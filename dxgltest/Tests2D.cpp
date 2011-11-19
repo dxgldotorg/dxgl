@@ -422,8 +422,8 @@ void InitTest(int test)
 		error = sprites[0].surface->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 		DrawGradients(ddsd,(unsigned char *)ddsd.lpSurface,hWnd,palette,1,0);
 		error = sprites[0].surface->Unlock(NULL);
-		sprites[0].width = ddsd.dwWidth;
-		sprites[0].height = ddsd.dwHeight;
+		sprites[0].width = (float)ddsd.dwWidth;
+		sprites[0].height = (float)ddsd.dwHeight;
 		sprites[0].rect.left = sprites[0].rect.top = 0;
 		sprites[0].rect.right = ddsd.dwWidth;
 		sprites[0].rect.bottom = ddsd.dwHeight;
@@ -432,8 +432,8 @@ void InitTest(int test)
 			switch((i-1 & 3))
 			{
 			case 0:
-				sprites[i].width = sprites[i].height =
-					sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight = 
+				sprites[i].width = sprites[i].height = 64.f;
+				sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight = 
 					sprites[i].rect.right = sprites[i].rect.bottom = 64;
 				sprites[i].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 				ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -463,8 +463,8 @@ void InitTest(int test)
 			}
 			else if(i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
 			else sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
-			sprites[i].x = randfloat(ddsd.dwWidth);
-			sprites[i].y = randfloat(ddsd.dwHeight);
+			sprites[i].x = randfloat((float)ddsd.dwWidth);
+			sprites[i].y = randfloat((float)ddsd.dwHeight);
 			sprites[i].xvelocity = randfloat(5);
 			sprites[i].yvelocity = randfloat(5);
 		}
@@ -500,7 +500,7 @@ void RunTestTimed(int test)
 			{
 				if(backbuffers)	ddsrender->GetAttachedSurface(&ddscaps,&temp1);
 				else temp1 = ddsrender;
-				temp1->BltFast(sprites[i].x,sprites[i].y,sprites[i].surface,&sprites[i].rect,sprites[i].bltflags);
+				temp1->BltFast((DWORD)sprites[i].x,(DWORD)sprites[i].y,sprites[i].surface,&sprites[i].rect,sprites[i].bltflags);
 				if(backbuffers) temp1->Release();
 			}
 		}

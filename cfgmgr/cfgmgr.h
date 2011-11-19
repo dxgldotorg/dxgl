@@ -22,7 +22,6 @@
 
 typedef struct
 {
-	bool UseGfxSettings;
 	DWORD scaler;
 	bool colormode;
 	DWORD scalingfilter;
@@ -30,23 +29,23 @@ typedef struct
 	DWORD anisotropic;
 	DWORD msaa;
 	DWORD aspect;
-	DWORD highres;
+	bool highres;
 	DWORD vsync;
-	WCHAR shaderfile[MAX_PATH+1];
+	TCHAR shaderfile[MAX_PATH+1];
 	DWORD SortModes;
 	bool AllColorDepths;
 	bool ExtraModes;
-	bool UseAudSettings;
 	bool audio3d;
 	bool audioglobal;
-	bool UseInputSettings;
 	bool inputglobal;
 } DXGLCFG;
 
-void ReadSettings(HKEY hKey, DXGLCFG *cfg, bool global);
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, bool global);
+void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global);
 void GetCurrentConfig(DXGLCFG *cfg);
 void GetGlobalConfig(DXGLCFG *cfg);
 void SetGlobalConfig(const DXGLCFG *cfg);
-
+void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
+void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
+LPTSTR MakeNewConfig(LPTSTR path);
 #endif //_CFGMGR_H

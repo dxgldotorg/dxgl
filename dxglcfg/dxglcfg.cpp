@@ -24,6 +24,15 @@
 #include "resource.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
+#include <string>
+
+using namespace std;
+#ifdef _UNICODE
+typedef wstring tstring;
+#else
+typedef string tstring;
+#endif
+
 
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
 #define GL_MAX_SAMPLES_EXT                     0x8D57
@@ -31,31 +40,177 @@
 #define GL_MULTISAMPLE_COVERAGE_MODES_NV            0x8E12
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT      0x84FF
 
-DXGLCFG globalcfg;
-DXGLCFG currentcfg;
+DXGLCFG *cfg;
+DXGLCFG *cfgmask;
+bool *dirty;
 HINSTANCE hinstance;
 bool msaa = false;
 const char *extensions_string = NULL;
+OSVERSIONINFO osver;
+
+typedef struct
+{
+	tstring *regkey;
+	tstring *name;
+	HICON icon;
+	bool icon_shared;
+	bool dirty;
+	DXGLCFG cfg;
+	DXGLCFG mask;
+} app_setting;
+
+TCHAR exe_filter[] = _T("Program Files\0*.exe\0All Files\0*.*\0\0");
+
+app_setting *apps;
+int appcount;
+int maxapps;
+int current_app;
+bool tristate;
+TCHAR strdefault[] = _T("(global default)");
+
+DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
+{
+	bool installed = false;
+	bool old_dxgl = false;
+	tstring command;
+	if(copyfile)
+	{
+		DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
+		TCHAR installpath[MAX_PATH+1];
+		TCHAR destpath[MAX_PATH+1];
+		HKEY hKeyInstall;
+		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
+		if(error == ERROR_SUCCESS)
+		{
+			error = RegQueryValueEx(hKeyInstall,_T("InstallPath"),NULL,NULL,(LPBYTE)installpath,&sizeout);
+			if(error == ERROR_SUCCESS) installed = true;
+		}
+		if(hKeyInstall) RegCloseKey(hKeyInstall);
+		if(!installed)
+		{
+			GetModuleFileName(NULL,installpath,MAX_PATH+1);
+		}
+		(_tcsrchr(installpath,_T('\\')))[1] = 0;
+		_tcscat(installpath,_T("ddraw.dll"));
+		_tcsncpy(destpath,path,MAX_PATH+1);
+		(_tcsrchr(destpath,_T('\\')))[1] = 0;
+		_tcscat(destpath,_T("ddraw.dll"));
+		error = CopyFile(installpath,destpath,TRUE);
+		error_loop:
+		if(!error)
+		{
+			error = GetLastError();
+			if(error == ERROR_FILE_EXISTS)
+			{
+				HMODULE hmod = LoadLibrary(destpath);
+				if(hmod)
+				{
+					if(GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = true;
+					FreeLibrary(hmod);
+				}
+				if(old_dxgl)
+				{
+					error = CopyFile(installpath,destpath,FALSE);
+					goto error_loop;
+				}
+			}
+			if((error == ERROR_ACCESS_DENIED) && !admin)
+			{
+				command.assign(_T(" install "));
+				command.append(path);
+				SHELLEXECUTEINFO shex;
+				ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
+				shex.cbSize = sizeof(SHELLEXECUTEINFO);
+				shex.lpVerb = _T("runas");
+				shex.lpFile = destpath;
+				shex.lpParameters = command.c_str();
+				ShellExecuteEx(&shex);
+				WaitForSingleObject(shex.hProcess,INFINITE);
+				DWORD exitcode;
+				GetExitCodeProcess(shex.hProcess,&exitcode);
+				return exitcode;
+			}
+			return error;
+		}
+	}
+	return 0;
+}
 
 void SaveChanges(HWND hWnd)
 {
-	globalcfg.scaler = SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_GETCURSEL,0,0);
-	if(SendDlgItemMessage(hWnd,IDC_COLOR,BM_GETCHECK,0,0)) globalcfg.colormode = true;
-	else globalcfg.colormode = false;
-	globalcfg.scalingfilter = SendDlgItemMessage(hWnd,IDC_SCALE,CB_GETCURSEL,0,0);
-	globalcfg.vsync = SendDlgItemMessage(hWnd,IDC_VSYNC,CB_GETCURSEL,0,0);
-	SendDlgItemMessageW(hWnd,IDC_SHADER,WM_GETTEXT,MAX_PATH+1,(LPARAM)globalcfg.shaderfile);
-	globalcfg.texfilter = SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_GETCURSEL,0,0);
-	globalcfg.anisotropic = SendDlgItemMessage(hWnd,IDC_ANISO,CB_GETCURSEL,0,0);
-	globalcfg.msaa = SendDlgItemMessage(hWnd,IDC_MSAA,CB_GETCURSEL,0,0);
-	globalcfg.aspect = SendDlgItemMessage(hWnd,IDC_ASPECT,CB_GETCURSEL,0,0);
-	globalcfg.highres = SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_GETCHECK,0,0);
-	if(SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_GETCHECK,0,0)) globalcfg.AllColorDepths = true;
-	else globalcfg.AllColorDepths = false;
-	if(SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_GETCHECK,0,0)) globalcfg.ExtraModes = true;
-	else globalcfg.ExtraModes = false;
-	globalcfg.SortModes = SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_GETCURSEL,0,0);
-	SetGlobalConfig(&globalcfg);
+	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg);
+	for(int i = 1; i < appcount; i++)
+	{
+		if(apps[i].dirty) SetConfig(&apps[i].cfg,&apps[i].mask,apps[i].regkey->c_str());
+	}
+	EnableWindow(GetDlgItem(hWnd,IDC_APPLY),FALSE);
+}
+
+void SetCheck(HWND hWnd, int DlgItem, bool value, bool mask, bool tristate)
+{
+	if(tristate && !mask)
+		SendDlgItemMessage(hWnd,DlgItem,BM_SETCHECK,BST_INDETERMINATE,0);
+	else
+	{
+		if(value) SendDlgItemMessage(hWnd,DlgItem,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,DlgItem,BM_SETCHECK,BST_UNCHECKED,0);
+	}
+}
+
+void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, bool tristate)
+{
+	if(tristate && !mask)
+		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,
+		SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+	else
+		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
+}
+
+void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, bool tristate)
+{
+	if(tristate && (mask[0] == 0))
+		SetWindowText(GetDlgItem(hWnd,DlgItem),_T(""));
+	else SetWindowText(GetDlgItem(hWnd,DlgItem),value);
+}
+
+bool GetCheck(HWND hWnd, int DlgItem, bool &mask)
+{
+	int check = SendDlgItemMessage(hWnd,DlgItem,BM_GETCHECK,0,0);
+	switch(check)
+	{
+	case BST_CHECKED:
+		mask = true;
+		return true;
+	case BST_UNCHECKED:
+		mask = true;
+		return false;
+	case BST_INDETERMINATE:
+	default:
+		mask = false;
+		return false;
+	}
+}
+
+DWORD GetCombo(HWND hWnd, int DlgItem, DWORD &mask)
+{
+	int value = SendDlgItemMessage(hWnd,DlgItem,CB_GETCURSEL,0,0);
+	if(value == SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault))
+	{
+		mask = 0;
+		return 0;
+	}
+	else
+	{
+		mask = 1;
+		return value;
+	}
+}
+
+void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
+{
+	GetDlgItemText(hWnd,DlgItem,str,MAX_PATH+1);
+	if(str[0] == 0) mask[0] = 0;
+	else mask[0] = 0xff;
 }
 
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -88,11 +243,48 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	int msaamodes[32];
 	int pf;
 	int i;
+	HKEY hKeyBase;
+	HKEY hKey;
+	DWORD keysize,keysize2;
 	DEVMODE mode;
+	LPTSTR keyname;
+	LPTSTR regbuffer;
+	DWORD regbuffersize;
+	DWORD regbufferpos;
+	DWORD buffersize;
+	LONG error;
 	TCHAR buffer[64];
+	tstring subkey;
+	tstring path;
+	SHFILEINFO fileinfo;
+	DWORD verinfosize;
+	LPTSTR outbuffer;
+	UINT outlen;
+	TCHAR verpath[64];
+	WORD translation[2];
+	DWORD cursel;
+	DRAWITEMSTRUCT* drawitem = (DRAWITEMSTRUCT*)lParam;
+	bool hasname;
+	void *verinfo;
+	COLORREF OldTextColor,OldBackColor;
+	HANDLE token;
+	TOKEN_ELEVATION elevation;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
+		tristate = false;
+		maxapps = 128;
+		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));
+		apps[0].name = new tstring(_T("Global"));
+		apps[0].regkey = new tstring(_T("Global"));
+		GetGlobalConfig(&apps[0].cfg);
+		cfg = &apps[0].cfg;
+		cfgmask = &apps[0].mask;
+		dirty = &apps[0].dirty;
+		memset(&apps[0].mask,0xff,sizeof(DXGLCFG));
+		apps[0].dirty = false;
+		apps[0].icon = LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_STAR));
+		apps[0].icon_shared = true;
 		SetClassLong(hWnd,GCL_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
 		SetClassLong(hWnd,GCL_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
 		// create temporary gl context to get AA and AF settings.
@@ -140,9 +332,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,5,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,globalcfg.scaler,NULL);
+		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,NULL);
 		// colormode
-		if(globalcfg.colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,NULL);
+		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,NULL);
 		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
 		// scalingfilter
 		_tcscpy(buffer,_T("Nearest"));
@@ -153,9 +345,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,2,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Shader (primary only)"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,3,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,globalcfg.scalingfilter,NULL);
+		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,NULL);
 		// highres
-		if(globalcfg.highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,NULL);
+		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,NULL);
 		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,NULL);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
@@ -172,7 +364,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,5,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, linear mipmap"));
 		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,globalcfg.texfilter,NULL);
+		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,NULL);
 		// anisotropic
 		if (anisotropic < 2)
 		{
@@ -180,8 +372,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,0,NULL);
 			EnableWindow(GetDlgItem(hWnd,IDC_ANISO),FALSE);
-			globalcfg.anisotropic = 0;
-			currentcfg.anisotropic = 0;
+			cfg->anisotropic = 0;
 		}
 		else
 		{
@@ -214,7 +405,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				_tcscpy(buffer,_T("32x"));
 				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
 			}
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,globalcfg.anisotropic,NULL);
+			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,cfg->anisotropic,NULL);
 		}
 		// msaa
 		if(msaa)
@@ -261,7 +452,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,32,(LPARAM)buffer);
 				}
 			}
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,globalcfg.msaa,NULL);
+			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,cfg->msaa,NULL);
 		}
 		else
 		{
@@ -269,8 +460,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
 			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,0,NULL);
 			EnableWindow(GetDlgItem(hWnd,IDC_MSAA),FALSE);
-			globalcfg.msaa = 0;
-			currentcfg.msaa = 0;
+			cfg->msaa = 0;
 		}
 		// aspect
 		_tcscpy(buffer,_T("Stretch to display"));
@@ -279,7 +469,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,globalcfg.aspect,NULL);
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,cfg->aspect,NULL);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -287,16 +477,178 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by resolution"));
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,globalcfg.SortModes,NULL);
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,NULL);
 		// color depths
-		if(globalcfg.AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,NULL);
+		if(cfg->AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,NULL);
 		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
 		// extra modes
-		if(globalcfg.ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,NULL);
+		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,NULL);
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,NULL);
+		// shader path
+		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,false);
+		// Add installed programs
+		current_app = 1;
+		appcount = 1;
+		regbuffersize = 1024;
+		regbuffer = (LPTSTR)malloc(regbuffersize*sizeof(TCHAR));
+		RegCreateKeyEx(HKEY_CURRENT_USER,_T("Software\\DXGL"),0,NULL,0,KEY_READ,NULL,&hKeyBase,NULL);
+		RegQueryInfoKey(hKeyBase,NULL,NULL,NULL,NULL,&keysize,NULL,NULL,NULL,NULL,NULL,NULL);
+		keysize++;
+		keyname = (LPTSTR)malloc(keysize*sizeof(TCHAR));
+		keysize2 = keysize;
+		i = 0;
+		while(RegEnumKeyEx(hKeyBase,i,keyname,&keysize2,NULL,NULL,NULL,NULL) == ERROR_SUCCESS)
+		{
+			keysize2 = keysize;
+			i++;
+			if(!_tcscmp(keyname,_T("Global"))) continue;
+			appcount++;
+			if(appcount > maxapps)
+			{
+				maxapps += 128;
+				apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
+			}
+			subkey = keyname;
+			if(subkey.rfind(_T("-")) != -1) subkey.resize(subkey.rfind(_T("-")));
+			error = RegOpenKeyEx(hKeyBase,keyname,0,KEY_READ,&hKey);
+			buffersize = regbuffersize;
+			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
+			if(buffersize > regbuffersize)
+			{
+				regbuffersize = buffersize;
+				regbuffer = (LPTSTR)realloc(regbuffer,regbuffersize);
+			}
+			buffersize = regbuffersize;
+			regbuffer[0] = regbuffer[1] = 0;
+			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
+			regbufferpos = 0;
+			apps[i].regkey = new tstring(keyname);
+			GetConfig(&apps[i].cfg,&apps[i].mask,keyname);
+			apps[i].dirty = false;
+			while(1)
+			{
+				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
+				{
+					// Default icon
+					apps[i].icon = LoadIcon(NULL,IDI_APPLICATION);
+					apps[i].icon_shared = true;
+					apps[i].name = new tstring(subkey);
+					break;
+				}
+				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+subkey;
+				if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+				{
+					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+					continue;
+				}
+				// Get exe attributes
+				error = SHGetFileInfo(path.c_str(),0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
+				apps[i].icon = fileinfo.hIcon;
+				apps[i].icon_shared = false;
+				verinfosize = GetFileVersionInfoSize(path.c_str(),NULL);
+				verinfo = malloc(verinfosize);
+				hasname = false;
+				if(GetFileVersionInfo(path.c_str(),0,verinfosize,verinfo))
+				{
+					if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
+					{
+						memcpy(translation,outbuffer,4);
+						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
+						if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+						{
+							hasname = true;
+							apps[i].name = new tstring(outbuffer);
+						}
+						else
+						{
+							_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
+							if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+							{
+								hasname = true;
+								apps[i].name = new tstring(outbuffer);
+							}
+							else
+							{
+								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
+								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+								{
+									hasname = true;
+									apps[i].name = new tstring(outbuffer);
+								}
+							}
+						}
+					}
+				}
+				if(!hasname) apps[i].name = new tstring(subkey);
+				free(verinfo);
+				break;
+			}
+			RegCloseKey(hKey);
+		}
+		RegCloseKey(hKeyBase);
+		free(keyname);
+		for(i = 0; i < appcount; i++)
+		{
+			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name->c_str());
+		}
+		current_app = 0;
+		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,NULL);
+		if(osver.dwMajorVersion >= 6)
+		{
+			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
+			{
+				if(GetTokenInformation(token,TokenElevation,&elevation,sizeof(TOKEN_ELEVATION),(PDWORD)&outlen))
+				{
+					if(!elevation.TokenIsElevated)
+					{
+						SendDlgItemMessage(hWnd,IDC_ADD,BCM_SETSHIELD,0,TRUE);
+						SendDlgItemMessage(hWnd,IDC_REMOVE,BCM_SETSHIELD,0,TRUE);
+					}
+				}
+			}
+		}
+		if(token) CloseHandle(token);
 		return true;
-	case WM_COMMAND:
+	case WM_MEASUREITEM:
 		switch(wParam)
+		{
+		case IDC_APPS:
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON)+1;
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
+		default:
+			break;
+		}
+		break;
+	case WM_DRAWITEM:
+		switch(wParam)
+		{
+		case IDC_APPS:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if((drawitem->itemAction | ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
+				!(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
+			}
+			else ExtTextOut(drawitem->hDC,0,0,ETO_OPAQUE,&drawitem->rcItem,NULL,0,NULL);
+			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
+				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
+			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
+			DrawText(drawitem->hDC,apps[drawitem->itemID].name->c_str(),
+				apps[drawitem->itemID].name->length(),&drawitem->rcItem,
+				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
+			SetTextColor(drawitem->hDC,OldTextColor);
+			SetBkColor(drawitem->hDC,OldBackColor);
+			DefWindowProc(hWnd,Msg,wParam,lParam);
+			break;
+		default:
+			break;
+		}
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wParam))
 		{
 		case IDOK:
 			SaveChanges(hWnd);
@@ -308,6 +660,244 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_APPLY:
 			SaveChanges(hWnd);
 			return true;
+		case IDC_APPS:
+			if(HIWORD(wParam) == LBN_SELCHANGE)
+			{
+				cursel = SendDlgItemMessage(hWnd,IDC_APPS,LB_GETCURSEL,0,0);
+				if(cursel == current_app) break;
+				current_app = cursel;
+				cfg = &apps[current_app].cfg;
+				cfgmask = &apps[current_app].mask;
+				dirty = &apps[current_app].dirty;
+				// Set 3-state status
+				if(current_app && !tristate)
+				{
+					tristate = true;
+					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_SYSMEMCACHE,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+				}
+				else if(!current_app && tristate)
+				{
+					tristate = false;
+					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_SCALE,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_SCALE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_VSYNC,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_ANISO,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_ASPECT,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_SYSMEMCACHE,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+				}
+				// Read settings into controls
+				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
+				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
+				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
+				SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
+				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
+				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
+				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
+				SetCombo(hWnd,IDC_ASPECT,cfg->aspect,cfgmask->aspect,tristate);
+				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
+				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
+				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
+				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
+				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
+			}
+		case IDC_VIDMODE:
+			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,cfgmask->scaler);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_SORTMODES:
+			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,cfgmask->SortModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_SCALE:
+			cfg->scalingfilter = GetCombo(hWnd,IDC_SCALE,cfgmask->scalingfilter);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_VSYNC:
+			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,cfgmask->vsync);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_MSAA:
+			cfg->msaa = GetCombo(hWnd,IDC_MSAA,cfgmask->msaa);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_ANISO:
+			cfg->anisotropic = GetCombo(hWnd,IDC_ANISO,cfgmask->anisotropic);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_TEXFILTER:
+			cfg->texfilter = GetCombo(hWnd,IDC_TEXFILTER,cfgmask->texfilter);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_ASPECT:
+			cfg->aspect = GetCombo(hWnd,IDC_ASPECT,cfgmask->aspect);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_COLOR:
+			cfg->colormode = GetCheck(hWnd,IDC_COLOR,cfgmask->colormode);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_HIGHRES:
+			cfg->highres = GetCheck(hWnd,IDC_COLOR,cfgmask->highres);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_UNCOMMONCOLOR:
+			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,cfgmask->AllColorDepths);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_EXTRAMODES:
+			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,cfgmask->ExtraModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_SHADER:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				GetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile);
+				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+				*dirty = true;
+			}
+			break;
+		case IDC_ADD:
+			OPENFILENAME_NT4 filename;
+			TCHAR selectedfile[MAX_PATH+1];
+			selectedfile[0] = 0;
+			ZeroMemory(&filename,sizeof(OPENFILENAME_NT4));
+			filename.lStructSize = sizeof(OPENFILENAME_NT4);
+			filename.hwndOwner = hWnd;
+			filename.lpstrFilter = exe_filter;
+			filename.lpstrFile = selectedfile;
+			filename.nMaxFile = MAX_PATH+1;
+			filename.lpstrInitialDir = _T("%ProgramFiles%");
+			filename.lpstrTitle = _T("Select program");
+			filename.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+			if(GetOpenFileName((LPOPENFILENAME)&filename))
+			{
+				DWORD err = AddApp(filename.lpstrFile,true,false);
+				if(!err)
+				{
+					tstring newkey = MakeNewConfig(filename.lpstrFile);
+					tstring newkey2 = _T("Software\\DXGL\\") + newkey;
+					appcount++;
+					if(appcount > maxapps)
+					{
+						maxapps += 128;
+						apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
+					}
+					RegOpenKeyEx(HKEY_CURRENT_USER,newkey2.c_str(),0,KEY_READ,&hKey);
+					RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
+					regbuffer = (LPTSTR)malloc(buffersize);
+					regbuffer[0] = regbuffer[1] = 0;
+					error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
+					regbufferpos = 0;
+					apps[appcount-1].regkey = new tstring(newkey);
+					GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,newkey.c_str());
+					apps[appcount-1].dirty = false;
+					while(1)
+					{
+						if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
+						{
+							// Default icon
+							apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
+							apps[appcount-1].icon_shared = true;
+							apps[appcount-1].name = new tstring(newkey);
+							break;
+						}
+						if(newkey.rfind(_T("-")) != -1) newkey.resize(newkey.rfind(_T("-")));
+						path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+newkey;
+						if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+						{
+							regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+							continue;
+						}
+						// Get exe attributes
+						error = SHGetFileInfo(path.c_str(),0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
+						apps[appcount-1].icon = fileinfo.hIcon;
+						apps[appcount-1].icon_shared = false;
+						verinfosize = GetFileVersionInfoSize(path.c_str(),NULL);
+						verinfo = malloc(verinfosize);
+						hasname = false;
+						if(GetFileVersionInfo(path.c_str(),0,verinfosize,verinfo))
+						{
+							if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
+							{
+								memcpy(translation,outbuffer,4);
+								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
+								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+								{
+									hasname = true;
+									apps[appcount-1].name = new tstring(outbuffer);
+								}
+								else
+								{
+									_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
+									if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+									{
+										hasname = true;
+										apps[appcount-1].name = new tstring(outbuffer);
+									}
+									else
+									{
+										_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
+										if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+										{
+											hasname = true;
+											apps[appcount-1].name = new tstring(outbuffer);
+										}
+									}
+								}
+							}
+						}
+						if(!hasname) apps[appcount-1].name = new tstring(newkey);
+						free(verinfo);
+						break;
+					}
+					SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[appcount-1].name->c_str());
+					RegCloseKey(hKey);
+					free(regbuffer);
+				}
+			}
+
+			break;
+		case IDC_REMOVE:
+			break;
 		}
 		break;
 	}
@@ -325,7 +915,14 @@ typedef struct tagINITCOMMONCONTROLSEX {
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
+	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&osver);
+	CoInitialize(NULL);
 	INITCOMMONCONTROLSEX icc;
+	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
+	{
+		return AddApp(lpCmdLine+8,true,true);
+	}
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
 	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
@@ -334,15 +931,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
 	hinstance = hInstance;
-	GetGlobalConfig(&globalcfg);
 	int result = DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));
-	switch(result)
-	{
-	case IDOK:
-		// Save settings
-		break;
-	case IDCANCEL:
-		break;
-	}
 	return 0;
 }

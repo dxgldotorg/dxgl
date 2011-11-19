@@ -18,122 +18,236 @@
 #include "stdafx.h"
 #include "crc32.h"
 #include "cfgmgr.h"
+#include <tchar.h>
+using namespace std;
+#ifdef _UNICODE
+typedef wstring tstring;
+#else
+typedef string tstring;
+#endif
 
-wchar_t regkeyglobal[] = L"Software\\DXGL\\Global";
-wchar_t regkeybase[] = L"Software\\DXGL\\";
 
-void ReadSettings(HKEY hKey, DXGLCFG *cfg, bool global)
+TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
+TCHAR regkeybase[] = _T("Software\\DXGL\\");
+
+DXGLCFG defaultmask;
+
+void GetDirFromPath(LPTSTR path)
+{
+	int len = _tcslen(path);
+	for(int i = len; i > 0; i--)
+	{
+		if((path[i] == '\\') || (path[i] == '/'))
+		{
+			path[i] = 0;
+			break;
+		}
+	}
+}
+
+int FindStringInMultiSz(LPTSTR multisz, LPTSTR comp)
+{
+	LPTSTR str = multisz;
+	while(str[0] != 0)
+	{
+		if(!_tcscmp(str,comp)) return 1;
+		str += (_tcslen(str) + 1);
+	}
+	return 0;
+}
+
+void AddStringToMultiSz(LPTSTR multisz, LPTSTR string)
+{
+	LPTSTR str = multisz;
+	while(str[0] != 0)
+	{
+		str += (_tcslen(str) + 1);
+	}
+	_tcscpy(str,string);
+}
+
+
+bool ReadBool(HKEY hKey, bool &mask, LPTSTR value)
 {
 	DWORD dwOut;
-	LONG error;
+	DWORD sizeout = 4;
 	DWORD regdword = REG_DWORD;
-	DWORD regsz = REG_SZ;
-	DWORD sizeout=4;
-	error = RegQueryValueExW(hKey,L"UseGraphicsSettings",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-	if(((error == ERROR_SUCCESS) && dwOut) || global)
+	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+	if(error == ERROR_SUCCESS)
 	{
-		cfg->UseGfxSettings = true;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"ScalingMode",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->scaler = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"ChangeColorDepth",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if((error == ERROR_SUCCESS) && dwOut) cfg->colormode = true;
-		else cfg->colormode = false;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"ScalingFilter",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->scalingfilter = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"TextureFilter",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->texfilter = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"AnisotropicFiltering",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->anisotropic = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"Antialiasing",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->msaa = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"AdjustAspectRatio",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->aspect = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"AdjustPrimaryResolution",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->highres = dwOut;
-		sizeout = MAX_PATH*2;
-		WCHAR file[MAX_PATH+1];
-		error = RegQueryValueExW(hKey,L"ShaderFile",NULL,&regsz,(LPBYTE)file,&sizeout);
-		if(error == ERROR_SUCCESS) wcsncpy(cfg->shaderfile,file,MAX_PATH);
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"SortModes",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->SortModes = dwOut;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"AllColorDepths",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS && dwOut) cfg->AllColorDepths = true;
-		else cfg->AllColorDepths = false;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"ExtraModes",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS && dwOut) cfg->ExtraModes = true;
-		else cfg->ExtraModes = false;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"VSync",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->vsync = dwOut;
-		sizeout = 4;
+		mask = true;
+		if(dwOut) return true;
+		else return false;
 	}
-	else cfg->UseGfxSettings = false;
-	sizeout = 4;
-	error = RegQueryValueExW(hKey,L"UseAudioSettings",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-	if(((error == ERROR_SUCCESS) && dwOut) || global)
+	else
 	{
-		cfg->UseAudSettings = true;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"Use3DAudio",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if((error == ERROR_SUCCESS) && dwOut) cfg->audio3d = true;
-		else cfg->audio3d = false;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"GlobalAudio",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if((error == ERROR_SUCCESS) && dwOut) cfg->audioglobal = true;
-		else cfg->audioglobal = false;
+		mask = false;
+		return false;
 	}
-	else cfg->UseAudSettings = false;
-	sizeout = 4;
-	error = RegQueryValueExW(hKey,L"UseInputSettings",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-	if(((error == ERROR_SUCCESS) && dwOut) || global)
-	{
-		cfg->UseInputSettings = true;
-		sizeout = 4;
-		error = RegQueryValueExW(hKey,L"GlobalInput",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if((error == ERROR_SUCCESS) && dwOut) cfg->inputglobal = true;
-		else cfg->inputglobal = false;
-	}
-	else cfg->UseInputSettings = false;
 }
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, bool global)
+
+DWORD ReadDWORD(HKEY hKey, DWORD &mask, LPTSTR value)
 {
+	DWORD dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+	if(error == ERROR_SUCCESS)
+	{
+		mask = 1;
+		return dwOut;
+	}
+	else
+	{
+		mask = 0;
+		return 0;
+	}
+}
+
+void ReadPath(HKEY hKey, TCHAR *path, TCHAR *mask, LPTSTR value)
+{
+	DWORD sizeout = MAX_PATH*sizeof(TCHAR);
+	DWORD regsz = REG_SZ;
+	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regsz,(LPBYTE)path,&sizeout);
+	if(error == ERROR_SUCCESS) mask[0] = 0xFF;
+	else
+	{
+		mask[0] = 0;
+		path[0] = 0;
+	}
+}
+
+void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir)
+{
+	DXGLCFG *cfgmask;
+	if(mask) cfgmask = mask;
+	else cfgmask = &defaultmask;
+	TCHAR path[MAX_PATH+1];
 	LONG error;
+	DWORD regmultisz = REG_MULTI_SZ;
+	DWORD sizeout=4;
+	cfg->scaler = ReadDWORD(hKey,cfgmask->scaler,_T("ScalingMode"));
+	cfg->colormode = ReadBool(hKey,cfgmask->colormode,_T("ChangeColorDepth"));
+	cfg->scalingfilter = ReadDWORD(hKey,cfgmask->scalingfilter,_T("ScalingFilter"));
+	cfg->texfilter = ReadDWORD(hKey,cfgmask->texfilter,_T("TextureFilter"));
+	cfg->anisotropic = ReadDWORD(hKey,cfgmask->anisotropic,_T("AnisotropicFiltering"));
+	cfg->msaa = ReadDWORD(hKey,cfgmask->msaa,_T("Antialiasing"));
+	cfg->aspect = ReadDWORD(hKey,cfgmask->aspect,_T("AdjustAspectRatio"));
+	cfg->highres = ReadBool(hKey,cfgmask->highres,_T("AdjustPrimaryResolution"));
+	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
+	cfg->SortModes = ReadDWORD(hKey,cfgmask->SortModes,_T("SortModes"));
+	cfg->AllColorDepths = ReadBool(hKey,cfgmask->AllColorDepths,_T("AllColorDepths"));
+	cfg->ExtraModes = ReadBool(hKey,cfgmask->ExtraModes,_T("ExtraModes"));
+	cfg->vsync = ReadDWORD(hKey,cfgmask->vsync,_T("VSync"));
+	cfg->audio3d = ReadBool(hKey,cfgmask->audio3d,_T("Use3DAudio"));
+	cfg->audioglobal = ReadBool(hKey,cfgmask->audioglobal,_T("GlobalAudio"));
+	cfg->inputglobal = ReadBool(hKey,cfgmask->inputglobal,_T("GlobalInput"));
+	if(!global && dll)
+	{
+		LPTSTR paths;
+		sizeout = 0;
+		if(!path) GetModuleFileName(NULL,path,MAX_PATH);
+		else _tcsncpy(path,dir,MAX_PATH+1);
+		GetDirFromPath(path);
+		error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,NULL,&sizeout);
+		if(error == ERROR_FILE_NOT_FOUND)
+		{
+			sizeout = (_tcslen(path)*2)+4;
+			paths = (LPTSTR)malloc(sizeout*sizeof(TCHAR));
+			ZeroMemory(paths,sizeout*sizeof(TCHAR));
+			_tcscpy(paths,path);
+			error = RegSetValueEx(hKey,_T("InstallPaths"),NULL,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
+			free(paths);
+		}
+		else
+		{
+			paths = (LPTSTR)malloc(sizeout+(MAX_PATH*2)+4);
+			ZeroMemory(paths,sizeout+(MAX_PATH*2)+4);
+			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,(LPBYTE)paths,&sizeout);
+			if(!FindStringInMultiSz(paths,path))
+			{
+				AddStringToMultiSz(paths,path);
+				sizeout += (MAX_PATH*2)+4;
+				error = RegSetValueEx(hKey,_T("InstallPaths"),NULL,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
+			}
+			free(paths);
+		}
+	}
+}
+
+void WriteBool(HKEY hKey, bool value, bool mask, LPTSTR name)
+{
 	const DWORD one = 1;
 	const DWORD zero = 0;
-	if(cfg->UseGfxSettings || global)
+	if(mask)
 	{
-		if(!global) error = RegSetValueExW(hKey,L"UseGraphicsSettings",0,REG_DWORD,(BYTE*)&one,4);
-		error = RegSetValueExW(hKey,L"ScalingMode",0,REG_DWORD,(BYTE*)&cfg->scaler,4);
-		if(cfg->colormode) error = RegSetValueExW(hKey,L"ChangeColorDepth",0,REG_DWORD,(BYTE*)&one,4);
-		else error = RegSetValueExW(hKey,L"ChangeColorDepth",0,REG_DWORD,(BYTE*)&zero,4);
-		error = RegSetValueExW(hKey,L"ScalingFilter",0,REG_DWORD,(BYTE*)&cfg->scalingfilter,4);
-		error = RegSetValueExW(hKey,L"TextureFilter",0,REG_DWORD,(BYTE*)&cfg->texfilter,4);
-		error = RegSetValueExW(hKey,L"AnisotropicFiltering",0,REG_DWORD,(BYTE*)&cfg->anisotropic,4);
-		error = RegSetValueExW(hKey,L"Antialiasing",0,REG_DWORD,(BYTE*)&cfg->msaa,4);
-		error = RegSetValueExW(hKey,L"AdjustAspectRatio",0,REG_DWORD,(BYTE*)&cfg->aspect,4);
-		error = RegSetValueExW(hKey,L"AdjustPrimaryResolution",0,REG_DWORD,(BYTE*)&cfg->highres,4);
-		if(cfg->shaderfile[0]) error = RegSetValueExW(hKey,L"ShaderFile",0,REG_SZ,(BYTE*)cfg->shaderfile,
-			wcslen(cfg->shaderfile)*2);
-		else error = RegDeleteValueW(hKey,L"ShaderFile");
-		error = RegSetValueExW(hKey,L"SortModes",0,REG_DWORD,(BYTE*)&cfg->SortModes,4);
-		if(cfg->AllColorDepths) error = RegSetValueExW(hKey,L"AllColorDepths",0,REG_DWORD,(BYTE*)&one,4);
-		else error = RegSetValueExW(hKey,L"AllColorDepths",0,REG_DWORD,(BYTE*)&zero,4);
-		if(cfg->ExtraModes) error = RegSetValueExW(hKey,L"ExtraModes",0,REG_DWORD,(BYTE*)&one,4);
-		else error = RegSetValueExW(hKey,L"LowResModes",0,REG_DWORD,(BYTE*)&zero,4);
-		error = RegSetValueExW(hKey,L"VSync",0,REG_DWORD,(BYTE*)&cfg->vsync,4);
+		if(value) RegSetValueEx(hKey,name,0,REG_DWORD,(BYTE*)&one,4);
+		else RegSetValueEx(hKey,name,0,REG_DWORD,(BYTE*)&zero,4);
 	}
-	else if(!cfg->UseGfxSettings && !global) error = RegDeleteValueW(hKey,L"UseGraphicsSettings");
+	else RegDeleteValue(hKey,name);
+}
+
+void WriteDWORD(HKEY hKey, DWORD value, DWORD mask, LPTSTR name)
+{
+	if(mask) RegSetValueEx(hKey,name,0,REG_DWORD,(BYTE*)&value,4);
+	else RegDeleteValue(hKey,name);
+}
+void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPTSTR name)
+{
+	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcsnlen(path,MAX_PATH+1)+1)*sizeof(TCHAR));
+	else RegDeleteValue(hKey,name);
+}
+
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global)
+{
+	const DXGLCFG *cfgmask;
+	if(mask) cfgmask = mask;
+	else cfgmask = &defaultmask;
+	memset(&defaultmask,1,sizeof(DXGLCFG));
+	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
+	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
+	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
+	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
+	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
+	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
+	WriteDWORD(hKey,cfg->aspect,cfgmask->aspect,_T("AdjustAspectRatio"));
+	WriteBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
+	WritePath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
+	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
+	WriteBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
+	WriteBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
+	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));	
+}
+
+tstring newregname;
+
+LPTSTR MakeNewConfig(LPTSTR path)
+{
+	HKEY hKey;
+	DXGLCFG tmp;
+	TCHAR crcstr[10];
+	unsigned long crc;
+	FILE *file = _tfopen(path,_T("rb"));
+	if(file != NULL) Crc32_ComputeFile(file,&crc);
+	else crc = 0;
+	_itot(crc,crcstr,16);
+	if(file) fclose(file);
+	tstring regkey = regkeybase;
+	int i;
+	TCHAR filename[MAX_PATH+1];
+	_tcsncpy(filename,path,MAX_PATH);
+	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	i++;
+	regkey.append(&filename[i]);
+	regkey.append(_T("-"));
+	regkey.append(crcstr);
+	newregname = &filename[i];
+	newregname.append(_T("-"));
+	newregname.append(crcstr);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,&tmp,NULL,false,true,path);
+	RegCloseKey(hKey);
+	return (LPTSTR)newregname.c_str();
 }
 
 void GetCurrentConfig(DXGLCFG *cfg)
@@ -141,44 +255,59 @@ void GetCurrentConfig(DXGLCFG *cfg)
 	HKEY hKey;
 	unsigned long crc;
 	FILE *file;
-	WCHAR filename[MAX_PATH+1];
-	WCHAR crcstr[10];
-	GetModuleFileNameW(NULL,filename,MAX_PATH);
-	file = _wfopen(filename,L"rb");
-	if(file != NULL)
-	{
-		Crc32_ComputeFile(file,&crc);
-	}
-	else
-	{
-		crc = 0;
-	}
-	_itow(crc,crcstr,16);
-	std::wstring regkey = regkeybase;
+	TCHAR filename[MAX_PATH+1];
+	TCHAR crcstr[10];
+	GetModuleFileName(NULL,filename,MAX_PATH);
+	file = _tfopen(filename,_T("rb"));
+	if(file != NULL) Crc32_ComputeFile(file,&crc);
+	else crc = 0;
+	_itot(crc,crcstr,16);
+	if(file) fclose(file);
+	tstring regkey = regkeybase;
 	int i;
-	for(i = wcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
 	regkey.append(&filename[i]);
-	regkey.append(L"-");
+	regkey.append(_T("-"));
 	regkey.append(crcstr);
 	GetGlobalConfig(cfg);
-	RegCreateKeyExW(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,cfg,false);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,cfg,NULL,false,true,NULL);
 	RegCloseKey(hKey);
 }
 void GetGlobalConfig(DXGLCFG *cfg)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
-	RegCreateKeyExW(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,cfg,true);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,cfg,NULL,true,false,NULL);
 	RegCloseKey(hKey);
 }
 
+void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
+{
+	HKEY hKey;
+	tstring regkey = regkeybase;
+	regkey.append(name);
+	ZeroMemory(cfg,sizeof(DXGLCFG));
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,cfg,mask,false,false,NULL);
+	RegCloseKey(hKey);
+}
 void SetGlobalConfig(const DXGLCFG *cfg)
 {
 	HKEY hKey;
-	RegCreateKeyExW(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	WriteSettings(hKey,cfg,true);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	WriteSettings(hKey,cfg,NULL,true);
+	RegCloseKey(hKey);
+}
+
+void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
+{
+	HKEY hKey;
+	tstring regkey = regkeybase;
+	regkey.append(name);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	WriteSettings(hKey,cfg,mask,false);
 	RegCloseKey(hKey);
 }

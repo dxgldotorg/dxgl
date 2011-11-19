@@ -22,6 +22,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxgltest", "dxgltest\dxglte
 		{9F051466-EA2C-4195-80B1-1B7C5B3F4AC2} = {9F051466-EA2C-4195-80B1-1B7C5B3F4AC2}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Help", "Help\Help.vcxproj", "{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug no DXGL|Win32 = Debug no DXGL|Win32
@@ -70,6 +72,14 @@ Global
 		{3A14A469-504B-4E32-8F23-063F8A2A8B5D}.Release no DXGL|Win32.Build.0 = Release no DXGL|Win32
 		{3A14A469-504B-4E32-8F23-063F8A2A8B5D}.Release|Win32.ActiveCfg = Release|Win32
 		{3A14A469-504B-4E32-8F23-063F8A2A8B5D}.Release|Win32.Build.0 = Release|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Debug no DXGL|Win32.ActiveCfg = Debug|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Debug no DXGL|Win32.Build.0 = Debug|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Debug|Win32.Build.0 = Debug|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Release no DXGL|Win32.ActiveCfg = Release|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Release no DXGL|Win32.Build.0 = Release|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Release|Win32.ActiveCfg = Release|Win32
+		{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
