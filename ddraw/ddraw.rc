@@ -1,0 +1,65 @@
+// DXGL
+// Copyright (C) 2011 William Feely
+
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include <windows.h>
+#include <commctrl.h>
+#include <richedit.h>
+#include "resource.h"
+
+
+
+
+//
+// Icon resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDI_ICON1          ICON           "..\\common\\dxgl.ico"
+
+
+
+//
+// Version Information resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+1 VERSIONINFO
+    FILEVERSION     0,0,1,0
+    PRODUCTVERSION  0,0,1,0
+    FILEOS          VOS__WINDOWS32
+    FILETYPE        VFT_DLL
+    FILESUBTYPE     VFT2_UNKNOWN
+    FILEFLAGSMASK   0x00000000
+    FILEFLAGS       0x00000000
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "043604e4"
+        {
+            VALUE "CompanyName", "William Feely"
+            VALUE "FileDescription", "DXGL DDraw Library"
+            VALUE "FileVersion", "0.0.1.0"
+            VALUE "InternalName", "DXGL"
+            VALUE "LegalCopyright", "Copyright (C) 2010 William Feely"
+            VALUE "OriginalFilename", "DDraw.dll"
+            VALUE "ProductName", "DXGL"
+            VALUE "ProductVersion", "0.0.1.0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0436, 0x04E4
+    }
+}

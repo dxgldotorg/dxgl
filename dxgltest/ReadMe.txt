@@ -1,0 +1,1 @@
+dxgltest is used for testing DXGL functionality against DirectDraw.
