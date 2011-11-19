@@ -102,7 +102,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(WXWIN)\lib\vc_lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>wxbase29ud.lib;wxmsw29ud_core.lib;comctl32.lib;rpcrt4.lib;winmm.lib;wsock32.lib;version.lib;dxguid.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxbase29ud.lib;wxmsw29ud_core.lib;comctl32.lib;rpcrt4.lib;winmm.lib;wsock32.lib;version.lib;dxguid.lib;$(OutDir)ddraw.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">

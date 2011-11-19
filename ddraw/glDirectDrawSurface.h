@@ -82,15 +82,17 @@ public:
 	HRESULT WINAPI SetLOD(DWORD dwMaxLOD);
 	HRESULT WINAPI GetLOD(LPDWORD lpdwMaxLOD);
 	// internal functions
-	GLuint GetTexture(){return texture;}
+	GLuint GetTexture(){
+		return texture;
+	}
 	void SetTexture(GLuint newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
+	void RenderScreen(GLuint texture);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 private:
-	DWORD fakex,fakey;
+	LONG fakex,fakey;
 	ULONG refcount;
-	DDSCAPS2 caps;
 	int locked;
 	HDC hdc;
 	HBITMAP hbitmap;
@@ -103,6 +105,7 @@ private:
 	char *buffer;
 	glDirectDrawSurface7 *backbuffer;
 	glDirectDrawPalette *palette;
+	glDirectDrawClipper *clipper;
 	GLenum texformat;
 	GLenum texformat2;
 	glDirectDrawSurface1 *dds1;
@@ -150,6 +153,7 @@ public:
 	HRESULT WINAPI UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRAWSURFACE lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx);
 	HRESULT WINAPI UpdateOverlayDisplay(DWORD dwFlags);
 	HRESULT WINAPI UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSReference);
+	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
 private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;

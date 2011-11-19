@@ -49,5 +49,5 @@
 #include <wx/spinctrl.h>
 // DirectX/DXGL headers
 #include <ddraw.h>
-
+extern const unsigned char DefaultPalette[1024];
 #endif //_STDAFX_H

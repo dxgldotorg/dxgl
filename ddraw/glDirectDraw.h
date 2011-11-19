@@ -80,7 +80,7 @@ public:
     // internal functions
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
-	void GetSizes(DWORD *sizes);
+	void GetSizes(LONG *sizes);
 	GLuint PalProg(){return palprog;}
 	LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
@@ -89,6 +89,11 @@ public:
 	DWORD screenx,screeny,screenrefresh,screenbpp;
 	DWORD internalx,internaly,internalrefresh,internalbpp;
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
+	bool GetFullscreen(){return fullscreen;};
+	GLuint fbo;
+	GLuint pbo;
+	GLuint depthbuffer;
+	void GetHandles(HWND *hwnd, HWND *hrender);
 private:
 	void DeleteGL();
 	BOOL InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd);

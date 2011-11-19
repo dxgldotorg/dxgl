@@ -82,13 +82,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../include;../glew/glew-1.5.7/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
@@ -97,13 +97,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../include;../glew/glew-1.5.7/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../Debug/glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
     </Link>
     <PostBuildEvent />
@@ -117,7 +117,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../include;../glew/glew-1.5.7/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +126,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SetChecksum>true</SetChecksum>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
@@ -137,7 +137,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../include;../glew/glew-1.5.7/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,7 +146,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SetChecksum>true</SetChecksum>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../Release/glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
     </Link>
     <PostBuildEvent />

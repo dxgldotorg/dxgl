@@ -21,6 +21,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
+#include "glDirectDrawPalette.h"
 
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
@@ -279,16 +280,17 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 		clippercountmax += 1024;
 	}
 	clippers[clippercount-1] = new glDirectDrawClipper(dwFlags,lplpDDClipper,pUnkOuter,this);
+	*lplpDDClipper = clippers[clippercount-1];
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
-	FIXME("IDirectDraw::CreatePalette: stub\n");
-	return DDERR_GENERIC;
+	glDirectDrawPalette *pal = new glDirectDrawPalette(dwFlags,lpDDColorArray,lplpDDPalette);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps |= DDSCAPS_PRIMARYSURFACE) )
+	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) )
 		return DDERR_PRIMARYSURFACEALREADYEXISTS;
 	surfacecount++;
 	if(surfacecount > surfacecountmax)
@@ -303,7 +305,7 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 	}
 	HRESULT error;
 	surfaces[surfacecount-1] = new glDirectDrawSurface7(this,lpDDSurfaceDesc2,lplpDDSurface,&error,false,NULL);
-	if(lpDDSurfaceDesc2->ddsCaps.dwCaps |= DDSCAPS_PRIMARYSURFACE)
+	if(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		primary = surfaces[surfacecount-1];
 	*lplpDDSurface = surfaces[surfacecount-1];
 	return error;
@@ -441,10 +443,13 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	{
 		RECT rect;
 		GetClientRect(hWnd,&rect);
-		x = rect.right = rect.left;
+		x = rect.right - rect.left;
 		y = rect.bottom - rect.top;
+		internalx = screenx = primaryx = devmode.dmPelsWidth;
+		internaly = screeny = primaryy = devmode.dmPelsHeight;
 	}
 	bpp = devmode.dmBitsPerPel;
+	primarybpp = bpp;
 	if(InitGL(x,y,bpp,fullscreen,hWnd)) return DD_OK;
 	return DDERR_GENERIC;
 }
@@ -711,13 +716,31 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		glAttachShader(palprog,palshader);
 		glLinkProgram(palprog);
 	}
+	if(GLEW_ARB_framebuffer_object)
+	{
+		glGenFramebuffers(1,&fbo);
+		glGenRenderbuffers(1,&depthbuffer);
+		glBindRenderbuffer(GL_RENDERBUFFER,depthbuffer);
+		//glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT,width,height);
+		//glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,depthbuffer);
+		glBindRenderbuffer(GL_RENDERBUFFER,0);
+	}
+	else if(GLEW_EXT_framebuffer_object)
+	{
+		glGenFramebuffersEXT(1,&fbo);
+		glGenRenderbuffersEXT(1,&depthbuffer);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,depthbuffer);
+		//glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_DEPTH_COMPONENT,width,height);
+		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,depthbuffer);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);
+	}
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SwapBuffers(hDC);
 	return TRUE;
 }
-void glDirectDraw7::GetSizes(DWORD *sizes) // allocate 6 dwords
+void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
 {
 	sizes[0] = internalx;
 	sizes[1] = internaly;
@@ -729,6 +752,11 @@ void glDirectDraw7::GetSizes(DWORD *sizes) // allocate 6 dwords
 LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	return DefWindowProcA(hWnd,msg,wParam,lParam);
+}
+void glDirectDraw7::GetHandles(HWND *hwnd, HWND *hrender)
+{
+	if(hwnd) *hwnd = hWnd;
+	if(hrender) *hrender = hRenderWnd;
 }
 #pragma endregion
 #pragma region DDRAW1 wrapper

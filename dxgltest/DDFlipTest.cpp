@@ -111,6 +111,13 @@ void DDFlipTestWindow::InitDD()
 		timer = new wxTimer(this,wxID_HIGHEST);
 		timer->Start(1000);
 	}
+	if(bpp == 8)
+	{
+		IDirectDrawPalette *pal;
+		ddinterface->CreatePalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256,(LPPALETTEENTRY)&DefaultPalette,&pal,NULL);
+		ddsrender->SetPalette(pal);
+		pal->Release();
+	}
 	firstpaint=true;
 	dd_ready=true;
 }
@@ -179,7 +186,34 @@ void DDFlipTestWindow::OnPaint(wxPaintEvent& event)
 			{
 				ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
 				error = ddsrender->GetAttachedSurface(&ddscaps,&temp1);
-				GenScreen1(ddsd,buffer,GetHandle(),temp1);
+				GenScreen1(ddsd,buffer,GetHandle(),ddsrender);
+				error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+				memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+				error = temp1->Unlock(NULL);
+			}
+			if(backbuffers > 1)
+			{
+				ddscaps.dwCaps = DDSCAPS_FLIP;
+				error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+				GenScreen2(ddsd,buffer,GetHandle(),ddsrender);
+				error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+				memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+				error = temp1->Unlock(NULL);
+			}
+			if(backbuffers > 2)
+			{
+				ddscaps.dwCaps = DDSCAPS_FLIP;
+				error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+				GenScreen3(ddsd,buffer,GetHandle(),ddsrender);
+				error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+				memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+				error = temp1->Unlock(NULL);
+			}
+			if(backbuffers > 3)
+			{
+				ddscaps.dwCaps = DDSCAPS_FLIP;
+				error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+				GenScreen4(ddsd,buffer,GetHandle(),ddsrender);
 				error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 				memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
 				error = temp1->Unlock(NULL);

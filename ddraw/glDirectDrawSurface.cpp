@@ -20,6 +20,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glDirectDrawClipper.h"
 
 inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
 inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
@@ -30,6 +31,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	locked = 0;
 	bitmapinfo = (BITMAPINFO *)malloc(sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	palette = NULL;
+	clipper = NULL;
 	hdc = NULL;
 	dds1 = NULL;
 	if(copysurface)
@@ -43,7 +45,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		ddInterface = (glDirectDraw7 *)lpDD7;
 		ddsd = *lpDDSurfaceDesc2;
 	}
-	DWORD sizes[6];
+	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	if(!(ddsd.dwFlags & DDSD_CAPS))
 	{
@@ -60,12 +62,22 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 		else
 		{
-			fakex = sizes[0];
-			fakey = sizes[1];
-			ddsd.dwWidth = sizes[2];
-			ddsd.dwHeight = sizes[3];
-			ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
-			*error = DD_OK;
+			if(ddInterface->GetFullscreen())
+			{
+				fakex = sizes[0];
+				fakey = sizes[1];
+				ddsd.dwWidth = sizes[2];
+				ddsd.dwHeight = sizes[3];
+				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+				*error = DD_OK;
+			}
+			else
+			{
+				fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXSCREEN);
+				fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYSCREEN);
+				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+				*error = DD_OK;
+			}
 		}
 		if(ddInterface->GetBPP() == 8)
 		{
@@ -320,8 +332,82 @@ HRESULT WINAPI glDirectDrawSurface7::AddOverlayDirtyRect(LPRECT lpRect)
 }
 HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	FIXME("glDirectDrawSurface7::Blt: stub\n");
-	return DDERR_GENERIC;
+	LONG sizes[6];
+	ddInterface->GetSizes(sizes);
+	int error;
+	if(GLEW_ARB_framebuffer_object)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER,ddInterface->fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,texture,0);
+		error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	}
+	else if(GLEW_EXT_framebuffer_object)
+	{
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,ddInterface->fbo);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,texture,0);
+		error = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	}
+	glPushAttrib(GL_VIEWPORT_BIT);
+	glViewport(0,0,fakex,fakey);
+	RECT destrect;
+	if(!lpDestRect)
+	{
+		destrect.left = 0;
+		destrect.top = 0;
+		destrect.right = ddsd.dwWidth;
+		destrect.bottom = ddsd.dwHeight;
+	}
+	else destrect = *lpDestRect;
+	RECT srcrect;
+	DDSURFACEDESC2 ddsdSrc;
+	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
+	lpDDSrcSurface->GetSurfaceDesc(&ddsdSrc);
+	if(!lpSrcRect)
+	{
+		srcrect.left = 0;
+		srcrect.top = 0;
+		srcrect.right = ddsdSrc.dwWidth;
+		srcrect.right = ddsdSrc.dwHeight;
+	}
+	else srcrect = *lpSrcRect;
+	GLfloat coords[8];
+	coords[0] = (GLfloat)destrect.left * ((GLfloat)sizes[0]/(GLfloat)ddsd.dwWidth);
+	coords[1] = (GLfloat)destrect.right * ((GLfloat)sizes[0]/(GLfloat)ddsd.dwWidth);
+	coords[2] = (GLfloat)fakey-((GLfloat)destrect.top * ((GLfloat)sizes[1]/(GLfloat)ddsd.dwHeight));
+	coords[3] = (GLfloat)fakey-((GLfloat)destrect.bottom * ((GLfloat)sizes[1]/(GLfloat)ddsd.dwHeight));
+	coords[4] = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
+	coords[5] = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
+	coords[6] = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
+	coords[7] = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	glMatrixMode(GL_PROJECTION);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	glOrtho(0,fakex,fakey,0,0,1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,((glDirectDrawSurface7*)lpDDSrcSurface)->GetTexture());
+	glBegin(GL_QUADS);
+	glTexCoord2f(coords[4], coords[6]);
+	glVertex2f(coords[0], coords[2]);
+	glTexCoord2f(coords[5], coords[6]);
+	glVertex2f( coords[1], coords[2]);
+	glTexCoord2f(coords[5], coords[7]);
+	glVertex2f( coords[1], coords[3]);
+	glTexCoord2f(coords[4], coords[7]);
+	glVertex2f(coords[0], coords[3]);
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+	if(GLEW_ARB_framebuffer_object)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER,0);
+	}
+	else if(GLEW_EXT_framebuffer_object)
+	{
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+	}
+	glPopAttrib();
+	if(ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER | DDSCAPS_PRIMARYSURFACE)) RenderScreen(texture);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
@@ -350,7 +436,6 @@ HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	DWORD sizes[6];
 	if(lpDDSurfaceTargetOverride) return DDERR_GENERIC;
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)
 	{
@@ -373,51 +458,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			tmp = tmp->GetBackbuffer();
 			tmp->SetTexture(textures[i+1]);
 		}
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
-		{
-			ddInterface->GetSizes(sizes);
-			glOrtho((signed)-(sizes[4]-fakex)/2,(sizes[4]-fakex)/2+fakex,
-				(signed)-(sizes[5]-fakey)/2,(sizes[5]-fakey)/2+fakey,0,1);
-		}
-		else glOrtho(0,fakex,fakey,0,0,1);
-		glMatrixMode(GL_MODELVIEW);
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		if(ddInterface->GetBPP() == 8)
-		{
-			GLint palprog = ddInterface->PalProg();
-			glUseProgram(palprog);
-			glBindTexture(GL_TEXTURE_2D,paltex);
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_BGRA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
-			GLint palloc = glGetUniformLocation(palprog,"ColorTable");
-			GLint texloc = glGetUniformLocation(palprog,"IndexTexture");
-			glUniform1i(texloc,0);
-			glUniform1i(palloc,1);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,textures[0]);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D,paltex);
-			glActiveTexture(GL_TEXTURE0);
-		}
-		else
-		{
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D,textures[0]);
-		}
-		glBegin(GL_QUADS);
-		glTexCoord2f(0., 1.);
-		glVertex2f(0., 0.);
-		glTexCoord2f(1., 1.);
-		glVertex2f( (float)fakex, 0.);
-		glTexCoord2f(1., 0.);
-		glVertex2f( (float)fakex, (float)fakey);
-		glTexCoord2f(0., 0.);
-		glVertex2f(0., (float)fakey);
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-		glFlush();
-		SwapBuffers(ddInterface->hDC);
+		RenderScreen(textures[0]);
 		delete textures;
 	}
 	else return DDERR_NOTFLIPPABLE;
@@ -528,7 +569,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 	unsigned char *bitmap = (unsigned char *)malloc((ddInterface->GetBPP()/8) * ddsd.dwWidth * ddsd.dwHeight);
 	unsigned short *&bmp16 = (unsigned short *&)bitmap;
 	unsigned long *&bmp32 = (unsigned long *&)bitmap;
-	unsigned char *temptex = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+	unsigned char *temptex;
 	unsigned short *&tmptex16 = (unsigned short *&)temptex;
 	unsigned long *&tmptex32 = (unsigned long *&)temptex;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * (ddInterface->GetBPP()/8));
@@ -536,8 +577,6 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 	float mulx, muly;
 	if(!bitmap) return DDERR_OUTOFMEMORY;
 	if(!temptex) return DDERR_OUTOFMEMORY;
-	mulx = (float)fakex / (float)ddsd.dwWidth;
-	muly = (float)fakey / (float)ddsd.dwHeight;
 	switch(surfacetype)
 	{
 	case 0:
@@ -550,30 +589,40 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		break;
 	case 2:
 		glBindTexture(GL_TEXTURE_2D,this->texture);  // Select surface's texture
-		glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,temptex);
-		switch(ddInterface->GetBPP())
+		if(fakex == ddsd.dwWidth && fakey == ddsd.dwHeight)
 		{
-		case 8:
-			for(y = 0; y < ddsd.dwHeight; y++)
-				for(x = 0; x < ddsd.dwWidth; x++)
-					bitmap[x + (ddsd.dwWidth*y)] = temptex[(int)(x*mulx) + (fakex*(int)(y*muly))];
+			glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,bitmap); // Shortcut for no scaling
+		}
+		else
+		{
+			mulx = (float)fakex / (float)ddsd.dwWidth;
+			muly = (float)fakey / (float)ddsd.dwHeight;
+			temptex = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+			glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,temptex);
+			switch(ddInterface->GetBPP())
+			{
+			case 8:
+				for(y = 0; y < ddsd.dwHeight; y++)
+					for(x = 0; x < ddsd.dwWidth; x++)
+						bitmap[x + (ddsd.dwWidth*y)] = temptex[(int)(x*mulx) + (fakex*(int)(y*muly))];
+				break;
+			case 16:
+				for(y = 0; y < ddsd.dwHeight; y++)
+					for(x = 0; x < ddsd.dwWidth; x++)
+						bmp16[x + (ddsd.dwWidth*y)] = tmptex16[(int)(x*mulx) + (fakex*(int)(y*muly))];
+				break;
+			case 32:
+				for(y = 0; y < ddsd.dwHeight; y++)
+					for(x = 0; x < ddsd.dwWidth; x++)
+						bmp32[x + (ddsd.dwWidth*y)] = tmptex32[(int)(x*mulx) + (fakex*(int)(y*muly))];
+				break;
 			break;
-		case 16:
-			for(y = 0; y < ddsd.dwHeight; y++)
-				for(x = 0; x < ddsd.dwWidth; x++)
-					bmp16[x + (ddsd.dwWidth*y)] = tmptex16[(int)(x*mulx) + (fakex*(int)(y*muly))];
-			break;
-		case 32:
-			for(y = 0; y < ddsd.dwHeight; y++)
-				for(x = 0; x < ddsd.dwWidth; x++)
-					bmp32[x + (ddsd.dwWidth*y)] = tmptex32[(int)(x*mulx) + (fakex*(int)(y*muly))];
-			break;
-		break;
+			}
+			free(temptex);
 		}
 	}
 	ddsd.lpSurface = bitmap;
 	memcpy(lpDDSurfaceDesc,&ddsd,lpDDSurfaceDesc->dwSize);
-	free(temptex);
 	locked++;
 	return DD_OK;
 }
@@ -596,8 +645,10 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 }
 HRESULT WINAPI glDirectDrawSurface7::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 {
-	FIXME("glDirectDrawSurface7::SetClipper: stub\n");
-	return DDERR_GENERIC;
+	if(clipper) clipper->Release();
+	clipper = (glDirectDrawClipper *)lpDDClipper;
+	if(clipper)clipper->AddRef();
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
@@ -611,8 +662,17 @@ HRESULT WINAPI glDirectDrawSurface7::SetOverlayPosition(LONG lX, LONG lY)
 }
 HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
-	FIXME("glDirectDrawSurface7::SetPalette: stub\n");
-	return DDERR_GENERIC;
+	if(palette)
+	{
+		palette->Release();
+		if(!lpDDPalette) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
+	}
+	if(lpDDPalette)
+	{
+		palette = (glDirectDrawPalette *)lpDDPalette;
+		palette->AddRef();
+	}
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 {
@@ -621,38 +681,47 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 	unsigned char *bitmap = (unsigned char *)ddsd.lpSurface;
 	unsigned short *&bmp16 = (unsigned short *&)bitmap;
 	unsigned long *&bmp32 = (unsigned long *&)bitmap;
-	unsigned char *temptex = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+	unsigned char *temptex;
 	unsigned short *&tmptex16 = (unsigned short *&)temptex;
 	unsigned long *&tmptex32 = (unsigned long *&)temptex;
 	if(!temptex) return DDERR_OUTOFMEMORY;
 	float mulx, muly;
-	DWORD x,y;
-	mulx = (float)ddsd.dwWidth / (float)fakex;
-	muly = (float)ddsd.dwHeight / (float)fakey;
-	switch(ddInterface->GetBPP())
-	{
-	case 8:
-		for(y = 0; y < fakey; y++)
-			for(x = 0; x < fakex; x++)
-				temptex[x + (NextMultipleOf4(fakex)*y)] = bitmap[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
-		break;
-	case 16:
-		for(y = 0; y < fakey; y++)
-			for(x = 0; x < fakex; x++)
-				tmptex16[x + (NextMultipleOf2(fakex)*y)] = bmp16[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
-		break;
-	case 32:
-		for(y = 0; y < fakey; y++)
-			for(x = 0; x < fakex; x++)
-				tmptex32[x + (fakex*y)] = bmp32[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
-		break;
-	break;
-	}
+	LONG x,y;
 	glBindTexture(GL_TEXTURE_2D,this->texture);  // Select surface's texture
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,fakex,fakey,0,texformat,texformat2,temptex);
+	if(ddsd.dwWidth == fakex && ddsd.dwHeight == fakey)
+	{
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,fakex,fakey,0,texformat,texformat2,bitmap);
+	}
+	else
+	{
+		temptex  = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+		mulx = (float)ddsd.dwWidth / (float)fakex;
+		muly = (float)ddsd.dwHeight / (float)fakey;
+		switch(ddInterface->GetBPP())
+		{
+		case 8:
+			for(y = 0; y < fakey; y++)
+				for(x = 0; x < fakex; x++)
+					temptex[x + (NextMultipleOf4(fakex)*y)] = bitmap[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
+			break;
+		case 16:
+			for(y = 0; y < fakey; y++)
+				for(x = 0; x < fakex; x++)
+					tmptex16[x + (NextMultipleOf2(fakex)*y)] = bmp16[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
+			break;
+		case 32:
+			for(y = 0; y < fakey; y++)
+				for(x = 0; x < fakex; x++)
+					tmptex32[x + (fakex*y)] = bmp32[(int)(x*mulx) + (ddsd.dwWidth*(int)(y*muly))];
+			break;
+		break;
+		}
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,fakex,fakey,0,texformat,texformat2,temptex);
+		free(temptex);
+	}
 	if(ddsd.lpSurface) free(ddsd.lpSurface);
 	ddsd.lpSurface = NULL;
-	free(temptex);
+	if(ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER | DDSCAPS_PRIMARYSURFACE)) RenderScreen(texture);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRAWSURFACE7 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx)
@@ -669,6 +738,74 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 {
 	FIXME("glDirectDrawSurface7::UpdateOverlayZOrder: stub\n");
 	return DDERR_GENERIC;
+}
+
+void glDirectDrawSurface7::RenderScreen(GLuint texture)
+{
+	LONG sizes[6];
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	RECT r,r2;
+	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	{
+		if(ddInterface->GetFullscreen())
+		{
+			ddInterface->GetSizes(sizes);
+			glOrtho((signed)-(sizes[4]-fakex)/2,(sizes[4]-fakex)/2+fakex,
+				(signed)-(sizes[5]-fakey)/2,(sizes[5]-fakey)/2+fakey,0,1);
+		}
+		else
+		{
+			HWND hwnd,hrender;
+			ddInterface->GetHandles(&hwnd,&hrender);
+			GetClientRect(hwnd,&r);
+			GetClientRect(hrender,&r2);
+			if(memcmp(&r2,&r,sizeof(RECT)))
+				SetWindowPos(hrender,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+			r2 = r;
+			ClientToScreen(hwnd,(LPPOINT)&r2.left);
+			ClientToScreen(hwnd,(LPPOINT)&r2.right);
+			glViewport(0,0,r.right,r.bottom);
+			glOrtho(r2.left,r2.right,fakey-r2.bottom,fakey-r2.top,0,1);
+		}
+	}
+	else glOrtho(0,fakex,fakey,0,0,1);
+	glMatrixMode(GL_MODELVIEW);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	if(ddInterface->GetBPP() == 8)
+	{
+		GLint palprog = ddInterface->PalProg();
+		glUseProgram(palprog);
+		glBindTexture(GL_TEXTURE_2D,paltex);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_BGRA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
+		GLint palloc = glGetUniformLocation(palprog,"ColorTable");
+		GLint texloc = glGetUniformLocation(palprog,"IndexTexture");
+		glUniform1i(texloc,0);
+		glUniform1i(palloc,1);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D,texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D,paltex);
+		glActiveTexture(GL_TEXTURE0);
+	}
+	else
+	{
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D,texture);
+	}
+	glBegin(GL_QUADS);
+	glTexCoord2f(0., 1.);
+	glVertex2f(0., 0.);
+	glTexCoord2f(1., 1.);
+	glVertex2f( (float)fakex, 0.);
+	glTexCoord2f(1., 0.);
+	glVertex2f( (float)fakex, (float)fakey);
+	glTexCoord2f(0., 0.);
+	glVertex2f(0., (float)fakey);
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+	glFlush();
+	SwapBuffers(ddInterface->hDC);
 }
 // ddraw 2+ api
 HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)
@@ -784,7 +921,7 @@ HRESULT WINAPI glDirectDrawSurface1::AddOverlayDirtyRect(LPRECT lpRect)
 }
 HRESULT WINAPI glDirectDrawSurface1::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	return glDDS7->Blt(lpDestRect,(LPDIRECTDRAWSURFACE7)lpDDSrcSurface,lpSrcRect,dwFlags,lpDDBltFx);
+	return glDDS7->Blt(lpDestRect,((glDirectDrawSurface1*)lpDDSrcSurface)->GetDDS7(),lpSrcRect,dwFlags,lpDDBltFx);
 }
 HRESULT WINAPI glDirectDrawSurface1::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
