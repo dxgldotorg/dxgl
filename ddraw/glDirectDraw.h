@@ -81,7 +81,7 @@ public:
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
-	GLuint PalProg(){return palprog;}
+	GLuint PalProg(){return shaders[PROG_PAL256].prog;}
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
 	DWORD GetBPPMultipleOf8(){if(primarybpp == 15) return 16; else return primarybpp;}
@@ -95,6 +95,7 @@ public:
 	GLuint pbo;
 	GLuint depthbuffer;
 	void GetHandles(HWND *hwnd, HWND *hrender);
+	glDirectDrawSurface7 *primary;
 private:
 	void DeleteGL();
 	BOOL InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd);
@@ -109,11 +110,9 @@ private:
 	bool nowindowchanges;
 	LONG_PTR winstyle,winstyleex;
 	glDirectDrawSurface7 **surfaces;
-	glDirectDrawSurface7 *primary;
 	int surfacecount, surfacecountmax;
 	glDirectDrawClipper **clippers;
 	int clippercount, clippercountmax;
-	GLuint palprog;
 	GLCAPS gl_caps;
 	DEVMODE oldmode;
 };

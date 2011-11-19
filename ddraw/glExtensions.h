@@ -52,6 +52,7 @@ GLAPI GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target);
 
 GLAPI GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name);
 GLAPI void (APIENTRY *glUniform1i) (GLint location, GLint v0);
+GLAPI void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
 

@@ -24,6 +24,7 @@ http://www.microsoft.com/downloads/en/details.aspx?FamilyID=689655B4-C55D-4F9B-9
 * Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F5.
 
 == Progress ==
+For detailed progress information, please check https://www.williamfeely.info/wiki/DXGL_Features
 What works:
 * DirectDraw object creation and destruction (versions 1 to 7)
 * Display mode enumeration and switching (with emulated mode switching)
@@ -37,14 +38,10 @@ What partially works:
 What doesn't work:
 * Most functions are stubbed out and return an error
 * No 3D graphics support
-* Blt() may cause crashing
 
 == Roadmap ==
 These are goals to be set for future releases.
 Please see https://www.williamfeely.info/wiki/DXGL for updated information.
-
-- Version 0.0.7 Pre-Alpha
-* Fix blitting in fullscreen.
 
 - Version 0.1.0 Alpha
 * Implement per-application settings
@@ -67,10 +64,16 @@ https://www.williamfeely.info/wiki/Special:Code/DXGL
 == AppDB ==
 
 An AppDB system (similar to that on winehq.org) is now available at:
-
 https://www.williamfeely.info/appdb/
 
 This requires a user account separate from the other services.
+
+== Discussion boards ==
+
+You may discuss DXGL at:
+https://www.williamfeely.info/phpBB3
+
+You must create a forum account to post content.
 
 
 == Bug reports ==

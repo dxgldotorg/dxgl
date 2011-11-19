@@ -31,7 +31,7 @@ glDirectDrawClipper::~glDirectDrawClipper()
 }
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
-	return E_NOINTERFACE;
+	ERR(E_NOINTERFACE);
 }
 ULONG WINAPI glDirectDrawClipper::AddRef()
 {
@@ -49,28 +49,28 @@ ULONG WINAPI glDirectDrawClipper::Release()
 HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
 	FIXME("IDirectDrawClipper::GetClipList: stub");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
 {
 	*lphWnd = hWnd;
-	if(!hWnd) return DDERR_INVALIDOBJECT;
+	if(!hWnd) ERR(DDERR_INVALIDOBJECT);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 {
 	FIXME("IDirectDrawClipper::Initialize: stub");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
 {
 	FIXME("IDirectDrawClipper::IsClipListChanged: stub");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFlags)
 {
 	FIXME("IDirectDrawClipper::SetClipList: stub");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::SetHWnd(DWORD dwFlags, HWND hWnd)
 {

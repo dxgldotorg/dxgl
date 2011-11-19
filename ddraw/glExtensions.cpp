@@ -45,6 +45,7 @@ GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target) = NULL;
 
 GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name) = NULL;
 void (APIENTRY *glUniform1i) (GLint location, GLint v0) = NULL;
+void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3) = NULL;
 
 void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
 
@@ -73,6 +74,7 @@ void InitGLExt()
 		glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
 		glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
 		glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
+		glUniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
 	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;

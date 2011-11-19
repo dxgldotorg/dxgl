@@ -183,6 +183,7 @@ typedef struct
 	int buffermin;
 	int buffermax;
 	bool usesfps;
+	float defaultfps;
 	bool usestexture;
 	bool usesfsaa;
 	TCHAR *name;
@@ -191,11 +192,13 @@ typedef struct
 // Use EXACTLY one line per entry.  Don't change layout of the list.
 const int START_2D = __LINE__;
 const TEST_ITEM Tests2D[] =
-{ // minver maxver  buffermin max   usesfps		usestexture	usesfsaa	name
-	{1,		7,		0,		4,		true,		false,		false,		_T("Color palette and gradient screens (direct surface access)")},
-	{1,		7,		0,		1,		false,		false,		false,		_T("Random noise (direct surface access speed test)")},
-	{1,		7,		0,		7,		true,		false,		false,		_T("GDI Test patterns (GetDC() test)")},
-	{1,		7,		0,		0,		false,		false,		false,		_T("Random GDI patterns (does not clear screen between paints)")}
+{ // minver maxver  buffermin max   usesfps		defaultfps		usestexture	usesfsaa	name
+	{1,		7,		0,		4,		true,		1.0,			false,		false,		_T("Color palette and gradient screens (direct surface access)")},
+	{1,		7,		0,		1,		false,		0.0,			false,		false,		_T("Random noise (direct surface access speed test)")},
+	{1,		7,		0,		7,		true,		1.0,			false,		false,		_T("GDI Test patterns (GetDC() test)")},
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random GDI patterns (does not clear screen between paints)")},
+	{1,		7,		0,		1,		true,		60.0,			false,		false,		_T("BltFast background and sprites")},
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random color fill Blt() patterns")}
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;
@@ -254,6 +257,7 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					minbuffer2d = Tests2D[i].buffermin;
 					maxbuffer2d = Tests2D[i].buffermax;
 					fps_enabled2d = Tests2D[i].usesfps;
+					if(Tests2D[i].usesfps) framerate2d = Tests2D[i].defaultfps;
 					EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
 					EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
 					EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),fps_enabled2d);

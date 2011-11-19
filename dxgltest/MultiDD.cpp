@@ -514,6 +514,43 @@ HRESULT MultiDirectDrawSurface::Blt(LPRECT lpDestRect, MultiDirectDrawSurface *l
 	return DDERR_GENERIC;
 }
 
+HRESULT MultiDirectDrawSurface::BltFast(DWORD dwX, DWORD dwY, MultiDirectDrawSurface *lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans)
+{
+	if(lpDDSrcSurface)
+	{
+		switch(version)
+		{
+		case 1:
+			return dds1->BltFast(dwX,dwY,lpDDSrcSurface->dds1,lpSrcRect,dwTrans);
+		case 2:
+			return dds2->BltFast(dwX,dwY,lpDDSrcSurface->dds2,lpSrcRect,dwTrans);
+		case 3:
+			return dds3->BltFast(dwX,dwY,lpDDSrcSurface->dds3,lpSrcRect,dwTrans);
+		case 4:
+			return dds4->BltFast(dwX,dwY,lpDDSrcSurface->dds4,lpSrcRect,dwTrans);
+		case 7:
+			return dds7->BltFast(dwX,dwY,lpDDSrcSurface->dds7,lpSrcRect,dwTrans);
+		}
+	}
+	else
+	{
+		switch(version)
+		{
+		case 1:
+			return dds1->BltFast(dwX,dwY,NULL,lpSrcRect,dwTrans);
+		case 2:
+			return dds2->BltFast(dwX,dwY,NULL,lpSrcRect,dwTrans);
+		case 3:
+			return dds3->BltFast(dwX,dwY,NULL,lpSrcRect,dwTrans);
+		case 4:
+			return dds4->BltFast(dwX,dwY,NULL,lpSrcRect,dwTrans);
+		case 7:
+			return dds7->BltFast(dwX,dwY,NULL,lpSrcRect,dwTrans);
+		}
+	}
+	return DDERR_GENERIC;
+}
+
 HRESULT MultiDirectDrawSurface::GetDC(HDC FAR *lphDC)
 {
 	switch(version)
@@ -547,6 +584,25 @@ HRESULT MultiDirectDrawSurface::ReleaseDC(HDC hDC)
 		return dds4->ReleaseDC(hDC);
 	case 7:
 		return dds7->ReleaseDC(hDC);
+	default:
+		return DDERR_GENERIC;
+	}
+}
+
+HRESULT MultiDirectDrawSurface::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey)
+{
+	switch(version)
+	{
+	case 1:
+		return dds1->SetColorKey(dwFlags,lpDDColorKey);
+	case 2:
+		return dds2->SetColorKey(dwFlags,lpDDColorKey);
+	case 3:
+		return dds3->SetColorKey(dwFlags,lpDDColorKey);
+	case 4:
+		return dds4->SetColorKey(dwFlags,lpDDColorKey);
+	case 7:
+		return dds7->SetColorKey(dwFlags,lpDDColorKey);
 	default:
 		return DDERR_GENERIC;
 	}

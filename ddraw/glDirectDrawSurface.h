@@ -19,6 +19,13 @@
 #ifndef _GLDIRECTDRAWSURFACE_H
 #define _GLDIRECTDRAWSURFACE_H
 
+typedef struct
+{
+	bool enabled;
+	bool colorspace;
+	DDCOLORKEY key;
+} CKEY;
+
 class glDirectDrawPalette;
 class glDirectDrawSurface1;
 class glDirectDrawSurface2;
@@ -101,16 +108,17 @@ public:
 	GLenum texformat2;
 	DWORD fakex,fakey;
 	DWORD dirty;
+	HGLRC hrc;
 	// dirty bits:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw
+	CKEY colorkey[4];
 private:
 	ULONG refcount;
 	int locked;
 	HDC hdc;
 	HBITMAP hbitmap;
 	BITMAPINFO *bitmapinfo;
-	HGLRC hrc;
 	glDirectDraw7 *ddInterface;
 	DDSURFACEDESC2 ddsd;
 	GLuint texture,paltex;

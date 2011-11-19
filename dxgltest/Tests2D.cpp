@@ -31,18 +31,38 @@ inline unsigned int rand32(unsigned int &n)
         (unsigned int) 0xFFFFFFFF;
 }
 
-	MultiDirectDraw *ddinterface;
-	MultiDirectDrawSurface *ddsurface;
-	MultiDirectDrawSurface *ddsrender;
-	LPDIRECTDRAWCLIPPER ddclipper;
-	int width,height,bpp,refresh,backbuffers;
-	double fps;
-	bool fullscreen,resizable;
-	HWND hWnd;
-	int testnum;
-	unsigned int randnum;
-	int testtypes[] = {0,1,0,1};
+inline float randfloat(float multiple)
+{
+	return ((float)rand() / (float)RAND_MAX)*multiple;
+}
 
+MultiDirectDraw *ddinterface;
+MultiDirectDrawSurface *ddsurface;
+MultiDirectDrawSurface *ddsrender;
+LPDIRECTDRAWCLIPPER ddclipper;
+int width,height,bpp,refresh,backbuffers;
+double fps;
+bool fullscreen,resizable;
+HWND hWnd;
+int testnum;
+unsigned int randnum;
+int testtypes[] = {0,1,0,1,0,1};
+
+typedef struct
+{
+	MultiDirectDrawSurface *surface;
+	DDSURFACEDESC2 ddsd;
+	float width;
+	float height;
+	float x;
+	float y;
+	float xvelocity;
+	float yvelocity;
+	DWORD bltflags;
+	RECT rect;
+} DDSPRITE;
+
+DDSPRITE sprites[16];
 
 LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -56,6 +76,8 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		StopTimer();
+		for(int i = 0; i < 16; i++)
+			if(sprites[i].surface) sprites[i].surface->Release();
 		if(ddsrender)
 		{
 			ddsrender->Release();
@@ -111,6 +133,7 @@ const TCHAR wndclassname2d[] = _T("DDTestWndClass");
 void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	double fps, bool fullscreen, bool resizable)
 {
+	ZeroMemory(sprites,16*sizeof(DDSPRITE));
 	DDSURFACEDESC2 ddsd;
 	BOOL done = false;
 	::testnum = testnum;
@@ -390,19 +413,98 @@ void InitTest(int test)
 		}
 		if(temp1) temp1->Release();
 		break;
-	default:
-		break;
+	case 4:
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddinterface->CreateSurface(&ddsd,&sprites[0].surface,NULL);
+		ddsrender->GetPalette(&palette);
+		error = sprites[0].surface->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+		DrawGradients(ddsd,(unsigned char *)ddsd.lpSurface,hWnd,palette,1,0);
+		error = sprites[0].surface->Unlock(NULL);
+		sprites[0].width = ddsd.dwWidth;
+		sprites[0].height = ddsd.dwHeight;
+		sprites[0].rect.left = sprites[0].rect.top = 0;
+		sprites[0].rect.right = ddsd.dwWidth;
+		sprites[0].rect.bottom = ddsd.dwHeight;
+		for(int i = 1; i < 16; i++)
+		{
+			switch((i-1 & 3))
+			{
+			case 0:
+				sprites[i].width = sprites[i].height =
+					sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight = 
+					sprites[i].rect.right = sprites[i].rect.bottom = 64;
+				sprites[i].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+				ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+				if(ddver > 3) sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+				else sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC);
+				ddinterface->CreateSurface(&sprites[i].ddsd,&sprites[i].surface,NULL);
+				error = sprites[i].surface->Lock(NULL,&sprites[i].ddsd,DDLOCK_WAIT,NULL);
+				DrawPalette(sprites[i].ddsd,(unsigned char *)sprites[i].ddsd.lpSurface);
+				sprites[i].surface->Unlock(NULL);
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			default:
+				break;
+			}
+			DDCOLORKEY ckey;
+			ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = 0;
+			if(i < 5) sprites[i].bltflags = 0;
+			else if(i < 9)
+			{
+				sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY;
+				if(sprites[i].surface) sprites[i].surface->SetColorKey(DDCKEY_SRCBLT,&ckey);
+			}
+			else if(i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
+			else sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
+			sprites[i].x = randfloat(ddsd.dwWidth);
+			sprites[i].y = randfloat(ddsd.dwHeight);
+			sprites[i].xvelocity = randfloat(5);
+			sprites[i].yvelocity = randfloat(5);
+		}
+
 	}
 }
 
 void RunTestTimed(int test)
 {
+	DDSCAPS2 ddscaps;
+	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
+	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+	MultiDirectDrawSurface *temp1 = NULL;
 	switch(test)
 	{
-	case 0:
-	case 2:
+	case 0: // Palette and gradients
+	case 2: // GDI patterns
 	default:
 		if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
+		break;
+	case 4: // FastBlt sprites
+		for(int i = 0; i < 16; i++)
+		{
+			sprites[i].x += sprites[i].xvelocity;
+			if(sprites[i].xvelocity < 0 && sprites[i].x < 0) sprites[i].xvelocity = -sprites[i].xvelocity;
+			if(sprites[i].xvelocity > 0 && (sprites[i].x + sprites[i].width) > width)
+				sprites[i].xvelocity = -sprites[i].xvelocity;
+			sprites[i].y += sprites[i].yvelocity;
+			if(sprites[i].yvelocity < 0 && sprites[i].y < 0) sprites[i].yvelocity = -sprites[i].yvelocity;
+			if(sprites[i].yvelocity > 0 && (sprites[i].y + sprites[i].height) > height)
+				sprites[i].yvelocity = -sprites[i].yvelocity;
+			if(sprites[i].surface)
+			{
+				if(backbuffers)	ddsrender->GetAttachedSurface(&ddscaps,&temp1);
+				else temp1 = ddsrender;
+				temp1->BltFast(sprites[i].x,sprites[i].y,sprites[i].surface,&sprites[i].rect,sprites[i].bltflags);
+				if(backbuffers) temp1->Release();
+			}
+		}
+		if(backbuffers) ddsrender->Flip(NULL,DDFLIP_WAIT);
 		break;
 	}
 }
@@ -419,6 +521,7 @@ void RunTestLooped(int test)
 	RECT srcrect,destrect;
 	HRESULT error;
 	DDSURFACEDESC2 ddsd;
+	DDBLTFX bltfx;
 	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
 	error = ddsrender->GetSurfaceDesc(&ddsd);
@@ -501,6 +604,44 @@ void RunTestLooped(int test)
 			SetRect(&srcrect,0,0,width,height);
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
+		break;
+	case 5:
+		rndrect5:
+		destrect.bottom = rand32(randnum)%ddsd.dwHeight;
+		destrect.top = rand32(randnum)%ddsd.dwHeight;
+		destrect.left = rand32(randnum)%ddsd.dwWidth;
+		destrect.right = rand32(randnum)%ddsd.dwWidth;
+		if((destrect.bottom < destrect.top) || (destrect.right < destrect.left)) goto rndrect5;
+		bltfx.dwSize = sizeof(DDBLTFX);
+		switch(bpp)
+		{
+		case 8:
+			bltfx.dwFillColor = rand32(randnum) % 0xFF;
+			break;
+		case 15:
+			bltfx.dwFillColor = rand32(randnum) % 0x7FFF;
+			break;
+		case 16:
+			bltfx.dwFillColor = rand32(randnum) % 0xFFFF;
+			break;
+		case 24:
+		case 32:
+		default:
+			bltfx.dwFillColor = rand32(randnum) % 0xFFFFFF;
+			break;
+		}
+		ddsrender->Blt(&destrect,NULL,NULL,DDBLT_COLORFILL,&bltfx);
+		if(!fullscreen)
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd,&p);
+			GetClientRect(hWnd,&destrect);
+			OffsetRect(&destrect,p.x,p.y);
+			SetRect(&srcrect,0,0,width,height);
+			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+		}
+		break;
 	}
 	if(temp1) temp1->Release();
 }

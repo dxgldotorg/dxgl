@@ -26,6 +26,12 @@
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
 
+DDDEVICEIDENTIFIER2 devid = {
+	"ddraw.dll",
+	"DXGL DDraw Wrapper",
+	0x0000000000070000,
+	0,0,0,0,
+	0,0};
 
 void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 {
@@ -206,7 +212,7 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 
 void AddExtraColorModes(DEVMODE **array, DWORD *count)
 {
-	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(7*(*count)));
 	DEVMODE compmode;
 	DWORD count2 = 0;
 	for(DWORD i = 0; i < *count; i++)
@@ -243,6 +249,27 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 		case 32:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 24;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 16;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 15;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 8;
 			if(!ScanModeList(*array,compmode,*count))
 			{
 				array2[count2] = compmode;
@@ -302,7 +329,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 	mode.dmSize = sizeof(DEVMODE);
 	DEVMODE *modes = (DEVMODE*)malloc(128*sizeof(DEVMODE));
 	DEVMODE *tmp;
-	if(!modes) return DDERR_OUTOFMEMORY;
+	if(!modes) ERR(DDERR_OUTOFMEMORY);
 	DDSURFACEDESC ddmode;
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC));
 	ddmode.dwSize = sizeof(DDSURFACEDESC);
@@ -317,13 +344,14 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 			if(tmp == NULL)
 			{
 				free(modes);
-				return DDERR_OUTOFMEMORY;
+				ERR(DDERR_OUTOFMEMORY);
 			}
 			modes = tmp;
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AllColorDepths) AddExtraColorModes(&modes,&modenum);
+	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.ExtraModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
@@ -412,7 +440,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 	mode.dmSize = sizeof(DEVMODE);
 	DEVMODE *modes = (DEVMODE*)malloc(128*sizeof(DEVMODE));
 	DEVMODE *tmp;
-	if(!modes) return DDERR_OUTOFMEMORY;
+	if(!modes) ERR(DDERR_OUTOFMEMORY);
 	DDSURFACEDESC2 ddmode;
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC));
 	ddmode.dwSize = sizeof(DDSURFACEDESC);
@@ -427,7 +455,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 			if(tmp == NULL)
 			{
 				free(modes);
-				return DDERR_OUTOFMEMORY;
+				ERR(DDERR_OUTOFMEMORY);
 			}
 			modes = tmp;
 		}
@@ -617,33 +645,33 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	if(riid == IID_IDirect3D)
 	{
 		FIXME("Add IDirect3D Interfaces\n");
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}
 	if(riid == IID_IDirect3D2)
 	{
 		FIXME("Add IDirect3D Interfaces\n");
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}
 	if(riid == IID_IDirect3D3)
 	{
 		FIXME("Add IDirect3D Interfaces\n");
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}
 	if(riid == IID_IDirect3D7)
 	{
 		FIXME("Add IDirect3D Interfaces\n");
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}
 	if(riid == IID_IDirectDrawGammaControl)
 	{
 		FIXME("Add IDirect3D Interfaces\n");
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}
 	/*if(riid == IID_IDDVideoPortContainer)
 	{
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 	}*/
-	return E_NOINTERFACE;
+	ERR(E_NOINTERFACE);
 }
 ULONG WINAPI glDirectDraw7::AddRef()
 {
@@ -671,7 +699,7 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 		glDirectDrawClipper **clippers2;
 		clippers2 = (glDirectDrawClipper **)realloc(clippers,(clippercountmax+1024)*sizeof(glDirectDrawClipper *));
 		if(!clippers2)
-			return DDERR_OUTOFMEMORY;
+			ERR(DDERR_OUTOFMEMORY);
 		clippers = clippers2;
 		ZeroMemory(&clippers[clippercountmax],1024*sizeof(glDirectDrawClipper *));
 		clippercountmax += 1024;
@@ -687,15 +715,15 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) )
-		return DDERR_PRIMARYSURFACEALREADYEXISTS;
+	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (hRC == primary->hrc) )
+		ERR(DDERR_PRIMARYSURFACEALREADYEXISTS);
 	surfacecount++;
 	if(surfacecount > surfacecountmax)
 	{
 		glDirectDrawSurface7 **surfaces2;
 		surfaces2 = (glDirectDrawSurface7 **)realloc(surfaces,(surfacecountmax+1024)*sizeof(glDirectDrawSurface7 *));
 		if(!surfaces2)
-			return DDERR_OUTOFMEMORY;
+			ERR(DDERR_OUTOFMEMORY);
 		surfaces = surfaces2;
 		ZeroMemory(&surfaces[surfacecountmax],1024*sizeof(glDirectDrawSurface7 *));
 		surfacecountmax += 1024;
@@ -710,7 +738,7 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 HRESULT WINAPI glDirectDraw7::DuplicateSurface(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDIRECTDRAWSURFACE7 FAR *lplpDupDDSurface)
 {
 	FIXME("IDirectDraw::DuplicateSurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
@@ -719,7 +747,7 @@ HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 l
 HRESULT WINAPI glDirectDraw7::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpEnumSurfacesCallback)
 {
 	FIXME("IDirectDraw::EnumSurfaces: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 {
@@ -736,7 +764,7 @@ HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 		}
 		return(error);
 	}
-	else return DDERR_NOTFOUND;
+	else ERR(DDERR_NOTFOUND);
 }
 HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
@@ -745,7 +773,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
 	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
 	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
-	else return DDERR_INVALIDPARAMS;
+	else ERR(DDERR_INVALIDPARAMS);
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
 		DDCAPS_GDI | DDCAPS_PALETTE;
 	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES;
@@ -753,16 +781,17 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDFXCAPS_BLTSTRETCHX | DDFXCAPS_BLTSTRETCHY;
 	ddCaps.dwPalCaps = DDPCAPS_8BIT | DDPCAPS_PRIMARYSURFACE;
 	ddCaps.ddsOldCaps.dwCaps = ddCaps.ddsCaps.dwCaps =
-		DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_FRONTBUFFER |
-		DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE | DDSCAPS_SYSTEMMEMORY |
-		DDSCAPS_VIDEOMEMORY;
+		DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDCAPS_COLORKEY | DDSCAPS_FLIP |
+		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
+		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY;
+	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT;
 	if(lpDDDriverCaps) memcpy(lpDDDriverCaps,&ddCaps,lpDDDriverCaps->dwSize);
 	if(lpDDHELCaps) memcpy(lpDDHELCaps,&ddCaps,lpDDHELCaps->dwSize);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
-	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
+	if(!lpDDSurfaceDesc2) ERR(DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsdMode;
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
@@ -801,7 +830,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	if(currmode.dmBitsPerPel == 15) ddsdMode.lPitch = currmode.dmPelsWidth * 2;
 		else if(currmode.dmBitsPerPel == 4) ddsdMode.lPitch = currmode.dmPelsWidth / 2;
 		else ddsdMode.lPitch = currmode.dmPelsWidth * (currmode.dmBitsPerPel / 8);
-	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) return DDERR_INVALIDPARAMS;
+	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 		lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
 	memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
@@ -810,12 +839,12 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 HRESULT WINAPI glDirectDraw7::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
 	FIXME("IDirectDraw::GetFourCCCodes: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDSurface)
 {
 	FIXME("IDirectDraw::GetGDISurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
@@ -829,17 +858,17 @@ HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 HRESULT WINAPI glDirectDraw7::GetScanLine(LPDWORD lpdwScanLine)
 {
 	FIXME("IDirectDraw::GetScanLine: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
 	FIXME("IDirectDraw::GetVerticalBlankStatis: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 {
 	FIXME("IDirectDraw::Initialize: stub\n");
-	return DDERR_DIRECTDRAWALREADYCREATED;
+	ERR(DDERR_DIRECTDRAWALREADYCREATED);
 }
 HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 {
@@ -875,7 +904,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		fullscreen = true;
 	else fullscreen = false;
 	if(exclusive)
-		if(!fullscreen) return DDERR_INVALIDPARAMS;
+		if(!fullscreen) ERR(DDERR_INVALIDPARAMS);
 	if(dwFlags & DDSCL_FPUPRESERVE)
 		fpupreserve = true;
 	else fpupreserve = false;
@@ -886,7 +915,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		threadsafe = true;
 	else threadsafe = false;
 	if(dwFlags & DDSCL_NORMAL)
-		if(exclusive) return DDERR_INVALIDPARAMS;
+		if(exclusive) ERR(DDERR_INVALIDPARAMS);
 	if(dwFlags & DDSCL_NOWINDOWCHANGES)
 		nowindowchanges = true;
 	else nowindowchanges = false;
@@ -914,7 +943,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	bpp = devmode.dmBitsPerPel;
 	primarybpp = bpp;
 	if(InitGL(x,y,bpp,fullscreen,hWnd)) return DD_OK;
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 
 void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
@@ -1022,23 +1051,23 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			InitGL(screenx,screeny,screenbpp,true,hWnd);
 			return DD_OK;
 		case DISP_CHANGE_BADMODE:
-			return DDERR_INVALIDMODE;
+			ERR(DDERR_INVALIDMODE);
 		case DISP_CHANGE_BADFLAGS:
-			return DDERR_INVALIDPARAMS;
+			ERR(DDERR_INVALIDPARAMS);
 		case DISP_CHANGE_BADDUALVIEW:
-			return DDERR_GENERIC;
+			ERR(DDERR_GENERIC);
 		case DISP_CHANGE_BADPARAM:
-			return DDERR_INVALIDPARAMS;
+			ERR(DDERR_INVALIDPARAMS);
 		case DISP_CHANGE_FAILED:
-			return DDERR_GENERIC;
+			ERR(DDERR_GENERIC);
 		case DISP_CHANGE_NOTUPDATED:
-			return DDERR_GENERIC;
+			ERR(DDERR_GENERIC);
 		case DISP_CHANGE_RESTART:
-			return DDERR_UNSUPPORTEDMODE;
+			ERR(DDERR_UNSUPPORTEDMODE);
 		default:
-			return DDERR_GENERIC;
+			ERR(DDERR_GENERIC);
 		}
-		return DDERR_GENERIC;
+		ERR(DDERR_GENERIC);
 		break;
 	case 1: // Stretch to screen
 		primaryx = dwWidth;
@@ -1164,47 +1193,49 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		}
 		break;
 	}
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
 	FIXME("IDirectDraw::WaitForVerticalBlank: stub\n");
-	return DDERR_GENERIC;
+
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
 	FIXME("IDirectDraw::GetAvailableVidMem: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetSurfaceFromDC(HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
 	FIXME("IDirectDraw::GetSurfaceFromDC: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::RestoreAllSurfaces()
 {
 	FIXME("IDirectDraw::RestoreAllSurfaces: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::TestCooperativeLevel()
 {
 	FIXME("IDirectDraw::TestCooperativeLevel: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER2 lpdddi, DWORD dwFlags)
 {
-	FIXME("IDirectDraw::GetDeviceIdentifier: stub\n");
-	return DDERR_GENERIC;
+	devid.guidDeviceIdentifier = device_template;
+	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER2));
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::StartModeTest(LPSIZE lpModesToTest, DWORD dwNumEntries, DWORD dwFlags)
 {
 	FIXME("IDirectDraw::StartModeTest: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTimeout)
 {
 	FIXME("IDirectDraw::EvaluateMode: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 
 void glDirectDraw7::DeleteGL()
@@ -1245,7 +1276,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		wndclass.lpszMenuName = NULL;
 		wndclass.lpszClassName = "DXGLRenderWindow";
 		wndclass.hIconSm = NULL;
-		if(!RegisterClassExA(&wndclass)) return DDERR_GENERIC;
+		if(!RegisterClassExA(&wndclass)) ERR(DDERR_GENERIC);
 		wndclasscreated = true;
 	}
 	GLuint pf;
@@ -1321,17 +1352,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
 	}
 	else gl_caps.ShaderVer = 0;
-	if(GetBPP() <= 8)
-	{
-		GLuint palshader = glCreateShader(GL_FRAGMENT_SHADER);
-		const GLchar *palsrc = frag_IndexedTexture;
-		GLint palsrclen = strlen(frag_IndexedTexture);
-		glShaderSource(palshader,1,&palsrc,&palsrclen);
-		glCompileShader(palshader);
-		palprog = glCreateProgram();
-		glAttachShader(palprog,palshader);
-		glLinkProgram(palprog);
-	}
+	CompileShaders();
 	if(GLEXT_ARB_framebuffer_object)
 	{
 		glGenFramebuffers(1,&fbo);
@@ -1430,7 +1451,7 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 HRESULT WINAPI glDirectDraw1::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
 	FIXME("glDirectDraw1::DuplicateSurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
@@ -1439,7 +1460,7 @@ HRESULT WINAPI glDirectDraw1::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lp
 HRESULT WINAPI glDirectDraw1::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
 	FIXME("glDirectDraw1::EnumSurfaces: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::FlipToGDISurface()
 {
@@ -1460,7 +1481,7 @@ HRESULT WINAPI glDirectDraw1::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes
 HRESULT WINAPI glDirectDraw1::GetGDISurface(LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface)
 {
 	FIXME("glDirectDraw1::GetGDISurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
@@ -1477,7 +1498,7 @@ HRESULT WINAPI glDirectDraw1::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 HRESULT WINAPI glDirectDraw1::Initialize(GUID FAR *lpGUID)
 {
 	FIXME("IDirectDraw1::Initialize: stub\n");
-	return DDERR_DIRECTDRAWALREADYCREATED;
+	ERR(DDERR_DIRECTDRAWALREADYCREATED);
 }
 HRESULT WINAPI glDirectDraw1::RestoreDisplayMode()
 {
@@ -1550,7 +1571,7 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 HRESULT WINAPI glDirectDraw2::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
 	FIXME("glDirectDraw2::DuplicateSurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
@@ -1559,7 +1580,7 @@ HRESULT WINAPI glDirectDraw2::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lp
 HRESULT WINAPI glDirectDraw2::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
 	FIXME("glDirectDraw2::EnumSurfaces: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::FlipToGDISurface()
 {
@@ -1580,7 +1601,7 @@ HRESULT WINAPI glDirectDraw2::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes
 HRESULT WINAPI glDirectDraw2::GetGDISurface(LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface)
 {
 	FIXME("glDirectDraw2::GetGDISurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
@@ -1597,7 +1618,7 @@ HRESULT WINAPI glDirectDraw2::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 HRESULT WINAPI glDirectDraw2::Initialize(GUID FAR *lpGUID)
 {
 	FIXME("IDirectDraw2::Initialize: stub\n");
-	return DDERR_DIRECTDRAWALREADYCREATED;
+	ERR(DDERR_DIRECTDRAWALREADYCREATED);
 }
 HRESULT WINAPI glDirectDraw2::RestoreDisplayMode()
 {
@@ -1618,7 +1639,7 @@ HRESULT WINAPI glDirectDraw2::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
 	FIXME("glDirectDraw2::GetAvailableVidMem: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 // DDRAW4 wrapper
 glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
@@ -1673,7 +1694,7 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 HRESULT WINAPI glDirectDraw4::DuplicateSurface(LPDIRECTDRAWSURFACE4 lpDDSurface, LPDIRECTDRAWSURFACE4 FAR *lplpDupDDSurface)
 {
 	FIXME("glDirectDraw4::DuplicateSurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
@@ -1682,7 +1703,7 @@ HRESULT WINAPI glDirectDraw4::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 l
 HRESULT WINAPI glDirectDraw4::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpEnumSurfacesCallback)
 {
 	FIXME("glDirectDraw4::EnumSurfaces: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::FlipToGDISurface()
 {
@@ -1703,7 +1724,7 @@ HRESULT WINAPI glDirectDraw4::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes
 HRESULT WINAPI glDirectDraw4::GetGDISurface(LPDIRECTDRAWSURFACE4 FAR *lplpGDIDDSurface)
 {
 	FIXME("glDirectDraw4::GetGDISurface: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
@@ -1720,7 +1741,7 @@ HRESULT WINAPI glDirectDraw4::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 HRESULT WINAPI glDirectDraw4::Initialize(GUID FAR *lpGUID)
 {
 	FIXME("IDirectDraw4::Initialize: stub\n");
-	return DDERR_DIRECTDRAWALREADYCREATED;
+	ERR(DDERR_DIRECTDRAWALREADYCREATED);
 }
 HRESULT WINAPI glDirectDraw4::RestoreDisplayMode()
 {
@@ -1741,12 +1762,12 @@ HRESULT WINAPI glDirectDraw4::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 HRESULT WINAPI glDirectDraw4::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
 	FIXME("IDirectDraw4::GetAvailableVidMem: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::GetSurfaceFromDC(HDC hdc, LPDIRECTDRAWSURFACE4 *lpDDS)
 {
 	FIXME("IDirectDraw4::GetSurfaceFromDC: stub\n");
-	return DDERR_GENERIC;
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::RestoreAllSurfaces()
 {
@@ -1758,8 +1779,9 @@ HRESULT WINAPI glDirectDraw4::TestCooperativeLevel()
 }
 HRESULT WINAPI glDirectDraw4::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER lpdddi, DWORD dwFlags)
 {
-	FIXME("IDirectDraw4::GetDeviceIdentifier: stub\n");
-	return DDERR_GENERIC;
+	devid.guidDeviceIdentifier = device_template;
+	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER));
+	return DD_OK;
 }
 
 // Render Window event handler

@@ -22,8 +22,8 @@
 #define IDD_DXGLTEST                            112
 #define IDD_TESTGFX                             113
 #define IDD_SYSINFO                             115
-#define IDI_DXGLSM                              116
-#define IDI_DXGL                                117
+#define IDI_DXGL                                116
+#define IDI_DXGLSM                              117
 #define IDB_DXGLINV                             118
 #define IDB_DXGLINV64                           119
 #define IDC_DXDIAG                              1000

@@ -19,6 +19,22 @@
 #ifndef __SHADERS_H
 #define __SHADERS_H
 
-extern char frag_IndexedTexture[];
+typedef struct
+{
+	GLint vs;
+	GLint fs;
+	char *vsrc;
+	char *fsrc;
+	GLint prog;
+} SHADER;
+
+extern SHADER shaders[];
+
+#define PROG_PAL256 0
+#define PROG_CKEY 1
+#define PROG_CKEYMASK 2
+#define PROG_2CKEY 3
+
+void CompileShaders();
 
 #endif //__SHADERS_H

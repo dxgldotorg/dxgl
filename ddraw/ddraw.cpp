@@ -25,6 +25,11 @@ bool gllock = false;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
 
+const GUID device_template = 
+{ 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
+
+
+
 DDRAW_API void WINAPI AcquireDDThreadLock()
 {
 	// FIXME:  Add thread lock
@@ -67,12 +72,12 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 			GetSystemDirectoryA(buffer,MAX_PATH);
 			strcat(buffer,"\\ddraw.dll");
 			sysddraw = LoadLibraryA(buffer);
-			if(!sysddraw) return DDERR_GENERIC;
+			if(!sysddraw) ERR(DDERR_GENERIC);
 		}
 		if(!sysddrawcreate)
 		{
 			sysddrawcreate = (HRESULT(WINAPI *)(GUID FAR*,LPDIRECTDRAW FAR*, IUnknown FAR*))GetProcAddress(sysddraw,"DirectDrawCreate");
-			if(!sysddrawcreate) return DDERR_GENERIC;
+			if(!sysddrawcreate) ERR(DDERR_GENERIC);
 		}
 		return sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
 	}
@@ -101,7 +106,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
-	if(iid != IID_IDirectDraw7) return DDERR_UNSUPPORTED;
+	if(iid != IID_IDirectDraw7) ERR(DDERR_UNSUPPORTED);
 	myddraw = new glDirectDraw7(lpGUID,(LPDIRECTDRAW FAR *)lplpDD,pUnkOuter);
 	error = myddraw->err();
 	if(error != DD_OK)
@@ -112,25 +117,94 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	*lplpDD = (LPDIRECTDRAW7)myddraw;
 	return error;
 }
+
+BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
+{
+	int *context = (int *)lpContext;
+	LPDDENUMCALLBACKA callback = (LPDDENUMCALLBACKA)context[0];
+	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+}
+
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)
 {
-	FIXME("DirectDrawEnumerateA: stub\n");
-	return DDERR_INVALIDPARAMS;
+	LPVOID context[2];
+	context[0] = (LPVOID) lpCallback;
+	context[1] = lpContext;
+	return DirectDrawEnumerateExA(DDEnumA,&context,0);
 }
+
+BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
+{
+	int *context = (int *)lpContext;
+	LPDDENUMCALLBACKW callback = (LPDDENUMCALLBACKW)context[0];
+	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+}
+
 HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext)
 {
-	FIXME("DirectDrawEnumerateW: stub\n");
-	return DDERR_INVALIDPARAMS;
+	LPVOID context[2];
+	context[0] = (LPVOID) lpCallback;
+	context[1] = lpContext;
+	return DirectDrawEnumerateExW(DDEnumW,&context,0);
 }
+
+BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
+{
+	int *context = (int *)lpContext;
+	LPDDENUMCALLBACKEXA callback = (LPDDENUMCALLBACKEXA)context[0];
+	CHAR desc[MAX_PATH];
+	CHAR driver[MAX_PATH];
+	WideCharToMultiByte(CP_ACP,0,lpDriverDescription,-1,desc,MAX_PATH,NULL,NULL);
+	WideCharToMultiByte(CP_ACP,0,lpDriverName,-1,driver,MAX_PATH,NULL,NULL);
+	return callback(guid,desc,driver,(LPVOID)context[1],hMonitor);
+}
+
 HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
-	FIXME("DirectDrawEnumerateExA: stub\n");
-	return DDERR_INVALIDPARAMS;
+	LPVOID context[2];
+	context[0] = (LPVOID) lpCallback;
+	context[1] = lpContext;
+	return DirectDrawEnumerateExW(DDEnumExA,&context,dwFlags);
 }
+
+BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM ptr)
+{
+	int * monitors = *(int**)ptr;
+	if(!monitors)
+	{
+		monitors = (int*)malloc(256*sizeof(int));
+		monitors[0] = 1;
+	}
+	else monitors[0]++;
+	monitors[monitors[0]] = (int)hMonitor;
+	*(int**)ptr = monitors;
+	if(monitors[0] == 255) return FALSE;
+	return TRUE;
+}
+
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
-	FIXME("DirectDrawEnumerateExW: stub\n");
-	return DDERR_INVALIDPARAMS;
+	int *monitors = NULL;
+	GUID guid;
+	MONITORINFOEXW monitorinfo;
+	monitorinfo.cbSize = sizeof(MONITORINFOEXW);
+	DISPLAY_DEVICEW dev;
+	dev.cb = sizeof(DISPLAY_DEVICE);
+	if(!lpCallback(NULL,L"Primary Display Driver",L"display",lpContext,0)) return DD_OK;
+	if(dwFlags & DDENUM_ATTACHEDSECONDARYDEVICES)
+	{
+		EnumDisplayMonitors(NULL,NULL,MonitorEnum,(LPARAM)&monitors);
+		for(int i = 1; i < monitors[0]; i++)
+		{
+			guid = device_template;
+			guid.Data1 |= i;
+			GetMonitorInfoW((HMONITOR)monitors[i],&monitorinfo);
+			EnumDisplayDevicesW(NULL,(monitorinfo.szDevice[_tcslen(monitorinfo.szDevice)-1])-49,&dev,0);
+			lpCallback(&guid,dev.DeviceString,monitorinfo.szDevice,lpContext,(HMONITOR)monitors[i]);
+		}
+		free(monitors);
+	}
+	return DD_OK;
 }
 HRESULT WINAPI DllCanUnloadNow()
 {
@@ -145,9 +219,10 @@ DDRAW_API void WINAPI GetDDSurfaceLocal()
 {
 	FIXME("GetDDSurfaceLocal: stub\n");
 }
-DDRAW_API void WINAPI GetOLEThunkData()
+DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 {
 	FIXME("GetOleThunkData: stub\n");
+	return 0;
 }
 DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {

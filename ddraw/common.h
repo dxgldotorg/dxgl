@@ -21,6 +21,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <tchar.h>
 #include "include/winedef.h"
 #include <ddraw.h>
 #include "include/d3d.h"
@@ -28,6 +29,10 @@
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
 #include "glExtensions.h"
+#include "shaders.h"
+
+extern const GUID device_template;
+
 
 #ifdef _DEBUG
 #define DEBUGBREAK DebugBreak();
@@ -53,5 +58,22 @@
 	OutputDebugStringA("DEBUG: ");\
 	OutputDebugStringA(x);\
 }
+#define STR(x) #x
+#ifdef _DEBUG
+#define ERR(error) \
+{\
+	OutputDebugStringA("ERROR: ");\
+	OutputDebugStringA(STR(__FILE__));\
+	OutputDebugStringA(": Line ");\
+	OutputDebugStringA(STR(__LINE__));\
+	OutputDebugStringA(": ");\
+	OutputDebugStringA(STR(error));\
+	OutputDebugStringA("\n");\
+	DEBUGBREAK\
+	return error;\
+}
+#else
+#define ERR(error) return error;
+#endif
 #include "../cfgmgr/cfgmgr.h"
 #endif //_STDAFX_H

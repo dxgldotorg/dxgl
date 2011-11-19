@@ -124,8 +124,8 @@ IDB_DXGLINV64      BITMAP         "..\\common\\dxglinv64.bmp"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 1 VERSIONINFO
-    FILEVERSION     0,0,6,0
-    PRODUCTVERSION  0,0,6,0
+    FILEVERSION     0,0,7,0
+    PRODUCTVERSION  0,0,7,0
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_APP
     FILESUBTYPE     VFT2_UNKNOWN
@@ -137,12 +137,12 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
         BLOCK "08000352"
         {
             VALUE "FileDescription", "DXGL Test App"
-            VALUE "FileVersion", "0.0.6.0"
+            VALUE "FileVersion", "0.0.7.0"
             VALUE "InternalName", "DXGL"
             VALUE "LegalCopyright", "Copyright © 2011 William Feely"
             VALUE "OriginalFilename", "dxgltest.exe"
             VALUE "ProductName", "DXGL"
-            VALUE "ProductVersion", "0.0.6.0"
+            VALUE "ProductVersion", "0.0.7.0"
         }
     }
     BLOCK "VarFileInfo"
