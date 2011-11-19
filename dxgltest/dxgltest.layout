@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="Resource.h" open="1" top="0" tabpos="2">
+	<File name="MultiDD.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="1028" topLine="10" />
+	</File>
+	<File name="Resource.h" open="0" top="0" tabpos="2">
 		<Cursor position="0" topLine="0" />
 	</File>
 	<File name="Tests2D.cpp" open="0" top="0" tabpos="4">
 		<Cursor position="0" topLine="0" />
 	</File>
-	<File name="common.h" open="1" top="0" tabpos="3">
+	<File name="common.h" open="0" top="0" tabpos="3">
 		<Cursor position="1088" topLine="12" />
 	</File>
-	<File name="dxgltest.cpp" open="1" top="1" tabpos="1">
-		<Cursor position="4834" topLine="147" />
+	<File name="dxgltest.cpp" open="0" top="0" tabpos="1">
+		<Cursor position="6446" topLine="205" />
 	</File>
 	<File name="dxgltest.rc" open="0" top="0" tabpos="2">
 		<Cursor position="169" topLine="0" />
@@ -24,5 +27,8 @@
 	</File>
 	<File name="surfacegen.cpp" open="0" top="0" tabpos="3">
 		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="timer.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="1174" topLine="20" />
 	</File>
 </CodeBlocks_layout_file>

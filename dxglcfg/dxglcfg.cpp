@@ -17,6 +17,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
+#include <CommCtrl.h>
 #include <tchar.h>
 #include <stdio.h>
 #include <io.h>
@@ -36,8 +37,21 @@ HINSTANCE hinstance;
 bool msaa = false;
 const char *extensions_string = NULL;
 
-void SaveChanges()
+void SaveChanges(HWND hWnd)
 {
+	globalcfg.scaler = SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_GETCURSEL,0,0);
+	globalcfg.colormode = SendDlgItemMessage(hWnd,IDC_COLOR,BM_GETCHECK,0,0);
+	globalcfg.scalingfilter = SendDlgItemMessage(hWnd,IDC_SCALE,CB_GETCURSEL,0,0);
+	globalcfg.vsync = SendDlgItemMessage(hWnd,IDC_VSYNC,CB_GETCURSEL,0,0);
+	SendDlgItemMessageW(hWnd,IDC_SHADER,WM_GETTEXT,MAX_PATH+1,(LPARAM)globalcfg.shaderfile);
+	globalcfg.texfilter = SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_GETCURSEL,0,0);
+	globalcfg.anisotropic = SendDlgItemMessage(hWnd,IDC_ANISO,CB_GETCURSEL,0,0);
+	globalcfg.msaa = SendDlgItemMessage(hWnd,IDC_MSAA,CB_GETCURSEL,0,0);
+	globalcfg.aspect = SendDlgItemMessage(hWnd,IDC_ASPECT,CB_GETCURSEL,0,0);
+	globalcfg.highres = SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_GETCHECK,0,0);
+	globalcfg.AllColorDepths = SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_GETCHECK,0,0);
+	globalcfg.ExtraModes = SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_GETCHECK,0,0);
+	globalcfg.SortModes = SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_GETCURSEL,0,0);
 	SetGlobalConfig(&globalcfg);
 }
 
@@ -263,27 +277,59 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Crop to display"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,globalcfg.aspect,NULL);
+		// sort modes
+		_tcscpy(buffer,_T("Use system order"));
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer,_T("Group by color depth"));
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,1,(LPARAM)buffer);
+		_tcscpy(buffer,_T("Group by resolution"));
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,globalcfg.SortModes,NULL);
+		// color depths
+		if(globalcfg.AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,NULL);
+		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
+		// extra modes
+		if(globalcfg.ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,NULL);
+		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,NULL);
 		return true;
 	case WM_COMMAND:
 		switch(wParam)
 		{
 		case IDOK:
-			SaveChanges();
+			SaveChanges(hWnd);
 			EndDialog(hWnd,IDOK);
 			return true;
 		case IDCANCEL:
 			EndDialog(hWnd,IDCANCEL);
 			return true;
 		case IDC_APPLY:
-			SaveChanges();
+			SaveChanges(hWnd);
 			return true;
 		}
 		break;
 	}
 	return false;
 }
+
+#ifdef __GNUC__
+#ifndef INITCOMMONCONTROLSEX
+typedef struct tagINITCOMMONCONTROLSEX {
+  DWORD dwSize;
+  DWORD dwICC;
+} INITCOMMONCONTROLSEX, *LPINITCOMMONCONTROLSEX;
+#endif
+#endif
+
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
+	INITCOMMONCONTROLSEX icc;
+	icc.dwSize = sizeof(icc);
+	icc.dwICC = ICC_WIN95_CLASSES;
+	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
+	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) =
+		(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
+	if(iccex) iccex(&icc);
+	else InitCommonControls();
 	hinstance = hInstance;
 	GetGlobalConfig(&globalcfg);
 	int result = DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));

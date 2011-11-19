@@ -31,7 +31,11 @@ typedef struct
 	DWORD msaa;
 	DWORD aspect;
 	DWORD highres;
+	DWORD vsync;
 	WCHAR shaderfile[MAX_PATH+1];
+	DWORD SortModes;
+	bool AllColorDepths;
+	bool ExtraModes;
 	bool UseAudSettings;
 	bool audio3d;
 	bool audioglobal;

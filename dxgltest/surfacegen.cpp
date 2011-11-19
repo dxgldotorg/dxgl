@@ -18,9 +18,12 @@
 #include "common.h"
 #include "surfacegen.h"
 
+inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
+
 void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 {
 	DWORD x,y;
+	DWORD color;
 	unsigned short *buffer16 = (unsigned short*) buffer;
 	unsigned long *buffer32 = (unsigned long*) buffer;
 	switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
@@ -34,18 +37,40 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 				}
 			}
 			break;
-		case 15:
-			return;
 		case 16:
-			for(y = 0; y < ddsd.dwHeight; y++)
+			if((ddsd.ddpfPixelFormat.dwRBitMask | ddsd.ddpfPixelFormat.dwGBitMask |
+				ddsd.ddpfPixelFormat.dwBBitMask) == 0x7FFF)
 			{
-				for(x = 0; x < ddsd.dwWidth; x++)
+				for(y = 0; y < ddsd.dwHeight; y++)
 				{
-					buffer16[x+((ddsd.lPitch/2)*y)] = (x/(ddsd.dwWidth/256.)) + 256*floor((y/(ddsd.dwHeight/256.)));
+					for(x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer16[x+((ddsd.lPitch/2)*y)] = ((x/(ddsd.dwWidth/256.)) + 256*floor((y/(ddsd.dwHeight/256.))))/2;
+					}
+				}
+			}
+			else
+			{
+				for(y = 0; y < ddsd.dwHeight; y++)
+				{
+					for(x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer16[x+((ddsd.lPitch/2)*y)] = (x/(ddsd.dwWidth/256.)) + 256*floor((y/(ddsd.dwHeight/256.)));
+					}
 				}
 			}
 			break;
 		case 24:
+			for(y = 0; y < ddsd.dwHeight; y++)
+			{
+				for(x = 0; x < ddsd.dwWidth*3; x+=3)
+				{
+					color = ((x/3)/(ddsd.dwWidth/4096.)) + 4096*floor((y/(ddsd.dwHeight/4096.)));
+					buffer[x+(ddsd.lPitch*y)] = color & 0xFF;
+					buffer[(x+1)+(ddsd.lPitch*y)] = (color >> 8) & 0xFF;
+					buffer[(x+2)+(ddsd.lPitch*y)] = (color >> 16) & 0xFF;
+				}
+			}
 			return;
 		case 32:
 			for(y = 0; y < ddsd.dwHeight; y++)
@@ -137,7 +162,10 @@ void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRE
 	default:
 		DrawGradient(hdcmem,0,ddsd.dwWidth,0,ddsd.dwHeight,color);
 	}
-	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
+	for(int i = 0; i < ddsd.dwHeight; i++)
+	{
+		memcpy(buffer+(ddsd.lPitch*i),bits+(NextMultipleOf4(ddsd.lPitch)*i),ddsd.lPitch);
+	}
 	SelectObject(hdcmem,hbmold);
 	DeleteDC(hdcmem);
 	DeleteObject(bitmap);

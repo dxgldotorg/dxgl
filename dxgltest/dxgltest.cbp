@@ -15,7 +15,7 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
-					<Add library="version" />
+					<Add library="../ddraw/bin/Debug/libddraw.dll.a" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -28,7 +28,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="version" />
+					<Add library="../ddraw/bin/Release/libddraw.dll.a" />
 				</Linker>
 			</Target>
 		</Build>
@@ -39,6 +39,9 @@
 			<Add library="gdi32" />
 			<Add library="user32" />
 			<Add library="kernel32" />
+			<Add library="version" />
+			<Add library="comctl32" />
+			<Add library="winmm" />
 		</Linker>
 		<Unit filename="MultiDD.cpp" />
 		<Unit filename="MultiDD.h" />
@@ -51,6 +54,7 @@
 		<Unit filename="dxgltest.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="dxguid.cpp" />
 		<Unit filename="palette.cpp" />
 		<Unit filename="palette.h" />
 		<Unit filename="precomp.cpp" />

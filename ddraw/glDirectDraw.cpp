@@ -54,6 +54,243 @@ void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 	*count = newcount;
 }
 
+bool ScanModeList(DEVMODE *array, DEVMODE comp, DWORD count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		if(!memcmp(&array[i],&comp,sizeof(DEVMODE))) return true;
+	}
+	return false;
+}
+
+const int ExtraModes[30] [3] = {
+	{320,175,70},
+	{320,200,70},
+	{320,240,60},
+	{320,400,70},
+	{320,480,60},
+	{360,200,70},
+	{360,240,60},
+	{360,400,70},
+	{360,480,60},
+	{400,300,60},
+	{416,312,75},
+	{512,384,60},
+	{576,432,60},
+	{640,350,70},
+	{640,400,70},
+	{640,512,60},
+	{680,384,60},
+	{700,525,60},
+	{720,350,70},
+	{720,400,70},
+	{720,450,60},
+	{720,480,60},
+	{800,512,60},
+	{832,624,75},
+	{840,525,60},
+	{896,672,60},
+	{928,696,60},
+	{960,540,60},
+	{960,600,60},
+	{960,720,60}
+};
+
+bool ScanColorMode(DEVMODE *array, DWORD count, int bpp)
+{
+	for(int i = 0; i < count; i++)
+	{
+		if(array[i].dmBitsPerPel == bpp) return true;
+	}
+	return false;
+}
+
+bool ScanModeListNoRefresh(DEVMODE *array, DEVMODE comp, DWORD count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		if((array[i].dmBitsPerPel == comp.dmBitsPerPel) &&
+			(array[i].dmPelsWidth == comp.dmPelsWidth) &&
+			(array[i].dmPelsHeight == comp.dmPelsHeight)) return true;
+	}
+	return false;
+} 
+
+void AddExtraResolutions(DEVMODE **array, DWORD *count)
+{
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*5*30);
+	DEVMODE compmode = *array[0];
+	DWORD newcount = 0;
+	int i;
+	if(ScanColorMode(*array,*count,8))
+	{
+		compmode.dmBitsPerPel = 8;
+		for(i = 0; i < 30; i++)
+		{
+			compmode.dmPelsWidth = ExtraModes[i][0];
+			compmode.dmPelsHeight = ExtraModes[i][1];
+			compmode.dmDisplayFrequency = ExtraModes[i][2];
+			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			{
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if(ScanColorMode(*array,*count,15))
+	{
+		compmode.dmBitsPerPel = 15;
+		for(i = 0; i < 30; i++)
+		{
+			compmode.dmPelsWidth = ExtraModes[i][0];
+			compmode.dmPelsHeight = ExtraModes[i][1];
+			compmode.dmDisplayFrequency = ExtraModes[i][2];
+			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			{
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if(ScanColorMode(*array,*count,16))
+	{
+		compmode.dmBitsPerPel = 16;
+		for(i = 0; i < 30; i++)
+		{
+			compmode.dmPelsWidth = ExtraModes[i][0];
+			compmode.dmPelsHeight = ExtraModes[i][1];
+			compmode.dmDisplayFrequency = ExtraModes[i][2];
+			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			{
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if(ScanColorMode(*array,*count,24))
+	{
+		compmode.dmBitsPerPel = 24;
+		for(i = 0; i < 30; i++)
+		{
+			compmode.dmPelsWidth = ExtraModes[i][0];
+			compmode.dmPelsHeight = ExtraModes[i][1];
+			compmode.dmDisplayFrequency = ExtraModes[i][2];
+			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			{
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if(ScanColorMode(*array,*count,32))
+	{
+		compmode.dmBitsPerPel = 32;
+		for(i = 0; i < 30; i++)
+		{
+			compmode.dmPelsWidth = ExtraModes[i][0];
+			compmode.dmPelsHeight = ExtraModes[i][1];
+			compmode.dmDisplayFrequency = ExtraModes[i][2];
+			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			{
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	*array = (DEVMODE *)realloc(*array,(*count+newcount)*sizeof(DEVMODE));
+	memcpy(&(*array)[*count-1],array2,newcount*sizeof(DEVMODE));
+	free(array2);
+	*count += newcount;
+}
+
+void AddExtraColorModes(DEVMODE **array, DWORD *count)
+{
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	DEVMODE compmode;
+	DWORD count2 = 0;
+	for(int i = 0; i < *count; i++)
+	{
+		switch((*array)[i].dmBitsPerPel)
+		{
+		case 15:
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 16;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			break;
+		case 16:
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 15;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			break;
+		case 24:
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 32;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			break;
+		case 32:
+			compmode = (*array)[i];
+			compmode.dmBitsPerPel = 24;
+			if(!ScanModeList(*array,compmode,*count))
+			{
+				array2[count2] = compmode;
+				count2++;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	*array = (DEVMODE *)realloc(*array,(*count+count2)*sizeof(DEVMODE));
+	memcpy(&(*array)[*count-1],array2,count2*sizeof(DEVMODE));
+	free(array2);
+	*count += count2;
+}
+
+int SortDepth(const DEVMODE *mode1, const DEVMODE *mode2)
+{
+	unsigned __int64 mode1num = 
+		(mode1->dmDisplayFrequency & 0xFFFF) |
+		((unsigned __int64)(mode1->dmPelsWidth & 0xFFFF)<< 16) |
+		((unsigned __int64)(mode1->dmPelsHeight & 0xFFFF)<< 32) |
+		((unsigned __int64)(mode1->dmBitsPerPel & 0xFFFF)<< 48);
+	unsigned __int64 mode2num = 
+		(mode2->dmDisplayFrequency & 0xFFFF) |
+		((unsigned __int64)(mode2->dmPelsWidth & 0xFFFF)<< 16) |
+		((unsigned __int64)(mode2->dmPelsHeight & 0xFFFF)<< 32) |
+		((unsigned __int64)(mode2->dmBitsPerPel & 0xFFFF)<< 48);
+	if(mode2num > mode1num) return -1;
+	else if(mode2num < mode1num) return  1;
+	else return 0;
+}
+int SortRes(const DEVMODE *mode1, const DEVMODE *mode2)
+{
+	unsigned __int64 mode1num = 
+		(mode1->dmDisplayFrequency & 0xFFFF) |
+		((unsigned __int64)(mode1->dmPelsWidth & 0xFFFF)<< 32) |
+		((unsigned __int64)(mode1->dmPelsHeight & 0xFFFF)<< 48) |
+		((unsigned __int64)(mode1->dmBitsPerPel & 0xFFFF)<< 16);
+	unsigned __int64 mode2num = 
+		(mode2->dmDisplayFrequency & 0xFFFF) |
+		((unsigned __int64)(mode2->dmPelsWidth & 0xFFFF)<< 32) |
+		((unsigned __int64)(mode2->dmPelsHeight & 0xFFFF)<< 48) |
+		((unsigned __int64)(mode2->dmBitsPerPel & 0xFFFF)<< 16);
+	if(mode2num > mode1num) return -1;
+	else if(mode2num < mode1num) return  1;
+	else return 0;
+}
+
 HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
 	bool match;
@@ -85,7 +322,21 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
+	if(dxglcfg.AllColorDepths) AddExtraColorModes(&modes,&modenum);
+	if(dxglcfg.ExtraModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);
 	modenum--;
+	switch(dxglcfg.SortModes)
+	{
+	case 0:
+	default:
+		break;
+	case 1:
+		qsort(modes,modenum,sizeof(DEVMODE),(int(*)(const void*, const void*))SortDepth);
+		break;
+	case 2:
+		qsort(modes,modenum,sizeof(DEVMODE),(int(*)(const void*, const void*))SortRes);
+		break;
+	}
 	for(DWORD i = 0; i < modenum; i++)
 	{
 		match = true;
@@ -1081,9 +1332,15 @@ HRESULT WINAPI glDirectDraw4::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LPDIRECTDRAWSURFACE4 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	FIXME("glDirectDraw4::CreateSurface: stub\n");
-	return DDERR_GENERIC;
-}
+	LPDIRECTDRAWSURFACE7 lpDDS7;
+	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
+	if(err == DD_OK)
+	{
+		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);
+		lpDDS7->Release();
+		return DD_OK;
+	}
+	return err;}
 HRESULT WINAPI glDirectDraw4::DuplicateSurface(LPDIRECTDRAWSURFACE4 lpDDSurface, LPDIRECTDRAWSURFACE4 FAR *lplpDupDDSurface)
 {
 	FIXME("glDirectDraw4::DuplicateSurface: stub\n");

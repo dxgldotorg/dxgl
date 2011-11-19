@@ -36,8 +36,8 @@ IDI_ICON1          ICON           "..\\common\\dxgl.ico"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 1 VERSIONINFO
-    FILEVERSION     0,0,3,0
-    PRODUCTVERSION  0,0,3,0
+    FILEVERSION     0,0,4,0
+    PRODUCTVERSION  0,0,4,0
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
     FILESUBTYPE     VFT2_UNKNOWN
@@ -50,12 +50,12 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
         {
             VALUE "CompanyName", "William Feely"
             VALUE "FileDescription", "DXGL DDraw Library"
-            VALUE "FileVersion", "0.0.2.0"
+            VALUE "FileVersion", "0.0.4.0"
             VALUE "InternalName", "DXGL"
             VALUE "LegalCopyright", "Copyright (C) 2011 William Feely"
             VALUE "OriginalFilename", "DDraw.dll"
             VALUE "ProductName", "DXGL"
-            VALUE "ProductVersion", "0.0.3.0"
+            VALUE "ProductVersion", "0.0.4.0"
         }
     }
     BLOCK "VarFileInfo"

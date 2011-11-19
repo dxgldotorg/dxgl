@@ -4,8 +4,8 @@
 	<File name="cfgmgr.cpp" open="0" top="0" tabpos="0">
 		<Cursor position="1022" topLine="0" />
 	</File>
-	<File name="crc32.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="2460" topLine="45" />
+	<File name="crc32.cpp" open="1" top="0" tabpos="1">
+		<Cursor position="2450" topLine="46" />
 	</File>
 	<File name="stdafx.h" open="0" top="0" tabpos="0">
 		<Cursor position="816" topLine="0" />

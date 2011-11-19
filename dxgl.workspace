@@ -9,6 +9,8 @@
 		<Project filename="dxglcfg/dxglcfg.cbp">
 			<Depends filename="cfgmgr/cfgmgr.cbp" />
 		</Project>
-		<Project filename="dxgltest/dxgltest.cbp" active="1" />
+		<Project filename="dxgltest/dxgltest.cbp" active="1">
+			<Depends filename="ddraw/ddraw.cbp" />
+		</Project>
 	</Workspace>
 </CodeBlocks_workspace_file>

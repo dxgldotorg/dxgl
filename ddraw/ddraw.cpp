@@ -108,6 +108,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 		delete myddraw;
 		return error;
 	}
+	*lplpDD = (LPDIRECTDRAW7)myddraw;
 	return error;
 }
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)

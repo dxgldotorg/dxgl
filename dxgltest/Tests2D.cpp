@@ -215,7 +215,8 @@ void InitTest(int test)
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	LPDIRECTDRAWPALETTE palette;
 	unsigned char *buffer;
-	MultiDirectDrawSurface *temp1;
+	MultiDirectDrawSurface *temp1 = NULL;
+	MultiDirectDrawSurface *temp2 = NULL;
 	HRESULT error;
 	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -242,7 +243,9 @@ void InitTest(int test)
 		if(backbuffers > 1)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
 			DrawGradients(ddsd,buffer,hWnd,palette,0,0x0000FF);
 			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
@@ -251,7 +254,9 @@ void InitTest(int test)
 		if(backbuffers > 2)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
 			DrawGradients(ddsd,buffer,hWnd,palette,0,0x00FF00);
 			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
@@ -260,12 +265,15 @@ void InitTest(int test)
 		if(backbuffers > 3)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp1);
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
 			DrawGradients(ddsd,buffer,hWnd,palette,0,0xFF0000);
 			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
 			error = temp1->Unlock(NULL);
 		}
+		if(temp1) temp1->Release();
 		free(buffer);
 		if(palette) palette->Release();
 		break;

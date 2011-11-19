@@ -84,6 +84,8 @@ public:
 	GLuint PalProg(){return palprog;}
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
+	DWORD GetBPPMultipleOf8(){if(primarybpp == 15) return 16; else return primarybpp;}
+	DWORD GetBPPPowerOf2(){if(primarybpp == 15) return 16; if(primarybpp == 24) return 32; else return primarybpp;}
 	HGLRC hRC;
 	HDC  hDC;
 	DWORD screenx,screeny,screenrefresh,screenbpp;

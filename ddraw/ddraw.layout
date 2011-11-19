@@ -2,25 +2,25 @@
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
 	<File name="common.h" open="0" top="0" tabpos="0">
-		<Cursor position="905" topLine="0" />
+		<Cursor position="1301" topLine="12" />
 	</File>
-	<File name="ddraw.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="818" topLine="0" />
+	<File name="ddraw.cpp" open="1" top="0" tabpos="1">
+		<Cursor position="811" topLine="0" />
 	</File>
-	<File name="ddraw.def" open="0" top="0" tabpos="0">
-		<Cursor position="785" topLine="0" />
+	<File name="ddraw.def" open="1" top="1" tabpos="2">
+		<Cursor position="822" topLine="2" />
 	</File>
 	<File name="ddraw.h" open="0" top="0" tabpos="0">
-		<Cursor position="885" topLine="0" />
+		<Cursor position="850" topLine="11" />
 	</File>
 	<File name="ddraw.rc" open="0" top="0" tabpos="0">
 		<Cursor position="1824" topLine="24" />
 	</File>
 	<File name="dllmain.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="816" topLine="0" />
+		<Cursor position="988" topLine="0" />
 	</File>
-	<File name="glDirectDraw.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="9433" topLine="299" />
+	<File name="glDirectDraw.cpp" open="1" top="0" tabpos="3">
+		<Cursor position="1936" topLine="12" />
 	</File>
 	<File name="glDirectDraw.h" open="0" top="0" tabpos="0">
 		<Cursor position="925" topLine="5" />
@@ -31,20 +31,20 @@
 	<File name="glDirectDrawPalette.cpp" open="0" top="0" tabpos="0">
 		<Cursor position="816" topLine="0" />
 	</File>
-	<File name="glDirectDrawSurface.cpp" open="1" top="0" tabpos="6">
+	<File name="glDirectDrawSurface.cpp" open="0" top="0" tabpos="3">
 		<Cursor position="16091" topLine="489" />
 	</File>
 	<File name="glDirectDrawSurface.h" open="0" top="0" tabpos="0">
 		<Cursor position="4919" topLine="74" />
 	</File>
-	<File name="glExtensions.cpp" open="1" top="0" tabpos="4">
-		<Cursor position="851" topLine="1" />
+	<File name="glExtensions.cpp" open="0" top="0" tabpos="1">
+		<Cursor position="848" topLine="0" />
 	</File>
-	<File name="glExtensions.h" open="1" top="0" tabpos="5">
-		<Cursor position="2888" topLine="18" />
+	<File name="glExtensions.h" open="0" top="0" tabpos="2">
+		<Cursor position="979" topLine="5" />
 	</File>
 	<File name="include\GL\glext.h" open="0" top="0" tabpos="0">
-		<Cursor position="1790" topLine="29" />
+		<Cursor position="1698" topLine="23" />
 	</File>
 	<File name="include\d3dcaps.h" open="0" top="0" tabpos="0">
 		<Cursor position="854" topLine="0" />

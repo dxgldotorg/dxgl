@@ -63,6 +63,18 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, bool global)
 		error = RegQueryValueExW(hKey,L"ShaderFile",NULL,&regsz,(LPBYTE)file,&sizeout);
 		if(error == ERROR_SUCCESS) wcsncpy(cfg->shaderfile,file,MAX_PATH);
 		sizeout = 4;
+		error = RegQueryValueExW(hKey,L"SortModes",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+		if(error == ERROR_SUCCESS) cfg->SortModes = dwOut;
+		sizeout = 4;
+		error = RegQueryValueExW(hKey,L"AllColorDepths",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+		if(error == ERROR_SUCCESS) cfg->AllColorDepths = dwOut;
+		sizeout = 4;
+		error = RegQueryValueExW(hKey,L"ExtraModes",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+		if(error == ERROR_SUCCESS) cfg->ExtraModes = dwOut;
+		sizeout = 4;
+		error = RegQueryValueExW(hKey,L"VSync",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+		if(error == ERROR_SUCCESS) cfg->vsync = dwOut;
+		sizeout = 4;
 	}
 	else cfg->UseGfxSettings = false;
 	sizeout = 4;
@@ -112,6 +124,12 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, bool global)
 		if(cfg->shaderfile[0]) error = RegSetValueExW(hKey,L"ShaderFile",0,REG_SZ,(BYTE*)cfg->shaderfile,
 			wcslen(cfg->shaderfile)*2);
 		else error = RegDeleteValueW(hKey,L"ShaderFile");
+		error = RegSetValueExW(hKey,L"SortModes",0,REG_DWORD,(BYTE*)&cfg->SortModes,4);
+		if(cfg->AllColorDepths) error = RegSetValueExW(hKey,L"AllColorDepths",0,REG_DWORD,(BYTE*)&one,4);
+		else error = RegSetValueExW(hKey,L"AllColorDepths",0,REG_DWORD,(BYTE*)&zero,4);
+		if(cfg->ExtraModes) error = RegSetValueExW(hKey,L"ExtraModes",0,REG_DWORD,(BYTE*)&one,4);
+		else error = RegSetValueExW(hKey,L"LowResModes",0,REG_DWORD,(BYTE*)&zero,4);
+		error = RegSetValueExW(hKey,L"VSync",0,REG_DWORD,(BYTE*)&cfg->vsync,4);
 	}
 	else if(!cfg->UseGfxSettings && !global) error = RegDeleteValueW(hKey,L"UseGraphicsSettings");
 }

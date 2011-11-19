@@ -21,7 +21,10 @@
 
 extern int GLEXT_ARB_framebuffer_object;
 extern int GLEXT_EXT_framebuffer_object;
-#ifndef __GNUC__
+#ifdef __GNUC__
+#undef GLAPI
+#define GLAPI extern
+#endif
 GLAPI GLuint (APIENTRY *glCreateShader) (GLenum type);
 GLAPI void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
 GLAPI void (APIENTRY *glCompileShader) (GLuint shader);
@@ -51,7 +54,7 @@ GLAPI GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name
 GLAPI void (APIENTRY *glUniform1i) (GLint location, GLint v0);
 
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
-#endif
+
 void InitGLExt();
 
 #endif //_GLEXTENSIONS_H

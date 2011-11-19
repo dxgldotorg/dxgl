@@ -77,3 +77,33 @@ Valid settings:
 Member shaderfile
 REG_SZ HKCU\DXGL\<app>\ShaderFile
 Full path to file containing a custom pixel shader for 2D blits.
+
+Member SortModes
+REG_DWORD HKCU\DXGL\<app>\SortModes
+Sort display modes
+Valid settings:
+0 - As reported by system
+1 - Group by depth
+2 - Group by resolution
+
+Member AllColorDepths
+REG_DWORD HKCU\DXGL\<app>\AllColorDepths
+Enable all color depths, even if unsupported by the system
+Valid settings:
+0 - Off
+1 - On
+
+Member LowResModes
+REG_DWORD HKCU\DXGL\<app>\LowResModes
+Enable low resolution video modes, even if unsupported by the system
+Valid settings:
+0 - Off
+1 - On
+
+Member vsync
+REG_DWORD HKCU\DXGL\<app>\VSync
+Vertical retrace control
+Valid settings:
+0 - Determined by application
+1 - Off
+2 - On

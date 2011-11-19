@@ -15,46 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#pragma once
-#ifndef _STDAFX_H
-#define _STDAFX_H
-
-#define _CRT_SECURE_NO_WARNINGS
-
-
-#define WIN32_LEAN_AND_MEAN
-// Windows Header Files:
+#define INITGUID
 #include <windows.h>
-#include <commctrl.h>
-
-// C RunTime Header Files
-#ifdef _DEBUG
-#define _CRTDBG_MAP_ALLOC
-#endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <process.h>
-#ifdef _DEBUG
-#include <crtdbg.h>
-#endif
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
-#include <math.h>
-#include <string>
-#ifdef _DEBUG
-#include <crtdbg.h>
-#define new DEBUGNEW
-#define DEBUGNEW new(_NORMAL_BLOCK,__FILE__,__LINE__)
-#endif
-using namespace std;
-#ifdef _UNICODE
-typedef wstring tstring;
-#else
-typedef string tstring;
-#endif
-#include "Resource.h"
-// DirectX/DXGL headers
 #include <ddraw.h>
-extern const unsigned char DefaultPalette[1024];
-#endif //_STDAFX_H
+#include "../ddraw/include/d3d.h"

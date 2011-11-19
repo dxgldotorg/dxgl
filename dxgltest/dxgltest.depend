@@ -13,7 +13,7 @@
 
 1306509946 c:\programming\projects\dxgl\dxgltest\palette.h
 
-1307223978 source:c:\programming\projects\dxgl\dxgltest\surfacegen.cpp
+1307662922 source:c:\programming\projects\dxgl\dxgltest\surfacegen.cpp
 	"common.h"
 	"surfacegen.h"
 
@@ -41,7 +41,7 @@
 
 1306784320 c:\programming\projects\dxgl\dxgltest\tests.h
 
-1306692994 source:c:\programming\projects\dxgl\dxgltest\dxgltest.cpp
+1307834506 source:c:\programming\projects\dxgl\dxgltest\dxgltest.cpp
 	"common.h"
 	"dxgltest.h"
 	"tests.h"
@@ -49,7 +49,7 @@
 1306449963 c:\programming\projects\dxgl\dxgltest\dxgltest.h
 	"resource.h"
 
-1307227694 source:c:\programming\projects\dxgl\dxgltest\tests2d.cpp
+1307401557 source:c:\programming\projects\dxgl\dxgltest\tests2d.cpp
 	"common.h"
 	"tests.h"
 	"surfacegen.h"
@@ -68,7 +68,27 @@
 	<MMSystem.h>
 	"timer.h"
 
-1307227827 source:c:\programming\projects\dxgl\dxgltest\multidd.cpp
+1307401638 source:c:\programming\projects\dxgl\dxgltest\multidd.cpp
 	"common.h"
 	"MultiDD.h"
+
+1307401702 source:c:\programming\projects\dxgl\dxgltest\dxguid.cpp
+	<windows.h>
+	<ddraw.h>
+	"../ddraw/include/d3d.h"
+
+1306449962 c:\programming\projects\dxgl\ddraw\include\d3d.h
+	<stdlib.h>
+	<objbase.h>
+	"d3dtypes.h"
+	"d3dcaps.h"
+
+1306457720 c:\programming\projects\dxgl\ddraw\include\d3dtypes.h
+	<windows.h>
+	<float.h>
+	<ddraw.h>
+	<d3dvec.inl>
+
+1306457656 c:\programming\projects\dxgl\ddraw\include\d3dcaps.h
+	<ddraw.h>
 

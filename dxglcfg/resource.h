@@ -46,4 +46,4 @@
 #define IDC_AUDIOGLOBAL                         1052
 #define IDC_INPUTGLOBAL                         1053
 #define IDC_INPUTCFG                            1054
-#define IDC_LOWRES                              1055
+#define IDC_EXTRAMODES                          1055

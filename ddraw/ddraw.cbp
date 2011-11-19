@@ -11,7 +11,6 @@
 				<Option object_output="obj\Debug\" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-Wall" />
@@ -19,20 +18,12 @@
 					<Add option="-DBUILD_DLL" />
 					<Add option="-DDDRAW_EXPORTS" />
 				</Compiler>
-				<Linker>
-					<Add option="-Wl,--add-stdcall-alias --def=test.def" />
-					<Add library="user32" />
-					<Add library="..\cfgmgr\libcfgmgr.a" />
-					<Add library="opengl32" />
-					<Add library="gdi32" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="..\bin\Release\ddraw" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Release\" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-O2" />
@@ -42,15 +33,16 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add option="-Wl,--add-stdcall-alias --def=test.def" />
-					<Add library="user32" />
-					<Add library="..\cfgmgr\libcfgmgr.a" />
-					<Add library="opengl32" />
-					<Add library="gdi32" />
 				</Linker>
 			</Target>
 		</Build>
-		<Unit filename="ReadMe.txt" />
+		<Linker>
+			<Add library=".\ddraw.def" />
+			<Add library="..\cfgmgr\libcfgmgr.a" />
+			<Add library="user32" />
+			<Add library="gdi32" />
+			<Add library="opengl32" />
+		</Linker>
 		<Unit filename="common.h" />
 		<Unit filename="ddraw.cpp" />
 		<Unit filename="ddraw.def" />

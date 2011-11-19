@@ -40,17 +40,17 @@ What doesn't work:
 == Roadmap ==
 These are goals to be set for future releases.
 
-- Version 0.0.4 Pre-Alpha
-* Add support for DirectDraw versions 2 to 7
-* Sort video modes (optional, set in dxglcfg)
-* Support uncommon color depths (optional, set in dxglcfg)
-* Support low resolution modes (optional, set in dxglcfg)
-* Fix GCC build
-
 - Version 0.0.5 Pre-Alpha
 * Fully implement scaling and filtering options
-* Add more test patterns to dxgltest (increase back buffer count to see them)
+* Add more test modes to dxgltest
 * Support surface access via Windows GDI
+* Finish fixing Code::Blocks build
+
+- Version 0.0.6 Pre-Alpha
+* Fix distortion on non-multiple-of-8 width physical modes
+* Improve surface locking and unlocking
+* Start making DirectDraw programs run
+* Start an AppDB for compatible programs
 
 == Installation ==
 

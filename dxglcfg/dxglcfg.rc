@@ -69,7 +69,7 @@ FONT 8, "Ms Shell Dlg 2"
     AUTOCHECKBOX    "Always cache surfaces to system memory", IDC_SYSMEMCACHE, 196, 173, 149, 10
     AUTOCHECKBOX    "Adjust Primary resolution", IDC_HIGHRES, 299, 28, 96, 8
     AUTOCHECKBOX    "Support All Color Depths", IDC_UNCOMMONCOLOR, 299, 55, 94, 8
-    AUTOCHECKBOX    "Add Low Resolution Modes", IDC_LOWRES, 299, 42, 102, 8
+    AUTOCHECKBOX    "Add Extra Display Modes", IDC_EXTRAMODES, 299, 42, 102, 8
     LTEXT           "Sort video modes", IDC_STATIC, 196, 39, 56, 8, SS_LEFT
     COMBOBOX        IDC_SORTMODES, 196, 49, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
 }
@@ -90,6 +90,38 @@ IDI_DXGLSM         ICON           "..\\common\\dxglsm.ico"
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_STAR           ICON           "..\\common\\star.ico"
 
+
+//
+// Version Information resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+1 VERSIONINFO
+    FILEVERSION     0,0,4,0
+    PRODUCTVERSION  0,0,4,0
+    FILEOS          VOS__WINDOWS32
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
+    FILEFLAGSMASK   0x00000000
+    FILEFLAGS       0x00000000
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "08000352"
+        {
+            VALUE "FileDescription", "DXGL Configuration Program"
+            VALUE "FileVersion", "0.0.4.0"
+            VALUE "InternalName", "DXGL"
+            VALUE "LegalCopyright", "Copyright © 2011 William Feely"
+            VALUE "OriginalFilename", "dxglcfg.exe"
+            VALUE "ProductName", "DXGL"
+            VALUE "ProductVersion", "0.0.4.0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0800, 0x0352
+    }
+}
 
 
 //

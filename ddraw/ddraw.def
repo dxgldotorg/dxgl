@@ -16,28 +16,27 @@
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 LIBRARY "ddraw"
-; ordinals match Windows 7 RTM ddraw.dll
 EXPORTS
-	AcquireDDThreadLock @1
-	CompleteCreateSystemSurface @2
-	D3DParseUnknownCommand @3
-	DDGetAttachedSurfaceLcl @4
-	DDInternalLock @5
-	DDInternalUnlock @6
-	DSoundHelp @7
-	DirectDrawCreate @8
-	DirectDrawCreateClipper @9
-	DirectDrawCreateEx @10
-	DirectDrawEnumerateA @11
-	DirectDrawEnumerateExA @12
-	DirectDrawEnumerateExW @13
-	DirectDrawEnumerateW @14
-	DllCanUnloadNow @15 PRIVATE
-	DllGetClassObject @16 PRIVATE
-	GetDDSurfaceLocal @17
-	GetOLEThunkData @18
-	GetSurfaceFromDC=GlobalGetSurfaceFromDC @19
-	RegisterSpecialCase @20
-	ReleaseDDThreadLock @21
-	SetAppCompatData @22
+	AcquireDDThreadLock
+	CompleteCreateSystemSurface
+	D3DParseUnknownCommand
+	DDGetAttachedSurfaceLcl
+	DDInternalLock
+	DDInternalUnlock
+	DSoundHelp
+	DirectDrawCreate
+	DirectDrawCreateClipper
+	DirectDrawCreateEx
+	DirectDrawEnumerateA
+	DirectDrawEnumerateExA
+	DirectDrawEnumerateExW
+	DirectDrawEnumerateW
+	DllCanUnloadNow PRIVATE
+	DllGetClassObject PRIVATE
+	GetDDSurfaceLocal
+	GetOLEThunkData
+	GetSurfaceFromDC=GlobalGetSurfaceFromDC
+	RegisterSpecialCase
+	ReleaseDDThreadLock
+	SetAppCompatData
 	IsDXGLDDraw

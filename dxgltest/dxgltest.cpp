@@ -18,6 +18,11 @@
 #include "common.h"
 #include "dxgltest.h"
 #include "tests.h"
+#ifdef _UNICODE
+#define _ttof _wtof
+#else
+#define _ttof atof
+#endif
 
 HINSTANCE hinstance;
 
@@ -51,6 +56,14 @@ HRESULT WINAPI EnumModesCallback(LPDDSURFACEDESC ddsd, void *list)
 {
 	HWND hWnd = (HWND)list;
 	tstring resolution;
+	int bpp;
+	if(ddsd->ddpfPixelFormat.dwRGBBitCount == 16)
+	{
+		if((ddsd->ddpfPixelFormat.dwRBitMask | ddsd->ddpfPixelFormat.dwGBitMask |
+			ddsd->ddpfPixelFormat.dwBBitMask) == 0x7FFF) bpp = 15;
+		else bpp = 16;
+	}
+	else bpp = ddsd->ddpfPixelFormat.dwRGBBitCount;
 	TCHAR number[16];
 	_itot(ddsd->dwWidth,number,10);
 	resolution.append(number);
@@ -58,7 +71,7 @@ HRESULT WINAPI EnumModesCallback(LPDDSURFACEDESC ddsd, void *list)
 	_itot(ddsd->dwHeight,number,10);
 	resolution.append(number);
 	resolution.append(_T("x"));
-	_itot(ddsd->ddpfPixelFormat.dwRGBBitCount,number,10);
+	_itot(bpp,number,10);
 	resolution.append(number);
 	resolution.append(_T(","));
 	_itot(ddsd->dwRefreshRate,number,10);
@@ -145,7 +158,7 @@ INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		switch(LOWORD(wParam))
 		{
 		case IDC_DXDIAG:
-			_tspawnlp(_P_NOWAIT,_T("dxdiag.exe"),_T("dxdiag.exe"),NULL);
+			spawnlp(_P_NOWAIT,"dxdiag.exe","dxdiag.exe",NULL);
 			break;
 		default:
 			break;
@@ -211,7 +224,10 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			SendDlgItemMessage(hWnd,IDC_TESTLIST,LB_ADDSTRING,0,(LPARAM)Tests2D[i].name);
 		error = DirectDrawCreate(NULL,&lpdd,NULL);
 		if(error == DD_OK)
+		{
 			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback);
+			lpdd->Release();
+		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
 		break;
 	case WM_COMMAND:
@@ -253,7 +269,7 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					i = _tcslen(tmpstring);
 					f = _ttof(tmpstring);
 					if(errno != ERANGE) framerate2d = f;
-					if(framerate2d < 0.01) framerate2d = 0.01;
+					if(framerate2d < 0.5) framerate2d = 0.5;
 					if(framerate2d > 99.99) framerate2d = 99.99;
 					_stprintf(framerate2dstring,_T("%.2f"),framerate2d);
 					SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_SETTEXT,0,(LPARAM)framerate2dstring);
@@ -458,10 +474,29 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
     return TRUE;
 }
 
+#ifdef __GNUC__
+#ifndef INITCOMMONCONTROLSEX
+typedef struct tagINITCOMMONCONTROLSEX {
+  DWORD dwSize;
+  DWORD dwICC;
+} INITCOMMONCONTROLSEX, *LPINITCOMMONCONTROLSEX;
+#endif
+#endif
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	INITCOMMONCONTROLSEX icc;
+	icc.dwSize = sizeof(icc);
+	icc.dwICC = ICC_WIN95_CLASSES;
+	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
+	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) =
+		(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
+	if(iccex) iccex(&icc);
+	else InitCommonControls();
     hinstance = hInstance;
     DialogBox(hinstance,MAKEINTRESOURCE(IDD_DXGLTEST),NULL,DXGLTestCallback);
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
     return 0;
 }
