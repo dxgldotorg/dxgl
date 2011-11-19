@@ -68,6 +68,9 @@
     <ClInclude Include="include\GL\wglext.h">
       <Filter>Header Files\include\GL</Filter>
     </ClInclude>
+    <ClInclude Include="scalers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -98,6 +101,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dxguid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scalers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

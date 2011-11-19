@@ -449,6 +449,7 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
         tabwnd[1] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,Test2DCallback);
 		SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETITEMRECT,0,(LPARAM)&tabrect);
 		SetWindowPos(tabwnd[0],NULL,tabrect.left,tabrect.bottom+3,0,0,SWP_SHOWWINDOW|SWP_NOSIZE);
+		ShowWindow(tabwnd[1],SWP_HIDEWINDOW);
 		tabopen = 0;
 		ShowWindow(hWnd,SW_SHOWNORMAL);
         return TRUE;

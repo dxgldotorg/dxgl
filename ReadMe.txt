@@ -7,7 +7,8 @@ DXGL is currently in a pre-alpha stage and very little works at this point.
 == System Requirements ==
 
 * Windows operating system (currently XP or above)
-* OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures
+* OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures.
+  Geforce FX series graphics cards are NOT supported because non-power-of-two textures are emulated in software.
 
 == Build Requirements ==
 * Visual Studio 2010 or Visual C++ 2010 Express
@@ -24,27 +25,30 @@ http://www.microsoft.com/downloads/en/details.aspx?FamilyID=689655B4-C55D-4F9B-9
 
 == Progress ==
 What works:
-* DirectDraw object creation and destruction
+* DirectDraw object creation and destruction (versions 1 to 7)
 * Display mode enumeration and switching (with emulated mode switching)
 * Fullscreen and windowed modes.
 * Basic Blt() functionality
+* 8-bit color
 
 What partially works:
-* SetCooperativeLevel (not always on top for debugging purposes.)
-* 8-bit color
+* SetCooperativeLevel (destroys the GL context if switching between windowed and fullscreen modes)
 
 What doesn't work:
 * Most functions are stubbed out and return an error
 * No 3D graphics support
+* Blt() may cause crashing
 
 == Roadmap ==
 These are goals to be set for future releases.
+Please see https://www.williamfeely.info/wiki/DXGL for updated information.
 
-- Version 0.0.6 Pre-Alpha
-* Fix distortion on non-multiple-of-8 width physical modes
-* Improve surface locking and unlocking
-* Start making DirectDraw programs run
-* Start an AppDB for compatible programs
+- Version 0.0.7 Pre-Alpha
+* Fix blitting in fullscreen.
+
+- Version 0.1.0 Alpha
+* Implement per-application settings
+* Create installer
 
 == Installation ==
 
@@ -58,7 +62,16 @@ SVN readonly access is available at:
 https://www.williamfeely.info/svn/dxgl
 
 There is a Mediawiki-based SVN log at:
-http://www.williamfeely.info/wiki/Special:Code/DXGL
+https://www.williamfeely.info/wiki/Special:Code/DXGL
+
+== AppDB ==
+
+An AppDB system (similar to that on winehq.org) is now available at:
+
+https://www.williamfeely.info/appdb/
+
+This requires a user account separate from the other services.
+
 
 == Bug reports ==
 

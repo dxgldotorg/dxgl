@@ -172,6 +172,7 @@
     <ClInclude Include="include\GL\glext.h" />
     <ClInclude Include="include\GL\wglext.h" />
     <ClInclude Include="include\winedef.h" />
+    <ClInclude Include="scalers.h" />
     <ClInclude Include="shaders.h" />
   </ItemGroup>
   <ItemGroup>
@@ -207,6 +208,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="scalers.cpp" />
     <ClCompile Include="shaders.cpp" />
   </ItemGroup>
   <ItemGroup>

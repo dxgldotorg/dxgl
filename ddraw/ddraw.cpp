@@ -98,6 +98,7 @@ HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *l
 }
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
+	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
 	if(iid != IID_IDirectDraw7) return DDERR_UNSUPPORTED;

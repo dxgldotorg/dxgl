@@ -26,6 +26,7 @@
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
 
+
 void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 {
 	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
@@ -401,6 +402,116 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 	free(modes);
 	return DD_OK;
 }
+HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
+{
+	bool match;
+	DWORD modenum = 0;
+	DWORD modemax = 128;
+	DEVMODE mode;
+	ZeroMemory(&mode,sizeof(DEVMODE));
+	mode.dmSize = sizeof(DEVMODE);
+	DEVMODE *modes = (DEVMODE*)malloc(128*sizeof(DEVMODE));
+	DEVMODE *tmp;
+	if(!modes) return DDERR_OUTOFMEMORY;
+	DDSURFACEDESC2 ddmode;
+	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC));
+	ddmode.dwSize = sizeof(DDSURFACEDESC);
+	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
+	while(EnumDisplaySettings(NULL,modenum++,&mode))
+	{
+		modes[modenum-1] = mode;
+		if(modenum >= modemax)
+		{
+			modemax += 128;
+			tmp = (DEVMODE*)realloc(modes,modemax*sizeof(DEVMODE));
+			if(tmp == NULL)
+			{
+				free(modes);
+				return DDERR_OUTOFMEMORY;
+			}
+			modes = tmp;
+		}
+	}
+	DiscardDuplicateModes(&modes,&modenum);
+	if(dxglcfg.AllColorDepths) AddExtraColorModes(&modes,&modenum);
+	if(dxglcfg.ExtraModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);
+	modenum--;
+	switch(dxglcfg.SortModes)
+	{
+	case 0:
+	default:
+		break;
+	case 1:
+		qsort(modes,modenum,sizeof(DEVMODE),(int(*)(const void*, const void*))SortDepth);
+		break;
+	case 2:
+		qsort(modes,modenum,sizeof(DEVMODE),(int(*)(const void*, const void*))SortRes);
+		break;
+	}
+	for(DWORD i = 0; i < modenum; i++)
+	{
+		match = true;
+		if(dwFlags & DDEDM_REFRESHRATES) ddmode.dwRefreshRate = modes[i].dmDisplayFrequency;
+		else
+		{
+			ddmode.dwRefreshRate = 0;
+			for(DWORD x = 0; x < i; x++)
+				if((modes[x].dmBitsPerPel == modes[i].dmBitsPerPel) &&
+					(modes[x].dmPelsWidth == modes[i].dmPelsWidth) &&
+					(modes[x].dmPelsHeight == modes[i].dmPelsHeight)) match = false;
+		}
+		if(lpDDSurfaceDesc)
+		{
+			if(lpDDSurfaceDesc->dwFlags & DDSD_WIDTH)
+				if(lpDDSurfaceDesc->dwWidth != modes[i].dmPelsWidth) match = false;
+			if(lpDDSurfaceDesc->dwFlags & DDSD_HEIGHT)
+				if(lpDDSurfaceDesc->dwHeight != modes[i].dmPelsHeight) match = false;
+			if(lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT)
+				if(lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount != modes[i].dmBitsPerPel) match = false;
+			if(lpDDSurfaceDesc->dwFlags & DDSD_REFRESHRATE)
+				if(lpDDSurfaceDesc->dwRefreshRate != modes[i].dmDisplayFrequency) match = false;
+		}
+		if(match)
+		{
+			if(modes[i].dmBitsPerPel == 8) ddmode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
+			else if(modes[i].dmBitsPerPel == 4) ddmode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED4;
+			else ddmode.ddpfPixelFormat.dwFlags = DDPF_RGB;
+			if(modes[i].dmBitsPerPel == 8)
+			{
+				ddmode.ddpfPixelFormat.dwRBitMask = 0;
+				ddmode.ddpfPixelFormat.dwGBitMask = 0;
+				ddmode.ddpfPixelFormat.dwBBitMask = 0;
+			}
+			else if(modes[i].dmBitsPerPel == 15)
+			{
+				ddmode.ddpfPixelFormat.dwRBitMask = 0x7C00;
+				ddmode.ddpfPixelFormat.dwGBitMask = 0x3E0;
+				ddmode.ddpfPixelFormat.dwRBitMask = 0x1F;
+			}
+			else if(modes[i].dmBitsPerPel == 16)
+			{
+				ddmode.ddpfPixelFormat.dwRBitMask = 0xF800;
+				ddmode.ddpfPixelFormat.dwGBitMask = 0x7E0;
+				ddmode.ddpfPixelFormat.dwBBitMask = 0x1F;
+			}
+			else
+			{
+				ddmode.ddpfPixelFormat.dwRBitMask = 0xFF0000;
+				ddmode.ddpfPixelFormat.dwRBitMask = 0xFF00;
+				ddmode.ddpfPixelFormat.dwRBitMask = 0xFF;
+			}
+			ddmode.ddpfPixelFormat.dwRGBBitCount = modes[i].dmBitsPerPel;
+			ddmode.dwWidth = modes[i].dmPelsWidth;
+			ddmode.dwHeight = modes[i].dmPelsHeight;
+			if(modes[i].dmBitsPerPel == 15) ddmode.lPitch = modes[i].dmPelsWidth * 2;
+			else if(modes[i].dmBitsPerPel == 4) ddmode.lPitch = modes[i].dmPelsWidth / 2;
+			else ddmode.lPitch = modes[i].dmPelsWidth * (modes[i].dmBitsPerPel / 8);
+			if(lpEnumModesCallback(&ddmode,lpContext) == DDENUMRET_CANCEL) return DD_OK;
+		}
+	}
+	free(modes);
+	return DD_OK;
+}
 
 // DDRAW7/common routines
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter)
@@ -414,6 +525,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknow
 	fpusetup = false;
 	threadsafe = false;
 	nowindowchanges = false;
+	ZeroMemory(&oldmode,sizeof(DEVMODE));
 	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
 	if(!surfaces)
 	{
@@ -602,8 +714,7 @@ HRESULT WINAPI glDirectDraw7::DuplicateSurface(LPDIRECTDRAWSURFACE7 lpDDSurface,
 }
 HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
-	FIXME("IDirectDraw::EnumDisplayModes: stub\n");
-	return DDERR_GENERIC;
+	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc2,lpContext,lpEnumModesCallback);
 }
 HRESULT WINAPI glDirectDraw7::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpEnumSurfacesCallback)
 {
@@ -612,25 +723,89 @@ HRESULT WINAPI glDirectDraw7::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDS
 }
 HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 {
-	FIXME("IDirectDraw::FlipToGDISurface: stub\n");
-	return DDERR_GENERIC;
+	HRESULT error = DD_OK;
+	if(primary)
+	{
+		if(primary->flipcount)
+		{
+			while(primary->flipcount != 0)
+			{
+				error = primary->Flip(NULL,DDFLIP_WAIT);
+				if(error != DD_OK) break;
+			}
+		}
+		return(error);
+	}
+	else return DDERR_NOTFOUND;
 }
 HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
-	FIXME("IDirectDraw::GetCaps: Fill in as implemented.\n");
+	//TODO:  Fill in as implemented.
 	DDCAPS_DX7 ddCaps;
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
-	ddCaps.dwSize = sizeof(DDCAPS_DX7);
-	ddCaps.dwCaps = 0; // FIXME:  Fill in capabilities
-	ddCaps.dwCaps2 = 0;
-	memcpy(lpDDDriverCaps,&ddCaps,sizeof(DDCAPS_DX7));
-	memcpy(lpDDHELCaps,&ddCaps,sizeof(DDCAPS_DX7));
+	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
+	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
+	else return DDERR_INVALIDPARAMS;
+	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
+		DDCAPS_GDI | DDCAPS_PALETTE;
+	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES;
+	ddCaps.dwFXCaps = DDFXCAPS_BLTSHRINKX | DDFXCAPS_BLTSHRINKY |
+		DDFXCAPS_BLTSTRETCHX | DDFXCAPS_BLTSTRETCHY;
+	ddCaps.dwPalCaps = DDPCAPS_8BIT | DDPCAPS_PRIMARYSURFACE;
+	ddCaps.ddsOldCaps.dwCaps = ddCaps.ddsCaps.dwCaps =
+		DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_FRONTBUFFER |
+		DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE | DDSCAPS_SYSTEMMEMORY |
+		DDSCAPS_VIDEOMEMORY;
+	if(lpDDDriverCaps) memcpy(lpDDDriverCaps,&ddCaps,lpDDDriverCaps->dwSize);
+	if(lpDDHELCaps) memcpy(lpDDHELCaps,&ddCaps,lpDDHELCaps->dwSize);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
-	FIXME("IDirectDraw::GetDisplayMode: stub\n");
-	return DDERR_GENERIC;
+	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
+	DDSURFACEDESC2 ddsdMode;
+	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
+	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
+	DEVMODE currmode;
+	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
+	if(currmode.dmBitsPerPel == 8) ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
+	else if(currmode.dmBitsPerPel == 4) ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED4;
+	else ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB;
+	if(currmode.dmBitsPerPel == 8)
+	{
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0;
+		ddsdMode.ddpfPixelFormat.dwGBitMask = 0;
+		ddsdMode.ddpfPixelFormat.dwBBitMask = 0;
+	}
+	else if(currmode.dmBitsPerPel == 15)
+	{
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0x7C00;
+		ddsdMode.ddpfPixelFormat.dwGBitMask = 0x3E0;
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0x1F;
+	}
+	else if(currmode.dmBitsPerPel == 16)
+	{
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0xF800;
+		ddsdMode.ddpfPixelFormat.dwGBitMask = 0x7E0;
+		ddsdMode.ddpfPixelFormat.dwBBitMask = 0x1F;
+	}
+	else
+	{
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF0000;
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF00;
+		ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF;
+	}
+	ddsdMode.ddpfPixelFormat.dwRGBBitCount = currmode.dmBitsPerPel;
+	ddsdMode.dwWidth = currmode.dmPelsWidth;
+	ddsdMode.dwHeight = currmode.dmPelsHeight;
+	if(currmode.dmBitsPerPel == 15) ddsdMode.lPitch = currmode.dmPelsWidth * 2;
+		else if(currmode.dmBitsPerPel == 4) ddsdMode.lPitch = currmode.dmPelsWidth / 2;
+		else ddsdMode.lPitch = currmode.dmPelsWidth * (currmode.dmBitsPerPel / 8);
+	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) return DDERR_INVALIDPARAMS;
+	if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
+		lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
+	memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
@@ -668,8 +843,11 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 }
 HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 {
-	FIXME("IDirectDraw::RestoreDisplayMode: stub\n");
-	return DDERR_GENERIC;
+	if(oldmode.dmSize != 0)
+	{
+		ChangeDisplaySettingsEx(NULL,&oldmode,NULL,0,NULL);
+	}
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
@@ -807,6 +985,11 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	float aspect,xmul,ymul;
 	LONG error;
 	DWORD flags;
+	if(!oldmode.dmSize)
+	{
+		oldmode.dmSize = sizeof(DEVMODE);
+		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&oldmode);
+	}
 	currmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	switch(dxglcfg.scaler)
@@ -1266,10 +1449,9 @@ HRESULT WINAPI glDirectDraw1::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 {
 	return glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps);
 }
-HRESULT WINAPI glDirectDraw1::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc2)
+HRESULT WINAPI glDirectDraw1::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	FIXME("glDirectDraw1::GetDisplayMode: stub\n");
-	return DDERR_GENERIC;
+	return glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc);
 }
 HRESULT WINAPI glDirectDraw1::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
@@ -1387,10 +1569,9 @@ HRESULT WINAPI glDirectDraw2::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 {
 	return glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps);
 }
-HRESULT WINAPI glDirectDraw2::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc2)
+HRESULT WINAPI glDirectDraw2::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	FIXME("glDirectDraw2::GetDisplayMode: stub\n");
-	return DDERR_GENERIC;
+	return glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc);
 }
 HRESULT WINAPI glDirectDraw2::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
@@ -1496,8 +1677,7 @@ HRESULT WINAPI glDirectDraw4::DuplicateSurface(LPDIRECTDRAWSURFACE4 lpDDSurface,
 }
 HRESULT WINAPI glDirectDraw4::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
-	FIXME("glDirectDraw4::EnumDisplayModes: stub\n");
-	return DDERR_GENERIC;
+	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback);
 }
 HRESULT WINAPI glDirectDraw4::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpEnumSurfacesCallback)
 {
@@ -1514,8 +1694,7 @@ HRESULT WINAPI glDirectDraw4::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 }
 HRESULT WINAPI glDirectDraw4::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
-	FIXME("glDirectDraw4::GetDisplayMode: stub\n");
-	return DDERR_GENERIC;
+	return glDD7->GetDisplayMode(lpDDSurfaceDesc2);
 }
 HRESULT WINAPI glDirectDraw4::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {

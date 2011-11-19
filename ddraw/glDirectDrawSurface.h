@@ -89,15 +89,22 @@ public:
 	}
 	void SetTexture(GLuint newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
-	void RenderScreen(GLuint texture);
+	void RenderScreen(GLuint texture, glDirectDrawSurface7 *surface);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	glDirectDrawSurface1 *dds1;
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
 	glDirectDrawSurface4 *dds4;
-private:
+	int flipcount;
+	GLenum texformat;
+	GLenum texformat2;
 	DWORD fakex,fakey;
+	DWORD dirty;
+	// dirty bits:
+	// 1 - Surface was locked
+	// 2 - Texture was written to by ddraw
+private:
 	ULONG refcount;
 	int locked;
 	HDC hdc;
@@ -109,11 +116,12 @@ private:
 	GLuint texture,paltex;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	char *buffer;
+	char *bigbuffer;
+	char *gdibuffer;
 	glDirectDrawSurface7 *backbuffer;
 	glDirectDrawPalette *palette;
 	glDirectDrawClipper *clipper;
-	GLenum texformat;
-	GLenum texformat2;
+	int pagelocked;
 };
 
 // Legacy DDRAW Interfaces

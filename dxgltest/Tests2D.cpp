@@ -114,7 +114,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	DDSURFACEDESC2 ddsd;
 	BOOL done = false;
 	::testnum = testnum;
-	randnum = time(NULL);
+	randnum = (unsigned int)time(NULL);
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 	if(apiver > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -409,7 +409,7 @@ void RunTestTimed(int test)
 
 void RunTestLooped(int test)
 {
-	randnum /= rand(); // Improves randomness of "snow" patterns at certain resolutions
+	randnum += rand(); // Improves randomness of "snow" patterns at certain resolutions
 	HDC hdc;
 	unsigned int i;
 	POINT p;
