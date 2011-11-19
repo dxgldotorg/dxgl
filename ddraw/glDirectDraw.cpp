@@ -56,7 +56,7 @@ void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 
 bool ScanModeList(DEVMODE *array, DEVMODE comp, DWORD count)
 {
-	for(int i = 0; i < count; i++)
+	for(DWORD i = 0; i < count; i++)
 	{
 		if(!memcmp(&array[i],&comp,sizeof(DEVMODE))) return true;
 	}
@@ -98,7 +98,7 @@ const int ExtraModes[30] [3] = {
 
 bool ScanColorMode(DEVMODE *array, DWORD count, int bpp)
 {
-	for(int i = 0; i < count; i++)
+	for(DWORD i = 0; i < count; i++)
 	{
 		if(array[i].dmBitsPerPel == bpp) return true;
 	}
@@ -107,7 +107,7 @@ bool ScanColorMode(DEVMODE *array, DWORD count, int bpp)
 
 bool ScanModeListNoRefresh(DEVMODE *array, DEVMODE comp, DWORD count)
 {
-	for(int i = 0; i < count; i++)
+	for(DWORD i = 0; i < count; i++)
 	{
 		if((array[i].dmBitsPerPel == comp.dmBitsPerPel) &&
 			(array[i].dmPelsWidth == comp.dmPelsWidth) &&
@@ -208,7 +208,7 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
 	DEVMODE compmode;
 	DWORD count2 = 0;
-	for(int i = 0; i < *count; i++)
+	for(DWORD i = 0; i < *count; i++)
 	{
 		switch((*array)[i].dmBitsPerPel)
 		{
@@ -645,9 +645,9 @@ HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDS
 HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
 	FIXME("IDirectDraw::GetMonitorFrequency: support multi-monitor\n");
-	DEVMODEA devmode;
-	devmode.dmSize = sizeof(DEVMODEA);
-	EnumDisplaySettingsA(NULL,ENUM_CURRENT_SETTINGS,&devmode);
+	DEVMODE devmode;
+	devmode.dmSize = sizeof(DEVMODE);
+	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
 	*lpdwFrequency = devmode.dmDisplayFrequency;
 	return DD_OK;
 }
@@ -716,8 +716,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETDEVICEWINDOW unsupported\n");
 	if(dwFlags & DDSCL_SETFOCUSWINDOW)
 		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETFOCUSWINDOW unsupported\n");
-	DEVMODEA devmode;
-	EnumDisplaySettingsA(NULL,ENUM_CURRENT_SETTINGS,&devmode);
+	DEVMODE devmode;
+	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
 	int x,y,bpp;
 	if(fullscreen)
 	{
@@ -738,20 +738,82 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	if(InitGL(x,y,bpp,fullscreen,hWnd)) return DD_OK;
 	return DDERR_GENERIC;
 }
+
+void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
+{
+	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	DWORD newcount = 0;
+	bool match;
+	for(DWORD x = 0; x < (*count); x++)
+	{
+		match = false;
+		memcpy(&newarray[newcount],&(*array)[x],sizeof(DEVMODE));
+		for(int y = newcount; y > 0; y--)
+		{
+			if((*array)[x].dmBitsPerPel != comp.dmBitsPerPel ||
+				(*array)[x].dmPelsWidth < comp.dmPelsWidth ||
+				(*array)[x].dmPelsHeight < comp.dmPelsHeight)
+			{
+				match = true;
+				break;
+			}
+		}
+		if(!match) newcount++;
+	}
+	realloc(newarray,sizeof(DEVMODE)*newcount);
+	free(*array);
+	*array = newarray;
+	*count = newcount;
+}
+
+
+DEVMODE FindClosestMode(const DEVMODE in)
+{
+	DEVMODE newmode;
+	DEVMODE *candidates = (DEVMODE *)malloc(128*sizeof(DEVMODE));
+	DEVMODE mode;
+	DEVMODE *tmp = NULL;
+	DWORD modenum = 0;
+	DWORD modemax = 128;
+	while(EnumDisplaySettings(NULL,modenum++,&mode))
+	{
+		candidates[modenum-1] = mode;
+		if(modenum >= modemax)
+		{
+			modemax += 128;
+			tmp = (DEVMODE*)realloc(candidates,modemax*sizeof(DEVMODE));
+			if(tmp == NULL)
+			{
+				free(candidates);
+				return in;
+			}
+			candidates = tmp;
+		}
+	}
+	DiscardDuplicateModes(&candidates,&modenum);
+	DiscardUndersizedModes(&candidates,&modenum,in);
+	qsort(candidates,modenum,sizeof(DEVMODE),(int(*)(const void*, const void*))SortRes);
+	newmode = candidates[0];
+	newmode.dmFields = DM_BITSPERPEL| DM_PELSWIDTH | DM_PELSHEIGHT;
+	free(candidates);
+	return newmode;
+}
+
 HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
-	DEVMODEA newmode;
-	DEVMODEA currmode;
+	DEVMODE newmode,newmode2;
+	DEVMODE currmode;
 	float aspect,xmul,ymul;
 	LONG error;
 	DWORD flags;
-	currmode.dmSize = sizeof(DEVMODEA);
-	EnumDisplaySettingsA(NULL,ENUM_CURRENT_SETTINGS,&currmode);
+	currmode.dmSize = sizeof(DEVMODE);
+	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	switch(dxglcfg.scaler)
 	{
 	case 0: // No scaling, switch mode
-		newmode.dmSize = sizeof(DEVMODEA);
+	default:
+		newmode.dmSize = sizeof(DEVMODE);
 		newmode.dmDriverExtra = 0;
 		newmode.dmPelsWidth = dwWidth;
 		newmode.dmPelsHeight = dwHeight;
@@ -763,7 +825,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 		flags = 0;
 		if(fullscreen) flags |= CDS_FULLSCREEN;
-		error = ChangeDisplaySettingsExA(NULL,&newmode,NULL,flags,NULL);
+		error = ChangeDisplaySettingsEx(NULL,&newmode,NULL,flags,NULL);
 		switch(error)
 		{
 		case DISP_CHANGE_SUCCESSFUL:
@@ -831,6 +893,92 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		DeleteGL();
 		InitGL(screenx,screeny,screenbpp,true,hWnd);
 		return DD_OK;
+		break;
+	case 3: // Center image
+		primaryx = internalx = dwWidth;
+		screenx = currmode.dmPelsWidth;
+		primaryy = internaly = dwHeight;
+		screeny = currmode.dmPelsHeight;
+		primarybpp = dwBPP;
+		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+		else internalbpp = screenbpp = currmode.dmBitsPerPel;
+		DeleteGL();
+		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		break;
+	case 4: // Switch then stretch
+	case 5: // Switch then scale
+	case 6: // Switch then center
+		newmode.dmSize = sizeof(DEVMODE);
+		newmode.dmDriverExtra = 0;
+		newmode.dmPelsWidth = dwWidth;
+		newmode.dmPelsHeight = dwHeight;
+		if(dxglcfg.colormode)
+			newmode.dmBitsPerPel = dwBPP;
+		else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
+		newmode.dmDisplayFrequency = dwRefreshRate;
+		if(dwRefreshRate) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+		else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+		flags = 0;
+		if(fullscreen) flags |= CDS_FULLSCREEN;
+		error = ChangeDisplaySettingsEx(NULL,&newmode,NULL,flags,NULL);
+		if(error != DISP_CHANGE_SUCCESSFUL)
+		{
+			newmode2 = FindClosestMode(newmode);
+			error = ChangeDisplaySettingsEx(NULL,&newmode2,NULL,flags,NULL);
+		}
+		else newmode2 = newmode;
+		switch(dxglcfg.scaler)
+		{
+		case 4:
+			primaryx = dwWidth;
+			internalx = screenx = newmode2.dmPelsWidth;
+			primaryy = dwHeight;
+			internaly = screeny = newmode2.dmPelsHeight;
+			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			primarybpp = dwBPP;
+			DeleteGL();
+			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			return DD_OK;
+			break;
+		case 5:
+			primaryx = dwWidth;
+			screenx = newmode2.dmPelsWidth;
+			primaryy = dwHeight;
+			screeny = newmode2.dmPelsHeight;
+			aspect = (float)dwWidth / (float)dwHeight;
+			xmul = (float)screenx / (float)dwWidth;
+			ymul = (float)screeny / (float)dwHeight;
+			if((float)dwWidth*(float)ymul > (float)screenx)
+			{
+				internalx = (DWORD)((float)dwWidth * (float)xmul);
+				internaly = (DWORD)((float)dwHeight * (float)xmul);
+			}
+			else
+			{
+				internalx = (DWORD)((float)dwWidth * (float)ymul);
+				internaly = (DWORD)((float)dwHeight * (float)ymul);
+			}
+			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			primarybpp = dwBPP;
+			DeleteGL();
+			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			return DD_OK;
+			break;
+		case 6:
+		default:
+			primaryx = internalx = dwWidth;
+			screenx = newmode2.dmPelsWidth;
+			primaryy = internaly = dwHeight;
+			screeny = newmode2.dmPelsHeight;
+			primarybpp = dwBPP;
+			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			DeleteGL();
+			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			break;
+		}
 		break;
 	}
 	return DDERR_GENERIC;
@@ -983,11 +1131,11 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	glMatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
 	const GLubyte *glver = glGetString(GL_VERSION);
-	gl_caps.Version = atof((char*)glver);
+	gl_caps.Version = (GLfloat)atof((char*)glver);
 	if(gl_caps.Version >= 2)
 	{
 		glver = glGetString(GL_SHADING_LANGUAGE_VERSION);
-		gl_caps.ShaderVer = atof((char*)glver);
+		gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
 	}
 	else gl_caps.ShaderVer = 0;
 	if(GetBPP() <= 8)

@@ -513,3 +513,41 @@ HRESULT MultiDirectDrawSurface::Blt(LPRECT lpDestRect, MultiDirectDrawSurface *l
 	}
 	return DDERR_GENERIC;
 }
+
+HRESULT MultiDirectDrawSurface::GetDC(HDC FAR *lphDC)
+{
+	switch(version)
+	{
+	case 1:
+		return dds1->GetDC(lphDC);
+	case 2:
+		return dds2->GetDC(lphDC);
+	case 3:
+		return dds3->GetDC(lphDC);
+	case 4:
+		return dds4->GetDC(lphDC);
+	case 7:
+		return dds7->GetDC(lphDC);
+	default:
+		return DDERR_GENERIC;
+	}
+}
+
+HRESULT MultiDirectDrawSurface::ReleaseDC(HDC hDC)
+{
+	switch(version)
+	{
+	case 1:
+		return dds1->ReleaseDC(hDC);
+	case 2:
+		return dds2->ReleaseDC(hDC);
+	case 3:
+		return dds3->ReleaseDC(hDC);
+	case 4:
+		return dds4->ReleaseDC(hDC);
+	case 7:
+		return dds7->ReleaseDC(hDC);
+	default:
+		return DDERR_GENERIC;
+	}
+}

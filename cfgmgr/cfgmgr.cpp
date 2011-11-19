@@ -67,10 +67,12 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, bool global)
 		if(error == ERROR_SUCCESS) cfg->SortModes = dwOut;
 		sizeout = 4;
 		error = RegQueryValueExW(hKey,L"AllColorDepths",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->AllColorDepths = dwOut;
+		if(error == ERROR_SUCCESS && dwOut) cfg->AllColorDepths = true;
+		else cfg->AllColorDepths = false;
 		sizeout = 4;
 		error = RegQueryValueExW(hKey,L"ExtraModes",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
-		if(error == ERROR_SUCCESS) cfg->ExtraModes = dwOut;
+		if(error == ERROR_SUCCESS && dwOut) cfg->ExtraModes = true;
+		else cfg->ExtraModes = false;
 		sizeout = 4;
 		error = RegQueryValueExW(hKey,L"VSync",NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
 		if(error == ERROR_SUCCESS) cfg->vsync = dwOut;

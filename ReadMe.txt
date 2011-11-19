@@ -40,12 +40,6 @@ What doesn't work:
 == Roadmap ==
 These are goals to be set for future releases.
 
-- Version 0.0.5 Pre-Alpha
-* Fully implement scaling and filtering options
-* Add more test modes to dxgltest
-* Support surface access via Windows GDI
-* Finish fixing Code::Blocks build
-
 - Version 0.0.6 Pre-Alpha
 * Fix distortion on non-multiple-of-8 width physical modes
 * Improve surface locking and unlocking
@@ -63,8 +57,8 @@ To test DXGL, run dxgltest.exe
 SVN readonly access is available at:
 https://www.williamfeely.info/svn/dxgl
 
-There is a web interface at:
-http://www.williamfeely.info/websvn/listing.php?repname=dxgl
+There is a Mediawiki-based SVN log at:
+http://www.williamfeely.info/wiki/Special:Code/DXGL
 
 == Bug reports ==
 

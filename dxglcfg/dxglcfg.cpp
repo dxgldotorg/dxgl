@@ -40,7 +40,8 @@ const char *extensions_string = NULL;
 void SaveChanges(HWND hWnd)
 {
 	globalcfg.scaler = SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_GETCURSEL,0,0);
-	globalcfg.colormode = SendDlgItemMessage(hWnd,IDC_COLOR,BM_GETCHECK,0,0);
+	if(SendDlgItemMessage(hWnd,IDC_COLOR,BM_GETCHECK,0,0)) globalcfg.colormode = true;
+	else globalcfg.colormode = false;
 	globalcfg.scalingfilter = SendDlgItemMessage(hWnd,IDC_SCALE,CB_GETCURSEL,0,0);
 	globalcfg.vsync = SendDlgItemMessage(hWnd,IDC_VSYNC,CB_GETCURSEL,0,0);
 	SendDlgItemMessageW(hWnd,IDC_SHADER,WM_GETTEXT,MAX_PATH+1,(LPARAM)globalcfg.shaderfile);
@@ -49,8 +50,10 @@ void SaveChanges(HWND hWnd)
 	globalcfg.msaa = SendDlgItemMessage(hWnd,IDC_MSAA,CB_GETCURSEL,0,0);
 	globalcfg.aspect = SendDlgItemMessage(hWnd,IDC_ASPECT,CB_GETCURSEL,0,0);
 	globalcfg.highres = SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_GETCHECK,0,0);
-	globalcfg.AllColorDepths = SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_GETCHECK,0,0);
-	globalcfg.ExtraModes = SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_GETCHECK,0,0);
+	if(SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_GETCHECK,0,0)) globalcfg.AllColorDepths = true;
+	else globalcfg.AllColorDepths = false;
+	if(SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_GETCHECK,0,0)) globalcfg.ExtraModes = true;
+	else globalcfg.ExtraModes = false;
 	globalcfg.SortModes = SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_GETCURSEL,0,0);
 	SetGlobalConfig(&globalcfg);
 }
@@ -94,7 +97,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SetClassLong(hWnd,GCL_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
 		// create temporary gl context to get AA and AF settings.
 		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&mode);
-		pfd.cColorBits = mode.dmBitsPerPel;
+		pfd.cColorBits = (BYTE)mode.dmBitsPerPel;
 		dc = GetDC(hWnd);
 		pf = ChoosePixelFormat(dc,&pfd);
 		SetPixelFormat(dc,pf,&pfd);

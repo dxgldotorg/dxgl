@@ -38,6 +38,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dds2 = NULL;
 	dds3 = NULL;
 	dds4 = NULL;
+	DWORD colormasks[3];
 	if(copysurface)
 	{
 		FIXME("glDirectDrawSurface7::glDirectDrawSurface7: copy surface stub\n");
@@ -68,10 +69,18 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		{
 			if(ddInterface->GetFullscreen())
 			{
-				fakex = sizes[0];
-				fakey = sizes[1];
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
+				if(dxglcfg.highres)
+				{
+					fakex = sizes[0];
+					fakey = sizes[1];
+				}
+				else
+				{
+					fakex = ddsd.dwWidth;
+					fakey = ddsd.dwHeight;
+				}
 				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
 				*error = DD_OK;
 			}
@@ -121,7 +130,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		{
 			info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 			info.bmiHeader.biWidth = fakex;
-			info.bmiHeader.biHeight = fakey;
+			info.bmiHeader.biHeight = -fakey;
 			info.bmiHeader.biPlanes = 1;
 			info.bmiHeader.biCompression = BI_RGB;
 			info.bmiHeader.biSizeImage = 0;
@@ -129,7 +138,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			info.bmiHeader.biYPelsPerMeter = 0;
 			info.bmiHeader.biClrImportant = 0;
 			info.bmiHeader.biClrUsed = 0;
-			info.bmiHeader.biBitCount = (WORD)ddInterface->GetBPP();
+			info.bmiHeader.biBitCount = (WORD)ddInterface->GetBPPMultipleOf8();
 			*bitmapinfo = info;
 			surfacetype=1;
 		}
@@ -140,7 +149,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			{
 				info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 				info.bmiHeader.biWidth = fakex;
-				info.bmiHeader.biHeight = fakey;
+				info.bmiHeader.biHeight = -fakey;
 				info.bmiHeader.biPlanes = 1;
 				info.bmiHeader.biCompression = BI_RGB;
 				info.bmiHeader.biSizeImage = 0;
@@ -148,7 +157,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				info.bmiHeader.biYPelsPerMeter = 0;
 				info.bmiHeader.biClrImportant = 0;
 				info.bmiHeader.biClrUsed = 0;
-				info.bmiHeader.biBitCount = (WORD)ddInterface->GetBPP();
+				info.bmiHeader.biBitCount = (WORD)ddInterface->GetBPPMultipleOf8();
 				*bitmapinfo = info;
 				surfacetype=1;
 			}
@@ -164,11 +173,11 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		bitmapinfo->bmiHeader.biClrImportant = 0;
 		bitmapinfo->bmiHeader.biClrUsed = 0;
 		bitmapinfo->bmiHeader.biCompression = BI_RGB;
-		bitmapinfo->bmiHeader.biBitCount = (WORD)ddInterface->GetBPP();
+		bitmapinfo->bmiHeader.biBitCount = (WORD)ddInterface->GetBPPMultipleOf8();
 		surfacetype=2;
 	}
 	bitmapinfo->bmiHeader.biWidth = ddsd.dwWidth;
-	bitmapinfo->bmiHeader.biHeight = ddsd.dwHeight;
+	bitmapinfo->bmiHeader.biHeight = -ddsd.dwHeight;
 	switch(surfacetype)
 	{
 	case 0:
@@ -183,7 +192,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		glGenTextures(1,&texture);
 		glBindTexture(GL_TEXTURE_2D,texture);
 		glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-		if(dxglcfg.scalingfilter == 0)
+		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8))
 		{
 			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -259,6 +268,13 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			default:
 				*error = DDERR_INVALIDPIXELFORMAT;
 				return;
+			}
+			if(ddInterface->GetBPP() > 8)
+			{
+				colormasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
+				colormasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
+				colormasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
+				memcpy(bitmapinfo->bmiColors,colormasks,3*sizeof(DWORD));
 			}
 		}
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,fakex,fakey,0,texformat,texformat2,NULL);
@@ -572,15 +588,24 @@ HRESULT WINAPI glDirectDrawSurface7::GetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 {
 	if(hdc) return DDERR_DCALREADYCREATED;
+	DWORD colors[256];
 	HRESULT error;
+	LPVOID surface;
 	unsigned char *bitmap;
 	error = this->Lock(NULL,&ddsd,0,NULL);
 	if(error != DD_OK) return error;
 	hdc = CreateCompatibleDC(NULL);
 	bitmapinfo->bmiHeader.biWidth = ddsd.lPitch / (bitmapinfo->bmiHeader.biBitCount / 8);
 	if(ddInterface->GetBPP() == 8)
-		memcpy(bitmapinfo->bmiColors,palette->GetPalette(NULL),1024);
-	hbitmap = CreateDIBitmap(hdc,&bitmapinfo->bmiHeader,CBM_INIT,ddsd.lpSurface,bitmapinfo,DIB_RGB_COLORS);
+	{
+		memcpy(colors,palette->GetPalette(NULL),1024);
+		for(int i = 0; i < 256; i++)
+			colors[i] = ((colors[i]&0x0000FF)<<16) | (colors[i]&0x00FF00) | ((colors[i]&0xFF0000)>>16);
+		memcpy(bitmapinfo->bmiColors,colors,1024);
+	}
+	else  if(ddInterface->GetBPPMultipleOf8() == 16)bitmapinfo->bmiHeader.biCompression = BI_BITFIELDS;
+	hbitmap = CreateDIBSection(hdc,bitmapinfo,DIB_RGB_COLORS,&surface,NULL,0);
+	memcpy(surface,ddsd.lpSurface,ddsd.lPitch*ddsd.dwHeight);
 	HGDIOBJ temp = SelectObject(hdc,hbitmap);
 	DeleteObject(temp);
 	*lphDC = hdc;
@@ -870,8 +895,8 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture)
 		if(ddInterface->GetFullscreen())
 		{
 			ddInterface->GetSizes(sizes);
-			glOrtho((signed)-(sizes[4]-fakex)/2,(sizes[4]-fakex)/2+fakex,
-				(signed)-(sizes[5]-fakey)/2,(sizes[5]-fakey)/2+fakey,0,1);
+			glOrtho((signed)-(sizes[4]-sizes[0])/2,(sizes[4]-sizes[0])/2+sizes[0],
+				(signed)-(sizes[5]-sizes[1])/2,(sizes[5]-sizes[1])/2+sizes[1],0,1);
 		}
 		else
 		{
@@ -912,16 +937,32 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture)
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,texture);
 	}
-	glBegin(GL_QUADS);
-	glTexCoord2f(0., 1.);
-	glVertex2f(0., 0.);
-	glTexCoord2f(1., 1.);
-	glVertex2f( (float)fakex, 0.);
-	glTexCoord2f(1., 0.);
-	glVertex2f( (float)fakex, (float)fakey);
-	glTexCoord2f(0., 0.);
-	glVertex2f(0., (float)fakey);
-	glEnd();
+	if(ddInterface->GetFullscreen())
+	{
+		glBegin(GL_QUADS);
+		glTexCoord2f(0., 1.);
+		glVertex2f(0., 0.);
+		glTexCoord2f(1., 1.);
+		glVertex2f( (float)sizes[0], 0.);
+		glTexCoord2f(1., 0.);
+		glVertex2f( (float)sizes[0], (float)sizes[1]);
+		glTexCoord2f(0., 0.);
+		glVertex2f(0., (float)sizes[1]);
+		glEnd();
+	}
+	else
+	{
+		glBegin(GL_QUADS);
+		glTexCoord2f(0., 1.);
+		glVertex2f(0., 0.);
+		glTexCoord2f(1., 1.);
+		glVertex2f( (float)fakex, 0.);
+		glTexCoord2f(1., 0.);
+		glVertex2f( (float)fakex, (float)fakey);
+		glTexCoord2f(0., 0.);
+		glVertex2f(0., (float)fakey);
+		glEnd();
+	}
 	glDisable(GL_TEXTURE_2D);
 	glFlush();
 	SwapBuffers(ddInterface->hDC);

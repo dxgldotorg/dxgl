@@ -25,6 +25,8 @@
 #endif
 
 HINSTANCE hinstance;
+bool gradientavailable;
+BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -49,7 +51,11 @@ void GetFileVersion(tstring &version, LPCTSTR filename)
 		version.append(number);
 		free(verinfo);
 	}
-	else version = _T("NOT FOUND");
+	else
+	{
+		version = _T("NOT FOUND");
+		free(verinfo);
+	}
 }
 int modenum = 0;
 HRESULT WINAPI EnumModesCallback(LPDDSURFACEDESC ddsd, void *list)
@@ -158,7 +164,7 @@ INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		switch(LOWORD(wParam))
 		{
 		case IDC_DXDIAG:
-			spawnlp(_P_NOWAIT,"dxdiag.exe","dxdiag.exe",NULL);
+			_spawnlp(_P_NOWAIT,"dxdiag.exe","dxdiag.exe",NULL);
 			break;
 		default:
 			break;
@@ -186,7 +192,10 @@ typedef struct
 const int START_2D = __LINE__;
 const TEST_ITEM Tests2D[] =
 { // minver maxver  buffermin max   usesfps		usestexture	usesfsaa	name
-	{1,		7,		0,		4,		true,		false,		false,		_T("Color palette and gradient screens (direct surface access)")}
+	{1,		7,		0,		4,		true,		false,		false,		_T("Color palette and gradient screens (direct surface access)")},
+	{1,		7,		0,		1,		false,		false,		false,		_T("Random noise (direct surface access speed test)")},
+	{1,		7,		0,		7,		true,		false,		false,		_T("GDI Test patterns (GetDC() test)")},
+	{1,		7,		0,		0,		false,		false,		false,		_T("Random GDI patterns (does not clear screen between paints)")}
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;
@@ -310,7 +319,8 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		case IDC_TEST:
-			resizable2d = SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0);
+			if(SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0)) resizable2d = true;
+			else resizable2d = false;
 			i = SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETCURSEL,0,0);
 			SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETTEXT,i,(LPARAM)tmpstring);
 			TranslateResolutionString(tmpstring,width,height,bpp,refresh);
@@ -485,6 +495,27 @@ typedef struct tagINITCOMMONCONTROLSEX {
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	OSVERSIONINFO verinfo;
+	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
+	GetVersionEx(&verinfo);
+	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
+	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
+	else gradientavailable = false;
+	HMODULE msimg32 = NULL;;
+	if(gradientavailable)
+	{
+		msimg32 = LoadLibrary(_T("msimg32.dll"));
+		if(!msimg32) gradientavailable = false;
+		if(gradientavailable) _GradientFill =
+			(BOOL(_stdcall*)(HDC,TRIVERTEX*,ULONG,void*,ULONG,DWORD))
+			GetProcAddress(msimg32,"GradientFill");
+		if(!_GradientFill)
+		{
+			FreeLibrary(msimg32);
+			msimg32 = NULL;
+			gradientavailable = false;
+		}
+	}
 	INITCOMMONCONTROLSEX icc;
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
@@ -495,6 +526,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	else InitCommonControls();
     hinstance = hInstance;
     DialogBox(hinstance,MAKEINTRESOURCE(IDD_DXGLTEST),NULL,DXGLTestCallback);
+	if(msimg32) FreeLibrary(msimg32);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif

@@ -21,5 +21,6 @@
 
 void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer);  // Palette test
 void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWPALETTE palette, int type, DWORD color); // Gradients
+void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type); // GDI pattern test
 
 #endif //_SURFACEGEN_H

@@ -38,7 +38,7 @@ loop:
 	while(stoptimer == false)
 	{
 		lasttime = timeGetTime();
-		sleeptime = nexttime - lasttime - 1;
+		sleeptime = (int)(nexttime - lasttime - 1);
 		if(sleeptime > 0) Sleep(sleeptime);
 		while(nexttime > lasttime)
 			lasttime = timeGetTime();

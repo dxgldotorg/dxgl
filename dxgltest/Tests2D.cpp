@@ -20,9 +20,16 @@
 #include "surfacegen.h"
 #include "MultiDD.h"
 #include "timer.h"
+#include <time.h>
 
 void InitTest(int test);
-void RunTest(int test);
+void RunTestTimed(int test);
+void RunTestLooped(int test);
+inline unsigned int rand32(unsigned int &n)
+{
+    return n=(((unsigned int) 1103515245 * n) + (unsigned int) 12345) %
+        (unsigned int) 0xFFFFFFFF;
+}
 
 	MultiDirectDraw *ddinterface;
 	MultiDirectDrawSurface *ddsurface;
@@ -33,6 +40,8 @@ void RunTest(int test);
 	bool fullscreen,resizable;
 	HWND hWnd;
 	int testnum;
+	unsigned int randnum;
+	int testtypes[] = {0,1,0,1};
 
 
 LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -73,7 +82,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		if(wParam == VK_ESCAPE) DestroyWindow(hWnd);
 		break;
 	case WM_APP:
-		RunTest(testnum);
+		RunTestTimed(testnum);
 		break;
 	case WM_SIZE:
 	case WM_PAINT:
@@ -87,7 +96,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 			SetRect(&srcrect,0,0,width,height);
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
-		return TRUE;
+		return FALSE;
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
 	}
@@ -103,7 +112,9 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	double fps, bool fullscreen, bool resizable)
 {
 	DDSURFACEDESC2 ddsd;
+	BOOL done = false;
 	::testnum = testnum;
+	randnum = time(NULL);
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 	if(apiver > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -113,7 +124,8 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	::height = height;
 	::bpp = bpp;
 	::refresh = refresh;
-	::backbuffers = backbuffers;
+	if(fullscreen)::backbuffers = backbuffers;
+	else ::backbuffers = backbuffers = 0;
 	::fps = fps;
 	ddtestnum = testnum;
 	ddver = apiver;
@@ -122,6 +134,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	MSG Msg;
 	ZeroMemory(&wc,sizeof(WNDCLASS));
 	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = DDWndProc;
 	wc.hInstance = hinstance;
 	wc.hIcon = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGL));
@@ -137,9 +150,11 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	if(resizable)
 		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname2d,_T("DDraw Test Window"),WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT,CW_USEDEFAULT,width,height,NULL,NULL,hinstance,NULL);
-	else
+	else if(!fullscreen)
 		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname2d,_T("DDraw Test Window"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
 			CW_USEDEFAULT,CW_USEDEFAULT,width,height,NULL,NULL,hinstance,NULL);
+	else hWnd = CreateWindowEx(WS_EX_TOPMOST,wndclassname2d,_T("DDraw Test Window"),WS_POPUP,0,0,
+		GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),NULL,NULL,hinstance,NULL);
 
 	DWORD err = GetLastError();
 	ShowWindow(hWnd,SW_SHOWNORMAL);
@@ -194,15 +209,37 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 		ddsrender->SetPalette(pal);
 		pal->Release();
 	}
-	UpdateWindow(hWnd);
 	InitTest(testnum);
 	if(!fullscreen) SendMessage(hWnd,WM_PAINT,0,0);
-	StartTimer(hWnd,WM_APP,fps);
-	while(GetMessage(&Msg, NULL, 0, 0) > 0)
-    {
-        TranslateMessage(&Msg);
-        DispatchMessage(&Msg);
-    }
+	if(testtypes[testnum] == 1)
+	{
+		while(!done)
+		{
+			if(PeekMessage(&Msg,NULL,0,0,PM_REMOVE))
+			{
+				if(Msg.message == WM_PAINT) RunTestLooped(testnum);
+				else if(Msg.message  == WM_QUIT) done = TRUE;
+				else
+				{
+					TranslateMessage(&Msg);
+					DispatchMessage(&Msg);
+				}
+			}
+			else
+			{
+				RunTestLooped(testnum);
+			}
+		}
+	}
+	else
+	{
+		StartTimer(hWnd,WM_APP,fps);
+		while(GetMessage(&Msg, NULL, 0, 0) > 0)
+		{
+	        TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+	}
 	UnregisterClass(wndclassname2d,hinstance);
 	StopTimer();
 }
@@ -212,6 +249,7 @@ void InitTest(int test)
 {
 	DDSURFACEDESC2 ddsd;
 	DDSCAPS2 ddscaps;
+	HDC hRenderDC;
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	LPDIRECTDRAWPALETTE palette;
 	unsigned char *buffer;
@@ -277,71 +315,199 @@ void InitTest(int test)
 		free(buffer);
 		if(palette) palette->Release();
 		break;
+	case 2:
+		if(!fullscreen) backbuffers=0;
+		error = ddsrender->GetDC(&hRenderDC);
+		DrawGDIPatterns(ddsd,hRenderDC,0);
+		ddsrender->ReleaseDC(hRenderDC);
+		if(backbuffers > 0)
+		{
+			ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+			error = ddsrender->GetAttachedSurface(&ddscaps,&temp1);
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,1);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 1)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,2);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 2)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,3);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 3)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,4);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 4)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,5);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 5)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,6);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(backbuffers > 6)
+		{
+			ddscaps.dwCaps = DDSCAPS_FLIP;
+			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			temp1->Release();
+			temp1 = temp2;
+			temp1->GetDC(&hRenderDC);
+			DrawGDIPatterns(ddsd,hRenderDC,7);
+			temp1->ReleaseDC(hRenderDC);
+		}
+		if(temp1) temp1->Release();
+		break;
 	default:
 		break;
 	}
 }
 
-void RunTest(int test)
+void RunTestTimed(int test)
 {
 	switch(test)
 	{
 	case 0:
+	case 2:
 	default:
-		if(fullscreen)	ddsurface->Flip(NULL,DDBLT_WAIT);
+		if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
 		break;
 	}
 }
 
-/*void DDFlipTestWindow::OnClose(wxCloseEvent& event)
+void RunTestLooped(int test)
 {
-	if(timer) delete timer;
-	if(ddsrender) ddsrender->Release();
-	if(ddsurface) ddsurface->Release();
-	if(ddclipper) ddclipper->Release();
-	if(ddinterface) ddinterface->Release();
-	parentwnd->Enable();
-	Destroy();
-}
-
-void DDFlipTestWindow::OnKey(wxKeyEvent& event)
-{
-	if(event.m_keyCode == WXK_ESCAPE) Close(true);
-	else event.Skip();
-}
-
-void DDFlipTestWindow::OnPaint(wxPaintEvent& event)
-{
+	randnum /= rand(); // Improves randomness of "snow" patterns at certain resolutions
+	HDC hdc;
+	unsigned int i;
 	POINT p;
+	HPEN pen;
+	HBRUSH brush;
+	HANDLE tmphandle,tmphandle2;
 	RECT srcrect,destrect;
-	LPDIRECTDRAWSURFACE temp1,temp2;
-	if(dd_ready)
+	HRESULT error;
+	DDSURFACEDESC2 ddsd;
+	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	error = ddsrender->GetSurfaceDesc(&ddsd);
+	MultiDirectDrawSurface *temp1 = NULL;
+	DDSCAPS2 ddscaps;
+	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
+	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+	int op;
+	switch(test)
 	{
-		if(firstpaint)
+	case 1:
+	default:
+		if(backbuffers)
 		{
+			ddsrender->GetAttachedSurface(&ddscaps,&temp1);
+			temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 		}
-		if(fullscreen)
+		else ddsrender->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+		
+		for(i = 0; i < ((ddsd.lPitch * ddsd.dwHeight)/4); i++)
+			((DWORD*)ddsd.lpSurface)[i] = rand32(randnum);
+
+		if(backbuffers)
 		{
-			ddsurface->Flip(NULL,DDBLT_WAIT);
+			temp1->Unlock(NULL);
+			ddsrender->Flip(NULL,DDFLIP_WAIT);
 		}
-		else
+		else ddsrender->Unlock(NULL);
+		if(!fullscreen)
 		{
 			p.x = 0;
 			p.y = 0;
-			::ClientToScreen(GetHandle(),&p);
-			::GetClientRect(GetHandle(),&destrect);
+			ClientToScreen(hWnd,&p);
+			GetClientRect(hWnd,&destrect);
 			OffsetRect(&destrect,p.x,p.y);
 			SetRect(&srcrect,0,0,width,height);
-			error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+		}
+		break;
+	case 3:
+		ddsrender->GetDC(&hdc);
+		op = rand32(randnum) % 4;
+		pen = CreatePen(rand32(randnum) % 5,0,RGB(rand32(randnum)%256,rand32(randnum)%256,rand32(randnum)%256));
+		brush = CreateSolidBrush(RGB(rand32(randnum)%256,rand32(randnum)%256,rand32(randnum)%256));
+		tmphandle = SelectObject(hdc,pen);
+		tmphandle2 = SelectObject(hdc,brush);
+		SetBkColor(hdc,RGB(rand32(randnum)%256,rand32(randnum)%256,rand32(randnum)%256));
+		switch(op)
+		{
+		case 0:
+		default:
+			Rectangle(hdc,rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight,
+				rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight);
+			break;
+		case 1:
+			Ellipse(hdc,rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight,
+				rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight);
+			break;
+		case 2:
+			MoveToEx(hdc,rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight,NULL);
+			LineTo(hdc,rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight);
+			break;
+		case 3:
+			SetTextColor(hdc,RGB(rand32(randnum)%256,rand32(randnum)%256,rand32(randnum)%256));
+			TextOut(hdc,rand32(randnum)%ddsd.dwWidth,rand32(randnum)%ddsd.dwHeight,_T("Text"),4);
+			break;
+		}
+		SelectObject(hdc,tmphandle2);
+		SelectObject(hdc,tmphandle);
+		DeleteObject(brush);
+		DeleteObject(pen);
+		ddsrender->ReleaseDC(hdc);
+		if(!fullscreen)
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd,&p);
+			GetClientRect(hWnd,&destrect);
+			OffsetRect(&destrect,p.x,p.y);
+			SetRect(&srcrect,0,0,width,height);
+			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
 	}
+	if(temp1) temp1->Release();
 }
 
+/*
 void DDFlipTestWindow::OnQueryNewPalette(wxQueryNewPaletteEvent& event)
 {
 	//if(bpp == 8) ddsurface->SetPalette
 }
-void DDFlipTestWindow::OnPaletteChanged(wxPaletteChangedEvent& event)
-{
-
-}*/
+*/

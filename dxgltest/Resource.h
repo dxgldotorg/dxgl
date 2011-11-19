@@ -24,6 +24,8 @@
 #define IDD_SYSINFO                             115
 #define IDI_DXGLSM                              116
 #define IDI_DXGL                                117
+#define IDB_DXGLINV                             118
+#define IDB_DXGLINV64                           119
 #define IDC_DXDIAG                              1000
 #define IDC_VIDMODES                            1000
 #define IDC_RESIZABLE                           1001

@@ -51,7 +51,7 @@ int main( int argc, const char *argv[] )
 {
     FILE *file = NULL;
     const char *filename;
-    unsigned long argIdx;
+    int argIdx;
     unsigned long crc32;
     int err;
 
