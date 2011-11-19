@@ -11,9 +11,16 @@ DXGL is currently in a pre-alpha stage and very little works at this point.
 
 == Build Requirements ==
 * Visual Studio 2010 or Visual C++ 2010 Express
-* Latest DirectX SDK, with DXSDK_DIR environment variable set to the installation path
-* wxWidgets 2.9.1, with WXWIN environment variable set to the installation path (dxgltest only)
-* Latest version of Windows SDK may be required
+* Latest version of Windows SDK
+
+== Build instructions ==
+These instructions assume that you do not have any of the required software installed.  If you already have any or all of this software installed and set up, skip those steps.
+* Install Visual C++ 2010 Express at http://www.microsoft.com/express/downloads/#2010-Visual-CPP
+* Install the Windows SDK at:
+http://www.microsoft.com/downloads/en/details.aspx?familyid=6b6c21d2-2006-4afa-9702-529fa782d63b 
+Warning:  If you have installed Visual Studio 2010 SP1, install the Windows SDK update at:
+http://www.microsoft.com/downloads/en/details.aspx?FamilyID=689655B4-C55D-4F9B-9665-2C547E637B70 
+* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F5.
 
 == Progress ==
 What works:
@@ -33,20 +40,17 @@ What doesn't work:
 == Roadmap ==
 These are goals to be set for future releases.
 
-Items marked (done) have been completed in a SVN build.
-
-- Version 0.0.3 Pre-Alpha
+- Version 0.0.4 Pre-Alpha
+* Add support for DirectDraw versions 2 to 7
 * Sort video modes (optional, set in dxglcfg)
 * Support uncommon color depths (optional, set in dxglcfg)
 * Support low resolution modes (optional, set in dxglcfg)
-* Support surface access via Windows GDI
-
-- Version 0.0.4 Pre-Alpha
-* Fully implement scaling and filtering options
-* Add more test patterns to dxgltest (increase back buffer count to see them)
+* Fix GCC build
 
 - Version 0.0.5 Pre-Alpha
-* Fully implement color palettes for primary surface
+* Fully implement scaling and filtering options
+* Add more test patterns to dxgltest (increase back buffer count to see them)
+* Support surface access via Windows GDI
 
 == Installation ==
 

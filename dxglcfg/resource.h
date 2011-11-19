@@ -25,6 +25,8 @@
 #define IDI_STAR                                111
 #define IDC_SYSMEMCACHE                         1001
 #define IDC_HIGHRES                             1002
+#define IDC_SORTMODES                           1003
+#define IDC_UNCOMMONCOLOR                       1004
 #define IDC_APPLY                               1015
 #define IDC_APPS                                1037
 #define IDC_ADD                                 1038
@@ -44,3 +46,4 @@
 #define IDC_AUDIOGLOBAL                         1052
 #define IDC_INPUTGLOBAL                         1053
 #define IDC_INPUTCFG                            1054
+#define IDC_LOWRES                              1055

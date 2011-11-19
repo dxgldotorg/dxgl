@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#include "common.h"
 #include "shaders.h"
 #include "ddraw.h"
 #include "glDirectDraw.h"
@@ -25,6 +25,34 @@
 
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
+
+void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
+{
+	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	DWORD newcount = 0;
+	bool match;
+	for(DWORD x = 0; x < (*count); x++)
+	{
+		match = false;
+		memcpy(&newarray[newcount],&(*array)[x],sizeof(DEVMODE));
+		for(int y = newcount; y > 0; y--)
+		{
+			if((*array)[x].dmBitsPerPel == newarray[y-1].dmBitsPerPel &&
+				(*array)[x].dmDisplayFrequency == newarray[y-1].dmDisplayFrequency &&
+				(*array)[x].dmPelsWidth == newarray[y-1].dmPelsWidth &&
+				(*array)[x].dmPelsHeight == newarray[y-1].dmPelsHeight)
+			{
+				match = true;
+				break;
+			}
+		}
+		if(!match) newcount++;
+	}
+	realloc(newarray,sizeof(DEVMODE)*newcount);
+	free(*array);
+	*array = newarray;
+	*count = newcount;
+}
 
 HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
@@ -56,6 +84,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 			modes = tmp;
 		}
 	}
+	DiscardDuplicateModes(&modes,&modenum);
 	modenum--;
 	for(DWORD i = 0; i < modenum; i++)
 	{
@@ -122,7 +151,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 	return DD_OK;
 }
 
-#pragma region DDRAW7/common routines
+// DDRAW7/common routines
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter)
 {
 	hDC = NULL;
@@ -176,7 +205,12 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknow
 glDirectDraw7::~glDirectDraw7()
 {
 	//FIXME("glDirectDraw7::~glDirectDraw7:  Destructor.\n");
-	if(clippers) free(clippers);
+	if(clippers)
+	{
+		for(int i = 0; i < clippercount; i++)
+			clippers[i]->Release();
+		free(clippers);
+	}
 	if(surfaces)
 	{
 
@@ -258,7 +292,7 @@ ULONG WINAPI glDirectDraw7::Release()
 	ULONG ret;
 	refcount--;
 	ret = refcount;
-	if(refcount == 0) 
+	if(refcount == 0)
 		delete this;
 	return ret;
 }
@@ -654,7 +688,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
 		rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
 	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	PIXELFORMATDESCRIPTOR pfd = 
+	PIXELFORMATDESCRIPTOR pfd =
 	{sizeof(PIXELFORMATDESCRIPTOR),1,PFD_SUPPORT_OPENGL,bpp,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,16,0,0,PFD_MAIN_PLANE,0,0,0,0};
 	hDC = GetDC(hRenderWnd);
@@ -690,7 +724,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		return FALSE;
 	}
 	gllock = false;
-	glewInit();
+	InitGLExt();
 	glViewport(0,0,width,height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -716,7 +750,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		glAttachShader(palprog,palshader);
 		glLinkProgram(palprog);
 	}
-	if(GLEW_ARB_framebuffer_object)
+	if(GLEXT_ARB_framebuffer_object)
 	{
 		glGenFramebuffers(1,&fbo);
 		glGenRenderbuffers(1,&depthbuffer);
@@ -725,7 +759,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		//glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,depthbuffer);
 		glBindRenderbuffer(GL_RENDERBUFFER,0);
 	}
-	else if(GLEW_EXT_framebuffer_object)
+	else if(GLEXT_EXT_framebuffer_object)
 	{
 		glGenFramebuffersEXT(1,&fbo);
 		glGenRenderbuffersEXT(1,&depthbuffer);
@@ -734,7 +768,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,depthbuffer);
 		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);
 	}
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SwapBuffers(hDC);
@@ -758,8 +792,8 @@ void glDirectDraw7::GetHandles(HWND *hwnd, HWND *hrender)
 	if(hwnd) *hwnd = hWnd;
 	if(hrender) *hrender = hRenderWnd;
 }
-#pragma endregion
-#pragma region DDRAW1 wrapper
+
+// DDRAW1 wrapper
 glDirectDraw1::glDirectDraw1(glDirectDraw7 *gl_DD7)
 {
 	glDD7 = gl_DD7;
@@ -880,8 +914,7 @@ HRESULT WINAPI glDirectDraw1::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
 	return glDD7->WaitForVerticalBlank(dwFlags,hEvent);
 }
-#pragma endregion
-#pragma region DDRAW2 wrapper
+// DDRAW2 wrapper
 glDirectDraw2::glDirectDraw2(glDirectDraw7 *gl_DD7)
 {
 	glDD7 = gl_DD7;
@@ -1007,8 +1040,7 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 	FIXME("glDirectDraw2::GetAvailableVidMem: stub\n");
 	return DDERR_GENERIC;
 }
-#pragma endregion
-#pragma region DDRAW4 wrapper
+// DDRAW4 wrapper
 glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
 {
 	glDD7 = gl_DD7;
@@ -1145,10 +1177,9 @@ HRESULT WINAPI glDirectDraw4::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER lpdddi, D
 	FIXME("IDirectDraw4::GetDeviceIdentifier: stub\n");
 	return DDERR_GENERIC;
 }
-#pragma endregion
 
 // Render Window event handler
-static LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	glDirectDraw7* instance = reinterpret_cast<glDirectDraw7*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
 	if(!instance)

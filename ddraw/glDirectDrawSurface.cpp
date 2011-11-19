@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#include "common.h"
 #include "shaders.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
@@ -25,7 +25,7 @@
 inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
 inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
 
-#pragma region DDRAW7 routines
+// DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
 {
 	locked = 0;
@@ -242,7 +242,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,fakex,fakey,0,texformat,texformat2,NULL);
 	}
-	
+
 	refcount = 1;
 	*error = DD_OK;
 	backbuffer = NULL;
@@ -261,7 +261,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,(LPDIRECTDRAWSURFACE7 *)&tmp,error,false,palette);
 			}
 			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT){}
-			else *error = DDERR_INVALIDPARAMS;			
+			else *error = DDERR_INVALIDPARAMS;
 		}
 	}
 	ddInterface->AddRef();
@@ -335,13 +335,13 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	int error;
-	if(GLEW_ARB_framebuffer_object)
+	if(GLEXT_ARB_framebuffer_object)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER,ddInterface->fbo);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,texture,0);
 		error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	}
-	else if(GLEW_EXT_framebuffer_object)
+	else if(GLEXT_EXT_framebuffer_object)
 	{
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,ddInterface->fbo);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,texture,0);
@@ -397,11 +397,11 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glVertex2f(coords[0], coords[3]);
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
-	if(GLEW_ARB_framebuffer_object)
+	if(GLEXT_ARB_framebuffer_object)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 	}
-	else if(GLEW_EXT_framebuffer_object)
+	else if(GLEXT_EXT_framebuffer_object)
 	{
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
 	}
@@ -538,7 +538,11 @@ HRESULT WINAPI glDirectDrawSurface7::GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDP
 		*lplpDDPalette = palette;
 		err = DD_OK;
 	}
-	else err = DDERR_NOPALETTEATTACHED;
+	else
+	{
+		err = DDERR_NOPALETTEATTACHED;
+		*lplpDDPalette = NULL;
+	}
 	return err;
 }
 HRESULT WINAPI glDirectDrawSurface7::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
@@ -563,7 +567,7 @@ HRESULT WINAPI glDirectDrawSurface7::IsLost()
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent)
-{	
+{
 	if(locked) return DDERR_SURFACEBUSY;
 	DWORD x,y;
 	unsigned char *bitmap = (unsigned char *)malloc((ddInterface->GetBPP()/8) * ddsd.dwWidth * ddsd.dwHeight);
@@ -573,10 +577,8 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 	unsigned short *&tmptex16 = (unsigned short *&)temptex;
 	unsigned long *&tmptex32 = (unsigned long *&)temptex;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * (ddInterface->GetBPP()/8));
-	DWORD pixsize = ddInterface->GetBPP()/8;
 	float mulx, muly;
 	if(!bitmap) return DDERR_OUTOFMEMORY;
-	if(!temptex) return DDERR_OUTOFMEMORY;
 	switch(surfacetype)
 	{
 	case 0:
@@ -598,6 +600,11 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 			mulx = (float)fakex / (float)ddsd.dwWidth;
 			muly = (float)fakey / (float)ddsd.dwHeight;
 			temptex = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+			if(!temptex)
+			{
+				free(bitmap);
+				return DDERR_OUTOFMEMORY;
+			}
 			glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,temptex);
 			switch(ddInterface->GetBPP())
 			{
@@ -684,9 +691,8 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 	unsigned char *temptex;
 	unsigned short *&tmptex16 = (unsigned short *&)temptex;
 	unsigned long *&tmptex32 = (unsigned long *&)temptex;
-	if(!temptex) return DDERR_OUTOFMEMORY;
 	float mulx, muly;
-	LONG x,y;
+	DWORD x,y;
 	glBindTexture(GL_TEXTURE_2D,this->texture);  // Select surface's texture
 	if(ddsd.dwWidth == fakex && ddsd.dwHeight == fakey)
 	{
@@ -695,6 +701,7 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 	else
 	{
 		temptex  = (unsigned char *)malloc(NextMultipleOf4((ddInterface->GetBPP()/8)*fakex)*fakey);
+		if(!temptex) return DDERR_OUTOFMEMORY;
 		mulx = (float)ddsd.dwWidth / (float)fakex;
 		muly = (float)ddsd.dwHeight / (float)fakey;
 		switch(ddInterface->GetBPP())
@@ -777,7 +784,7 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture)
 		GLint palprog = ddInterface->PalProg();
 		glUseProgram(palprog);
 		glBindTexture(GL_TEXTURE_2D,paltex);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_BGRA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
 		GLint palloc = glGetUniformLocation(palprog,"ColorTable");
 		GLint texloc = glGetUniformLocation(palprog,"IndexTexture");
 		glUniform1i(texloc,0);
@@ -882,9 +889,7 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock2(LPVOID lpSurfaceData)
 	return Unlock((LPRECT)lpSurfaceData);
 }
 
-#pragma endregion
-
-#pragma region DDRAW1 wrapper
+// DDRAW1 wrapper
 glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
 {
 	glDDS7 = gl_DDS7;
@@ -1062,4 +1067,3 @@ HRESULT WINAPI glDirectDrawSurface1::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 {
 	return glDDS7->UpdateOverlayZOrder(dwFlags,(LPDIRECTDRAWSURFACE7)lpDDSReference);
 }
-#pragma endregion

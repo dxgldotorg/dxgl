@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#include "common.h"
 #include "glDirectDrawClipper.h"
 
 glDirectDrawClipper::glDirectDrawClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter, glDirectDraw7 *parent)

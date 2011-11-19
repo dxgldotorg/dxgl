@@ -15,10 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#include "common.h"
 #include "surfacegen.h"
 
-void GenScreen0(DDSURFACEDESC ddsd, unsigned char *buffer)  // Palette test
+void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 {
 	DWORD x,y;
 	unsigned short *buffer16 = (unsigned short*) buffer;
@@ -34,6 +34,8 @@ void GenScreen0(DDSURFACEDESC ddsd, unsigned char *buffer)  // Palette test
 				}
 			}
 			break;
+		case 15:
+			return;
 		case 16:
 			for(y = 0; y < ddsd.dwHeight; y++)
 			{
@@ -60,342 +62,84 @@ void GenScreen0(DDSURFACEDESC ddsd, unsigned char *buffer)  // Palette test
 }
 
 
-
-
-void GenScreen1(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface) // Gradients
+void DrawGradient(HDC hdc, int left, int right, int top, int bottom, DWORD color)
 {
-	OSVERSIONINFOA verinfo;
-	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
-	GetVersionExA(&verinfo);
-	bool gradientavailable;
-	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
-	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
-	else gradientavailable = false;
-	int bitmode = BI_RGB;
-	DWORD bitmasks[3];
-	LPBYTE bits;
-	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
-	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
-	{
-		//GetSystemPaletteEntries(GetDC(hwnd),0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		LPDIRECTDRAWPALETTE pal;
-		surface->GetPalette(&pal);
-		pal->GetEntries(0,0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		pal->Release();
-	}
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
-		{
-			bitmode = BI_BITFIELDS;
-			bitmasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
-			bitmasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
-			bitmasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
-			memcpy(bmi->bmiColors,bitmasks,3*sizeof(DWORD));
-		}
-	bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmi->bmiHeader.biWidth = ddsd.lPitch / (ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
-	bmi->bmiHeader.biHeight = 0-ddsd.dwHeight;
-	bmi->bmiHeader.biPlanes = 1;
-	bmi->bmiHeader.biCompression = bitmode;
-	bmi->bmiHeader.biBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
-	HBITMAP bitmap = CreateDIBSection(GetDC(hwnd),bmi,DIB_RGB_COLORS,(void**)&bits,NULL,0);
-	HDC hdcmem = CreateCompatibleDC(GetDC(hwnd));
-	HGDIOBJ hbmold = SelectObject(hdcmem,bitmap);
-	SetBkMode(hdcmem,TRANSPARENT);
-	DWORD x;
+	int x;
 	int r,g,b;
 	RECT rect;
-	HBRUSH color;
-	for(x = 0; x < ddsd.dwWidth; x++)
+	HBRUSH brushcolor;
+	for(x = left; x < right; x++)
 	{
-		r = (x*255)/ddsd.dwWidth;
-		g = 0;
-		b = 0;
+		r = (x*(color & 0xff)) / (right-left);
+		g = (x*((color >> 8) & 0xff)) / (right-left);
+		b = (x*((color >> 16) & 0xff)) / (right-left);
 		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 0;
-		rect.bottom = ddsd.dwHeight / 7;
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
+		rect.right = x+1;
+		rect.top = top;
+		rect.bottom = bottom;
+		brushcolor = CreateSolidBrush(RGB(r,g,b));
+		FillRect(hdc,&rect,brushcolor);
+		DeleteObject(brushcolor);
 	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = 0;
-		g = (x*255)/ddsd.dwWidth;
-		b = 0;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = ddsd.dwHeight / 7;
-		rect.bottom = 2*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = 0;
-		g = 0;
-		b = (x*255)/ddsd.dwWidth;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 2*(ddsd.dwHeight / 7.);
-		rect.bottom = 3*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = 0;
-		g = (x*255)/ddsd.dwWidth;
-		b = (x*255)/ddsd.dwWidth;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 3*(ddsd.dwHeight / 7.);
-		rect.bottom = 4*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = (x*255)/ddsd.dwWidth;
-		g = 0;
-		b = (x*255)/ddsd.dwWidth;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 4*(ddsd.dwHeight / 7.);
-		rect.bottom = 5*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = (x*255)/ddsd.dwWidth;
-		g = (x*255)/ddsd.dwWidth;
-		b = 0;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 5*(ddsd.dwHeight / 7.);
-		rect.bottom = 6*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = (x*255)/ddsd.dwWidth;
-		g = (x*255)/ddsd.dwWidth;
-		b = (x*255)/ddsd.dwWidth;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 6*(ddsd.dwHeight / 7.);
-		rect.bottom = 7*(ddsd.dwHeight / 7.);
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
-	SelectObject(hdcmem,hbmold);
-	DeleteDC(hdcmem);
-	DeleteObject(bitmap);
-	free(bmi);
-}
-void GenScreen2(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface)
-{
-	OSVERSIONINFOA verinfo;
-	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
-	GetVersionExA(&verinfo);
-	bool gradientavailable;
-	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
-	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
-	else gradientavailable = false;
-	int bitmode = BI_RGB;
-	DWORD bitmasks[3];
-	LPBYTE bits;
-	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
-	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
-	{
-		//GetSystemPaletteEntries(GetDC(hwnd),0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		LPDIRECTDRAWPALETTE pal;
-		surface->GetPalette(&pal);
-		pal->GetEntries(0,0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		pal->Release();
-	}
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
-		{
-			bitmode = BI_BITFIELDS;
-			bitmasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
-			bitmasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
-			bitmasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
-			memcpy(bmi->bmiColors,bitmasks,3*sizeof(DWORD));
-		}
-	bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmi->bmiHeader.biWidth = ddsd.lPitch / (ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
-	bmi->bmiHeader.biHeight = 0-ddsd.dwHeight;
-	bmi->bmiHeader.biPlanes = 1;
-	bmi->bmiHeader.biCompression = bitmode;
-	bmi->bmiHeader.biBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
-	HBITMAP bitmap = CreateDIBSection(GetDC(hwnd),bmi,DIB_RGB_COLORS,(void**)&bits,NULL,0);
-	HDC hdcmem = CreateCompatibleDC(GetDC(hwnd));
-	HGDIOBJ hbmold = SelectObject(hdcmem,bitmap);
-	SetBkMode(hdcmem,TRANSPARENT);
-	DWORD x;
-	int r,g,b;
-	RECT rect;
-	HBRUSH color;
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = (x*255)/ddsd.dwWidth;
-		g = 0;
-		b = 0;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 0;
-		rect.bottom = ddsd.dwHeight;
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
-	SelectObject(hdcmem,hbmold);
-	DeleteDC(hdcmem);
-	DeleteObject(bitmap);
-	free(bmi);
-}
-void GenScreen3(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface)
-{
-	OSVERSIONINFOA verinfo;
-	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
-	GetVersionExA(&verinfo);
-	bool gradientavailable;
-	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
-	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
-	else gradientavailable = false;
-	int bitmode = BI_RGB;
-	DWORD bitmasks[3];
-	LPBYTE bits;
-	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
-	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
-	{
-		//GetSystemPaletteEntries(GetDC(hwnd),0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		LPDIRECTDRAWPALETTE pal;
-		surface->GetPalette(&pal);
-		pal->GetEntries(0,0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		pal->Release();
-	}
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
-		{
-			bitmode = BI_BITFIELDS;
-			bitmasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
-			bitmasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
-			bitmasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
-			memcpy(bmi->bmiColors,bitmasks,3*sizeof(DWORD));
-		}
-	bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmi->bmiHeader.biWidth = ddsd.lPitch / (ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
-	bmi->bmiHeader.biHeight = 0-ddsd.dwHeight;
-	bmi->bmiHeader.biPlanes = 1;
-	bmi->bmiHeader.biCompression = bitmode;
-	bmi->bmiHeader.biBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
-	HBITMAP bitmap = CreateDIBSection(GetDC(hwnd),bmi,DIB_RGB_COLORS,(void**)&bits,NULL,0);
-	HDC hdcmem = CreateCompatibleDC(GetDC(hwnd));
-	HGDIOBJ hbmold = SelectObject(hdcmem,bitmap);
-	SetBkMode(hdcmem,TRANSPARENT);
-	DWORD x;
-	int r,g,b;
-	RECT rect;
-	HBRUSH color;
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = 0;
-		g = (x*255)/ddsd.dwWidth;
-		b = 0;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 0;
-		rect.bottom = ddsd.dwHeight;
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
-	SelectObject(hdcmem,hbmold);
-	DeleteDC(hdcmem);
-	DeleteObject(bitmap);
-	free(bmi);
-}
-void GenScreen4(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface)
-{
-	OSVERSIONINFOA verinfo;
-	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
-	GetVersionExA(&verinfo);
-	bool gradientavailable;
-	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
-	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
-	else gradientavailable = false;
-	int bitmode = BI_RGB;
-	DWORD bitmasks[3];
-	LPBYTE bits;
-	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
-	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
-	{
-		//GetSystemPaletteEntries(GetDC(hwnd),0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		LPDIRECTDRAWPALETTE pal;
-		surface->GetPalette(&pal);
-		pal->GetEntries(0,0,256,(LPPALETTEENTRY)&bmi->bmiColors);
-		pal->Release();
-	}
-	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
-		{
-			bitmode = BI_BITFIELDS;
-			bitmasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
-			bitmasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
-			bitmasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
-			memcpy(bmi->bmiColors,bitmasks,3*sizeof(DWORD));
-		}
-	bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmi->bmiHeader.biWidth = ddsd.lPitch / (ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
-	bmi->bmiHeader.biHeight = 0-ddsd.dwHeight;
-	bmi->bmiHeader.biPlanes = 1;
-	bmi->bmiHeader.biCompression = bitmode;
-	bmi->bmiHeader.biBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
-	HBITMAP bitmap = CreateDIBSection(GetDC(hwnd),bmi,DIB_RGB_COLORS,(void**)&bits,NULL,0);
-	HDC hdcmem = CreateCompatibleDC(GetDC(hwnd));
-	HGDIOBJ hbmold = SelectObject(hdcmem,bitmap);
-	SetBkMode(hdcmem,TRANSPARENT);
-	DWORD x;
-	int r,g,b;
-	RECT rect;
-	HBRUSH color;
-	for(x = 0; x < ddsd.dwWidth; x++)
-	{
-		r = 0;
-		g = 0;
-		b = (x*255)/ddsd.dwWidth;
-		rect.left = x;
-		rect.right = x + 1;
-		rect.top = 0;
-		rect.bottom = ddsd.dwHeight;
-		color = CreateSolidBrush(RGB(r,g,b));
-		FillRect(hdcmem,&rect,color);
-		DeleteObject(color);
-	}
-	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
-	SelectObject(hdcmem,hbmold);
-	DeleteDC(hdcmem);
-	DeleteObject(bitmap);
-	free(bmi);
 }
 
-void GenScreen5(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen6(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen7(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen8(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen9(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen10(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
+void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWPALETTE palette, int type, DWORD color) // Gradients
+{
+	DWORD colors[1024];
+	OSVERSIONINFOA verinfo;
+	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
+	GetVersionExA(&verinfo);
+	bool gradientavailable;
+	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
+	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
+	else gradientavailable = false;
+	int bitmode = BI_RGB;
+	DWORD bitmasks[3];
+	LPBYTE bits;
+	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
+	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
+	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
+	{
+		palette->GetEntries(0,0,256,(LPPALETTEENTRY)colors);
+		for(int i = 0; i < 256; i++)
+			colors[i] = ((colors[i]&0x0000FF)<<16) | (colors[i]&0x00FF00) | ((colors[i]&0xFF0000)>>16);
+		memcpy(bmi->bmiColors,colors,1024);
+	}
+	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
+		{
+			bitmode = BI_BITFIELDS;
+			bitmasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
+			bitmasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
+			bitmasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
+			memcpy(bmi->bmiColors,bitmasks,3*sizeof(DWORD));
+		}
+	bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmi->bmiHeader.biWidth = ddsd.lPitch / (ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
+	bmi->bmiHeader.biHeight = 0-ddsd.dwHeight;
+	bmi->bmiHeader.biPlanes = 1;
+	bmi->bmiHeader.biCompression = bitmode;
+	bmi->bmiHeader.biBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
+	HBITMAP bitmap = CreateDIBSection(GetDC(hwnd),bmi,DIB_RGB_COLORS,(void**)&bits,NULL,0);
+	HDC hdcmem = CreateCompatibleDC(GetDC(hwnd));
+	HGDIOBJ hbmold = SelectObject(hdcmem,bitmap);
+	SetBkMode(hdcmem,TRANSPARENT);
+	switch(type)
+	{
+	case 1:
+		DrawGradient(hdcmem,0,ddsd.dwWidth,0,ddsd.dwHeight / 7,0x0000FF);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,ddsd.dwHeight / 7, 2*(ddsd.dwHeight/7),0x00FF00);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,2*(ddsd.dwHeight/7),3*(ddsd.dwHeight/7),0xFF0000);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,3*(ddsd.dwHeight/7),4*(ddsd.dwHeight/7),0xFFFF00);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,4*(ddsd.dwHeight/7),5*(ddsd.dwHeight/7),0xFF00FF);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,5*(ddsd.dwHeight/7),6*(ddsd.dwHeight/7),0x00FFFF);
+		DrawGradient(hdcmem,0,ddsd.dwWidth,6*(ddsd.dwHeight/7),ddsd.dwHeight,0xFFFFFF);
+		break;
+	default:
+		DrawGradient(hdcmem,0,ddsd.dwWidth,0,ddsd.dwHeight,color);
+	}
+	memcpy(buffer,bits,ddsd.lPitch*ddsd.dwHeight);
+	SelectObject(hdcmem,hbmold);
+	DeleteDC(hdcmem);
+	DeleteObject(bitmap);
+	free(bmi);
+}

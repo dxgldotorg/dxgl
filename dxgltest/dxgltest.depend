@@ -1,0 +1,74 @@
+# depslib dependency file v1.0
+1307227816 source:c:\programming\projects\dxgl\dxgltest\dxgltest.rc
+	<windows.h>
+	<commctrl.h>
+	<richedit.h>
+	"resource.h"
+
+1307227803 c:\programming\projects\dxgl\dxgltest\resource.h
+
+1306695183 source:c:\programming\projects\dxgl\dxgltest\palette.cpp
+	"common.h"
+	"palette.h"
+
+1306509946 c:\programming\projects\dxgl\dxgltest\palette.h
+
+1307223978 source:c:\programming\projects\dxgl\dxgltest\surfacegen.cpp
+	"common.h"
+	"surfacegen.h"
+
+1307229296 c:\programming\projects\dxgl\dxgltest\common.h
+	<windows.h>
+	<commctrl.h>
+	<stdio.h>
+	<stdlib.h>
+	<process.h>
+	<crtdbg.h>
+	<malloc.h>
+	<memory.h>
+	<tchar.h>
+	<math.h>
+	<string>
+	"Resource.h"
+	<ddraw.h>
+
+1307223288 c:\programming\projects\dxgl\dxgltest\surfacegen.h
+
+1306593497 source:c:\programming\projects\dxgl\dxgltest\ddfliptest.cpp
+	"common.h"
+	"tests.h"
+	"surfacegen.h"
+
+1306784320 c:\programming\projects\dxgl\dxgltest\tests.h
+
+1306692994 source:c:\programming\projects\dxgl\dxgltest\dxgltest.cpp
+	"common.h"
+	"dxgltest.h"
+	"tests.h"
+
+1306449963 c:\programming\projects\dxgl\dxgltest\dxgltest.h
+	"resource.h"
+
+1307227694 source:c:\programming\projects\dxgl\dxgltest\tests2d.cpp
+	"common.h"
+	"tests.h"
+	"surfacegen.h"
+	"MultiDD.h"
+	"timer.h"
+
+1307227786 c:\programming\projects\dxgl\dxgltest\multidd.h
+
+1307227801 c:\programming\projects\dxgl\dxgltest\timer.h
+
+1307228021 source:c:\programming\projects\dxgl\dxgltest\precomp.cpp
+	"common.h"
+
+1307228020 source:c:\programming\projects\dxgl\dxgltest\timer.cpp
+	"common.h"
+	<MMSystem.h>
+	"timer.h"
+
+1307227827 source:c:\programming\projects\dxgl\dxgltest\multidd.cpp
+	"common.h"
+	"MultiDD.h"
+

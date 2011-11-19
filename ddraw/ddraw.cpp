@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#include "common.h"
 #include "ddraw.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
@@ -81,7 +81,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	HRESULT error;
 	myddraw7 = new glDirectDraw7(lpGUID,lplpDD,pUnkOuter);
 	error = myddraw7->err();
-	if(error != DD_OK) 
+	if(error != DD_OK)
 	{
 		delete myddraw7;
 		return error;
@@ -103,7 +103,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	if(iid != IID_IDirectDraw7) return DDERR_UNSUPPORTED;
 	myddraw = new glDirectDraw7(lpGUID,(LPDIRECTDRAW FAR *)lplpDD,pUnkOuter);
 	error = myddraw->err();
-	if(error != DD_OK) 
+	if(error != DD_OK)
 	{
 		delete myddraw;
 		return error;

@@ -22,16 +22,19 @@
 #include <io.h>
 #include "resource.h"
 #include "../cfgmgr/cfgmgr.h"
-#define GLEW_STATIC
-#include "GL/glew.h"
-#include "GL/wglew.h"
 #include <gl/GL.h>
 
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
+#define GL_MAX_SAMPLES_EXT                     0x8D57
+#define GL_MAX_MULTISAMPLE_COVERAGE_MODES_NV        0x8E11
+#define GL_MULTISAMPLE_COVERAGE_MODES_NV            0x8E12
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT      0x84FF
 
 DXGLCFG globalcfg;
 DXGLCFG currentcfg;
 HINSTANCE hinstance;
+bool msaa = false;
+const char *extensions_string = NULL;
 
 void SaveChanges()
 {
@@ -83,20 +86,21 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SetPixelFormat(dc,pf,&pfd);
 		rc = wglCreateContext(dc);
 		wglMakeCurrent(dc,rc);
-		glewInit();
-		if(GLEW_EXT_texture_filter_anisotropic)
+		extensions_string = (char*)glGetString(GL_EXTENSIONS);
+		if(strstr(extensions_string,"GL_EXT_texture_filter_anisotropic"))
 			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&anisotropic);
 		else anisotropic = 0;
-		if(GLEW_EXT_framebuffer_multisample)
+		if(strstr(extensions_string,"GL_EXT_framebuffer_multisample"))
 		{
 			glGetIntegerv(GL_MAX_SAMPLES_EXT,&maxsamples);
-			if(GLEW_NV_framebuffer_multisample_coverage) // Supports NVIDIA CSAA
+			if(strstr(extensions_string,"GL_NV_framebuffer_multisample_coverage")) // Supports NVIDIA CSAA
 			{
 				glGetIntegerv(GL_MAX_MULTISAMPLE_COVERAGE_MODES_NV,&maxcoverage);
 				glGetIntegerv(GL_MULTISAMPLE_COVERAGE_MODES_NV,coveragemodes);
 				if(maxcoverage) for(i = 0; i < maxcoverage; i++)
 				{
 					msaamodes[i] = coveragemodes[2*i]+(4096*coveragemodes[(2*i)+1]);
+					msaa = true;
 				}
 			}
 		}
@@ -168,7 +172,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,1,(LPARAM)buffer);
-			if(anisotropic >= 2) 
+			if(anisotropic >= 2)
 			{
 				_tcscpy(buffer,_T("2x"));
 				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,2,(LPARAM)buffer);
@@ -196,7 +200,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,globalcfg.anisotropic,NULL);
 		}
 		// msaa
-		if(GLEW_EXT_texture_filter_anisotropic)
+		if(msaa)
 		{
 			_tcscpy(buffer,_T("Application default"));
 			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);

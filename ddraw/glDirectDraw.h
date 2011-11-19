@@ -22,7 +22,7 @@
 class glDirectDrawSurface7;
 class glDirectDrawClipper;
 
-static LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 typedef struct
 {
@@ -31,7 +31,7 @@ typedef struct
 	int TextureMaxX;
 	int TextureMaxY;
 	bool NonPowerOfTwo;
-	int RenderToTexture; // 0 - no support, 1 - 
+	int RenderToTexture; // 0 - no support, 1 -
 	int MultiTextureExt;
 	int PalettedTextures;
 } GLCAPS;
@@ -82,7 +82,7 @@ public:
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
 	GLuint PalProg(){return palprog;}
-	LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
 	HGLRC hRC;
 	HDC  hDC;
@@ -115,7 +115,7 @@ private:
 	GLuint palprog;
 	GLCAPS gl_caps;
 };
-#pragma region Legacy DDRAW Interfaces
+
 class glDirectDraw1 : public IDirectDraw
 {
 public:
@@ -230,5 +230,4 @@ private:
 	ULONG refcount;
 	glDirectDraw7 *glDD7;
 };
-#pragma endregion
 #endif //_GLDIRECTDRAW_H

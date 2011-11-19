@@ -20,6 +20,7 @@
 #define _TESTS_H
 
 
-void RunDDFlipTest(int width, int height, int bpp, int refresh, int backbuffers, bool fullscreen, bool resizable, wxWindow *parent);
+void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
+	double fps, bool fullscreen, bool resizable);
 
 #endif //_TESTS_H

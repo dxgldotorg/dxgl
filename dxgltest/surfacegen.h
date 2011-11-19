@@ -19,17 +19,7 @@
 #ifndef _SURFACEGEN_H
 #define _SURFACEGEN_H
 
-void GenScreen0(DDSURFACEDESC ddsd, unsigned char *buffer);  // Palette test
-void GenScreen1(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface); // Gradients
-void GenScreen2(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen3(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen4(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen5(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen6(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen7(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen8(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen9(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-void GenScreen10(DDSURFACEDESC ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWSURFACE surface);
-
+void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer);  // Palette test
+void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWPALETTE palette, int type, DWORD color); // Gradients
 
 #endif //_SURFACEGEN_H

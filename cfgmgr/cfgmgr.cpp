@@ -111,7 +111,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, bool global)
 		error = RegSetValueExW(hKey,L"AdjustPrimaryResolution",0,REG_DWORD,(BYTE*)&cfg->highres,4);
 		if(cfg->shaderfile[0]) error = RegSetValueExW(hKey,L"ShaderFile",0,REG_SZ,(BYTE*)cfg->shaderfile,
 			wcslen(cfg->shaderfile)*2);
-		else error = RegDeleteValue(hKey,L"ShaderFile");
+		else error = RegDeleteValueW(hKey,L"ShaderFile");
 	}
 	else if(!cfg->UseGfxSettings && !global) error = RegDeleteValueW(hKey,L"UseGraphicsSettings");
 }

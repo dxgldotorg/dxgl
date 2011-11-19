@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="dxgl">
+		<Project filename="cfgmgr/cfgmgr.cbp" />
+		<Project filename="common/common.cbp" />
+		<Project filename="ddraw/ddraw.cbp">
+			<Depends filename="cfgmgr/cfgmgr.cbp" />
+		</Project>
+		<Project filename="dxglcfg/dxglcfg.cbp">
+			<Depends filename="cfgmgr/cfgmgr.cbp" />
+		</Project>
+		<Project filename="dxgltest/dxgltest.cbp" active="1" />
+	</Workspace>
+</CodeBlocks_workspace_file>

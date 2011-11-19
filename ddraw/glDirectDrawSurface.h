@@ -91,7 +91,7 @@ public:
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 private:
-	LONG fakex,fakey;
+	DWORD fakex,fakey;
 	ULONG refcount;
 	int locked;
 	HDC hdc;
@@ -110,7 +110,8 @@ private:
 	GLenum texformat2;
 	glDirectDrawSurface1 *dds1;
 };
-#pragma region Legacy DDRAW Interfaces
+
+// Legacy DDRAW Interfaces
 class glDirectDrawSurface1 : public IDirectDrawSurface
 {
 public:
@@ -318,5 +319,4 @@ private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
 };
-#pragma endregion
 #endif //_GLDIRECTDRAWSURFACE_H

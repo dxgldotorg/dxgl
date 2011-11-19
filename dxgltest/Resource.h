@@ -15,29 +15,42 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define IDS_APP_TITLE			103
-
-#define IDR_MAINFRAME			128
-#define IDD_DXGLTEST_DIALOG	102
-#define IDD_ABOUTBOX			103
-#define IDM_ABOUT				104
-#define IDM_EXIT				105
-#define IDI_DXGLTEST			107
-#define IDI_SMALL				108
-#define IDC_DXGLTEST			109
-#define IDC_MYICON				2
 #ifndef IDC_STATIC
-#define IDC_STATIC				-1
+#define IDC_STATIC (-1)
 #endif
-// Next default values for new objects
-//
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
 
-#define _APS_NO_MFC					130
-#define _APS_NEXT_RESOURCE_VALUE	129
-#define _APS_NEXT_COMMAND_VALUE		32771
-#define _APS_NEXT_CONTROL_VALUE		1000
-#define _APS_NEXT_SYMED_VALUE		110
-#endif
-#endif
+#define IDD_DXGLTEST                            112
+#define IDD_TESTGFX                             113
+#define IDD_SYSINFO                             115
+#define IDI_DXGLSM                              116
+#define IDI_DXGL                                117
+#define IDC_DXDIAG                              1000
+#define IDC_VIDMODES                            1000
+#define IDC_RESIZABLE                           1001
+#define IDC_DDTYPE                              1002
+#define IDC_TABS                                1002
+#define IDC_TESTHEADER                          1002
+#define IDC_TESTLIST                            1004
+#define IDC_WINDOWED                            1008
+#define IDC_FULLSCREEN                          1009
+#define IDC_APIVER                              1012
+#define IDC_SPINAPI                             1013
+#define IDC_VSYNC                               1015
+#define IDC_BUFFERS                             1017
+#define IDC_SPINBACK                            1019
+#define IDC_FRAMERATE                           1023
+#define IDC_SPINFRAME                           1024
+#define IDC_FSAA                                1026
+#define IDC_FILTERLABEL                         1027
+#define IDC_FILTER                              1028
+#define IDC_FSAALABEL                           1029
+#define IDC_TEST                                1031
+#define IDC_DDVER                               1032
+#define IDC_DDEXVER                             1041
+#define IDC_D3DVER                              1042
+#define IDC_D3D7VER                             1043
+#define IDC_D3DREFVER                           1044
+#define IDC_D3DRAMPVER                          1045
+#define IDC_D3DRMVER                            1046
+#define IDC_D3DXOFVER                           1047
+#define IDC_D3DPMESHVER                         1048

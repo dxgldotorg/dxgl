@@ -83,12 +83,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
@@ -98,12 +99,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
     </Link>
     <PostBuildEvent />
@@ -118,6 +120,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +129,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SetChecksum>true</SetChecksum>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
@@ -138,6 +141,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DDRAW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include;../glew/glew-1.6.0/include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,7 +150,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SetChecksum>true</SetChecksum>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;$(OutDir)../glew/glew-1.6.0/lib/glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
     </Link>
     <PostBuildEvent />
@@ -156,17 +160,20 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="common.h" />
     <ClInclude Include="ddraw.h" />
     <ClInclude Include="glDirectDraw.h" />
     <ClInclude Include="glDirectDrawClipper.h" />
     <ClInclude Include="glDirectDrawPalette.h" />
     <ClInclude Include="glDirectDrawSurface.h" />
+    <ClInclude Include="glExtensions.h" />
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />
     <ClInclude Include="include\d3dtypes.h" />
+    <ClInclude Include="include\GL\glext.h" />
+    <ClInclude Include="include\GL\wglext.h" />
+    <ClInclude Include="include\winedef.h" />
     <ClInclude Include="shaders.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp" />
@@ -184,17 +191,24 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="dxguid.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="glDirectDraw.cpp" />
     <ClCompile Include="glDirectDrawClipper.cpp" />
     <ClCompile Include="glDirectDrawPalette.cpp" />
     <ClCompile Include="glDirectDrawSurface.cpp" />
-    <ClCompile Include="shaders.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+    <ClCompile Include="glExtensions.cpp" />
+    <ClCompile Include="precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="shaders.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ddraw.rc" />
