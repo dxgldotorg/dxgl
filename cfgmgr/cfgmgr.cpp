@@ -146,7 +146,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	{
 		LPTSTR paths;
 		sizeout = 0;
-		if(!path) GetModuleFileName(NULL,path,MAX_PATH);
+		if(!dir) GetModuleFileName(NULL,path,MAX_PATH);
 		else _tcsncpy(path,dir,MAX_PATH+1);
 		GetDirFromPath(path);
 		error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,NULL,&sizeout);
