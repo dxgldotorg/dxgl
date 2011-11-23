@@ -2,14 +2,17 @@
 
 SetCompressor /SOLID lzma
 
+!include 'LogicLib.nsh'
+
+
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
-!define PRODUCT_VERSION "0.0.6"
 !define PRODUCT_PUBLISHER "William Feely"
 !define PRODUCT_WEB_SITE "https://www.williamfeely.info/wiki/DXGL"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
+!include "version.nsh"
 
 ; MUI2
 !include "MUI2.nsh"
@@ -41,8 +44,20 @@ SetCompressor /SOLID lzma
 
 ; MUI end ------
 
+
+!define HKEY_CURRENT_USER 0x80000001
+!define RegOpenKeyEx     "Advapi32::RegOpenKeyEx(i, t, i, i, *i) i"
+!define RegQueryValueEx  "Advapi32::RegQueryValueEx(i, t, i, *i, i, *i) i"
+!define RegCloseKey      "Advapi32::RegCloseKey(i) i"
+!define REG_MULTI_SZ     7
+!define INSTPATH         "InstallPaths"
+!define KEY_QUERY_VALUE          0x0001
+!define KEY_ENUMERATE_SUB_KEYS   0x0008
+!define ROOT_KEY         ${HKEY_CURRENT_USER}
+Var SUBKEY
+
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "DXGL-0.0.6-win32.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-win32.exe"
 InstallDir "$PROGRAMFILES\DXGL"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -59,6 +74,74 @@ Section "MainSection" SEC01
   File "..\Release\ddraw.dll"
   File "..\ReadMe.txt"
   File "..\COPYING.txt"
+  
+  StrCpy $8 0
+  SetPluginUnload alwaysoff
+  regloop:
+    EnumRegKey $SUBKEY HKCU "Software\DXGL" $8
+    StrCmp $SUBKEY "" regdone
+    StrCpy $SUBKEY "Software\DXGL\$SUBKEY"
+    MessageBox MB_OK "$SUBKEY"
+    IntOp $8 $8 + 1
+    ;REG_MULTI_SZ reader based on code at http://nsis.sourceforge.net/REG_MULTI_SZ_Reader
+    StrCpy $0 ""
+    StrCpy $1 ""
+    StrCpy $2 ""
+    StrCpy $3 ""
+    System::Call "${RegOpenKeyEx}(${ROOT_KEY},'$SUBKEY',0, \
+                  ${KEY_QUERY_VALUE}|${KEY_ENUMERATE_SUB_KEYS},.r0) .r3"
+    StrCmp $3 0 readvalue
+    Goto regloop
+    readvalue:
+    System::Call "${RegQueryValueEx}(r0,'${INSTPATH}',0,.r1,0,.r2) .r3"
+    StrCmp $3 0 checksz
+    goto readdone
+    checksz:
+    StrCmp $1 ${REG_MULTI_SZ} checkempty
+    MessageBox MB_OK|MB_ICONSTOP "Registry value no REG_MULTI_SZ! ($3)"
+    Goto readdone
+    checkempty:
+    StrCmp $2 0 0 multiszalloc
+    MessageBox MB_OK|MB_ICONSTOP "Registry value empty! ($3)"
+    Goto readdone
+    multiszalloc:
+    System::Alloc $2
+    Pop $1
+    StrCmp $1 0 0 multiszget
+    MessageBox MB_OK|MB_ICONSTOP "Can't allocate enough memory! ($3)"
+    Goto readdone
+    multiszget:
+    System::Call "${RegQueryValueEx}(r0, '${INSTPATH}', 0, n, r1, r2) .r3"
+    StrCmp $3 0 multiszprocess
+    MessageBox MB_OK|MB_ICONSTOP "Can't query registry value data! ($3)"
+    System::Free $1
+    Goto readdone
+    multiszprocess:
+    StrCpy $4 $1
+    IntOp $6 $4 + $2
+    !ifdef NSIS_UNICODE
+    IntOp $6 $6 - 2
+    !else
+    IntOp $6 $6 - 1
+    !endif
+    szloop:
+      System::Call "*$4(&t${NSIS_MAX_STRLEN} .r3)"
+      StrLen $5 $3
+      IntOp $5 $5 + 1
+      !ifdef NSIS_UNICODE
+      IntOp $5 $5 * 2
+      !endif
+      IntOp $4 $4 + $5
+      MessageBox MB_OK "$3"
+      IntCmp IntCmp $4 $6 0 szloop
+      System::Free $1
+
+    readdone:
+    StrCmp $0 0 regloop
+    System::Call "${RegCloseKey}(r0)"
+    goto regloop
+  regdone:
+  SetPluginUnload manual
 SectionEnd
 
 Section -AdditionalIcons
