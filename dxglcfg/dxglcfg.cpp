@@ -267,7 +267,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	bool hasname;
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
-	HANDLE token;
+	HANDLE token = NULL;
 	TOKEN_ELEVATION elevation;
 	switch(Msg)
 	{

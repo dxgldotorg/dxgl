@@ -19,6 +19,8 @@
 #include "ddraw.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
+#include <intrin.h>
+#include <tlhelp32.h>
 
 DXGLCFG dxglcfg;
 bool gllock = false;
@@ -61,10 +63,28 @@ DDRAW_API void WINAPI DSoundHelp()
 {
 	FIXME("DSoundHelp: stub\n");
 }
+int IsCallerOpenGL(void *returnaddress)
+{
+	int isgl = 0;
+	MODULEENTRY32 modentry = {0};
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE,0);
+	modentry.dwSize = sizeof(MODULEENTRY32);
+	Module32First(hSnapshot,&modentry);
+	do
+	{
+		if((modentry.modBaseAddr <= returnaddress) &&
+			(modentry.modBaseAddr+modentry.modBaseSize > returnaddress))
+		{
+			if(!_tcsicmp(modentry.szModule,_T("opengl32.dll"))) isgl=1;
+			break;
+		}
+	} while(Module32Next(hSnapshot,&modentry));
+	CloseHandle(hSnapshot);
+	return isgl;
+}
 HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter)
 {
-	GetCurrentConfig(&dxglcfg);
-	if(gllock)
+	if(gllock || IsCallerOpenGL(_ReturnAddress()))
 	{
 		if(!sysddraw)
 		{
@@ -81,6 +101,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		}
 		return sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
 	}
+	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
