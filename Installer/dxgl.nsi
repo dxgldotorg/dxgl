@@ -188,5 +188,71 @@ Section Uninstall
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
+
+  StrCpy $8 0
+  SetPluginUnload alwaysoff
+  regloop:
+    EnumRegKey $SUBKEY HKCU "Software\DXGL" $8
+    StrCmp $SUBKEY "" regdone
+    StrCpy $SUBKEY "Software\DXGL\$SUBKEY"
+    IntOp $8 $8 + 1
+    ;REG_MULTI_SZ reader based on code at http://nsis.sourceforge.net/REG_MULTI_SZ_Reader
+    StrCpy $0 ""
+    StrCpy $1 ""
+    StrCpy $2 ""
+    StrCpy $3 ""
+    System::Call "${RegOpenKeyEx}(${ROOT_KEY},'$SUBKEY',0, \
+                  ${KEY_QUERY_VALUE}|${KEY_ENUMERATE_SUB_KEYS},.r0) .r3"
+    StrCmp $3 0 readvalue
+    Goto regloop
+    readvalue:
+    System::Call "${RegQueryValueEx}(r0,'${INSTPATH}',0,.r1,0,.r2) .r3"
+    StrCmp $3 0 checksz
+    goto readdone
+    checksz:
+    StrCmp $1 ${REG_MULTI_SZ} checkempty
+    Goto readdone
+    checkempty:
+    StrCmp $2 0 0 multiszalloc
+    Goto readdone
+    multiszalloc:
+    System::Alloc $2
+    Pop $1
+    StrCmp $1 0 0 multiszget
+    Goto readdone
+    multiszget:
+    System::Call "${RegQueryValueEx}(r0, '${INSTPATH}', 0, n, r1, r2) .r3"
+    StrCmp $3 0 multiszprocess
+    System::Free $1
+    Goto readdone
+    multiszprocess:
+    StrCpy $4 $1
+    IntOp $6 $4 + $2
+    !ifdef NSIS_UNICODE
+    IntOp $6 $6 - 2
+    !else
+    IntOp $6 $6 - 1
+    !endif
+    szloop:
+      System::Call "*$4(&t${NSIS_MAX_STRLEN} .r3)"
+      StrLen $5 $3
+      IntOp $5 $5 + 1
+      !ifdef NSIS_UNICODE
+      IntOp $5 $5 * 2
+      !endif
+      IntOp $4 $4 + $5
+      ;copy file here
+      DetailPrint "Removing ddraw.dll from $3"
+      Delete $3\ddraw.dll
+      IntCmp IntCmp $4 $6 0 szloop
+      System::Free $1
+
+    readdone:
+    StrCmp $0 0 regloop
+    System::Call "${RegCloseKey}(r0)"
+    goto regloop
+  regdone:
+  SetPluginUnload manual
+
   SetAutoClose true
 SectionEnd
