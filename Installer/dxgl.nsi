@@ -81,7 +81,6 @@ Section "MainSection" SEC01
     EnumRegKey $SUBKEY HKCU "Software\DXGL" $8
     StrCmp $SUBKEY "" regdone
     StrCpy $SUBKEY "Software\DXGL\$SUBKEY"
-    MessageBox MB_OK "$SUBKEY"
     IntOp $8 $8 + 1
     ;REG_MULTI_SZ reader based on code at http://nsis.sourceforge.net/REG_MULTI_SZ_Reader
     StrCpy $0 ""
@@ -98,22 +97,18 @@ Section "MainSection" SEC01
     goto readdone
     checksz:
     StrCmp $1 ${REG_MULTI_SZ} checkempty
-    MessageBox MB_OK|MB_ICONSTOP "Registry value no REG_MULTI_SZ! ($3)"
     Goto readdone
     checkempty:
     StrCmp $2 0 0 multiszalloc
-    MessageBox MB_OK|MB_ICONSTOP "Registry value empty! ($3)"
     Goto readdone
     multiszalloc:
     System::Alloc $2
     Pop $1
     StrCmp $1 0 0 multiszget
-    MessageBox MB_OK|MB_ICONSTOP "Can't allocate enough memory! ($3)"
     Goto readdone
     multiszget:
     System::Call "${RegQueryValueEx}(r0, '${INSTPATH}', 0, n, r1, r2) .r3"
     StrCmp $3 0 multiszprocess
-    MessageBox MB_OK|MB_ICONSTOP "Can't query registry value data! ($3)"
     System::Free $1
     Goto readdone
     multiszprocess:
@@ -132,7 +127,9 @@ Section "MainSection" SEC01
       IntOp $5 $5 * 2
       !endif
       IntOp $4 $4 + $5
-      MessageBox MB_OK "$3"
+      ;copy file here
+      DetailPrint "Installing ddraw.dll to $3"
+      CopyFiles $INSTDIR\ddraw.dll $3
       IntCmp IntCmp $4 $6 0 szloop
       System::Free $1
 
