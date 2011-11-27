@@ -67,7 +67,7 @@ void AddStringToMultiSz(LPTSTR multisz, LPTSTR string)
 }
 
 
-bool ReadBool(HKEY hKey, bool &mask, LPTSTR value)
+bool ReadBool(HKEY hKey, bool original, bool &mask, LPTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -82,11 +82,11 @@ bool ReadBool(HKEY hKey, bool &mask, LPTSTR value)
 	else
 	{
 		mask = false;
-		return false;
+		return original;
 	}
 }
 
-DWORD ReadDWORD(HKEY hKey, DWORD &mask, LPTSTR value)
+DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -100,7 +100,7 @@ DWORD ReadDWORD(HKEY hKey, DWORD &mask, LPTSTR value)
 	else
 	{
 		mask = 0;
-		return 0;
+		return original;
 	}
 }
 
@@ -126,22 +126,22 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	LONG error;
 	DWORD regmultisz = REG_MULTI_SZ;
 	DWORD sizeout=4;
-	cfg->scaler = ReadDWORD(hKey,cfgmask->scaler,_T("ScalingMode"));
-	cfg->colormode = ReadBool(hKey,cfgmask->colormode,_T("ChangeColorDepth"));
-	cfg->scalingfilter = ReadDWORD(hKey,cfgmask->scalingfilter,_T("ScalingFilter"));
-	cfg->texfilter = ReadDWORD(hKey,cfgmask->texfilter,_T("TextureFilter"));
-	cfg->anisotropic = ReadDWORD(hKey,cfgmask->anisotropic,_T("AnisotropicFiltering"));
-	cfg->msaa = ReadDWORD(hKey,cfgmask->msaa,_T("Antialiasing"));
-	cfg->aspect = ReadDWORD(hKey,cfgmask->aspect,_T("AdjustAspectRatio"));
-	cfg->highres = ReadBool(hKey,cfgmask->highres,_T("AdjustPrimaryResolution"));
+	cfg->scaler = ReadDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
+	cfg->colormode = ReadBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
+	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
+	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
+	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
+	cfg->msaa = ReadDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
+	cfg->aspect = ReadDWORD(hKey,cfg->aspect,cfgmask->aspect,_T("AdjustAspectRatio"));
+	cfg->highres = ReadBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
-	cfg->SortModes = ReadDWORD(hKey,cfgmask->SortModes,_T("SortModes"));
-	cfg->AllColorDepths = ReadBool(hKey,cfgmask->AllColorDepths,_T("AllColorDepths"));
-	cfg->ExtraModes = ReadBool(hKey,cfgmask->ExtraModes,_T("ExtraModes"));
-	cfg->vsync = ReadDWORD(hKey,cfgmask->vsync,_T("VSync"));
-	cfg->audio3d = ReadBool(hKey,cfgmask->audio3d,_T("Use3DAudio"));
-	cfg->audioglobal = ReadBool(hKey,cfgmask->audioglobal,_T("GlobalAudio"));
-	cfg->inputglobal = ReadBool(hKey,cfgmask->inputglobal,_T("GlobalInput"));
+	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
+	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
+	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
+	cfg->vsync = ReadDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
+	cfg->audio3d = ReadBool(hKey,cfg->audio3d,cfgmask->audio3d,_T("Use3DAudio"));
+	cfg->audioglobal = ReadBool(hKey,cfg->audioglobal,cfgmask->audioglobal,_T("GlobalAudio"));
+	cfg->inputglobal = ReadBool(hKey,cfg->inputglobal,cfgmask->inputglobal,_T("GlobalInput"));
 	if(!global && dll)
 	{
 		LPTSTR paths;
