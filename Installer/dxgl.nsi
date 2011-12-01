@@ -139,6 +139,14 @@ Section "MainSection" SEC01
     goto regloop
   regdone:
   SetPluginUnload manual
+  ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
+  StrCmp $0 1 skipvcredist
+  DetailPrint "Downloading Visual C++ 2010 Runtime"
+  NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
+  DetailPrint "Installing Visual C++ 2010 Runtime"
+  ExecWait '"$TEMP\vcredist_x86.exe" /passive /norestart'
+  Delete $TEMP\vcredist_x86.exe
+  skipvcredist:
 SectionEnd
 
 Section -AdditionalIcons
