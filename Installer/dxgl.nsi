@@ -141,11 +141,15 @@ Section "MainSection" SEC01
   SetPluginUnload manual
   ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
   StrCmp $0 1 skipvcredist
+  MessageBox MB_YESNO|MB_ICONQUESTION  "The Microsoft Visual C++ 2010 Runtime does not seem to be installed.  Do you want to download and install it now?" IDNO novc
   DetailPrint "Downloading Visual C++ 2010 Runtime"
   NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
   DetailPrint "Installing Visual C++ 2010 Runtime"
-  ExecWait '"$TEMP\vcredist_x86.exe" /passive /norestart'
+  ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
   Delete $TEMP\vcredist_x86.exe
+  goto skipvcredist
+  novc:
+  MessageBox MB_OK|MB_ICONEXCLAMATION "DXGL will not work if the Visual C++ 2010 Runtime is not installed.  Please install the Visual C++ 2010 Runtime before running DXGL."
   skipvcredist:
 SectionEnd
 
