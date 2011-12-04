@@ -897,6 +897,23 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 			break;
 		case IDC_REMOVE:
+			if(!(GetWindowLong(hWnd,GWL_STYLE) & WS_DISABLED))
+			{
+				switch(MessageBox(hWnd,_T("Do you want to apply settings before continuing?\nIf you answer No, the unsaved settings will be discarded."),
+					_T("Unsaved settings detected"),MB_YESNOCANCEL))
+				{
+				case IDYES:
+					SaveChanges(hWnd);
+					break;
+				case IDNO:
+					break;
+				default:
+					return false;
+				}
+			}
+			// Delete app profile
+
+
 			break;
 		}
 		break;
