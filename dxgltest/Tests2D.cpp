@@ -39,6 +39,7 @@ inline float randfloat(float multiple)
 MultiDirectDraw *ddinterface;
 MultiDirectDrawSurface *ddsurface;
 MultiDirectDrawSurface *ddsrender;
+IDirectDrawPalette *pal;
 LPDIRECTDRAWCLIPPER ddclipper;
 int width,height,bpp,refresh,backbuffers;
 double fps;
@@ -87,6 +88,11 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 			ddsurface->Release();
 			ddsurface = NULL;
+		}
+		if(pal)
+		{
+			pal->Release();
+			pal = NULL;
 		}
 		if(ddclipper)
 		{
@@ -227,11 +233,10 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	}
 	if(bpp == 8)
 	{
-		IDirectDrawPalette *pal;
 		ddinterface->CreatePalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256,(LPPALETTEENTRY)&DefaultPalette,&pal,NULL);
 		ddsrender->SetPalette(pal);
-		pal->Release();
 	}
+	else pal = NULL;
 	InitTest(testnum);
 	if(!fullscreen) SendMessage(hWnd,WM_PAINT,0,0);
 	if(testtypes[testnum] == 1)
