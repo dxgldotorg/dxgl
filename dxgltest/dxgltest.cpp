@@ -500,6 +500,13 @@ typedef struct tagINITCOMMONCONTROLSEX {
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	if(_tcsstr(lpCmdLine,_T(" install")))
+	{
+		LPDIRECTDRAW lpdd;
+		DirectDrawCreate(NULL,&lpdd,NULL);
+		lpdd->Release();
+		return 0;
+	}
 	OSVERSIONINFO verinfo;
 	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
 	GetVersionEx(&verinfo);

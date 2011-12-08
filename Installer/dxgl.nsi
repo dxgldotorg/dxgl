@@ -124,7 +124,7 @@ Section "MainSection" SEC01
       StrLen $5 $3
       IntOp $5 $5 + 1
       !ifdef NSIS_UNICODE
-      IntOp $5 $5 * 2
+      IntOp $5 $5 + 2
       !endif
       IntOp $4 $4 + $5
       ;copy file here
@@ -151,6 +151,8 @@ Section "MainSection" SEC01
   novc:
   MessageBox MB_OK|MB_ICONEXCLAMATION "DXGL will not work if the Visual C++ 2010 Runtime is not installed.  Please install the Visual C++ 2010 Runtime before running DXGL."
   skipvcredist:
+  WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
+  ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
 Section -AdditionalIcons
@@ -200,6 +202,7 @@ Section Uninstall
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
+  DeleteRegKey HKLM "Software\DXGL"
 
   StrCpy $8 0
   SetPluginUnload alwaysoff

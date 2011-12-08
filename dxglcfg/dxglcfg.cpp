@@ -82,7 +82,7 @@ DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
 		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
 		if(error == ERROR_SUCCESS)
 		{
-			error = RegQueryValueEx(hKeyInstall,_T("InstallPath"),NULL,NULL,(LPBYTE)installpath,&sizeout);
+			error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
 			if(error == ERROR_SUCCESS) installed = true;
 		}
 		if(hKeyInstall) RegCloseKey(hKeyInstall);
@@ -508,7 +508,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				maxapps += 128;
 				apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
 			}
-			subkey = keyname;
+			if(!_tcscmp(keyname,_T("DXGLTestApp"))) subkey = _T("dxgltest.exe-0");
+			else subkey = keyname;
 			if(subkey.rfind(_T("-")) != -1) subkey.resize(subkey.rfind(_T("-")));
 			error = RegOpenKeyEx(hKeyBase,keyname,0,KEY_READ,&hKey);
 			buffersize = regbuffersize;
@@ -669,6 +670,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				cfg = &apps[current_app].cfg;
 				cfgmask = &apps[current_app].mask;
 				dirty = &apps[current_app].dirty;
+				if(current_app) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),true);
+				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),false);
 				// Set 3-state status
 				if(current_app && !tristate)
 				{
@@ -897,19 +900,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 			break;
 		case IDC_REMOVE:
-			if(!(GetWindowLong(hWnd,GWL_STYLE) & WS_DISABLED))
+			if(!(GetWindowLong(GetDlgItem(hWnd,IDC_APPLY),GWL_STYLE) & WS_DISABLED))
 			{
-				switch(MessageBox(hWnd,_T("Do you want to apply settings before continuing?\nIf you answer No, the unsaved settings will be discarded."),
-					_T("Unsaved settings detected"),MB_YESNOCANCEL))
-				{
-				case IDYES:
-					SaveChanges(hWnd);
-					break;
-				case IDNO:
-					break;
-				default:
-					return false;
-				}
+				if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
+					_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) == IDNO) return false;
+				
 			}
 			// Delete app profile
 

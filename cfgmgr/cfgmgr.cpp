@@ -250,26 +250,57 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	return (LPTSTR)newregname.c_str();
 }
 
+bool IsInstalledDXGLTest(LPCTSTR path)
+{
+	LRESULT err;
+	TCHAR dir[MAX_PATH+1];
+	TCHAR cmp[MAX_PATH+1];
+	_tcsncpy(dir,path,MAX_PATH);
+	GetDirFromPath(dir);
+	HKEY hKey;
+	DWORD sizeout = MAX_PATH*sizeof(TCHAR);
+	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKey) != ERROR_SUCCESS)
+		return false;
+	err = RegQueryValueEx(hKey,_T("InstallDir"),NULL,NULL,(LPBYTE)cmp,&sizeout);
+	if(err != ERROR_SUCCESS)
+	{
+		RegCloseKey(hKey);
+		return false;
+	}
+	RegCloseKey(hKey);
+	if(!_tcsnicmp(dir,cmp,MAX_PATH)) return true;
+	else return false;
+}
+
 void GetCurrentConfig(DXGLCFG *cfg)
 {
 	HKEY hKey;
 	unsigned long crc;
+	tstring regkey;
 	FILE *file;
 	TCHAR filename[MAX_PATH+1];
 	TCHAR crcstr[10];
 	GetModuleFileName(NULL,filename,MAX_PATH);
-	file = _tfopen(filename,_T("rb"));
-	if(file != NULL) Crc32_ComputeFile(file,&crc);
-	else crc = 0;
-	_itot(crc,crcstr,16);
-	if(file) fclose(file);
-	tstring regkey = regkeybase;
-	int i;
-	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
-	i++;
-	regkey.append(&filename[i]);
-	regkey.append(_T("-"));
-	regkey.append(crcstr);
+	if(IsInstalledDXGLTest(filename))
+	{
+		regkey = regkeybase;
+		regkey.append(_T("DXGLTestApp"));
+	}
+	else
+	{
+		file = _tfopen(filename,_T("rb"));
+		if(file != NULL) Crc32_ComputeFile(file,&crc);
+		else crc = 0;
+		_itot(crc,crcstr,16);
+		if(file) fclose(file);
+		regkey = regkeybase;
+		int i;
+		for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+		i++;
+		regkey.append(&filename[i]);
+		regkey.append(_T("-"));
+		regkey.append(crcstr);
+	}
 	GetGlobalConfig(cfg);
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,false,true,NULL);
