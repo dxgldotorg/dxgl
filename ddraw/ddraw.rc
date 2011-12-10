@@ -19,6 +19,7 @@
 #include <commctrl.h>
 #include <richedit.h>
 #include "resource.h"
+#include "../common/version.h"
 
 
 
@@ -36,8 +37,8 @@ IDI_ICON1          ICON           "..\\common\\dxgl.ico"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 1 VERSIONINFO
-    FILEVERSION     0,0,7,0
-    PRODUCTVERSION  0,0,7,0
+    FILEVERSION     DXGLVERNUMBER
+    PRODUCTVERSION  DXGLVERNUMBER
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
     FILESUBTYPE     VFT2_UNKNOWN
@@ -50,12 +51,12 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
         {
             VALUE "CompanyName", "William Feely"
             VALUE "FileDescription", "DXGL DDraw Library"
-            VALUE "FileVersion", "0.0.7.0"
+            VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
             VALUE "LegalCopyright", "Copyright (C) 2011 William Feely"
             VALUE "OriginalFilename", "DDraw.dll"
             VALUE "ProductName", "DXGL"
-            VALUE "ProductVersion", "0.0.7.0"
+            VALUE "ProductVersion", DXGLVERSTRING
         }
     }
     BLOCK "VarFileInfo"

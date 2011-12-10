@@ -12,7 +12,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
-!include "version.nsh"
+!include "..\common\version.nsh"
 
 ; MUI2
 !include "MUI2.nsh"
@@ -74,6 +74,8 @@ Section "MainSection" SEC01
   File "..\Release\ddraw.dll"
   File "..\ReadMe.txt"
   File "..\COPYING.txt"
+  File "..\Help\dxgl.chm"
+  CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   
   StrCpy $8 0
   SetPluginUnload alwaysoff

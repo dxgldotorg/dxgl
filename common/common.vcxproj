@@ -111,6 +111,10 @@
     <None Include="dxglicon.svg" />
     <None Include="dxglsm.ico" />
     <None Include="star.ico" />
+    <None Include="version.nsh" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

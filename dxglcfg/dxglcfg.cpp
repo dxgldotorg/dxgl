@@ -17,6 +17,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
+#include <HtmlHelp.h>
 #include <CommCtrl.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -47,6 +48,7 @@ HINSTANCE hinstance;
 bool msaa = false;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
+TCHAR hlppath[MAX_PATH+16];
 
 typedef struct
 {
@@ -648,6 +650,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		}
 		break;
+	case WM_HELP:
+		HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
+		return true;
+		break;
+	case WM_SYSCOMMAND:
+		if(LOWORD(wParam) == SC_CONTEXTHELP)
+		{
+			HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
+			return true;
+		}
+		break;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
@@ -670,7 +683,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				cfg = &apps[current_app].cfg;
 				cfgmask = &apps[current_app].mask;
 				dirty = &apps[current_app].dirty;
-				if(current_app) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),true);
+				if(current_app)
+				{
+					if(!_tcscmp(apps[current_app].regkey->c_str(),_T("DXGLTestApp"))) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),false);
+					else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),true);
+				}
 				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),false);
 				// Set 3-state status
 				if(current_app && !tristate)
@@ -943,6 +960,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
 	hinstance = hInstance;
+	GetModuleFileName(NULL,hlppath,MAX_PATH);
+	GetDirFromPath(hlppath);
+	_tcscat(hlppath,_T("\\dxgl.chm"));
 	int result = DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));
 	return 0;
 }

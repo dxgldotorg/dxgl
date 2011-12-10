@@ -47,5 +47,6 @@ void GetGlobalConfig(DXGLCFG *cfg);
 void SetGlobalConfig(const DXGLCFG *cfg);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
+void GetDirFromPath(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
 #endif //_CFGMGR_H
