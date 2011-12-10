@@ -73,6 +73,7 @@ TCHAR strdefault[] = _T("(global default)");
 DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
 {
 	bool installed = false;
+	bool dxgl_installdir = false;
 	bool old_dxgl = false;
 	tstring command;
 	if(copyfile)
@@ -84,6 +85,7 @@ DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
 		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
 		if(error == ERROR_SUCCESS)
 		{
+			dxgl_installdir = true;
 			error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
 			if(error == ERROR_SUCCESS) installed = true;
 		}
@@ -92,7 +94,8 @@ DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
 		{
 			GetModuleFileName(NULL,installpath,MAX_PATH+1);
 		}
-		(_tcsrchr(installpath,_T('\\')))[1] = 0;
+		if(dxgl_installdir) _tcscat(installpath,_T("\\"));
+		else (_tcsrchr(installpath,_T('\\')))[1] = 0;
 		_tcscat(installpath,_T("ddraw.dll"));
 		_tcsncpy(destpath,path,MAX_PATH+1);
 		(_tcsrchr(destpath,_T('\\')))[1] = 0;
