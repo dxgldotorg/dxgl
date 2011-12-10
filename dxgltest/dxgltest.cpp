@@ -500,7 +500,7 @@ typedef struct tagINITCOMMONCONTROLSEX {
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	if(_tcsstr(lpCmdLine,_T(" install")))
+	if(!_tcsnicmp(lpCmdLine,_T("install"),7))
 	{
 		LPDIRECTDRAW lpdd;
 		DirectDrawCreate(NULL,&lpdd,NULL);

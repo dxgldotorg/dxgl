@@ -15,5 +15,17 @@
     <None Include="toc.hhc">
       <Filter>Help files</Filter>
     </None>
+    <None Include="introduction.htm">
+      <Filter>Help files</Filter>
+    </None>
+    <None Include="configuration.htm">
+      <Filter>Help files</Filter>
+    </None>
+    <None Include="dxglcfg.png">
+      <Filter>Help files</Filter>
+    </None>
+    <None Include="dxgl.css">
+      <Filter>Help files</Filter>
+    </None>
   </ItemGroup>
 </Project>

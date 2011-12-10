@@ -60,8 +60,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="configuration.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="dxgl.css" />
     <None Include="dxgl.hhp" />
+    <None Include="dxglcfg.png" />
     <None Include="Index.hhk" />
+    <None Include="introduction.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="toc.hhc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

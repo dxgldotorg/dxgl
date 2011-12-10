@@ -69,8 +69,8 @@ FONT 8, "Ms Shell Dlg 2"
     AUTOCHECKBOX    "Adjust Primary resolution", IDC_HIGHRES, 299, 28, 96, 8
     AUTOCHECKBOX    "Support All Color Depths", IDC_UNCOMMONCOLOR, 299, 55, 94, 8
     AUTOCHECKBOX    "Add Extra Display Modes", IDC_EXTRAMODES, 299, 42, 100, 8
-    LTEXT           "Sort video modes", IDC_STATIC, 196, 39, 56, 8, SS_LEFT
-    COMBOBOX        IDC_SORTMODES, 196, 49, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    LTEXT           "Sort video modes", IDC_STATIC, 195, 39, 56, 8, SS_LEFT
+    COMBOBOX        IDC_SORTMODES, 195, 49, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
 }
 
 

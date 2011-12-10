@@ -2,11 +2,18 @@
 Compatibility=1.1 or later
 Compiled file=dxgl.chm
 Contents file=toc.hhc
+Default topic=introduction.htm
 Display compile progress=No
 Index file=Index.hhk
 Language=0x409 English (United States)
 Title=DXGL Help
 
+
+[FILES]
+introduction.htm
+configuration.htm
+dxgl.css
+dxglcfg.png
 
 [INFOTYPES]
 
