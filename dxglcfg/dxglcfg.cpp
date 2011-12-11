@@ -70,7 +70,7 @@ int current_app;
 bool tristate;
 TCHAR strdefault[] = _T("(global default)");
 
-DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
+DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 {
 	bool installed = false;
 	bool dxgl_installdir = false;
@@ -137,6 +137,59 @@ DWORD AddApp(LPTSTR path, bool copyfile, bool admin)
 			}
 			return error;
 		}
+	}
+	return 0;
+}
+
+DWORD DelApp(LPCTSTR path, bool admin)
+{
+	bool installed = false;
+	bool dxgl_installdir = false;
+	tstring command;
+	bool old_dxgl = true;
+	DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
+	TCHAR installpath[MAX_PATH+1];
+	HKEY hKeyInstall;
+	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
+	if(error == ERROR_SUCCESS)
+	{
+		dxgl_installdir = true;
+		error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
+		if(error == ERROR_SUCCESS) installed = true;
+	}
+	if(hKeyInstall) RegCloseKey(hKeyInstall);
+	if(!installed)
+	{
+		GetModuleFileName(NULL,installpath,MAX_PATH+1);
+	}
+	HMODULE hmod = LoadLibrary(path);
+	if(hmod)
+	{
+		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = false;
+		FreeLibrary(hmod);
+	}
+	if(!DeleteFile(path))
+	{
+		error = GetLastError();
+		if(error == ERROR_FILE_NOT_FOUND) return 0;
+		if((error == ERROR_ACCESS_DENIED) && !admin)
+		{
+			command.assign(_T(" remove "));
+			command.append(path);
+			SHELLEXECUTEINFO shex;
+			ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
+			shex.cbSize = sizeof(SHELLEXECUTEINFO);
+			shex.lpVerb = _T("runas");
+			_tcscat(installpath,_T("\\dxglcfg.exe"));
+			shex.lpFile = installpath;
+			shex.lpParameters = command.c_str();
+			ShellExecuteEx(&shex);
+			WaitForSingleObject(shex.hProcess,INFINITE);
+			DWORD exitcode;
+			GetExitCodeProcess(shex.hProcess,&exitcode);
+			return exitcode;
+		}
+		return error;
 	}
 	return 0;
 }
@@ -920,15 +973,45 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 			break;
 		case IDC_REMOVE:
-			if(!(GetWindowLong(GetDlgItem(hWnd,IDC_APPLY),GWL_STYLE) & WS_DISABLED))
+			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
+				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return false;
+			tstring regpath = _T("Software\\DXGL\\");
+			tstring regkey = *apps[current_app].regkey;
+			regpath.append(*apps[current_app].regkey);
+			RegOpenKeyEx(HKEY_CURRENT_USER,regpath.c_str(),0,KEY_READ,&hKey);
+			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
+			regbuffer = (LPTSTR)malloc(buffersize);
+			regbuffer[0] = regbuffer[1] = 0;
+			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
+			regbufferpos = 0;
+			bool failed = false;
+			while(1)
 			{
-				if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
-					_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) == IDNO) return false;
-				
+				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS) break;
+				if(regkey.rfind(_T("-")) != -1) regkey.resize(regkey.rfind(_T("-")));
+				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\ddraw.dll"));
+				if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+				{
+					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+					continue;
+				}
+				if(DelApp(path.c_str(),false)) failed = true;
+				regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
 			}
-			// Delete app profile
-
-
+			RegCloseKey(hKey);
+			if(!failed)
+			{
+				RegDeleteKey(HKEY_CURRENT_USER,regpath.c_str());
+				if(!apps[current_app].icon_shared) DeleteObject(apps[current_app].icon);
+				if(apps[current_app].name) delete apps[current_app].name;
+				if(apps[current_app].regkey) delete apps[current_app].regkey;
+				for(int i = current_app; i < appcount; i++)
+				{
+					apps[i] = apps[i+1];
+				}
+				appcount--;
+			}
+			SendDlgItemMessage(hWnd,IDC_APPS,LB_DELETESTRING,current_app,NULL);
 			break;
 		}
 		break;
@@ -954,6 +1037,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
 	{
 		return AddApp(lpCmdLine+8,true,true);
+	}
+	if(!_tcsnicmp(lpCmdLine,_T("remove "),7))
+	{
+		return DelApp(lpCmdLine+7,true);
 	}
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
