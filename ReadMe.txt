@@ -2,7 +2,7 @@
 
 DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL 2.0. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
 
-DXGL is currently in a pre-alpha stage and very little works at this point.
+DXGL is currently in an alpha stage of development and very little works at this point.
 
 == System Requirements ==
 
@@ -39,19 +39,10 @@ What doesn't work:
 * Most functions are stubbed out and return an error
 * No 3D graphics support
 
-== Roadmap ==
-These are goals to be set for future releases.
-Please see https://www.williamfeely.info/wiki/DXGL for updated information.
-
-- Version 0.1.0 Alpha
-* Implement per-application settings
-* Create installer
-
 == Installation ==
 
-Extract ddraw.dll to the folder where your application is installed.
-To uninstall, delete ddraw.dll from the application's folder.
-To test DXGL, run dxgltest.exe
+Run the installer.  When the installer completes, open DXGL Config and add your program files to the config program.
+To uninstall, go to the Add/Remove Programs or Programs and Features control panel and uninstall.
 
 == SVN ==
 
