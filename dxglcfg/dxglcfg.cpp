@@ -581,17 +581,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			regbuffer[0] = regbuffer[1] = 0;
 			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
 			regbufferpos = 0;
-			apps[i].regkey = new tstring(keyname);
-			GetConfig(&apps[i].cfg,&apps[i].mask,keyname);
-			apps[i].dirty = false;
+			apps[appcount-1].regkey = new tstring(keyname);
+			GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,keyname);
+			apps[appcount-1].dirty = false;
 			while(1)
 			{
 				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
 				{
 					// Default icon
-					apps[i].icon = LoadIcon(NULL,IDI_APPLICATION);
-					apps[i].icon_shared = true;
-					apps[i].name = new tstring(subkey);
+					apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
+					apps[appcount-1].icon_shared = true;
+					apps[appcount-1].name = new tstring(subkey);
 					break;
 				}
 				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+subkey;
@@ -602,8 +602,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				// Get exe attributes
 				error = SHGetFileInfo(path.c_str(),0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
-				apps[i].icon = fileinfo.hIcon;
-				apps[i].icon_shared = false;
+				apps[appcount-1].icon = fileinfo.hIcon;
+				apps[appcount-1].icon_shared = false;
 				verinfosize = GetFileVersionInfoSize(path.c_str(),NULL);
 				verinfo = malloc(verinfosize);
 				hasname = false;
@@ -616,7 +616,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 						{
 							hasname = true;
-							apps[i].name = new tstring(outbuffer);
+							apps[appcount-1].name = new tstring(outbuffer);
 						}
 						else
 						{
@@ -624,7 +624,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 							if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 							{
 								hasname = true;
-								apps[i].name = new tstring(outbuffer);
+								apps[appcount-1].name = new tstring(outbuffer);
 							}
 							else
 							{
@@ -632,13 +632,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 								{
 									hasname = true;
-									apps[i].name = new tstring(outbuffer);
+									apps[appcount-1].name = new tstring(outbuffer);
 								}
 							}
 						}
 					}
 				}
-				if(!hasname) apps[i].name = new tstring(subkey);
+				if(!hasname) apps[appcount-1].name = new tstring(subkey);
 				free(verinfo);
 				break;
 			}
