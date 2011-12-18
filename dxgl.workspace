@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_workspace_file>
-	<Workspace title="DXGL" />
+	<Workspace title="DXGL">
+		<Project filename="cfgmgr/cfgmgr.cbp" />
+		<Project filename="common/common.cbp" active="1" />
+	</Workspace>
 </CodeBlocks_workspace_file>

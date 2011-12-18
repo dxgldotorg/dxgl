@@ -2,31 +2,25 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="cfgmgr" />
+		<Option title="common" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="libcfgmgr" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
+				<Option output="bin\Debug\common" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Debug\" />
-				<Option type="2" />
+				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="libcfgmgr" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
+				<Option output="bin\Release\common" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Release\" />
-				<Option type="2" />
+				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-O2" />
 				</Compiler>
 				<Linker>
@@ -34,29 +28,23 @@
 				</Linker>
 			</Target>
 			<Target title="Unicode Debug">
-				<Option output="libcfgmgr" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
+				<Option output="bin\Debug\common" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Unicode Debug\" />
-				<Option type="2" />
+				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-g" />
 					<Add option="-DUNICODE" />
 					<Add option="-D_UNICODE" />
 				</Compiler>
 			</Target>
 			<Target title="Unicode Release">
-				<Option output="libcfgmgr" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
+				<Option output="bin\Release\common" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Unicode Release\" />
-				<Option type="2" />
+				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
 				<Compiler>
 					<Add option="-O2" />
-					<Add option="-Wall" />
 					<Add option="-DUNICODE" />
 					<Add option="-D_UNICODE" />
 				</Compiler>
@@ -65,13 +53,19 @@
 				</Linker>
 			</Target>
 		</Build>
-		<Unit filename="ReadMe.txt" />
-		<Unit filename="cfgmgr.cpp" />
-		<Unit filename="cfgmgr.h" />
-		<Unit filename="crc32.cpp" />
-		<Unit filename="crc32.h" />
-		<Unit filename="stdafx.cpp" />
-		<Unit filename="stdafx.h" />
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="dxgl.ico" />
+		<Unit filename="dxgl.png" />
+		<Unit filename="dxgl48.ico" />
+		<Unit filename="dxglicon.svg" />
+		<Unit filename="dxglinv.bmp" />
+		<Unit filename="dxglinv64.bmp" />
+		<Unit filename="dxglsm.ico" />
+		<Unit filename="star.ico" />
+		<Unit filename="version.h" />
+		<Unit filename="version.nsh" />
 		<Extensions>
 			<code_completion />
 			<envvars />
