@@ -132,7 +132,21 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		if(paintwnd) EndPaint(hWnd,&paintstruct);
 		return 0;
 	case WM_MOUSEMOVE:
-		RunTestMouse(testnum,WM_MOUSEMOVE,wParam,lParam);
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_LBUTTONDBLCLK:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_RBUTTONDBLCLK:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MBUTTONDBLCLK:
+	case WM_MOUSEWHEEL:
+	case WM_XBUTTONDOWN:
+	case WM_XBUTTONUP:
+	case WM_XBUTTONDBLCLK:
+	case WM_MOUSEHWHEEL:
+		RunTestMouse(testnum,Msg,wParam,lParam);
 		if(!fullscreen)
 		{
 			p.x = 0;
@@ -199,6 +213,48 @@ void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 		case WM_MOUSEMOVE:
 			_tcscat(message,_T("WM_MOUSEMOVE "));
+			break;
+		case WM_LBUTTONDOWN:
+			_tcscat(message,_T("WM_LBUTTONDOWN "));
+			break;
+		case WM_LBUTTONUP:
+			_tcscat(message,_T("WM_LBUTTONUP "));
+			break;
+		case WM_LBUTTONDBLCLK:
+			_tcscat(message,_T("WM_LBUTTONDBLCLK "));
+			break;
+		case WM_RBUTTONDOWN:
+			_tcscat(message,_T("WM_RBUTTONDOWN "));
+			break;
+		case WM_RBUTTONUP:
+			_tcscat(message,_T("WM_RBUTTONUP "));
+			break;
+		case WM_RBUTTONDBLCLK:
+			_tcscat(message,_T("WM_RBUTTONDBLCLK "));
+			break;
+		case WM_MBUTTONDOWN:
+			_tcscat(message,_T("WM_MBUTTONDOWN "));
+			break;
+		case WM_MBUTTONUP:
+			_tcscat(message,_T("WM_MBUTTONUP "));
+			break;
+		case WM_MBUTTONDBLCLK:
+			_tcscat(message,_T("WM_MBUTTONDBLCLK "));
+			break;
+		case WM_MOUSEWHEEL:
+			_tcscat(message,_T("WM_MOUSEWHEEL "));
+			break;
+		case WM_XBUTTONDOWN:
+			_tcscat(message,_T("WM_XBUTTONDOWN "));
+			break;
+		case WM_XBUTTONUP:
+			_tcscat(message,_T("WM_XBUTTONUP "));
+			break;
+		case WM_XBUTTONDBLCLK:
+			_tcscat(message,_T("WM_XBUTTONDBLCLK "));
+			break;
+		case WM_MOUSEHWHEEL:
+			_tcscat(message,_T("WM_MOUSEHWHEEL "));
 			break;
 		default:
 			_tcscat(message,_T("unknown "));
