@@ -25,6 +25,7 @@
 void InitTest(int test);
 void RunTestTimed(int test);
 void RunTestLooped(int test);
+void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
 inline unsigned int rand32(unsigned int &n)
 {
     return n=(((unsigned int) 1103515245 * n) + (unsigned int) 12345) %
@@ -47,7 +48,7 @@ bool fullscreen,resizable;
 HWND hWnd;
 int testnum;
 unsigned int randnum;
-int testtypes[] = {0,1,0,1,0,1};
+int testtypes[] = {0,1,0,1,0,1,2};
 
 typedef struct
 {
@@ -70,6 +71,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	POINT p;
 	RECT srcrect,destrect;
 	HRESULT error;
+	PAINTSTRUCT paintstruct;
 	switch(Msg)
 	{
 	case WM_CLOSE:
@@ -114,6 +116,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_SIZE:
 	case WM_PAINT:
+		BeginPaint(hWnd,&paintstruct);
 		if(!fullscreen)
 		{
 			p.x = 0;
@@ -124,17 +127,112 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 			SetRect(&srcrect,0,0,width,height);
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
-		return FALSE;
+		EndPaint(hWnd,&paintstruct);
+		return 0;
+	case WM_MOUSEMOVE:
+		RunTestMouse(testnum,WM_MOUSEMOVE,wParam,lParam);
+		if(!fullscreen)
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd,&p);
+			GetClientRect(hWnd,&destrect);
+			OffsetRect(&destrect,p.x,p.y);
+			SetRect(&srcrect,0,0,width,height);
+			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+		}
+		break;
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
 	}
 	return FALSE;
 }
 
-
-
 int ddtestnum;
 int ddver;
+
+void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	DDBLTFX bltfx;
+	unsigned char *surface;
+	int bytes;
+	unsigned int x,y;
+	bool out = false;
+	bool msgbottom = false;
+	TCHAR message[256];
+	message[0] = 0;
+	HDC hDC;
+	switch(test)
+	{
+	case 6:
+		x = LOWORD(lParam);
+		y = HIWORD(lParam);
+		ZeroMemory(&bltfx,sizeof(DDBLTFX));
+		bltfx.dwSize = sizeof(DDBLTFX);
+		bltfx.dwFillColor = 0;
+		ddsrender->Blt(NULL,NULL,NULL,DDBLT_COLORFILL,&bltfx);
+		if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else ddsd.dwSize = sizeof(DDSURFACEDESC);
+		ddsrender->GetSurfaceDesc(&ddsd);
+		switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
+		{
+		case 8:
+			bytes=1;
+			break;
+		case 15:
+		case 16:
+			bytes=2;
+			break;
+		case 24:
+			bytes=3;
+			break;
+		case 32:
+		default:
+			bytes=4;
+		}
+		_tcscpy(message,_T("Message: "));
+		switch(Msg)
+		{
+		case WM_MOUSEMOVE:
+			_tcscat(message,_T("WM_MOUSEMOVE "));
+			break;
+		default:
+			_tcscat(message,_T("unknown "));
+		}
+		_tcscat(message,_T("Keys: "));
+		if(wParam & MK_CONTROL) _tcscat(message, _T("CTRL "));
+		if(wParam & MK_SHIFT) _tcscat(message,_T("SHIFT "));
+		_tcscat(message,_T("Buttons: "));
+		if(wParam & MK_LBUTTON) _tcscat(message,_T("L "));
+		if(wParam & MK_MBUTTON) _tcscat(message,_T("M "));
+		if(wParam & MK_RBUTTON) _tcscat(message,_T("R "));
+		if(wParam & MK_XBUTTON1) _tcscat(message,_T("X1 "));
+		if(wParam & MK_XBUTTON2) _tcscat(message,_T("X2 "));
+		// Add X and Y
+		ddsrender->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
+		surface = (unsigned char *)ddsd.lpSurface;
+		if((x > ddsd.dwWidth) || (y > ddsd.dwHeight))
+		{
+			out = true;
+			_tcscat(message,_T(" OUT OF BOUNDS"));
+		}
+		else surface[(x*bytes)+(y*ddsd.lPitch)] = 0xFF;
+		ddsrender->Unlock(NULL);
+		ddsrender->GetDC(&hDC);
+		if(out)SetBkColor(hDC,RGB(255,0,0));
+		else SetBkColor(hDC,RGB(0,0,255));
+		SetTextColor(hDC,RGB(255,255,255));
+		if(y > ddsd.dwHeight / 2) TextOut(hDC,0,0,message,_tcslen(message));
+		else TextOut(hDC,0,ddsd.dwHeight-16,message,_tcslen(message));
+		ddsrender->ReleaseDC(hDC);
+		break;
+	default:
+		break;
+	}
+}
+
 const TCHAR wndclassname2d[] = _T("DDTestWndClass");
 void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	double fps, bool fullscreen, bool resizable)
@@ -168,7 +266,8 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	wc.hInstance = hinstance;
 	wc.hIcon = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGL));
 	wc.hIconSm = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGLSM));
-	wc.hCursor = LoadCursor(NULL,IDC_ARROW);
+	if(testnum == 6) wc.hCursor = LoadCursor(NULL,IDC_CROSS);
+	else wc.hCursor = LoadCursor(NULL,IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	wc.lpszClassName = wndclassname2d;
 	if(!RegisterClassEx(&wc))
@@ -259,9 +358,17 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 			}
 		}
 	}
-	else
+	else if(testtypes[testnum] == 0)
 	{
 		StartTimer(hWnd,WM_APP,fps);
+		while(GetMessage(&Msg, NULL, 0, 0) > 0)
+		{
+	        TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+	}
+	else
+	{
 		while(GetMessage(&Msg, NULL, 0, 0) > 0)
 		{
 	        TranslateMessage(&Msg);

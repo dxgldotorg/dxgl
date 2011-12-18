@@ -198,7 +198,8 @@ const TEST_ITEM Tests2D[] =
 	{1,		7,		0,		7,		true,		1.0,			false,		false,		_T("GDI Test patterns (GetDC() test)")},
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random GDI patterns (does not clear screen between paints)")},
 	{1,		7,		0,		1,		true,		60.0,			false,		false,		_T("BltFast background and sprites")},
-	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random color fill Blt() patterns")}
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random color fill Blt() paterns")},
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Mouse pointer event test")}
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;
