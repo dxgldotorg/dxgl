@@ -156,7 +156,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 			paths = (LPTSTR)malloc(sizeout*sizeof(TCHAR));
 			ZeroMemory(paths,sizeout*sizeof(TCHAR));
 			_tcscpy(paths,path);
-			error = RegSetValueEx(hKey,_T("InstallPaths"),NULL,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
+			error = RegSetValueEx(hKey,_T("InstallPaths"),0,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
 			free(paths);
 		}
 		else
@@ -168,7 +168,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 			{
 				AddStringToMultiSz(paths,path);
 				sizeout += (MAX_PATH*2)+4;
-				error = RegSetValueEx(hKey,_T("InstallPaths"),NULL,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
+				error = RegSetValueEx(hKey,_T("InstallPaths"),0,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
 			}
 			free(paths);
 		}

@@ -34,7 +34,6 @@ typedef wstring tstring;
 typedef string tstring;
 #endif
 
-
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
 #define GL_MAX_SAMPLES_EXT                     0x8D57
 #define GL_MAX_MULTISAMPLE_COVERAGE_MODES_NV        0x8E11
@@ -390,7 +389,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,5,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,NULL);
+		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// colormode
 		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,NULL);
 		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
@@ -656,7 +655,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		{
 			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
 			{
-				if(GetTokenInformation(token,TokenElevation,&elevation,sizeof(TOKEN_ELEVATION),(PDWORD)&outlen))
+				if(GetTokenInformation(token,(TOKEN_INFORMATION_CLASS)TokenElevation,&elevation,sizeof(TOKEN_ELEVATION),(PDWORD)&outlen))
 				{
 					if(!elevation.TokenIsElevated)
 					{
