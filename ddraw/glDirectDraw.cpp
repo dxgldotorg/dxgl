@@ -1272,7 +1272,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 		wndclass.hInstance = (HINSTANCE)GetWindowLongPtr(hWnd,GWLP_HINSTANCE);
 		wndclass.hIcon = NULL;
 		wndclass.hCursor = NULL;
-		wndclass.hbrBackground = (HBRUSH)(COLOR_3DFACE+1);
+		wndclass.hbrBackground = NULL;
 		wndclass.lpszMenuName = NULL;
 		wndclass.lpszClassName = "DXGLRenderWindow";
 		wndclass.hIconSm = NULL;
@@ -1388,7 +1388,12 @@ void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
 }
 LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	return DefWindowProcA(hWnd,msg,wParam,lParam);
+	if(msg == WM_CREATE)
+	{
+		SetWindowLongPtr(hwnd,GWLP_USERDATA,(LONG_PTR)this);
+		return 0;
+	}
+	return DefWindowProc(hwnd,msg,wParam,lParam);
 }
 void glDirectDraw7::GetHandles(HWND *hwnd, HWND *hrender)
 {

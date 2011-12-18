@@ -68,6 +68,7 @@ DDSPRITE sprites[16];
 
 LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	bool paintwnd = true;
 	POINT p;
 	RECT srcrect,destrect;
 	HRESULT error;
@@ -115,8 +116,9 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		RunTestTimed(testnum);
 		break;
 	case WM_SIZE:
+		paintwnd = false;
 	case WM_PAINT:
-		BeginPaint(hWnd,&paintstruct);
+		if(paintwnd) BeginPaint(hWnd,&paintstruct);
 		if(!fullscreen)
 		{
 			p.x = 0;
@@ -127,7 +129,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 			SetRect(&srcrect,0,0,width,height);
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
-		EndPaint(hWnd,&paintstruct);
+		if(paintwnd) EndPaint(hWnd,&paintstruct);
 		return 0;
 	case WM_MOUSEMOVE:
 		RunTestMouse(testnum,WM_MOUSEMOVE,wParam,lParam);
@@ -268,7 +270,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 	wc.hIconSm = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGLSM));
 	if(testnum == 6) wc.hCursor = LoadCursor(NULL,IDC_CROSS);
 	else wc.hCursor = LoadCursor(NULL,IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+	wc.hbrBackground = NULL;
 	wc.lpszClassName = wndclassname2d;
 	if(!RegisterClassEx(&wc))
 	{
