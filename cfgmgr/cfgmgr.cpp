@@ -45,7 +45,7 @@ void GetDirFromPath(LPTSTR path)
 	}
 }
 
-int FindStringInMultiSz(LPTSTR multisz, LPTSTR comp)
+int FindStringInMultiSz(LPTSTR multisz, LPCTSTR comp)
 {
 	LPTSTR str = multisz;
 	while(str[0] != 0)
@@ -56,7 +56,7 @@ int FindStringInMultiSz(LPTSTR multisz, LPTSTR comp)
 	return 0;
 }
 
-void AddStringToMultiSz(LPTSTR multisz, LPTSTR string)
+void AddStringToMultiSz(LPTSTR multisz, LPCTSTR string)
 {
 	LPTSTR str = multisz;
 	while(str[0] != 0)
@@ -67,7 +67,7 @@ void AddStringToMultiSz(LPTSTR multisz, LPTSTR string)
 }
 
 
-bool ReadBool(HKEY hKey, bool original, bool &mask, LPTSTR value)
+bool ReadBool(HKEY hKey, bool original, bool &mask, LPCTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -86,7 +86,7 @@ bool ReadBool(HKEY hKey, bool original, bool &mask, LPTSTR value)
 	}
 }
 
-DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPTSTR value)
+DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPCTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -104,7 +104,7 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPTSTR value)
 	}
 }
 
-void ReadPath(HKEY hKey, TCHAR *path, TCHAR *mask, LPTSTR value)
+void ReadPath(HKEY hKey, TCHAR *path, TCHAR *mask, LPCTSTR value)
 {
 	DWORD sizeout = MAX_PATH*sizeof(TCHAR);
 	DWORD regsz = REG_SZ;
@@ -175,7 +175,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	}
 }
 
-void WriteBool(HKEY hKey, bool value, bool mask, LPTSTR name)
+void WriteBool(HKEY hKey, bool value, bool mask, LPCTSTR name)
 {
 	const DWORD one = 1;
 	const DWORD zero = 0;
@@ -187,14 +187,14 @@ void WriteBool(HKEY hKey, bool value, bool mask, LPTSTR name)
 	else RegDeleteValue(hKey,name);
 }
 
-void WriteDWORD(HKEY hKey, DWORD value, DWORD mask, LPTSTR name)
+void WriteDWORD(HKEY hKey, DWORD value, DWORD mask, LPCTSTR name)
 {
 	if(mask) RegSetValueEx(hKey,name,0,REG_DWORD,(BYTE*)&value,4);
 	else RegDeleteValue(hKey,name);
 }
-void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPTSTR name)
+void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPCTSTR name)
 {
-	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcsnlen(path,MAX_PATH+1)+1)*sizeof(TCHAR));
+	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcslen(path)+1)*sizeof(TCHAR));
 	else RegDeleteValue(hKey,name);
 }
 
@@ -216,7 +216,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
 	WriteBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
 	WriteBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
-	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));	
+	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 }
 
 tstring newregname;
