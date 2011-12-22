@@ -1131,22 +1131,14 @@ HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)
 }
 HRESULT WINAPI glDirectDrawSurface7::PageLock(DWORD dwFlags)
 {
-	if(surfacetype == 1)
-	{
-		pagelocked++;
-		return DD_OK;
-	}
-	else ERR(DDERR_CANTPAGELOCK);
+	pagelocked++;
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::PageUnlock(DWORD dwFlags)
 {
-	if(surfacetype == 1)
-	{
-		if(!pagelocked) ERR(DDERR_NOTPAGELOCKED);
-		pagelocked--;
-		return DD_OK;
-	}
-	else ERR(DDERR_CANTPAGEUNLOCK);
+	if(!pagelocked) ERR(DDERR_NOTPAGELOCKED);
+	pagelocked--;
+	return DD_OK;
 }
 // ddraw 3+ api
 HRESULT WINAPI glDirectDrawSurface7::SetSurfaceDesc(LPDDSURFACEDESC2 lpddsd2, DWORD dwFlags)
