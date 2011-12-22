@@ -113,6 +113,7 @@ public:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
+	GLuint texture;
 private:
 	ULONG refcount;
 	int locked;
@@ -121,7 +122,7 @@ private:
 	BITMAPINFO *bitmapinfo;
 	glDirectDraw7 *ddInterface;
 	DDSURFACEDESC2 ddsd;
-	GLuint texture,paltex;
+	GLuint paltex;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	char *buffer;
 	char *bigbuffer;

@@ -1197,9 +1197,11 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 }
 HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
-	FIXME("IDirectDraw::WaitForVerticalBlank: stub\n");
-
-	ERR(DDERR_GENERIC);
+	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT) return DDERR_UNSUPPORTED;
+	if(wglSwapIntervalEXT) wglSwapIntervalEXT(1);
+	primary->RenderScreen(primary->texture,primary);
+	if(wglSwapIntervalEXT) wglSwapIntervalEXT(0);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {

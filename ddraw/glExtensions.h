@@ -56,6 +56,8 @@ GLAPI void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2
 
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
 
+GLAPI BOOL (APIENTRY *wglSwapIntervalEXT)(int interval);
+
 void InitGLExt();
 
 #endif //_GLEXTENSIONS_H
