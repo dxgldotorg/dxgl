@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1324232573 source:c:\programming\projects\dxgl\dxglcfg\dxglcfg.rc
+	<windows.h>
+	<commctrl.h>
+	<richedit.h>
+	"resource.h"
+	"../common/version.h"
+
+1324232573 c:\programming\projects\dxgl\dxglcfg\resource.h
+
+1324232573 c:\programming\projects\dxgl\common\version.h
+
+1324750330 source:c:\programming\projects\dxgl\dxglcfg\dxglcfg.cpp
+	<windows.h>
+	<HtmlHelp.h>
+	<CommCtrl.h>
+	<tchar.h>
+	<stdio.h>
+	<io.h>
+	"resource.h"
+	"../cfgmgr/cfgmgr.h"
+	<gl/GL.h>
+	<string>
+
+1324232573 c:\programming\projects\dxgl\cfgmgr\cfgmgr.h
+

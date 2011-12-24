@@ -47,7 +47,7 @@ unsigned long Crc32_ComputeBuf( unsigned long inCrc32, const void *buf,
  *     - file errors
 \*----------------------------------------------------------------------------*/
 
-int main( int argc, const char *argv[] )
+int crcmain( int argc, const char *argv[] )
 {
     FILE *file = NULL;
     const char *filename;

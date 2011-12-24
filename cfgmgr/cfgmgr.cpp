@@ -244,7 +244,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	newregname = &filename[i];
 	newregname.append(_T("-"));
 	newregname.append(crcstr);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,&tmp,NULL,false,true,path);
 	RegCloseKey(hKey);
 	return (LPTSTR)newregname.c_str();
@@ -302,7 +302,7 @@ void GetCurrentConfig(DXGLCFG *cfg)
 		regkey.append(crcstr);
 	}
 	GetGlobalConfig(cfg);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,false,true,NULL);
 	RegCloseKey(hKey);
 }
@@ -310,7 +310,7 @@ void GetGlobalConfig(DXGLCFG *cfg)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,true,false,NULL);
 	RegCloseKey(hKey);
 }
@@ -321,14 +321,14 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 	tstring regkey = regkeybase;
 	regkey.append(name);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,mask,false,false,NULL);
 	RegCloseKey(hKey);
 }
 void SetGlobalConfig(const DXGLCFG *cfg)
 {
 	HKEY hKey;
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	WriteSettings(hKey,cfg,NULL,true);
 	RegCloseKey(hKey);
 }
@@ -338,7 +338,7 @@ void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 	HKEY hKey;
 	tstring regkey = regkeybase;
 	regkey.append(name);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),NULL,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	WriteSettings(hKey,cfg,mask,false);
 	RegCloseKey(hKey);
 }

@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _WIN32_WINNT 0x0600
+#define _WIN32_IE 0x0300
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
 #include <HtmlHelp.h>
@@ -32,6 +34,14 @@ using namespace std;
 typedef wstring tstring;
 #else
 typedef string tstring;
+#endif
+
+#ifndef SHGFI_ADDOVERLAYS
+#define SHGFI_ADDOVERLAYS 0x000000020
+#endif //SHGFI_ADDOVERLAYS
+
+#ifndef BCM_SETSHIELD
+#define BCM_SETSHIELD 0x160C
 #endif
 
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
@@ -65,7 +75,7 @@ TCHAR exe_filter[] = _T("Program Files\0*.exe\0All Files\0*.*\0\0");
 app_setting *apps;
 int appcount;
 int maxapps;
-int current_app;
+DWORD current_app;
 bool tristate;
 TCHAR strdefault[] = _T("(global default)");
 
@@ -143,7 +153,6 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 DWORD DelApp(LPCTSTR path, bool admin)
 {
 	bool installed = false;
-	bool dxgl_installdir = false;
 	tstring command;
 	bool old_dxgl = true;
 	DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
@@ -152,7 +161,6 @@ DWORD DelApp(LPCTSTR path, bool admin)
 	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
 	if(error == ERROR_SUCCESS)
 	{
-		dxgl_installdir = true;
 		error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
 		if(error == ERROR_SUCCESS) installed = true;
 	}
@@ -167,6 +175,7 @@ DWORD DelApp(LPCTSTR path, bool admin)
 		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = false;
 		FreeLibrary(hmod);
 	}
+	if(old_dxgl) return 0;
 	if(!DeleteFile(path))
 	{
 		error = GetLastError();
@@ -391,8 +400,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// colormode
-		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,NULL);
-		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
+		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,0);
 		// scalingfilter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -402,10 +411,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,2,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Shader (primary only)"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,3,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,NULL);
+		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
 		// highres
-		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,NULL);
-		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,NULL);
+		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
 		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -421,13 +430,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,5,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, linear mipmap"));
 		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,NULL);
+		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
 		// anisotropic
 		if (anisotropic < 2)
 		{
 			_tcscpy(buffer,_T("Not supported"));
 			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,0,NULL);
+			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,0,0);
 			EnableWindow(GetDlgItem(hWnd,IDC_ANISO),FALSE);
 			cfg->anisotropic = 0;
 		}
@@ -462,7 +471,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				_tcscpy(buffer,_T("32x"));
 				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
 			}
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,cfg->anisotropic,NULL);
+			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,cfg->anisotropic,0);
 		}
 		// msaa
 		if(msaa)
@@ -509,13 +518,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,32,(LPARAM)buffer);
 				}
 			}
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,cfg->msaa,NULL);
+			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,cfg->msaa,0);
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Not supported"));
 			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,0,NULL);
+			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,0,0);
 			EnableWindow(GetDlgItem(hWnd,IDC_MSAA),FALSE);
 			cfg->msaa = 0;
 		}
@@ -526,7 +535,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,cfg->aspect,NULL);
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,cfg->aspect,0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -534,13 +543,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by resolution"));
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,NULL);
+		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
 		// color depths
-		if(cfg->AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,NULL);
-		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,NULL);
+		if(cfg->AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,0);
 		// extra modes
-		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,NULL);
-		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,NULL);
+		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
 		// shader path
 		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,false);
 		// Add installed programs
@@ -567,7 +576,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			}
 			if(!_tcscmp(keyname,_T("DXGLTestApp"))) subkey = _T("dxgltest.exe-0");
 			else subkey = keyname;
-			if(subkey.rfind(_T("-")) != -1) subkey.resize(subkey.rfind(_T("-")));
+			if(subkey.rfind(_T("-")) != string::npos) subkey.resize(subkey.rfind(_T("-")));
 			error = RegOpenKeyEx(hKeyBase,keyname,0,KEY_READ,&hKey);
 			buffersize = regbuffersize;
 			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
@@ -650,7 +659,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name->c_str());
 		}
 		current_app = 0;
-		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,NULL);
+		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,0);
 		if(osver.dwMajorVersion >= 6)
 		{
 			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
@@ -871,11 +880,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			}
 			break;
 		case IDC_ADD:
-			OPENFILENAME_NT4 filename;
+			OPENFILENAME filename;
 			TCHAR selectedfile[MAX_PATH+1];
 			selectedfile[0] = 0;
-			ZeroMemory(&filename,sizeof(OPENFILENAME_NT4));
-			filename.lStructSize = sizeof(OPENFILENAME_NT4);
+			ZeroMemory(&filename,OPENFILENAME_SIZE_VERSION_400);
+			filename.lStructSize = OPENFILENAME_SIZE_VERSION_400;
 			filename.hwndOwner = hWnd;
 			filename.lpstrFilter = exe_filter;
 			filename.lpstrFile = selectedfile;
@@ -883,7 +892,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			filename.lpstrInitialDir = _T("%ProgramFiles%");
 			filename.lpstrTitle = _T("Select program");
 			filename.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
-			if(GetOpenFileName((LPOPENFILENAME)&filename))
+			if(GetOpenFileName(&filename))
 			{
 				DWORD err = AddApp(filename.lpstrFile,true,false);
 				if(!err)
@@ -915,7 +924,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 							apps[appcount-1].name = new tstring(newkey);
 							break;
 						}
-						if(newkey.rfind(_T("-")) != -1) newkey.resize(newkey.rfind(_T("-")));
+						if(newkey.rfind(_T("-")) != string::npos) newkey.resize(newkey.rfind(_T("-")));
 						path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+newkey;
 						if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
 						{
@@ -987,7 +996,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			while(1)
 			{
 				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS) break;
-				if(regkey.rfind(_T("-")) != -1) regkey.resize(regkey.rfind(_T("-")));
+				if(regkey.rfind(_T("-")) != string::npos) regkey.resize(regkey.rfind(_T("-")));
 				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\ddraw.dll"));
 				if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
 				{
@@ -1010,22 +1019,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				appcount--;
 			}
-			SendDlgItemMessage(hWnd,IDC_APPS,LB_DELETESTRING,current_app,NULL);
+			SendDlgItemMessage(hWnd,IDC_APPS,LB_DELETESTRING,current_app,0);
 			break;
 		}
 		break;
 	}
 	return false;
 }
-
-#ifdef __GNUC__
-#ifndef INITCOMMONCONTROLSEX
-typedef struct tagINITCOMMONCONTROLSEX {
-  DWORD dwSize;
-  DWORD dwICC;
-} INITCOMMONCONTROLSEX, *LPINITCOMMONCONTROLSEX;
-#endif
-#endif
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
@@ -1052,6 +1052,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
-	int result = DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));
+	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));
 	return 0;
 }

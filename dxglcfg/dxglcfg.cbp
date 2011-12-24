@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="dxglcfg" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin\Debug\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj\Debug\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="../cfgmgr/bin/Debug/libcfgmgr.a" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin\Release\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj\Release\" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="../cfgmgr/bin/Release/libcfgmgr.a" />
+				</Linker>
+			</Target>
+			<Target title="Unicode Debug">
+				<Option output="bin\Unicode Debug\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj\Unicode Debug\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DUNICODE" />
+					<Add option="-D_UNICODE" />
+					<Add option="-D_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="../cfgmgr/bin/Unicode Debug/libcfgmgr.a" />
+				</Linker>
+			</Target>
+			<Target title="Unicode Release">
+				<Option output="bin\Unicode Release\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj\Unicode Release\" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DUNICODE" />
+					<Add option="-D_UNICODE" />
+					<Add option="-DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="../cfgmgr/bin/Unicode Release/libcfgmgr.a" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-D_WIN32" />
+			<Add option="-DWINDOWS" />
+		</Compiler>
+		<Linker>
+			<Add option="-static-libgcc" />
+			<Add option="-static-libstdc++" />
+			<Add library="gdi32" />
+			<Add library="user32" />
+			<Add library="kernel32" />
+			<Add library="opengl32" />
+			<Add library="comctl32" />
+			<Add library="version" />
+			<Add library="htmlhelp" />
+			<Add library="comdlg32" />
+			<Add library="ole32" />
+		</Linker>
+		<Unit filename="dxglcfg.cpp" />
+		<Unit filename="dxglcfg.rc">
+			<Option compilerVar="WINDRES" />
+		</Unit>
+		<Unit filename="resource.h" />
+		<Unit filename="xp.manifest" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
