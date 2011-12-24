@@ -50,6 +50,7 @@ void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLin
 void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
 
 BOOL (APIENTRY *wglSwapIntervalEXT)(int interval) = NULL;
+int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
 
 int GLEXT_ARB_framebuffer_object = 0;
 int GLEXT_EXT_framebuffer_object = 0;
@@ -99,4 +100,5 @@ void InitGLExt()
 		glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatusEXT");
 	}
 	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
 }

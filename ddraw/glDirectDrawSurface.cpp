@@ -24,12 +24,13 @@
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 
-int swapinterval;
+int swapinterval = 0;
 inline void SetSwap(int swap)
 {
 	if(swap != swapinterval)
 	{
 		wglSwapIntervalEXT(swap);
+		swapinterval = wglGetSwapIntervalEXT();
 		swapinterval = swap;
 	}
 }
@@ -734,7 +735,6 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 		else if(dwFlags & DDFLIP_INTERVAL4) SetSwap(4);
 		else SetSwap(1);
 	}
-
 	int flips = 1;
 	if(lpDDSurfaceTargetOverride) ERR(DDERR_GENERIC);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)
@@ -777,7 +777,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 		RenderScreen(textures[0],this);
 		delete textures;
 	}
-	else ERR(DDERR_NOTFLIPPABLE);
+	else return DDERR_NOTFLIPPABLE;
 	flipcount+=flips;
 	if(flipcount > ddsd.dwBackBufferCount) flipcount -= (ddsd.dwBackBufferCount+1);
 	return DD_OK;
