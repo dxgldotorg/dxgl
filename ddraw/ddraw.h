@@ -58,5 +58,8 @@ DDRAW_API BOOL IsDXGLDDraw();
 
 extern DXGLCFG dxglcfg;
 extern bool gllock;
+extern DWORD timer;
+extern int vsyncstatus;
+
 
 #endif //_DDRAW_H

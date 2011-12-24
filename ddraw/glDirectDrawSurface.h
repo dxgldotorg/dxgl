@@ -19,6 +19,8 @@
 #ifndef _GLDIRECTDRAWSURFACE_H
 #define _GLDIRECTDRAWSURFACE_H
 
+extern inline void SetSwap(int swap);
+
 typedef struct
 {
 	bool enabled;

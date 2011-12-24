@@ -30,7 +30,8 @@ HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUn
 const GUID device_template = 
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
 
-
+DWORD timer;
+int vsyncstatus;
 
 DDRAW_API void WINAPI AcquireDDThreadLock()
 {

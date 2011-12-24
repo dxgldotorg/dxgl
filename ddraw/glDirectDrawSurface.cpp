@@ -24,6 +24,16 @@
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 
+int swapinterval;
+inline void SetSwap(int swap)
+{
+	if(swap != swapinterval)
+	{
+		wglSwapIntervalEXT(swap);
+		swapinterval = swap;
+	}
+}
+
 inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
 inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
 inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
@@ -715,6 +725,16 @@ HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
+	int test;
+	if(dwFlags & DDFLIP_NOVSYNC) SetSwap(0);
+	else
+	{
+		if(dwFlags & DDFLIP_INTERVAL3) SetSwap(3);
+		else if(dwFlags & DDFLIP_INTERVAL2) SetSwap(2);
+		else if(dwFlags & DDFLIP_INTERVAL4) SetSwap(4);
+		else SetSwap(1);
+	}
+
 	int flips = 1;
 	if(lpDDSurfaceTargetOverride) ERR(DDERR_GENERIC);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)

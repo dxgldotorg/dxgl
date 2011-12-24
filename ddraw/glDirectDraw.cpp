@@ -553,6 +553,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknow
 	fpusetup = false;
 	threadsafe = false;
 	nowindowchanges = false;
+	timer = timeGetTime();
 	ZeroMemory(&oldmode,sizeof(DEVMODE));
 	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
 	if(!surfaces)
@@ -776,7 +777,8 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	else ERR(DDERR_INVALIDPARAMS);
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
 		DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM;
-	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED;
+	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED |
+		DDCAPS2_FLIPINTERVAL | DDCAPS2_FLIPNOVSYNC;
 	ddCaps.dwFXCaps = DDFXCAPS_BLTSHRINKX | DDFXCAPS_BLTSHRINKY |
 		DDFXCAPS_BLTSTRETCHX | DDFXCAPS_BLTSTRETCHY;
 	ddCaps.dwPalCaps = DDPCAPS_8BIT | DDPCAPS_PRIMARYSURFACE;
@@ -1198,9 +1200,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
 	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT) return DDERR_UNSUPPORTED;
-	if(wglSwapIntervalEXT) wglSwapIntervalEXT(1);
+	SetSwap(1);
 	primary->RenderScreen(primary->texture,primary);
-	if(wglSwapIntervalEXT) wglSwapIntervalEXT(0);
+	SetSwap(0);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
@@ -1303,9 +1305,14 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
 		rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
 	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	PIXELFORMATDESCRIPTOR pfd =
-	{sizeof(PIXELFORMATDESCRIPTOR),1,PFD_SUPPORT_OPENGL,bpp,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,16,0,0,PFD_MAIN_PLANE,0,0,0,0};
+	PIXELFORMATDESCRIPTOR pfd;
+	ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = bpp;
+	pfd.iLayerType = PFD_MAIN_PLANE;
 	hDC = GetDC(hRenderWnd);
 	if(!hDC)
 	{
