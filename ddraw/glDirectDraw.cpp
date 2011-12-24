@@ -1347,7 +1347,6 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	}
 	gllock = false;
 	InitGLExt();
-	wglSwapIntervalEXT(0);
 	glViewport(0,0,width,height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
