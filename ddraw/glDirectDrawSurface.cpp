@@ -148,11 +148,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	}
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
-	if(!(ddsd.dwFlags & DDSD_CAPS))
-	{
-		*error = DDERR_INVALIDPARAMS;
-		return;
-	}
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		if(((ddsd.dwFlags & DDSD_WIDTH) || (ddsd.dwFlags & DDSD_HEIGHT)
