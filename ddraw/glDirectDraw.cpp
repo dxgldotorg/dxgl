@@ -563,7 +563,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 
 glDirectDraw7::~glDirectDraw7()
 {
-	//FIXME("glDirectDraw7::~glDirectDraw7:  Destructor.\n");
+	RestoreDisplayMode();
 	if(clippers)
 	{
 		for(int i = 0; i < clippercount; i++)
