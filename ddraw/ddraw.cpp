@@ -237,6 +237,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
 	if((rclsid != CLSID_DirectDraw) && (rclsid != CLSID_DirectDraw7) &&
 		(rclsid != CLSID_DirectDrawClipper)) return CLASS_E_CLASSNOTAVAILABLE;
+	GetCurrentConfig(&dxglcfg);
 	glClassFactory *factory = new glClassFactory;
 	if(factory == NULL) return E_OUTOFMEMORY;
 	HRESULT result = factory->QueryInterface(riid,ppv);

@@ -41,6 +41,7 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = this;
+		this->AddRef();
 	}
 	else
 	{
