@@ -1556,8 +1556,7 @@ HRESULT WINAPI glDirectDraw1::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 }
 HRESULT WINAPI glDirectDraw1::Initialize(GUID FAR *lpGUID)
 {
-	FIXME("IDirectDraw1::Initialize: stub\n");
-	ERR(DDERR_DIRECTDRAWALREADYCREATED);
+	return glDD7->Initialize(lpGUID);
 }
 HRESULT WINAPI glDirectDraw1::RestoreDisplayMode()
 {
@@ -1676,8 +1675,7 @@ HRESULT WINAPI glDirectDraw2::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 }
 HRESULT WINAPI glDirectDraw2::Initialize(GUID FAR *lpGUID)
 {
-	FIXME("IDirectDraw2::Initialize: stub\n");
-	ERR(DDERR_DIRECTDRAWALREADYCREATED);
+	return glDD7->Initialize(lpGUID);
 }
 HRESULT WINAPI glDirectDraw2::RestoreDisplayMode()
 {
@@ -1799,8 +1797,7 @@ HRESULT WINAPI glDirectDraw4::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 }
 HRESULT WINAPI glDirectDraw4::Initialize(GUID FAR *lpGUID)
 {
-	FIXME("IDirectDraw4::Initialize: stub\n");
-	ERR(DDERR_DIRECTDRAWALREADYCREATED);
+	return glDD7->Initialize(lpGUID);
 }
 HRESULT WINAPI glDirectDraw4::RestoreDisplayMode()
 {

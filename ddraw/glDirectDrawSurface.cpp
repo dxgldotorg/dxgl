@@ -916,7 +916,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetSurfaceDesc(LPDDSURFACEDESC2 lpDDSurface
 }
 HRESULT WINAPI glDirectDrawSurface7::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC2 lpDDSurfaceDesc)
 {
-	ERR(DDERR_ALREADYINITIALIZED);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawSurface7::IsLost()
 {
@@ -1342,8 +1342,7 @@ HRESULT WINAPI glDirectDrawSurface1::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 }
 HRESULT WINAPI glDirectDrawSurface1::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	FIXME("glDirectDrawSurface1::Initialize: stub\n");
-	ERR(DDERR_GENERIC);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawSurface1::IsLost()
 {
@@ -1523,8 +1522,7 @@ HRESULT WINAPI glDirectDrawSurface2::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 }
 HRESULT WINAPI glDirectDrawSurface2::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	FIXME("glDirectDrawSurface2::Initialize: stub\n");
-	ERR(DDERR_GENERIC);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawSurface2::IsLost()
 {
@@ -1716,8 +1714,7 @@ HRESULT WINAPI glDirectDrawSurface3::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 }
 HRESULT WINAPI glDirectDrawSurface3::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	FIXME("glDirectDrawSurface3::Initialize: stub\n");
-	ERR(DDERR_GENERIC);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawSurface3::IsLost()
 {
@@ -1905,8 +1902,7 @@ HRESULT WINAPI glDirectDrawSurface4::GetSurfaceDesc(LPDDSURFACEDESC2 lpDDSurface
 }
 HRESULT WINAPI glDirectDrawSurface4::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC2 lpDDSurfaceDesc)
 {
-	FIXME("glDirectDrawSurface4::Initialize: stub\n");
-	ERR(DDERR_GENERIC);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawSurface4::IsLost()
 {
