@@ -107,7 +107,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
-	myddraw7 = new glDirectDraw7(lpGUID,lplpDD,pUnkOuter);
+	myddraw7 = new glDirectDraw7(lpGUID,pUnkOuter);
 	error = myddraw7->err();
 	if(error != DD_OK)
 	{
@@ -130,7 +130,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	glDirectDraw7 *myddraw;
 	HRESULT error;
 	if(iid != IID_IDirectDraw7) ERR(DDERR_UNSUPPORTED);
-	myddraw = new glDirectDraw7(lpGUID,(LPDIRECTDRAW FAR *)lplpDD,pUnkOuter);
+	myddraw = new glDirectDraw7(lpGUID,pUnkOuter);
 	error = myddraw->err();
 	if(error != DD_OK)
 	{

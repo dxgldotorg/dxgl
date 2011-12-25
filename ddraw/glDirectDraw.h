@@ -39,7 +39,8 @@ typedef struct
 class glDirectDraw7 : public IDirectDraw7
 {
 public:
-	glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter);
+	glDirectDraw7();
+	glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter);
 	virtual ~glDirectDraw7();
 
 	// ddraw 1+ api
@@ -115,6 +116,7 @@ private:
 	int clippercount, clippercountmax;
 	GLCAPS gl_caps;
 	DEVMODE oldmode;
+	bool initialized;
 };
 
 class glDirectDraw1 : public IDirectDraw

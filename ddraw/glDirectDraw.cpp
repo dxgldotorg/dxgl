@@ -542,56 +542,23 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 }
 
 // DDRAW7/common routines
-glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter)
+
+glDirectDraw7::glDirectDraw7()
 {
-	hDC = NULL;
-	hRC = NULL;
-	hRenderWnd = NULL;
-	primary = NULL;
-	fullscreen = false;
-	fpupreserve = false;
-	fpusetup = false;
-	threadsafe = false;
-	nowindowchanges = false;
-	timer = timeGetTime();
-	ZeroMemory(&oldmode,sizeof(DEVMODE));
-	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
-	if(!surfaces)
-	{
-		error = DDERR_OUTOFMEMORY;
-		return;
-	}
-	ZeroMemory(surfaces,1024*sizeof(glDirectDrawSurface7 *));
-	surfacecount = 0;
-	surfacecountmax = 1024;
-	clippers = (glDirectDrawClipper **)malloc(1024*sizeof(glDirectDrawClipper *));
-	if(!clippers)
-	{
-		error = DDERR_OUTOFMEMORY;
-		return;
-	}
-	ZeroMemory(clippers,1024*sizeof(glDirectDrawClipper *));
-	clippercount = 0;
-	clippercountmax = 1024;
-	if(directdraw_created) error = DDERR_DIRECTDRAWALREADYCREATED;
-	bool useguid = false;
-	if(pUnkOuter) error = DDERR_INVALIDPARAMS ;
-	switch((INT_PTR)lpGUID)
-	{
-	case NULL:
-		break;
-	case DDCREATE_EMULATIONONLY:
-		DEBUG("DDRAW software emulation not supported, using OpenGL.\n");
-		break;
-	case DDCREATE_HARDWAREONLY:
-		DEBUG("DDCREATE_HARDWAREONLY unnecessarily called.\n");
-		break;
-	default:
-		useguid = true;
-		FIXME("Display GUIDs not yet supported, using primary.\n");
-	}
+	initialized = false;
 	refcount = 1;
-	error = 0;
+}
+
+glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
+{
+	initialized = false;
+	if(pUnkOuter)
+	{
+		error = DDERR_INVALIDPARAMS ;
+		return;
+	}
+	error = glDirectDraw7::Initialize(lpGUID);
+	refcount = 1;
 }
 
 glDirectDraw7::~glDirectDraw7()
@@ -869,8 +836,45 @@ HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 }
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 {
-	FIXME("IDirectDraw::Initialize: stub\n");
-	ERR(DDERR_DIRECTDRAWALREADYCREATED);
+	if(initialized) return DDERR_ALREADYINITIALIZED;
+	hDC = NULL;
+	hRC = NULL;
+	hRenderWnd = NULL;
+	primary = NULL;
+	fullscreen = false;
+	fpupreserve = false;
+	fpusetup = false;
+	threadsafe = false;
+	nowindowchanges = false;
+	timer = timeGetTime();
+	ZeroMemory(&oldmode,sizeof(DEVMODE));
+	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
+	if(!surfaces) return DDERR_OUTOFMEMORY;
+	ZeroMemory(surfaces,1024*sizeof(glDirectDrawSurface7 *));
+	surfacecount = 0;
+	surfacecountmax = 1024;
+	clippers = (glDirectDrawClipper **)malloc(1024*sizeof(glDirectDrawClipper *));
+	if(!clippers) return DDERR_OUTOFMEMORY;
+	ZeroMemory(clippers,1024*sizeof(glDirectDrawClipper *));
+	clippercount = 0;
+	clippercountmax = 1024;
+	if(directdraw_created) error = DDERR_DIRECTDRAWALREADYCREATED;
+	bool useguid = false;
+	switch((INT_PTR)lpGUID)
+	{
+	case NULL:
+		break;
+	case DDCREATE_EMULATIONONLY:
+		DEBUG("DDRAW software emulation not supported, using OpenGL.\n");
+		break;
+	case DDCREATE_HARDWAREONLY:
+		DEBUG("DDCREATE_HARDWAREONLY unnecessarily called.\n");
+		break;
+	default:
+		useguid = true;
+		FIXME("Display GUIDs not yet supported, using primary.\n");
+	}
+	return 0;
 }
 HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 {
