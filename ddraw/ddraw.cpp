@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "ddraw.h"
+#include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include <intrin.h>
@@ -234,8 +235,12 @@ HRESULT WINAPI DllCanUnloadNow()
 }
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-	FIXME("DllGetClassObject: stub\n");
-	return CLASS_E_CLASSNOTAVAILABLE;
+	if(rclsid != CLSID_DirectDraw) return CLASS_E_CLASSNOTAVAILABLE;
+	glClassFactory *factory = new glClassFactory;
+	if(factory == NULL) return E_OUTOFMEMORY;
+	HRESULT result = factory->QueryInterface(riid,ppv);
+	factory->Release();
+	return result;
 }
 DDRAW_API void WINAPI GetDDSurfaceLocal()
 {
