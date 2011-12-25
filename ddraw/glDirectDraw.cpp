@@ -672,7 +672,7 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 		ZeroMemory(&clippers[clippercountmax],1024*sizeof(glDirectDrawClipper *));
 		clippercountmax += 1024;
 	}
-	clippers[clippercount-1] = new glDirectDrawClipper(dwFlags,lplpDDClipper,pUnkOuter,this);
+	clippers[clippercount-1] = new glDirectDrawClipper(dwFlags,this);
 	*lplpDDClipper = clippers[clippercount-1];
 	return DD_OK;
 }
@@ -874,7 +874,8 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		useguid = true;
 		FIXME("Display GUIDs not yet supported, using primary.\n");
 	}
-	return 0;
+	initialized = true;
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 {

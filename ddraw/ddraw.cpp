@@ -121,7 +121,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 }
 HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
-	*lplpDDClipper = new glDirectDrawClipper(dwFlags,lplpDDClipper,pUnkOuter,NULL);
+	*lplpDDClipper = new glDirectDrawClipper(dwFlags,NULL);
 	return DD_OK;
 }
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
@@ -235,7 +235,8 @@ HRESULT WINAPI DllCanUnloadNow()
 }
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-	if(rclsid != CLSID_DirectDraw) return CLASS_E_CLASSNOTAVAILABLE;
+	if((rclsid != CLSID_DirectDraw) && (rclsid != CLSID_DirectDraw7) &&
+		(rclsid != CLSID_DirectDrawClipper)) return CLASS_E_CLASSNOTAVAILABLE;
 	glClassFactory *factory = new glClassFactory;
 	if(factory == NULL) return E_OUTOFMEMORY;
 	HRESULT result = factory->QueryInterface(riid,ppv);

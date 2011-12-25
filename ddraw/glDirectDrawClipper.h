@@ -24,7 +24,8 @@ class glDirectDraw7;
 class glDirectDrawClipper : public IDirectDrawClipper
 {
 public:
-	glDirectDrawClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter, glDirectDraw7 *parent);
+	glDirectDrawClipper();
+	glDirectDrawClipper(DWORD dwFlags, glDirectDraw7 *parent);
 	~glDirectDrawClipper();
 	// ddraw api
 	HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* obp);
@@ -40,6 +41,7 @@ private:
 	ULONG refcount;
 	glDirectDraw7 *glDD7;
 	bool hasparent;
+	bool initialized;
 	HWND hWnd;
 };
 #endif //_GLDIRECTDRAWCLIPPER_H

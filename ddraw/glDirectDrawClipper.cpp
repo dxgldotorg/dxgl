@@ -18,20 +18,30 @@
 #include "common.h"
 #include "glDirectDrawClipper.h"
 
-glDirectDrawClipper::glDirectDrawClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter, glDirectDraw7 *parent)
+glDirectDrawClipper::glDirectDrawClipper()
 {
-	glDD7 = parent;
-	if(glDD7) hasparent = true;
-	else hasparent = false;
-	hWnd = NULL;
+	initialized = false;
 	refcount = 1;
+}
+
+glDirectDrawClipper::glDirectDrawClipper(DWORD dwFlags, glDirectDraw7 *parent)
+{
+	initialized = false;
+	refcount = 1;
+	Initialize((LPDIRECTDRAW)parent,dwFlags);
 }
 glDirectDrawClipper::~glDirectDrawClipper()
 {
 }
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
-	ERR(E_NOINTERFACE);
+	if(riid == IID_IDirectDrawClipper)
+	{
+		*obp = this;
+		this->AddRef();
+		return S_OK;
+	}
+	return E_NOINTERFACE;
 }
 ULONG WINAPI glDirectDrawClipper::AddRef()
 {
@@ -54,13 +64,19 @@ HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipL
 HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
 {
 	*lphWnd = hWnd;
-	if(!hWnd) ERR(DDERR_INVALIDOBJECT);
+	if(!hWnd) return DDERR_INVALIDOBJECT;
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 {
-	FIXME("IDirectDrawClipper::Initialize: stub");
-	ERR(DDERR_GENERIC);
+	if(initialized) return DDERR_ALREADYINITIALIZED;
+	glDD7 = (glDirectDraw7*)lpDD;
+	if(glDD7) hasparent = true;
+	else hasparent = false;
+	hWnd = NULL;
+	refcount = 1;
+	initialized = true;
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
 {

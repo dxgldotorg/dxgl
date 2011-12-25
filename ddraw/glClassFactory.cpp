@@ -17,6 +17,10 @@
 
 #include "common.h"
 #include "glClassFactory.h"
+#include "glDirectDraw.h"
+#include "glDirectDrawClipper.h"
+
+LONG locks;
 
 ULONG WINAPI glClassFactory::AddRef()
 {
@@ -34,17 +38,55 @@ ULONG WINAPI glClassFactory::Release()
 
 HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 {
-	FIXME("glClassFactory::QueryInterface: stub");
-	return E_FAIL;
+	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
+	{
+		*ppvObj = this;
+	}
+	else
+	{
+		*ppvObj = NULL;
+		return E_NOINTERFACE;
+	}
+	return S_OK;
 }
 HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
+	glDirectDraw7 *glDD7;
+	if(pUnkOuter != NULL) return CLASS_E_NOAGGREGATION;
+	if(riid == IID_IDirectDraw)
+	{
+		glDD7 = new glDirectDraw7;
+		*ppvObject = new glDirectDraw1(glDD7);
+		return S_OK;
+	}
+	if(riid == IID_IDirectDraw2)
+	{
+		glDD7 = new glDirectDraw7;
+		*ppvObject = new glDirectDraw2(glDD7);
+		return S_OK;
+	}
+	if(riid == IID_IDirectDraw4)
+	{
+		glDD7 = new glDirectDraw7;
+		*ppvObject = new glDirectDraw4(glDD7);
+		return S_OK;
+	}
+	if(riid == IID_IDirectDraw7)
+	{
+		*ppvObject = new glDirectDraw7();
+		return S_OK;
+	}
+	if(riid == IID_IDirectDrawClipper)
+	{
+		*ppvObject = new glDirectDrawClipper();
+	}
 	FIXME("glClassFactory::CreateInterface: stub");
-	return E_FAIL;
+	return E_NOINTERFACE;
 }
 HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
-	FIXME("glClassFactory::LockServer: stub");
-	return E_FAIL;
+	if(fLock) InterlockedIncrement(&locks);
+	else InterlockedDecrement(&locks);
+	return S_OK;
 }
 
