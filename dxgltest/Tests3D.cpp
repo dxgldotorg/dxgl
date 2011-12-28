@@ -44,6 +44,13 @@ static int testnum;
 static unsigned int randnum;
 static int testtypes[] = {0};
 
+static D3DVECTOR points[256];
+static D3DVECTOR normals[256];
+static D3DVERTEX vertices[256];
+static WORD mesh[256];
+static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14, 14,13,15, 16,17,18,
+		18,17,19, 20,21,22, 22,21,23 };
+
 LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	bool paintwnd = true;
@@ -58,6 +65,16 @@ LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		StopTimer();
+		if(d3d7dev)
+		{
+			d3d7dev->Release();
+			d3d7dev = NULL;
+		}
+		if(d3d7)
+		{
+			d3d7->Release();
+			d3d7dev = NULL;
+		}
 		if(ddsrender)
 		{
 			ddsrender->Release();
@@ -148,6 +165,7 @@ const TCHAR wndclassname3d[] = _T("D3DTestWndClass");
 void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter,	int msaa, double fps, bool fullscreen, bool resizable)
 {	
+	DDSCAPS2 caps;
 	DDSURFACEDESC2 ddsd;
 	BOOL done = false;
 	::testnum = testnum;
@@ -240,8 +258,17 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	}
 	else
 	{
-		ddsrender = ddsurface;
-		ddsrender->AddRef();
+		if(backbuffers)
+		{
+			ZeroMemory(&caps,sizeof(DDSCAPS2));
+			caps.dwCaps = DDSCAPS_BACKBUFFER;
+			error = ddsurface->GetAttachedSurface(&caps,&ddsrender);
+		}
+		else
+		{
+			ddsrender = ddsurface;
+			ddsrender->AddRef();
+		}
 	}
 	error = ddinterface->QueryInterface(IID_IDirect3D7,(VOID**)&d3d7);
 	error = d3d7->CreateDevice(IID_IDirect3DHALDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
@@ -294,14 +321,83 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	StopTimer();
 }
 
+void MakeCube3D(D3DVECTOR *points, D3DVECTOR *normals, D3DVERTEX *vertices)
+{
+	points[0] = D3DVECTOR(0.0f,0.0f,0.0f);
+	points[1] = D3DVECTOR(0.0f,3.0f,0.0f);
+	points[2] = D3DVECTOR(3.0f,0.0f,0.0f);
+	points[3] = D3DVECTOR(3.0f,3.0f,0.0f);
+	points[4] = D3DVECTOR(3.0f,0.0f,3.0f);
+	points[5] = D3DVECTOR(3.0f,3.0f,3.0f);
+	points[6] = D3DVECTOR(0.0f,0.0f,3.0f);
+	points[7] = D3DVECTOR(0.0f,3.0f,3.0f);
+	normals[0] = D3DVECTOR(0.0f,0.0f,-1.0f);
+	normals[1] = D3DVECTOR(1.0f,0.0f,0.0f);
+	normals[2] = D3DVECTOR(0.0f,0.0f,1.0f);
+	normals[3] = D3DVECTOR(-1.0f,0.0f,0.0f);
+	normals[4] = D3DVECTOR(0.0f,1.0f,0.0f);
+	normals[5] = D3DVECTOR(0.0f,-10.0f,0.0f);
+	vertices[0] = D3DVERTEX(points[0],normals[0],0,0);
+	vertices[1] = D3DVERTEX(points[1],normals[0],0,0);
+	vertices[2] = D3DVERTEX(points[2],normals[0],0,0);
+	vertices[3] = D3DVERTEX(points[3],normals[0],0,0);
+	vertices[4] = D3DVERTEX(points[2],normals[1],0,0);
+	vertices[5] = D3DVERTEX(points[3],normals[1],0,0);
+	vertices[6] = D3DVERTEX(points[4],normals[1],0,0);
+	vertices[7] = D3DVERTEX(points[5],normals[1],0,0);
+	vertices[8] = D3DVERTEX(points[4],normals[2],0,0);
+	vertices[9] = D3DVERTEX(points[5],normals[2],0,0);
+	vertices[10] = D3DVERTEX(points[6],normals[2],0,0);
+	vertices[11] = D3DVERTEX(points[7],normals[2],0,0);
+	vertices[12] = D3DVERTEX(points[6],normals[3],0,0);
+	vertices[13] = D3DVERTEX(points[7],normals[3],0,0);
+	vertices[14] = D3DVERTEX(points[0],normals[3],0,0);
+	vertices[15] = D3DVERTEX(points[1],normals[3],0,0);
+	vertices[16] = D3DVERTEX(points[1],normals[4],0,0);
+	vertices[17] = D3DVERTEX(points[7],normals[4],0,0);
+	vertices[18] = D3DVERTEX(points[3],normals[4],0,0);
+	vertices[19] = D3DVERTEX(points[5],normals[4],0,0);
+	vertices[20] = D3DVERTEX(points[6],normals[5],0,0);
+	vertices[21] = D3DVERTEX(points[0],normals[5],0,0);
+	vertices[22] = D3DVERTEX(points[4],normals[5],0,0);
+	vertices[23] = D3DVERTEX(points[2],normals[5],0,0);
+}
+
 void InitTest3D(int test)
 {
-	D3DVECTOR p0,p1,p2,p3,p4,p5,p6,p7;
-	D3DVERTEX vertices[256];
+	HRESULT error;
+	D3DMATRIX matWorld;
+	D3DMATRIX matView;
+	D3DMATRIX matProj;
+	D3DMATRIX mat;
 	switch(test)
 	{
 	case 0:
-		p0 = D3DVECTOR(0.0f,0.0f,0.0f);
+		MakeCube3D(points,normals,vertices);
+		D3DMATERIAL7 material;
+		ZeroMemory(&material,sizeof(D3DMATERIAL7));
+		material.ambient.r = 1.0f;
+		material.ambient.g = 1.0f;
+		material.ambient.b = 0.0f;
+		error = d3d7dev->SetMaterial(&material);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT,0xffffffff);
+		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
+		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
+		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
+		mat._31 = mat._32 = mat._34 = mat._43 = 0.0f;
+		matWorld = mat;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD,&matWorld);
+		matView = mat;
+		matView._43 = 10.0f;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_VIEW,&matView);
+		matProj = mat;
+	    matProj._11 =  2.0f;
+	    matProj._22 =  2.0f;
+	    matProj._34 =  1.0f;
+	    matProj._43 = -1.0f;
+	    matProj._44 =  0.0f;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_PROJECTION,&matProj);
+
 		break;
 	default:
 		break;
@@ -310,6 +406,49 @@ void InitTest3D(int test)
 
 void RunTestTimed3D(int test)
 {
+	POINT p;
+	RECT srcrect,destrect;
+	HRESULT error;
+	D3DMATRIX mat;
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+	if(d3dver >= 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	DDBLTFX bltfx;
+	ZeroMemory(&bltfx,sizeof(DDBLTFX));
+	bltfx.dwSize = sizeof(DDBLTFX);
+	bltfx.dwFillColor = 0;
+	ddsrender->Blt(NULL,NULL,NULL,DDBLT_COLORFILL,&bltfx);
+	float time = (float)clock() / (float)CLOCKS_PER_SEC;
+	switch(test)
+	{
+	case 0:
+		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
+		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
+		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
+		mat._31 = mat._32 = mat._34 = mat._43 = 0.0f;
+	    mat._11 = (FLOAT)cos( (float)time );
+	    mat._33 = (FLOAT)cos( (float)time );
+	    mat._13 = -(FLOAT)sin( (float)time );
+	    mat._31 = (FLOAT)sin( (float)time );
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
+		error = d3d7dev->BeginScene();
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,24,cube_mesh,36,0);
+		break;
+	default:
+		break;
+	}
+	if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
+	else
+	{
+		p.x = 0;
+		p.y = 0;
+		ClientToScreen(hWnd,&p);
+		GetClientRect(hWnd,&destrect);
+		OffsetRect(&destrect,p.x,p.y);
+		SetRect(&srcrect,0,0,width,height);
+		if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+	}
 }
 
 void RunTestLooped3D(int test)

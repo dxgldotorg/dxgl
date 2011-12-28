@@ -58,7 +58,7 @@ void GetFileVersion(tstring &version, LPCTSTR filename)
 	}
 }
 int modenum = 0;
-HRESULT WINAPI EnumModesCallback(LPDDSURFACEDESC ddsd, void *list)
+HRESULT WINAPI EnumModesCallback8(LPDDSURFACEDESC ddsd, void *list)
 {
 	HWND hWnd = (HWND)list;
 	tstring resolution;
@@ -85,6 +85,36 @@ HRESULT WINAPI EnumModesCallback(LPDDSURFACEDESC ddsd, void *list)
 	resolution.append(_T("Hz"));
 	int listnum = SendMessage(hWnd,LB_ADDSTRING,0,(LPARAM)resolution.c_str());
 	if(ddsd->dwWidth == 640 && ddsd->dwHeight == 480 && ddsd->dwRefreshRate == 60 && ddsd->ddpfPixelFormat.dwRGBBitCount == 8)
+		modenum = listnum;
+	return DDENUMRET_OK;
+}
+HRESULT WINAPI EnumModesCallback32(LPDDSURFACEDESC ddsd, void *list)
+{
+	HWND hWnd = (HWND)list;
+	tstring resolution;
+	int bpp;
+	if(ddsd->ddpfPixelFormat.dwRGBBitCount == 16)
+	{
+		if((ddsd->ddpfPixelFormat.dwRBitMask | ddsd->ddpfPixelFormat.dwGBitMask |
+			ddsd->ddpfPixelFormat.dwBBitMask) == 0x7FFF) bpp = 15;
+		else bpp = 16;
+	}
+	else bpp = ddsd->ddpfPixelFormat.dwRGBBitCount;
+	TCHAR number[16];
+	_itot(ddsd->dwWidth,number,10);
+	resolution.append(number);
+	resolution.append(_T("x"));
+	_itot(ddsd->dwHeight,number,10);
+	resolution.append(number);
+	resolution.append(_T("x"));
+	_itot(bpp,number,10);
+	resolution.append(number);
+	resolution.append(_T(","));
+	_itot(ddsd->dwRefreshRate,number,10);
+	resolution.append(number);
+	resolution.append(_T("Hz"));
+	int listnum = SendMessage(hWnd,LB_ADDSTRING,0,(LPARAM)resolution.c_str());
+	if(ddsd->dwWidth == 640 && ddsd->dwHeight == 480 && ddsd->dwRefreshRate == 60 && ddsd->ddpfPixelFormat.dwRGBBitCount == 32)
 		modenum = listnum;
 	return DDENUMRET_OK;
 }
@@ -265,7 +295,7 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = DirectDrawCreate(NULL,&lpdd,NULL);
 		if(error == DD_OK)
 		{
-			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback);
+			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback8);
 			lpdd->Release();
 		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
@@ -470,7 +500,7 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = DirectDrawCreate(NULL,&lpdd,NULL);
 		if(error == DD_OK)
 		{
-			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback);
+			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback32);
 			lpdd->Release();
 		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
