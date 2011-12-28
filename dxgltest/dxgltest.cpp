@@ -203,6 +203,7 @@ const TEST_ITEM Tests2D[] =
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;
+
 int currenttest2d = 0;
 int minapi2d = 1;
 int maxapi2d = 7;
@@ -215,6 +216,32 @@ bool fullscreen2d = true;
 bool resizable2d = false;
 double framerate2d = 1.00;
 TCHAR framerate2dstring[33];
+
+// Use EXACTLY one line per entry.  Don't change layout of the list.
+const int START_3D = __LINE__;
+const TEST_ITEM Tests3D[] =
+{ // minver maxver  buffermin max   usesfps		defaultfps		usestexture	usesfsaa	name
+	{7,		7,		0,		2,		true,		60.0,			false,		true,		_T("Basic polygons (DX7)")}
+};
+const int END_3D = __LINE__ - 4;
+const int numtests3d = END_3D - START_3D;
+
+int currenttest3d = 0;
+int minapi3d = 7;
+int maxapi3d = 7;
+int minbuffer3d = 0;
+int maxbuffer3d = 2;
+int fps_enabled3d = true;
+int api3d = 7;
+int buffer3d = 1;
+int filter3d = 0;
+int msaa3d = 0;
+bool fullscreen3d = true;
+bool resizable3d = true;
+double framerate3d = 60.00;
+TCHAR framerate3dstring[33];
+
+
 TCHAR tmpstring[33];
 INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -425,6 +452,212 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	return TRUE;
 }
 
+INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	int i;
+	int pos;
+	double f;
+	LPDIRECTDRAW lpdd;
+	HRESULT error;
+	int width,height,bpp,refresh;
+	switch(Msg)
+	{
+	case WM_INITDIALOG:
+		SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,1,0);
+		SetDlgItemText(hWnd,IDC_TESTHEADER,_T("Test 3D graphics functionality in DXGL or Direct3D.  Press ESC to quit any test."));
+		for(i = 0; i < numtests3d; i++)
+			SendDlgItemMessage(hWnd,IDC_TESTLIST,LB_ADDSTRING,0,(LPARAM)Tests3D[i].name);
+		error = DirectDrawCreate(NULL,&lpdd,NULL);
+		if(error == DD_OK)
+		{
+			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback);
+			lpdd->Release();
+		}
+		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wParam))
+		{
+		case IDC_TESTLIST:
+			if(HIWORD(wParam) == LBN_SELCHANGE)
+			{
+				i = SendDlgItemMessage(hWnd,IDC_TESTLIST,LB_GETCURSEL,0,0);
+				if(i != -1)
+				{
+					currenttest3d = i;
+					minapi3d = Tests3D[i].minver;
+					maxapi3d = Tests3D[i].maxver;
+					minbuffer3d = Tests3D[i].buffermin;
+					maxbuffer3d = Tests3D[i].buffermax;
+					fps_enabled3d = Tests3D[i].usesfps;
+					if(Tests3D[i].usesfps) framerate3d = Tests3D[i].defaultfps;
+					EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
+					EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
+					EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),fps_enabled3d);
+					EnableWindow(GetDlgItem(hWnd,IDC_TEST),TRUE);
+					SendDlgItemMessage(hWnd,IDC_BUFFERS,EM_SETLIMITTEXT,2,0);
+					SendDlgItemMessage(hWnd,IDC_APIVER,EM_SETLIMITTEXT,1,0);
+					SendDlgItemMessage(hWnd,IDC_FRAMERATE,EM_SETLIMITTEXT,5,0);
+					SendDlgItemMessage(hWnd,IDC_BUFFERS,WM_SETTEXT,0,(LPARAM)_itot(buffer3d,tmpstring,10));
+					SendDlgItemMessage(hWnd,IDC_APIVER,WM_SETTEXT,0,(LPARAM)_itot(api3d,tmpstring,10));
+					_stprintf(framerate3dstring,_T("%.2f"),framerate3d);
+					SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_SETTEXT,0,(LPARAM)framerate3dstring);
+				}
+			}
+			break;
+		case IDC_FRAMERATE:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_GETTEXT,6,(LPARAM)tmpstring);
+				if(_tcscmp(framerate3dstring,tmpstring))
+				{
+					pos = LOWORD(SendDlgItemMessage(hWnd,IDC_FRAMERATE,EM_GETSEL,NULL,NULL));
+					i = _tcslen(tmpstring);
+					f = _ttof(tmpstring);
+					if(errno != ERANGE) framerate3d = f;
+					if(framerate3d < 0.5) framerate3d = 0.5;
+					if(framerate3d > 99.99) framerate3d = 99.99;
+					_stprintf(framerate3dstring,_T("%.2f"),framerate3d);
+					SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_SETTEXT,0,(LPARAM)framerate3dstring);
+					SendDlgItemMessage(hWnd,IDC_FRAMERATE,EM_SETSEL,pos,pos);
+				}
+			}
+			break;
+		case IDC_APIVER:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_APIVER,WM_GETTEXT,6,(LPARAM)tmpstring);
+				i = _ttoi(tmpstring);
+				if(i != api3d)
+				{
+					api3d = i;
+					if(api3d == 5) api3d = 4;
+					if(api3d == 6) api3d = 7;
+					if(api3d < minapi3d) api3d = minapi3d;
+					if(api3d > maxapi3d) api3d = maxapi3d;
+					_itot(api3d,tmpstring,10);
+					SendDlgItemMessage(hWnd,IDC_APIVER,WM_SETTEXT,0,(LPARAM)tmpstring);
+				}
+			}
+			break;
+		case IDC_BUFFERS:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_BUFFERS,WM_GETTEXT,6,(LPARAM)tmpstring);
+				i = _ttoi(tmpstring);
+				if(i != buffer3d)
+				{
+					buffer3d = i;
+					if(buffer3d < minbuffer3d) buffer3d = minbuffer3d;
+					if(buffer3d > maxbuffer3d) buffer3d = maxbuffer3d;
+					_itot(buffer3d,tmpstring,10);
+					SendDlgItemMessage(hWnd,IDC_BUFFERS,WM_SETTEXT,0,(LPARAM)tmpstring);
+				}
+			}
+			break;
+		case IDC_TEST:
+			if(SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0)) resizable3d = true;
+			else resizable3d = false;
+			i = SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETCURSEL,0,0);
+			SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETTEXT,i,(LPARAM)tmpstring);
+			TranslateResolutionString(tmpstring,width,height,bpp,refresh);
+			RunTest3D(currenttest3d,width,height,bpp,refresh,buffer3d,api3d,filter3d,msaa3d,framerate3d,fullscreen3d,resizable3d);
+			break;
+		case IDC_WINDOWED:
+			SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,0,0);
+			SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,1,0);
+			fullscreen3d = false;
+			break;
+		case IDC_FULLSCREEN:
+			SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,1,0);
+			SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,0,0);
+			fullscreen3d = true;
+			break;
+		}
+		break;
+	case WM_NOTIFY:
+		switch(((LPNMHDR)lParam)->code)
+		{
+		case UDN_DELTAPOS:
+			switch(((LPNMHDR)lParam)->idFrom)
+			{
+			case IDC_SPINFRAME:
+				framerate3d -= ((LPNMUPDOWN)lParam)->iDelta;
+				if(framerate3d < 0.01) framerate3d = 0.01;
+				if(framerate3d > 99.99) framerate3d = 99.99;
+				_stprintf(framerate3dstring,_T("%.2f"),framerate3d);
+				SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_SETTEXT,0,(LPARAM)framerate3dstring);
+				break;
+			case IDC_SPINAPI:
+				if(api3d < 1) api3d = 1;
+				if(api3d > 7) api3d = 7;
+				if(((LPNMUPDOWN)lParam)->iDelta > 0)
+				{
+					switch(api3d)
+					{
+					case 1:
+					case 2:
+					default:
+						api3d = 1;
+						break;
+					case 3:
+						api3d = 2;
+						break;
+					case 4:
+						api3d = 3;
+						break;
+					case 7:
+					case 6:
+					case 5:
+						api3d = 4;
+					}
+				}
+				else
+				{
+					switch(api3d)
+					{
+					case 1:
+					default:
+						api3d = 2;
+						break;
+					case 2:
+						api3d = 3;
+						break;
+					case 3:
+						api3d = 4;
+						break;
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						api3d = 7;
+					}
+				}
+				if(api3d < minapi3d) api3d = minapi3d;
+				if(api3d > maxapi3d) api3d = maxapi3d;
+				SendDlgItemMessage(hWnd,IDC_APIVER,WM_SETTEXT,0,(LPARAM)_itot(api3d,tmpstring,10));
+				break;
+			case IDC_SPINBACK:
+				buffer3d -= ((LPNMUPDOWN)lParam)->iDelta;
+				if(buffer3d < minbuffer3d) buffer3d = minbuffer3d;
+				if(buffer3d > maxbuffer3d) buffer3d = maxbuffer3d;
+				SendDlgItemMessage(hWnd,IDC_BUFFERS,WM_SETTEXT,0,(LPARAM)_itot(buffer3d,tmpstring,10));
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
 HWND tabwnd[3];
 int tabopen;
 INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -450,11 +683,15 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
         tab.pszText = _T("2D Graphics");
 		hTab = GetDlgItem(hWnd,IDC_TABS);
         SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,1,(LPARAM)&tab);
-        tabwnd[0] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_SYSINFO),hTab,SysTabCallback);
+        tab.pszText = _T("3D Graphics");
+        SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,2,(LPARAM)&tab);
+		tabwnd[0] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_SYSINFO),hTab,SysTabCallback);
         tabwnd[1] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,Test2DCallback);
+        tabwnd[2] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,Test3DCallback);
 		SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETITEMRECT,0,(LPARAM)&tabrect);
 		SetWindowPos(tabwnd[0],NULL,tabrect.left,tabrect.bottom+3,0,0,SWP_SHOWWINDOW|SWP_NOSIZE);
-		ShowWindow(tabwnd[1],SWP_HIDEWINDOW);
+		ShowWindow(tabwnd[1],SW_HIDE);
+		ShowWindow(tabwnd[2],SW_HIDE);
 		tabopen = 0;
 		ShowWindow(hWnd,SW_SHOWNORMAL);
         return TRUE;

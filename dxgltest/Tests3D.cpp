@@ -20,3 +20,8 @@
 #include "surfacegen.h"
 #include "timer.h"
 #include "misc.h"
+
+
+void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
+	int filter,	int msaa, double fps, bool fullscreen, bool resizable)
+{}
