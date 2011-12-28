@@ -157,6 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ddraw.def" />
+    <None Include="include\d3dvec.inl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />

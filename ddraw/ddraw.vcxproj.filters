@@ -24,6 +24,9 @@
     <None Include="ddraw.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="include\d3dvec.inl">
+      <Filter>Header Files\include</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ddraw.h">

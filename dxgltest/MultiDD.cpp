@@ -187,6 +187,24 @@ HRESULT MultiDirectDraw::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwB
 		return  DDERR_GENERIC;
 	}
 }
+HRESULT MultiDirectDraw::QueryInterface(REFIID riid, void** ppvObj)
+{
+	switch(version)
+	{
+	case 1:
+		return dd1->QueryInterface(riid,ppvObj);
+	case 2:
+	case 3:
+		return dd2->QueryInterface(riid,ppvObj);
+	case 4:
+		return dd4->QueryInterface(riid,ppvObj);
+	case 7:
+		return dd7->QueryInterface(riid,ppvObj);
+	default:
+		return NULL;
+	}
+}
+
 
 
 MultiDirectDrawSurface::MultiDirectDrawSurface(int version, LPVOID surface)
@@ -603,6 +621,44 @@ HRESULT MultiDirectDrawSurface::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColo
 		return dds4->SetColorKey(dwFlags,lpDDColorKey);
 	case 7:
 		return dds7->SetColorKey(dwFlags,lpDDColorKey);
+	default:
+		return DDERR_GENERIC;
+	}
+}
+
+LPVOID MultiDirectDrawSurface::GetSurface()
+{
+	switch(version)
+	{
+	case 1:
+		return dds1;
+	case 2:
+		return dds2;
+	case 3:
+		return dds3;
+	case 4:
+		return dds4;
+	case 7:
+		return dds7;
+	default:
+		return NULL;
+	}
+}
+
+HRESULT MultiDirectDrawSurface::QueryInterface(REFIID riid, void** ppvObj)
+{
+	switch(version)
+	{
+	case 1:
+		return dds1->QueryInterface(riid,ppvObj);
+	case 2:
+		return dds2->QueryInterface(riid,ppvObj);
+	case 3:
+		return dds3->QueryInterface(riid,ppvObj);
+	case 4:
+		return dds4->QueryInterface(riid,ppvObj);
+	case 7:
+		return dds7->QueryInterface(riid,ppvObj);
 	default:
 		return DDERR_GENERIC;
 	}

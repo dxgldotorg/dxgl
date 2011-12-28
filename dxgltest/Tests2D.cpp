@@ -22,24 +22,24 @@
 #include "timer.h"
 #include "misc.h"
 
-void InitTest(int test);
-void RunTestTimed(int test);
-void RunTestLooped(int test);
-void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
+void InitTest2D(int test);
+void RunTestTimed2D(int test);
+void RunTestLooped2D(int test);
+void RunTestMouse2D(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 
-MultiDirectDraw *ddinterface;
-MultiDirectDrawSurface *ddsurface;
-MultiDirectDrawSurface *ddsrender;
-IDirectDrawPalette *pal;
-LPDIRECTDRAWCLIPPER ddclipper;
-int width,height,bpp,refresh,backbuffers;
-double fps;
-bool fullscreen,resizable;
-HWND hWnd;
-int testnum;
-unsigned int randnum;
-int testtypes[] = {0,1,0,1,0,1,2};
+static MultiDirectDraw *ddinterface;
+static MultiDirectDrawSurface *ddsurface;
+static MultiDirectDrawSurface *ddsrender;
+static IDirectDrawPalette *pal;
+static LPDIRECTDRAWCLIPPER ddclipper;
+static int width,height,bpp,refresh,backbuffers;
+static double fps;
+static bool fullscreen,resizable;
+static HWND hWnd;
+static int testnum;
+static unsigned int randnum;
+static int testtypes[] = {0,1,0,1,0,1,2};
 
 typedef struct
 {
@@ -55,7 +55,7 @@ typedef struct
 	RECT rect;
 } DDSPRITE;
 
-DDSPRITE sprites[16];
+static DDSPRITE sprites[16];
 
 LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -104,7 +104,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		if(wParam == VK_ESCAPE) DestroyWindow(hWnd);
 		break;
 	case WM_APP:
-		RunTestTimed(testnum);
+		RunTestTimed2D(testnum);
 		break;
 	case WM_SIZE:
 		paintwnd = false;
@@ -137,7 +137,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	case WM_XBUTTONUP:
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEHWHEEL:
-		RunTestMouse(testnum,Msg,wParam,lParam);
+		RunTestMouse2D(testnum,Msg,wParam,lParam);
 		if(!fullscreen)
 		{
 			p.x = 0;
@@ -155,10 +155,10 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-int ddtestnum;
-int ddver;
+static int ddtestnum;
+static int ddver;
 
-void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
+void RunTestMouse2D(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
@@ -385,7 +385,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 		ddsrender->SetPalette(pal);
 	}
 	else pal = NULL;
-	InitTest(testnum);
+	InitTest2D(testnum);
 	if(!fullscreen) SendMessage(hWnd,WM_PAINT,0,0);
 	if(testtypes[testnum] == 1)
 	{
@@ -393,7 +393,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 		{
 			if(PeekMessage(&Msg,NULL,0,0,PM_REMOVE))
 			{
-				if(Msg.message == WM_PAINT) RunTestLooped(testnum);
+				if(Msg.message == WM_PAINT) RunTestLooped2D(testnum);
 				else if(Msg.message  == WM_QUIT) done = TRUE;
 				else
 				{
@@ -403,7 +403,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 			}
 			else
 			{
-				RunTestLooped(testnum);
+				RunTestLooped2D(testnum);
 			}
 		}
 	}
@@ -429,7 +429,7 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 }
 
 
-void InitTest(int test)
+void InitTest2D(int test)
 {
 	DDSURFACEDESC2 ddsd;
 	DDSCAPS2 ddscaps;
@@ -633,7 +633,7 @@ void InitTest(int test)
 	}
 }
 
-void RunTestTimed(int test)
+void RunTestTimed2D(int test)
 {
 	DDSCAPS2 ddscaps;
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
@@ -670,7 +670,7 @@ void RunTestTimed(int test)
 	}
 }
 
-void RunTestLooped(int test)
+void RunTestLooped2D(int test)
 {
 	randnum += rand(); // Improves randomness of "snow" patterns at certain resolutions
 	HDC hdc;

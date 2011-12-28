@@ -18,6 +18,7 @@
 
 #ifndef __WINE_D3D_H
 #define __WINE_D3D_H
+#include "winedef.h"
 
 #include <stdlib.h>
 

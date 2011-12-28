@@ -326,6 +326,28 @@ public:
 #endif
 } D3DVERTEX, *LPD3DVERTEX;
 
+#ifdef _MSC_VER
+typedef struct _D3DMATRIX {
+	union{
+		struct{
+  D3DVALUE        _11, _12, _13, _14;
+  D3DVALUE        _21, _22, _23, _24;
+  D3DVALUE        _31, _32, _33, _34;
+  D3DVALUE        _41, _42, _43, _44;
+	};
+	D3DVALUE m[4][4];
+	};
+#if defined(__cplusplus) && defined(D3D_OVERLOADS)
+  _D3DMATRIX() { }
+
+    D3DVALUE &operator () (int r, int c)
+	{ return m[r][c]; }
+    const D3DVALUE &operator() (int r, int c) const
+	{ return m[r][c]; }
+#endif
+} D3DMATRIX, *LPD3DMATRIX;
+
+#else
 typedef struct _D3DMATRIX {
   D3DVALUE        _11, _12, _13, _14;
   D3DVALUE        _21, _22, _23, _24;
@@ -336,14 +358,16 @@ typedef struct _D3DMATRIX {
 
     /* This is different from MS, but avoids anonymous structs. */
     D3DVALUE &operator () (int r, int c)
-	{ return ((D3DVALUE [4][4])&_11)[r][c]; }
+	{ return (&_11)[r*4 + c]; }
     const D3DVALUE &operator() (int r, int c) const
-	{ return ((const D3DVALUE [4][4])&_11)[r][c]; }
+	{ return (&_11)[r*4 + c]; }
 #endif
 } D3DMATRIX, *LPD3DMATRIX;
 
+#endif
+
 #if defined(__cplusplus) && defined(D3D_OVERLOADS)
-#include <d3dvec.inl>
+#include "d3dvec.inl"
 #endif
 
 typedef struct _D3DVIEWPORT {

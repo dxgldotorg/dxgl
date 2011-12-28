@@ -604,12 +604,12 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 						api3d = 2;
 						break;
 					case 4:
-						api3d = 3;
+						api3d = 7;
 						break;
 					case 7:
 					case 6:
 					case 5:
-						api3d = 4;
+						api3d = 3;
 					}
 				}
 				else
@@ -624,7 +624,7 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 						api3d = 3;
 						break;
 					case 3:
-						api3d = 4;
+						api3d = 7;
 						break;
 					case 4:
 					case 5:

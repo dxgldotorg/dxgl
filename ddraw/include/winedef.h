@@ -1,35 +1,63 @@
-// Part of windef.h from Wine source code, subject to the following license:
-/*
- * Basic types definitions
- *
- * Copyright 1996 Alexandre Julliard
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+/**
+ * This file has no copyright assigned and is placed in the Public Domain.
+ * This file is part of the w64 mingw-runtime package.
+ * No warranty is given; refer to the file DISCLAIMER within this package.
  */
-
-
 
 #pragma once
 #ifndef _WINEDEF_H
 #define _WINEDEF_H
-
-# define DECL_WINELIB_TYPE_AW(type)  typedef WINELIB_NAME_AW(type) type;
-# ifdef UNICODE
-#  define WINELIB_NAME_AW(func) func##W
-# else
-#  define WINELIB_NAME_AW(func) func##A
+#ifndef DUMMYUNIONNAME1
+#define DUMMYUNIONNAME1 // fix MSVC
+#endif //DUMMYUNIONNAME1
+#ifndef DUMMYUNIONNAME
+# ifdef NONAMELESSUNION
+#  define DUMMYUNIONNAME  u
+#  define DUMMYUNIONNAME1 u1
+#  define DUMMYUNIONNAME2 u2
+#  define DUMMYUNIONNAME3 u3
+#  define DUMMYUNIONNAME4 u4
+#  define DUMMYUNIONNAME5 u5
+# else /* NONAMELESSUNION */
+#  define DUMMYUNIONNAME
+#  define DUMMYUNIONNAME1
+#  define DUMMYUNIONNAME2
+#  define DUMMYUNIONNAME3
+#  define DUMMYUNIONNAME4
+#  define DUMMYUNIONNAME5
 # endif
+#endif	/* DUMMYUNIONNAME */
+
+#ifndef DUMMYSTRUCTNAME
+# ifdef NONAMELESSSTRUCT
+#  define DUMMYSTRUCTNAME s
+# else
+#  define DUMMYSTRUCTNAME
+# endif
+#endif
+
+
+/* These are for compatibility with the Wine source tree */
+
+#ifndef WINELIB_NAME_AW
+# ifdef __MINGW_NAME_AW
+#   define WINELIB_NAME_AW  __MINGW_NAME_AW
+# else
+#  ifdef UNICODE
+#   define WINELIB_NAME_AW(func) func##W
+#  else
+#   define WINELIB_NAME_AW(func) func##A
+#  endif
+# endif
+#endif	/* WINELIB_NAME_AW */
+
+#ifndef DECL_WINELIB_TYPE_AW
+# ifdef __MINGW_TYPEDEF_AW
+#  define DECL_WINELIB_TYPE_AW  __MINGW_TYPEDEF_AW
+# else
+#  define DECL_WINELIB_TYPE_AW(type)  typedef WINELIB_NAME_AW(type) type;
+# endif
+#endif	/* DECL_WINELIB_TYPE_AW */
+
 
 #endif //_WINEDEF_H
