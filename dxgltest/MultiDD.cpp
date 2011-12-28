@@ -263,6 +263,25 @@ ULONG MultiDirectDrawSurface::Release()
 	return ret;
 }
 
+HRESULT MultiDirectDrawSurface::AddAttachedSurface(MultiDirectDrawSurface *lpDDSAttachedSurface)
+{
+	switch(version)
+	{
+	case 1:
+		return dds1->AddAttachedSurface(lpDDSAttachedSurface->dds1);
+	case 2:
+		return dds2->AddAttachedSurface(lpDDSAttachedSurface->dds2);
+	case 3:
+		return dds3->AddAttachedSurface(lpDDSAttachedSurface->dds3);
+	case 4:
+		return dds4->AddAttachedSurface(lpDDSAttachedSurface->dds4);
+	case 7:
+		return dds7->AddAttachedSurface(lpDDSAttachedSurface->dds7);
+	default:
+		return DDERR_GENERIC;
+	}
+}
+
 HRESULT MultiDirectDrawSurface::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent)
 {
 	switch(version)

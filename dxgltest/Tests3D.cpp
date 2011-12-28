@@ -33,6 +33,7 @@ void RunTestMouse3D(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
 static MultiDirectDraw *ddinterface;
 static MultiDirectDrawSurface *ddsurface;
 static MultiDirectDrawSurface *ddsrender;
+static MultiDirectDrawSurface *zbuffer;
 static IDirect3D7 *d3d7;
 static IDirect3DDevice7 *d3d7dev;
 static LPDIRECTDRAWCLIPPER ddclipper;
@@ -161,12 +162,22 @@ void RunTestMouse3D(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 const TCHAR wndclassname3d[] = _T("D3DTestWndClass");
 
+static HRESULT WINAPI zcallback(DDPIXELFORMAT *ddpf, VOID *context)
+{
+	if(ddpf->dwFlags == DDPF_ZBUFFER)
+	{
+		memcpy(context,ddpf,sizeof(DDPIXELFORMAT));
+		return D3DENUMRET_CANCEL;
+	}
+	return D3DENUMRET_OK;
+}
 
 void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter,	int msaa, double fps, bool fullscreen, bool resizable)
 {	
 	DDSCAPS2 caps;
 	DDSURFACEDESC2 ddsd;
+	DDPIXELFORMAT ddpfz;
 	BOOL done = false;
 	::testnum = testnum;
 	randnum = (unsigned int)time(NULL);
@@ -271,13 +282,19 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 		}
 	}
 	error = ddinterface->QueryInterface(IID_IDirect3D7,(VOID**)&d3d7);
+	error = d3d7->EnumZBufferFormats(IID_IDirect3DHALDevice,zcallback,&ddpfz);
+	ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER|DDSCAPS_VIDEOMEMORY;
+	memcpy(&ddsd.ddpfPixelFormat,&ddpfz,sizeof(DDPIXELFORMAT));
+	error = ddinterface->CreateSurface(&ddsd,&zbuffer,NULL);
+	error = ddsrender->AddAttachedSurface(zbuffer);
 	error = d3d7->CreateDevice(IID_IDirect3DHALDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
 	if(error != D3D_OK)
 		error = d3d7->CreateDevice(IID_IDirect3DRGBDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
 	ddsrender->GetSurfaceDesc(&ddsd);
 	D3DVIEWPORT7 vp = {0,0,ddsd.dwWidth,ddsd.dwHeight,0.0f,1.0f};
 	error = d3d7dev->SetViewport(&vp);
-
+	error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
 	InitTest3D(testnum);
 	if(!fullscreen) SendMessage(hWnd,WM_PAINT,0,0);
 	if(testtypes[testnum] == 1)
@@ -414,11 +431,7 @@ void RunTestTimed3D(int test)
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 	if(d3dver >= 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
-	DDBLTFX bltfx;
-	ZeroMemory(&bltfx,sizeof(DDBLTFX));
-	bltfx.dwSize = sizeof(DDBLTFX);
-	bltfx.dwFillColor = 0;
-	ddsrender->Blt(NULL,NULL,NULL,DDBLT_COLORFILL,&bltfx);
+	d3d7dev->Clear(0,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0,1.0,0);
 	float time = (float)clock() / (float)CLOCKS_PER_SEC;
 	switch(test)
 	{
