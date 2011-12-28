@@ -18,6 +18,7 @@
 #include "common.h"
 #include "shaders.h"
 #include "ddraw.h"
+#include "glDirect3D.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
@@ -563,6 +564,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 
 glDirectDraw7::~glDirectDraw7()
 {
+	if(glD3D7) glD3D7->Release();
 	RestoreDisplayMode();
 	if(clippers)
 	{
@@ -627,8 +629,9 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D7)
 	{
-		FIXME("Add IDirect3D Interfaces\n");
-		ERR(DDERR_GENERIC);
+		this->AddRef();
+		*ppvObj = new glDirect3D7(this);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawGammaControl)
 	{
@@ -839,6 +842,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	if(initialized) return DDERR_ALREADYINITIALIZED;
 	hDC = NULL;
 	hRC = NULL;
+	glD3D7 = NULL;
 	hRenderWnd = NULL;
 	primary = NULL;
 	fullscreen = false;

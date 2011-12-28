@@ -20,22 +20,13 @@
 #include "surfacegen.h"
 #include "MultiDD.h"
 #include "timer.h"
-#include <time.h>
+#include "misc.h"
 
 void InitTest(int test);
 void RunTestTimed(int test);
 void RunTestLooped(int test);
 void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
-inline unsigned int rand32(unsigned int &n)
-{
-    return n=(((unsigned int) 1103515245 * n) + (unsigned int) 12345) %
-        (unsigned int) 0xFFFFFFFF;
-}
 
-inline float randfloat(float multiple)
-{
-	return ((float)rand() / (float)RAND_MAX)*multiple;
-}
 
 MultiDirectDraw *ddinterface;
 MultiDirectDrawSurface *ddsurface;

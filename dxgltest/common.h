@@ -43,6 +43,7 @@ extern BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertic
 #include <memory.h>
 #include <tchar.h>
 #include <math.h>
+#include <time.h>
 #include <string>
 #ifdef _DEBUG
 #include <crtdbg.h>

@@ -16,14 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _TESTS_H
-#define _TESTS_H
+#ifndef _MISC_H
+#define _MISC_H
 
+inline unsigned int rand32(unsigned int &n)
+{
+    return n=(((unsigned int) 1103515245 * n) + (unsigned int) 12345) %
+        (unsigned int) 0xFFFFFFFF;
+}
 
-void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	double fps, bool fullscreen, bool resizable);
+inline float randfloat(float multiple)
+{
+	return ((float)rand() / (float)RAND_MAX)*multiple;
+}
 
-void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int filter,
-	int msaa, double fps, bool fullscreen, bool resizable);
-
-#endif //_TESTS_H
+#endif //_MISC_H

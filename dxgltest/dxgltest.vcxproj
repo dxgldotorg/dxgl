@@ -164,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="common.h" />
     <ClInclude Include="dxgltest.h" />
+    <ClInclude Include="misc.h" />
     <ClInclude Include="MultiDD.h" />
     <ClInclude Include="palette.h" />
     <ClInclude Include="Resource.h" />
@@ -189,6 +190,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="surfacegen.cpp" />
+    <ClCompile Include="Tests3D.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>

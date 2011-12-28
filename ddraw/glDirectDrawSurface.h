@@ -28,6 +28,7 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
+class glDirectDrawClipper;
 class glDirectDrawPalette;
 class glDirectDrawSurface1;
 class glDirectDrawSurface2;

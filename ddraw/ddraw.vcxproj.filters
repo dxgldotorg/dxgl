@@ -74,6 +74,12 @@
     <ClInclude Include="glClassFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="glDirect3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glDirect3DDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -110,6 +116,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glClassFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glDirect3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glDirect3DDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

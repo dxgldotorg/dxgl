@@ -21,6 +21,7 @@
 
 class glDirectDrawSurface7;
 class glDirectDrawClipper;
+class glDirect3D7;
 
 LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -117,6 +118,7 @@ private:
 	GLCAPS gl_caps;
 	DEVMODE oldmode;
 	bool initialized;
+	glDirect3D7 *glD3D7;
 };
 
 class glDirectDraw1 : public IDirectDraw

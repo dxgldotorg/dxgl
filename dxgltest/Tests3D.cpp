@@ -15,15 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#pragma once
-#ifndef _TESTS_H
-#define _TESTS_H
-
-
-void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	double fps, bool fullscreen, bool resizable);
-
-void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int filter,
-	int msaa, double fps, bool fullscreen, bool resizable);
-
-#endif //_TESTS_H
+#include "common.h"
+#include "tests.h"
+#include "surfacegen.h"
+#include "timer.h"
+#include "misc.h"
