@@ -51,6 +51,7 @@ static D3DVERTEX vertices[256];
 static WORD mesh[256];
 static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14, 14,13,15, 16,17,18,
 		18,17,19, 20,21,22, 22,21,23 };
+static D3DLIGHT7 lights[8];
 
 LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -85,6 +86,11 @@ LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 			ddsurface->Release();
 			ddsurface = NULL;
+		}
+		if(zbuffer)
+		{
+			zbuffer->Release();
+			zbuffer = NULL;
 		}
 		if(ddclipper)
 		{
@@ -283,6 +289,7 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	}
 	error = ddinterface->QueryInterface(IID_IDirect3D7,(VOID**)&d3d7);
 	error = d3d7->EnumZBufferFormats(IID_IDirect3DHALDevice,zcallback,&ddpfz);
+	error = ddsrender->GetSurfaceDesc(&ddsd);
 	ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER|DDSCAPS_VIDEOMEMORY;
 	memcpy(&ddsd.ddpfPixelFormat,&ddpfz,sizeof(DDPIXELFORMAT));
@@ -340,14 +347,14 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 
 void MakeCube3D(D3DVECTOR *points, D3DVECTOR *normals, D3DVERTEX *vertices)
 {
-	points[0] = D3DVECTOR(0.0f,0.0f,0.0f);
-	points[1] = D3DVECTOR(0.0f,3.0f,0.0f);
-	points[2] = D3DVECTOR(3.0f,0.0f,0.0f);
-	points[3] = D3DVECTOR(3.0f,3.0f,0.0f);
-	points[4] = D3DVECTOR(3.0f,0.0f,3.0f);
-	points[5] = D3DVECTOR(3.0f,3.0f,3.0f);
-	points[6] = D3DVECTOR(0.0f,0.0f,3.0f);
-	points[7] = D3DVECTOR(0.0f,3.0f,3.0f);
+	points[0] = D3DVECTOR(-2.5f,-2.5f,-2.5f);
+	points[1] = D3DVECTOR(-2.5f,2.5f,-2.5f);
+	points[2] = D3DVECTOR(2.5f,-2.5f,-2.5f);
+	points[3] = D3DVECTOR(2.5f,2.5f,-2.5f);
+	points[4] = D3DVECTOR(2.5f,-2.5f,2.5f);
+	points[5] = D3DVECTOR(2.5f,2.5f,2.5f);
+	points[6] = D3DVECTOR(-2.5f,-2.5f,2.5f);
+	points[7] = D3DVECTOR(-2.5f,2.5f,2.5f);
 	normals[0] = D3DVECTOR(0.0f,0.0f,-1.0f);
 	normals[1] = D3DVECTOR(1.0f,0.0f,0.0f);
 	normals[2] = D3DVECTOR(0.0f,0.0f,1.0f);
@@ -393,11 +400,16 @@ void InitTest3D(int test)
 		MakeCube3D(points,normals,vertices);
 		D3DMATERIAL7 material;
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
-		material.ambient.r = 1.0f;
-		material.ambient.g = 1.0f;
+		material.ambient.r = 0.5f;
+		material.ambient.g = 0.5f;
 		material.ambient.b = 0.0f;
+		material.diffuse.r = 1.0f;
+		material.diffuse.g = 1.0f;
+		material.diffuse.b = 1.0f;
 		error = d3d7dev->SetMaterial(&material);
-		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT,0xffffffff);
+		error = d3d7dev->LightEnable(0,TRUE);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, TRUE);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0x7f7f7f7f);
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
 		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
 		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
@@ -414,7 +426,15 @@ void InitTest3D(int test)
 	    matProj._43 = -1.0f;
 	    matProj._44 =  0.0f;
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_PROJECTION,&matProj);
-
+		ZeroMemory(&lights[0],sizeof(D3DLIGHT7));
+		lights[0].dltType = D3DLIGHT_DIRECTIONAL;
+		lights[0].dcvDiffuse.r = 1;
+		lights[0].dcvDiffuse.g = 0;
+		lights[0].dcvDiffuse.b = 1;
+		lights[0].dvDirection = D3DVECTOR(5,5,5);
+		lights[0].dvRange = D3DLIGHT_RANGE_MAX;
+		lights[0].dvAttenuation1 = 0.4f;
+		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
 	default:
 		break;
@@ -447,11 +467,15 @@ void RunTestTimed3D(int test)
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
 		error = d3d7dev->BeginScene();
 		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,24,cube_mesh,36,0);
+		error = d3d7dev->EndScene();
 		break;
 	default:
 		break;
 	}
-	if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
+	if(fullscreen)
+	{
+		if(backbuffers) ddsurface->Flip(NULL,DDFLIP_WAIT);
+	}
 	else
 	{
 		p.x = 0;
