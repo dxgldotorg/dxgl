@@ -28,6 +28,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
 	glDDS7->AddRef();
+	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
@@ -191,7 +192,7 @@ HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStat
 	FIXME("glDirect3DDevice7::GetRenderState: stub");
 	ERR(DDERR_GENERIC);
 }
-HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 lplpRenderTarget)
+HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRenderTarget)
 {
 	FIXME("glDirect3DDevice7::GetRenderTarget: stub");
 	ERR(DDERR_GENERIC);
@@ -218,8 +219,8 @@ HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 }
 HRESULT WINAPI glDirect3DDevice7::GetViewport(LPD3DVIEWPORT7 lpViewport)
 {
-	FIXME("glDirect3DDevice7::GetViewport: stub");
-	ERR(DDERR_GENERIC);
+	memcpy(lpViewport,&viewport,sizeof(D3DVIEWPORT7));
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 {
@@ -294,8 +295,8 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 }
 HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
-	FIXME("glDirect3DDevice7::SetViewport: stub");
-	ERR(DDERR_GENERIC);
+	memcpy(&viewport,lpViewport,sizeof(D3DVIEWPORT7));
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 {

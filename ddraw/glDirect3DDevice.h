@@ -61,7 +61,7 @@ public:
 	HRESULT WINAPI GetLightEnable(DWORD dwLightIndex, BOOL* pbEnable);
 	HRESULT WINAPI GetMaterial(LPD3DMATERIAL7 lpMaterial);
 	HRESULT WINAPI GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState);
-	HRESULT WINAPI GetRenderTarget(LPDIRECTDRAWSURFACE7 lplpRenderTarget);
+	HRESULT WINAPI GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRenderTarget);
 	HRESULT WINAPI GetStateData(DWORD dwState, LPVOID* lplpStateData);
 	HRESULT WINAPI GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7 *lplpTexture);
 	HRESULT WINAPI GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue);
@@ -89,7 +89,7 @@ private:
 	glDirect3D7 *glD3D7;
 	glDirectDrawSurface7 *glDDS7;
 	ULONG refcount;
-
+	D3DVIEWPORT7 viewport;
 };
 
 #endif //__GLDIRECT3DDEVICE_H
