@@ -109,6 +109,7 @@ public:
 	int flipcount;
 	GLenum texformat;
 	GLenum texformat2;
+	GLint texformat3;
 	DWORD fakex,fakey;
 	DWORD dirty;
 	HGLRC hrc;

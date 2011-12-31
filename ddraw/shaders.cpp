@@ -32,11 +32,11 @@ void main() \n\
 char frag_ColorKey[] = "\
 #version 110\n\
 uniform sampler2D myTexture;\n\
-uniform ivec4 keyIn;\n\
+uniform ivec3 keyIn;\n\
 void main (void)\n\
 {\n\
  vec4 value = texture2D(myTexture, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(myTexture, vec2(gl_TexCoord[0]))*255.0);\n\
+ ivec3 comp = ivec3(texture2D(myTexture, vec2(gl_TexCoord[0]))*255.0);\n\
  if (comp == keyIn)\n\
   discard;\n\
  gl_FragColor = value;\n\

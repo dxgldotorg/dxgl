@@ -25,7 +25,9 @@
 #ifndef GL_STENCIL_BUFFER
 #define GL_STENCIL_BUFFER 0x8224
 #endif
-
+#ifndef GL_RGB565
+#define GL_RGB565 0x8D62
+#endif
 
 extern int GLEXT_ARB_framebuffer_object;
 extern int GLEXT_EXT_framebuffer_object;
@@ -65,6 +67,8 @@ GLAPI GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target);
 
 GLAPI GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name);
 GLAPI void (APIENTRY *glUniform1i) (GLint location, GLint v0);
+GLAPI void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1);
+GLAPI void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2);
 GLAPI void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
