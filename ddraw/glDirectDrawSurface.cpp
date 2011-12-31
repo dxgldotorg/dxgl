@@ -299,15 +299,44 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
 		if(ddsd.dwFlags & DDSD_PIXELFORMAT)
 		{
-			if(ddsd.dwFlags & DDPF_ZBUFFER)
+			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
 			{
 				switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
 				{
 				case 16:
 				default:
+					texformat = GL_DEPTH_COMPONENT;
+					texformat2 = GL_UNSIGNED_BYTE;
+					texformat3 = GL_DEPTH_COMPONENT16;
+					break;
 				case 24:
+					texformat = GL_DEPTH_COMPONENT;
+					texformat2 = GL_UNSIGNED_BYTE;
+					texformat3 = GL_DEPTH_COMPONENT24;
+					break;
 				case 32:
-					__asm nop
+					if((ddsd.ddpfPixelFormat.dwRGBZBitMask == 0x00ffffff) &&
+						!(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER))
+					{
+						texformat = GL_DEPTH_COMPONENT;
+						texformat2 = GL_UNSIGNED_INT;
+						texformat3 = GL_DEPTH_COMPONENT24;
+						break;
+					}
+					else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER)
+					{
+						texformat = GL_DEPTH_STENCIL;
+						texformat2 = GL_UNSIGNED_INT_24_8;
+						texformat3 = GL_DEPTH24_STENCIL8;
+						break;
+					}
+					else
+					{
+						texformat = GL_DEPTH_COMPONENT;
+						texformat2 = GL_UNSIGNED_INT;
+						texformat3 = GL_DEPTH_COMPONENT32;
+						break;
+					}
 				}
 			}
 		}
