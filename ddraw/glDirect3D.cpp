@@ -77,24 +77,24 @@ HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIX
 	ddpf.dwFlags = DDPF_ZBUFFER;
 	ddpf.dwZBufferBitDepth = 16;
 	ddpf.dwZBitMask = 0xffff;
-	if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 	ddpf.dwZBufferBitDepth = 24;
 	ddpf.dwZBitMask = 0xffffff00;
-	if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 	ddpf.dwZBufferBitDepth = 32;
-	if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 	ddpf.dwZBitMask = 0xffffffff;
-	if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 	if(GLEXT_EXT_packed_depth_stencil || GLEXT_NV_packed_depth_stencil)
 	{
 		ddpf.dwZBufferBitDepth = 32;
 		ddpf.dwStencilBitDepth = 8;
 		ddpf.dwZBitMask = 0xffffff00;
 		ddpf.dwStencilBitMask = 0xff;
-		if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+		if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 		ddpf.dwZBitMask = 0x00ffffff;
 		ddpf.dwStencilBitMask = 0xff000000;
-		if(lpEnumCallback(&ddpf,lpContext) == D3DEMUMRET_CANCEL) return D3D_OK;
+		if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) return D3D_OK;
 	}
 	return D3D_OK;
 }
