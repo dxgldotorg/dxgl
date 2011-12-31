@@ -54,6 +54,10 @@ int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
 
 int GLEXT_ARB_framebuffer_object = 0;
 int GLEXT_EXT_framebuffer_object = 0;
+int GLEXT_NV_packed_depth_stencil = 0;
+int GLEXT_EXT_packed_depth_stencil = 0;
+int GLEXT_ARB_depth_buffer_float = 0;
+int GLEXT_ARB_depth_texture = 0;
 int glver_major, glver_minor = 0;
 
 void InitGLExt()
@@ -81,6 +85,10 @@ void InitGLExt()
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;
 	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object")) GLEXT_EXT_framebuffer_object = 1;
+	if(strstr((char*)glextensions,"GL_NV_packed_depth_stencil")) GLEXT_NV_packed_depth_stencil = 1;
+	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) GLEXT_EXT_packed_depth_stencil = 1;
+	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float")) GLEXT_ARB_depth_buffer_float = 1;
+	if(strstr((char*)glextensions,"GL_ARB_depth_texture")) GLEXT_ARB_depth_texture = 1;
 	if(GLEXT_ARB_framebuffer_object)
 	{
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");

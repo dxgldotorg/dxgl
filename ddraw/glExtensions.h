@@ -19,8 +19,21 @@
 #ifndef _GLEXTENSIONS_H
 #define _GLEXTENSIONS_H
 
+#ifndef GL_DEPTH_BUFFER
+#define GL_DEPTH_BUFFER 0x8223
+#endif
+#ifndef GL_STENCIL_BUFFER
+#define GL_STENCIL_BUFFER 0x8224
+#endif
+
+
 extern int GLEXT_ARB_framebuffer_object;
 extern int GLEXT_EXT_framebuffer_object;
+extern int GLEXT_NV_packed_depth_stencil;
+extern int GLEXT_EXT_packed_depth_stencil;
+extern int GLEXT_ARB_depth_buffer_float;
+extern int GLEXT_ARB_depth_texture;
+
 #ifdef __GNUC__
 #undef GLAPI
 #define GLAPI extern

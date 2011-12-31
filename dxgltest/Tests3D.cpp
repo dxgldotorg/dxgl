@@ -223,12 +223,12 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 		return;
 	}
 	if(resizable)
-		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname3d,_T("DDraw Test Window"),WS_OVERLAPPEDWINDOW,
+		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname3d,_T("D3D Test Window"),WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT,CW_USEDEFAULT,width,height,NULL,NULL,hinstance,NULL);
 	else if(!fullscreen)
-		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname3d,_T("DDraw Test Window"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
+		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname3d,_T("D3D Test Window"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
 			CW_USEDEFAULT,CW_USEDEFAULT,width,height,NULL,NULL,hinstance,NULL);
-	else hWnd = CreateWindowEx(WS_EX_TOPMOST,wndclassname3d,_T("DDraw Test Window"),WS_POPUP,0,0,
+	else hWnd = CreateWindowEx(WS_EX_TOPMOST,wndclassname3d,_T("D3D Test Window"),WS_POPUP,0,0,
 		GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),NULL,NULL,hinstance,NULL);
 
 	DWORD err = GetLastError();
