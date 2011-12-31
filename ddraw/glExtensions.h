@@ -25,9 +25,6 @@
 #ifndef GL_STENCIL_BUFFER
 #define GL_STENCIL_BUFFER 0x8224
 #endif
-#ifndef GL_RGB565
-#define GL_RGB565 0x8D62
-#endif
 
 extern int GLEXT_ARB_framebuffer_object;
 extern int GLEXT_EXT_framebuffer_object;

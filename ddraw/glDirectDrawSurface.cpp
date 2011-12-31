@@ -340,7 +340,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			case 16:
 				texformat = GL_RGB;
 				texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-				texformat3 = GL_RGB565;
+				texformat3 = GL_RGB;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
