@@ -133,6 +133,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dds4 = NULL;
 	buffer = gdibuffer = NULL;
 	bigbuffer = NULL;
+	zbuffer = NULL;
 	DWORD colormasks[3];
 	if(copysurface)
 	{
@@ -447,6 +448,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(backbuffer) backbuffer->Release();
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
+	if(zbuffer) zbuffer->Release();
 	ddInterface->Release();
 }
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
@@ -538,8 +540,18 @@ ULONG WINAPI glDirectDrawSurface7::Release()
 }
 HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
 {
-	FIXME("glDirectDrawSurface7::AddAttachedSurface: stub\n");
-	ERR(DDERR_GENERIC);
+	if(zbuffer) ERR(DDERR_SURFACEALREADYATTACHED);
+	glDirectDrawSurface7 *attached = (glDirectDrawSurface7 *)lpDDSAttachedSurface;
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	attached->GetSurfaceDesc(&ddsd);
+	if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
+	{
+		attached->AddRef();
+		zbuffer = attached;
+		return DD_OK;
+	}
+	else return DDERR_CANNOTATTACHSURFACE;
 }
 HRESULT WINAPI glDirectDrawSurface7::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -743,8 +755,13 @@ HRESULT WINAPI glDirectDrawSurface7::BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWS
 }
 HRESULT WINAPI glDirectDrawSurface7::DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
 {
-	FIXME("glDirectDrawSurface7::DeleteAttachedSurface: stub\n");
-	ERR(DDERR_GENERIC);
+	if(lpDDSAttachedSurface == (LPDIRECTDRAWSURFACE7)zbuffer)
+	{
+		zbuffer->Release();
+		zbuffer = NULL;
+		return DD_OK;
+	}
+	else ERR(DDERR_SURFACENOTATTACHED);
 }
 HRESULT WINAPI glDirectDrawSurface7::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpEnumSurfacesCallback)
 {
@@ -758,7 +775,6 @@ HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	int test;
 	if(dwFlags & DDFLIP_NOVSYNC) SetSwap(0);
 	else
 	{
@@ -817,7 +833,6 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LPDIRECTDRAWSURFACE7 FAR *lplpDDAttachedSurface)
 {
 	DDSCAPS2 ddsComp;
-	if(!backbuffer) ERR(DDERR_NOTFOUND);
 	backbuffer->GetCaps(&ddsComp);
 	unsigned __int64 comp1,comp2;
 	memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
@@ -830,8 +845,16 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 	}
 	else
 	{
-		FIXME("glDirectDrawSurface7::GetAttachedSurface: stub\n");
-		ERR(DDERR_GENERIC);
+		zbuffer->GetCaps(&ddsComp);
+		memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
+		memcpy(&comp2,&ddsComp,sizeof(unsigned __int64));
+		if((comp1 & comp2) == comp1)
+		{
+			*lplpDDAttachedSurface = zbuffer;
+			zbuffer->AddRef();
+			return DD_OK;
+		}
+		ERR(DDERR_NOTFOUND);
 	}
 }
 HRESULT WINAPI glDirectDrawSurface7::GetBltStatus(DWORD dwFlags)

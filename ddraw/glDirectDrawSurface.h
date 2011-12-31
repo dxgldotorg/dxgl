@@ -106,7 +106,7 @@ public:
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
 	glDirectDrawSurface4 *dds4;
-	int flipcount;
+	DWORD flipcount;
 	GLenum texformat;
 	GLenum texformat2;
 	GLint texformat3;
@@ -132,6 +132,7 @@ private:
 	char *bigbuffer;
 	char *gdibuffer;
 	glDirectDrawSurface7 *backbuffer;
+	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawPalette *palette;
 	glDirectDrawClipper *clipper;
 	int pagelocked;
