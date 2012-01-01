@@ -292,8 +292,12 @@ HRESULT WINAPI glDirect3DDevice7::GetMaterial(LPD3DMATERIAL7 lpMaterial)
 }
 HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState)
 {
-	FIXME("glDirect3DDevice7::GetRenderState: stub");
-	ERR(DDERR_GENERIC);
+	if(dwRenderStateType <= 152)
+	{
+		*lpdwRenderState = renderstate[dwRenderStateType];
+		return D3D_OK;
+	}
+	return DDERR_INVALIDPARAMS;
 }
 HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRenderTarget)
 {
@@ -368,8 +372,34 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 }
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
-	FIXME("glDirect3DDevice7::SetRenderState: stub");
-	ERR(DDERR_GENERIC);
+	switch(dwRendStateType)
+	{
+	case D3DRENDERSTATE_ANTIALIAS:
+		renderstate[dwRendStateType] = dwRenderState;
+		if(dwRenderState == 0) glDisable(GL_MULTISAMPLE);
+		else glEnable(GL_MULTISAMPLE);
+		return D3D_OK;
+	case D3DRENDERSTATE_TEXTUREPERSPECTIVE:
+		renderstate[dwRendStateType] = dwRenderState;
+		if(dwRenderState) glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+		else glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_FASTEST);
+		return D3D_OK;
+	case D3DRENDERSTATE_ZENABLE:
+		renderstate[dwRendStateType] = dwRenderState;
+		switch(dwRenderState)
+		{
+		case D3DZB_FALSE:
+			glDisable(GL_DEPTH_TEST);
+			break;
+		case D3DZB_TRUE:
+		default:
+		case D3DZB_USEW:
+			glEnable(GL_DEPTH_TEST);
+		}
+		return D3D_OK;
+	default:
+		ERR(DDERR_INVALIDPARAMS);
+	}
 }
 HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRenderTarget, DWORD dwFlags)
 {
