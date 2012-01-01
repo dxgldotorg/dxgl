@@ -90,6 +90,7 @@ private:
 	glDirectDrawSurface7 *glDDS7;
 	ULONG refcount;
 	D3DVIEWPORT7 viewport;
+	DWORD renderstate[153];
 };
 
 #endif //__GLDIRECT3DDEVICE_H

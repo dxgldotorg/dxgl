@@ -99,6 +99,7 @@ public:
 	}
 	void SetTexture(GLuint newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
+	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
 	void RenderScreen(GLuint texture, glDirectDrawSurface7 *surface);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);

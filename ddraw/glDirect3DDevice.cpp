@@ -21,14 +21,117 @@
 #include "glDirect3DDevice.h"
 
 
+const DWORD renderstate_default[153] = {0,                 // 0
+	NULL, //texturehandle
+	D3DANTIALIAS_NONE, //antialias
+	D3DTADDRESS_WRAP, //textureaddress
+	TRUE, //textureperspective
+	FALSE, //wrapu
+	FALSE, //wrapv
+	D3DZB_FALSE, //zenable
+	D3DFILL_SOLID, //fillmode
+	D3DSHADE_GOURAUD, //shademode
+	0, //linepattern                                         10
+	FALSE, //monoenable
+	R2_COPYPEN, //rop2
+	0xFFFFFFFF, //planemask
+	TRUE, //zwriteenable
+	FALSE, //alphastateenable
+	TRUE, //lastpixel
+	D3DFILTER_NEAREST, //texturemag
+	D3DFILTER_NEAREST, //texturemin
+	D3DBLEND_ONE, //srcblend
+	D3DBLEND_ZERO, //destblend                               20
+	D3DTBLEND_MODULATE, //texturemapblend
+	D3DCULL_CCW, //cullmode
+	D3DCMP_LESSEQUAL, //zfunc
+	0, //alpharef
+	D3DCMP_ALWAYS, //alphafunc
+	FALSE, //ditherenable
+	FALSE, //alphablendenable
+	FALSE, //fogenable
+	FALSE, //specularenable
+	FALSE, //zvisible                                        30
+	FALSE, //subpixel
+	FALSE, //subpixelx
+	FALSE, //stippledalpha
+	0, //fogcolor
+	D3DFOG_NONE, //fogtablemode
+	0, //fogstart = 0
+	0x3f800000, //fogend = 0.0078125
+	0x3f800000, //fogdensity = 0.0078125
+	FALSE, //stippleenable
+	FALSE, //edgeantialias                                   40
+	FALSE, //colorkeyenable
+	FALSE, // old blendenable
+	0, //bordercolor
+	D3DTADDRESS_WRAP, //textureaddressu
+	D3DTADDRESS_WRAP, //textureaddressv
+	0, //mipmaplodbias = 0
+	0, //zbias
+	FALSE, //rangefogenable
+	1, //anisotropy
+	0, //flushbatch                                          50
+	FALSE, //translucentsortindependent
+	FALSE, //stencilenable
+	D3DSTENCILOP_KEEP, //stencilfail
+	D3DSTENCILOP_KEEP, //stencilzfail
+	D3DSTENCILOP_KEEP, //stencilpass
+	D3DCMP_ALWAYS, //stencilfunc
+	0,  //stencilref
+	0xFFFFFFFF, //stencilmask
+	0xFFFFFFFF, //stencilwritemask
+	0xFFFFFFFF, //texturefactor                              60
+	0,0,0,0,0,0,0,0,0,0,                                  // 70
+	0,0,0,0,0,0,0,0,0,0,                                  // 80
+	0,0,0,0,0,0,0,0,0,0,                                  // 90
+	0,0,0,0,0,0,0,0,0,0,                                  //100
+	0,0,0,0,0,0,0,0,0,0,                                  //110
+	0,0,0,0,0,0,0,0,0,0,                                  //120
+	0,0,0,0,0,0,0, // 127
+	0, //wrap0
+	0, //wrap1
+	0, //wrap2                                              130
+	0, //wrap3
+	0, //wrap4
+	0, //wrap5
+	0, //wrap6
+	0, //wrap7
+	TRUE, //clipping
+	TRUE, //lighting
+	FALSE, //extents
+	0, //ambient
+	D3DFOG_NONE, //fogvertexmode                            140
+	TRUE, //colorvertex
+	TRUE, //localviewer
+	FALSE, //normalizenormals
+	0, //colorblendkeyenable
+	D3DMCS_COLOR1, //diffusematerialsource
+	D3DMCS_COLOR2, //specularmaterialsource
+	D3DMCS_COLOR2, //ambientmaterialsource
+	D3DMCS_MATERIAL, //emissivematerialsource
+	0,0,                                                  //150
+	D3DVBLEND_DISABLE, //vertexblend
+	FALSE, //clipplaneenable
+};
+
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
+	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
+	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	refcount = 1;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
 	glDDS7->AddRef();
 	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+	if(glDDS7->GetZBuffer()) glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_DITHER);
+	glEnable(GL_LIGHTING);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
