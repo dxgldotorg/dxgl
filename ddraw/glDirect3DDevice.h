@@ -91,6 +91,7 @@ private:
 	ULONG refcount;
 	D3DVIEWPORT7 viewport;
 	DWORD renderstate[153];
+	D3DMATERIAL7 material;
 };
 
 #endif //__GLDIRECT3DDEVICE_H

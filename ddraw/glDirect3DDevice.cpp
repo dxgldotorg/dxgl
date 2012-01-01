@@ -131,6 +131,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	glDisable(GL_DITHER);
 	glEnable(GL_LIGHTING);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+	ZeroMemory(&material,sizeof(D3DMATERIAL7));
 
 }
 glDirect3DDevice7::~glDirect3DDevice7()
@@ -287,8 +288,9 @@ HRESULT WINAPI glDirect3DDevice7::GetLightEnable(DWORD dwLightIndex, BOOL* pbEna
 }
 HRESULT WINAPI glDirect3DDevice7::GetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
-	FIXME("glDirect3DDevice7::GetMaterial: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpMaterial) return DDERR_INVALIDPARAMS;
+	memcpy(lpMaterial,&material,sizeof(D3DMATERIAL7));
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState)
 {
@@ -367,8 +369,14 @@ HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 }
 HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
-	FIXME("glDirect3DDevice7::SetMaterial: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpMaterial) return DDERR_INVALIDPARAMS;
+	memcpy(&material,lpMaterial,sizeof(D3DMATERIAL7));
+	glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,(GLfloat*)&material.ambient);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,(GLfloat*)&material.diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,(GLfloat*)&material.specular);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,(GLfloat*)&material.emissive);
+	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.power);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
