@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _STDAFX_H
-#define _STDAFX_H
+#ifndef _COMMON_H
+#define _COMMON_H
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -25,6 +25,7 @@
 #include <MMSystem.h>
 #include "include/winedef.h"
 #include <ddraw.h>
+#define D3D_OVERLOADS
 #include "include/d3d.h"
 #include "GL/gl.h"
 #include "include/GL/glext.h"
@@ -77,4 +78,4 @@ extern const GUID device_template;
 #define ERR(error) return error;
 #endif
 #include "../cfgmgr/cfgmgr.h"
-#endif //_STDAFX_H
+#endif //_COMMON_H

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 #include "glDirect3D.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DDevice.h"
-
+#include "glDirect3DLight.h"
 
 const DWORD renderstate_default[153] = {0,                 // 0
 	NULL, //texturehandle
@@ -132,12 +132,28 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	glEnable(GL_LIGHTING);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
 	ZeroMemory(&material,sizeof(D3DMATERIAL7));
+	lightsmax = 16;
+	lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
+	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
+	memset(gllights,0xff,8*sizeof(int));
 
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
 	glD3D7->Release();
 	glDDS7->Release();
+}
+
+int ExpandLightBuffer(glDirect3DLight ***lights, DWORD *maxlights, DWORD newmax)
+{
+	if(newmax < *maxlights) return 1;
+	glDirect3DLight **tmp = (glDirect3DLight**)realloc(*lights,newmax*sizeof(glDirect3DLight*));
+	if(!tmp) return 0;
+	*lights = tmp;
+	for(DWORD i = *maxlights; i < newmax; i++)
+		lights[i] = NULL;
+	*maxlights = newmax;
+	return 1;
 }
 
 HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
@@ -333,6 +349,30 @@ HRESULT WINAPI glDirect3DDevice7::GetViewport(LPD3DVIEWPORT7 lpViewport)
 }
 HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 {
+	int i;
+	D3DLIGHT7 light;
+	bool foundlight = false;
+	if(dwLightIndex >= lightsmax)
+	{
+		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex-1)) return DDERR_OUTOFMEMORY;
+	}
+	if(!lights[dwLightIndex]) lights[dwLightIndex] = new glDirect3DLight;
+	if(bEnable)
+	{
+		for(i = 0; i < 8; i++)
+			if(gllights[i] == dwLightIndex) return D3D_OK;
+		for(i = 0; i < 8; i++)
+		{
+			if(gllights[i] == -1)
+			{
+				foundlight = true;
+				gllights[i] = dwLightIndex;
+				break;
+			}
+		}
+		if(!foundlight) return D3DERR_LIGHT_SET_FAILED;
+		lights[dwLightIndex]->SetGLLight(i);
+	}
 	FIXME("glDirect3DDevice7::LightEnable: stub");
 	ERR(DDERR_GENERIC);
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 #ifndef __GLDIRECT3DDEVICE_H
 #define __GLDIRECT3DDEVICE_H
 
+class glDirect3DLight;
 class glDirectDrawSurface7;
 class glDirect3DDevice7 : public IDirect3DDevice7
 {
@@ -92,6 +93,9 @@ private:
 	D3DVIEWPORT7 viewport;
 	DWORD renderstate[153];
 	D3DMATERIAL7 material;
+	glDirect3DLight **lights;
+	int gllights[8];
+	DWORD lightsmax;
 };
 
 #endif //__GLDIRECT3DDEVICE_H
