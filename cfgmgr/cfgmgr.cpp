@@ -139,6 +139,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
 	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
+	cfg->texformat = ReadBool(hKey,cfg->texformat,cfgmask->texformat,_T("TexFormat"));
 	if(!global && dll)
 	{
 		LPTSTR paths;
@@ -213,6 +214,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
 	WriteBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
 	WriteBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
+	WriteBool(hKey,cfg->texformat,cfgmask->texformat,_T("TexFormat"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 }
 

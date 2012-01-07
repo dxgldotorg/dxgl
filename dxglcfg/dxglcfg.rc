@@ -60,12 +60,12 @@ FONT 8, "Ms Shell Dlg 2"
     COMBOBOX        IDC_MSAA, 196, 155, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "Aspect ratio", IDC_STATIC, 300, 145, 40, 8, SS_LEFT
     COMBOBOX        IDC_ASPECT, 299, 155, 100, 14, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    AUTOCHECKBOX    "Always cache surfaces to system memory", IDC_SYSMEMCACHE, 196, 173, 149, 10
     AUTOCHECKBOX    "Adjust Primary resolution", IDC_HIGHRES, 299, 28, 96, 8
     AUTOCHECKBOX    "Support All Color Depths", IDC_UNCOMMONCOLOR, 299, 55, 94, 8
     AUTOCHECKBOX    "Add Extra Display Modes", IDC_EXTRAMODES, 299, 42, 100, 8
     LTEXT           "Sort video modes", IDC_STATIC, 195, 39, 56, 8, SS_LEFT
     COMBOBOX        IDC_SORTMODES, 195, 49, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+	AUTOCHECKBOX    "Use optimized texture internal formats", IDC_TEXFORMAT, 196, 173, 149, 10
 }
 
 

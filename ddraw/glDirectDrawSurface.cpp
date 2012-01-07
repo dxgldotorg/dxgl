@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -349,7 +349,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			case 8:
 				texformat = GL_LUMINANCE;
 				texformat2 = GL_UNSIGNED_BYTE;
-				texformat3 = GL_LUMINANCE8;
+				if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
+				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0;
@@ -359,7 +360,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			case 15:
 				texformat = GL_BGRA;
 				texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-				texformat3 = GL_RGB5_A1;
+				if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
+				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0x7C00;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0x3E0;
@@ -370,7 +372,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			case 16:
 				texformat = GL_RGB;
 				texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-				texformat3 = GL_RGB;
+				if(dxglcfg.texformat) texformat3 = GL_RGB;
+				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
@@ -380,7 +383,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			case 24:
 				texformat = GL_BGR;
 				texformat2 = GL_UNSIGNED_BYTE;
-				texformat3 = GL_RGB8;
+				if(dxglcfg.texformat) texformat3 = GL_RGB8;
+				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;

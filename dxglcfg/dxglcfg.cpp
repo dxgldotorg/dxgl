@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -552,6 +552,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
 		// shader path
 		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,false);
+		// texture format
+		if(cfg->texformat) SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETCHECK,BST_CHECKED,0);
+		else SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETCHECK,BST_UNCHECKED,0);
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
@@ -769,7 +772,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_SYSMEMCACHE,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 				}
 				else if(!current_app && tristate)
 				{
@@ -794,7 +797,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_SYSMEMCACHE,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 				}
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
@@ -808,6 +811,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
 				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
 				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
+				SetCheck(hWnd,IDC_TEXFORMAT,cfg->texformat,cfgmask->texformat,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 			}
@@ -868,6 +872,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_EXTRAMODES:
 			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,cfgmask->ExtraModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_TEXFORMAT:
+			cfg->texformat = GetCheck(hWnd,IDC_TEXFORMAT,cfgmask->texformat);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;

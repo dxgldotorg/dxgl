@@ -35,6 +35,7 @@ typedef struct
 	DWORD SortModes;
 	bool AllColorDepths;
 	bool ExtraModes;
+	bool texformat;
 } DXGLCFG;
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);

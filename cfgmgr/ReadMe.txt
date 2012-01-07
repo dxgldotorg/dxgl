@@ -107,3 +107,10 @@ Valid settings:
 0 - Determined by application
 1 - Off
 2 - On
+
+Member texformat
+REG_DWORD HKCU\DXGL\<app>\TexFormat
+Texture format
+Valid settings:
+0 - RGBA8
+1 - Optimized
