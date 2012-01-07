@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,6 @@
 #define IDC_APPS                                1037
 #define IDC_ADD                                 1038
 #define IDC_REMOVE                              1039
-#define IDC_INSTALL                             1040
 #define IDC_VIDMODE                             1041
 #define IDC_SCALE                               1042
 #define IDC_VSYNC                               1043
@@ -42,8 +41,4 @@
 #define IDC_MSAA                                1048
 #define IDC_COLOR                               1049
 #define IDC_ASPECT                              1050
-#define IDC_AUDIO3D                             1051
-#define IDC_AUDIOGLOBAL                         1052
-#define IDC_INPUTGLOBAL                         1053
-#define IDC_INPUTCFG                            1054
 #define IDC_EXTRAMODES                          1055

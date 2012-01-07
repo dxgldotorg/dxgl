@@ -418,22 +418,29 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.power);
 	return D3D_OK;
 }
+
+inline void dwordto4float(DWORD in, GLfloat *out)
+{
+
+}
+
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
+	GLfloat floats[4];
+	if(dwRendStateType > 152) return DDERR_INVALIDPARAMS;
+	if(dwRendStateType < 0) return DDERR_INVALIDPARAMS;
+	renderstate[dwRendStateType] = dwRenderState;
 	switch(dwRendStateType)
 	{
 	case D3DRENDERSTATE_ANTIALIAS:
-		renderstate[dwRendStateType] = dwRenderState;
 		if(dwRenderState == 0) glDisable(GL_MULTISAMPLE);
 		else glEnable(GL_MULTISAMPLE);
 		return D3D_OK;
 	case D3DRENDERSTATE_TEXTUREPERSPECTIVE:
-		renderstate[dwRendStateType] = dwRenderState;
 		if(dwRenderState) glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 		else glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_FASTEST);
 		return D3D_OK;
 	case D3DRENDERSTATE_ZENABLE:
-		renderstate[dwRendStateType] = dwRenderState;
 		switch(dwRenderState)
 		{
 		case D3DZB_FALSE:
@@ -445,6 +452,13 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 			glEnable(GL_DEPTH_TEST);
 		}
 		return D3D_OK;
+	case D3DRENDERSTATE_LIGHTING:
+		if(dwRenderState) glEnable(GL_LIGHTING);
+		else glDisable(GL_LIGHTING);
+		return D3D_OK;
+	case D3DRENDERSTATE_AMBIENT:
+		dwordto4float(dwRenderState,floats);
+
 	default:
 		ERR(DDERR_INVALIDPARAMS);
 	}

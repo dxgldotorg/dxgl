@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -139,9 +139,6 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
 	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
-	cfg->audio3d = ReadBool(hKey,cfg->audio3d,cfgmask->audio3d,_T("Use3DAudio"));
-	cfg->audioglobal = ReadBool(hKey,cfg->audioglobal,cfgmask->audioglobal,_T("GlobalAudio"));
-	cfg->inputglobal = ReadBool(hKey,cfg->inputglobal,cfgmask->inputglobal,_T("GlobalInput"));
 	if(!global && dll)
 	{
 		LPTSTR paths;

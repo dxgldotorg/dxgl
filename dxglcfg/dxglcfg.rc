@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ FONT 8, "Ms Shell Dlg 2"
     LTEXT           "Applications", IDC_STATIC, 4, 4, 39, 8, SS_LEFT
     PUSHBUTTON      "A&dd...", IDC_ADD, 4, 228, 90, 14
     PUSHBUTTON      "&Remove", IDC_REMOVE, 96, 228, 90, 14, WS_DISABLED
-    GROUPBOX        "Graphics", IDC_STATIC, 190, 4, 211, 184
+    GROUPBOX        "Graphics", IDC_STATIC, 190, 4, 211, 238
     LTEXT           "Video mode", IDC_STATIC, 195, 14, 38, 8, SS_LEFT
     COMBOBOX        IDC_VIDMODE, 195, 24, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     AUTOCHECKBOX    "Change color depth", IDC_COLOR, 299, 14, 79, 10
@@ -60,12 +60,6 @@ FONT 8, "Ms Shell Dlg 2"
     COMBOBOX        IDC_MSAA, 196, 155, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "Aspect ratio", IDC_STATIC, 300, 145, 40, 8, SS_LEFT
     COMBOBOX        IDC_ASPECT, 299, 155, 100, 14, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    GROUPBOX        "Audio", IDC_STATIC, 190, 190, 211, 24
-    AUTOCHECKBOX    "Enable 3D audio", IDC_AUDIO3D, 194, 200, 67, 10, WS_DISABLED
-    AUTOCHECKBOX    "Force global audio", IDC_AUDIOGLOBAL, 299, 200, 74, 10, WS_DISABLED
-    GROUPBOX        "Input", IDC_STATIC, 190, 216, 211, 26
-    AUTOCHECKBOX    "Force global input", IDC_INPUTGLOBAL, 194, 227, 73, 10, WS_DISABLED
-    PUSHBUTTON      "Configure controllers...", IDC_INPUTCFG, 299, 223, 80, 14, WS_DISABLED
     AUTOCHECKBOX    "Always cache surfaces to system memory", IDC_SYSMEMCACHE, 196, 173, 149, 10
     AUTOCHECKBOX    "Adjust Primary resolution", IDC_HIGHRES, 299, 28, 96, 8
     AUTOCHECKBOX    "Support All Color Depths", IDC_UNCOMMONCOLOR, 299, 55, 94, 8
@@ -89,6 +83,7 @@ IDI_DXGLSM         ICON           "..\\common\\dxglsm.ico"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_STAR           ICON           "..\\common\\star.ico"
+
 
 
 //
@@ -122,6 +117,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
         VALUE "Translation", 0x0800, 0x0352
     }
 }
+
 
 
 //

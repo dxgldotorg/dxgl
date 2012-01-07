@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -35,9 +35,6 @@ typedef struct
 	DWORD SortModes;
 	bool AllColorDepths;
 	bool ExtraModes;
-	bool audio3d;
-	bool audioglobal;
-	bool inputglobal;
 } DXGLCFG;
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);
