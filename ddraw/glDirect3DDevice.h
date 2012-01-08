@@ -97,6 +97,7 @@ private:
 	glDirect3DLight **lights;
 	int gllights[8];
 	DWORD lightsmax;
+	bool inscene;
 };
 
 #endif //__GLDIRECT3DDEVICE_H

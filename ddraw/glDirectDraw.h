@@ -93,9 +93,6 @@ public:
 	DWORD internalx,internaly,internalrefresh,internalbpp;
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
 	bool GetFullscreen(){return fullscreen;};
-	GLuint fbo;
-	GLuint pbo;
-	GLuint depthbuffer;
 	void GetHandles(HWND *hwnd, HWND *hrender);
 	glDirectDrawSurface7 *primary;
 private:

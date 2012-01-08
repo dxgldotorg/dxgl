@@ -20,6 +20,15 @@
 #include "glDirectDrawSurface.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
+#include "glutil.h"
+
+inline void dwordto4float(DWORD in, GLfloat *out)
+{
+	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
+	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
+	out[2] = (GLfloat)(in& 0xff) / 255.0f;
+	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
+}
 
 const DWORD renderstate_default[153] = {0,                 // 0
 	NULL, //texturehandle
@@ -128,6 +137,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 		identity._41 = identity._42 = identity._43 = 0.0;
 	matWorld = matView = matProjection = identity;
 	refcount = 1;
+	inscene = false;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
@@ -190,8 +200,9 @@ HRESULT WINAPI glDirect3DDevice7::ApplyStateBlock(DWORD dwBlockHandle)
 }
 HRESULT WINAPI glDirect3DDevice7::BeginScene()
 {
-	FIXME("glDirect3DDevice7::BeginScene: stub");
-	ERR(DDERR_GENERIC);
+	if(inscene) return D3DERR_SCENE_IN_SCENE;
+	inscene = true;
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::BeginStateBlock()
 {
@@ -210,8 +221,29 @@ HRESULT WINAPI glDirect3DDevice7::CreateStateBlock(D3DSTATEBLOCKTYPE d3dsbtype, 
 }
 HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	FIXME("glDirect3DDevice7::Clear: stub");
-	ERR(DDERR_GENERIC);
+	if(dwCount && !lpRects) return DDERR_INVALIDPARAMS;
+	if(dwCount) ERR(DDERR_INVALIDPARAMS);
+	GLfloat color[4];
+	dwordto4float(dwColor,color);
+	SetFBO(glDDS7->texture,glDDS7->GetZBuffer()->texture,glDDS7->GetZBuffer()->hasstencil);
+	int clearbits = 0;
+	if(D3DCLEAR_TARGET)
+	{
+		clearbits |= GL_COLOR_BUFFER_BIT;
+		glClearColor(color[0],color[1],color[2],color[3]);
+	}
+	if(D3DCLEAR_ZBUFFER)
+	{
+		clearbits |= GL_DEPTH_BUFFER_BIT;
+		glClearDepth(dvZ);
+	}
+	if(D3DCLEAR_STENCIL)
+	{
+		clearbits |= GL_STENCIL_BUFFER_BIT;
+		glClearStencil(dwStencil);
+	}
+	glClear(clearbits);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
@@ -262,8 +294,10 @@ HRESULT WINAPI glDirect3DDevice7::DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiv
 }
 HRESULT WINAPI glDirect3DDevice7::EndScene()
 {
-	FIXME("glDirect3DDevice7::EndScene: stub");
-	ERR(DDERR_GENERIC);
+	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
+	inscene = false;
+	glFlush();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
 {
@@ -454,14 +488,6 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 	glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,(GLfloat*)&material.emissive);
 	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.power);
 	return D3D_OK;
-}
-
-inline void dwordto4float(DWORD in, GLfloat *out)
-{
-	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
-	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
-	out[2] = (GLfloat)(in& 0xff) / 255.0f;
-	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
 }
 
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)

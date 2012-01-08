@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -119,6 +119,7 @@ public:
 	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
 	GLuint texture;
+	bool hasstencil;
 private:
 	ULONG refcount;
 	int locked;

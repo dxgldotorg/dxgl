@@ -23,6 +23,7 @@
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
+#include "glutil.h"
 
 int swapinterval = 0;
 inline void SetSwap(int swap)
@@ -118,6 +119,7 @@ int DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
 {
+	hasstencil = false;
 	dirty = 2;
 	locked = 0;
 	pagelocked = 0;
@@ -329,6 +331,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 						texformat = GL_DEPTH_STENCIL;
 						texformat2 = GL_UNSIGNED_INT_24_8;
 						texformat3 = GL_DEPTH24_STENCIL8;
+						hasstencil = true;
 						break;
 					}
 					else
@@ -584,18 +587,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	int error;
-	if(GLEXT_ARB_framebuffer_object)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER,ddInterface->fbo);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,texture,0);
-		error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	}
-	else if(GLEXT_EXT_framebuffer_object)
-	{
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,ddInterface->fbo);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,texture,0);
-		error = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	}
+	error = SetFBO(texture,0,false);
 	glPushAttrib(GL_VIEWPORT_BIT);
 	glViewport(0,0,fakex,fakey);
 	RECT destrect;
@@ -713,14 +705,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glColor3f(1.0,1.0,1.0);
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);
-	if(GLEXT_ARB_framebuffer_object)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER,0);
-	}
-	else if(GLEXT_EXT_framebuffer_object)
-	{
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-	}
+	SetFBO(0,0,false);
 	glPopAttrib();
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||

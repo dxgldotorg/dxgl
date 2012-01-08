@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glutil.h"
 
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
@@ -1373,24 +1374,7 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	}
 	else gl_caps.ShaderVer = 0;
 	CompileShaders();
-	if(GLEXT_ARB_framebuffer_object)
-	{
-		glGenFramebuffers(1,&fbo);
-		glGenRenderbuffers(1,&depthbuffer);
-		glBindRenderbuffer(GL_RENDERBUFFER,depthbuffer);
-		//glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT,width,height);
-		//glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,depthbuffer);
-		glBindRenderbuffer(GL_RENDERBUFFER,0);
-	}
-	else if(GLEXT_EXT_framebuffer_object)
-	{
-		glGenFramebuffersEXT(1,&fbo);
-		glGenRenderbuffersEXT(1,&depthbuffer);
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,depthbuffer);
-		//glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_DEPTH_COMPONENT,width,height);
-		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,depthbuffer);
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);
-	}
+	InitFBO();
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
