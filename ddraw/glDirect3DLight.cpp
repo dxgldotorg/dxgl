@@ -75,6 +75,7 @@ void glDirect3DLight::GetLight7(LPD3DLIGHT7 lpLight7)
 void glDirect3DLight::SetLight7(LPD3DLIGHT7 lpLight7)
 {
 	memcpy(&light,lpLight7,sizeof(D3DLIGHT7));
+	if(gllight != -1) SetGLLight(gllight);
 }
 
 HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)

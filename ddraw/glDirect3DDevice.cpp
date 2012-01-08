@@ -393,6 +393,18 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 		if(!foundlight) return D3DERR_LIGHT_SET_FAILED;
 		lights[dwLightIndex]->SetGLLight(i);
 	}
+	else
+	{
+		for(i = 0; i < 8; i++)
+		{
+			if(gllights[i] == dwLightIndex)
+			{
+				lights[dwLightIndex]->SetGLLight(-1);
+				gllights[i] = -1;
+			}
+		}
+		return D3D_OK;
+	}
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::Load(LPDIRECTDRAWSURFACE7 lpDestTex, LPPOINT lpDestPoint, LPDIRECTDRAWSURFACE7 lpSrcTex,
@@ -423,8 +435,14 @@ HRESULT WINAPI glDirect3DDevice7::SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus)
 }
 HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLight)
 {
-	FIXME("glDirect3DDevice7::SetLight: stub");
-	ERR(DDERR_GENERIC);
+	bool foundlight = false;
+	if(dwLightIndex >= lightsmax)
+	{
+		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex-1)) return DDERR_OUTOFMEMORY;
+	}
+	if(!lights[dwLightIndex]) lights[dwLightIndex] = new glDirect3DLight;
+	lights[dwLightIndex]->SetLight7(lpLight);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
