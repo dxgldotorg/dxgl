@@ -87,6 +87,7 @@ public:
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 
 private:
+	D3DMATRIX matWorld,matView,matProjection;
 	glDirect3D7 *glD3D7;
 	glDirectDrawSurface7 *glDDS7;
 	ULONG refcount;

@@ -115,10 +115,18 @@ const DWORD renderstate_default[153] = {0,                 // 0
 	FALSE, //clipplaneenable
 };
 
+D3DMATRIX identity;
+
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
+	identity._11 = identity._22 = identity._33 = identity._44 = 1.0;
+	identity._12 = identity._13 = identity._14 =
+		identity._21 = identity._23 = identity._24 = 
+		identity._31 = identity._32 = identity._34 =
+		identity._41 = identity._42 = identity._43 = 0.0;
+	matWorld = matView = matProjection = identity;
 	refcount = 1;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
@@ -339,8 +347,20 @@ HRESULT WINAPI glDirect3DDevice7::GetTextureStageState(DWORD dwStage, D3DTEXTURE
 }
 HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
-	FIXME("glDirect3DDevice7::GetTransform: stub");
-	ERR(DDERR_GENERIC);
+	switch(dtstTransformStateType)
+	{
+	case D3DTRANSFORMSTATE_WORLD:
+		memcpy(lpD3DMatrix,&matWorld,sizeof(D3DMATRIX));
+		return D3D_OK;
+	case D3DTRANSFORMSTATE_VIEW:
+		memcpy(lpD3DMatrix,&matView,sizeof(D3DMATRIX));
+		return D3D_OK;
+	case D3DTRANSFORMSTATE_PROJECTION:
+		memcpy(lpD3DMatrix,&matProjection,sizeof(D3DMATRIX));
+		return D3D_OK;
+	default:
+		ERR(DDERR_INVALIDPARAMS);
+	}
 }
 HRESULT WINAPI glDirect3DDevice7::GetViewport(LPD3DVIEWPORT7 lpViewport)
 {
@@ -373,8 +393,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 		if(!foundlight) return D3DERR_LIGHT_SET_FAILED;
 		lights[dwLightIndex]->SetGLLight(i);
 	}
-	FIXME("glDirect3DDevice7::LightEnable: stub");
-	ERR(DDERR_GENERIC);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::Load(LPDIRECTDRAWSURFACE7 lpDestTex, LPPOINT lpDestPoint, LPDIRECTDRAWSURFACE7 lpSrcTex,
 	LPRECT lprcSrcRect, DWORD dwFlags)
@@ -421,7 +440,10 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 
 inline void dwordto4float(DWORD in, GLfloat *out)
 {
-
+	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
+	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
+	out[2] = (GLfloat)(in& 0xff) / 255.0f;
+	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
 }
 
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
@@ -458,7 +480,8 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 		return D3D_OK;
 	case D3DRENDERSTATE_AMBIENT:
 		dwordto4float(dwRenderState,floats);
-
+		glLightModelfv(GL_LIGHT_MODEL_AMBIENT,floats);
+		return D3D_OK;
 	default:
 		ERR(DDERR_INVALIDPARAMS);
 	}
@@ -485,8 +508,20 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 }
 HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
-	FIXME("glDirect3DDevice7::SetTransform: stub");
-	ERR(DDERR_GENERIC);
+	switch(dtstTransformStateType)
+	{
+	case D3DTRANSFORMSTATE_WORLD:
+		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
+		return D3D_OK;
+	case D3DTRANSFORMSTATE_VIEW:
+		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
+		return D3D_OK;
+	case D3DTRANSFORMSTATE_PROJECTION:
+		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
+		return D3D_OK;
+	default:
+		ERR(DDERR_INVALIDPARAMS);
+	}
 }
 HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
