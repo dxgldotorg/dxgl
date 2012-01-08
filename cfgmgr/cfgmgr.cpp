@@ -309,6 +309,7 @@ void GetGlobalConfig(DXGLCFG *cfg)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
+	cfg->texformat = true;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,true,false,NULL);
 	RegCloseKey(hKey);
