@@ -713,15 +713,21 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
         tab.pszText = _T("2D Graphics");
 		hTab = GetDlgItem(hWnd,IDC_TABS);
         SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,1,(LPARAM)&tab);
+		#ifdef _DEBUG
         tab.pszText = _T("3D Graphics");
         SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,2,(LPARAM)&tab);
+		#endif
 		tabwnd[0] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_SYSINFO),hTab,SysTabCallback);
         tabwnd[1] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,Test2DCallback);
+		#ifdef _DEBUG
         tabwnd[2] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,Test3DCallback);
+		#endif
 		SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETITEMRECT,0,(LPARAM)&tabrect);
 		SetWindowPos(tabwnd[0],NULL,tabrect.left,tabrect.bottom+3,0,0,SWP_SHOWWINDOW|SWP_NOSIZE);
 		ShowWindow(tabwnd[1],SW_HIDE);
+		#ifdef _DEBUG
 		ShowWindow(tabwnd[2],SW_HIDE);
+		#endif
 		tabopen = 0;
 		ShowWindow(hWnd,SW_SHOWNORMAL);
         return TRUE;
