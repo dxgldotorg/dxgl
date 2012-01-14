@@ -85,6 +85,7 @@ public:
 	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT7 lpViewport);
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
+	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
 
 private:
 	D3DMATRIX matWorld,matView,matProjection;
@@ -98,6 +99,14 @@ private:
 	int gllights[8];
 	DWORD lightsmax;
 	bool inscene;
+	DWORD maxarray;
+	DWORD vertexsize;
+	DWORD texcoordsize;
+	GLfloat *vertices;
+	GLfloat *normals;
+	GLubyte *diffuse;
+	GLubyte *specular;
+	GLfloat *texcoords[8];
 };
 
 #endif //__GLDIRECT3DDEVICE_H

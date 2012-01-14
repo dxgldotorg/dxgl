@@ -29,10 +29,12 @@ void InitFBO()
 	if(GLEXT_ARB_framebuffer_object)
 	{
 		glGenFramebuffers(1,&fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 	else if(GLEXT_EXT_framebuffer_object)
 	{
 		glGenFramebuffersEXT(1,&fbo);
+		glBindFramebufferEXT(GL_FRAMEBUFFER,0);
 	}
 }
 

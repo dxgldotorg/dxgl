@@ -128,6 +128,9 @@ D3DMATRIX identity;
 
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
+	vertices = normals = NULL;
+	diffuse = specular = NULL;
+	ZeroMemory(texcoords,8*sizeof(GLfloat*));
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	identity._11 = identity._22 = identity._33 = identity._44 = 1.0;
@@ -256,9 +259,44 @@ HRESULT WINAPI glDirect3DDevice7::DeleteStateBlock(DWORD dwBlockHandle)
 	FIXME("glDirect3DDevice7::DeleteStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
+int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
+{
+	switch(d3dptPrimitiveType)
+	{
+	case D3DPT_POINTLIST:
+		return GL_POINTS;
+	case D3DPT_LINELIST:
+		return GL_LINES;
+	case D3DPT_LINESTRIP:
+		return GL_LINE_STRIP;
+	case D3DPT_TRIANGLELIST:
+		return GL_TRIANGLES;
+	case D3DPT_TRIANGLESTRIP:
+		return GL_TRIANGLE_STRIP;
+	case D3DPT_TRIANGLEFAN:
+		return GL_TRIANGLE_FAN;
+	default:
+		return -1;
+	}
+}
+
+void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
+{
+	if(!vertices) vertices = (GLfloat*)malloc(size*4*sizeof(GLfloat));
+	else if(size > maxarray) vertices = (GLfloat*)realloc(vertices,size*4*sizeof(GLfloat));
+	if(!normals) normals = (GLfloat*)malloc(size*4*sizeof(GLfloat));
+	else if(size > maxarray) normals = (GLfloat*)realloc(normals,size*4*sizeof(GLfloat));
+}
+
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
+	int drawmode = setdrawmode(d3dptPrimitiveType);
+	if(drawmode == -1) return DDERR_INVALIDPARAMS;
+	if(dwVertexTypeDesc & D3DFVF_XYZB1) ERR(DDERR_GENERIC);
+	
+	//for(int i = 0; i < 
 	FIXME("glDirect3DDevice7::DrawIndexedPrimitive: stub");
 	ERR(DDERR_GENERIC);
 }
