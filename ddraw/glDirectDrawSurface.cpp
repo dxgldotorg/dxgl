@@ -589,7 +589,6 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	ddInterface->GetSizes(sizes);
 	int error;
 	error = SetFBO(texture,0,false);
-	glPushAttrib(GL_VIEWPORT_BIT);
 	glViewport(0,0,fakex,fakey);
 	RECT destrect;
 	if(!lpDestRect)
@@ -710,7 +709,6 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glColor3f(1.0,1.0,1.0);
 	glDisable(GL_TEXTURE_2D);
 	SetFBO(0,0,false);
-	glPopAttrib();
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
@@ -1118,6 +1116,7 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 		if(ddInterface->GetFullscreen())
 		{
 			ddInterface->GetSizes(sizes);
+			glViewport(0,0,sizes[4],sizes[5]);
 			view[0] = (signed)-(sizes[4]-sizes[0])/2;
 			view[1] = (signed)(sizes[4]-sizes[0])/2+sizes[0];
 			view[2] = (signed)(sizes[5]-sizes[1])/2+sizes[1];
