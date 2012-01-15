@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -15,28 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#pragma once
-#ifndef __SHADERS_H
-#define __SHADERS_H
+#ifndef _SHADERGEN_H
+#define _SHADERGEN_H
 
-typedef struct
-{
-	GLint vs;
-	GLint fs;
-	const char *vsrc;
-	const char *fsrc;
-	GLint prog;
-} SHADER;
 
-extern SHADER shaders[];
+void SetShader(__int64 id, bool builtin);
+__int64 GetProgram();
 
-#define PROG_FILL 0
-#define PROG_TEXTURE 1
-#define PROG_PAL256 2
-#define PROG_CKEY 3
-#define PROG_CKEYMASK 4
-#define PROG_2CKEY 5
 
-void CompileShaders();
-
-#endif //__SHADERS_H
+#endif

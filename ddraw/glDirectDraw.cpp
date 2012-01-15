@@ -24,6 +24,7 @@
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glutil.h"
+#include "../common/version.h"
 
 bool directdraw_created = false; // emulate only one ddraw device
 bool wndclasscreated = false;
@@ -31,7 +32,7 @@ bool wndclasscreated = false;
 DDDEVICEIDENTIFIER2 devid = {
 	"ddraw.dll",
 	"DXGL DDraw Wrapper",
-	0x0000000000070000,
+	0,
 	0,0,0,0,
 	0,0};
 
@@ -548,6 +549,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 glDirectDraw7::glDirectDraw7()
 {
 	initialized = false;
+	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	refcount = 1;
 }
 
@@ -559,6 +561,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 		error = DDERR_INVALIDPARAMS ;
 		return;
 	}
+	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	error = glDirectDraw7::Initialize(lpGUID);
 	refcount = 1;
 }
@@ -1365,10 +1368,6 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	SetSwap(1);
 	SetSwap(0);
 	glViewport(0,0,width,height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,width,height,0,0,1);
-	glMatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
 	const GLubyte *glver = glGetString(GL_VERSION);
 	gl_caps.Version = (GLfloat)atof((char*)glver);

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -48,6 +48,11 @@ void (APIENTRY *glUniform1i) (GLint location, GLint v0) = NULL;
 void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1) = NULL;
 void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2) = NULL;
 void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3) = NULL;
+void (APIENTRY *glUniform1f) (GLint location, GLfloat v0) = NULL;
+void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1) = NULL;
+void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2) = NULL;
+void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) = NULL;
+void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) = NULL;
 
 void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
 
@@ -85,6 +90,11 @@ void InitGLExt()
 		glUniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
 		glUniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
 		glUniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
+		glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
+		glUniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
+		glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
+		glUniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
+		glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
 	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;

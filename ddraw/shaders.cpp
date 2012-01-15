@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,22 @@
 #include "common.h"
 #include "shaders.h"
 
-char frag_Pal256[] =  "\
+const char frag_Color[] = "\
+#version 110\n\
+void main() \n\
+{ \n\
+    gl_FragColor = gl_Color; \n\
+} ";
+
+const char frag_Texture[] = "\
+#version 110\n\
+uniform sampler2D Texture;\n\
+void main() \n\
+{ \n\
+    gl_FragColor = texture2D( Texture, gl_TexCoord[0].st ); \n\
+} ";
+
+const char frag_Pal256[] =  "\
 #version 110\n\
 uniform sampler2D ColorTable; \n\
 uniform sampler2D IndexTexture; \n\
@@ -29,7 +44,7 @@ void main() \n\
 	gl_FragColor = texel; \n\
 } ";
 
-char frag_ColorKey[] = "\
+const char frag_ColorKey[] = "\
 #version 110\n\
 uniform sampler2D myTexture;\n\
 uniform ivec3 keyIn;\n\
@@ -42,7 +57,7 @@ void main (void)\n\
  gl_FragColor = value;\n\
 } ";
 
-char frag_ColorKeyMask[] = "\
+const char frag_ColorKeyMask[] = "\
 #version 110\n\
 uniform sampler2D myTexture;\n\
 uniform ivec4 keyIn;\n\
@@ -55,7 +70,7 @@ void main (void)\n\
  else gl_FragColor[0] = 0.0;\n\
 } ";
 
-char frag_2ColorKey[] = "\
+const char frag_2ColorKey[] = "\
 #version 110\n\
 uniform sampler2D myTexture;\n\
 uniform sampler2D maskTexture;\n\
@@ -72,19 +87,43 @@ void main (void)\n\
  gl_FragColor = value;\n\
 } ";
 
-int NumberOfShaders = 4;
+const char vert_ortho[] = "\
+#version 110\n\
+uniform vec4 view;\n\
+void main()\n\
+{\n\
+	mat4 proj = mat4(\n\
+    vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
+    vec4(0, 2.0 / (view[2] - view[3]), 0, 0),\n\
+    vec4(0, 0, -2.0, 0),\n\
+    vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
+ -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
+	gl_Position    = proj * gl_Vertex;\n\
+	gl_FrontColor  = gl_Color;\n\
+	gl_TexCoord[0] = gl_MultiTexCoord0;\n\
+} ";
 
-SHADER shaders[] = {
-	{0,0,	NULL,			frag_Pal256,		0},
-	{0,0,	NULL,			frag_ColorKey,		0},
-	{0,0,	NULL,			frag_ColorKeyMask,	0},
-	{0,0,	NULL,			frag_2ColorKey,		0}
+
+
+// Use EXACTLY one line per entry.  Don't change layout of the list.
+const int SHADER_START = __LINE__;
+SHADER shaders[] = 
+{
+	{0,0,	vert_ortho,			frag_Color,			0},
+	{0,0,	vert_ortho,			frag_Texture,		0},
+	{0,0,	vert_ortho,			frag_Pal256,		0},
+	{0,0,	vert_ortho,			frag_ColorKey,		0},
+	{0,0,	vert_ortho,			frag_ColorKeyMask,	0},
+	{0,0,	vert_ortho,			frag_2ColorKey,		0}
 };
+const int SHADER_END = __LINE__ - 4;
+const int NumberOfShaders = SHADER_END - SHADER_START;
 
 void CompileShaders()
 {
 	const GLchar *src;
 	GLint srclen;
+	GLenum error;
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
 		shaders[i].prog = glCreateProgram();

@@ -18,6 +18,7 @@
 #include "common.h"
 #include "scalers.h"
 #include "shaders.h"
+#include "shadergen.h"
 #include "ddraw.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
@@ -620,13 +621,10 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	coords[5] = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	coords[6] = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
 	coords[7] = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
-	glMatrixMode(GL_PROJECTION);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-	glOrtho(0,fakex,fakey,0,0,1);
-	glMatrixMode(GL_MODELVIEW);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
+		SetShader(PROG_FILL,1);
 		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_ALPHA_TEST);
 		switch(ddInterface->GetBPP())
@@ -661,7 +659,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	if(lpDDSrcSurface) glBindTexture(GL_TEXTURE_2D,((glDirectDrawSurface7*)lpDDSrcSurface)->GetTexture());
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
-		glUseProgram(shaders[PROG_CKEY].prog);
+		SetShader(PROG_CKEY,1);
 		GLint keyloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"keyIn");
 		switch(ddInterface->GetBPP())
 		{
@@ -690,7 +688,14 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		GLint texloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"myTexture");
 		glUniform1i(texloc,0);
 	}
-	else glUseProgram(0);
+	else if(!(dwFlags & DDBLT_COLORFILL))
+	{
+		SetShader(PROG_TEXTURE,1);
+		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
+		glUniform1i(texloc,0);
+	}
+	GLint viewloc = glGetUniformLocation(GetProgram()&0xffffffff,"view");
+	glUniform4f(viewloc,0,(GLfloat)fakex,0,(GLfloat)fakey);
 	this->dirty |= 2;
 	glBegin(GL_QUADS);
 	glTexCoord2f(coords[4], coords[6]);
@@ -703,7 +708,6 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glVertex2f(coords[0], coords[3]);
 	glEnd();
 	glColor3f(1.0,1.0,1.0);
-	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);
 	SetFBO(0,0,false);
 	glPopAttrib();
@@ -1099,8 +1103,7 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *surface)
 {
 	LONG sizes[6];
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	GLfloat view[4];
 	RECT r,r2;
 	if(surface->dirty & 1)
 	{
@@ -1115,8 +1118,10 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 		if(ddInterface->GetFullscreen())
 		{
 			ddInterface->GetSizes(sizes);
-			glOrtho((signed)-(sizes[4]-sizes[0])/2,(sizes[4]-sizes[0])/2+sizes[0],
-				(signed)-(sizes[5]-sizes[1])/2,(sizes[5]-sizes[1])/2+sizes[1],0,1);
+			view[0] = (signed)-(sizes[4]-sizes[0])/2;
+			view[1] = (signed)(sizes[4]-sizes[0])/2+sizes[0];
+			view[2] = (signed)(sizes[5]-sizes[1])/2+sizes[1];
+			view[3] = (signed)-(sizes[5]-sizes[1])/2;
 		}
 		else
 		{
@@ -1130,15 +1135,23 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 			ClientToScreen(hwnd,(LPPOINT)&r2.left);
 			ClientToScreen(hwnd,(LPPOINT)&r2.right);
 			glViewport(0,0,r.right,r.bottom);
-			glOrtho((signed)r2.left,(signed)r2.right,(signed)(fakey-r2.bottom),(signed)(fakey-r2.top),0,1);
+			view[0] = (signed)r2.left;
+			view[1] = (signed)r2.right;
+			view[2] = (signed)(fakey-r2.top);
+			view[3] = (signed)(fakey-r2.bottom);
 		}
 	}
-	else glOrtho(0,fakex,fakey,0,0,1);
-	glMatrixMode(GL_MODELVIEW);
+	else
+	{
+		view[0] = 0;
+		view[1] = fakex;
+		view[2] = 0;
+		view[3] = fakey;
+	}
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(ddInterface->GetBPP() == 8)
 	{
-		glUseProgram(shaders[PROG_PAL256].prog);
+		SetShader(PROG_PAL256,true);
 		glBindTexture(GL_TEXTURE_2D,paltex);
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
 		GLint palloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"ColorTable");
@@ -1153,9 +1166,15 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 	}
 	else
 	{
+		SetShader(PROG_TEXTURE,true);
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,texture);
+		int prog = GetProgram();
+		GLint texloc = glGetUniformLocation(prog,"Texture");
 	}
+	int prog = GetProgram();
+	GLint viewloc = glGetUniformLocation(prog,"view");
+	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
 	if(ddInterface->GetFullscreen())
 	{
 		glBegin(GL_QUADS);

@@ -8,6 +8,7 @@
 #define DXGLBUILD 0
 
 #define DXGLVERNUMBER DXGLMAJOR,DXGLMINOR,DXGLPOINT,DXGLBUILD
+#define DXGLVERQWORD (((unsigned __int64)DXGLMAJOR<<48)+((unsigned __int64)DXGLMINOR<<32)+((unsigned __int64)DXGLPOINT<<16)+(unsigned __int64)DXGLBUILD)
 #define DXGLVERSTRING "0.1.3.0"
 
 
