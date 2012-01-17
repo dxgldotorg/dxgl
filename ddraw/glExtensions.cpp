@@ -21,6 +21,7 @@
 GLuint (APIENTRY *glCreateShader) (GLenum type) = NULL;
 void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length) = NULL;
 void (APIENTRY *glCompileShader) (GLuint shader) = NULL;
+void (APIENTRY *glDeleteShader) (GLuint shader) = NULL;
 GLuint (APIENTRY *glCreateProgram) () = NULL;
 void (APIENTRY *glDeleteProgram) (GLuint program) = NULL;
 void (APIENTRY *glGetProgramiv) (GLuint program, GLenum pname, GLint* params) = NULL;
@@ -35,6 +36,7 @@ void (APIENTRY *glGenRenderbuffers) (GLsizei n, GLuint* renderbuffers) = NULL;
 void (APIENTRY *glBindRenderbuffer) (GLenum target, GLuint renderbuffer) = NULL;
 void (APIENTRY *glFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) = NULL;
 GLenum (APIENTRY *glCheckFramebufferStatus) (GLenum target) = NULL;
+void (APIENTRY *glDeleteFramebuffers) (GLsizei n, const GLuint *framebuffers) = NULL;
 
 void (APIENTRY *glGenFramebuffersEXT) (GLsizei n, GLuint* ids) = NULL;
 void (APIENTRY *glBindFramebufferEXT) (GLenum target, GLuint framebuffer) = NULL;
@@ -42,6 +44,7 @@ void (APIENTRY *glGenRenderbuffersEXT) (GLsizei n, GLuint* renderbuffers) = NULL
 void (APIENTRY *glBindRenderbufferEXT) (GLenum target, GLuint renderbuffer) = NULL;
 void (APIENTRY *glFramebufferTexture2DEXT) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) = NULL;
 GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target) = NULL;
+void (APIENTRY *glDeleteFramebuffersEXT) (GLsizei n, const GLuint *framebuffers) = NULL;
 
 GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name) = NULL;
 void (APIENTRY *glUniform1i) (GLint location, GLint v0) = NULL;
@@ -86,6 +89,7 @@ void InitGLExt()
 		glCreateShader = (PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader");
 		glShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
 		glCompileShader = (PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader");
+		glDeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
 		glCreateProgram = (PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram");
 		glDeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
 		glGetProgramiv = (PFNGLGETPROGRAMIVPROC)wglGetProcAddress("glGetProgramiv");
@@ -119,6 +123,7 @@ void InitGLExt()
 		glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
 		glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
 		glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
+		glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
 	}
 	if(GLEXT_EXT_framebuffer_object)
 	{
@@ -128,6 +133,7 @@ void InitGLExt()
 		glBindRenderbufferEXT = (PFNGLBINDRENDERBUFFEREXTPROC)wglGetProcAddress("glBindRenderbufferEXT");
 		glFramebufferTexture2DEXT = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)wglGetProcAddress("glFramebufferTexture2D");
 		glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatusEXT");
+		glDeleteFramebuffersEXT = (PFNGLDELETEFRAMEBUFFERSEXTPROC)wglGetProcAddress("glDeleteFramebuffersEXT");
 	}
 	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 	wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");

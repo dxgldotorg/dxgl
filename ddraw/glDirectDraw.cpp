@@ -1264,6 +1264,8 @@ void glDirectDraw7::DeleteGL()
 {
 	if(hRC)
 	{
+		DeleteShaders();
+		DeleteFBO();
 		wglMakeCurrent(NULL,NULL);
 		wglDeleteContext(hRC);
 	};

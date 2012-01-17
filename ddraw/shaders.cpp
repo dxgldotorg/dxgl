@@ -147,3 +147,26 @@ void CompileShaders()
 		glLinkProgram(shaders[i].prog);
 	}
 }
+
+void DeleteShaders()
+{
+	glUseProgram(0);
+	for(int i = 0; i < NumberOfShaders; i++)
+	{
+		if(shaders[i].prog)
+		{
+			glDeleteProgram(shaders[i].prog);
+			shaders[i].prog = 0;
+		}
+		if(shaders[i].vs)
+		{
+			glDeleteShader(shaders[i].vs);
+			shaders[i].vs = 0;
+		}
+		if(shaders[i].fs)
+		{
+			glDeleteShader(shaders[i].fs);
+			shaders[i].fs = 0;
+		}
+	}
+}

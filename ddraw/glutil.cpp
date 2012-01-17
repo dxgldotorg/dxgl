@@ -38,6 +38,15 @@ void InitFBO()
 	}
 }
 
+void DeleteFBO()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER,0);
+	if(GLEXT_ARB_framebuffer_object)
+		glDeleteFramebuffers(1,&fbo);
+	else if(GLEXT_EXT_framebuffer_object)
+		glDeleteFramebuffersEXT(1,&fbo);
+}
+
 GLenum SetFBO(GLint color, GLint z, bool stencil)
 {
 	GLenum error;

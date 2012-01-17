@@ -38,5 +38,6 @@ extern SHADER shaders[];
 #define PROG_2CKEY 5
 
 void CompileShaders();
+void DeleteShaders();
 
 #endif //__SHADERS_H

@@ -41,6 +41,7 @@ extern int GLEXT_ARB_depth_texture;
 GLAPI GLuint (APIENTRY *glCreateShader) (GLenum type);
 GLAPI void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
 GLAPI void (APIENTRY *glCompileShader) (GLuint shader);
+GLAPI void (APIENTRY *glDeleteShader) (GLuint shader);
 GLAPI GLuint (APIENTRY *glCreateProgram) ();
 GLAPI void (APIENTRY *glDeleteProgram) (GLuint program);
 GLAPI void (APIENTRY *glGetProgramiv) (GLuint program, GLenum pname, GLint* params);
@@ -55,6 +56,7 @@ GLAPI void (APIENTRY *glGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);
 GLAPI void (APIENTRY *glBindRenderbuffer) (GLenum target, GLuint renderbuffer);
 GLAPI void (APIENTRY *glFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 GLAPI GLenum (APIENTRY *glCheckFramebufferStatus) (GLenum target);
+GLAPI void (APIENTRY *glDeleteFramebuffers) (GLsizei n, const GLuint *framebuffers);
 
 GLAPI void (APIENTRY *glGenFramebuffersEXT) (GLsizei n, GLuint* ids);
 GLAPI void (APIENTRY *glBindFramebufferEXT) (GLenum target, GLuint framebuffer);
@@ -62,6 +64,7 @@ GLAPI void (APIENTRY *glGenRenderbuffersEXT) (GLsizei n, GLuint* renderbuffers);
 GLAPI void (APIENTRY *glBindRenderbufferEXT) (GLenum target, GLuint renderbuffer);
 GLAPI void (APIENTRY *glFramebufferTexture2DEXT) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 GLAPI GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target);
+GLAPI void (APIENTRY *glDeleteFramebuffersEXT) (GLsizei n, const GLuint *framebuffers);
 
 GLAPI GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name);
 GLAPI void (APIENTRY *glUniform1i) (GLint location, GLint v0);
