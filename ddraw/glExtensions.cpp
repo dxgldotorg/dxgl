@@ -54,7 +54,10 @@ void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2
 void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) = NULL;
 void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) = NULL;
 
+void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+
 void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
+void (APIENTRY *glClientActiveTexture) (GLenum texture) = NULL;
 
 BOOL (APIENTRY *wglSwapIntervalEXT)(int interval) = NULL;
 int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
@@ -71,8 +74,13 @@ void InitGLExt()
 {
 	const GLubyte *glversion = glGetString(GL_VERSION);
 	sscanf((char*)glversion,"%d.%d",&glver_major,&glver_minor);
+	if((glver_major >= 2) || ((glver_major >= 1) && (glver_minor >= 2)))
+		glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC)wglGetProcAddress("glDrawRangeElements");
 	if((glver_major >= 2) || ((glver_major >= 1) && (glver_minor >= 3)))
+	{
 		glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
+		glClientActiveTexture = (PFNGLCLIENTACTIVETEXTUREPROC)wglGetProcAddress("glClientActiveTexture");
+	}
 	if(glver_major >= 2)
 	{
 		glCreateShader = (PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader");

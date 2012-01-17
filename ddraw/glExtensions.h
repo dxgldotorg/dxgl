@@ -37,6 +37,7 @@ extern int GLEXT_ARB_depth_texture;
 #undef GLAPI
 #define GLAPI extern
 #endif
+
 GLAPI GLuint (APIENTRY *glCreateShader) (GLenum type);
 GLAPI void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
 GLAPI void (APIENTRY *glCompileShader) (GLuint shader);
@@ -73,7 +74,10 @@ GLAPI void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfl
 GLAPI void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 GLAPI void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
+GLAPI void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
+GLAPI void (APIENTRY *glClientActiveTexture) (GLenum texture);
 
 GLAPI BOOL (APIENTRY *wglSwapIntervalEXT)(int interval);
 GLAPI int (APIENTRY *wglGetSwapIntervalEXT)();

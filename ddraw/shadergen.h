@@ -20,7 +20,7 @@
 
 
 void SetShader(__int64 id, bool builtin);
-__int64 GetProgram();
+GLuint GetProgram();
 
 
 #endif

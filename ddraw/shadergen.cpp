@@ -23,6 +23,7 @@ SHADER genshaders[256];
 static __int64 current_shader = 0;
 static int shadercount = 0;
 static bool initialized = false;
+static bool isbuiltin = true;
 
 void SetShader(__int64 id, bool builtin)
 {
@@ -33,7 +34,11 @@ void SetShader(__int64 id, bool builtin)
 		}
 }
 
-__int64 GetProgram()
+GLuint GetProgram()
 {
-	return current_shader;
+	if(isbuiltin) return current_shader & 0xFFFFFFFF;
+	else
+	{
+		return 0;
+	}
 }

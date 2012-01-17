@@ -28,6 +28,16 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
+struct BltVertex
+{
+	GLfloat x,y;
+	GLubyte r,g,b,a;
+	GLfloat s,t;
+	GLfloat padding[3];
+};
+
+extern BltVertex bltvertices[4];
+
 class glDirectDrawClipper;
 class glDirectDrawPalette;
 class glDirectDrawSurface1;

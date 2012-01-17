@@ -123,7 +123,6 @@ void CompileShaders()
 {
 	const GLchar *src;
 	GLint srclen;
-	GLenum error;
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
 		shaders[i].prog = glCreateProgram();
