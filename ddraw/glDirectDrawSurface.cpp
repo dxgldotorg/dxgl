@@ -709,16 +709,25 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
 		glUniform1i(texloc,0);
 	}
-	GLint viewloc = glGetUniformLocation(GetProgram()&0xffffffff,"view");
+	GLuint prog = GetProgram()&0xffffffff;
+	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,0,(GLfloat)fakex,0,(GLfloat)fakey);
 	this->dirty |= 2;
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(2,GL_FLOAT,sizeof(BltVertex),&bltvertices[0].x);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glColorPointer(3,GL_UNSIGNED_BYTE,sizeof(BltVertex),&bltvertices[0].r);
-	glClientActiveTexture(GL_TEXTURE0);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glTexCoordPointer(2,GL_FLOAT,sizeof(BltVertex),&bltvertices[0].s);
+	GLint xyloc = glGetAttribLocation(prog,"xy");
+	glEnableVertexAttribArray(xyloc);
+	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	if(dwFlags & DDBLT_COLORFILL)
+	{
+		GLint rgbloc = glGetAttribLocation(prog,"rgb");
+		glEnableVertexAttribArray(rgbloc);
+		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	}
+	else
+	{
+		GLint stloc = glGetAttribLocation(prog,"st");
+		glEnableVertexAttribArray(stloc);
+		glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glDisable(GL_TEXTURE_2D);
 	SetFBO(0,0,false);
@@ -1201,11 +1210,12 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 	}
 	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
 	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(2,GL_FLOAT,sizeof(BltVertex),&bltvertices[0].x);
-	glClientActiveTexture(GL_TEXTURE0);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glTexCoordPointer(2,GL_FLOAT,sizeof(BltVertex),&bltvertices[0].s);
+	GLint xyloc = glGetAttribLocation(prog,"xy");
+	glEnableVertexAttribArray(xyloc);
+	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	GLint stloc = glGetAttribLocation(prog,"st");
+	glEnableVertexAttribArray(stloc);
+	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glDisable(GL_TEXTURE_2D);
 	glFlush();

@@ -50,6 +50,10 @@ GLAPI void (APIENTRY *glDetachShader) (GLuint program, GLuint shader);
 GLAPI void (APIENTRY *glLinkProgram) (GLuint program);
 GLAPI void (APIENTRY *glUseProgram) (GLuint program);
 
+GLAPI GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name);
+GLAPI void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
+GLAPI void (APIENTRY *glEnableVertexAttribArray) (GLuint index);
+
 GLAPI void (APIENTRY *glGenFramebuffers) (GLsizei n, GLuint* ids);
 GLAPI void (APIENTRY *glBindFramebuffer) (GLenum target, GLuint framebuffer);
 GLAPI void (APIENTRY *glGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);

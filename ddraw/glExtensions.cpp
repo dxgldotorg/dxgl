@@ -30,6 +30,10 @@ void (APIENTRY *glDetachShader) (GLuint program, GLuint shader) = NULL;
 void (APIENTRY *glLinkProgram) (GLuint program) = NULL;
 void (APIENTRY *glUseProgram) (GLuint program) = NULL;
 
+GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name) = NULL;
+void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) = NULL;
+void (APIENTRY *glEnableVertexAttribArray) (GLuint index) = NULL;
+
 void (APIENTRY *glGenFramebuffers) (GLsizei n, GLuint* ids) = NULL;
 void (APIENTRY *glBindFramebuffer) (GLenum target, GLuint framebuffer) = NULL;
 void (APIENTRY *glGenRenderbuffers) (GLsizei n, GLuint* renderbuffers) = NULL;
@@ -107,6 +111,9 @@ void InitGLExt()
 		glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
 		glUniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
 		glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
+		glGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
+		glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
+		glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
 	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;

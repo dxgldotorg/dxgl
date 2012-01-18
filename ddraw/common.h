@@ -60,7 +60,8 @@ extern const GUID device_template;
 	OutputDebugStringA("DEBUG: ");\
 	OutputDebugStringA(x);\
 }
-#define STR(x) #x
+#define STR2(x) #x
+#define STR(x) STR2(x)
 #ifdef _DEBUG
 #define ERR(error) \
 {\

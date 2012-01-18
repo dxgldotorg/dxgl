@@ -90,17 +90,23 @@ void main (void)\n\
 const char vert_ortho[] = "\
 #version 110\n\
 uniform vec4 view;\n\
+attribute vec2 xy;\n\
+attribute vec3 rgb;\n\
+attribute vec2 st;\n\
 void main()\n\
 {\n\
+	vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
+	vec4 rgba = vec4(rgb[0],rgb[1],rgb[2],1);\n\
+	vec4 strq = vec4(st[0],st[1],0,1);\n\
 	mat4 proj = mat4(\n\
     vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
     vec4(0, 2.0 / (view[2] - view[3]), 0, 0),\n\
     vec4(0, 0, -2.0, 0),\n\
     vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
  -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
-	gl_Position    = proj * gl_Vertex;\n\
-	gl_FrontColor  = gl_Color;\n\
-	gl_TexCoord[0] = gl_MultiTexCoord0;\n\
+	gl_Position    = proj * xyzw;\n\
+	gl_FrontColor  = rgba;\n\
+	gl_TexCoord[0] = strq;\n\
 } ";
 
 
