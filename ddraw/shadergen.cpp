@@ -18,27 +18,108 @@
 #include "common.h"
 #include "shadergen.h"
 #include "shaders.h"
+#include <string>
+using namespace std;
+
+typedef struct
+{
+	GLint vs;
+	GLint fs;
+	string *vsrc;
+	string *fsrc;
+	GLint prog;
+} _GENSHADER;
 
 struct GenShader
 {
-	SHADER shader;
+	_GENSHADER shader;
 	__int64 id;
 };
 GenShader genshaders[256];
 static __int64 current_shader = 0;
 static int shadercount = 0;
+static int genindex = 0;
 static bool initialized = false;
 static bool isbuiltin = true;
 
+/* Bits in Shader ID:
+Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel
+Bit 2 - Alpha test enable
+Bits 3-5 - Alpha test function:
+000=never  001=less  010=equal  011=lessequal
+100=greater  101=notequal  110=lessequal  111=always
+Bits 6-7 - Table fog:
+00 = none  01=exp  10=exp2  11=linear
+Bits 8-9 - Vertex fog: same as table
+Bit 10 - Range based fog
+Bit 11 - Specular highlights
+Bit 12 - Stippled alpha
+Bit 13 - Color key transparency
+Bit 14 - Enable Z bias
+Bits 15-17 - Number of lights
+Bit 18 - Camera relative specular highlights
+Bit 19 - Alpha blended color key
+Bits 20-21 - Diffuse material source
+Bits 22-23 - Specular material source
+Bits 24-25 - Ambient material source
+Bits 26-27 - Emissive material source
+Bits 28-30 - Number of textures
+Bit 31 - RGB or RGBA color
+Bits 32-33 - Vertex format
+Bits 34-49 - Texture coordinate format
+Bit 50 - Enable normals
+Bits 51-58 - Light types
+*/
+void ZeroShaderArray()
+{
+	ZeroMemory(genshaders,256*sizeof(GenShader));
+	current_shader = 0;
+	isbuiltin = true;
+}
+
 void SetShader(__int64 id, bool builtin)
 {
+	int shaderindex = -1;
 	if(builtin)
 	{
+		if(isbuiltin && (shaders[id].prog == current_shader)) return;
 		glUseProgram(shaders[id].prog);
 		current_shader = shaders[id].prog;
+		isbuiltin=true;
 	}
 	else
 	{
+		if(!isbuiltin && (id == current_shader)) return;
+		current_shader = id;
+		isbuiltin=false;
+		for(int i = 0; i < shadercount; i++)
+		{
+			if(genshaders[i].id == id)
+			{
+				shaderindex = i;
+				break;
+			}
+		}
+		if(shaderindex == -1)
+		{
+			shadercount++;
+			if(shadercount > 256) shadercount = 256;
+			if(genshaders[genindex].shader.prog)
+			{
+				glUseProgram(0);
+				glDeleteProgram(genshaders[shaderindex].shader.prog);
+				glDeleteShader(genshaders[shaderindex].shader.vs);
+				glDeleteShader(genshaders[shaderindex].shader.fs);
+				delete genshaders[shaderindex].shader.vsrc;
+				delete genshaders[shaderindex].shader.fsrc;
+				ZeroMemory(&genshaders[shaderindex],sizeof(GenShader));
+			}
+			CreateShader(genindex,id);
+			shaderindex = genindex;
+			genindex++;
+			if(genindex == 256) genindex = 0;
+		}
+		glUseProgram(shaderindex);
 	}
 }
 
@@ -51,6 +132,7 @@ GLuint GetProgram()
 	}
 }
 
+
 #define REVISION 1
 static const char header[] =
 	"//REV" STR(REVISION) "\n\
@@ -61,18 +143,89 @@ static const char idheader[] = "//ID: 0x";
 static const char linefeed[] = "\n";
 static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
-static const char attr_xy[] = "attribute vec2 xy;\n";
-static const char conv_xy[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n";
+// Attributes
 static const char attr_xyz[] = "attribute vec3 xyz;\n";
 static const char conv_xyz[] = "vec4 xyzw = vec4(xyz[0],xyz[1],xyz[2],1);\n";
 static const char attr_xyzw[] = "attribute vec4 xyzw;\n";
-static const char attr_rgb[] = "attrib vec3 rgb;\n";
-static const char conv_rgb[] = "vec4 rgba = vec4(rgb[0],rgb[1],rgb[2],1);\n";
-static const char attr_rgba[] = "attrib vec4 rgba;\n";
-static const char attr_s[] = "attrib float sX;\n";
+static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
+static const char attr_blend[] = "attribute float blendX;\n";
+static const char attr_rgb[] = "attribute vec3 rgbX;\n";
+static const char conv_rgb[] = "vec4 rgbaX = vec4(rgbX[0],rgbX[1],rgbX[2],1);\n";
+static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
+static const char attr_s[] = "attribute float sX;\n";
 static const char conv_s[] = "vec4 strqX = vec4(sX,0,0,1);\n";
-static const char attr_st[] = "attrib vec2 stX;\n";
+static const char attr_st[] = "attribute vec2 stX;\n";
 static const char conv_st[] = "vec4 strqX = vec4(stX[0],stX[1],0,1);\n";
-static const char attr_str[] = "attrib vec3 strX;\n";
+static const char attr_str[] = "attribute vec3 strX;\n";
 static const char conv_str[] = "vec4 strqX = vec4(strX[0],strX[1],strX[2],1);\n";
-static const char attr_strq[] = "attrib vec4 strqX;\n";
+static const char attr_strq[] = "attribute vec4 strqX;\n";
+// Uniforms
+static const char unif_mats[] = "uniform mat4 world;\n\
+uniform mat4 view;\n\
+uniform mat4 projection;\n";
+static const char modelview[] = "mat4 modelview = world * view;\n";
+static const char unif_material[] = "struct Material\n\
+{\n\
+vec4 diffuse;\n\
+vec4 ambient;\n\
+vec4 specular;\n\
+vec4 emussive;\n\
+int power;\n\
+};\n\
+uniform Material material;\n";
+static const char lightstruct[] = "struct Light\n\
+{\n\
+vec4 diffuse;\n\
+vec4 specilar;\n\
+vec4 ambient;\n\
+vec3 position;\n\
+vec3 direction;\n\
+float range;\n\
+float falloff;\n\
+float constant;\n\
+float linear;\n\
+float quad;\n\
+float theta;\n\
+float phi;\n\
+};\n";
+static const char unif_light[] = "uniform Light lightX;\n";
+// Operations
+static const char normalize[] = "vec3 N = normalize(vec3(modelview*vec4(nxyz,0.0)));\n";
+
+void CreateShader(int index, __int64 id)
+{
+	string tmp;
+	int i;
+	char idstring[22];
+	_snprintf(idstring,21,"%0.16I64X\n",id);
+	idstring[21] = 0;
+	genshaders[index].shader.vsrc = new string;
+	genshaders[index].shader.fsrc = new string;
+	// Create vertex shader
+	//Header
+	string *vsrc = genshaders[index].shader.vsrc;
+	vsrc->append(header);
+	vsrc->append(vertexshader);
+	vsrc->append(idheader);
+	vsrc->append(idstring);
+	//Variables
+	vsrc->append(unif_mats);
+	vsrc->append(unif_material);
+	if((id>>15)&8) // Lighting
+	{
+		vsrc->append(lightstruct);
+		for(i = 0; i < ((id>>15)&8); i++)
+		{
+			tmp = unif_light;
+			tmp.replace(19,1,_itoa(i,idstring,10));
+			vsrc->append(tmp);
+		}
+	}
+
+	//Main
+	vsrc->append(mainstart);
+
+
+	vsrc->append(mainend);
+	
+}

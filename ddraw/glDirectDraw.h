@@ -36,6 +36,17 @@ typedef struct
 	int MultiTextureExt;
 	int PalettedTextures;
 } GLCAPS;
+typedef struct
+{
+	bool enabled;
+	int width;
+	int height;
+	int pitch;
+	HDC hdc;
+	HBITMAP hbitmap;
+	BITMAPINFO info;
+	BYTE *pixels;
+} DIB;
 
 class glDirectDraw7 : public IDirectDraw7
 {
@@ -95,13 +106,16 @@ public:
 	bool GetFullscreen(){return fullscreen;};
 	void GetHandles(HWND *hwnd, HWND *hrender);
 	glDirectDrawSurface7 *primary;
+	bool hasHWnd;
+	DIB dib;
+	GLuint PBO;
+	HWND hRenderWnd;
 private:
 	void DeleteGL();
 	BOOL InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd);
 	HRESULT error;
 	ULONG refcount;
 	HWND hWnd;
-	HWND hRenderWnd;
 	bool fullscreen;
 	bool fpupreserve;
 	bool fpusetup;

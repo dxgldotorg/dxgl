@@ -21,6 +21,7 @@
 
 void SetShader(__int64 id, bool builtin);
 GLuint GetProgram();
-
+void ZeroShaderArray();
+void CreateShader(int index, __int64 id);
 
 #endif

@@ -86,6 +86,13 @@ GLAPI void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint en
 GLAPI void (APIENTRY *glActiveTexture)(GLenum texture);
 GLAPI void (APIENTRY *glClientActiveTexture) (GLenum texture);
 
+GLAPI void (APIENTRY *glGenBuffers)(GLsizei n, GLuint* buffers);
+GLAPI void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint* buffers);
+GLAPI void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer);
+GLAPI void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
+GLAPI void* (APIENTRY *glMapBuffer)(GLenum target, GLenum access);
+GLAPI GLboolean (APIENTRY *glUnmapBuffer)(GLenum target);
+
 GLAPI BOOL (APIENTRY *wglSwapIntervalEXT)(int interval);
 GLAPI int (APIENTRY *wglGetSwapIntervalEXT)();
 

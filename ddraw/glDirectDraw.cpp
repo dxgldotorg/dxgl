@@ -851,6 +851,9 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	if(initialized) return DDERR_ALREADYINITIALIZED;
 	hDC = NULL;
 	hRC = NULL;
+	PBO = 0;
+	hasHWnd = false;
+	dib.enabled = false;
 	glD3D7 = NULL;
 	hRenderWnd = NULL;
 	primary = NULL;
@@ -1266,6 +1269,11 @@ void glDirectDraw7::DeleteGL()
 	{
 		DeleteShaders();
 		DeleteFBO();
+		if(PBO)
+		{
+			glDeleteBuffers(1,&PBO);
+			PBO = 0;
+		}
 		wglMakeCurrent(NULL,NULL);
 		wglDeleteContext(hRC);
 	};
@@ -1322,16 +1330,34 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	SetWindowPos(hWnd,NULL,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	RECT rectRender;
 	GetClientRect(hWnd,&rectRender);
-	hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
-		rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
+	if(hWnd)
+	{
+		hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
+			rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
+		hasHWnd = true;
+	}
+	else
+	{
+		width = GetSystemMetrics(SM_CXSCREEN);
+		height = GetSystemMetrics(SM_CYSCREEN);
+		hRenderWnd = CreateWindowExA(WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,"DXGLRenderWindow","Renderer",
+			WS_POPUP,0,0,width,height,0,0,NULL,this);
+		hasHWnd = false;
+	}
 	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
 	PIXELFORMATDESCRIPTOR pfd;
 	ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	if(hasHWnd) pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	else pfd.dwFlags = pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
 	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = bpp;
+	if(hasHWnd) pfd.cColorBits = bpp;
+	else
+	{
+		pfd.cColorBits = 24;
+		pfd.cAlphaBits = 8;
+	}
 	pfd.iLayerType = PFD_MAIN_PLANE;
 	hDC = GetDC(hRenderWnd);
 	if(!hDC)
@@ -1385,6 +1411,27 @@ BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SwapBuffers(hDC);
+	if(!hasHWnd)
+	{
+		dib.enabled = true;
+		dib.width = width;
+		dib.height = height;
+		dib.pitch = (((width<<3)+31)&~31) >>3;
+		dib.pixels = NULL;
+		dib.hdc = CreateCompatibleDC(NULL);
+		ZeroMemory(&dib.info,sizeof(BITMAPINFO));
+		dib.info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		dib.info.bmiHeader.biBitCount = 32;
+		dib.info.bmiHeader.biWidth = width;
+		dib.info.bmiHeader.biHeight = height;
+		dib.info.bmiHeader.biCompression = BI_RGB;
+		dib.info.bmiHeader.biPlanes = 1;
+		dib.hbitmap = CreateDIBSection(dib.hdc,&dib.info,DIB_RGB_COLORS,(void**)&dib.pixels,NULL,0);
+		glGenBuffers(1,&PBO);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
+		glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+	}
 	return TRUE;
 }
 void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords

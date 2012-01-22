@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "shaders.h"
+#include "shadergen.h"
 
 const char frag_Color[] = "\
 #version 110\n\
@@ -127,6 +128,7 @@ const int NumberOfShaders = SHADER_END - SHADER_START;
 
 void CompileShaders()
 {
+	ZeroShaderArray();
 	const GLchar *src;
 	GLint srclen;
 	for(int i = 0; i < NumberOfShaders; i++)

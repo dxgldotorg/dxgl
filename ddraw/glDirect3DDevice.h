@@ -106,6 +106,7 @@ private:
 	GLfloat *normals;
 	GLubyte *diffuse;
 	GLubyte *specular;
+	GLubyte *ambient;
 	GLfloat *texcoords[8];
 };
 

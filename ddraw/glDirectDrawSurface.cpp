@@ -993,8 +993,8 @@ HRESULT WINAPI glDirectDrawSurface7::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDE
 }
 HRESULT WINAPI glDirectDrawSurface7::IsLost()
 {
-	FIXME("glDirectDrawSurface7::IsLost: stub\n");
-	ERR(DDERR_GENERIC);
+	if(hrc == ddInterface->hRC) return DD_OK;
+	else return DDERR_SURFACELOST;
 }
 
 HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent)
@@ -1219,7 +1219,37 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glDisable(GL_TEXTURE_2D);
 	glFlush();
-	SwapBuffers(ddInterface->hDC);
+	if(ddInterface->hasHWnd) SwapBuffers(ddInterface->hDC);
+	else
+	{
+		glReadBuffer(GL_FRONT);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER,ddInterface->PBO);
+		GLint packalign;
+		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
+		glPixelStorei(GL_PACK_ALIGNMENT,1);
+		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
+		GLubyte *pixels = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
+		for(int i = 0; i < sizes[5];i++)
+		{
+			memcpy(&ddInterface->dib.pixels[ddInterface->dib.pitch*i],
+				&pixels[((sizes[5]-1)-i)*(sizes[4]*4)],sizes[4]*4);
+		}
+		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
+		HDC hRenderDC = (HDC)::GetDC(ddInterface->hRenderWnd);
+		HGDIOBJ hPrevObj = 0;
+		POINT dest = {0,0};
+		POINT src = {0,0};
+		SIZE wnd = {ddInterface->dib.width,ddInterface->dib.height};
+		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
+		hPrevObj = SelectObject(ddInterface->dib.hdc,ddInterface->dib.hbitmap);
+		ClientToScreen(ddInterface->hRenderWnd,&dest);
+		UpdateLayeredWindow(ddInterface->hRenderWnd,hRenderDC,&dest,&wnd,
+			ddInterface->dib.hdc,&src,0,&func,ULW_ALPHA);
+		SelectObject(ddInterface->dib.hdc,hPrevObj);
+		::ReleaseDC(ddInterface->hRenderWnd,hRenderDC);
+	}
 }
 // ddraw 2+ api
 HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)

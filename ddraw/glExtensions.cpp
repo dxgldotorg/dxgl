@@ -66,6 +66,13 @@ void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLs
 void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
 void (APIENTRY *glClientActiveTexture) (GLenum texture) = NULL;
 
+void (APIENTRY *glGenBuffers)(GLsizei n, GLuint* buffers) = NULL;
+void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint* buffers) = NULL;
+void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer) = NULL;
+void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) = NULL;
+void* (APIENTRY *glMapBuffer)(GLenum target, GLenum access) = NULL;
+GLboolean (APIENTRY *glUnmapBuffer)(GLenum target) = NULL;
+
 BOOL (APIENTRY *wglSwapIntervalEXT)(int interval) = NULL;
 int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
 
@@ -87,6 +94,15 @@ void InitGLExt()
 	{
 		glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
 		glClientActiveTexture = (PFNGLCLIENTACTIVETEXTUREPROC)wglGetProcAddress("glClientActiveTexture");
+	}
+	if((glver_major >= 2) || ((glver_major >= 1) && (glver_minor >= 5)))
+	{
+		glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+		glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+		glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+		glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+		glMapBuffer = (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
+		glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
 	}
 	if(glver_major >= 2)
 	{

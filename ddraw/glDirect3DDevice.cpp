@@ -520,11 +520,6 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
 	if(!lpMaterial) return DDERR_INVALIDPARAMS;
 	memcpy(&material,lpMaterial,sizeof(D3DMATERIAL7));
-	glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,(GLfloat*)&material.ambient);
-	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,(GLfloat*)&material.diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,(GLfloat*)&material.specular);
-	glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,(GLfloat*)&material.emissive);
-	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.power);
 	return D3D_OK;
 }
 
