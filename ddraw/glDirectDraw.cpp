@@ -582,6 +582,7 @@ glDirectDraw7::~glDirectDraw7()
 		free(surfaces);
 	}
 	DeleteGL();
+	ddenabled = false;
 }
 
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
@@ -777,6 +778,44 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
 	DEVMODE currmode;
+	if(fullscreen)
+	{
+		if(primarybpp == 8)
+		{
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0;
+			ddsdMode.ddpfPixelFormat.dwGBitMask = 0;
+			ddsdMode.ddpfPixelFormat.dwBBitMask = 0;
+		}
+		else if(primarybpp == 15)
+		{
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0x7C00;
+			ddsdMode.ddpfPixelFormat.dwGBitMask = 0x3E0;
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0x1F;
+		}
+		else if(primarybpp == 16)
+		{
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0xF800;
+			ddsdMode.ddpfPixelFormat.dwGBitMask = 0x7E0;
+			ddsdMode.ddpfPixelFormat.dwBBitMask = 0x1F;
+		}
+		else
+		{
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF0000;
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF00;
+			ddsdMode.ddpfPixelFormat.dwRBitMask = 0xFF;
+		}
+		ddsdMode.ddpfPixelFormat.dwRGBBitCount = GetBPPMultipleOf8();
+		ddsdMode.dwWidth = primaryx;
+		ddsdMode.dwHeight = primaryy;
+		if(primarybpp == 15) ddsdMode.lPitch = primaryx * 2;
+			else if(primarybpp == 4) ddsdMode.lPitch = primaryx / 2;
+			else ddsdMode.lPitch = primaryx * (primarybpp / 8);
+		if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
+		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
+			lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
+		memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+		return DD_OK;
+	}
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	if(currmode.dmBitsPerPel == 8) ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
 	else if(currmode.dmBitsPerPel == 4) ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED4;
@@ -829,7 +868,7 @@ HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDS
 }
 HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
-	FIXME("IDirectDraw::GetMonitorFrequency: support multi-monitor\n");
+	DEBUG("IDirectDraw::GetMonitorFrequency: support multi-monitor\n");
 	DEVMODE devmode;
 	devmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
@@ -904,6 +943,7 @@ HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
 	this->hWnd = hWnd;
+	if(hRC) DeleteGL();
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
 	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
 	bool exclusive = false;
@@ -1267,10 +1307,17 @@ void glDirectDraw7::DeleteGL()
 {
 	if(hRC)
 	{
+		if(dib.enabled)
+		{
+			if(dib.hbitmap)	DeleteObject(dib.hbitmap);
+			if(dib.hdc)	DeleteDC(dib.hdc);
+			ZeroMemory(&dib,sizeof(DIB));
+		}
 		DeleteShaders();
 		DeleteFBO();
 		if(PBO)
 		{
+			glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
 			glDeleteBuffers(1,&PBO);
 			PBO = 0;
 		}

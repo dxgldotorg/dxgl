@@ -130,6 +130,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	flipcount = 0;
 	ZeroMemory(colorkey,4*sizeof(CKEY));
 	bitmapinfo = (BITMAPINFO *)malloc(sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
+	ZeroMemory(bitmapinfo,sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	palette = NULL;
 	paltex = NULL;
 	texture = NULL;
@@ -226,12 +227,11 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY)
 	{
 		BITMAPINFO info;
+		ZeroMemory(&info,sizeof(BITMAPINFO));
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
-			info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 			info.bmiHeader.biWidth = fakex;
 			info.bmiHeader.biHeight = -(signed)fakey;
-			info.bmiHeader.biPlanes = 1;
 			info.bmiHeader.biCompression = BI_RGB;
 			info.bmiHeader.biSizeImage = 0;
 			info.bmiHeader.biXPelsPerMeter = 0;
@@ -246,10 +246,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			if(ddsd.dwFlags & DDSD_PIXELFORMAT) surfacetype=2;
 			else
 			{
-				info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 				info.bmiHeader.biWidth = fakex;
 				info.bmiHeader.biHeight = -(signed)fakey;
-				info.bmiHeader.biPlanes = 1;
 				info.bmiHeader.biCompression = BI_RGB;
 				info.bmiHeader.biSizeImage = 0;
 				info.bmiHeader.biXPelsPerMeter = 0;
@@ -263,8 +261,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	}
 	else
 	{
-		bitmapinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bitmapinfo->bmiHeader.biPlanes = 1;
 		bitmapinfo->bmiHeader.biSizeImage = 0;
 		bitmapinfo->bmiHeader.biXPelsPerMeter = 0;
 		bitmapinfo->bmiHeader.biYPelsPerMeter = 0;
@@ -274,8 +270,10 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		bitmapinfo->bmiHeader.biBitCount = (WORD)ddInterface->GetBPPMultipleOf8();
 	}
 	surfacetype=2;
+	bitmapinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bitmapinfo->bmiHeader.biWidth = ddsd.dwWidth;
 	bitmapinfo->bmiHeader.biHeight = -(signed)ddsd.dwHeight;
+	bitmapinfo->bmiHeader.biPlanes = 1;
 	switch(surfacetype)
 	{
 	case 0:
@@ -308,7 +306,42 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
 		if(ddsd.dwFlags & DDSD_PIXELFORMAT)
 		{
-			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
+			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
+			{
+				switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
+				{
+				case 8:
+					if(ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8)
+					{
+						texformat = GL_LUMINANCE;
+						texformat2 = GL_UNSIGNED_BYTE;
+						if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
+						else texformat3 = GL_RGBA8;
+						if(!palettein) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
+						bitmapinfo->bmiHeader.biBitCount = 8;
+					}
+					else
+					{
+						texformat = GL_RGB;
+						texformat2 = GL_UNSIGNED_BYTE_3_3_2;
+						if(dxglcfg.texformat) texformat3 = GL_R3_G3_B2;
+						else texformat3 = GL_RGBA8;
+					}
+					ddsd.ddpfPixelFormat.dwRBitMask = 0;
+					ddsd.ddpfPixelFormat.dwGBitMask = 0;
+					ddsd.ddpfPixelFormat.dwBBitMask = 0;
+					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
+					break;
+				case 16:
+					FIXME("Support 16 bit pixelformat");
+				case 24:
+					FIXME("Support 24 bit pixelformat");
+				case 32:
+				default:
+					FIXME("Support 32 bit pixelformat");
+				}
+			}
+			else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
 			{
 				switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
 				{
@@ -447,7 +480,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			else *error = DDERR_INVALIDPARAMS;
 		}
 	}
-	ddInterface->AddRef();
+	//ddInterface->AddRef();
 }
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
@@ -935,14 +968,14 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 	if(error != DD_OK) return error;
 	hdc = CreateCompatibleDC(NULL);
 	bitmapinfo->bmiHeader.biWidth = ddsd.lPitch / (bitmapinfo->bmiHeader.biBitCount / 8);
-	if(ddInterface->GetBPP() == 8)
+	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 	{
-		memcpy(colors,ddInterface->primary->palette->GetPalette(NULL),1024);
+		memcpy(colors,palette->GetPalette(NULL),1024);
 		for(int i = 0; i < 256; i++)
 			colors[i] = ((colors[i]&0x0000FF)<<16) | (colors[i]&0x00FF00) | ((colors[i]&0xFF0000)>>16);
 		memcpy(bitmapinfo->bmiColors,colors,1024);
 	}
-	else  if(ddInterface->GetBPPMultipleOf8() == 16)bitmapinfo->bmiHeader.biCompression = BI_BITFIELDS;
+	else  if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)bitmapinfo->bmiHeader.biCompression = BI_BITFIELDS;
 	hbitmap = CreateDIBSection(hdc,bitmapinfo,DIB_RGB_COLORS,&surface,NULL,0);
 	memcpy(surface,ddsd.lpSurface,ddsd.lPitch*ddsd.dwHeight);
 	HGDIOBJ temp = SelectObject(hdc,hbitmap);

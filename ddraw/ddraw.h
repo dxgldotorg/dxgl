@@ -60,6 +60,6 @@ extern DXGLCFG dxglcfg;
 extern bool gllock;
 extern DWORD timer;
 extern int vsyncstatus;
-
+extern bool ddenabled;
 
 #endif //_DDRAW_H
