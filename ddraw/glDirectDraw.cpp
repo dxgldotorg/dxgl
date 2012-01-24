@@ -1784,8 +1784,11 @@ HRESULT WINAPI glDirectDraw2::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 }
 HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
-	FIXME("glDirectDraw2::GetAvailableVidMem: stub\n");
-	ERR(DDERR_GENERIC);
+	MEMORYSTATUS memstatus;
+	memstatus.dwLength = sizeof(MEMORYSTATUS);
+	*lpdwTotal = memstatus.dwTotalVirtual;
+	*lpdwFree = memstatus.dwAvailVirtual;
+	return DD_OK;
 }
 // DDRAW4 wrapper
 glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
