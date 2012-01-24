@@ -1786,6 +1786,7 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 {
 	MEMORYSTATUS memstatus;
 	memstatus.dwLength = sizeof(MEMORYSTATUS);
+	GlobalMemoryStatus(&memstatus);
 	*lpdwTotal = memstatus.dwTotalVirtual;
 	*lpdwFree = memstatus.dwAvailVirtual;
 	return DD_OK;
