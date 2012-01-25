@@ -105,6 +105,7 @@ public:
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
 	bool GetFullscreen(){return fullscreen;};
 	void GetHandles(HWND *hwnd, HWND *hrender);
+	void DeleteSurface(glDirectDrawSurface7 *surface);
 	glDirectDrawSurface7 *primary;
 	bool hasHWnd;
 	DIB dib;

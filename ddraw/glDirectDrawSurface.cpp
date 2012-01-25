@@ -480,7 +480,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			else *error = DDERR_INVALIDPARAMS;
 		}
 	}
-	//ddInterface->AddRef();
 }
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
@@ -496,7 +495,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer->Release();
-	ddInterface->Release();
+	ddInterface->DeleteSurface(this);
 }
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 {

@@ -171,6 +171,7 @@
     <ClInclude Include="glDirectDrawPalette.h" />
     <ClInclude Include="glDirectDrawSurface.h" />
     <ClInclude Include="glExtensions.h" />
+    <ClInclude Include="glThread.h" />
     <ClInclude Include="glutil.h" />
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />
@@ -213,6 +214,7 @@
     <ClCompile Include="glDirectDrawPalette.cpp" />
     <ClCompile Include="glDirectDrawSurface.cpp" />
     <ClCompile Include="glExtensions.cpp" />
+    <ClCompile Include="glThread.cpp" />
     <ClCompile Include="glutil.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">Create</PrecompiledHeader>

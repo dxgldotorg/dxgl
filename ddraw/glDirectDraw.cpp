@@ -578,7 +578,11 @@ glDirectDraw7::~glDirectDraw7()
 	}
 	if(surfaces)
 	{
-
+		for(int i = 0; i < surfacecount; i++)
+		{
+			if(surfaces[i]) delete surfaces[i];
+			surfaces[i] = NULL;
+		}
 		free(surfaces);
 	}
 	DeleteGL();
@@ -1542,6 +1546,12 @@ void glDirectDraw7::GetHandles(HWND *hwnd, HWND *hrender)
 {
 	if(hwnd) *hwnd = hWnd;
 	if(hrender) *hrender = hRenderWnd;
+}
+
+void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
+{
+	for(int i = 0; i < surfacecount; i++)
+		if(surfaces[i] == surface) surfaces[i] = NULL;
 }
 
 // DDRAW1 wrapper
