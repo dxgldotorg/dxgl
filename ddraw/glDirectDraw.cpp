@@ -23,11 +23,11 @@
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glRenderer.h"
 #include "glutil.h"
 #include "../common/version.h"
 
 bool directdraw_created = false; // emulate only one ddraw device
-bool wndclasscreated = false;
 
 DDDEVICEIDENTIFIER2 devid = {
 	"ddraw.dll",
@@ -700,7 +700,7 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (hRC == primary->hrc) )
+	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer == primary->renderer) )
 		ERR(DDERR_PRIMARYSURFACEALREADYEXISTS);
 	surfacecount++;
 	if(surfacecount > surfacecountmax)
@@ -892,13 +892,8 @@ HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 {
 	if(initialized) return DDERR_ALREADYINITIALIZED;
-	hDC = NULL;
-	hRC = NULL;
-	PBO = 0;
-	hasHWnd = false;
-	dib.enabled = false;
 	glD3D7 = NULL;
-	hRenderWnd = NULL;
+	renderer = NULL;
 	primary = NULL;
 	fullscreen = false;
 	fpupreserve = false;
@@ -947,7 +942,7 @@ HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
 	this->hWnd = hWnd;
-	if(hRC) DeleteGL();
+	if(renderer) DeleteGL();
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
 	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
 	bool exclusive = false;
@@ -1309,180 +1304,13 @@ HRESULT WINAPI glDirectDraw7::EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTi
 
 void glDirectDraw7::DeleteGL()
 {
-	if(hRC)
-	{
-		if(dib.enabled)
-		{
-			if(dib.hbitmap)	DeleteObject(dib.hbitmap);
-			if(dib.hdc)	DeleteDC(dib.hdc);
-			ZeroMemory(&dib,sizeof(DIB));
-		}
-		DeleteShaders();
-		DeleteFBO();
-		if(PBO)
-		{
-			glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-			glDeleteBuffers(1,&PBO);
-			PBO = 0;
-		}
-		wglMakeCurrent(NULL,NULL);
-		wglDeleteContext(hRC);
-	};
-	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
-	hRC = NULL;
-	hDC = NULL;
-	hRenderWnd = NULL;
+	delete renderer;
+	renderer = NULL;
 }
 
 BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd)
 {
-	if(hRC)
-	{
-		wglMakeCurrent(NULL,NULL);
-		wglDeleteContext(hRC);
-	};
-	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
-	WNDCLASSEXA wndclass;
-	if(!wndclasscreated)
-	{
-		wndclass.cbSize = sizeof(WNDCLASSEXA);
-		wndclass.style = 0;
-		wndclass.lpfnWndProc = RenderWndProc;
-		wndclass.cbClsExtra = 0;
-		wndclass.cbWndExtra = 0;
-		wndclass.hInstance = (HINSTANCE)GetWindowLongPtr(hWnd,GWLP_HINSTANCE);
-		wndclass.hIcon = NULL;
-		wndclass.hCursor = NULL;
-		wndclass.hbrBackground = NULL;
-		wndclass.lpszMenuName = NULL;
-		wndclass.lpszClassName = "DXGLRenderWindow";
-		wndclass.hIconSm = NULL;
-		if(!RegisterClassExA(&wndclass)) ERR(DDERR_GENERIC);
-		wndclasscreated = true;
-	}
-	GLuint pf;
-	RECT rect;
-	rect.left = 0;
-	rect.right = width;
-	rect.top = 0;
-	rect.bottom = height;
-	if(fullscreen)
-	{
-		SetWindowLongPtrA(hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-		SetWindowLongPtrA(hWnd,GWL_STYLE,WS_POPUP);
-		ShowWindow(hWnd,SW_MAXIMIZE);
-	}
-	if(width)
-	{
-		// TODO:  Adjust window rect
-	}
-	SetWindowPos(hWnd,NULL,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-	RECT rectRender;
-	GetClientRect(hWnd,&rectRender);
-	if(hWnd)
-	{
-		hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
-			rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
-		hasHWnd = true;
-	}
-	else
-	{
-		width = GetSystemMetrics(SM_CXSCREEN);
-		height = GetSystemMetrics(SM_CYSCREEN);
-		hRenderWnd = CreateWindowExA(WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,"DXGLRenderWindow","Renderer",
-			WS_POPUP,0,0,width,height,0,0,NULL,this);
-		hasHWnd = false;
-	}
-	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	PIXELFORMATDESCRIPTOR pfd;
-	ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
-	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-	pfd.nVersion = 1;
-	if(hasHWnd) pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	else pfd.dwFlags = pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	if(hasHWnd) pfd.cColorBits = bpp;
-	else
-	{
-		pfd.cColorBits = 24;
-		pfd.cAlphaBits = 8;
-	}
-	pfd.iLayerType = PFD_MAIN_PLANE;
-	hDC = GetDC(hRenderWnd);
-	if(!hDC)
-	{
-		DEBUG("glDirectDraw7::InitGL: Can not create hDC\n");
-		return FALSE;
-	}
-	pf = ChoosePixelFormat(hDC,&pfd);
-	if(!pf)
-	{
-		DEBUG("glDirectDraw7::InitGL: Can not get pixelformat\n");
-		return FALSE;
-	}
-	if(!SetPixelFormat(hDC,pf,&pfd))
-		DEBUG("glDirectDraw7::InitGL: Can not set pixelformat\n");
-	gllock = true;
-	hRC = wglCreateContext(hDC);
-	if(!hRC)
-	{
-		DEBUG("glDirectDraw7::InitGL: Can not create GL context\n");
-		gllock = false;
-		return FALSE;
-	}
-	if(!wglMakeCurrent(hDC,hRC))
-	{
-		DEBUG("glDirectDraw7::InitGL: Can not activate GL context\n");
-		wglDeleteContext(hRC);
-		hRC = NULL;
-		ReleaseDC(hRenderWnd,hDC);
-		hDC = NULL;
-		gllock = false;
-		return FALSE;
-	}
-	gllock = false;
-	InitGLExt();
-	SetSwap(1);
-	SetSwap(0);
-	glViewport(0,0,width,height);
-	glDisable(GL_DEPTH_TEST);
-	const GLubyte *glver = glGetString(GL_VERSION);
-	gl_caps.Version = (GLfloat)atof((char*)glver);
-	if(gl_caps.Version >= 2)
-	{
-		glver = glGetString(GL_SHADING_LANGUAGE_VERSION);
-		gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
-	}
-	else gl_caps.ShaderVer = 0;
-	CompileShaders();
-	InitFBO();
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glFlush();
-	SwapBuffers(hDC);
-	if(!hasHWnd)
-	{
-		dib.enabled = true;
-		dib.width = width;
-		dib.height = height;
-		dib.pitch = (((width<<3)+31)&~31) >>3;
-		dib.pixels = NULL;
-		dib.hdc = CreateCompatibleDC(NULL);
-		ZeroMemory(&dib.info,sizeof(BITMAPINFO));
-		dib.info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		dib.info.bmiHeader.biBitCount = 32;
-		dib.info.bmiHeader.biWidth = width;
-		dib.info.bmiHeader.biHeight = height;
-		dib.info.bmiHeader.biCompression = BI_RGB;
-		dib.info.bmiHeader.biPlanes = 1;
-		dib.hbitmap = CreateDIBSection(dib.hdc,&dib.info,DIB_RGB_COLORS,(void**)&dib.pixels,NULL,0);
-		glGenBuffers(1,&PBO);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
-		glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-	}
+	renderer = new glRenderer(width,height,bpp,fullscreen,hWnd,this);
 	return TRUE;
 }
 void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
@@ -1541,11 +1369,6 @@ LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		else return SendMessage(hParent,msg,wParam,lParam);
 	}
 	return DefWindowProc(hwnd,msg,wParam,lParam);
-}
-void glDirectDraw7::GetHandles(HWND *hwnd, HWND *hrender)
-{
-	if(hwnd) *hwnd = hWnd;
-	if(hrender) *hrender = hRenderWnd;
 }
 
 void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)

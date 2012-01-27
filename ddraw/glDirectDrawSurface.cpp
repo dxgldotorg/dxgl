@@ -24,101 +24,20 @@
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
+#include "glRenderer.h"
 #include "glutil.h"
 
-BltVertex bltvertices[4];
-const GLushort bltindices[4] = {0,1,2,3};
 
-int swapinterval = 0;
-inline void SetSwap(int swap)
-{
-	if(swap != swapinterval)
-	{
-		wglSwapIntervalEXT(swap);
-		swapinterval = wglGetSwapIntervalEXT();
-		swapinterval = swap;
-	}
-}
-
-inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
-inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
-inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
+static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
+static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
+static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
 #ifdef _M_X64
 #define NextMultipleOfWord NextMultipleOf8
 #else
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
-inline int _5to8bit(int number)
-{
-	return (number << 3)+(number>>2);
-}
-inline int _6to8bit(int number)
-{
-	return (number<<2)+(number>>4);
-}
 
-
-int UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3)
-{
-	if(bpp == 15) bpp = 16;
-	glBindTexture(GL_TEXTURE_2D,texture);  // Select surface's texture
-	if((x == bigx && y == bigy) || !bigbuffer)
-	{
-		glTexImage2D(GL_TEXTURE_2D,0,texformat3,x,y,0,texformat,texformat2,buffer);
-	}
-	else
-	{
-		switch(bpp)
-		{
-		case 8:
-			ScaleNearest8(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
-			break;
-		case 16:
-			ScaleNearest16(bigbuffer,buffer,bigx,bigy,x,y,pitch/2,bigpitch/2);
-			break;
-		case 24:
-			ScaleNearest24(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
-			break;
-		case 32:
-			ScaleNearest32(bigbuffer,buffer,bigx,bigy,x,y,pitch/4,bigpitch/4);
-			break;
-		break;
-		}
-		glTexImage2D(GL_TEXTURE_2D,0,texformat3,bigx,bigy,0,texformat,texformat2,bigbuffer);
-	}
-	return 0;
-}
-int DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2)
-{
-	glBindTexture(GL_TEXTURE_2D,texture);  // Select surface's texture
-	if((bigx == x && bigy == y) || !bigbuffer)
-	{
-		glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,buffer); // Shortcut for no scaling
-	}
-	else
-	{
-		glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,bigbuffer);
-		switch(bpp)
-		{
-		case 8:
-			ScaleNearest8(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 15:
-		case 16:
-			ScaleNearest16(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/2,pitch/2);
-			break;
-		case 24:
-			ScaleNearest24(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 32:
-			ScaleNearest32(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/4,pitch/4);
-			break;
-		break;
-		}
-	}
-	return 0;
-}
 
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
@@ -144,6 +63,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bigbuffer = NULL;
 	zbuffer = NULL;
 	DWORD colormasks[3];
+	GLint filter = GL_NEAREST;
 	if(copysurface)
 	{
 		FIXME("glDirectDrawSurface7::glDirectDrawSurface7: copy surface stub\n");
@@ -153,7 +73,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	else
 	{
 		ddInterface = (glDirectDraw7 *)lpDD7;
-		hrc = ddInterface->hRC;
+		renderer = ddInterface->renderer;
 		ddsd = *lpDDSurfaceDesc2;
 	}
 	LONG sizes[6];
@@ -201,13 +121,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				palette = palettein;
 				palette->AddRef();
 			}
-			glGenTextures(1,&paltex);
-			glBindTexture(GL_TEXTURE_2D,paltex);
-			glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+			paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
 		}
 		else paltex = 0;
 	}
@@ -289,21 +203,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	case 2:
 	maketex:
 		buffer = NULL;
-		glGenTextures(1,&texture);
-		glBindTexture(GL_TEXTURE_2D,texture);
-		glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8))
-		{
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		}
-		else
-		{
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		}
-		glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
-		glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) filter = GL_NEAREST;
+		else filter = GL_LINEAR;
 		if(ddsd.dwFlags & DDSD_PIXELFORMAT)
 		{
 			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
@@ -455,7 +356,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				memcpy(bitmapinfo->bmiColors,colormasks,3*sizeof(DWORD));
 			}
 		}
-		glTexImage2D(GL_TEXTURE_2D,0,texformat3,fakex,fakey,0,texformat,texformat2,NULL);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
 	}
 
 	refcount = 1;
@@ -487,8 +388,8 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(dds2) dds2->Release();
 	if(dds3) dds3->Release();
 	if(dds4) dds4->Release();
-	if(paltex)glDeleteTextures(1,&paltex);
-	if(texture)glDeleteTextures(1,&texture);
+	if(paltex) renderer->DeleteTexture(paltex);
+	if(texture) renderer->DeleteTexture(texture);
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) palette->Release();
 	if(backbuffer) backbuffer->Release();
@@ -610,164 +511,20 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glDirectDrawSurface7 *src = (glDirectDrawSurface7 *)lpDDSrcSurface;
 	if(dirty & 1)
 	{
-		UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
+		renderer->UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
 			fakex,fakey,ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*fakex)),
 			ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2,texformat3);
 		dirty &= ~1;
 	}
 	if(src && (src->dirty & 1))
 	{
-		UploadTexture(src->buffer,src->bigbuffer,src->texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
+		renderer->UploadTexture(src->buffer,src->bigbuffer,src->texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
 			(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
 			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->texformat,src->texformat2,src->texformat3);
 		src->dirty &= ~1;
 	}
-	LONG sizes[6];
-	ddInterface->GetSizes(sizes);
-	int error;
-	error = SetFBO(texture,0,false);
-	glViewport(0,0,fakex,fakey);
-	RECT destrect;
-	if(!lpDestRect)
-	{
-		destrect.left = 0;
-		destrect.top = 0;
-		destrect.right = ddsd.dwWidth;
-		destrect.bottom = ddsd.dwHeight;
-	}
-	else destrect = *lpDestRect;
-	RECT srcrect;
-	DDSURFACEDESC2 ddsdSrc;
-	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
-	if(lpDDSrcSurface) lpDDSrcSurface->GetSurfaceDesc(&ddsdSrc);
-	if(!lpSrcRect)
-	{
-		srcrect.left = 0;
-		srcrect.top = 0;
-		srcrect.right = ddsdSrc.dwWidth;
-		srcrect.bottom = ddsdSrc.dwHeight;
-	}
-	else srcrect = *lpSrcRect;
-	bltvertices[1].x = bltvertices[3].x = (GLfloat)destrect.left * ((GLfloat)fakex/(GLfloat)ddsd.dwWidth);
-	bltvertices[0].x = bltvertices[2].x = (GLfloat)destrect.right * ((GLfloat)fakex/(GLfloat)ddsd.dwWidth);
-	bltvertices[0].y = bltvertices[1].y = (GLfloat)fakey-((GLfloat)destrect.top * ((GLfloat)fakey/(GLfloat)ddsd.dwHeight));
-	bltvertices[2].y = bltvertices[3].y = (GLfloat)fakey-((GLfloat)destrect.bottom * ((GLfloat)fakey/(GLfloat)ddsd.dwHeight));
-	bltvertices[1].s = bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
-	bltvertices[0].s = bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
-	bltvertices[0].t = bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
-	bltvertices[2].t = bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
-	glClear(GL_DEPTH_BUFFER_BIT);
-	if(dwFlags & DDBLT_COLORFILL)
-	{
-		SetShader(PROG_FILL,1);
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_ALPHA_TEST);
-		switch(ddInterface->GetBPP())
-		{
-		case 8:
-			bltvertices[0].r = bltvertices[0].g = bltvertices[0].b =
-				bltvertices[1].r = bltvertices[1].g = bltvertices[1].b =
-				bltvertices[2].r = bltvertices[2].g = bltvertices[2].b =
-				bltvertices[3].r = bltvertices[3].g = bltvertices[3].b = (GLubyte)lpDDBltFx->dwFillColor;
-			break;
-		case 15:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
-				_5to8bit((lpDDBltFx->dwFillColor>>10) & 31);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
-				_5to8bit((lpDDBltFx->dwFillColor>>5) & 31);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
-				_5to8bit(lpDDBltFx->dwFillColor & 31);
-			break;
-		case 16:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
-				_5to8bit((lpDDBltFx->dwFillColor>>11) & 31);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
-				_6to8bit((lpDDBltFx->dwFillColor>>5) & 63);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
-				_5to8bit(lpDDBltFx->dwFillColor & 31);
-			break;
-		case 24:
-		case 32:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
-				((lpDDBltFx->dwFillColor>>16) & 255);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
-				((lpDDBltFx->dwFillColor>>8) & 255);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
-				(lpDDBltFx->dwFillColor & 255);
-		default:
-			break;
-		}
-	}
-	else
-	{
-		glEnable(GL_TEXTURE_2D);
-	}
-	if(lpDDSrcSurface) glBindTexture(GL_TEXTURE_2D,((glDirectDrawSurface7*)lpDDSrcSurface)->GetTexture());
-	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
-	{
-		SetShader(PROG_CKEY,1);
-		GLint keyloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"keyIn");
-		switch(ddInterface->GetBPP())
-		{
-		case 8:
-			glUniform3i(keyloc,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
-				src->colorkey[0].key.dwColorSpaceHighValue);
-			break;
-		case 15:
-			glUniform3i(keyloc,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
-			break;
-		case 16:
-			glUniform3i(keyloc,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
-				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
-			break;
-		case 24:
-		case 32:
-		default:
-			glUniform3i(keyloc,(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
-				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
-				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
-			break;
-		}
-		GLint texloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"myTexture");
-		glUniform1i(texloc,0);
-	}
-	else if(!(dwFlags & DDBLT_COLORFILL))
-	{
-		SetShader(PROG_TEXTURE,1);
-		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
-		glUniform1i(texloc,0);
-	}
-	GLuint prog = GetProgram()&0xffffffff;
-	GLint viewloc = glGetUniformLocation(prog,"view");
-	glUniform4f(viewloc,0,(GLfloat)fakex,0,(GLfloat)fakey);
-	this->dirty |= 2;
-	GLint xyloc = glGetAttribLocation(prog,"xy");
-	glEnableVertexAttribArray(xyloc);
-	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	if(dwFlags & DDBLT_COLORFILL)
-	{
-		GLint rgbloc = glGetAttribLocation(prog,"rgb");
-		glEnableVertexAttribArray(rgbloc);
-		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
-	}
-	else
-	{
-		GLint stloc = glGetAttribLocation(prog,"st");
-		glEnableVertexAttribArray(stloc);
-		glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
-	}
-	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	glDisable(GL_TEXTURE_2D);
-	SetFBO(0,0,false);
-	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
-		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
-		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP))) RenderScreen(texture,this);
-	return DD_OK;
+	return renderer->Blt(lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx);
 }
 HRESULT WINAPI glDirectDrawSurface7::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
@@ -838,7 +595,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 		glDirectDrawSurface7 *tmp = this;
 		if(dirty & 1)
 		{
-			UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
+			renderer->UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
 				fakex,fakey,ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*fakex)),
 				ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2,texformat3);
 			dirty &= ~1;
@@ -849,7 +606,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			tmp = tmp->GetBackbuffer();
 			if(tmp->dirty & 1)
 			{
-				UploadTexture(tmp->buffer,tmp->bigbuffer,tmp->texture,tmp->ddsd.dwWidth,tmp->ddsd.dwHeight,
+				renderer->UploadTexture(tmp->buffer,tmp->bigbuffer,tmp->texture,tmp->ddsd.dwWidth,tmp->ddsd.dwHeight,
 					tmp->fakex,tmp->fakey,tmp->ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*tmp->fakex)),
 					tmp->ddsd.ddpfPixelFormat.dwRGBBitCount,tmp->texformat,tmp->texformat2,tmp->texformat3);
 				tmp->dirty &= ~1;
@@ -1025,7 +782,7 @@ HRESULT WINAPI glDirectDrawSurface7::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDE
 }
 HRESULT WINAPI glDirectDrawSurface7::IsLost()
 {
-	if(hrc == ddInterface->hRC) return DD_OK;
+	if(renderer == ddInterface->renderer) return DD_OK;
 	else return DDERR_SURFACELOST;
 }
 
@@ -1041,7 +798,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		break;
 	case 0:
 		if(dirty & 2)
-			DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
+			renderer->DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
 				(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2);
 		ddsd.lpSurface = buffer;
 		break;
@@ -1054,7 +811,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		if((ddsd.dwWidth != fakex) || (ddsd.dwHeight != fakey))
 			bigbuffer = (char *)malloc((ddsd.ddpfPixelFormat.dwRGBBitCount * NextMultipleOfWord(fakex) * fakey)/8);
 		else bigbuffer = NULL;
-		DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
+		renderer->DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
 			(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2);
 		dirty &= ~2;
 		surfacetype = 0;
@@ -1066,8 +823,8 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 }
 HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 {
-	if(!hdc) ERR(DDERR_INVALIDOBJECT);
-	if(hDC != hdc) ERR(DDERR_INVALIDOBJECT);
+	if(!hdc) return DDERR_INVALIDOBJECT;
+	if(hDC != hdc) return DDERR_INVALIDOBJECT;
 	GetDIBits(hDC,hbitmap,0,ddsd.dwHeight,ddsd.lpSurface,bitmapinfo,DIB_RGB_COLORS);
 	Unlock(NULL);
 	DeleteObject(hbitmap);
@@ -1078,7 +835,7 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 }
 HRESULT WINAPI glDirectDrawSurface7::Restore()
 {
-	if(hrc != ddInterface->hRC)
+	if(renderer != ddInterface->renderer)
 	{
 		FIXME("glDirectDrawSurface7::Restore: stub\n");
 		ERR(DDERR_GENERIC);
@@ -1154,134 +911,7 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 
 void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *surface)
 {
-	LONG sizes[6];
-	GLfloat view[4];
-	RECT r,r2;
-	if(surface->dirty & 1)
-	{
-		UploadTexture(buffer,surface->bigbuffer,texture,surface->ddsd.dwWidth,surface->ddsd.dwHeight,
-			surface->fakex,surface->fakey,surface->ddsd.lPitch,
-			(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*surface->fakex)),
-			surface->ddsd.ddpfPixelFormat.dwRGBBitCount,surface->texformat,surface->texformat2,surface->texformat3);
-		surface->dirty &= ~1;
-	}
-	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
-	{
-		if(ddInterface->GetFullscreen())
-		{
-			ddInterface->GetSizes(sizes);
-			glViewport(0,0,sizes[4],sizes[5]);
-			view[0] = (GLfloat)-(sizes[4]-sizes[0])/2;
-			view[1] = (GLfloat)(sizes[4]-sizes[0])/2+sizes[0];
-			view[2] = (GLfloat)(sizes[5]-sizes[1])/2+sizes[1];
-			view[3] = (GLfloat)-(sizes[5]-sizes[1])/2;
-		}
-		else
-		{
-			HWND hwnd,hrender;
-			ddInterface->GetHandles(&hwnd,&hrender);
-			GetClientRect(hwnd,&r);
-			GetClientRect(hrender,&r2);
-			if(memcmp(&r2,&r,sizeof(RECT)))
-				SetWindowPos(hrender,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
-			r2 = r;
-			ClientToScreen(hwnd,(LPPOINT)&r2.left);
-			ClientToScreen(hwnd,(LPPOINT)&r2.right);
-			glViewport(0,0,r.right,r.bottom);
-			view[0] = (GLfloat)r2.left;
-			view[1] = (GLfloat)r2.right;
-			view[2] = (GLfloat)fakey-(GLfloat)r2.top;
-			view[3] = (GLfloat)fakey-(GLfloat)r2.bottom;
-		}
-	}
-	else
-	{
-		view[0] = 0;
-		view[1] = (GLfloat)fakex;
-		view[2] = 0;
-		view[3] = (GLfloat)fakey;
-	}
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	if(ddInterface->GetBPP() == 8)
-	{
-		SetShader(PROG_PAL256,true);
-		glBindTexture(GL_TEXTURE_2D,paltex);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,palette->GetPalette(NULL));
-		GLint palloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"ColorTable");
-		GLint texloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"IndexTexture");
-		glUniform1i(texloc,0);
-		glUniform1i(palloc,1);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,texture);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D,paltex);
-		glActiveTexture(GL_TEXTURE0);
-	}
-	else
-	{
-		SetShader(PROG_TEXTURE,true);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D,texture);
-		GLuint prog = GetProgram() & 0xFFFFFFFF;
-		GLint texloc = glGetUniformLocation(prog,"Texture");
-	}
-	GLuint prog = GetProgram();
-	GLint viewloc = glGetUniformLocation(prog,"view");
-	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
-	if(ddInterface->GetFullscreen())
-	{
-		bltvertices[0].x = bltvertices[2].x = (float)sizes[0];
-		bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
-		bltvertices[2].y = bltvertices[3].y = (float)sizes[1];
-	}
-	else
-	{
-		bltvertices[0].x = bltvertices[2].x = (float)fakex;
-		bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
-		bltvertices[2].y = bltvertices[3].y = (float)fakey;
-	}
-	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
-	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
-	GLint xyloc = glGetAttribLocation(prog,"xy");
-	glEnableVertexAttribArray(xyloc);
-	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	GLint stloc = glGetAttribLocation(prog,"st");
-	glEnableVertexAttribArray(stloc);
-	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
-	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	glDisable(GL_TEXTURE_2D);
-	glFlush();
-	if(ddInterface->hasHWnd) SwapBuffers(ddInterface->hDC);
-	else
-	{
-		glReadBuffer(GL_FRONT);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,ddInterface->PBO);
-		GLint packalign;
-		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
-		glPixelStorei(GL_PACK_ALIGNMENT,1);
-		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
-		GLubyte *pixels = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
-		for(int i = 0; i < sizes[5];i++)
-		{
-			memcpy(&ddInterface->dib.pixels[ddInterface->dib.pitch*i],
-				&pixels[((sizes[5]-1)-i)*(sizes[4]*4)],sizes[4]*4);
-		}
-		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
-		HDC hRenderDC = (HDC)::GetDC(ddInterface->hRenderWnd);
-		HGDIOBJ hPrevObj = 0;
-		POINT dest = {0,0};
-		POINT src = {0,0};
-		SIZE wnd = {ddInterface->dib.width,ddInterface->dib.height};
-		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
-		hPrevObj = SelectObject(ddInterface->dib.hdc,ddInterface->dib.hbitmap);
-		ClientToScreen(ddInterface->hRenderWnd,&dest);
-		UpdateLayeredWindow(ddInterface->hRenderWnd,hRenderDC,&dest,&wnd,
-			ddInterface->dib.hdc,&src,0,&func,ULW_ALPHA);
-		SelectObject(ddInterface->dib.hdc,hPrevObj);
-		::ReleaseDC(ddInterface->hRenderWnd,hRenderDC);
-	}
+	renderer->DrawScreen(texture,paltex,this,surface);
 }
 // ddraw 2+ api
 HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)

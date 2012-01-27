@@ -92,7 +92,7 @@
     <ClInclude Include="shadergen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="glThread.h">
+    <ClInclude Include="glRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -148,7 +148,7 @@
     <ClCompile Include="shadergen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glThread.cpp">
+    <ClCompile Include="glRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

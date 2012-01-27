@@ -22,31 +22,9 @@
 class glDirectDrawSurface7;
 class glDirectDrawClipper;
 class glDirect3D7;
+class glRenderer;
 
 LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-typedef struct
-{
-	float Version;
-	float ShaderVer;
-	int TextureMaxX;
-	int TextureMaxY;
-	bool NonPowerOfTwo;
-	int RenderToTexture; // 0 - no support, 1 -
-	int MultiTextureExt;
-	int PalettedTextures;
-} GLCAPS;
-typedef struct
-{
-	bool enabled;
-	int width;
-	int height;
-	int pitch;
-	HDC hdc;
-	HBITMAP hbitmap;
-	BITMAPINFO info;
-	BYTE *pixels;
-} DIB;
 
 class glDirectDraw7 : public IDirectDraw7
 {
@@ -98,19 +76,13 @@ public:
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
 	DWORD GetBPPMultipleOf8(){if(primarybpp == 15) return 16; else return primarybpp;}
-	HGLRC hRC;
-	HDC  hDC;
 	DWORD screenx,screeny,screenrefresh,screenbpp;
 	DWORD internalx,internaly,internalrefresh,internalbpp;
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
 	bool GetFullscreen(){return fullscreen;};
-	void GetHandles(HWND *hwnd, HWND *hrender);
 	void DeleteSurface(glDirectDrawSurface7 *surface);
 	glDirectDrawSurface7 *primary;
-	bool hasHWnd;
-	DIB dib;
-	GLuint PBO;
-	HWND hRenderWnd;
+	glRenderer *renderer;
 private:
 	void DeleteGL();
 	BOOL InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd);
@@ -127,7 +99,6 @@ private:
 	int surfacecount, surfacecountmax;
 	glDirectDrawClipper **clippers;
 	int clippercount, clippercountmax;
-	GLCAPS gl_caps;
 	DEVMODE oldmode;
 	bool initialized;
 	glDirect3D7 *glD3D7;

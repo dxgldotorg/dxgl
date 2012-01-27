@@ -19,8 +19,6 @@
 #ifndef _GLDIRECTDRAWSURFACE_H
 #define _GLDIRECTDRAWSURFACE_H
 
-extern inline void SetSwap(int swap);
-
 typedef struct
 {
 	bool enabled;
@@ -28,16 +26,7 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
-struct BltVertex
-{
-	GLfloat x,y;
-	GLubyte r,g,b,a;
-	GLfloat s,t;
-	GLfloat padding[3];
-};
-
-extern BltVertex bltvertices[4];
-
+class glRenderer;
 class glDirectDrawClipper;
 class glDirectDrawPalette;
 class glDirectDrawSurface1;
@@ -123,13 +112,19 @@ public:
 	GLint texformat3;
 	DWORD fakex,fakey;
 	DWORD dirty;
-	HGLRC hrc;
+	glRenderer *renderer;
 	// dirty bits:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
 	GLuint texture;
+	GLuint paltex;
 	bool hasstencil;
+	char *buffer;
+	char *bigbuffer;
+	char *gdibuffer;
+	DDSURFACEDESC2 ddsd;
+	glDirectDrawPalette *palette;
 private:
 	ULONG refcount;
 	int locked;
@@ -137,15 +132,9 @@ private:
 	HBITMAP hbitmap;
 	BITMAPINFO *bitmapinfo;
 	glDirectDraw7 *ddInterface;
-	DDSURFACEDESC2 ddsd;
-	GLuint paltex;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
-	char *buffer;
-	char *bigbuffer;
-	char *gdibuffer;
 	glDirectDrawSurface7 *backbuffer;
 	glDirectDrawSurface7 *zbuffer;
-	glDirectDrawPalette *palette;
 	glDirectDrawClipper *clipper;
 	int pagelocked;
 };
