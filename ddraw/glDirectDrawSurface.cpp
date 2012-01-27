@@ -579,6 +579,14 @@ HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
+	HRESULT ret = Flip2(lpDDSurfaceTargetOverride,dwFlags);
+	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) RenderScreen(texture,this);
+	return ret;
+}
+HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
+{
+	DWORD i;
+	glDirectDrawSurface7 *tmp;
 	if(dwFlags & DDFLIP_NOVSYNC) swapinterval=0;
 	else
 	{
@@ -588,13 +596,34 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 		else swapinterval=1;
 	}
 	int flips = 1;
-	if(lpDDSurfaceTargetOverride) ERR(DDERR_GENERIC);
+	if(lpDDSurfaceTargetOverride)
+	{
+		bool success = false;
+		if(lpDDSurfaceTargetOverride == this) return DD_OK;
+		tmp = this;
+		for(i = 0; i < ddsd.dwBackBufferCount; i++)
+		{
+			tmp = tmp->GetBackbuffer();
+			if(lpDDSurfaceTargetOverride == tmp)
+			{
+				success = true;
+				i++;
+				break;
+			}
+		}
+		if(!success) return DDERR_INVALIDPARAMS;
+		for(DWORD x = 0; x < i; x++)
+		{
+			if(x == i-1) return Flip2(NULL,dwFlags);
+			else Flip2(NULL,0);
+		}
+	}
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)
 	{
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) return DDERR_INVALIDOBJECT;
 		GLuint *textures = new GLuint[ddsd.dwBackBufferCount+1];
 		textures[0] = texture;
-		glDirectDrawSurface7 *tmp = this;
+		tmp = this;
 		if(dirty & 1)
 		{
 			renderer->UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
@@ -603,7 +632,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			dirty &= ~1;
 		}
 		this->dirty |= 2;
-		for(DWORD i = 0; i < ddsd.dwBackBufferCount; i++)
+		for(i = 0; i < ddsd.dwBackBufferCount; i++)
 		{
 			tmp = tmp->GetBackbuffer();
 			if(tmp->dirty & 1)
@@ -626,7 +655,6 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			tmp = tmp->GetBackbuffer();
 			tmp->SetTexture(textures[i+1]);
 		}
-		RenderScreen(textures[0],this);
 		delete textures;
 	}
 	else return DDERR_NOTFLIPPABLE;
@@ -1124,7 +1152,9 @@ HRESULT WINAPI glDirectDrawSurface1::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface1::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	return glDDS7->Flip((LPDIRECTDRAWSURFACE7)lpDDSurfaceTargetOverride,dwFlags);
+	if(lpDDSurfaceTargetOverride)
+		return glDDS7->Flip(((glDirectDrawSurface1*)lpDDSurfaceTargetOverride)->GetDDS7(),dwFlags);
+	else return glDDS7->Flip(NULL,dwFlags);
 }
 HRESULT WINAPI glDirectDrawSurface1::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE FAR *lplpDDAttachedSurface)
 {
@@ -1304,7 +1334,9 @@ HRESULT WINAPI glDirectDrawSurface2::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface2::Flip(LPDIRECTDRAWSURFACE2 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	return glDDS7->Flip((LPDIRECTDRAWSURFACE7)lpDDSurfaceTargetOverride,dwFlags);
+	if(lpDDSurfaceTargetOverride)
+		return glDDS7->Flip(((glDirectDrawSurface2*)lpDDSurfaceTargetOverride)->GetDDS7(),dwFlags);
+	else return glDDS7->Flip(NULL,dwFlags);
 }
 HRESULT WINAPI glDirectDrawSurface2::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE2 FAR *lplpDDAttachedSurface)
 {
@@ -1496,7 +1528,9 @@ HRESULT WINAPI glDirectDrawSurface3::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface3::Flip(LPDIRECTDRAWSURFACE3 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	return glDDS7->Flip((LPDIRECTDRAWSURFACE7)lpDDSurfaceTargetOverride,dwFlags);
+	if(lpDDSurfaceTargetOverride)
+		return glDDS7->Flip(((glDirectDrawSurface3*)lpDDSurfaceTargetOverride)->GetDDS7(),dwFlags);
+	else return glDDS7->Flip(NULL,dwFlags);
 }
 HRESULT WINAPI glDirectDrawSurface3::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE3 FAR *lplpDDAttachedSurface)
 {
@@ -1692,7 +1726,9 @@ HRESULT WINAPI glDirectDrawSurface4::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface4::Flip(LPDIRECTDRAWSURFACE4 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	return glDDS7->Flip((LPDIRECTDRAWSURFACE7)lpDDSurfaceTargetOverride,dwFlags);
+	if(lpDDSurfaceTargetOverride)
+		return glDDS7->Flip(((glDirectDrawSurface4*)lpDDSurfaceTargetOverride)->GetDDS7(),dwFlags);
+	else return glDDS7->Flip(NULL,dwFlags);
 }
 HRESULT WINAPI glDirectDrawSurface4::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps2, LPDIRECTDRAWSURFACE4 FAR *lplpDDAttachedSurface)
 {
