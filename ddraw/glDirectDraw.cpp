@@ -700,8 +700,17 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer == primary->renderer) )
-		ERR(DDERR_PRIMARYSURFACEALREADYEXISTS);
+	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer->hRC == primary->hRC) )
+	{
+		if(primarylost)
+		{
+			primary->Restore();
+			*lplpDDSurface = primary;
+			primarylost = false;
+			return DD_OK;
+		}
+		else return DDERR_PRIMARYSURFACEALREADYEXISTS;
+	}
 	surfacecount++;
 	if(surfacecount > surfacecountmax)
 	{
@@ -716,7 +725,10 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 	HRESULT error;
 	surfaces[surfacecount-1] = new glDirectDrawSurface7(this,lpDDSurfaceDesc2,lplpDDSurface,&error,false,NULL);
 	if(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	{
 		primary = surfaces[surfacecount-1];
+		primarylost = false;
+	}
 	*lplpDDSurface = surfaces[surfacecount-1];
 	return error;
 }
@@ -892,6 +904,7 @@ HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 {
 	if(initialized) return DDERR_ALREADYINITIALIZED;
+	primarylost = true;
 	glD3D7 = NULL;
 	renderer = NULL;
 	primary = NULL;
@@ -1111,6 +1124,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 			DeleteGL();
 			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			primarylost = true;
 			return DD_OK;
 		case DISP_CHANGE_BADMODE:
 			ERR(DDERR_INVALIDMODE);
@@ -1141,6 +1155,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		DeleteGL();
 		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		primarylost = true;
 		return DD_OK;
 		break;
 	case 2: // Scale to screen
@@ -1166,6 +1181,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		DeleteGL();
 		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		primarylost = true;
 		return DD_OK;
 		break;
 	case 3: // Center image
@@ -1213,6 +1229,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			DeleteGL();
 			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			primarylost = true;
 			return DD_OK;
 			break;
 		case 5:
@@ -1238,6 +1255,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			DeleteGL();
 			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			primarylost = true;
 			return DD_OK;
 			break;
 		case 6:
@@ -1251,6 +1269,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 			DeleteGL();
 			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			primarylost = true;
+			return DD_OK;
 			break;
 		}
 		break;
@@ -1260,9 +1280,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
 	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT) return DDERR_UNSUPPORTED;
-	SetSwap(1);
+	swapinterval=1;
 	primary->RenderScreen(primary->texture,primary);
-	SetSwap(0);
+	swapinterval=0;
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)

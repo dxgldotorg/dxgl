@@ -60,6 +60,7 @@ extern BltVertex bltvertices[4];
 #define GLEVENT_BLT 6
 #define GLEVENT_DRAWSCREEN 7
 
+extern int swapinterval;
 extern inline void SetSwap(int swap);
 
 class glRenderer
@@ -75,6 +76,7 @@ public:
 	GLuint MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
 	void DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
 	void DeleteTexture(GLuint texture);
+	HGLRC hRC;
 private:
 	// In-thread APIs
 	DWORD _Entry();
@@ -93,7 +95,6 @@ private:
 	HANDLE hThread;
 	HANDLE EventSend;
 	HANDLE EventWait;
-	HGLRC hRC;
 	HDC hDC;
 	HWND hWnd;
 	HWND hRenderWnd;

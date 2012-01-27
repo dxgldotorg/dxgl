@@ -82,6 +82,7 @@ public:
 	bool GetFullscreen(){return fullscreen;};
 	void DeleteSurface(glDirectDrawSurface7 *surface);
 	glDirectDrawSurface7 *primary;
+	bool primarylost;
 	glRenderer *renderer;
 private:
 	void DeleteGL();

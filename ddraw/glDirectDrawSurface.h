@@ -96,6 +96,7 @@ public:
 	GLuint GetTexture(){
 		return texture;
 	}
+	void Restore2();
 	void SetTexture(GLuint newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
@@ -125,6 +126,7 @@ public:
 	char *gdibuffer;
 	DDSURFACEDESC2 ddsd;
 	glDirectDrawPalette *palette;
+	HGLRC hRC;
 private:
 	ULONG refcount;
 	int locked;
@@ -137,6 +139,7 @@ private:
 	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawClipper *clipper;
 	int pagelocked;
+	GLint filter;
 };
 
 // Legacy DDRAW Interfaces

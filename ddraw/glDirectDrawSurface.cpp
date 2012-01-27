@@ -63,7 +63,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bigbuffer = NULL;
 	zbuffer = NULL;
 	DWORD colormasks[3];
-	GLint filter = GL_NEAREST;
+	filter = GL_NEAREST;
 	if(copysurface)
 	{
 		FIXME("glDirectDrawSurface7::glDirectDrawSurface7: copy surface stub\n");
@@ -74,6 +74,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	{
 		ddInterface = (glDirectDraw7 *)lpDD7;
 		renderer = ddInterface->renderer;
+		hRC = ddInterface->renderer->hRC;
 		ddsd = *lpDDSurfaceDesc2;
 	}
 	LONG sizes[6];
@@ -384,6 +385,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 }
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
+	AddRef();
 	if(dds1) dds1->Release();
 	if(dds2) dds2->Release();
 	if(dds3) dds3->Release();
@@ -577,13 +579,13 @@ HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lp
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
-	if(dwFlags & DDFLIP_NOVSYNC) SetSwap(0);
+	if(dwFlags & DDFLIP_NOVSYNC) swapinterval=0;
 	else
 	{
-		if(dwFlags & DDFLIP_INTERVAL3) SetSwap(3);
-		else if(dwFlags & DDFLIP_INTERVAL2) SetSwap(2);
-		else if(dwFlags & DDFLIP_INTERVAL4) SetSwap(4);
-		else SetSwap(1);
+		if(dwFlags & DDFLIP_INTERVAL3) swapinterval=3;
+		else if(dwFlags & DDFLIP_INTERVAL2) swapinterval=2;
+		else if(dwFlags & DDFLIP_INTERVAL4) swapinterval=4;
+		else swapinterval=1;
 	}
 	int flips = 1;
 	if(lpDDSurfaceTargetOverride) ERR(DDERR_GENERIC);
@@ -741,6 +743,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 }
 HRESULT WINAPI glDirectDrawSurface7::GetFlipStatus(DWORD dwFlags)
 {
+	return DD_OK;
 	FIXME("glDirectDrawSurface7::GetFlipStatus: stub\n");
 	ERR(DDERR_GENERIC);
 }
@@ -782,7 +785,7 @@ HRESULT WINAPI glDirectDrawSurface7::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDE
 }
 HRESULT WINAPI glDirectDrawSurface7::IsLost()
 {
-	if(renderer == ddInterface->renderer) return DD_OK;
+	if(hRC == ddInterface->renderer->hRC) return DD_OK;
 	else return DDERR_SURFACELOST;
 }
 
@@ -833,12 +836,81 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	hdc = NULL;
 	return DD_OK;
 }
+void glDirectDrawSurface7::Restore2()
+{
+	LONG sizes[6];
+	if(hRC != ddInterface->renderer->hRC)
+	{
+		ddInterface->GetSizes(sizes);
+		if(ddInterface->GetFullscreen())
+		{
+			ddsd.dwWidth = sizes[2];
+			ddsd.dwHeight = sizes[3];
+			if(dxglcfg.highres)
+			{
+				fakex = sizes[0];
+				fakey = sizes[1];
+			}
+			else
+			{
+				fakex = ddsd.dwWidth;
+				fakey = ddsd.dwHeight;
+			}
+			ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+		}
+		else
+		{
+			fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXSCREEN);
+			fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYSCREEN);
+			ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+		}
+		if(backbuffer) backbuffer->Restore2();
+		if(zbuffer) zbuffer->Restore2();
+		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
+	}
+}
 HRESULT WINAPI glDirectDrawSurface7::Restore()
 {
-	if(renderer != ddInterface->renderer)
+	LONG sizes[6];
+	if(hRC != ddInterface->renderer->hRC)
 	{
-		FIXME("glDirectDrawSurface7::Restore: stub\n");
-		ERR(DDERR_GENERIC);
+		if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			ddInterface->GetSizes(sizes);
+			if(ddInterface->GetFullscreen())
+			{
+				ddsd.dwWidth = sizes[2];
+				ddsd.dwHeight = sizes[3];
+				if(dxglcfg.highres)
+				{
+					fakex = sizes[0];
+					fakey = sizes[1];
+				}
+				else
+				{
+					fakex = ddsd.dwWidth;
+					fakey = ddsd.dwHeight;
+				}
+				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+			}
+			else
+			{
+				fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXSCREEN);
+				fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYSCREEN);
+				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
+			}
+			if(backbuffer) backbuffer->Restore2();
+			if(zbuffer) zbuffer->Restore2();
+		}
+		else
+		{
+			if(backbuffer) backbuffer->Restore();
+			if(zbuffer) zbuffer->Restore();
+		}
+		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
+		return DD_OK;
 	}
 	else return DD_OK;
 }

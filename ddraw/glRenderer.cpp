@@ -39,6 +39,7 @@ bool wndclasscreated = false;
 BltVertex bltvertices[4];
 const GLushort bltindices[4] = {0,1,2,3};
 
+
 inline int _5to8bit(int number)
 {
 	return (number << 3)+(number>>2);
@@ -48,14 +49,15 @@ inline int _6to8bit(int number)
 	return (number<<2)+(number>>4);
 }
 
+int oldswap = 0;
 int swapinterval = 0;
 inline void SetSwap(int swap)
 {
-	if(swap != swapinterval)
+	if(swap != oldswap)
 	{
 		wglSwapIntervalEXT(swap);
-		swapinterval = wglGetSwapIntervalEXT();
-		swapinterval = swap;
+		oldswap = wglGetSwapIntervalEXT();
+		oldswap = swap;
 	}
 }
 
@@ -662,6 +664,7 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 
 void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, RECT *viewrect)
 {
+	SetSwap(swapinterval);
 	LONG sizes[6];
 	GLfloat view[4];
 	if(src->dirty & 1)
