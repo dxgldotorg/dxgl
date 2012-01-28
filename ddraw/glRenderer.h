@@ -89,6 +89,7 @@ private:
 	GLuint _MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
 	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
 	void _DeleteTexture(GLuint texture);
+	void _DrawBackbuffer(GLuint *texture, int x, int y);
 	glDirectDraw7 *ddInterface;
 	void* inputs[32];
 	void* outputs[32];

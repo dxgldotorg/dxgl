@@ -36,7 +36,9 @@ static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
 
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
-
+GLuint backbuffer = 0;
+int backx = 0;
+int backy = 0;
 BltVertex bltvertices[4];
 const GLushort bltindices[4] = {0,1,2,3};
 
@@ -342,47 +344,6 @@ DWORD glRenderer::_Entry()
         TranslateMessage(&Msg);
 		DispatchMessage(&Msg);
 	}
-/*	do
-	{
-		WaitForSingleObject(EventSend,INFINITE);
-		switch(eventnum)
-		{
-		case GLEVENT_DELETE:
-			break;
-		case GLEVENT_CREATE:
-			outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
-				(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8]);
-			SetEvent(EventWait);
-			break;
-		case GLEVENT_UPLOAD:
-			outputs[0] = (void*)_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
-				(int)inputs[10],(int)inputs[11],(int)inputs[12]);
-			SetEvent(EventWait);
-			break;
-		case GLEVENT_DOWNLOAD:
-			outputs[0] = (void*)_DownloadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
-				(int)inputs[10],(int)inputs[11]);
-			SetEvent(EventWait);
-			break;
-		case GLEVENT_DELETETEX:
-			_DeleteTexture((GLuint)inputs[0]);
-			SetEvent(EventWait);
-			break;
-		case GLEVENT_BLT:
-			outputs[0] = (void*)_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
-				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
-			SetEvent(EventWait);
-			break;
-		case GLEVENT_DRAWSCREEN:
-			_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3]);
-			SetEvent(EventWait);
-			break;
-		default:
-			break;
-		}
-	} while(eventnum != GLEVENT_DELETE);*/
 	if(hRenderWnd) DestroyWindow(hRenderWnd);
 	hRenderWnd = NULL;
 	wndbusy = false;
@@ -400,7 +361,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 		wndclass.lpfnWndProc = RenderWndProc;
 		wndclass.cbClsExtra = 0;
 		wndclass.cbWndExtra = 0;
-		wndclass.hInstance = (HINSTANCE)GetModuleHandle(NULL);//(HINSTANCE)GetWindowLongPtr(hWnd,GWLP_HINSTANCE);
+		wndclass.hInstance = (HINSTANCE)GetModuleHandle(NULL);
 		wndclass.hIcon = NULL;
 		wndclass.hCursor = NULL;
 		wndclass.hbrBackground = NULL;
@@ -705,6 +666,50 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 	return texture;
 }
 
+void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
+{
+	GLfloat view[4];
+	glActiveTexture(GL_TEXTURE0);
+	if(!backbuffer)
+	{
+		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP,GL_CLAMP,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
+		backx = x;
+		backy = y;
+	}
+	if((backx != x) || (backy != y))
+	{
+		glBindTexture(GL_TEXTURE_2D,backbuffer);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,x,y,0,GL_BGRA,GL_UNSIGNED_BYTE,NULL);
+		backx = x;
+		backy = y;
+	}
+	SetFBO(backbuffer,0,false);
+	view[0] = view[2] = 0;
+	view[1] = (GLfloat)x;
+	view[3] = (GLfloat)y;
+	glViewport(0,0,x,y);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glBindTexture(GL_TEXTURE_2D,*texture);
+	*texture = backbuffer;
+	GLuint prog = GetProgram();
+	GLint viewloc = glGetUniformLocation(prog,"view");
+	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
+
+	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
+	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
+	bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
+	bltvertices[0].x = bltvertices[2].x = (float)x;
+	bltvertices[2].y = bltvertices[3].y = (float)y;
+	GLint xyloc = glGetAttribLocation(prog,"xy");
+	glEnableVertexAttribArray(xyloc);
+	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	GLint stloc = glGetAttribLocation(prog,"st");
+	glEnableVertexAttribArray(stloc);
+	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	SetFBO(0,0,false);
+}
+
 void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
 {
 	RECT r,r2;
@@ -720,6 +725,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	SetSwap(swapinterval);
 	LONG sizes[6];
 	GLfloat view[4];
+	GLint viewport[4];
 	if(src->dirty & 1)
 	{
 		_UploadTexture(src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
@@ -733,7 +739,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		if(ddInterface->GetFullscreen())
 		{
 			ddInterface->GetSizes(sizes);
-			glViewport(0,0,sizes[4],sizes[5]);
+			viewport[0] = viewport[1] = 0;
+			viewport[2] = sizes[4];
+			viewport[3] = sizes[5];
 			view[0] = (GLfloat)-(sizes[4]-sizes[0])/2;
 			view[1] = (GLfloat)(sizes[4]-sizes[0])/2+sizes[0];
 			view[2] = (GLfloat)(sizes[5]-sizes[1])/2+sizes[1];
@@ -741,7 +749,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		}
 		else
 		{
-			glViewport(0,0,viewrect->right,viewrect->bottom);
+			viewport[0] = viewport[1] = 0;
+			viewport[2] = viewrect->right;
+			viewport[3] = viewrect->bottom;
 			ClientToScreen(hRenderWnd,(LPPOINT)&viewrect->left);
 			ClientToScreen(hRenderWnd,(LPPOINT)&viewrect->right);
 			view[0] = (GLfloat)viewrect->left;
@@ -772,6 +782,16 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D,paltex);
 		glActiveTexture(GL_TEXTURE0);
+		if(dxglcfg.scalingfilter)
+		{
+			_DrawBackbuffer(&texture,dest->fakex,dest->fakey);
+			SetShader(PROG_TEXTURE,true);
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D,texture);
+			GLuint prog = GetProgram() & 0xFFFFFFFF;
+			GLint texloc = glGetUniformLocation(prog,"Texture");
+			glUniform1i(texloc,0);
+		}
 	}
 	else
 	{
@@ -780,7 +800,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glBindTexture(GL_TEXTURE_2D,texture);
 		GLuint prog = GetProgram() & 0xFFFFFFFF;
 		GLint texloc = glGetUniformLocation(prog,"Texture");
+		glUniform1i(texloc,0);
 	}
+	glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
 	GLuint prog = GetProgram();
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
@@ -877,6 +899,7 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				glDeleteBuffers(1,&PBO);
 				PBO = 0;
 			}
+			if(backbuffer) glDeleteTextures(1,&backbuffer);
 			wglMakeCurrent(NULL,NULL);
 			wglDeleteContext(hRC);
 		};
