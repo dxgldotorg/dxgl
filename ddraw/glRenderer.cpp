@@ -34,6 +34,7 @@ static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
+WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
 
 BltVertex bltvertices[4];
@@ -124,6 +125,8 @@ int glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, 
 
 glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwnd, glDirectDraw7 *glDD7)
 {
+	MSG Msg;
+	wndbusy = false;
 	hDC = NULL;
 	hRC = NULL;
 	PBO = 0;
@@ -142,46 +145,7 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 		// TODO:  Adjust window rect
 	}
 	SetWindowPos(hWnd,NULL,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
-	WNDCLASSEXA wndclass;
-	if(!wndclasscreated)
-	{
-		wndclass.cbSize = sizeof(WNDCLASSEXA);
-		wndclass.style = 0;
-		wndclass.lpfnWndProc = RenderWndProc;
-		wndclass.cbClsExtra = 0;
-		wndclass.cbWndExtra = 0;
-		wndclass.hInstance = (HINSTANCE)GetWindowLongPtr(hWnd,GWLP_HINSTANCE);
-		wndclass.hIcon = NULL;
-		wndclass.hCursor = NULL;
-		wndclass.hbrBackground = NULL;
-		wndclass.lpszMenuName = NULL;
-		wndclass.lpszClassName = "DXGLRenderWindow";
-		wndclass.hIconSm = NULL;
-		RegisterClassExA(&wndclass);
-		wndclasscreated = true;
-	}
-	RECT rectRender;
-	GetClientRect(hWnd,&rectRender);
-	if(hWnd)
-	{
-		hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
-			rectRender.bottom - rectRender.top,hWnd,NULL,NULL,this);
-		hasHWnd = true;
-	}
-	else
-	{
-		width = GetSystemMetrics(SM_CXSCREEN);
-		height = GetSystemMetrics(SM_CYSCREEN);
-		hRenderWnd = CreateWindowExA(WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,"DXGLRenderWindow","Renderer",
-			WS_POPUP,0,0,width,height,0,0,NULL,this);
-		hasHWnd = false;
-	}
-	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	eventnum = GLEVENT_NULL;
-	EventSend = CreateEventA(NULL,FALSE,FALSE,NULL);
-	EventWait = CreateEventA(NULL,FALSE,FALSE,NULL);
+	InitializeCriticalSection(&cs);
 	inputs[0] = (void*)width;
 	inputs[1] = (void*)height;
 	inputs[2] = (void*)bpp;
@@ -189,19 +153,36 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	inputs[4] = (void*)hWnd;
 	inputs[5] = glDD7;
 	inputs[6] = this;
+	wndbusy = true;
 	hThread = CreateThread(NULL,0,ThreadEntry,inputs,0,NULL);
-	WaitForSingleObject(EventWait,INFINITE);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
 }
 
 glRenderer::~glRenderer()
 {
-	eventnum = GLEVENT_DELETE;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
-	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
-	hDC = NULL;
-	hRenderWnd = NULL;
+	MSG Msg;
+	EnterCriticalSection(&cs);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_DELETE,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
+	DeleteCriticalSection(&cs);
 }
 
 
@@ -214,6 +195,7 @@ DWORD WINAPI glRenderer::ThreadEntry(void *entry)
 
 GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3)
 {
+	EnterCriticalSection(&cs);
 	inputs[0] = (void*)min;
 	inputs[1] = (void*)mag;
 	inputs[2] = (void*)wraps;
@@ -223,15 +205,16 @@ GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, D
 	inputs[6] = (void*)texformat1;
 	inputs[7] = (void*)texformat2;
 	inputs[8] = (void*)texformat3;
-	eventnum = GLEVENT_CREATE;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	SendMessage(hRenderWnd,GLEVENT_CREATE,0,0);
+	LeaveCriticalSection(&cs);
 	return (GLuint)outputs[0];
 }
 
 int glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3)
 {
+	EnterCriticalSection(&cs);
+	MSG Msg;
 	inputs[0] = buffer;
 	inputs[1] = bigbuffer;
 	inputs[2] = (void*)texture;
@@ -245,15 +228,26 @@ int glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int
 	inputs[10] = (void*)texformat;
 	inputs[11] = (void*)texformat2;
 	inputs[12] = (void*)texformat3;
-	eventnum = GLEVENT_UPLOAD;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_UPLOAD,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
 	return (int)outputs[0];
 }
 
 int glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2)
 {
+	EnterCriticalSection(&cs);
+	MSG Msg;
 	inputs[0] = buffer;
 	inputs[1] = bigbuffer;
 	inputs[2] = (void*)texture;
@@ -266,72 +260,89 @@ int glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, i
 	inputs[9] = (void*)bpp;
 	inputs[10] = (void*)texformat;
 	inputs[11] = (void*)texformat2;
-	eventnum = GLEVENT_DOWNLOAD;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_DOWNLOAD,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
 	return (int)outputs[0];
 }
 
 void glRenderer::DeleteTexture(GLuint texture)
 {
+	EnterCriticalSection(&cs);
 	inputs[0] = (void*)texture;
-	eventnum = GLEVENT_DELETETEX;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	SendMessage(hRenderWnd,GLEVENT_DELETETEX,0,0);
+	LeaveCriticalSection(&cs);
 }
 
 HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	RECT r,r2;
-	if(((dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
-		(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
-		((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-	{
-		GetClientRect(hWnd,&r);
-		GetClientRect(hRenderWnd,&r2);
-		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
-	}
+	MSG Msg;
+	EnterCriticalSection(&cs);
 	inputs[0] = lpDestRect;
 	inputs[1] = src;
 	inputs[2] = dest;
 	inputs[3] = lpSrcRect;
 	inputs[4] = (void*)dwFlags;
 	inputs[5] = lpDDBltFx;
-	inputs[6] = &r2;
-	eventnum = GLEVENT_BLT;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_BLT,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
 	return (HRESULT)outputs[0];
 }
 
 void glRenderer::DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
 {
-	RECT r,r2;
-	if(!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
-	{
-		GetClientRect(hWnd,&r);
-		GetClientRect(hRenderWnd,&r2);
-		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
-	}
+	MSG Msg;
+	EnterCriticalSection(&cs);
 	inputs[0] = (void*)texture;
 	inputs[1] = (void*)paltex;
 	inputs[2] = dest;
 	inputs[3] = src;
-	inputs[4] = &r2;
-	eventnum = GLEVENT_DRAWSCREEN;
-	SetEvent(EventSend);
-	WaitForSingleObject(EventWait,INFINITE);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_DRAWSCREEN,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
 }
 
 DWORD glRenderer::_Entry()
 {
+	MSG Msg;
+	EnterCriticalSection(&cs);
 	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4],(glDirectDraw7*)inputs[5]);
-	SetEvent(EventWait);
-	do
+	LeaveCriticalSection(&cs);
+	while(GetMessage(&Msg, NULL, 0, 0) > 0)
+	{
+        TranslateMessage(&Msg);
+		DispatchMessage(&Msg);
+	}
+/*	do
 	{
 		WaitForSingleObject(EventSend,INFINITE);
 		switch(eventnum)
@@ -361,44 +372,64 @@ DWORD glRenderer::_Entry()
 			break;
 		case GLEVENT_BLT:
 			outputs[0] = (void*)_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
-				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5],(RECT*)inputs[6]);
+				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
 			SetEvent(EventWait);
 			break;
 		case GLEVENT_DRAWSCREEN:
-			_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],(RECT*)inputs[4]);
+			_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3]);
 			SetEvent(EventWait);
 			break;
 		default:
 			break;
 		}
-	} while(eventnum != GLEVENT_DELETE);
-	if(hRC)
-	{
-		if(dib.enabled)
-		{
-			if(dib.hbitmap)	DeleteObject(dib.hbitmap);
-			if(dib.hdc)	DeleteDC(dib.hdc);
-			ZeroMemory(&dib,sizeof(DIB));
-		}
-		DeleteShaders();
-		DeleteFBO();
-		if(PBO)
-		{
-			glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-			glDeleteBuffers(1,&PBO);
-			PBO = 0;
-		}
-		wglMakeCurrent(NULL,NULL);
-		wglDeleteContext(hRC);
-	};
+	} while(eventnum != GLEVENT_DELETE);*/
+	if(hRenderWnd) DestroyWindow(hRenderWnd);
+	hRenderWnd = NULL;
+	wndbusy = false;
 	hRC = NULL;
-	SetEvent(EventWait);
 	return 0;
 }
 
 BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	ddInterface = glDD7;
+	if(!wndclasscreated)
+	{
+		wndclass.cbSize = sizeof(WNDCLASSEXA);
+		wndclass.style = 0;
+		wndclass.lpfnWndProc = RenderWndProc;
+		wndclass.cbClsExtra = 0;
+		wndclass.cbWndExtra = 0;
+		wndclass.hInstance = (HINSTANCE)GetModuleHandle(NULL);//(HINSTANCE)GetWindowLongPtr(hWnd,GWLP_HINSTANCE);
+		wndclass.hIcon = NULL;
+		wndclass.hCursor = NULL;
+		wndclass.hbrBackground = NULL;
+		wndclass.lpszMenuName = NULL;
+		wndclass.lpszClassName = "DXGLRenderWindow";
+		wndclass.hIconSm = NULL;
+		RegisterClassExA(&wndclass);
+		wndclasscreated = true;
+	}
+	if(hDC) ReleaseDC(hRenderWnd,hDC);
+	if(hRenderWnd) DestroyWindow(hRenderWnd);
+	RECT rectRender;
+	GetClientRect(hWnd,&rectRender);
+	if(hWnd)
+	{
+		hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
+			rectRender.bottom - rectRender.top,hWnd,NULL,wndclass.hInstance,this);
+		hasHWnd = true;
+	}
+	else
+	{
+		width = GetSystemMetrics(SM_CXSCREEN);
+		height = GetSystemMetrics(SM_CYSCREEN);
+		hRenderWnd = CreateWindowExA(WS_EX_TOOLWINDOW|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,
+			"DXGLRenderWindow","Renderer",WS_POPUP,0,0,width,height,0,0,NULL,this);
+		hasHWnd = false;
+	}
+	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
+	wndbusy = false;
 	if(hRC)
 	{
 		wglMakeCurrent(NULL,NULL);
@@ -496,9 +527,21 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 }
 
 HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
-	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx, RECT *viewrect)
+	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
 	LONG sizes[6];
+	RECT r,r2;
+	if(((dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
+		(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
+		((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
+		!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+	{
+		GetClientRect(hWnd,&r);
+		GetClientRect(hRenderWnd,&r2);
+		if(memcmp(&r2,&r,sizeof(RECT)))
+		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+	}
+	wndbusy = false;
 	ddInterface->GetSizes(sizes);
 	int error;
 	error = SetFBO(dest->texture,0,false);
@@ -644,7 +687,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest,viewrect);
+		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest);
 	return DD_OK;
 }
 
@@ -662,8 +705,18 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 	return texture;
 }
 
-void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, RECT *viewrect)
+void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
 {
+	RECT r,r2;
+	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+	{
+		GetClientRect(hWnd,&r);
+		GetClientRect(hRenderWnd,&r2);
+		if(memcmp(&r2,&r,sizeof(RECT)))
+		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+	}
+	wndbusy = false;
+	RECT *viewrect = &r2;
 	SetSwap(swapinterval);
 	LONG sizes[6];
 	GLfloat view[4];
@@ -791,4 +844,132 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 void glRenderer::_DeleteTexture(GLuint texture)
 {
 	glDeleteTextures(1,&texture);
+}
+
+LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	int oldx,oldy;
+	float mulx, muly;
+	int translatex, translatey;
+	LPARAM newpos;
+	HWND hParent;
+	LONG sizes[6];
+	HCURSOR cursor;
+	switch(msg)
+	{
+	case WM_CREATE:
+		SetWindowLongPtr(hwnd,GWLP_USERDATA,(LONG_PTR)this);
+		return 0;
+	case WM_DESTROY:
+		if(hRC)
+		{
+			if(dib.enabled)
+			{
+				if(dib.hbitmap)	DeleteObject(dib.hbitmap);
+				if(dib.hdc)	DeleteDC(dib.hdc);
+				ZeroMemory(&dib,sizeof(DIB));
+			}
+			DeleteShaders();
+			DeleteFBO();
+			if(PBO)
+			{
+				glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+				glDeleteBuffers(1,&PBO);
+				PBO = 0;
+			}
+			wglMakeCurrent(NULL,NULL);
+			wglDeleteContext(hRC);
+		};
+		if(hDC) ReleaseDC(hRenderWnd,hDC);
+		hDC = NULL;
+		return 0;
+	case WM_SETCURSOR:
+		hParent = GetParent(hwnd);
+		cursor = (HCURSOR)GetClassLong(hParent,GCL_HCURSOR);
+		SetCursor(cursor);
+		return SendMessage(hParent,msg,wParam,lParam);
+	case WM_MOUSEMOVE:
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_LBUTTONDBLCLK:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_RBUTTONDBLCLK:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MBUTTONDBLCLK:
+	case WM_MOUSEWHEEL:
+	case WM_XBUTTONDOWN:
+	case WM_XBUTTONUP:
+	case WM_XBUTTONDBLCLK:
+	case WM_MOUSEHWHEEL:
+		hParent = GetParent(hwnd);
+		if((dxglcfg.scaler != 0) && ddInterface->GetFullscreen())
+		{
+			oldx = LOWORD(lParam);
+			oldy = HIWORD(lParam);
+			ddInterface->GetSizes(sizes);
+			mulx = (float)sizes[2] / (float)sizes[0];
+			muly = (float)sizes[3] / (float)sizes[1];
+			translatex = (sizes[4]-sizes[0])/2;
+			translatey = (sizes[5]-sizes[1])/2;
+			oldx -= translatex;
+			oldy -= translatey;
+			oldx = (int)((float)oldx * mulx);
+			oldy = (int)((float)oldy * muly);
+			if(oldx < 0) oldx = 0;
+			if(oldy < 0) oldy = 0;
+			if(oldx >= sizes[2]) oldx = sizes[2]-1;
+			if(oldy >= sizes[3]) oldy = sizes[3]-1;
+			newpos = oldx + (oldy << 16);
+			return SendMessage(hParent,msg,wParam,newpos);
+		}
+		else return SendMessage(hParent,msg,wParam,lParam);
+	case GLEVENT_DELETE:
+		DestroyWindow(hRenderWnd);
+		wndbusy = false;
+		return 0;
+	case GLEVENT_CREATE:
+		outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
+			(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8]);
+		return 0;
+	case GLEVENT_UPLOAD:
+		outputs[0] = (void*)_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
+			(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
+			(int)inputs[10],(int)inputs[11],(int)inputs[12]);
+		wndbusy = false;
+		return 0;
+	case GLEVENT_DOWNLOAD:
+		outputs[0] = (void*)_DownloadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
+			(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
+			(int)inputs[10],(int)inputs[11]);
+		wndbusy = false;
+		return 0;
+	case GLEVENT_DELETETEX:
+		_DeleteTexture((GLuint)inputs[0]);
+		return 0;
+	case GLEVENT_BLT:
+		outputs[0] = (void*)_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
+			(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
+		wndbusy = false;
+		return 0;
+	case GLEVENT_DRAWSCREEN:
+		_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3]);
+		return 0;
+	}
+	return DefWindowProc(hwnd,msg,wParam,lParam);
+}
+
+
+// Render Window event handler
+LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	glRenderer* instance = reinterpret_cast<glRenderer*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
+	if(!instance)
+	{
+		if(msg == WM_CREATE)
+			instance = reinterpret_cast<glRenderer*>(*(LONG_PTR*)lParam);
+		else return DefWindowProc(hwnd,msg,wParam,lParam);
+	}
+	return instance->WndProc(hwnd,msg,wParam,lParam);
 }

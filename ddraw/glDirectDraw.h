@@ -73,7 +73,6 @@ public:
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
 	GLuint PalProg(){return shaders[PROG_PAL256].prog;}
-	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	DWORD GetBPP(){return primarybpp;}
 	DWORD GetBPPMultipleOf8(){if(primarybpp == 15) return 16; else return primarybpp;}
 	DWORD screenx,screeny,screenrefresh,screenbpp;

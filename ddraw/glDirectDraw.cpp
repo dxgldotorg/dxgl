@@ -1342,54 +1342,6 @@ void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
 	sizes[4] = screenx;
 	sizes[5] = screeny;
 }
-LRESULT glDirectDraw7::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	int oldx,oldy;
-	float mulx, muly;
-	int translatex, translatey;
-	LPARAM newpos;
-	HWND hParent;
-	LONG sizes[6];
-	HCURSOR cursor;
-	if(msg == WM_CREATE)
-	{
-		SetWindowLongPtr(hwnd,GWLP_USERDATA,(LONG_PTR)this);
-		return 0;
-	}
-	if(msg == WM_SETCURSOR)
-	{
-		hParent = GetParent(hwnd);
-		cursor = (HCURSOR)GetClassLong(hParent,GCL_HCURSOR);
-		SetCursor(cursor);
-		return SendMessage(hParent,msg,wParam,lParam);
-	}
-	if((msg >= WM_MOUSEFIRST) && (msg <= WM_MOUSELAST))
-	{
-		hParent = GetParent(hwnd);
-		if((dxglcfg.scaler != 0) && fullscreen)
-		{
-			oldx = LOWORD(lParam);
-			oldy = HIWORD(lParam);
-			GetSizes(sizes);
-			mulx = (float)sizes[2] / (float)sizes[0];
-			muly = (float)sizes[3] / (float)sizes[1];
-			translatex = (sizes[4]-sizes[0])/2;
-			translatey = (sizes[5]-sizes[1])/2;
-			oldx -= translatex;
-			oldy -= translatey;
-			oldx = (int)((float)oldx * mulx);
-			oldy = (int)((float)oldy * muly);
-			if(oldx < 0) oldx = 0;
-			if(oldy < 0) oldy = 0;
-			if(oldx >= sizes[2]) oldx = sizes[2]-1;
-			if(oldy >= sizes[3]) oldy = sizes[3]-1;
-			newpos = oldx + (oldy << 16);
-			return SendMessage(hParent,msg,wParam,newpos);
-		}
-		else return SendMessage(hParent,msg,wParam,lParam);
-	}
-	return DefWindowProc(hwnd,msg,wParam,lParam);
-}
 
 void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
 {
@@ -1784,17 +1736,4 @@ HRESULT WINAPI glDirectDraw4::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER lpdddi, D
 	devid.guidDeviceIdentifier = device_template;
 	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER));
 	return DD_OK;
-}
-
-// Render Window event handler
-LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	glDirectDraw7* instance = reinterpret_cast<glDirectDraw7*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
-	if(!instance)
-	{
-		if(msg == WM_CREATE)
-			instance = reinterpret_cast<glDirectDraw7*>(*(LONG_PTR*)lParam);
-		else return DefWindowProc(hwnd,msg,wParam,lParam);
-	}
-	return instance->WndProc(hwnd,msg,wParam,lParam);
 }
