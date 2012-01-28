@@ -58,7 +58,7 @@ void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 		}
 		if(!match) newcount++;
 	}
-	realloc(newarray,sizeof(DEVMODE)*newcount);
+	newarray = (DEVMODE*)realloc(newarray,sizeof(DEVMODE)*newcount);
 	free(*array);
 	*array = newarray;
 	*count = newcount;
@@ -587,6 +587,7 @@ glDirectDraw7::~glDirectDraw7()
 	}
 	DeleteGL();
 	ddenabled = false;
+	directdraw_created = false;
 }
 
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
@@ -941,6 +942,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		useguid = true;
 		FIXME("Display GUIDs not yet supported, using primary.\n");
 	}
+	directdraw_created = true;
 	initialized = true;
 	return DD_OK;
 }
@@ -1347,6 +1349,7 @@ void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
 {
 	for(int i = 0; i < surfacecount; i++)
 		if(surfaces[i] == surface) surfaces[i] = NULL;
+	if(surface == primary) primary = NULL;
 }
 
 // DDRAW1 wrapper

@@ -901,6 +901,7 @@ void glDirectDrawSurface7::Restore2()
 HRESULT WINAPI glDirectDrawSurface7::Restore()
 {
 	LONG sizes[6];
+	if(!ddInterface->renderer) return DDERR_INVALIDOBJECT;
 	if(hRC != ddInterface->renderer->hRC)
 	{
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)

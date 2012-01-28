@@ -160,6 +160,7 @@ static int ddver;
 
 void RunTestMouse2D(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	if(!ddsrender) return;
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	DDBLTFX bltfx;
@@ -635,6 +636,7 @@ void InitTest2D(int test)
 
 void RunTestTimed2D(int test)
 {
+	if(stoptimer) return;
 	DDSCAPS2 ddscaps;
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
@@ -665,7 +667,7 @@ void RunTestTimed2D(int test)
 				if(backbuffers) temp1->Release();
 			}
 		}
-		if(backbuffers) ddsrender->Flip(NULL,DDFLIP_WAIT);
+		if(backbuffers && ddsrender) ddsrender->Flip(NULL,DDFLIP_WAIT);
 		break;
 	}
 }

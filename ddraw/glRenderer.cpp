@@ -136,6 +136,7 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	dib.enabled = false;
 	hWnd = hwnd;
 	hRenderWnd = NULL;
+	InitializeCriticalSection(&cs);
 	if(fullscreen)
 	{
 		SetWindowLongPtrA(hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
@@ -146,8 +147,7 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	{
 		// TODO:  Adjust window rect
 	}
-	SetWindowPos(hWnd,NULL,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-	InitializeCriticalSection(&cs);
+	SetWindowPos(hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	inputs[0] = (void*)width;
 	inputs[1] = (void*)height;
 	inputs[2] = (void*)bpp;
@@ -344,10 +344,6 @@ DWORD glRenderer::_Entry()
         TranslateMessage(&Msg);
 		DispatchMessage(&Msg);
 	}
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
-	hRenderWnd = NULL;
-	wndbusy = false;
-	hRC = NULL;
 	return 0;
 }
 
@@ -899,12 +895,20 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				glDeleteBuffers(1,&PBO);
 				PBO = 0;
 			}
-			if(backbuffer) glDeleteTextures(1,&backbuffer);
+			if(backbuffer)
+			{
+				glDeleteTextures(1,&backbuffer);
+				backbuffer = 0;
+				backx = 0;
+				backy = 0;
+			}
 			wglMakeCurrent(NULL,NULL);
 			wglDeleteContext(hRC);
 		};
 		if(hDC) ReleaseDC(hRenderWnd,hDC);
 		hDC = NULL;
+		wndbusy = false;
+		PostQuitMessage(0);
 		return 0;
 	case WM_SETCURSOR:
 		hParent = GetParent(hwnd);
@@ -950,7 +954,6 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		else return SendMessage(hParent,msg,wParam,lParam);
 	case GLEVENT_DELETE:
 		DestroyWindow(hRenderWnd);
-		wndbusy = false;
 		return 0;
 	case GLEVENT_CREATE:
 		outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],

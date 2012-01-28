@@ -20,6 +20,7 @@
 #define _TIMER_H
 
 
+extern bool stoptimer;
 void StartTimer(HWND hWnd, UINT message, double framerate);
 void StopTimer();
 
