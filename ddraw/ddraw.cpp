@@ -35,6 +35,21 @@ DWORD timer;
 int vsyncstatus;
 bool ddenabled = false;
 
+bool IsBadReadPointer(void *ptr)
+{
+	char a;
+	try
+	{
+		a = *(char*)ptr;
+		if(a == *(char*)ptr) return false;
+		else return true;
+	}
+	catch(...)
+	{
+		return true;
+	}
+}
+
 DDRAW_API void WINAPI AcquireDDThreadLock()
 {
 	// FIXME:  Add thread lock
@@ -155,6 +170,7 @@ BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverNam
 
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)
 {
+	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
@@ -170,6 +186,7 @@ BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverN
 
 HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext)
 {
+	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
@@ -189,6 +206,7 @@ BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDrive
 
 HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
+	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
@@ -212,6 +230,7 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
+	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
 	int *monitors = NULL;
 	GUID guid;
 	MONITORINFOEXW monitorinfo;
@@ -255,7 +274,7 @@ DDRAW_API void WINAPI GetDDSurfaceLocal()
 }
 DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 {
-	FIXME("GetOleThunkData: stub\n");
+	DEBUG("GetOleThunkData: stub\n");
 	return 0;
 }
 DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)

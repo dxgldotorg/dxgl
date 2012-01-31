@@ -235,12 +235,57 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
 					break;
 				case 16:
-					FIXME("Support 16 bit pixelformat");
+					if((ddsd.ddpfPixelFormat.dwRBitMask == 0x7C00) && (ddsd.ddpfPixelFormat.dwGBitMask == 0x3E0)
+						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0x1F))
+					{
+						texformat = GL_BGRA;
+						texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
+						if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
+						else texformat3 = GL_RGBA8;
+					}
+					else // fixme:  support more formats
+					{
+						texformat = GL_RGB;
+						texformat2 = GL_UNSIGNED_SHORT_5_6_5;
+						if(dxglcfg.texformat) texformat3 = GL_RGB;
+						else texformat3 = GL_RGBA8;
+					}
+					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
+					break;
 				case 24:
-					FIXME("Support 24 bit pixelformat");
+					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
+						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
+					{
+						texformat = GL_BGR;
+						texformat2 = GL_UNSIGNED_BYTE;
+						if(dxglcfg.texformat) texformat3 = GL_RGB8;
+						else texformat3 = GL_RGBA8;
+					}
+					else // fixme:  support more formats
+					{
+						texformat = GL_RGB;
+						texformat2 = GL_UNSIGNED_BYTE;
+						if(dxglcfg.texformat) texformat3 = GL_RGB8;
+						else texformat3 = GL_RGBA8;
+					}
+					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*3);
+					break;
 				case 32:
 				default:
-					FIXME("Support 32 bit pixelformat");
+					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
+						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
+					{
+						texformat = GL_BGRA;
+						texformat2 = GL_UNSIGNED_BYTE;
+						texformat3 = GL_RGBA8;
+					}
+					else // fixme: support more formats
+					{
+						texformat = GL_RGBA;
+						texformat2 = GL_UNSIGNED_BYTE;
+						texformat3 = GL_RGBA8;
+					}
+					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*4);
 				}
 			}
 			else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)

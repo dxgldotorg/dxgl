@@ -548,6 +548,10 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 
 glDirectDraw7::glDirectDraw7()
 {
+	glD3D7 = NULL;
+	clippers = NULL;
+	surfaces = NULL;
+	renderer = NULL;
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	refcount = 1;
@@ -701,6 +705,7 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
+	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
 	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer->hRC == primary->hRC) )
 	{
 		if(primarylost)
@@ -899,7 +904,7 @@ HRESULT WINAPI glDirectDraw7::GetScanLine(LPDWORD lpdwScanLine)
 }
 HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
-	FIXME("IDirectDraw::GetVerticalBlankStatis: stub\n");
+	FIXME("IDirectDraw::GetVerticalBlankStatus: stub\n");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
@@ -1513,6 +1518,7 @@ HRESULT WINAPI glDirectDraw2::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 }
 HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
+	if(!lplpDDSurface) return DDERR_INVALIDPARAMS;
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
