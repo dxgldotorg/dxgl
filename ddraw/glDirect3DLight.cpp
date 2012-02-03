@@ -46,11 +46,13 @@ glDirect3DLight::~glDirect3DLight()
 
 ULONG WINAPI glDirect3DLight::AddRef()
 {
+	if(!this) return 0;
 	refcount++;
 	return refcount;
 }
 ULONG WINAPI glDirect3DLight::Release()
 {
+	if(!this) return 0;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -60,11 +62,13 @@ ULONG WINAPI glDirect3DLight::Release()
 
 HRESULT WINAPI glDirect3DLight::Initialize(LPDIRECT3D lpDirect3D)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	return DDERR_ALREADYINITIALIZED;
 }
 
 HRESULT WINAPI glDirect3DLight::QueryInterface(REFIID riid, void** ppvObj)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	return E_NOINTERFACE;
 }
 
@@ -80,11 +84,13 @@ void glDirect3DLight::SetLight7(LPD3DLIGHT7 lpLight7)
 
 HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DLight::GetLight: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DLight::SetLight: stub");
 	ERR(DDERR_GENERIC);
 }

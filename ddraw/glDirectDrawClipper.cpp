@@ -35,6 +35,7 @@ glDirectDrawClipper::~glDirectDrawClipper()
 }
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(riid == IID_IDirectDrawClipper)
 	{
 		*obp = this;
@@ -45,11 +46,13 @@ HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 }
 ULONG WINAPI glDirectDrawClipper::AddRef()
 {
+	if(!this) return 0;
 	refcount++;
 	return refcount;
 }
 ULONG WINAPI glDirectDrawClipper::Release()
 {
+	if(!this) return 0;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -58,17 +61,20 @@ ULONG WINAPI glDirectDrawClipper::Release()
 }
 HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("IDirectDrawClipper::GetClipList: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	*lphWnd = hWnd;
 	if(!hWnd) return DDERR_INVALIDOBJECT;
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(initialized) return DDERR_ALREADYINITIALIZED;
 	glDD7 = (glDirectDraw7*)lpDD;
 	if(glDD7) hasparent = true;
@@ -80,16 +86,19 @@ HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 }
 HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("IDirectDrawClipper::IsClipListChanged: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("IDirectDrawClipper::SetClipList: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDrawClipper::SetHWnd(DWORD dwFlags, HWND hWnd)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	this->hWnd = hWnd;
 	return DD_OK;
 }

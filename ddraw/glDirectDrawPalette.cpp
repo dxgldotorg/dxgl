@@ -115,17 +115,20 @@ glDirectDrawPalette::~glDirectDrawPalette()
 
 HRESULT WINAPI glDirectDrawPalette::QueryInterface(REFIID riid, void** ppvObj)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	ERR(E_NOINTERFACE);
 }
 
 ULONG WINAPI glDirectDrawPalette::AddRef()
 {
+	if(!this) return 0;
 	refcount++;
 	return refcount;
 }
 
 ULONG WINAPI glDirectDrawPalette::Release()
 {
+	if(!this) return 0;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -135,11 +138,13 @@ ULONG WINAPI glDirectDrawPalette::Release()
 
 HRESULT WINAPI glDirectDrawPalette::GetCaps(LPDWORD lpdwCaps)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	return flags;
 }
 
 HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	DWORD allentries = 256;
 	DWORD entrysize;
 	if(flags & DDPCAPS_1BIT) allentries=2;
@@ -154,10 +159,12 @@ HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWOR
 }
 HRESULT WINAPI glDirectDrawPalette::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	ERR(DDERR_ALREADYINITIALIZED);
 }
 HRESULT WINAPI glDirectDrawPalette::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	DWORD allentries = 256;
 	DWORD entrysize;
 	if(flags & DDPCAPS_1BIT) allentries=2;

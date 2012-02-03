@@ -35,11 +35,13 @@ glDirect3D7::~glDirect3D7()
 
 ULONG WINAPI glDirect3D7::AddRef()
 {
+	if(!this) return 0;
 	refcount++;
 	return refcount;
 }
 ULONG WINAPI glDirect3D7::Release()
 {
+	if(!this) return 0;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -49,6 +51,7 @@ ULONG WINAPI glDirect3D7::Release()
 
 HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3D7::QueryInterface: stub");
 	return E_NOINTERFACE;
 }
@@ -56,22 +59,26 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 
 HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(this,(glDirectDrawSurface7*)lpDDS);
 	*lplpD3DDevice = (LPDIRECT3DDEVICE7) glD3DDev7;
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3D7::CreateVertexBuffer: stub");
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3D7::EnumDevices: stub");
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	DDPIXELFORMAT ddpf;
 	ZeroMemory(&ddpf,sizeof(DDPIXELFORMAT));
 	ddpf.dwSize = sizeof(DDPIXELFORMAT);
@@ -101,6 +108,7 @@ HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIX
 }
 HRESULT WINAPI glDirect3D7::EvictManagedTextures()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3D7::EvictManagedTextures: stub");
 	return DDERR_GENERIC;
 }

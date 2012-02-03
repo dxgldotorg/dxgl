@@ -24,11 +24,13 @@ LONG locks;
 
 ULONG WINAPI glClassFactory::AddRef()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	refcount++;
 	return refcount;
 }
 ULONG WINAPI glClassFactory::Release()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -38,6 +40,7 @@ ULONG WINAPI glClassFactory::Release()
 
 HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = this;
@@ -52,6 +55,7 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 }
 HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	glDirectDraw7 *glDD7;
 	if(pUnkOuter != NULL) return CLASS_E_NOAGGREGATION;
 	if(riid == IID_IDirectDraw)
@@ -86,6 +90,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 }
 HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(fLock) InterlockedIncrement(&locks);
 	else InterlockedDecrement(&locks);
 	return S_OK;

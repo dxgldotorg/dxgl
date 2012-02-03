@@ -179,16 +179,19 @@ int ExpandLightBuffer(glDirect3DLight ***lights, DWORD *maxlights, DWORD newmax)
 
 HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	ERR(E_NOINTERFACE);
 }
 
 ULONG WINAPI glDirect3DDevice7::AddRef()
 {
+	if(!this) return 0;
 	refcount++;
 	return refcount;
 }
 ULONG WINAPI glDirect3DDevice7::Release()
 {
+	if(!this) return 0;
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -198,32 +201,38 @@ ULONG WINAPI glDirect3DDevice7::Release()
 
 HRESULT WINAPI glDirect3DDevice7::ApplyStateBlock(DWORD dwBlockHandle)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::ApplyStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::BeginScene()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(inscene) return D3DERR_SCENE_IN_SCENE;
 	inscene = true;
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::BeginStateBlock()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::BeginStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::CaptureStateBlock(DWORD dwBlockHandle)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::CaptureStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::CreateStateBlock(D3DSTATEBLOCKTYPE d3dsbtype, LPDWORD lpdwBlockHandle)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::CreateStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(dwCount && !lpRects) return DDERR_INVALIDPARAMS;
 	if(dwCount) ERR(DDERR_INVALIDPARAMS);
 	GLfloat color[4];
@@ -251,11 +260,13 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::ComputeSphereVisibility: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::DeleteStateBlock(DWORD dwBlockHandle)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DeleteStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
@@ -291,6 +302,7 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	int drawmode = setdrawmode(d3dptPrimitiveType);
 	if(drawmode == -1) return DDERR_INVALIDPARAMS;
@@ -303,35 +315,41 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVerticexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DrawIndexedPrimitiveStrided: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER7 lpd3dVertexBuffer,
 	DWORD dwStartVertex, DWORD dwNumVertices, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DrawIndexedPrimitiveVB: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawPrimitive(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
 	DWORD dwVertexCount, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DrawPrimitive: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawPrimitiveStrided(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DrawPrimitiveStrided: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER7 lpd3dVertexBuffer,
 	DWORD dwStartVertex, DWORD dwNumVertices, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::DrawPrimitiveVB: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::EndScene()
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	inscene = false;
 	glFlush();
@@ -339,57 +357,68 @@ HRESULT WINAPI glDirect3DDevice7::EndScene()
 }
 HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::EndStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::EnumTextureFormats: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetCaps: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetClipPlane: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetClipStatus: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetDirect3D(LPDIRECT3D7 *lplpD3D)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	*lplpD3D = glD3D7;
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetInfo(DWORD dwDevInfoID, LPVOID pDevInfoStruct, DWORD dwSize)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetInfo: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLight)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetLight: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetLightEnable(DWORD dwLightIndex, BOOL* pbEnable)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetLightEnalbe: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(!lpMaterial) return DDERR_INVALIDPARAMS;
 	memcpy(lpMaterial,&material,sizeof(D3DMATERIAL7));
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(dwRenderStateType <= 152)
 	{
 		*lpdwRenderState = renderstate[dwRenderStateType];
@@ -399,26 +428,31 @@ HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStat
 }
 HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRenderTarget)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetRenderTarget: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetStateData(DWORD dwState, LPVOID* lplpStateData)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetStateData: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7 *lplpTexture)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetTexture: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::GetTextureStageState: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	switch(dtstTransformStateType)
 	{
 	case D3DTRANSFORMSTATE_WORLD:
@@ -436,11 +470,13 @@ HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 }
 HRESULT WINAPI glDirect3DDevice7::GetViewport(LPD3DVIEWPORT7 lpViewport)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	memcpy(lpViewport,&viewport,sizeof(D3DVIEWPORT7));
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	int i;
 	D3DLIGHT7 light;
 	bool foundlight = false;
@@ -482,31 +518,37 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 HRESULT WINAPI glDirect3DDevice7::Load(LPDIRECTDRAWSURFACE7 lpDestTex, LPPOINT lpDestPoint, LPDIRECTDRAWSURFACE7 lpSrcTex,
 	LPRECT lprcSrcRect, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::Load: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::MultiplyTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::MultiplyTransform: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::PreLoad(LPDIRECTDRAWSURFACE7 lpddsTexture)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::PreLoad: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetClipPlane(DWORD dwIndex, D3DVALUE* pPlaneEquation)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetClipPland: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetClipStatus: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLight)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	bool foundlight = false;
 	if(dwLightIndex >= lightsmax)
 	{
@@ -518,6 +560,7 @@ HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 }
 HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	if(!lpMaterial) return DDERR_INVALIDPARAMS;
 	memcpy(&material,lpMaterial,sizeof(D3DMATERIAL7));
 	return D3D_OK;
@@ -525,6 +568,7 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	GLfloat floats[4];
 	if(dwRendStateType > 152) return DDERR_INVALIDPARAMS;
 	if(dwRendStateType < 0) return DDERR_INVALIDPARAMS;
@@ -565,26 +609,31 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 }
 HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRenderTarget, DWORD dwFlags)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetRenderTarget: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetStateData(DWORD dwState, LPVOID lpStateData)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetStateData: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7 lpTexture)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetTexture: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SetTextureStageState: stub");
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	switch(dtstTransformStateType)
 	{
 	case D3DTRANSFORMSTATE_WORLD:
@@ -602,11 +651,13 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 }
 HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	memcpy(&viewport,lpViewport,sizeof(D3DVIEWPORT7));
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 {
+	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::ValidateDevice: stub");
 	ERR(DDERR_GENERIC);
 }
