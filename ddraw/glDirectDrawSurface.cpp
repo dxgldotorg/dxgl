@@ -28,17 +28,6 @@
 #include "glutil.h"
 
 
-static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
-static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
-static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
-#ifdef _M_X64
-#define NextMultipleOfWord NextMultipleOf8
-#else
-#define NextMultipleOfWord NextMultipleOf4
-#endif
-
-
-
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
 {

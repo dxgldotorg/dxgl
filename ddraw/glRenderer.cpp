@@ -25,15 +25,6 @@
 #include "scalers.h"
 #include "shadergen.h"
 
-static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
-static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
-static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
-#ifdef _M_X64
-#define NextMultipleOfWord NextMultipleOf8
-#else
-#define NextMultipleOfWord NextMultipleOf4
-#endif
-
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
 GLuint backbuffer = 0;

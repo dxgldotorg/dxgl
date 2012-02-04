@@ -823,6 +823,8 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	DDSURFACEDESC2 ddsdMode;
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
+	ddsdMode.dwFlags = DDSD_REFRESHRATE | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB;
 	DEVMODE currmode;
 	if(fullscreen)
 	{
@@ -831,6 +833,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 			ddsdMode.ddpfPixelFormat.dwRBitMask = 0;
 			ddsdMode.ddpfPixelFormat.dwGBitMask = 0;
 			ddsdMode.ddpfPixelFormat.dwBBitMask = 0;
+			ddsdMode.ddpfPixelFormat.dwFlags |= DDPF_PALETTEINDEXED8;
 		}
 		else if(primarybpp == 15)
 		{
@@ -853,9 +856,10 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 		ddsdMode.ddpfPixelFormat.dwRGBBitCount = GetBPPMultipleOf8();
 		ddsdMode.dwWidth = primaryx;
 		ddsdMode.dwHeight = primaryy;
-		if(primarybpp == 15) ddsdMode.lPitch = primaryx * 2;
-			else if(primarybpp == 4) ddsdMode.lPitch = primaryx / 2;
-			else ddsdMode.lPitch = primaryx * (primarybpp / 8);
+		ddsdMode.dwRefreshRate = primaryrefresh;
+		if(primarybpp == 15) ddsdMode.lPitch = NextMultipleOfWord(primaryx * 2);
+			else if(primarybpp == 4) ddsdMode.lPitch = NextMultipleOfWord(primaryx / 2);
+			else ddsdMode.lPitch = NextMultipleOfWord(primaryx * (primarybpp / 8));
 		if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
 		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 			lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);

@@ -75,6 +75,16 @@ extern const GUID device_template;
 	DEBUGBREAK\
 	return error;\
 }
+
+static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
+static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
+static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
+#ifdef _M_X64
+#define NextMultipleOfWord NextMultipleOf8
+#else
+#define NextMultipleOfWord NextMultipleOf4
+#endif
+
 #else
 #define ERR(error) return error;
 #endif

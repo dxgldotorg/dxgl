@@ -161,7 +161,7 @@ HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWOR
 HRESULT WINAPI glDirectDrawPalette::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	ERR(DDERR_ALREADYINITIALIZED);
+	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawPalette::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
