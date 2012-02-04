@@ -448,6 +448,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	if(riid == IID_IDirectDrawSurface7)
 	{
 		this->AddRef();
@@ -1101,8 +1102,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	*lplpDD = ddInterface;
-	FIXME("glDirectDrawSurface7::GetDDInterface: stub\n");
-	ERR(DDERR_GENERIC);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::PageLock(DWORD dwFlags)
 {

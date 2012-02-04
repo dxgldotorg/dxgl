@@ -41,6 +41,7 @@ ULONG WINAPI glClassFactory::Release()
 HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = this;

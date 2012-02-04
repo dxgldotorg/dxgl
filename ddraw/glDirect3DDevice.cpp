@@ -180,6 +180,7 @@ int ExpandLightBuffer(glDirect3DLight ***lights, DWORD *maxlights, DWORD newmax)
 HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	ERR(E_NOINTERFACE);
 }
 

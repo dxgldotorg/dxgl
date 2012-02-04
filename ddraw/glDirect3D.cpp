@@ -52,6 +52,7 @@ ULONG WINAPI glDirect3D7::Release()
 HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3D7::QueryInterface: stub");
 	return E_NOINTERFACE;
 }

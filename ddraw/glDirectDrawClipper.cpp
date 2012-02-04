@@ -36,6 +36,7 @@ glDirectDrawClipper::~glDirectDrawClipper()
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!obp) return DDERR_INVALIDPARAMS;
 	if(riid == IID_IDirectDrawClipper)
 	{
 		*obp = this;

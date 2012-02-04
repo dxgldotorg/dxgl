@@ -116,6 +116,7 @@ glDirectDrawPalette::~glDirectDrawPalette()
 HRESULT WINAPI glDirectDrawPalette::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	ERR(E_NOINTERFACE);
 }
 

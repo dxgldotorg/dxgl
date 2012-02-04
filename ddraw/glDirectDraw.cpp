@@ -324,6 +324,7 @@ int SortRes(const DEVMODE *mode1, const DEVMODE *mode2)
 
 HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
+	if(!lpEnumModesCallback) return DDERR_INVALIDPARAMS;
 	bool match;
 	DWORD modenum = 0;
 	DWORD modemax = 128;
@@ -597,6 +598,7 @@ glDirectDraw7::~glDirectDraw7()
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	if(riid == IID_IDirectDraw)
 	{
 		// Create an IDirectDraw1 interface
@@ -788,7 +790,8 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
 	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
 	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
-	else ERR(DDERR_INVALIDPARAMS);
+	if(ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
+	else return DDERR_INVALIDPARAMS;
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
 		DDCAPS_COLORKEY | DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM;
 	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED |
@@ -801,14 +804,22 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
 		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT;
-	if(lpDDDriverCaps) memcpy(lpDDDriverCaps,&ddCaps,lpDDDriverCaps->dwSize);
-	if(lpDDHELCaps) memcpy(lpDDHELCaps,&ddCaps,lpDDHELCaps->dwSize);
+	if(lpDDDriverCaps)
+	{
+		if(lpDDDriverCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDDriverCaps->dwSize = sizeof(DDCAPS_DX7);
+		memcpy(lpDDDriverCaps,&ddCaps,lpDDDriverCaps->dwSize);
+	}
+	if(lpDDHELCaps)
+	{
+		if(lpDDHELCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDHELCaps->dwSize = sizeof(DDCAPS_DX7);
+		memcpy(lpDDHELCaps,&ddCaps,lpDDHELCaps->dwSize);
+	}
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpDDSurfaceDesc2) ERR(DDERR_INVALIDPARAMS);
+	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
 	DDSURFACEDESC2 ddsdMode;
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
@@ -894,6 +905,8 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 HRESULT WINAPI glDirectDraw7::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpNumCodes) return DDERR_INVALIDPARAMS;
+	if(!lpCodes) return DDERR_INVALIDPARAMS;
 	FIXME("IDirectDraw::GetFourCCCodes: stub\n");
 	ERR(DDERR_GENERIC);
 }
@@ -906,6 +919,7 @@ HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDS
 HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpdwFrequency) return DDERR_INVALIDPARAMS;
 	DEBUG("IDirectDraw::GetMonitorFrequency: support multi-monitor\n");
 	DEVMODE devmode;
 	devmode.dmSize = sizeof(DEVMODE);
