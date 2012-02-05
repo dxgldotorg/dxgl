@@ -80,6 +80,7 @@ public:
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
 	bool GetFullscreen(){return fullscreen;};
 	void DeleteSurface(glDirectDrawSurface7 *surface);
+	void DeleteClipper(glDirectDrawClipper *clipper);
 	glDirectDrawSurface7 *primary;
 	bool primarylost;
 	glRenderer *renderer;

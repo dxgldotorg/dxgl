@@ -578,7 +578,10 @@ glDirectDraw7::~glDirectDraw7()
 	if(clippers)
 	{
 		for(int i = 0; i < clippercount; i++)
-			clippers[i]->Release();
+		{
+			if(clippers[i]) clippers[i]->Release();
+			clippers[i] = NULL;
+		}
 		free(clippers);
 	}
 	if(surfaces)
@@ -790,8 +793,8 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
 	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
 	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
-	if(ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
 	else return DDERR_INVALIDPARAMS;
+	if(ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
 		DDCAPS_COLORKEY | DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM;
 	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED |
@@ -1404,6 +1407,12 @@ void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
 	for(int i = 0; i < surfacecount; i++)
 		if(surfaces[i] == surface) surfaces[i] = NULL;
 	if(surface == primary) primary = NULL;
+}
+
+void glDirectDraw7::DeleteClipper(glDirectDrawClipper *clipper)
+{
+	for(int i = 0; i < clippercount; i++)
+		if(clippers[i] == clipper) clippers[i] = NULL;
 }
 
 // DDRAW1 wrapper

@@ -75,6 +75,9 @@ extern const GUID device_template;
 	DEBUGBREAK\
 	return error;\
 }
+#else
+#define ERR(error) return error;
+#endif
 
 static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
 static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
@@ -85,8 +88,5 @@ static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
-#else
-#define ERR(error) return error;
-#endif
 #include "../cfgmgr/cfgmgr.h"
 #endif //_COMMON_H

@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 
 glDirectDrawClipper::glDirectDrawClipper()
@@ -32,6 +33,7 @@ glDirectDrawClipper::glDirectDrawClipper(DWORD dwFlags, glDirectDraw7 *parent)
 }
 glDirectDrawClipper::~glDirectDrawClipper()
 {
+	if(glDD7) glDD7->DeleteClipper(this);
 }
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
