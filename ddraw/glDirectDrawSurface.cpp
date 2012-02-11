@@ -383,17 +383,19 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				*error = DDERR_INVALIDPIXELFORMAT;
 				return;
 			}
-			if(ddInterface->GetBPP() > 8)
-			{
-				colormasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
-				colormasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
-				colormasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
-				memcpy(bitmapinfo->bmiColors,colormasks,3*sizeof(DWORD));
-			}
 		}
 		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
 	}
 
+	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
+	{
+		colormasks[0] = ddsd.ddpfPixelFormat.dwRBitMask;
+		colormasks[1] = ddsd.ddpfPixelFormat.dwGBitMask;
+		colormasks[2] = ddsd.ddpfPixelFormat.dwBBitMask;
+		memcpy(bitmapinfo->bmiColors,colormasks,3*sizeof(DWORD));
+	}
+	if(!bitmapinfo->bmiHeader.biBitCount)
+		bitmapinfo->bmiHeader.biBitCount = (WORD)ddsd.ddpfPixelFormat.dwRGBBitCount;
 	refcount = 1;
 	*error = DD_OK;
 	backbuffer = NULL;
@@ -801,6 +803,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(hdc) ERR(DDERR_DCALREADYCREATED);
+	glDirectDrawPalette *pal;
 	DWORD colors[256];
 	HRESULT error;
 	LPVOID surface;
@@ -810,12 +813,15 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 	bitmapinfo->bmiHeader.biWidth = ddsd.lPitch / (bitmapinfo->bmiHeader.biBitCount / 8);
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 	{
-		memcpy(colors,palette->GetPalette(NULL),1024);
+		if(palette) pal = palette;
+		else pal = ddInterface->primary->palette;
+		memcpy(colors,pal->GetPalette(NULL),1024);
 		for(int i = 0; i < 256; i++)
 			colors[i] = ((colors[i]&0x0000FF)<<16) | (colors[i]&0x00FF00) | ((colors[i]&0xFF0000)>>16);
 		memcpy(bitmapinfo->bmiColors,colors,1024);
 	}
-	else  if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16)bitmapinfo->bmiHeader.biCompression = BI_BITFIELDS;
+	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 16) bitmapinfo->bmiHeader.biCompression = BI_BITFIELDS;
+	else bitmapinfo->bmiHeader.biCompression = BI_RGB;
 	hbitmap = CreateDIBSection(hdc,bitmapinfo,DIB_RGB_COLORS,&surface,NULL,0);
 	memcpy(surface,ddsd.lpSurface,ddsd.lPitch*ddsd.dwHeight);
 	HGDIOBJ temp = SelectObject(hdc,hbitmap);

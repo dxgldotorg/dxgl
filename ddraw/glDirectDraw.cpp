@@ -1054,6 +1054,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	{
 		x = devmode.dmPelsWidth;
 		y = devmode.dmPelsHeight;
+		internalx = screenx = primaryx = devmode.dmPelsWidth;
+		internaly = screeny = primaryy = devmode.dmPelsHeight;
 	}
 	else
 	{
