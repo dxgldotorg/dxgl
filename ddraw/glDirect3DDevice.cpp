@@ -17,18 +17,12 @@
 
 #include "common.h"
 #include "glDirect3D.h"
+#include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
+#include "glRenderer.h"
 #include "glutil.h"
-
-inline void dwordto4float(DWORD in, GLfloat *out)
-{
-	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
-	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
-	out[2] = (GLfloat)(in& 0xff) / 255.0f;
-	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
-}
 
 const DWORD renderstate_default[153] = {0,                 // 0
 	NULL, //texturehandle
@@ -128,11 +122,11 @@ D3DMATRIX identity;
 
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
+	int zbuffer = 0;
 	vertices = normals = NULL;
 	diffuse = specular = NULL;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
-	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	identity._11 = identity._22 = identity._33 = identity._44 = 1.0;
 	identity._12 = identity._13 = identity._14 =
 		identity._21 = identity._23 = identity._24 = 
@@ -146,18 +140,13 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	this->glDDS7 = glDDS7;
 	glDDS7->AddRef();
 	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-	if(glDDS7->GetZBuffer()) glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDisable(GL_DITHER);
-	glEnable(GL_LIGHTING);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+	if(glDDS7->GetZBuffer()) zbuffer = 1;
 	ZeroMemory(&material,sizeof(D3DMATERIAL7));
 	lightsmax = 16;
 	lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
 	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
 	memset(gllights,0xff,8*sizeof(int));
-
+	glD3D7->glDD7->renderer->InitD3D(zbuffer);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
@@ -235,28 +224,7 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(dwCount && !lpRects) return DDERR_INVALIDPARAMS;
-	if(dwCount) ERR(DDERR_INVALIDPARAMS);
-	GLfloat color[4];
-	dwordto4float(dwColor,color);
-	SetFBO(glDDS7->texture,glDDS7->GetZBuffer()->texture,glDDS7->GetZBuffer()->hasstencil);
-	int clearbits = 0;
-	if(D3DCLEAR_TARGET)
-	{
-		clearbits |= GL_COLOR_BUFFER_BIT;
-		glClearColor(color[0],color[1],color[2],color[3]);
-	}
-	if(D3DCLEAR_ZBUFFER)
-	{
-		clearbits |= GL_DEPTH_BUFFER_BIT;
-		glClearDepth(dvZ);
-	}
-	if(D3DCLEAR_STENCIL)
-	{
-		clearbits |= GL_STENCIL_BUFFER_BIT;
-		glClearStencil(dwStencil);
-	}
-	glClear(clearbits);
-	return D3D_OK;
+	return glD3D7->glDD7->renderer->Clear(glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil);
 }
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
@@ -353,7 +321,7 @@ HRESULT WINAPI glDirect3DDevice7::EndScene()
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	inscene = false;
-	glFlush();
+	glD3D7->glDD7->renderer->Flush();
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
@@ -500,7 +468,6 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 			}
 		}
 		if(!foundlight) return D3DERR_LIGHT_SET_FAILED;
-		lights[dwLightIndex]->SetGLLight(i);
 	}
 	else
 	{
@@ -508,7 +475,6 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 		{
 			if(gllights[i] == dwLightIndex)
 			{
-				lights[dwLightIndex]->SetGLLight(-1);
 				gllights[i] = -1;
 			}
 		}
@@ -570,43 +536,10 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	GLfloat floats[4];
 	if(dwRendStateType > 152) return DDERR_INVALIDPARAMS;
 	if(dwRendStateType < 0) return DDERR_INVALIDPARAMS;
 	renderstate[dwRendStateType] = dwRenderState;
-	switch(dwRendStateType)
-	{
-	case D3DRENDERSTATE_ANTIALIAS:
-		if(dwRenderState == 0) glDisable(GL_MULTISAMPLE);
-		else glEnable(GL_MULTISAMPLE);
-		return D3D_OK;
-	case D3DRENDERSTATE_TEXTUREPERSPECTIVE:
-		if(dwRenderState) glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-		else glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_FASTEST);
-		return D3D_OK;
-	case D3DRENDERSTATE_ZENABLE:
-		switch(dwRenderState)
-		{
-		case D3DZB_FALSE:
-			glDisable(GL_DEPTH_TEST);
-			break;
-		case D3DZB_TRUE:
-		default:
-		case D3DZB_USEW:
-			glEnable(GL_DEPTH_TEST);
-		}
-		return D3D_OK;
-	case D3DRENDERSTATE_LIGHTING:
-		if(dwRenderState) glEnable(GL_LIGHTING);
-		else glDisable(GL_LIGHTING);
-		return D3D_OK;
-	case D3DRENDERSTATE_AMBIENT:
-		dwordto4float(dwRenderState,floats);
-		glLightModelfv(GL_LIGHT_MODEL_AMBIENT,floats);
-		return D3D_OK;
-	default:
-		ERR(DDERR_INVALIDPARAMS);
-	}
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRenderTarget, DWORD dwFlags)
 {

@@ -82,6 +82,14 @@ extern const GUID device_template;
 static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
 static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
 static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
+static inline void dwordto4float(DWORD in, GLfloat *out)
+{
+	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
+	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
+	out[2] = (GLfloat)(in& 0xff) / 255.0f;
+	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
+}
+
 #ifdef _M_X64
 #define NextMultipleOfWord NextMultipleOf8
 #else

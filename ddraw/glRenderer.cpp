@@ -324,6 +324,69 @@ void glRenderer::DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 
 	LeaveCriticalSection(&cs);
 }
 
+void glRenderer::InitD3D(int zbuffer)
+{
+	MSG Msg;
+	EnterCriticalSection(&cs);
+	wndbusy = true;
+	inputs[0] = (void*)zbuffer;
+	SendMessage(hRenderWnd,GLEVENT_INITD3D,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
+}
+
+HRESULT glRenderer::Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+{
+	MSG Msg;
+	EnterCriticalSection(&cs);
+	wndbusy = true;
+	inputs[0] = target;
+	inputs[1] = (void*)dwCount;
+	inputs[2] = lpRects;
+	inputs[3] = (void*)dwFlags;
+	inputs[4] = (void*)dwColor;
+	memcpy(&inputs[5],&dvZ,4);
+	inputs[6] = (void*)dwStencil;
+	SendMessage(hRenderWnd,GLEVENT_CLEAR,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
+	return (HRESULT)outputs[0];
+}
+
+void glRenderer::Flush()
+{
+	MSG Msg;
+	EnterCriticalSection(&cs);
+	wndbusy = true;
+	SendMessage(hRenderWnd,GLEVENT_FLUSH,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
+}
+
 DWORD glRenderer::_Entry()
 {
 	MSG Msg;
@@ -855,10 +918,62 @@ void glRenderer::_DeleteTexture(GLuint texture)
 	glDeleteTextures(1,&texture);
 }
 
+void glRenderer::_InitD3D(int zbuffer)
+{
+	wndbusy = false;
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
+	if(zbuffer) glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_DITHER);
+	glEnable(GL_LIGHTING);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+}
+
+void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+{
+	if(dwCount)
+	{
+		outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		FIXME("glDirect3DDevice7::Clear:  Cannot clear rects yet.");
+		wndbusy = false;
+		return;
+	}
+	outputs[0] = (void*)D3D_OK;
+	wndbusy = false;
+	GLfloat color[4];
+	dwordto4float(dwColor,color);
+	SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
+	int clearbits = 0;
+	if(D3DCLEAR_TARGET)
+	{
+		clearbits |= GL_COLOR_BUFFER_BIT;
+		glClearColor(color[0],color[1],color[2],color[3]);
+	}
+	if(D3DCLEAR_ZBUFFER)
+	{
+		clearbits |= GL_DEPTH_BUFFER_BIT;
+		glClearDepth(dvZ);
+	}
+	if(D3DCLEAR_STENCIL)
+	{
+		clearbits |= GL_STENCIL_BUFFER_BIT;
+		glClearStencil(dwStencil);
+	}
+	glClear(clearbits);
+}
+
+void glRenderer::_Flush()
+{
+	wndbusy = false;
+	glFlush();
+}
+
 LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	int oldx,oldy;
 	float mulx, muly;
+	float tmpfloats[16];
 	int translatex, translatey;
 	LPARAM newpos;
 	HWND hParent;
@@ -972,6 +1087,17 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case GLEVENT_DRAWSCREEN:
 		_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3]);
+		return 0;
+	case GLEVENT_INITD3D:
+		_InitD3D((int)inputs[0]);
+		return 0;
+	case GLEVENT_CLEAR:
+		memcpy(&tmpfloats[0],&inputs[5],4);
+		_Clear((glDirectDrawSurface7*)inputs[0],(DWORD)inputs[1],(LPD3DRECT)inputs[2],(DWORD)inputs[3],(DWORD)inputs[4],
+			tmpfloats[0],(DWORD)inputs[6]);
+		return 0;
+	case GLEVENT_FLUSH:
+		_Flush();
 		return 0;
 	}
 	return DefWindowProc(hwnd,msg,wParam,lParam);

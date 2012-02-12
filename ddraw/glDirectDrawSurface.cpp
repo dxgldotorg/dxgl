@@ -530,6 +530,7 @@ ULONG WINAPI glDirectDrawSurface7::Release()
 HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSAttachedSurface) return DDERR_INVALIDPARAMS;
 	if(zbuffer) ERR(DDERR_SURFACEALREADYATTACHED);
 	glDirectDrawSurface7 *attached = (glDirectDrawSurface7 *)lpDDSAttachedSurface;
 	DDSURFACEDESC2 ddsd;
@@ -726,7 +727,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 		backbuffer->AddRef();
 		return DD_OK;
 	}
-	else
+	else if(zbuffer)
 	{
 		zbuffer->GetCaps(&ddsComp);
 		memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
@@ -737,8 +738,8 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 			zbuffer->AddRef();
 			return DD_OK;
 		}
-		ERR(DDERR_NOTFOUND);
 	}
+	ERR(DDERR_NOTFOUND);
 }
 HRESULT WINAPI glDirectDrawSurface7::GetBltStatus(DWORD dwFlags)
 {
@@ -749,6 +750,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetBltStatus(DWORD dwFlags)
 HRESULT WINAPI glDirectDrawSurface7::GetCaps(LPDDSCAPS2 lpDDSCaps)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSCaps) return DDERR_INVALIDPARAMS;
 	memcpy(lpDDSCaps,&ddsd.ddsCaps,sizeof(DDSCAPS2));
 	return DD_OK;
 }
@@ -761,6 +763,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetClipper(LPDIRECTDRAWCLIPPER FAR *lplpDDC
 HRESULT WINAPI glDirectDrawSurface7::GetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDColorKey) return DDERR_INVALIDPARAMS;
 	if(dwFlags == DDCKEY_SRCBLT)
 	{
 		if(colorkey[0].enabled)
@@ -802,6 +805,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lphDC) return DDERR_INVALIDPARAMS;
 	if(hdc) ERR(DDERR_DCALREADYCREATED);
 	glDirectDrawPalette *pal;
 	DWORD colors[256];
@@ -862,13 +866,14 @@ HRESULT WINAPI glDirectDrawSurface7::GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDP
 HRESULT WINAPI glDirectDrawSurface7::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDPixelFormat) return DDERR_INVALIDPARAMS;
 	*lpDDPixelFormat = ddsd.ddpfPixelFormat;
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::GetSurfaceDesc(LPDDSURFACEDESC2 lpDDSurfaceDesc)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpDDSurfaceDesc) ERR(DDERR_INVALIDPARAMS);
+	if(!lpDDSurfaceDesc) return DDERR_INVALIDPARAMS;
 	memcpy(lpDDSurfaceDesc,&ddsd,lpDDSurfaceDesc->dwSize);
 	return DD_OK;
 }
@@ -1024,6 +1029,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDColorKey) ERR(DDERR_GENERIC);
 	CKEY key;
 	key.enabled = true;
 	if(dwFlags & DDCKEY_COLORSPACE) key.colorspace = true;
@@ -1263,6 +1269,7 @@ HRESULT WINAPI glDirectDrawSurface1::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetO
 HRESULT WINAPI glDirectDrawSurface1::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE FAR *lplpDDAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSCaps) return DDERR_INVALIDPARAMS;
 	HRESULT error;
 	glDirectDrawSurface7 *attachedsurface;
 	glDirectDrawSurface1 *attached1;
@@ -1286,6 +1293,7 @@ HRESULT WINAPI glDirectDrawSurface1::GetBltStatus(DWORD dwFlags)
 HRESULT WINAPI glDirectDrawSurface1::GetCaps(LPDDSCAPS lpDDSCaps)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSCaps) return DDERR_INVALIDPARAMS;
 	HRESULT error;
 	DDSCAPS2 ddsCaps1;
 	error =  glDDS7->GetCaps(&ddsCaps1);
@@ -1504,6 +1512,7 @@ HRESULT WINAPI glDirectDrawSurface2::GetBltStatus(DWORD dwFlags)
 HRESULT WINAPI glDirectDrawSurface2::GetCaps(LPDDSCAPS lpDDSCaps)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSCaps) return DDERR_INVALIDPARAMS;
 	HRESULT error;
 	DDSCAPS2 ddsCaps1;
 	error =  glDDS7->GetCaps(&ddsCaps1);
@@ -1737,6 +1746,7 @@ HRESULT WINAPI glDirectDrawSurface3::GetBltStatus(DWORD dwFlags)
 HRESULT WINAPI glDirectDrawSurface3::GetCaps(LPDDSCAPS lpDDSCaps)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lpDDSCaps) return DDERR_INVALIDPARAMS;
 	HRESULT error;
 	DDSCAPS2 ddsCaps1;
 	error =  glDDS7->GetCaps(&ddsCaps1);

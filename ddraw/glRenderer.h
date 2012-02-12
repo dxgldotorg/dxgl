@@ -59,6 +59,9 @@ extern BltVertex bltvertices[4];
 #define GLEVENT_DELETETEX WM_USER+5
 #define GLEVENT_BLT WM_USER+6
 #define GLEVENT_DRAWSCREEN WM_USER+7
+#define GLEVENT_INITD3D WM_USER+8
+#define GLEVENT_CLEAR WM_USER+9
+#define GLEVENT_FLUSH WM_USER+10
 
 extern int swapinterval;
 extern inline void SetSwap(int swap);
@@ -76,6 +79,9 @@ public:
 	GLuint MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
 	void DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
 	void DeleteTexture(GLuint texture);
+	void InitD3D(int zbuffer);
+	void Flush();
+	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 	HGLRC hRC;
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 private:
@@ -90,7 +96,10 @@ private:
 	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
 	void _DeleteTexture(GLuint texture);
 	void _DrawBackbuffer(GLuint *texture, int x, int y);
+	void _InitD3D(int zbuffer);
+	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 	glDirectDraw7 *ddInterface;
+	void _Flush();
 	void* inputs[32];
 	void* outputs[32];
 	HANDLE hThread;

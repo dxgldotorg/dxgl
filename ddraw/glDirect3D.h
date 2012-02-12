@@ -34,8 +34,8 @@ public:
 	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg);
 	HRESULT WINAPI EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
 	HRESULT WINAPI EvictManagedTextures();
-private:
 	glDirectDraw7 *glDD7;
+private:
 	ULONG refcount;
 };
 
