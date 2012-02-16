@@ -146,6 +146,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
 	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
 	memset(gllights,0xff,8*sizeof(int));
+	memset(gltextures,0,8*sizeof(GLuint));
 	glD3D7->glDD7->renderer->InitD3D(zbuffer);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
@@ -266,6 +267,62 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 	else if(size > maxarray) vertices = (GLfloat*)realloc(vertices,size*4*sizeof(GLfloat));
 	if(!normals) normals = (GLfloat*)malloc(size*4*sizeof(GLfloat));
 	else if(size > maxarray) normals = (GLfloat*)realloc(normals,size*4*sizeof(GLfloat));
+}
+
+__int64 glDirect3DDevice7::SelectShader(DWORD VertexType)
+{
+	int i;
+	__int64 shader = 0;
+	switch(renderstate[D3DRENDERSTATE_SHADEMODE])
+	{
+	case D3DSHADE_FLAT:
+	default:
+		break;
+	case D3DSHADE_GOURAUD:
+		shader |= 1;
+		break;
+	case D3DSHADE_PHONG:
+		shader |= 3;
+		break;
+	}
+	if(renderstate[D3DRENDERSTATE_ALPHATESTENABLE]) shader |= 4;
+	shader |= (((renderstate[D3DRENDERSTATE_ALPHAFUNC]-1) & 7) << 3);
+	shader |= ((renderstate[D3DRENDERSTATE_FOGTABLEMODE] & 3) << 6);
+	shader |= ((renderstate[D3DRENDERSTATE_FOGVERTEXMODE] & 3) << 8);
+	if(renderstate[D3DRENDERSTATE_RANGEFOGENABLE]) shader |= (1 << 10);
+	if(renderstate[D3DRENDERSTATE_SPECULARENABLE]) shader |= (1 << 11);
+	if(renderstate[D3DRENDERSTATE_STIPPLEDALPHA]) shader |= (1 << 12);
+	if(renderstate[D3DRENDERSTATE_COLORKEYENABLE]) shader |= (1 << 13);
+	shader |= ((renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
+	int numlights = 0;
+	for(i = 0; i < 8; i++)
+		if(gllights[i] != -1) numlights++;
+	shader |= numlights << 18;
+	if(renderstate[D3DRENDERSTATE_LOCALVIEWER]) shader |= (1 << 21);
+	if(renderstate[D3DRENDERSTATE_COLORKEYBLENDENABLE]) shader |= (1 << 22);
+	shader |= ((renderstate[D3DRENDERSTATE_DIFFUSEMATERIALSOURCE] & 3) << 23);
+	shader |= ((renderstate[D3DRENDERSTATE_SPECULARMATERIALSOURCE] & 3) << 25);
+	shader |= ((renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
+	shader |= ((renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
+	int numtextures = (VertexType & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
+	shader |= (__int64)numtextures << 31;
+	if(VertexType & D3DFVF_XYZRHW) shader |= (1i64 << 34);
+	if((VertexType & D3DFVF_DIFFUSE) && (VertexType & D3DFVF_SPECULAR)) shader |= (1i64<<35);
+	for(i = 0; i < numtextures; i++)
+		shader |= (__int64)((VertexType >> (16+(2*i))) & 3) << (36 + (2*i));
+	if(VertexType & D3DFVF_NORMAL) shader |= (1i64 << 52);
+	int lightindex = 0;
+	for(i = 0; i < 8; i++)
+	{
+		if(gllights[i] != -1)
+		{
+			if(lights[gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
+				shader |= (1i64 << (53+lightindex));
+			lightindex++;
+		}
+	}
+	if(((VertexType >> 1) & 7) >= 3) shader |= (__int64)(((VertexType >> 1) & 7) - 2) << 61;
+	return shader;
 }
 
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,

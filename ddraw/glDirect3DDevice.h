@@ -88,6 +88,7 @@ public:
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
 
 private:
+	__int64 SelectShader(DWORD VertexType);
 	D3DMATRIX matWorld,matView,matProjection;
 	glDirect3D7 *glD3D7;
 	glDirectDrawSurface7 *glDDS7;
@@ -97,6 +98,7 @@ private:
 	D3DMATERIAL7 material;
 	glDirect3DLight **lights;
 	int gllights[8];
+	GLuint gltextures[8];
 	DWORD lightsmax;
 	bool inscene;
 	DWORD maxarray;

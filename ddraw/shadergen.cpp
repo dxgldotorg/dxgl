@@ -55,20 +55,26 @@ Bit 10 - Range based fog
 Bit 11 - Specular highlights
 Bit 12 - Stippled alpha
 Bit 13 - Color key transparency
-Bit 14 - Enable Z bias
-Bits 15-17 - Number of lights
-Bit 18 - Camera relative specular highlights
-Bit 19 - Alpha blended color key
-Bits 20-21 - Diffuse material source
-Bits 22-23 - Specular material source
-Bits 24-25 - Ambient material source
-Bits 26-27 - Emissive material source
-Bits 28-30 - Number of textures
-Bit 31 - RGB or RGBA color
-Bits 32-33 - Vertex format
-Bits 34-49 - Texture coordinate format
-Bit 50 - Enable normals
-Bits 51-58 - Light types
+Bit 14-17 - Z bias
+Bits 18-20 - Number of lights
+Bit 21 - Camera relative specular highlights
+Bit 22 - Alpha blended color key
+Bits 23-24 - Diffuse material source
+Bits 25-26 - Specular material source
+Bits 27-28 - Ambient material source
+Bits 29-30 - Emissive material source
+Bits 31-33 - Number of textures
+Bit 34 - Use transformed vertices
+Bit 35 - Use secondary color
+Bits 36-51 - Texture coordinate format:
+00=2dim  01=3dim 10=4dim 11=1dim
+Bit 52 - Enable normals
+Bits 53-60 - Light types
+Bits 61-63 - Number of blending weights
+*/
+
+/* Bits in Texture Stage ID:
+
 */
 void ZeroShaderArray()
 {
@@ -77,7 +83,7 @@ void ZeroShaderArray()
 	isbuiltin = true;
 }
 
-void SetShader(__int64 id, bool builtin)
+void SetShader(__int64 id, TexState *texstate, bool builtin)
 {
 	int shaderindex = -1;
 	if(builtin)
