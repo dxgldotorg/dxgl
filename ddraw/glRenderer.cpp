@@ -1031,13 +1031,6 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 		wndbusy = false;
 		return;
 	}
-	if(dwVertexTypeDesc & D3DFVF_XYZB1)
-	{
-		outputs[0] = (void*)DDERR_GENERIC;
-		wndbusy = false;
-		FIXME("glDirect3DDevice::DrawIndexedPrimitive: D3DFVF_XYZB1 stub");
-		return;
-	}
 	SetShader(device->SelectShader(dwVertexTypeDesc),NULL,0);
 
 	FIXME("glDirect3DDevice::DrawIndexedPrimitive: stub");

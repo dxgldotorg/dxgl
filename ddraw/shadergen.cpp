@@ -174,12 +174,9 @@ static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
 // Attributes
 static const char attr_xyz[] = "attribute vec3 xyz;\n";
-static const char conv_xyz[] = "vec4 xyzw = vec4(xyz[0],xyz[1],xyz[2],1);\n";
 static const char attr_xyzw[] = "attribute vec4 xyzw;\n";
 static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
 static const char attr_blend[] = "attribute float blendX;\n";
-static const char attr_rgb[] = "attribute vec3 rgbX;\n";
-static const char conv_rgb[] = "vec4 rgbaX = vec4(rgbX[0],rgbX[1],rgbX[2],1);\n";
 static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
 static const char attr_s[] = "attribute float sX;\n";
 static const char conv_s[] = "vec4 strqX = vec4(sX,0,0,1);\n";
@@ -189,16 +186,16 @@ static const char attr_str[] = "attribute vec3 strX;\n";
 static const char conv_str[] = "vec4 strqX = vec4(strX[0],strX[1],strX[2],1);\n";
 static const char attr_strq[] = "attribute vec4 strqX;\n";
 // Uniforms
-static const char unif_mats[] = "uniform mat4 world;\n\
+static const char unif_matrices[] = "uniform mat4 world;\n\
 uniform mat4 view;\n\
-uniform mat4 projection;\n";
-static const char modelview[] = "mat4 modelview = world * view;\n";
+uniform mat4 projection;\n\
+uniform mat4 normalmat;\n";
 static const char unif_material[] = "struct Material\n\
 {\n\
 vec4 diffuse;\n\
 vec4 ambient;\n\
 vec4 specular;\n\
-vec4 emussive;\n\
+vec4 emissive;\n\
 int power;\n\
 };\n\
 uniform Material material;\n";
@@ -218,13 +215,49 @@ float theta;\n\
 float phi;\n\
 };\n";
 static const char unif_light[] = "uniform Light lightX;\n";
+// Variables
+static const char var_colors[] = "vec4 diffuse;\n\
+vec4 specular;\n\
+vec4 ambient;\n";
+static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
-static const char normalize[] = "vec3 N = normalize(vec3(modelview*vec4(nxyz,0.0)));\n";
+static const char op_transform[] = "xyzw = vec4(xyz[0],xyz[1],xyz[2],1);\n\
+gl_Position = ((world*view)*projection)*xyzw;\n";
+static const char op_passthru[] = "gl_Position = xyzw;\n";
+static const char op_resetcolor[] = "diffuse = specular = ambient = vec4(0.0);\n";
+static const char op_dirlight[] = "DirLight(lightX);\n";
+static const char op_spotlight[] = "SpotLight(lightX);\n";
+static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
+(material.specular * specular) + material.emissive;\n";
+
+// Functions
+static const char func_dirlight[] = "void DirLight(in Light light)\n\
+{\n\
+float NdotHV = 0.0;\n\
+vec3 N = normalize(vec3(normalmat*vec4(nxyz,0.0)));\n\
+vec3 dir = normalize(light.direction);\n\
+ambient += light.ambient;\n\
+float NdotL = max(dot(N,dir),0.0);\n\
+diffuse += light.diffuse*NdotL;\n\
+if(NdotL > 0.0)\n\
+{\n\
+vec3 eye = (-view[3].xyz / view[3].w);\n\
+vec3 P = vec3((world*view)*xyzw);\n\
+vec3 L = normalize(light.position.xyz - P);\n\
+vec3 V = normalize(eye - P);\n\
+NdotHV = max(dot(N,L+V),0.0);\n\
+specular += pow(NdotHV,float(material.power));\n\
+}\n\
+}\n";
 
 void CreateShader(int index, __int64 id, TexState *texstate)
 {
 	string tmp;
 	int i;
+	bool hasdir = false;
+	bool hasspot = false;
+	int count;
+	int numlights;
 	char idstring[22];
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
@@ -238,23 +271,89 @@ void CreateShader(int index, __int64 id, TexState *texstate)
 	vsrc->append(idheader);
 	vsrc->append(idstring);
 	//Variables
-	vsrc->append(unif_mats);
+	// Attributes
+	if((id>>34)&1) vsrc->append(attr_xyzw);
+	else vsrc->append(attr_xyz);
+	tmp = attr_rgba;
+	if((id>>35)&1)
+	{
+		tmp.replace(19,1,"0");
+		vsrc->append(tmp);
+	}
+	if((id>>36)&1)
+	{
+		tmp.replace(19,1,"1");
+		vsrc->append(tmp);
+	}
+	if((id>>37)&1) vsrc->append(attr_nxyz);
+	count = (id>>46)&7;
+	if(count)
+	{
+		tmp = attr_blend;
+		for(i = 0; i < count; i++)
+		{
+			tmp.replace(21,1,_itoa(i,idstring,10));
+			vsrc->append(tmp);
+		}
+	}
+
+	// Uniforms
+	vsrc->append(unif_matrices); // Material
 	vsrc->append(unif_material);
-	if((id>>15)&8) // Lighting
+	numlights = (id>>18)&7;
+	if(numlights) // Lighting
 	{
 		vsrc->append(lightstruct);
-		for(i = 0; i < ((id>>15)&8); i++)
+		tmp = unif_light;
+		for(i = 0; i < numlights; i++)
 		{
-			tmp = unif_light;
 			tmp.replace(19,1,_itoa(i,idstring,10));
 			vsrc->append(tmp);
 		}
 	}
 	
+	// Variables
+	vsrc->append(var_colors);
+	if(!((id>>34)&1)) vsrc->append(var_xyzw);
+
+	// Functions
+	if(numlights)
+	{
+		for(i = 0; i < numlights; i++)
+		{
+			if(id>>(38+i)&1) hasspot = true;
+			else hasdir = true;
+		}
+	}
+	if(hasspot) FIXME("Add spot lights");
+	if(hasdir) vsrc->append(func_dirlight);
 	//Main
 	vsrc->append(mainstart);
-
-
+	if((id>>34)&1) vsrc->append(op_passthru);
+	else vsrc->append(op_transform);
+	vsrc->append(op_resetcolor);
+	if(numlights)
+	{
+		for(i = 0; i < numlights; i++)
+		{
+			if(id>>(38+i)&1)
+			{
+				tmp = op_spotlight;
+				tmp.replace(15,1,_itoa(i,idstring,10));
+				vsrc->append(tmp);
+			}
+			else
+			{
+				tmp = op_dirlight;
+				tmp.replace(14,1,_itoa(i,idstring,10));
+				vsrc->append(tmp);
+			}
+		}
+	}
+	vsrc->append(op_colorout);
 	vsrc->append(mainend);
-	
+#ifdef _DEBUG
+	OutputDebugStringA("Vertex shader:\n");
+	OutputDebugStringA(vsrc->c_str());
+#endif
 }
