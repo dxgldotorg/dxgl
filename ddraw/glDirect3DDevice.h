@@ -86,9 +86,9 @@ public:
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT7 lpViewport);
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
+	__int64 SelectShader(DWORD VertexType);
 
 private:
-	__int64 SelectShader(DWORD VertexType);
 	D3DMATRIX matWorld,matView,matProjection;
 	glDirect3D7 *glD3D7;
 	glDirectDrawSurface7 *glDDS7;

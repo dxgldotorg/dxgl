@@ -62,9 +62,18 @@ extern BltVertex bltvertices[4];
 #define GLEVENT_INITD3D WM_USER+8
 #define GLEVENT_CLEAR WM_USER+9
 #define GLEVENT_FLUSH WM_USER+10
+#define GLEVENT_DRAWPRIMITIVE WM_USER+11
+#define GLEVENT_DRAWPRIMITIVESTRIDED WM_USER+12
+#define GLEVENT_DRAWPRIMITIVEVB WM_USER+13
+#define GLEVENT_DRAWINDEXEDPRIMITIVE WM_USER+14
+#define GLEVENT_DRAWINDEXEDPRIMITIVESTRIDED WM_USER+15
+#define GLEVENT_DRAWINDEXEDPRIMITIVEVB WM_USER+16
+
 
 extern int swapinterval;
 extern inline void SetSwap(int swap);
+
+class glDirect3DDevice7;
 
 class glRenderer
 {
@@ -82,6 +91,8 @@ public:
 	void InitD3D(int zbuffer);
 	void Flush();
 	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+	HRESULT DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+		LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
 	HGLRC hRC;
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 private:
@@ -98,6 +109,8 @@ private:
 	void _DrawBackbuffer(GLuint *texture, int x, int y);
 	void _InitD3D(int zbuffer);
 	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+	void _DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+		LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
 	glDirectDraw7 *ddInterface;
 	void _Flush();
 	void* inputs[32];

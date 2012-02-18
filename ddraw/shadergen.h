@@ -33,6 +33,6 @@ typedef struct
 void SetShader(__int64 id, TexState *texstate, bool builtin);
 GLuint GetProgram();
 void ZeroShaderArray();
-void CreateShader(int index, __int64 id);
+void CreateShader(int index, __int64 id, TexState *texstate);
 
 #endif

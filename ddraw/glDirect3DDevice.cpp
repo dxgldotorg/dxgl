@@ -22,6 +22,7 @@
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
 #include "glRenderer.h"
+#include "shadergen.h"
 #include "glutil.h"
 
 const DWORD renderstate_default[153] = {0,                 // 0
@@ -240,26 +241,6 @@ HRESULT WINAPI glDirect3DDevice7::DeleteStateBlock(DWORD dwBlockHandle)
 	FIXME("glDirect3DDevice7::DeleteStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
-int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
-{
-	switch(d3dptPrimitiveType)
-	{
-	case D3DPT_POINTLIST:
-		return GL_POINTS;
-	case D3DPT_LINELIST:
-		return GL_LINES;
-	case D3DPT_LINESTRIP:
-		return GL_LINE_STRIP;
-	case D3DPT_TRIANGLELIST:
-		return GL_TRIANGLES;
-	case D3DPT_TRIANGLESTRIP:
-		return GL_TRIANGLE_STRIP;
-	case D3DPT_TRIANGLEFAN:
-		return GL_TRIANGLE_FAN;
-	default:
-		return -1;
-	}
-}
 
 void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 {
@@ -307,21 +288,21 @@ __int64 glDirect3DDevice7::SelectShader(DWORD VertexType)
 	int numtextures = (VertexType & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
 	shader |= (__int64)numtextures << 31;
 	if(VertexType & D3DFVF_XYZRHW) shader |= (1i64 << 34);
-	if((VertexType & D3DFVF_DIFFUSE) && (VertexType & D3DFVF_SPECULAR)) shader |= (1i64<<35);
-	for(i = 0; i < numtextures; i++)
-		shader |= (__int64)((VertexType >> (16+(2*i))) & 3) << (36 + (2*i));
-	if(VertexType & D3DFVF_NORMAL) shader |= (1i64 << 52);
+	if(VertexType & D3DFVF_DIFFUSE) shader |= (1i64<<35);
+	if(VertexType & D3DFVF_SPECULAR) shader |= (1i64<<36);
+	if(VertexType & D3DFVF_NORMAL) shader |= (1i64 << 37);
 	int lightindex = 0;
 	for(i = 0; i < 8; i++)
 	{
 		if(gllights[i] != -1)
 		{
 			if(lights[gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
-				shader |= (1i64 << (53+lightindex));
+				shader |= (1i64 << (38+lightindex));
 			lightindex++;
 		}
 	}
-	if(((VertexType >> 1) & 7) >= 3) shader |= (__int64)(((VertexType >> 1) & 7) - 2) << 61;
+	if(((VertexType >> 1) & 7) >= 3) shader |= (__int64)(((VertexType >> 1) & 7) - 2) << 46;
+
 	return shader;
 }
 
@@ -330,13 +311,8 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
-	int drawmode = setdrawmode(d3dptPrimitiveType);
-	if(drawmode == -1) return DDERR_INVALIDPARAMS;
-	if(dwVertexTypeDesc & D3DFVF_XYZB1) ERR(DDERR_GENERIC);
-	
-	//for(int i = 0; i < 
-	FIXME("glDirect3DDevice7::DrawIndexedPrimitive: stub");
-	ERR(DDERR_GENERIC);
+	return glD3D7->glDD7->renderer->DrawIndexedPrimitive(this,d3dptPrimitiveType,dwVertexTypeDesc,lpvVertices,
+		dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVerticexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)

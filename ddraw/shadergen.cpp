@@ -34,9 +34,11 @@ struct GenShader
 {
 	_GENSHADER shader;
 	__int64 id;
+	__int64 texids[8];
 };
 GenShader genshaders[256];
 static __int64 current_shader = 0;
+static __int64 current_texid[8];
 static int shadercount = 0;
 static int genindex = 0;
 static bool initialized = false;
@@ -65,16 +67,31 @@ Bits 27-28 - Ambient material source
 Bits 29-30 - Emissive material source
 Bits 31-33 - Number of textures
 Bit 34 - Use transformed vertices
-Bit 35 - Use secondary color
-Bits 36-51 - Texture coordinate format:
-00=2dim  01=3dim 10=4dim 11=1dim
-Bit 52 - Enable normals
-Bits 53-60 - Light types
-Bits 61-63 - Number of blending weights
+Bit 35 - Use diffuse color
+Bit 36 - Use specular color
+Bit 37 - Enable normals
+Bits 38-45 - Light types
+Bits 46-48 - Number of blending weights
 */
 
 /* Bits in Texture Stage ID:
-
+Bits 0-4: Texture color operation
+Bits 5-10: Texture color argument 1
+Bits 11-16: Texture color argument 2
+Bits 17-20: Texture alpha operation
+Bits 21-26: Texture alpha argument 1
+Bits 27-32: Texture alpha argument 2
+Bits 33-35: Texture coordinate index
+Bits 36-37: Texture coordinate flags
+Bits 38-39: U Texture address
+Bits 40-41: V Texture address
+Bits 42-44: Texture magnification filter
+Bits 45-46: Texture minification filter
+Bit 47: Enable texture coordinate transform
+Bits 48-49: Number of texcoord dimensions
+Bit 50: Projected texcoord
+Bits 51-52: Texutre coordinate format:
+00=2dim  01=3dim 10=4dim 11=1dim
 */
 void ZeroShaderArray()
 {
@@ -95,15 +112,21 @@ void SetShader(__int64 id, TexState *texstate, bool builtin)
 	}
 	else
 	{
-		if(!isbuiltin && (id == current_shader)) return;
+		if(!isbuiltin && (id == current_shader))
+		{
+			if(!memcmp(current_texid,texstate,8*sizeof(__int64))) return;
+		}
 		current_shader = id;
 		isbuiltin=false;
 		for(int i = 0; i < shadercount; i++)
 		{
 			if(genshaders[i].id == id)
 			{
-				shaderindex = i;
-				break;
+				if(!memcmp(genshaders[i].texids,texstate,8*sizeof(__int64)))
+				{
+					shaderindex = i;
+					break;
+				}
 			}
 		}
 		if(shaderindex == -1)
@@ -120,7 +143,7 @@ void SetShader(__int64 id, TexState *texstate, bool builtin)
 				delete genshaders[shaderindex].shader.fsrc;
 				ZeroMemory(&genshaders[shaderindex],sizeof(GenShader));
 			}
-			CreateShader(genindex,id);
+			CreateShader(genindex,id,texstate);
 			shaderindex = genindex;
 			genindex++;
 			if(genindex == 256) genindex = 0;
@@ -198,7 +221,7 @@ static const char unif_light[] = "uniform Light lightX;\n";
 // Operations
 static const char normalize[] = "vec3 N = normalize(vec3(modelview*vec4(nxyz,0.0)));\n";
 
-void CreateShader(int index, __int64 id)
+void CreateShader(int index, __int64 id, TexState *texstate)
 {
 	string tmp;
 	int i;
@@ -227,7 +250,7 @@ void CreateShader(int index, __int64 id)
 			vsrc->append(tmp);
 		}
 	}
-
+	
 	//Main
 	vsrc->append(mainstart);
 

@@ -19,6 +19,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glDirect3DDevice.h"
 #include "glRenderer.h"
 #include "glutil.h"
 #include "ddraw.h"
@@ -42,6 +43,28 @@ inline int _6to8bit(int number)
 {
 	return (number<<2)+(number>>4);
 }
+
+int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
+{
+	switch(d3dptPrimitiveType)
+	{
+	case D3DPT_POINTLIST:
+		return GL_POINTS;
+	case D3DPT_LINELIST:
+		return GL_LINES;
+	case D3DPT_LINESTRIP:
+		return GL_LINE_STRIP;
+	case D3DPT_TRIANGLELIST:
+		return GL_TRIANGLES;
+	case D3DPT_TRIANGLESTRIP:
+		return GL_TRIANGLE_STRIP;
+	case D3DPT_TRIANGLEFAN:
+		return GL_TRIANGLE_FAN;
+	default:
+		return -1;
+	}
+}
+
 
 int oldswap = 0;
 int swapinterval = 0;
@@ -386,6 +409,35 @@ void glRenderer::Flush()
 	}
 	LeaveCriticalSection(&cs);
 }
+
+HRESULT glRenderer::DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+{
+	MSG Msg;
+	EnterCriticalSection(&cs);
+	wndbusy = true;
+	inputs[0] = device;
+	inputs[1] = (void*)d3dptPrimitiveType;
+	inputs[2] = (void*)dwVertexTypeDesc;
+	inputs[3] = lpvVertices;
+	inputs[4] = (void*)dwVertexCount;
+	inputs[5] = lpwIndices;
+	inputs[6] = (void*)dwIndexCount;
+	inputs[7] = (void*)dwFlags;
+	SendMessage(hRenderWnd,GLEVENT_DRAWINDEXEDPRIMITIVE,0,0);
+	while(wndbusy)
+	{
+		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	LeaveCriticalSection(&cs);
+	return (HRESULT)outputs[0];
+}
+
 
 DWORD glRenderer::_Entry()
 {
@@ -969,11 +1021,37 @@ void glRenderer::_Flush()
 	glFlush();
 }
 
+void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+{
+	int drawmode = setdrawmode(d3dptPrimitiveType);
+	if(drawmode == -1)
+	{
+		outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		wndbusy = false;
+		return;
+	}
+	if(dwVertexTypeDesc & D3DFVF_XYZB1)
+	{
+		outputs[0] = (void*)DDERR_GENERIC;
+		wndbusy = false;
+		FIXME("glDirect3DDevice::DrawIndexedPrimitive: D3DFVF_XYZB1 stub");
+		return;
+	}
+	SetShader(device->SelectShader(dwVertexTypeDesc),NULL,0);
+
+	FIXME("glDirect3DDevice::DrawIndexedPrimitive: stub");
+	outputs[0] = (void*)DDERR_GENERIC;
+	wndbusy = false;
+	return;
+}
+
 LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	int oldx,oldy;
 	float mulx, muly;
 	float tmpfloats[16];
+	D3DPRIMITIVETYPE d3dpt;
 	int translatex, translatey;
 	LPARAM newpos;
 	HWND hParent;
@@ -1098,6 +1176,11 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case GLEVENT_FLUSH:
 		_Flush();
+		return 0;
+	case GLEVENT_DRAWINDEXEDPRIMITIVE:
+		memcpy(&d3dpt,&inputs[1],4);
+		_DrawIndexedPrimitive((glDirect3DDevice7*)inputs[0],d3dpt,(DWORD)inputs[2],(LPVOID)inputs[3],
+			(DWORD)inputs[4],(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
 		return 0;
 	}
 	return DefWindowProc(hwnd,msg,wParam,lParam);
