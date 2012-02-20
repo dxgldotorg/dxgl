@@ -87,17 +87,22 @@ public:
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
 	__int64 SelectShader(DWORD VertexType);
+	void UpdateNormalMatrix();
+	GLfloat matWorld[16];
+	GLfloat matView[16];
+	GLfloat matProjection[16];
+	GLfloat matNormal[16];
+	bool normal_dirty;
+	D3DMATERIAL7 material;
+	D3DVIEWPORT7 viewport;
+	glDirect3DLight **lights;
+	int gllights[8];
 
 private:
-	D3DMATRIX matWorld,matView,matProjection;
 	glDirect3D7 *glD3D7;
 	glDirectDrawSurface7 *glDDS7;
 	ULONG refcount;
-	D3DVIEWPORT7 viewport;
 	DWORD renderstate[153];
-	D3DMATERIAL7 material;
-	glDirect3DLight **lights;
-	int gllights[8];
 	GLuint gltextures[8];
 	DWORD lightsmax;
 	bool inscene;

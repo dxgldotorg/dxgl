@@ -43,6 +43,7 @@ static int shadercount = 0;
 static int genindex = 0;
 static bool initialized = false;
 static bool isbuiltin = true;
+GLuint current_prog;
 
 /* Bits in Shader ID:
 Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel
@@ -148,17 +149,16 @@ void SetShader(__int64 id, TexState *texstate, bool builtin)
 			genindex++;
 			if(genindex == 256) genindex = 0;
 		}
-		glUseProgram(shaderindex);
+		genshaders[shaderindex].id = id;
+		glUseProgram(genshaders[shaderindex].shader.prog);
+		current_prog = genshaders[shaderindex].shader.prog;
 	}
 }
 
 GLuint GetProgram()
 {
 	if(isbuiltin) return current_shader & 0xFFFFFFFF;
-	else
-	{
-		return 0;
-	}
+	else return current_prog;
 }
 
 
@@ -196,13 +196,13 @@ vec4 diffuse;\n\
 vec4 ambient;\n\
 vec4 specular;\n\
 vec4 emissive;\n\
-int power;\n\
+float power;\n\
 };\n\
 uniform Material material;\n";
 static const char lightstruct[] = "struct Light\n\
 {\n\
 vec4 diffuse;\n\
-vec4 specilar;\n\
+vec4 specular;\n\
 vec4 ambient;\n\
 vec3 position;\n\
 vec3 direction;\n\
@@ -219,6 +219,7 @@ static const char unif_light[] = "uniform Light lightX;\n";
 static const char var_colors[] = "vec4 diffuse;\n\
 vec4 specular;\n\
 vec4 ambient;\n";
+static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz[0],xyz[1],xyz[2],1);\n\
@@ -228,7 +229,10 @@ static const char op_resetcolor[] = "diffuse = specular = ambient = vec4(0.0);\n
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
-(material.specular * specular) + material.emissive;\n";
+(material.specular * specular) + material.emissive;\n\
+gl_FrontColor = color;\n";
+static const char op_colorfragout[] = "gl_FragColor = color;";
+static const char op_fragpassthru[] = "color = gl_Color;";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -243,7 +247,7 @@ if(NdotL > 0.0)\n\
 {\n\
 vec3 eye = (-view[3].xyz / view[3].w);\n\
 vec3 P = vec3((world*view)*xyzw);\n\
-vec3 L = normalize(light.position.xyz - P);\n\
+vec3 L = normalize(light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
 specular += pow(NdotHV,float(material.power));\n\
@@ -270,7 +274,6 @@ void CreateShader(int index, __int64 id, TexState *texstate)
 	vsrc->append(vertexshader);
 	vsrc->append(idheader);
 	vsrc->append(idstring);
-	//Variables
 	// Attributes
 	if((id>>34)&1) vsrc->append(attr_xyzw);
 	else vsrc->append(attr_xyz);
@@ -355,5 +358,82 @@ void CreateShader(int index, __int64 id, TexState *texstate)
 #ifdef _DEBUG
 	OutputDebugStringA("Vertex shader:\n");
 	OutputDebugStringA(vsrc->c_str());
+	OutputDebugStringA("\nCompiling vertex shader:\n");
+#endif
+	genshaders[index].shader.vs = glCreateShader(GL_VERTEX_SHADER);
+	const char *src = vsrc->c_str();
+	GLint srclen = strlen(src);
+	glShaderSource(genshaders[index].shader.vs,1,&src,&srclen);
+	glCompileShader(genshaders[index].shader.vs);
+	GLint loglen,result;
+	char *infolog = NULL;
+	glGetShaderiv(genshaders[index].shader.vs,GL_COMPILE_STATUS,&result);
+#ifdef _DEBUG
+	if(!result)
+	{
+		glGetShaderiv(genshaders[index].shader.vs,GL_INFO_LOG_LENGTH,&loglen);
+		infolog = (char*)malloc(loglen);
+		glGetShaderInfoLog(genshaders[index].shader.vs,loglen,&result,infolog);
+		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
+#endif
+	// Create fragment shader
+	string *fsrc = genshaders[index].shader.fsrc;
+	fsrc->append(header);
+	fsrc->append(fragshader);
+	_snprintf(idstring,21,"%0.16I64X\n",id);
+	idstring[21] = 0;
+	fsrc->append(idheader);
+	fsrc->append(idstring);
+	// Attributs
+	// Uniforms
+	// Variables
+	fsrc->append(var_color);
+	// Functions
+	// Main
+	fsrc->append(mainstart);
+	fsrc->append(op_fragpassthru);
+	fsrc->append(op_colorfragout);
+	fsrc->append(mainend);
+#ifdef _DEBUG
+	OutputDebugStringA("Fragment shader:\n");
+	OutputDebugStringA(fsrc->c_str());
+	OutputDebugStringA("\nCompiling fragment shader:\n");
+#endif
+	genshaders[index].shader.fs = glCreateShader(GL_FRAGMENT_SHADER);
+	src = fsrc->c_str();
+	srclen = strlen(src);
+	glShaderSource(genshaders[index].shader.fs,1,&src,&srclen);
+	glCompileShader(genshaders[index].shader.fs);
+	glGetShaderiv(genshaders[index].shader.fs,GL_COMPILE_STATUS,&result);
+#ifdef _DEBUG
+	if(!result)
+	{
+		glGetShaderiv(genshaders[index].shader.fs,GL_INFO_LOG_LENGTH,&loglen);
+		infolog = (char*)malloc(loglen);
+		glGetShaderInfoLog(genshaders[index].shader.fs,loglen,&result,infolog);
+		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
+	OutputDebugStringA("\nLinking program:\n");
+#endif
+	genshaders[index].shader.prog = glCreateProgram();
+	glAttachShader(genshaders[index].shader.prog,genshaders[index].shader.vs);
+	glAttachShader(genshaders[index].shader.prog,genshaders[index].shader.fs);
+	glLinkProgram(genshaders[index].shader.prog);
+	glGetProgramiv(genshaders[index].shader.prog,GL_LINK_STATUS,&result);
+#ifdef _DEBUG
+	if(!result)
+	{
+		glGetProgramiv(genshaders[index].shader.prog,GL_INFO_LOG_LENGTH,&loglen);
+		infolog = (char*)malloc(loglen);
+		glGetProgramInfoLog(genshaders[index].shader.prog,loglen,&result,infolog);
+		OutputDebugStringA("Program link failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
 #endif
 }

@@ -29,6 +29,9 @@ void (APIENTRY *glAttachShader) (GLuint program, GLuint shader) = NULL;
 void (APIENTRY *glDetachShader) (GLuint program, GLuint shader) = NULL;
 void (APIENTRY *glLinkProgram) (GLuint program) = NULL;
 void (APIENTRY *glUseProgram) (GLuint program) = NULL;
+void (APIENTRY *glGetShaderiv) (GLuint shader, GLenum pname, GLint* params) = NULL;
+void (APIENTRY *glGetShaderInfoLog) (GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) = NULL;
+void (APIENTRY *glGetProgramInfoLog) (GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infolog) = NULL;
 
 GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name) = NULL;
 void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) = NULL;
@@ -59,6 +62,8 @@ void (APIENTRY *glUniform1f) (GLint location, GLfloat v0) = NULL;
 void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1) = NULL;
 void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2) = NULL;
 void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) = NULL;
+void (APIENTRY *glUniform3fv) (GLint location, GLsizei count, const GLfloat* value) = NULL;
+void (APIENTRY *glUniform4fv) (GLint location, GLsizei count, const GLfloat* value) = NULL;
 void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) = NULL;
 
 void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
@@ -117,6 +122,9 @@ void InitGLExt()
 		glDetachShader = (PFNGLDETACHSHADERPROC)wglGetProcAddress("glDetachShader");
 		glLinkProgram = (PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram");
 		glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
+		glGetShaderiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
+		glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetShaderInfoLog");
+		glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
 		glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
 		glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
 		glUniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
@@ -126,6 +134,8 @@ void InitGLExt()
 		glUniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
 		glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
 		glUniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
+		glUniform3fv = (PFNGLUNIFORM3FVPROC)wglGetProcAddress("glUniform3fv");
+		glUniform4fv = (PFNGLUNIFORM4FVPROC)wglGetProcAddress("glUniform4fv");
 		glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
 		glGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
 		glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");

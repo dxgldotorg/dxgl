@@ -24,6 +24,7 @@
 #include "glRenderer.h"
 #include "shadergen.h"
 #include "glutil.h"
+#include "matrix.h"
 
 const DWORD renderstate_default[153] = {0,                 // 0
 	NULL, //texturehandle
@@ -119,7 +120,6 @@ const DWORD renderstate_default[153] = {0,                 // 0
 	FALSE, //clipplaneenable
 };
 
-D3DMATRIX identity;
 
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
@@ -128,14 +128,13 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	diffuse = specular = NULL;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
-	identity._11 = identity._22 = identity._33 = identity._44 = 1.0;
-	identity._12 = identity._13 = identity._14 =
-		identity._21 = identity._23 = identity._24 = 
-		identity._31 = identity._32 = identity._34 =
-		identity._41 = identity._42 = identity._43 = 0.0;
-	matWorld = matView = matProjection = identity;
+	__gluMakeIdentityf(matWorld);
+	__gluMakeIdentityf(matView);
+	__gluMakeIdentityf(matProjection);
+	__gluMakeIdentityf(matNormal);
 	refcount = 1;
 	inscene = false;
+	normal_dirty = false;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
@@ -605,9 +604,11 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 	{
 	case D3DTRANSFORMSTATE_WORLD:
 		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
+		normal_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_VIEW:
 		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
+		normal_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_PROJECTION:
 		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
@@ -627,4 +628,17 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 	if(!this) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::ValidateDevice: stub");
 	ERR(DDERR_GENERIC);
+}
+
+void glDirect3DDevice7::UpdateNormalMatrix()
+{
+	GLfloat worldview[16];
+	GLfloat tmp[16];
+	ZeroMemory(&worldview,sizeof(D3DMATRIX));
+	ZeroMemory(&tmp,sizeof(D3DMATRIX));
+	__gluMultMatricesf(matWorld,matView,worldview);	// Get worldview
+	if(__gluInvertMatrixf(worldview,tmp)) // Invert
+		memcpy(matNormal,tmp,16*sizeof(GLfloat));
+	else memcpy(matNormal,worldview,16*sizeof(GLfloat));
+	normal_dirty = false;
 }

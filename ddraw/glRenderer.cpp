@@ -20,6 +20,7 @@
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glDirect3DDevice.h"
+#include "glDirect3DLight.h"
 #include "glRenderer.h"
 #include "glutil.h"
 #include "ddraw.h"
@@ -1024,6 +1025,19 @@ void glRenderer::_Flush()
 void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	bool transformed;
+	int normalptr = 0;
+	int colorptr[2] = {0,0};
+	int blendptr[5] = {0,0,0,0,0};
+	int texptr[8] = {0,0,0,0,0,0,0,0};
+	char blendvar[] = "blendX";
+	char rgbavar[] = "rgbaX";
+	char svar[] = "sX";
+	char stvar[] = "stX";
+	char strvar[] = "strX";
+	char strqvar[] = "strqX";
+	int i;
+	GLfloat* vertices = (GLfloat*)lpvVertices;
 	int drawmode = setdrawmode(d3dptPrimitiveType);
 	if(drawmode == -1)
 	{
@@ -1031,8 +1045,132 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 		wndbusy = false;
 		return;
 	}
+	if((dwVertexTypeDesc & D3DFVF_XYZ) && (dwVertexTypeDesc & D3DFVF_XYZRHW))
+	{
+		outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		wndbusy = false;
+		return;
+	}
+	int ptr = 0;
+	if(dwVertexTypeDesc & D3DFVF_XYZ)
+	{
+		transformed = false;
+		ptr+= 3;
+	}
+	if(dwVertexTypeDesc & D3DFVF_XYZRHW)
+	{
+		transformed = true;
+		ptr+= 4;
+	}
+	if(!ptr)
+	{
+		outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		wndbusy = false;
+		return;
+	}
+	if(((dwVertexTypeDesc >> 1) & 7) >= 3)
+	{
+		for(i = 0; i < (signed)(((dwVertexTypeDesc >> 1) & 7) - 2); i++)
+		{
+			blendptr[(((dwVertexTypeDesc >> 1) & 7) - 2)] = ptr;
+			ptr++;
+		}
+	}
+	if(dwVertexTypeDesc & D3DFVF_NORMAL)
+	{
+		normalptr = ptr;
+		ptr+= 3;
+	}
+	if(dwVertexTypeDesc & D3DFVF_DIFFUSE)
+	{
+		colorptr[0] = ptr;
+		ptr++;
+	}
+	if(dwVertexTypeDesc & D3DFVF_SPECULAR)
+	{
+		colorptr[1] = ptr;
+		ptr++;
+	}
+	int stride = NextMultipleOf8(ptr*4);
 	SetShader(device->SelectShader(dwVertexTypeDesc),NULL,0);
-
+	GLuint prog = GetProgram();
+	if(transformed)
+	{
+		GLint xyzwloc = glGetAttribLocation(prog,"xyzw");
+		glEnableVertexAttribArray(xyzwloc);
+		glVertexAttribPointer(xyzwloc,4,GL_FLOAT,false,stride,vertices);
+	}
+	else
+	{
+		GLint xyzloc = glGetAttribLocation(prog,"xyz");
+		glEnableVertexAttribArray(xyzloc);
+		glVertexAttribPointer(xyzloc,3,GL_FLOAT,false,stride,vertices);
+	}
+	for(i = 0; i < 5; i++)
+	{
+		GLint blendloc;
+		if(blendptr[i])
+		{
+			blendvar[5] = i+'0';
+			blendloc = glGetAttribLocation(prog,blendvar);
+			glVertexAttribPointer(blendloc,1,GL_FLOAT,false,stride,vertices+blendptr[i]);
+		}
+	}
+	if(normalptr)
+	{
+		GLint normalloc = glGetAttribLocation(prog,"nxyz");
+		glEnableVertexAttribArray(normalloc);
+		glVertexAttribPointer(normalloc,3,GL_FLOAT,false,stride,vertices+normalptr);
+	}
+	for(i = 0; i < 2; i++)
+	{
+		GLint colorloc;
+		if(colorptr[i])
+		{
+			rgbavar[4] = i + '0';
+			colorloc = glGetAttribLocation(prog,rgbavar);
+			glVertexAttribPointer(colorloc,4,GL_UNSIGNED_BYTE,true,stride,vertices+colorptr[i]);
+		}
+	}
+	if(device->normal_dirty) device->UpdateNormalMatrix();
+	GLint loc = glGetUniformLocation(prog,"world");
+	glUniformMatrix4fv(loc,1,false,device->matWorld);
+	loc = glGetUniformLocation(prog,"view");
+	glUniformMatrix4fv(loc,1,false,device->matView);
+	loc = glGetUniformLocation(prog,"projection");
+	glUniformMatrix4fv(loc,1,false,device->matProjection);
+	loc = glGetUniformLocation(prog,"normalmat");
+	glUniformMatrix4fv(loc,1,true,device->matNormal);
+	loc = glGetUniformLocation(prog,"material.diffuse");
+	glUniform4fv(prog,4,(GLfloat*)&device->material.diffuse);
+	loc = glGetUniformLocation(prog,"material.ambient");
+	glUniform4fv(prog,4,(GLfloat*)&device->material.ambient);
+	loc = glGetUniformLocation(prog,"material.specular");
+	glUniform4fv(prog,4,(GLfloat*)&device->material.specular);
+	loc = glGetUniformLocation(prog,"material.emissive");
+	glUniform4fv(prog,4,(GLfloat*)&device->material.emissive);
+	loc = glGetUniformLocation(prog,"material.power");
+	glUniform1f(prog,device->material.power);
+	int lightindex = 0;
+	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
+	for(i = 0; i < 8; i++)
+	{
+		if(device->gllights[i] != -1)
+		{
+			lightname[5] = lightindex+'0';
+			memcpy((void*)(lightindex+7),"diffuse",8);
+			loc = glGetUniformLocation(prog,lightname);
+			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
+			memcpy((void*)(lightindex+7),"specular",9);
+			loc = glGetUniformLocation(prog,lightname);
+			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
+			memcpy((void*)(lightindex+7),"ambient",8);
+			loc = glGetUniformLocation(prog,lightname);
+			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
+		}
+	}
+	// Uniforms
+	// struct Light vec3 position,direction float range,falloff,constant,linear,quad,theta,pi  uniform lightX
 	FIXME("glDirect3DDevice::DrawIndexedPrimitive: stub");
 	outputs[0] = (void*)DDERR_GENERIC;
 	wndbusy = false;

@@ -49,6 +49,9 @@ GLAPI void (APIENTRY *glAttachShader) (GLuint program, GLuint shader);
 GLAPI void (APIENTRY *glDetachShader) (GLuint program, GLuint shader);
 GLAPI void (APIENTRY *glLinkProgram) (GLuint program);
 GLAPI void (APIENTRY *glUseProgram) (GLuint program);
+GLAPI void (APIENTRY *glGetShaderiv) (GLuint shader, GLenum pname, GLint* params);
+GLAPI void (APIENTRY *glGetShaderInfoLog) (GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+GLAPI void (APIENTRY *glGetProgramInfoLog) (GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infolog);
 
 GLAPI GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name);
 GLAPI void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
@@ -79,6 +82,8 @@ GLAPI void (APIENTRY *glUniform1f) (GLint location, GLfloat v0);
 GLAPI void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1);
 GLAPI void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
 GLAPI void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+GLAPI void (APIENTRY *glUniform3fv) (GLint location, GLsizei count, const GLfloat* value);
+GLAPI void (APIENTRY *glUniform4fv) (GLint location, GLsizei count, const GLfloat* value);
 GLAPI void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
 GLAPI void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);

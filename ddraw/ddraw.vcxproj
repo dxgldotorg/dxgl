@@ -183,6 +183,7 @@
     <ClInclude Include="include\GL\glext.h" />
     <ClInclude Include="include\GL\wglext.h" />
     <ClInclude Include="include\winedef.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="scalers.h" />
     <ClInclude Include="shadergen.h" />
     <ClInclude Include="shaders.h" />
@@ -220,6 +221,7 @@
     <ClCompile Include="glExtensions.cpp" />
     <ClCompile Include="glRenderer.cpp" />
     <ClCompile Include="glutil.cpp" />
+    <ClCompile Include="matrix.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
