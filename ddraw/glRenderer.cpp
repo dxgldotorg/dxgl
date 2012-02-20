@@ -688,7 +688,6 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	{
 		glEnable(GL_TEXTURE_2D);
 	}
-	if(src) glBindTexture(GL_TEXTURE_2D,src->GetTexture());
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
 		SetShader(PROG_CKEY,NULL,true);
@@ -726,6 +725,8 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
 		glUniform1i(texloc,0);
 	}
+	glActiveTexture(GL_TEXTURE0);
+	if(src) glBindTexture(GL_TEXTURE_2D,src->GetTexture());
 	GLuint prog = GetProgram()&0xffffffff;
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
@@ -733,13 +734,10 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	GLint xyloc = glGetAttribLocation(prog,"xy");
 	glEnableVertexAttribArray(xyloc);
 	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	if(dwFlags & DDBLT_COLORFILL)
-	{
-		GLint rgbloc = glGetAttribLocation(prog,"rgb");
-		glEnableVertexAttribArray(rgbloc);
-		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
-	}
-	else
+	GLint rgbloc = glGetAttribLocation(prog,"rgb");
+	glEnableVertexAttribArray(rgbloc);
+	glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		GLint stloc = glGetAttribLocation(prog,"st");
 		glEnableVertexAttribArray(stloc);
@@ -929,6 +927,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	GLint stloc = glGetAttribLocation(prog,"st");
 	glEnableVertexAttribArray(stloc);
 	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	GLint rgbloc = glGetAttribLocation(prog,"rgb");
+	glEnableVertexAttribArray(rgbloc);
+	glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glDisable(GL_TEXTURE_2D);
 	glFlush();
