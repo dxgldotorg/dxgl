@@ -443,6 +443,7 @@ void InitTest3D(int test)
 
 void RunTestTimed3D(int test)
 {
+	if(!d3d7dev) return;
 	POINT p;
 	RECT srcrect,destrect;
 	HRESULT error;

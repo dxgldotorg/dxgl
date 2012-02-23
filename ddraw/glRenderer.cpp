@@ -735,8 +735,11 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glEnableVertexAttribArray(xyloc);
 	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
 	GLint rgbloc = glGetAttribLocation(prog,"rgb");
-	glEnableVertexAttribArray(rgbloc);
-	glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	if(rgbloc != -1)
+	{
+		glEnableVertexAttribArray(rgbloc);
+		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		GLint stloc = glGetAttribLocation(prog,"st");
@@ -928,8 +931,11 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	glEnableVertexAttribArray(stloc);
 	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	GLint rgbloc = glGetAttribLocation(prog,"rgb");
-	glEnableVertexAttribArray(rgbloc);
-	glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	if(rgbloc != -1)
+	{
+		glEnableVertexAttribArray(rgbloc);
+		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glDisable(GL_TEXTURE_2D);
 	glFlush();
@@ -1092,8 +1098,31 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 		colorptr[1] = ptr;
 		ptr++;
 	}
+	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
+	for(i = 0; i < numtex; i++)
+	{
+		texptr[0] = ptr;
+		switch(dwVertexTypeDesc>>(16+(2*i))&3)
+		{
+		case 0: // st
+			ptr += 2;
+			break;
+		case 1: // str
+			ptr += 3;
+			break;
+		case 2: // strq
+			ptr += 4;
+			break;
+		case 3: // s
+			ptr++;
+			break;
+		}
+	}
 	int stride = NextMultipleOf8(ptr*4);
-	SetShader(device->SelectShader(dwVertexTypeDesc),NULL,0);
+	TexState texstage;
+	ZeroMemory(&texstage,sizeof(TexState));
+	__int64 shader = device->SelectShader(dwVertexTypeDesc);
+	SetShader(shader,&texstage,0);
 	GLuint prog = GetProgram();
 	if(transformed)
 	{
@@ -1139,19 +1168,19 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	loc = glGetUniformLocation(prog,"view");
 	glUniformMatrix4fv(loc,1,false,device->matView);
 	loc = glGetUniformLocation(prog,"projection");
-	glUniformMatrix4fv(loc,1,false,device->matProjection);
+	glUniformMatrix4fv(loc,1,true,device->matProjection);
 	loc = glGetUniformLocation(prog,"normalmat");
 	glUniformMatrix4fv(loc,1,true,device->matNormal);
 	loc = glGetUniformLocation(prog,"material.diffuse");
-	glUniform4fv(prog,4,(GLfloat*)&device->material.diffuse);
+	glUniform4fv(loc,1,(GLfloat*)&device->material.diffuse);
 	loc = glGetUniformLocation(prog,"material.ambient");
-	glUniform4fv(prog,4,(GLfloat*)&device->material.ambient);
+	glUniform4fv(loc,1,(GLfloat*)&device->material.ambient);
 	loc = glGetUniformLocation(prog,"material.specular");
-	glUniform4fv(prog,4,(GLfloat*)&device->material.specular);
+	glUniform4fv(loc,1,(GLfloat*)&device->material.specular);
 	loc = glGetUniformLocation(prog,"material.emissive");
-	glUniform4fv(prog,4,(GLfloat*)&device->material.emissive);
+	glUniform4fv(loc,1,(GLfloat*)&device->material.emissive);
 	loc = glGetUniformLocation(prog,"material.power");
-	glUniform1f(prog,device->material.power);
+	glUniform1f(loc,device->material.power);
 	int lightindex = 0;
 	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
 	for(i = 0; i < 8; i++)
@@ -1159,21 +1188,52 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 		if(device->gllights[i] != -1)
 		{
 			lightname[5] = lightindex+'0';
-			memcpy((void*)(lightindex+7),"diffuse",8);
+			memcpy((void*)(lightname+7),"diffuse",8);
 			loc = glGetUniformLocation(prog,lightname);
-			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
-			memcpy((void*)(lightindex+7),"specular",9);
+			glUniform4fv(loc,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
+			memcpy((void*)(lightname+7),"specular",9);
 			loc = glGetUniformLocation(prog,lightname);
-			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
-			memcpy((void*)(lightindex+7),"ambient",8);
+			glUniform4fv(loc,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
+			memcpy((void*)(lightname+7),"ambient",8);
 			loc = glGetUniformLocation(prog,lightname);
-			glUniform4fv(prog,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
+			glUniform4fv(loc,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
+			memcpy((void*)(lightname+7),"direction",10);
+			loc = glGetUniformLocation(prog,lightname);
+			glUniform3fv(loc,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvDirection);
+			if(device->lights[device->gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
+			{
+				memcpy((void*)(lightname+7),"position",9);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform3fv(loc,1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvPosition);
+				memcpy((void*)(lightname+7),"range",6);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvRange);
+				memcpy((void*)(lightname+7),"falloff",8);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvFalloff);
+				memcpy((void*)(lightname+7),"constant",9);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvAttenuation0);
+				memcpy((void*)(lightname+7),"linear",7);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvAttenuation1);
+				memcpy((void*)(lightname+7),"quad",5);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvAttenuation2);
+				memcpy((void*)(lightname+7),"theta",6);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvTheta);
+				memcpy((void*)(lightname+7),"Phi",4);
+				loc = glGetUniformLocation(prog,lightname);
+				glUniform1f(loc,device->lights[device->gllights[i]]->light.dvPhi);
+			}
 		}
 	}
-	// Uniforms
-	// struct Light vec3 position,direction float range,falloff,constant,linear,quad,theta,pi  uniform lightX
-	FIXME("glDirect3DDevice::DrawIndexedPrimitive: stub");
-	outputs[0] = (void*)DDERR_GENERIC;
+	SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
+	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
+	glDrawRangeElements(drawmode,0,dwIndexCount,dwVertexCount,GL_UNSIGNED_SHORT,lpwIndices);
+	if(dwFlags & D3DDP_WAIT) glFlush();
+	outputs[0] = (void*)D3D_OK;
 	wndbusy = false;
 	return;
 }

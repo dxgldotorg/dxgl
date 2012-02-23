@@ -97,10 +97,10 @@ public:
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
 	int gllights[8];
+	glDirectDrawSurface7 *glDDS7;
 
 private:
 	glDirect3D7 *glD3D7;
-	glDirectDrawSurface7 *glDDS7;
 	ULONG refcount;
 	DWORD renderstate[153];
 	GLuint gltextures[8];

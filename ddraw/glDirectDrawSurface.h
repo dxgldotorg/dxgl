@@ -128,6 +128,7 @@ public:
 	DDSURFACEDESC2 ddsd;
 	glDirectDrawPalette *palette;
 	HGLRC hRC;
+	glDirectDrawSurface7 *zbuffer;
 private:
 	ULONG refcount;
 	int locked;
@@ -137,7 +138,6 @@ private:
 	glDirectDraw7 *ddInterface;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	glDirectDrawSurface7 *backbuffer;
-	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawClipper *clipper;
 	int pagelocked;
 	GLint filter;
