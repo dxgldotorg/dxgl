@@ -493,7 +493,6 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 		hasHWnd = false;
 	}
 	SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	wndbusy = false;
 	if(hRC)
 	{
 		wglMakeCurrent(NULL,NULL);
@@ -546,6 +545,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 		gllock = false;
 		return FALSE;
 	}
+	wndbusy = false;
 	gllock = false;
 	InitGLExt();
 	SetSwap(1);
@@ -642,7 +642,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	bltvertices[0].s = bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	bltvertices[0].t = bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
 	bltvertices[2].t = bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
-	glClear(GL_DEPTH_BUFFER_BIT);
+	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
 		SetShader(PROG_FILL,NULL,true);
@@ -1353,7 +1353,6 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case GLEVENT_BLT:
 		outputs[0] = (void*)_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
 			(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
-		wndbusy = false;
 		return 0;
 	case GLEVENT_DRAWSCREEN:
 		_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3]);
@@ -1374,8 +1373,10 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		_DrawIndexedPrimitive((glDirect3DDevice7*)inputs[0],d3dpt,(DWORD)inputs[2],(LPVOID)inputs[3],
 			(DWORD)inputs[4],(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
 		return 0;
+	default:
+		return DefWindowProc(hwnd,msg,wParam,lParam);
 	}
-	return DefWindowProc(hwnd,msg,wParam,lParam);
+	return 0;
 }
 
 
