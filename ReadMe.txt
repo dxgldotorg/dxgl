@@ -1,3 +1,6 @@
+DXGL 0.1.6
+http://www.williamfeely.info/wiki/DXGL
+
 == Introduction ==
 
 DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL 2.0. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
@@ -6,15 +9,15 @@ DXGL is currently in an alpha stage of development and very little works at this
 
 == System Requirements ==
 
-* Windows operating system (currently XP or above)
-* OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures.
-  Geforce FX series graphics cards are NOT supported because non-power-of-two textures are emulated in software.
+* Windows XP, Vista, 7, or 8 (May work under recent builds of Wine)
+* OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures
+* Visual C++ 2010 x86 runtime, available at http://www.microsoft.com/download/en/details.aspx?id=5555 (will be installed if not present)
 
 == Build Requirements ==
 * Visual Studio 2010 or Visual C++ 2010 Express
-* Latest version of Windows SDK
+* Latest version of Windows SDK may be required
 
-== Build instructions ==
+== Build Instructions ==
 These instructions assume that you do not have any of the required software installed.  If you already have any or all of this software installed and set up, skip those steps.
 * Install Visual C++ 2010 Express at http://www.microsoft.com/express/downloads/#2010-Visual-CPP
 * Install the Windows SDK at:
@@ -24,13 +27,13 @@ http://www.microsoft.com/downloads/en/details.aspx?FamilyID=689655B4-C55D-4F9B-9
 * Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F5.
 
 == Progress ==
-For detailed progress information, please check https://www.williamfeely.info/wiki/DXGL_Features
+For detailed progress information, please check http://www.williamfeely.info/wiki/DXGL_Features
 What works:
 * DirectDraw object creation and destruction (versions 1 to 7)
 * Display mode enumeration and switching (with emulated mode switching)
 * Fullscreen and windowed modes.
 * Basic Blt() functionality
-* 8-bit color
+* 8-bit color with GLSL shader
 
 What partially works:
 * SetCooperativeLevel (destroys the GL context if switching between windowed and fullscreen modes)
@@ -50,7 +53,7 @@ SVN readonly access is available at:
 https://www.williamfeely.info/svn/dxgl
 
 There is a Mediawiki-based SVN log at:
-https://www.williamfeely.info/wiki/Special:Code/DXGL
+http://www.williamfeely.info/wiki/Special:Code/DXGL
 
 == AppDB ==
 
