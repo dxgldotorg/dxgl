@@ -1169,7 +1169,7 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	loc = glGetUniformLocation(prog,"view");
 	glUniformMatrix4fv(loc,1,false,device->matView);
 	loc = glGetUniformLocation(prog,"projection");
-	glUniformMatrix4fv(loc,1,true,device->matProjection);
+	glUniformMatrix4fv(loc,1,false,device->matProjection);
 	loc = glGetUniformLocation(prog,"normalmat");
 	glUniformMatrix4fv(loc,1,true,device->matNormal);
 	loc = glGetUniformLocation(prog,"material.diffuse");

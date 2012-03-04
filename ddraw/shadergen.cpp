@@ -222,8 +222,8 @@ vec4 ambient;\n";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
-static const char op_transform[] = "xyzw = vec4(xyz[0],xyz[1],xyz[2],1);\n\
-gl_Position = ((world*view)*projection)*xyzw;\n";
+static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
+gl_Position = (projection*(view*world))*xyzw;\n";
 static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = ambient = vec4(0.0);\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
@@ -231,8 +231,8 @@ static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
 (material.specular * specular) + material.emissive;\n\
 gl_FrontColor = color;\n";
-static const char op_colorfragout[] = "gl_FragColor = color;";
-static const char op_fragpassthru[] = "color = gl_Color;";
+static const char op_colorfragout[] = "gl_FragColor = color;\n";
+static const char op_fragpassthru[] = "color = gl_Color;\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
