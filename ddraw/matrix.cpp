@@ -46,10 +46,34 @@
  * other dealings in this Software without prior written authorization from
  * Silicon Graphics, Inc.
  */
-
+// Portions of this file are from the dxglwrap project, and are licensed under
+// the following terms:
+/*
+ *
+ * dxglwrapper 0.08 - Sept. 12, 2002
+ * For conditions of distribution and use, see copyright notice in d3dprj.h
+ * Copyright (c) 1991-2002 realtech VR
+ *
+ * Copyright (c) 2002 realtech VR
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without 
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish, 
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or 
+ * substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
+ * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * DEALINGS IN THE SOFTWARE.
+ *
+ */
 #include "common.h"
 #include "matrix.h"
 
+// From project.c:
 /*
 ** Invert 4x4 matrix.
 ** Contributed by David Moore (See Mesa bug #6748)
@@ -127,4 +151,40 @@ void __gluMakeIdentityf(GLfloat m[16])
     m[1+4*0] = 0; m[1+4*1] = 1; m[1+4*2] = 0; m[1+4*3] = 0;
     m[2+4*0] = 0; m[2+4*1] = 0; m[2+4*2] = 1; m[2+4*3] = 0;
     m[3+4*0] = 0; m[3+4*1] = 0; m[3+4*2] = 0; m[3+4*3] = 1;
+}
+
+
+// from dxglwrap:
+/*
+
+  This is one basic difference between OpenGL and Direct3D. 
+  In both coordinate systems, the X and Y axis are as normal. 
+  The Y positive axis going upwards and the X positive axis going to the right. 
+
+  However, the two systems differ in their Z-axis implementation. 
+  A Left-Handed System, which Direct3D uses, is one where the Z-axis is positive INTO the screen. 
+  Take your Left Hand, face the palm upwards with your fingers pointing in the direction of the positive x-axis (to the right), and curl your fingers in the direction of the Y-positive axis (up). Now if you stick your thumb STRAIGHT (like you were giving a sideways "thumbs-up" sign), your thumb is now pointing in the direction of the positive Z-axis.
+  
+  OpenGL, on the other hand, uses a Right-Handed system, where the positive Z-axis is coming OUT of the screen. 
+  Again, to remember this, take your right hand, point your palm upwards and your fingers pointing in the direction of the positive x-axis 
+  (to the right). Now curl your fingers up to the direction of the positive y-axis (up), and point your thumb out. It is now pointing in the direction of the positive Z-axis (out)..
+
+  Note: no doc exists how to do the conversion
+*/
+
+
+void prjLHtoRH(float *d, const float *s) // Exclusive function
+{
+	d[0] = -s[0];	d[1] = -s[1];	d[2] = -s[2];	d[3] = -s[3];
+	d[4] = s[4];	d[5] = s[5];	d[6] = s[6];	d[7] = s[7];
+	d[8] = -s[8];	d[9] = -s[9];	d[10] = -s[10];	d[11] = -s[11];
+	d[12] = s[12];	d[13] = s[13];	d[14] = s[14];	d[15] = s[15];
+}
+
+void viewLHtoRH(float *d, const float *s)
+{
+	d[0] = -s[0];	d[1] = s[1];	d[2] = -s[2];	d[3] = s[3];
+	d[4] = -s[4];	d[5] = s[5];	d[6] = -s[6];	d[7] = s[7];
+	d[8] = -s[8];	d[9] = s[9];	d[10] = -s[10];	d[11] = s[11];
+	d[12] = -s[12];	d[13] = s[13];	d[14] = -s[14];	d[15] = s[15];
 }

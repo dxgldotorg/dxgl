@@ -46,6 +46,30 @@
  * other dealings in this Software without prior written authorization from
  * Silicon Graphics, Inc.
  */
+// Portions of this file are from the dxglwrap project, and are licensed under
+// the following terms:
+/*
+ *
+ * dxglwrapper 0.08 - Sept. 12, 2002
+ * For conditions of distribution and use, see copyright notice in d3dprj.h
+ * Copyright (c) 1991-2002 realtech VR
+ *
+ * Copyright (c) 2002 realtech VR
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without 
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish, 
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or 
+ * substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
+ * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * DEALINGS IN THE SOFTWARE.
+ *
+ */
 #pragma once
 #ifndef _MATRIX_H
 #define _MATRIX_H
@@ -54,5 +78,8 @@ int __gluInvertMatrixf(const GLfloat m[16], GLfloat invOut[16]);
 void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 				GLfloat r[16]);
 void __gluMakeIdentityf(GLfloat m[16]);
+
+void prjLHtoRH(float *d, const float *s);
+void viewLHtoRH(float *d, const float *s);
 
 #endif //_MATRIX_H

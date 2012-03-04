@@ -98,11 +98,11 @@ public:
 	glDirect3DLight **lights;
 	int gllights[8];
 	glDirectDrawSurface7 *glDDS7;
+	DWORD renderstate[153];
 
 private:
 	glDirect3D7 *glD3D7;
 	ULONG refcount;
-	DWORD renderstate[153];
 	GLuint gltextures[8];
 	DWORD lightsmax;
 	bool inscene;

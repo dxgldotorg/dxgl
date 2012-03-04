@@ -26,6 +26,7 @@
 #include "ddraw.h"
 #include "scalers.h"
 #include "shadergen.h"
+#include "matrix.h"
 
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
@@ -1033,6 +1034,7 @@ void glRenderer::_Flush()
 void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	GLfloat tmpmat[16];
 	bool transformed;
 	int normalptr = 0;
 	int colorptr[2] = {0,0};
@@ -1165,11 +1167,14 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	}
 	if(device->normal_dirty) device->UpdateNormalMatrix();
 	GLint loc = glGetUniformLocation(prog,"world");
-	glUniformMatrix4fv(loc,1,false,device->matWorld);
+	viewLHtoRH(tmpmat,device->matWorld);
+	glUniformMatrix4fv(loc,1,false,tmpmat);
 	loc = glGetUniformLocation(prog,"view");
-	glUniformMatrix4fv(loc,1,false,device->matView);
+	viewLHtoRH(tmpmat,device->matView);
+	glUniformMatrix4fv(loc,1,false,tmpmat);
 	loc = glGetUniformLocation(prog,"projection");
-	glUniformMatrix4fv(loc,1,false,device->matProjection);
+	prjLHtoRH(tmpmat,device->matProjection);
+	glUniformMatrix4fv(loc,1,false,tmpmat);
 	loc = glGetUniformLocation(prog,"normalmat");
 	glUniformMatrix4fv(loc,1,true,device->matNormal);
 	loc = glGetUniformLocation(prog,"material.diffuse");
@@ -1182,6 +1187,10 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	glUniform4fv(loc,1,(GLfloat*)&device->material.emissive);
 	loc = glGetUniformLocation(prog,"material.power");
 	glUniform1f(loc,device->material.power);
+	loc = glGetUniformLocation(prog,"ambientcolor");
+	DWORD ambient = device->renderstate[D3DRENDERSTATE_AMBIENT];
+	glUniform4f(loc,RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
+		RGBA_GETBLUE(ambient),RGBA_GETALPHA(ambient));
 	int lightindex = 0;
 	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
 	for(i = 0; i < 8; i++)

@@ -215,6 +215,7 @@ float theta;\n\
 float phi;\n\
 };\n";
 static const char unif_light[] = "uniform Light lightX;\n";
+static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
 // Variables
 static const char var_colors[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -225,7 +226,8 @@ static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
 gl_Position = (projection*(view*world))*xyzw;\n";
 static const char op_passthru[] = "gl_Position = xyzw;\n";
-static const char op_resetcolor[] = "diffuse = specular = ambient = vec4(0.0);\n";
+static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
+ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
@@ -238,7 +240,7 @@ static const char op_fragpassthru[] = "color = gl_Color;\n";
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
 {\n\
 float NdotHV = 0.0;\n\
-vec3 N = normalize(vec3(normalmat*vec4(nxyz,0.0)));\n\
+vec3 N = normalize(vec3(normalmat*vec4(nxyz,1.0)));\n\
 vec3 dir = normalize(light.direction);\n\
 ambient += light.ambient;\n\
 float NdotL = max(dot(N,dir),0.0);\n\
@@ -246,11 +248,12 @@ diffuse += light.diffuse*NdotL;\n\
 if(NdotL > 0.0)\n\
 {\n\
 vec3 eye = (-view[3].xyz / view[3].w);\n\
-vec3 P = vec3((world*view)*xyzw);\n\
+vec3 P = vec3((view*world)*xyzw);\n\
 vec3 L = normalize(light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
-specular += pow(NdotHV,float(material.power));\n\
+specular += (pow(NdotHV,float(material.power))*light.specular);\n\
+ambient += light.ambient;\n\
 }\n\
 }\n";
 
@@ -303,6 +306,7 @@ void CreateShader(int index, __int64 id, TexState *texstate)
 	// Uniforms
 	vsrc->append(unif_matrices); // Material
 	vsrc->append(unif_material);
+	vsrc->append(unif_ambient);
 	numlights = (id>>18)&7;
 	if(numlights) // Lighting
 	{
