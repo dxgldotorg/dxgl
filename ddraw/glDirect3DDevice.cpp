@@ -17,11 +17,11 @@
 
 #include "common.h"
 #include "glDirect3D.h"
+#include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
-#include "glRenderer.h"
 #include "shadergen.h"
 #include "glutil.h"
 #include "matrix.h"
@@ -119,6 +119,27 @@ const DWORD renderstate_default[153] = {0,                 // 0
 	D3DVBLEND_DISABLE, //vertexblend
 	FALSE, //clipplaneenable
 };
+
+int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
+{
+	switch(d3dptPrimitiveType)
+	{
+	case D3DPT_POINTLIST:
+		return GL_POINTS;
+	case D3DPT_LINELIST:
+		return GL_LINES;
+	case D3DPT_LINESTRIP:
+		return GL_LINE_STRIP;
+	case D3DPT_TRIANGLELIST:
+		return GL_TRIANGLES;
+	case D3DPT_TRIANGLESTRIP:
+		return GL_TRIANGLE_STRIP;
+	case D3DPT_TRIANGLEFAN:
+		return GL_TRIANGLE_FAN;
+	default:
+		return -1;
+	}
+}
 
 
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
@@ -249,7 +270,7 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 	else if(size > maxarray) normals = (GLfloat*)realloc(normals,size*4*sizeof(GLfloat));
 }
 
-__int64 glDirect3DDevice7::SelectShader(DWORD VertexType)
+__int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 {
 	int i;
 	__int64 shader = 0;
@@ -284,12 +305,14 @@ __int64 glDirect3DDevice7::SelectShader(DWORD VertexType)
 	shader |= ((renderstate[D3DRENDERSTATE_SPECULARMATERIALSOURCE] & 3) << 25);
 	shader |= ((renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
 	shader |= ((renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
-	int numtextures = (VertexType & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
+	int numtextures = 0;
+	for(int i = 0; i < 8; i++)
+		if(VertexType[i+10].data) numtextures++;
 	shader |= (__int64)numtextures << 31;
-	if(VertexType & D3DFVF_XYZRHW) shader |= (1i64 << 34);
-	if(VertexType & D3DFVF_DIFFUSE) shader |= (1i64<<35);
-	if(VertexType & D3DFVF_SPECULAR) shader |= (1i64<<36);
-	if(VertexType & D3DFVF_NORMAL) shader |= (1i64 << 37);
+	if(VertexType[1].data) shader |= (1i64 << 34);
+	if(VertexType[8].data) shader |= (1i64<<35);
+	if(VertexType[9].data) shader |= (1i64<<36);
+	if(VertexType[7].data) shader |= (1i64 << 37);
 	int lightindex = 0;
 	for(i = 0; i < 8; i++)
 	{
@@ -300,9 +323,88 @@ __int64 glDirect3DDevice7::SelectShader(DWORD VertexType)
 			lightindex++;
 		}
 	}
-	if(((VertexType >> 1) & 7) >= 3) shader |= (__int64)(((VertexType >> 1) & 7) - 2) << 46;
-
+	int blendweights = 0;
+	for(i = 0; i < 5; i++)
+		if(VertexType[i+2].data) blendweights++;
+	shader |= (__int64)blendweights << 46;
+	//TODO:  Implement texture stages.
 	return shader;
+}
+
+HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
+{
+	int i;
+	int ptr = 0;
+	if((dwVertexTypeDesc & D3DFVF_XYZ) && (dwVertexTypeDesc & D3DFVF_XYZRHW))
+		return DDERR_INVALIDPARAMS;
+	if(dwVertexTypeDesc & D3DFVF_XYZ)
+	{
+		vertdata[0].data = vertptr;
+		vertdata[1].data = NULL;
+		ptr += 3;
+	}
+	else if(dwVertexTypeDesc & D3DFVF_XYZRHW)
+	{
+		vertdata[0].data = vertptr;
+		vertdata[1].data = &vertptr[3];
+		ptr += 4;
+	}
+	else return DDERR_INVALIDPARAMS;
+	for(i = 0; i < 5; i++)
+		vertdata[i+2].data = NULL;
+	if(((dwVertexTypeDesc >> 1) & 7) >= 3)
+	{
+		for(i = 0; i < (signed)(((dwVertexTypeDesc >> 1) & 7) - 2); i++)
+		{
+			vertdata[((dwVertexTypeDesc >> 1) & 7)].data = &vertptr[ptr];
+			ptr++;
+		}
+	}
+	if(dwVertexTypeDesc & D3DFVF_NORMAL)
+	{
+		vertdata[7].data = &vertptr[ptr];
+		ptr += 3;
+	}
+	else vertdata[7].data = NULL;
+	if(dwVertexTypeDesc & D3DFVF_DIFFUSE)
+	{
+		vertdata[8].data = &vertptr[ptr];
+		ptr++;
+	}
+	else vertdata[8].data = NULL;
+	if(dwVertexTypeDesc & D3DFVF_SPECULAR)
+	{
+		vertdata[9].data = &vertptr[ptr];
+		ptr++;
+	}
+	else vertdata[9].data = NULL;
+	for(i = 0; i < 8; i++)
+		vertdata[i+10].data = NULL;
+	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
+	for(i = 0; i < numtex; i++)
+	{
+		vertdata[i+10].data = &vertptr[ptr];
+		texformats[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
+		switch(texformats[i])
+		{
+		case 0: // st
+			ptr += 2;
+			break;
+		case 1: // str
+			ptr += 3;
+			break;
+		case 2: // strq
+			ptr += 4;
+			break;
+		case 3: // s
+			ptr++;
+			break;
+		}
+	}
+	int stride = NextMultipleOf8(ptr*4);
+	for(i = 0; i < 17; i++)
+		vertdata[i].stride = stride;
+	return D3D_OK;
 }
 
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
@@ -310,7 +412,9 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
-	return glD3D7->glDD7->renderer->DrawIndexedPrimitive(this,d3dptPrimitiveType,dwVertexTypeDesc,lpvVertices,
+	HRESULT err = fvftoglvertex(dwVertexTypeDesc,(LPDWORD)lpvVertices);
+	if(err != D3D_OK) return err;
+	return glD3D7->glDD7->renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
 		dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
@@ -330,9 +434,7 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptP
 HRESULT WINAPI glDirect3DDevice7::DrawPrimitive(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
 	DWORD dwVertexCount, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::DrawPrimitive: stub");
-	ERR(DDERR_GENERIC);
+	return DrawIndexedPrimitive(dptPrimitiveType,dwVertexTypeDesc,lpVertices,dwVertexCount,NULL,0,dwFlags);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawPrimitiveStrided(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags)

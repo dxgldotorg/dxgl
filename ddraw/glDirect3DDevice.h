@@ -86,7 +86,7 @@ public:
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT7 lpViewport);
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
-	__int64 SelectShader(DWORD VertexType);
+	__int64 SelectShader(GLVERTEX *VertexType);
 	void UpdateNormalMatrix();
 	GLfloat matWorld[16];
 	GLfloat matView[16];
@@ -101,6 +101,7 @@ public:
 	DWORD renderstate[153];
 
 private:
+	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);
 	glDirect3D7 *glD3D7;
 	ULONG refcount;
 	GLuint gltextures[8];
@@ -115,6 +116,8 @@ private:
 	GLubyte *specular;
 	GLubyte *ambient;
 	GLfloat *texcoords[8];
+	GLVERTEX vertdata[17];
+	int texformats[8];
 };
 
 #endif //__GLDIRECT3DDEVICE_H

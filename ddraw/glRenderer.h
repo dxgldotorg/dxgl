@@ -41,6 +41,12 @@ typedef struct
 	BYTE *pixels;
 } DIB;
 
+struct GLVERTEX
+{
+	void *data;
+	int stride;
+};
+
 struct BltVertex
 {
 	GLfloat x,y;
@@ -62,18 +68,15 @@ extern BltVertex bltvertices[4];
 #define GLEVENT_INITD3D WM_USER+8
 #define GLEVENT_CLEAR WM_USER+9
 #define GLEVENT_FLUSH WM_USER+10
-#define GLEVENT_DRAWPRIMITIVE WM_USER+11
-#define GLEVENT_DRAWPRIMITIVESTRIDED WM_USER+12
-#define GLEVENT_DRAWPRIMITIVEVB WM_USER+13
-#define GLEVENT_DRAWINDEXEDPRIMITIVE WM_USER+14
-#define GLEVENT_DRAWINDEXEDPRIMITIVESTRIDED WM_USER+15
-#define GLEVENT_DRAWINDEXEDPRIMITIVEVB WM_USER+16
+#define GLEVENT_DRAWPRIMITIVES WM_USER+11
 
 
 extern int swapinterval;
 extern inline void SetSwap(int swap);
 
+class glDirectDraw7;
 class glDirect3DDevice7;
+class glDirectDrawSurface7;
 
 class glRenderer
 {
@@ -91,8 +94,8 @@ public:
 	void InitD3D(int zbuffer);
 	void Flush();
 	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	HRESULT DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-		LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
+	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+		DWORD indexcount, DWORD flags);
 	HGLRC hRC;
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 private:
@@ -109,8 +112,8 @@ private:
 	void _DrawBackbuffer(GLuint *texture, int x, int y);
 	void _InitD3D(int zbuffer);
 	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	void _DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-		LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
+	void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
+		DWORD indexcount, DWORD flags);
 	glDirectDraw7 *ddInterface;
 	void _Flush();
 	void* inputs[32];

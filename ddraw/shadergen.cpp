@@ -174,7 +174,7 @@ static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
 // Attributes
 static const char attr_xyz[] = "attribute vec3 xyz;\n";
-static const char attr_xyzw[] = "attribute vec4 xyzw;\n";
+static const char attr_rhw[] = "attribute float rhw;\n";
 static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
 static const char attr_blend[] = "attribute float blendX;\n";
 static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
@@ -278,8 +278,8 @@ void CreateShader(int index, __int64 id, TexState *texstate)
 	vsrc->append(idheader);
 	vsrc->append(idstring);
 	// Attributes
-	if((id>>34)&1) vsrc->append(attr_xyzw);
-	else vsrc->append(attr_xyz);
+	vsrc->append(attr_xyz);
+	if((id>>34)&1) vsrc->append(attr_rhw);
 	tmp = attr_rgba;
 	if((id>>35)&1)
 	{

@@ -19,9 +19,9 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
-#include "glRenderer.h"
 #include "glutil.h"
 #include "ddraw.h"
 #include "scalers.h"
@@ -45,28 +45,6 @@ inline int _6to8bit(int number)
 {
 	return (number<<2)+(number>>4);
 }
-
-int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
-{
-	switch(d3dptPrimitiveType)
-	{
-	case D3DPT_POINTLIST:
-		return GL_POINTS;
-	case D3DPT_LINELIST:
-		return GL_LINES;
-	case D3DPT_LINESTRIP:
-		return GL_LINE_STRIP;
-	case D3DPT_TRIANGLELIST:
-		return GL_TRIANGLES;
-	case D3DPT_TRIANGLESTRIP:
-		return GL_TRIANGLE_STRIP;
-	case D3DPT_TRIANGLEFAN:
-		return GL_TRIANGLE_FAN;
-	default:
-		return -1;
-	}
-}
-
 
 int oldswap = 0;
 int swapinterval = 0;
@@ -412,21 +390,21 @@ void glRenderer::Flush()
 	LeaveCriticalSection(&cs);
 }
 
-HRESULT glRenderer::DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+HRESULT glRenderer::DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+	DWORD indexcount, DWORD flags)
 {
 	MSG Msg;
 	EnterCriticalSection(&cs);
 	wndbusy = true;
 	inputs[0] = device;
-	inputs[1] = (void*)d3dptPrimitiveType;
-	inputs[2] = (void*)dwVertexTypeDesc;
-	inputs[3] = lpvVertices;
-	inputs[4] = (void*)dwVertexCount;
-	inputs[5] = lpwIndices;
-	inputs[6] = (void*)dwIndexCount;
-	inputs[7] = (void*)dwFlags;
-	SendMessage(hRenderWnd,GLEVENT_DRAWINDEXEDPRIMITIVE,0,0);
+	inputs[1] = (void*)mode;
+	inputs[2] = vertices;
+	inputs[3] = texformats;
+	inputs[4] = (void*)count;
+	inputs[5] = indices;
+	inputs[6] = (void*)indexcount;
+	inputs[7] = (void*)flags;
+	SendMessage(hRenderWnd,GLEVENT_DRAWPRIMITIVES,0,0);
 	while(wndbusy)
 	{
 		while(PeekMessage(&Msg,hRenderWnd,0,0,PM_REMOVE))
@@ -436,7 +414,6 @@ HRESULT glRenderer::DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVE
 		}
 		Sleep(0);
 	}
-	LeaveCriticalSection(&cs);
 	return (HRESULT)outputs[0];
 }
 
@@ -1031,15 +1008,11 @@ void glRenderer::_Flush()
 	glFlush();
 }
 
-void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+	DWORD indexcount, DWORD flags)
 {
 	GLfloat tmpmat[16];
 	bool transformed;
-	int normalptr = 0;
-	int colorptr[2] = {0,0};
-	int blendptr[5] = {0,0,0,0,0};
-	int texptr[8] = {0,0,0,0,0,0,0,0};
 	char blendvar[] = "blendX";
 	char rgbavar[] = "rgbaX";
 	char svar[] = "sX";
@@ -1047,122 +1020,52 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	char strvar[] = "strX";
 	char strqvar[] = "strqX";
 	int i;
-	GLfloat* vertices = (GLfloat*)lpvVertices;
-	int drawmode = setdrawmode(d3dptPrimitiveType);
-	if(drawmode == -1)
+	if(vertices[1].data) transformed = false;
+	else transformed = true;
+	if(!vertices[0].data)
 	{
 		outputs[0] = (void*)DDERR_INVALIDPARAMS;
 		wndbusy = false;
 		return;
 	}
-	if((dwVertexTypeDesc & D3DFVF_XYZ) && (dwVertexTypeDesc & D3DFVF_XYZRHW))
-	{
-		outputs[0] = (void*)DDERR_INVALIDPARAMS;
-		wndbusy = false;
-		return;
-	}
-	int ptr = 0;
-	if(dwVertexTypeDesc & D3DFVF_XYZ)
-	{
-		transformed = false;
-		ptr+= 3;
-	}
-	if(dwVertexTypeDesc & D3DFVF_XYZRHW)
-	{
-		transformed = true;
-		ptr+= 4;
-	}
-	if(!ptr)
-	{
-		outputs[0] = (void*)DDERR_INVALIDPARAMS;
-		wndbusy = false;
-		return;
-	}
-	if(((dwVertexTypeDesc >> 1) & 7) >= 3)
-	{
-		for(i = 0; i < (signed)(((dwVertexTypeDesc >> 1) & 7) - 2); i++)
-		{
-			blendptr[(((dwVertexTypeDesc >> 1) & 7) - 2)] = ptr;
-			ptr++;
-		}
-	}
-	if(dwVertexTypeDesc & D3DFVF_NORMAL)
-	{
-		normalptr = ptr;
-		ptr+= 3;
-	}
-	if(dwVertexTypeDesc & D3DFVF_DIFFUSE)
-	{
-		colorptr[0] = ptr;
-		ptr++;
-	}
-	if(dwVertexTypeDesc & D3DFVF_SPECULAR)
-	{
-		colorptr[1] = ptr;
-		ptr++;
-	}
-	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
-	for(i = 0; i < numtex; i++)
-	{
-		texptr[0] = ptr;
-		switch(dwVertexTypeDesc>>(16+(2*i))&3)
-		{
-		case 0: // st
-			ptr += 2;
-			break;
-		case 1: // str
-			ptr += 3;
-			break;
-		case 2: // strq
-			ptr += 4;
-			break;
-		case 3: // s
-			ptr++;
-			break;
-		}
-	}
-	int stride = NextMultipleOf8(ptr*4);
 	TexState texstage;
 	ZeroMemory(&texstage,sizeof(TexState));
-	__int64 shader = device->SelectShader(dwVertexTypeDesc);
+	__int64 shader = device->SelectShader(vertices);
 	SetShader(shader,&texstage,0);
 	GLuint prog = GetProgram();
+	GLint xyzloc = glGetAttribLocation(prog,"xyz");
+	glEnableVertexAttribArray(xyzloc);
+	glVertexAttribPointer(xyzloc,3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
 	if(transformed)
 	{
-		GLint xyzwloc = glGetAttribLocation(prog,"xyzw");
+		GLint xyzwloc = glGetAttribLocation(prog,"rhw");
 		glEnableVertexAttribArray(xyzwloc);
-		glVertexAttribPointer(xyzwloc,4,GL_FLOAT,false,stride,vertices);
-	}
-	else
-	{
-		GLint xyzloc = glGetAttribLocation(prog,"xyz");
-		glEnableVertexAttribArray(xyzloc);
-		glVertexAttribPointer(xyzloc,3,GL_FLOAT,false,stride,vertices);
+		glVertexAttribPointer(xyzwloc,4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
 	}
 	for(i = 0; i < 5; i++)
 	{
 		GLint blendloc;
-		if(blendptr[i])
+		if(vertices[i+2].data)
 		{
 			blendvar[5] = i+'0';
 			blendloc = glGetAttribLocation(prog,blendvar);
-			glVertexAttribPointer(blendloc,1,GL_FLOAT,false,stride,vertices+blendptr[i]);
+			glVertexAttribPointer(blendloc,1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
 		}
 	}
-	if(normalptr)
+	if(vertices[7].data)
 	{
 		GLint normalloc = glGetAttribLocation(prog,"nxyz");
 		glEnableVertexAttribArray(normalloc);
-		glVertexAttribPointer(normalloc,3,GL_FLOAT,false,stride,vertices+normalptr);
+		glVertexAttribPointer(normalloc,3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
 	}
 	for(i = 0; i < 2; i++)
 	{
 		GLint colorloc;
-		if(colorptr[i])
+		if(vertices[i+8].data)
 		{
 			rgbavar[4] = i + '0';
 			colorloc = glGetAttribLocation(prog,rgbavar);
-			glVertexAttribPointer(colorloc,4,GL_UNSIGNED_BYTE,true,stride,vertices+colorptr[i]);
+			glVertexAttribPointer(colorloc,4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
 		}
 	}
 	if(device->normal_dirty) device->UpdateNormalMatrix();
@@ -1241,8 +1144,9 @@ void glRenderer::_DrawIndexedPrimitive(glDirect3DDevice7 *device, D3DPRIMITIVETY
 	}
 	SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
-	glDrawRangeElements(drawmode,0,dwIndexCount,dwVertexCount,GL_UNSIGNED_SHORT,lpwIndices);
-	if(dwFlags & D3DDP_WAIT) glFlush();
+	if(indices) glDrawRangeElements(mode,0,indexcount,count,GL_UNSIGNED_SHORT,indices);
+	else glDrawArrays(mode,0,count);
+	if(flags & D3DDP_WAIT) glFlush();
 	outputs[0] = (void*)D3D_OK;
 	wndbusy = false;
 	return;
@@ -1253,7 +1157,6 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	int oldx,oldy;
 	float mulx, muly;
 	float tmpfloats[16];
-	D3DPRIMITIVETYPE d3dpt;
 	int translatex, translatey;
 	LPARAM newpos;
 	HWND hParent;
@@ -1378,10 +1281,9 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case GLEVENT_FLUSH:
 		_Flush();
 		return 0;
-	case GLEVENT_DRAWINDEXEDPRIMITIVE:
-		memcpy(&d3dpt,&inputs[1],4);
-		_DrawIndexedPrimitive((glDirect3DDevice7*)inputs[0],d3dpt,(DWORD)inputs[2],(LPVOID)inputs[3],
-			(DWORD)inputs[4],(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
+	case GLEVENT_DRAWPRIMITIVES:
+		_DrawPrimitives((glDirect3DDevice7*)inputs[0],(GLenum)inputs[1],(GLVERTEX*)inputs[2],(int*)inputs[3],(DWORD)inputs[4],
+			(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
 		return 0;
 	default:
 		return DefWindowProc(hwnd,msg,wParam,lParam);
