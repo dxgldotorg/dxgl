@@ -22,6 +22,90 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 
+D3DDEVICEDESC7 d3ddesc = 
+{
+	D3DDEVCAPS_CANBLTSYSTONONLOCAL | D3DDEVCAPS_CANRENDERAFTERFLIP | D3DDEVCAPS_DRAWPRIMTLVERTEX | 
+		D3DDEVCAPS_FLOATTLVERTEX, // dwDevCaps
+	{ //dpcLineCaps
+		sizeof(D3DPRIMCAPS),
+		0, // dwMiscCaps
+		D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_ZTEST, //dwRasterCaps
+		D3DPCMPCAPS_LESSEQUAL, //dwZCmpCaps
+		DDBD_16|DDBD_24|DDBD_32, //dwSrcBlendCaps
+		DDBD_16|DDBD_24|DDBD_32, //dwDestBlendCaps
+		0, //dwAlphaCmpCaps
+		0, //dwShadeCaps
+		0, //dwTextureCaps
+		0, //dwTextureFilterCaps
+		0, //dwTextureBlendCaps
+		0, //dwTextureAddressCaps
+		0, //dwStippleWidth
+		0  //dwStippleHeight
+	},
+	{ //dpcTriCaps
+		sizeof(D3DPRIMCAPS),
+		0, // dwMiscCaps
+		D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_ZTEST, //dwRasterCaps
+		D3DPCMPCAPS_LESSEQUAL, //dwZCmpCaps
+		0, //dwSrcBlendCaps
+		0, //dwDestBlendCaps
+		0, //dwAlphaCmpCaps
+		0, //dwShadeCaps
+		0, //dwTextureCaps
+		0, //dwTextureFilterCaps
+		0, //dwTextureBlendCaps
+		0, //dwTextureAddressCaps
+		0, //dwStippleWidth
+		0  //dwStippleHeight
+	},
+	DDBD_16|DDBD_24|DDBD_32, //dwDeviceRenderBitDepth 
+	DDBD_16|DDBD_24|DDBD_32, //dwDeviceZBufferBitDepth
+	0, //dwMinTextureWidth
+	0, //dwMinTextureHeight
+	0, //dwMaxTextureWidth
+	0, //dwMaxTextureHeight
+	0, //dwMaxTextureRepeat
+	0, //dwMaxTextureAspectRatio
+	0, //dwMaxAnisotropy
+	0.0f, //dvGuardBandLeft
+	0.0f, //dvGuardBandTop
+	0.0f, //dvGuardBandRight
+	0.0f, //dvGuardBandBottom
+	0.0f, //dvExtentsAdjust 
+	0, //dwStencilCaps
+	8, //dwFVFCaps 
+	0, //dwTextureOpCaps
+	0, //wMaxTextureBlendStages
+	0, //wMaxSimultaneousTextures
+	8, //dwMaxActiveLights
+	0.0f, //dvMaxVertexW 
+	IID_IDirect3DHALDevice, //deviceGUID
+	0, //wMaxUserClipPlanes
+	0, //wMaxVertexBlendMatrices
+	D3DVTXPCAPS_DIRECTIONALLIGHTS, //dwVertexProcessingCaps 
+	0,0,0,0 //dwReserved1 through dwReserved4
+};
+
+struct D3DDevice
+{
+	char *name;
+	char *devname;
+};
+D3DDevice devices[3] =
+{
+	{
+		"Simulated RGB Rasterizer",
+		"DXGL RGB Rasterizer",
+	},
+	{
+		"DXGL Hardware Accelerator",
+		"DXGL D3D HAL",
+	},
+	{
+		"DXGL Hardware Accelerator with Transform and Lighting",
+		"DXGL D3D T&L HAL",
+	}
+};
 glDirect3D7::glDirect3D7(glDirectDraw7 *glDD7)
 {
 	refcount=1;
@@ -75,8 +159,29 @@ HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, L
 HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3D7::EnumDevices: stub");
-	return DDERR_GENERIC;
+	if(!lpEnumDevicesCallback) return DDERR_INVALIDPARAMS;
+	HRESULT result;
+	D3DDEVICEDESC7 desc = d3ddesc;
+	for(int i = 0; i < 3; i++)
+	{
+		switch(i)
+		{
+		case 0:
+			desc.deviceGUID = IID_IDirect3DRGBDevice;
+			break;
+		case 1:
+			desc.deviceGUID = IID_IDirect3DHALDevice;
+			desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
+			break;
+		case 2:
+			desc.deviceGUID = IID_IDirect3DTnLHalDevice;
+			desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
+			break;
+		}
+		result = lpEnumDevicesCallback(devices[i].name,devices[i].devname,&desc,lpUserArg);
+		if(result != D3DENUMRET_OK) break;
+	}
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext)
 {
