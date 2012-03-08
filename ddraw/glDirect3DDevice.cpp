@@ -172,6 +172,9 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
+	for(int i = 0; i < lightsmax; i++)
+		if(lights[i]) delete lights[i];
+	delete lights;
 	glD3D7->Release();
 	glDDS7->Release();
 }

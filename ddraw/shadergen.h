@@ -30,6 +30,7 @@ typedef struct
 	__int64 TEX7;
 } TexState;
 
+void ClearShaders();
 void SetShader(__int64 id, TexState *texstate, bool builtin);
 GLuint GetProgram();
 void ZeroShaderArray();

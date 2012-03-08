@@ -101,6 +101,23 @@ void ZeroShaderArray()
 	isbuiltin = true;
 }
 
+void ClearShaders()
+{
+	for(int i = 0; i < shadercount; i++)
+	{
+		genshaders[i].id = 0;
+		ZeroMemory(genshaders[i].texids,8*sizeof(__int64));
+		if(genshaders[i].shader.prog) glDeleteProgram(genshaders[i].shader.prog);
+		if(genshaders[i].shader.fs) glDeleteShader(genshaders[i].shader.fs);
+		if(genshaders[i].shader.vs) glDeleteShader(genshaders[i].shader.vs);
+		if(genshaders[i].shader.fsrc) delete genshaders[i].shader.fsrc;
+		if(genshaders[i].shader.vsrc) delete genshaders[i].shader.vsrc;
+		ZeroMemory(&genshaders[i].shader,sizeof(_GENSHADER));
+	}
+	shadercount = 0;
+	genindex = 0;
+}
+
 void SetShader(__int64 id, TexState *texstate, bool builtin)
 {
 	int shaderindex = -1;

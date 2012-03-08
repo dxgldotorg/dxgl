@@ -177,4 +177,5 @@ void DeleteShaders()
 			shaders[i].fs = 0;
 		}
 	}
+	ClearShaders();
 }
