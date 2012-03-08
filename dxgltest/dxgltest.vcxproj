@@ -69,6 +69,7 @@
     <SourcePath>$(WXWIN)\src;$(SourcePath)</SourcePath>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -77,18 +78,21 @@
     <SourcePath>$(WXWIN)\src;$(SourcePath)</SourcePath>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(WXWIN)\include;$(WXWIN)\lib\vc_lib\mswu;$(IncludePath)</IncludePath>
     <LibraryPath>$(WXWIN)\lib\vc_lib;$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
     <SourcePath>$(WXWIN)\src;$(SourcePath)</SourcePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(WXWIN)\include;$(WXWIN)\lib\vc_lib\mswu;$(IncludePath)</IncludePath>
     <LibraryPath>$(WXWIN)\lib\vc_lib;$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
     <SourcePath>$(WXWIN)\src;$(SourcePath)</SourcePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
