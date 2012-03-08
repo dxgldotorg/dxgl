@@ -477,8 +477,11 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 HRESULT WINAPI glDirect3DDevice7::GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetCaps: stub");
-	ERR(DDERR_GENERIC);
+	D3DDEVICEDESC7 desc = d3ddesc;
+	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
+	desc.deviceGUID = IID_IDirect3DTnLHalDevice;
+	memcpy(lpD3DDevDesc,&desc,sizeof(D3DDEVICEDESC7));
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation)
 {
@@ -536,8 +539,9 @@ HRESULT WINAPI glDirect3DDevice7::GetRenderState(D3DRENDERSTATETYPE dwRenderStat
 HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRenderTarget)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetRenderTarget: stub");
-	ERR(DDERR_GENERIC);
+	if(!lplpRenderTarget) return DDERR_INVALIDPARAMS;
+	*lplpRenderTarget = glDDS7;
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetStateData(DWORD dwState, LPVOID* lplpStateData)
 {
@@ -682,8 +686,16 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRenderTarget, DWORD dwFlags)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::SetRenderTarget: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpNewRenderTarget) return DDERR_INVALIDPARAMS;
+	if(dwFlags) return DDERR_INVALIDPARAMS;
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	lpNewRenderTarget->GetSurfaceDesc(&ddsd);
+	if(!(ddsd.ddsCaps.dwCaps & DDSCAPS_3DDEVICE)) return DDERR_INVALIDSURFACETYPE;
+	glDDS7->Release();
+	glDDS7 = (glDirectDrawSurface7*)lpNewRenderTarget;
+	glDDS7->AddRef();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetStateData(DWORD dwState, LPVOID lpStateData)
 {
