@@ -990,7 +990,7 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 	case D3DTSS_TEXTURETRANSFORMFLAGS:
 		if((dwValue & 0xFF) > 4) return DDERR_INVALIDPARAMS;
 		if((dwValue >> 8) > 1) return DDERR_INVALIDPARAMS;
-		texstages[dwStage].textransform = dwValue;
+		texstages[dwStage].textransform = (D3DTEXTURETRANSFORMFLAGS)dwValue;
 		texstages[dwStage].dirty = true;
 		return D3D_OK;
 	default:
