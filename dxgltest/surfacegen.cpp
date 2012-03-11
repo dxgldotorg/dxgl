@@ -60,13 +60,24 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 					}
 				}
 			}
-			else
+			else if((ddsd.ddpfPixelFormat.dwRBitMask | ddsd.ddpfPixelFormat.dwGBitMask |
+				ddsd.ddpfPixelFormat.dwBBitMask) == 0xFFFF)
 			{
 				for(y = 0; y < ddsd.dwHeight; y++)
 				{
 					for(x = 0; x < ddsd.dwWidth; x++)
 					{
 						buffer16[x+((ddsd.lPitch/2)*y)] = (unsigned short)((x/(ddsd.dwWidth/256.)) + 256*floor((y/(ddsd.dwHeight/256.))));
+					}
+				}
+			}
+			else
+			{
+				for(y = 0; y < ddsd.dwHeight; y++)
+				{
+					for(x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer16[x+((ddsd.lPitch/2)*y)] = (unsigned short)((x/(ddsd.dwWidth/64.)) + 64*floor((y/(ddsd.dwHeight/64.))));
 					}
 				}
 			}

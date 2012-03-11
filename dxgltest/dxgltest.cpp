@@ -251,7 +251,8 @@ TCHAR framerate2dstring[33];
 const int START_3D = __LINE__;
 const TEST_ITEM Tests3D[] =
 { // minver maxver  buffermin max   usesfps		defaultfps		usestexture	usesfsaa	name
-	{7,		7,		0,		2,		true,		60.0,			false,		true,		_T("DrawIndexedPrimitives cube with one light (DX7)")}
+	{7,		7,		0,		2,		true,		60.0,			false,		true,		_T("DrawIndexedPrimitive cube with directional light (DX7)")},
+	{7,		7,		0,		2,		true,		60.0,			true,		true,		_T("DrawPrimitive textured cube (DX7)")}
 };
 const int END_3D = __LINE__ - 4;
 const int numtests3d = END_3D - START_3D;
