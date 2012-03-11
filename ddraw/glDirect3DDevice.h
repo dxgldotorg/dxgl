@@ -44,6 +44,7 @@ struct TEXTURESTAGE
 	D3DVALUE bumpenvlscale;
 	D3DVALUE bumpenvloffset;
 	D3DTEXTURETRANSFORMFLAGS textransform;
+	glDirectDrawSurface7 *texture;
 };
 
 class glDirect3DLight;

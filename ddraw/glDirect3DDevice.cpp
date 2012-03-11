@@ -26,7 +26,7 @@
 #include "glutil.h"
 #include "matrix.h"
 
-const DWORD renderstate_default[153] = {0,                 // 0
+const DWORD renderstate_default[153] = {0, // 0
 	NULL, //texturehandle
 	D3DANTIALIAS_NONE, //antialias
 	D3DTADDRESS_WRAP, //textureaddress
@@ -141,7 +141,8 @@ const TEXTURESTAGE texstagedefault0 =
 	1,
 	0,
 	0,
-	D3DTTFF_DISABLE
+	D3DTTFF_DISABLE,
+	NULL
 };
 const TEXTURESTAGE texstagedefault1 =
 {
@@ -164,7 +165,8 @@ const TEXTURESTAGE texstagedefault1 =
 	1,
 	0,
 	0,
-	D3DTTFF_DISABLE
+	D3DTTFF_DISABLE,
+	NULL
 };
 
 int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
@@ -225,6 +227,8 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	for(int i = 0; i < lightsmax; i++)
 		if(lights[i]) delete lights[i];
 	delete lights;
+	for(int i = 0; i < 8; i++)
+		if(texstages[i].texture) texstages[i].texture->Release();
 	glD3D7->Release();
 	glDDS7->Release();
 }
@@ -621,9 +625,13 @@ HRESULT WINAPI glDirect3DDevice7::GetStateData(DWORD dwState, LPVOID* lplpStateD
 }
 HRESULT WINAPI glDirect3DDevice7::GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7 *lplpTexture)
 {
+	if(!lplpTexture) return DDERR_INVALIDPARAMS;
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetTexture: stub");
-	ERR(DDERR_GENERIC);
+	if(dwStage > 7) return DDERR_INVALIDPARAMS;
+	if(!texstages[dwStage].texture) return DDERR_INVALIDOBJECT;
+	*lplpTexture = texstages[dwStage].texture;
+	texstages[dwStage].texture->AddRef();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue)
 {
@@ -852,8 +860,11 @@ HRESULT WINAPI glDirect3DDevice7::SetStateData(DWORD dwState, LPVOID lpStateData
 HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7 lpTexture)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::SetTexture: stub");
-	ERR(DDERR_GENERIC);
+	if(dwStage > 7) return DDERR_INVALIDPARAMS;
+	if(texstages[dwStage].texture) texstages[dwStage].texture->Release();
+	texstages[dwStage].texture = (glDirectDrawSurface7*)lpTexture;
+	if(lpTexture) lpTexture->AddRef();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
