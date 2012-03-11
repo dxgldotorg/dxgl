@@ -142,7 +142,9 @@ const TEXTURESTAGE texstagedefault0 =
 	0,
 	0,
 	D3DTTFF_DISABLE,
-	NULL
+	NULL,
+	0,
+	0
 };
 const TEXTURESTAGE texstagedefault1 =
 {
@@ -166,7 +168,9 @@ const TEXTURESTAGE texstagedefault1 =
 	0,
 	0,
 	D3DTTFF_DISABLE,
-	NULL
+	NULL,
+	0,
+	0
 };
 
 int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
@@ -869,6 +873,129 @@ HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(dwStage > 7) return DDERR_INVALIDPARAMS;
+	switch(dwState)
+	{
+	case D3DTSS_COLOROP:
+		if(!dwValue || (dwValue > 24)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].colorop = (D3DTEXTUREOP)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_COLORARG1:
+		if((dwValue & D3DTA_SELECTMASK) > 4) return DDERR_INVALIDPARAMS;
+		if(dwValue > 0x34) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].colorarg1 = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_COLORARG2:
+		if((dwValue & D3DTA_SELECTMASK) > 4) return DDERR_INVALIDPARAMS;
+		if(dwValue > 0x34) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].colorarg2 = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ALPHAOP:
+		if(!dwValue || (dwValue > 24)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].alphaop = (D3DTEXTUREOP )dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ALPHAARG1:
+		if((dwValue & D3DTA_SELECTMASK) > 4) return DDERR_INVALIDPARAMS;
+		if(dwValue > 0x34) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].alphaarg1 = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ALPHAARG2:
+		if((dwValue & D3DTA_SELECTMASK) > 4) return DDERR_INVALIDPARAMS;
+		if(dwValue > 0x34) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].alphaarg2 = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT00:
+		memcpy(&texstages[dwStage].bumpenv00,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT01:
+		memcpy(&texstages[dwStage].bumpenv01,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT10:
+		memcpy(&texstages[dwStage].bumpenv10,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT11:
+		memcpy(&texstages[dwStage].bumpenv11,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_TEXCOORDINDEX:
+		if((dwValue & 0xFFFF) > 7) return DDERR_INVALIDPARAMS;
+		if((dwValue >> 16) > 3) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].texcoordindex = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ADDRESS:
+		if(!dwValue || (dwValue > 4)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].addressu = (D3DTEXTUREADDRESS)dwValue;
+		texstages[dwStage].addressv = (D3DTEXTUREADDRESS)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ADDRESSU:
+		if(!dwValue || (dwValue > 4)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].addressu = (D3DTEXTUREADDRESS)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_ADDRESSV:
+		if(!dwValue || (dwValue > 4)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].addressv = (D3DTEXTUREADDRESS)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BORDERCOLOR:
+		texstages[dwStage].bordercolor = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MAGFILTER:
+		if(!dwValue || (dwValue > 5)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].magfilter = (D3DTEXTUREMAGFILTER)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MINFILTER:
+		if(!dwValue || (dwValue > 3)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].minfilter = (D3DTEXTUREMINFILTER)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MIPFILTER:
+		if(!dwValue || (dwValue > 3)) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].mipfilter = (D3DTEXTUREMIPFILTER)dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MIPMAPLODBIAS:
+		memcpy(&texstages[dwStage].lodbias,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MAXMIPLEVEL:
+		texstages[dwStage].miplevel = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_MAXANISOTROPY:
+		texstages[dwStage].anisotropy = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVLSCALE:
+		memcpy(&texstages[dwStage].bumpenvlscale,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_BUMPENVLOFFSET:
+		memcpy(&texstages[dwStage].bumpenvloffset,&dwValue,sizeof(D3DVALUE));
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	case D3DTSS_TEXTURETRANSFORMFLAGS:
+		if((dwValue & 0xFF) > 4) return DDERR_INVALIDPARAMS;
+		if((dwValue >> 8) > 1) return DDERR_INVALIDPARAMS;
+		texstages[dwStage].textransform = dwValue;
+		texstages[dwStage].dirty = true;
+		return D3D_OK;
+	default:
+		return DDERR_INVALIDPARAMS;
+	}
 	FIXME("glDirect3DDevice7::SetTextureStageState: stub");
 	ERR(DDERR_GENERIC);
 }

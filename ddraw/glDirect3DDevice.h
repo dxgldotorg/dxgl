@@ -45,6 +45,8 @@ struct TEXTURESTAGE
 	D3DVALUE bumpenvloffset;
 	D3DTEXTURETRANSFORMFLAGS textransform;
 	glDirectDrawSurface7 *texture;
+	bool dirty;
+	__int64 shaderid;
 };
 
 class glDirect3DLight;
