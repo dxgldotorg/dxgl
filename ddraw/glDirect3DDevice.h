@@ -19,6 +19,33 @@
 #ifndef __GLDIRECT3DDEVICE_H
 #define __GLDIRECT3DDEVICE_H
 
+struct TEXTURESTAGE
+{
+	D3DTEXTUREOP colorop;
+	DWORD colorarg1;
+	DWORD colorarg2;
+	D3DTEXTUREOP alphaop;
+	DWORD alphaarg1;
+	DWORD alphaarg2;
+	D3DVALUE bumpenv00;
+	D3DVALUE bumpenv01;
+	D3DVALUE bumpenv10;
+	D3DVALUE bumpenv11;
+	DWORD texcoordindex;
+	D3DTEXTUREADDRESS addressu;
+	D3DTEXTUREADDRESS addressv;
+	DWORD bordercolor;
+	D3DTEXTUREMAGFILTER magfilter;
+	D3DTEXTUREMINFILTER minfilter;
+	D3DTEXTUREMIPFILTER mipfilter;
+	D3DVALUE lodbias;
+	DWORD miplevel;
+	DWORD anisotropy;
+	D3DVALUE bumpenvlscale;
+	D3DVALUE bumpenvloffset;
+	D3DTEXTURETRANSFORMFLAGS textransform;
+};
+
 class glDirect3DLight;
 class glDirectDrawSurface7;
 class glDirect3DDevice7 : public IDirect3DDevice7
@@ -99,6 +126,7 @@ public:
 	int gllights[8];
 	glDirectDrawSurface7 *glDDS7;
 	DWORD renderstate[153];
+	TEXTURESTAGE texstages[8];
 
 private:
 	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);

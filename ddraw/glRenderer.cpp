@@ -1068,6 +1068,16 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			glVertexAttribPointer(colorloc,4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
 		}
 	}
+	for(i = 0; i < 8; i++)
+	{
+		{
+			switch(texformats[i])
+			{
+
+			}
+
+		}
+	}
 	if(device->normal_dirty) device->UpdateNormalMatrix();
 	GLint loc = glGetUniformLocation(prog,"world");
 	viewLHtoRH(tmpmat,device->matWorld);

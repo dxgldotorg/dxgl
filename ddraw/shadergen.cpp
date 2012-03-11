@@ -91,7 +91,7 @@ Bits 45-46: Texture minification filter
 Bit 47: Enable texture coordinate transform
 Bits 48-49: Number of texcoord dimensions
 Bit 50: Projected texcoord
-Bits 51-52: Texutre coordinate format:
+Bits 51-52: Texture coordinate format:
 00=2dim  01=3dim 10=4dim 11=1dim
 */
 void ZeroShaderArray()

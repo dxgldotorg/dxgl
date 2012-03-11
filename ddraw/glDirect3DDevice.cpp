@@ -120,6 +120,53 @@ const DWORD renderstate_default[153] = {0,                 // 0
 	FALSE, //clipplaneenable
 };
 
+const TEXTURESTAGE texstagedefault0 =
+{
+	D3DTOP_MODULATE,
+	D3DTA_TEXTURE,
+	D3DTA_CURRENT,
+	D3DTOP_SELECTARG1,
+	D3DTA_TEXTURE,
+	D3DTA_CURRENT,
+	0,0,0,0,
+	0,
+	D3DTADDRESS_WRAP,
+	D3DTADDRESS_WRAP,
+	0,
+	D3DTFG_POINT,
+	D3DTFN_POINT,
+	D3DTFP_NONE,
+	0,
+	0,
+	1,
+	0,
+	0,
+	D3DTTFF_DISABLE
+};
+const TEXTURESTAGE texstagedefault1 =
+{
+	D3DTOP_DISABLE,
+	D3DTA_TEXTURE,
+	D3DTA_CURRENT,
+	D3DTOP_DISABLE,
+	D3DTA_TEXTURE,
+	D3DTA_CURRENT,
+	0,0,0,0,
+	0,
+	D3DTADDRESS_WRAP,
+	D3DTADDRESS_WRAP,
+	0,
+	D3DTFG_POINT,
+	D3DTFN_POINT,
+	D3DTFP_NONE,
+	0,
+	0,
+	1,
+	0,
+	0,
+	D3DTTFF_DISABLE
+};
+
 int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
 {
 	switch(d3dptPrimitiveType)
@@ -153,6 +200,9 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	__gluMakeIdentityf(matView);
 	__gluMakeIdentityf(matProjection);
 	__gluMakeIdentityf(matNormal);
+	texstages[0] = texstagedefault0;
+	texstages[1] = texstages[2] = texstages[3] = texstages[4] = 
+		texstages[5] = texstages[6] = texstages[7] = texstagedefault1;
 	refcount = 1;
 	inscene = false;
 	normal_dirty = false;
@@ -468,11 +518,31 @@ HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
 	FIXME("glDirect3DDevice7::EndStateBlock: stub");
 	ERR(DDERR_GENERIC);
 }
+
+// Use EXACTLY one line per entry.  Don't change layout of the list.
+const int TEXFMT_START = __LINE__;
+const DDPIXELFORMAT texformats[] = 
+{
+	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0xF00,0xF0,0xF,0xF000},
+	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0x7C00,0x3E0,0x1F,0x8000},
+	{sizeof(DDPIXELFORMAT),DDPF_RGB,0,16,0xF800,0x7E0,0x1F,0},
+	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,32,0xFF0000,0xFF00,0xFF,0xFF000000}
+};
+const int TEXFMT_END = __LINE__ - 4;
+const int numtexfmt = TEXFMT_END-TEXFMT_START;
+
 HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::EnumTextureFormats: stub");
-	ERR(DDERR_GENERIC);
+	HRESULT result;
+	DDPIXELFORMAT fmt;
+	for(int i = 0; i < numtexfmt; i++)
+	{
+		memcpy(&fmt,&texformats[i],sizeof(DDPIXELFORMAT));
+		result = lpd3dEnumPixelProc(&fmt,lpArg);
+		if(result != D3DENUMRET_OK) return D3D_OK;
+	}
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc)
 {
@@ -557,8 +627,84 @@ HRESULT WINAPI glDirect3DDevice7::GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 }
 HRESULT WINAPI glDirect3DDevice7::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue)
 {
+	if(dwStage > 7) return DDERR_INVALIDPARAMS;
+	if(!lpdwValue) return DDERR_INVALIDPARAMS;
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetTextureStageState: stub");
+	switch(dwState)
+	{
+	case D3DTSS_COLOROP:
+		*lpdwValue = texstages[dwStage].colorop;
+		return D3D_OK;
+	case D3DTSS_COLORARG1:
+		*lpdwValue = texstages[dwStage].colorarg1;
+		return D3D_OK;
+	case D3DTSS_COLORARG2:
+		*lpdwValue = texstages[dwStage].colorarg2;
+		return D3D_OK;
+	case D3DTSS_ALPHAOP:
+		*lpdwValue = texstages[dwStage].alphaop;
+		return D3D_OK;
+	case D3DTSS_ALPHAARG1:
+		*lpdwValue = texstages[dwStage].alphaarg1;
+		return D3D_OK;
+	case D3DTSS_ALPHAARG2:
+		*lpdwValue = texstages[dwStage].alphaarg2;
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT00:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenv00,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT01:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenv01,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT10:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenv10,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_BUMPENVMAT11:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenv11,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_TEXCOORDINDEX:
+		*lpdwValue = texstages[dwStage].texcoordindex;
+		return D3D_OK;
+	case D3DTSS_ADDRESS:
+	case D3DTSS_ADDRESSU:
+		*lpdwValue = texstages[dwStage].addressu;
+		return D3D_OK;
+	case D3DTSS_ADDRESSV:
+		*lpdwValue = texstages[dwStage].addressv;
+		return D3D_OK;
+	case D3DTSS_BORDERCOLOR:
+		*lpdwValue = texstages[dwStage].bordercolor;
+		return D3D_OK;
+	case D3DTSS_MAGFILTER:
+		*lpdwValue = texstages[dwStage].magfilter;
+		return D3D_OK;
+	case D3DTSS_MINFILTER:
+		*lpdwValue = texstages[dwStage].minfilter;
+		return D3D_OK;
+	case D3DTSS_MIPFILTER:
+		*lpdwValue = texstages[dwStage].mipfilter;
+		return D3D_OK;
+	case D3DTSS_MIPMAPLODBIAS:
+		memcpy(lpdwValue,&texstages[dwStage].lodbias,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_MAXMIPLEVEL:
+		*lpdwValue = texstages[dwStage].miplevel;
+		return D3D_OK;
+	case D3DTSS_MAXANISOTROPY:
+		*lpdwValue = texstages[dwStage].anisotropy;
+		return D3D_OK;
+	case D3DTSS_BUMPENVLSCALE:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenvlscale,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_BUMPENVLOFFSET:
+		memcpy(lpdwValue,&texstages[dwStage].bumpenvloffset,sizeof(D3DVALUE));
+		return D3D_OK;
+	case D3DTSS_TEXTURETRANSFORMFLAGS:
+		*lpdwValue = texstages[dwStage].textransform;
+		return D3D_OK;
+	default:
+		return DDERR_INVALIDPARAMS;
+	}
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
