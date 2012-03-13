@@ -389,6 +389,29 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		if(VertexType[i+2].data) blendweights++;
 	shader |= (__int64)blendweights << 46;
 	//TODO:  Implement texture stages.
+	for(i = 0; i < 8; i++)
+	{
+		if(!texstages[i].dirty) continue;
+		texstages[i].shaderid = texstages[i].colorop & 31;
+		texstages[i].shaderid |= (texstages[i].colorarg1 & 63) << 5;
+		texstages[i].shaderid |= (texstages[i].colorarg2 & 63) << 11;
+		texstages[i].shaderid |= (texstages[i].alphaop & 31) << 17;
+		texstages[i].shaderid |= (texstages[i].alphaarg1 & 63) << 22;
+		texstages[i].shaderid |= (__int64)(texstages[i].alphaarg2 & 63) << 28;
+		texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex & 7) << 34;
+		texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex >> 16) & 3) << 37;
+		texstages[i].shaderid |= (__int64)((texstages[i].addressu - 1) & 3) << 39;
+		texstages[i].shaderid |= (__int64)((texstages[i].addressv - 1) & 3) << 41;
+		texstages[i].shaderid |= (__int64)(texstages[i].magfilter & 7) << 43;
+		texstages[i].shaderid |= (__int64)(texstages[i].minfilter & 3) << 46;
+		texstages[i].shaderid |= (__int64)(texstages[i].mipfilter & 3) << 48;
+		if(texstages[i].textransform & 7)
+		{
+			texstages[i].shaderid |= 1i64 << 50;
+			texstages[i].shaderid |= (__int64)(((texstages[i].textransform & 7) - 1)& 3) << 51;
+		}
+		if(texstages[i].textransform & D3DTTFF_PROJECTED) texstages[i].shaderid |= 1i64 << 53;
+	}
 	return shader;
 }
 

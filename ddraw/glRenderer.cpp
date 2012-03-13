@@ -624,7 +624,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
-		SetShader(PROG_FILL,NULL,true);
+		SetShader(PROG_FILL,NULL,NULL,true);
 		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_ALPHA_TEST);
 		switch(ddInterface->GetBPP())
@@ -669,7 +669,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
-		SetShader(PROG_CKEY,NULL,true);
+		SetShader(PROG_CKEY,NULL,NULL,true);
 		GLint keyloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"keyIn");
 		switch(ddInterface->GetBPP())
 		{
@@ -700,7 +700,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		SetShader(PROG_TEXTURE,NULL,true);
+		SetShader(PROG_TEXTURE,NULL,NULL,true);
 		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
 		glUniform1i(texloc,0);
 	}
@@ -853,7 +853,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(ddInterface->GetBPP() == 8)
 	{
-		SetShader(PROG_PAL256,NULL,true);
+		SetShader(PROG_PAL256,NULL,NULL,true);
 		glBindTexture(GL_TEXTURE_2D,paltex);
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,dest->palette->GetPalette(NULL));
 		GLint palloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"ColorTable");
@@ -868,7 +868,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		if(dxglcfg.scalingfilter)
 		{
 			_DrawBackbuffer(&texture,dest->fakex,dest->fakey);
-			SetShader(PROG_TEXTURE,NULL,true);
+			SetShader(PROG_TEXTURE,NULL,NULL,true);
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D,texture);
 			GLuint prog = GetProgram() & 0xFFFFFFFF;
@@ -878,7 +878,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	}
 	else
 	{
-		SetShader(PROG_TEXTURE,NULL,true);
+		SetShader(PROG_TEXTURE,NULL,NULL,true);
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,texture);
 		GLuint prog = GetProgram() & 0xFFFFFFFF;
@@ -1028,10 +1028,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		wndbusy = false;
 		return;
 	}
-	TexState texstage;
-	ZeroMemory(&texstage,sizeof(TexState));
 	__int64 shader = device->SelectShader(vertices);
-	SetShader(shader,&texstage,0);
+	SetShader(shader,device->texstages,texformats,0);
 	GLuint prog = GetProgram();
 	GLint xyzloc = glGetAttribLocation(prog,"xyz");
 	glEnableVertexAttribArray(xyzloc);

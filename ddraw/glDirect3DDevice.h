@@ -19,6 +19,9 @@
 #ifndef __GLDIRECT3DDEVICE_H
 #define __GLDIRECT3DDEVICE_H
 
+class glDirectDrawSurface7;
+class glDirect3D7;
+
 struct TEXTURESTAGE
 {
 	D3DTEXTUREOP colorop;

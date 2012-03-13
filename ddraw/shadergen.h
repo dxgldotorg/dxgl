@@ -18,22 +18,10 @@
 #ifndef _SHADERGEN_H
 #define _SHADERGEN_H
 
-typedef struct
-{
-	__int64 TEX0;
-	__int64 TEX1;
-	__int64 TEX2;
-	__int64 TEX3;
-	__int64 TEX4;
-	__int64 TEX5;
-	__int64 TEX6;
-	__int64 TEX7;
-} TexState;
-
 void ClearShaders();
-void SetShader(__int64 id, TexState *texstate, bool builtin);
+void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin);
 GLuint GetProgram();
 void ZeroShaderArray();
-void CreateShader(int index, __int64 id, TexState *texstate);
+void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
 
 #endif

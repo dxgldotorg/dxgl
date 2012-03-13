@@ -17,14 +17,16 @@
 
 #include "common.h"
 #include "scalers.h"
-#include "shaders.h"
-#include "shadergen.h"
 #include "ddraw.h"
+#include "glRenderer.h"
+#include "glDirect3DDevice.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
+#include "shadergen.h"
+#include "shaders.h"
 #include "glutil.h"
 
 

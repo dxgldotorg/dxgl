@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "glRenderer.h"
+#include "glDirect3DDevice.h"
 #include "shadergen.h"
 #include "shaders.h"
 #include <string>
@@ -79,19 +81,20 @@ Bits 46-48 - Number of blending weights
 Bits 0-4: Texture color operation
 Bits 5-10: Texture color argument 1
 Bits 11-16: Texture color argument 2
-Bits 17-20: Texture alpha operation
-Bits 21-26: Texture alpha argument 1
-Bits 27-32: Texture alpha argument 2
-Bits 33-35: Texture coordinate index
-Bits 36-37: Texture coordinate flags
-Bits 38-39: U Texture address
-Bits 40-41: V Texture address
-Bits 42-44: Texture magnification filter
-Bits 45-46: Texture minification filter
-Bit 47: Enable texture coordinate transform
-Bits 48-49: Number of texcoord dimensions
-Bit 50: Projected texcoord
-Bits 51-52: Texture coordinate format:
+Bits 17-21: Texture alpha operation
+Bits 22-27: Texture alpha argument 1
+Bits 28-33: Texture alpha argument 2
+Bits 34-36: Texture coordinate index
+Bits 37-38: Texture coordinate flags
+Bits 39-40: U Texture address
+Bits 41-42: V Texture address
+Bits 43-45: Texture magnification filter
+Bits 46-47: Texture minification filter
+Bits 48-49: Texture mip filter
+Bit 50: Enable texture coordinate transform
+Bits 51-52: Number of texcoord dimensions
+Bit 53: Projected texcoord
+Bits in texcoord ID:
 00=2dim  01=3dim 10=4dim 11=1dim
 */
 void ZeroShaderArray()
@@ -118,7 +121,7 @@ void ClearShaders()
 	genindex = 0;
 }
 
-void SetShader(__int64 id, TexState *texstate, bool builtin)
+void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 {
 	int shaderindex = -1;
 	if(builtin)
@@ -161,7 +164,7 @@ void SetShader(__int64 id, TexState *texstate, bool builtin)
 				delete genshaders[shaderindex].shader.fsrc;
 				ZeroMemory(&genshaders[shaderindex],sizeof(GenShader));
 			}
-			CreateShader(genindex,id,texstate);
+			CreateShader(genindex,id,texstate,texcoords);
 			shaderindex = genindex;
 			genindex++;
 			if(genindex == 256) genindex = 0;
@@ -233,6 +236,7 @@ float phi;\n\
 };\n";
 static const char unif_light[] = "uniform Light lightX;\n";
 static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
+static const char unif_tex[] = "uniform sampler2d texX;\n";
 // Variables
 static const char var_colors[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -274,7 +278,7 @@ ambient += light.ambient;\n\
 }\n\
 }\n";
 
-void CreateShader(int index, __int64 id, TexState *texstate)
+void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 {
 	string tmp;
 	int i;
