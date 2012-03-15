@@ -1357,9 +1357,10 @@ HRESULT WINAPI glDirectDraw7::RestoreAllSurfaces()
 }
 HRESULT WINAPI glDirectDraw7::TestCooperativeLevel()
 {
-	if(!this) return DDERR_INVALIDOBJECT;
+	return DD_OK;
+	/*if(!this) return DDERR_INVALIDOBJECT;
 	if(fullscreen) return DDERR_EXCLUSIVEMODEALREADYSET;
-	return DDERR_NOEXCLUSIVEMODE;
+	return DDERR_NOEXCLUSIVEMODE;*/
 }
 HRESULT WINAPI glDirectDraw7::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER2 lpdddi, DWORD dwFlags)
 {
