@@ -157,17 +157,17 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 			if(genshaders[genindex].shader.prog)
 			{
 				glUseProgram(0);
-				glDeleteProgram(genshaders[shaderindex].shader.prog);
-				glDeleteShader(genshaders[shaderindex].shader.vs);
-				glDeleteShader(genshaders[shaderindex].shader.fs);
-				delete genshaders[shaderindex].shader.vsrc;
-				delete genshaders[shaderindex].shader.fsrc;
-				ZeroMemory(&genshaders[shaderindex],sizeof(GenShader));
+				glDeleteProgram(genshaders[genindex].shader.prog);
+				glDeleteShader(genshaders[genindex].shader.vs);
+				glDeleteShader(genshaders[genindex].shader.fs);
+				delete genshaders[genindex].shader.vsrc;
+				delete genshaders[genindex].shader.fsrc;
+				ZeroMemory(&genshaders[genindex],sizeof(GenShader));
 			}
 			CreateShader(genindex,id,texstate,texcoords);
 			shaderindex = genindex;
 			genindex++;
-			if(genindex == 256) genindex = 0;
+			if(genindex >= 256) genindex = 0;
 		}
 		genshaders[shaderindex].id = id;
 		glUseProgram(genshaders[shaderindex].shader.prog);
@@ -255,7 +255,7 @@ static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (
 (material.specular * specular) + material.emissive;\n\
 gl_FrontColor = color;\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
-static const char op_fragpassthru[] = "color = gl_Color;\n";
+static const char op_colorfragin[] = "color = gl_Color;\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -412,14 +412,17 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	idstring[21] = 0;
 	fsrc->append(idheader);
 	fsrc->append(idstring);
-	// Attributs
 	// Uniforms
 	// Variables
 	fsrc->append(var_color);
 	// Functions
 	// Main
 	fsrc->append(mainstart);
-	fsrc->append(op_fragpassthru);
+	fsrc->append(op_colorfragin);
+	for(int i = 0; i < 8; i++)
+	{
+
+	}
 	fsrc->append(op_colorfragout);
 	fsrc->append(mainend);
 #ifdef _DEBUG
