@@ -170,6 +170,7 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 			if(genindex >= 256) genindex = 0;
 		}
 		genshaders[shaderindex].id = id;
+		memcpy(genshaders[shaderindex].texids,texstate,8*sizeof(__int64));
 		glUseProgram(genshaders[shaderindex].shader.prog);
 		current_prog = genshaders[shaderindex].shader.prog;
 	}
