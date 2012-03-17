@@ -1001,6 +1001,8 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 		glClearStencil(dwStencil);
 	}
 	glClear(clearbits);
+	if(target->zbuffer) target->zbuffer->dirty |= 2;
+	target->dirty |= 2;
 }
 
 void glRenderer::_Flush()
@@ -1012,7 +1014,6 @@ void glRenderer::_Flush()
 void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
-	GLfloat tmpmat[16];
 	bool transformed;
 	char blendvar[] = "blendX";
 	char rgbavar[] = "rgbaX";
@@ -1021,8 +1022,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	char strvar[] = "strX";
 	char strqvar[] = "strqX";
 	int i;
-	if(vertices[1].data) transformed = false;
-	else transformed = true;
+	if(vertices[1].data) transformed = true;
+	else transformed = false;
 	if(!vertices[0].data)
 	{
 		outputs[0] = (void*)DDERR_INVALIDPARAMS;
@@ -1082,14 +1083,11 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	}
 	if(device->normal_dirty) device->UpdateNormalMatrix();
 	GLint loc = glGetUniformLocation(prog,"world");
-	viewLHtoRH(tmpmat,device->matWorld);
-	glUniformMatrix4fv(loc,1,false,tmpmat);
+	glUniformMatrix4fv(loc,1,false,device->matWorld);
 	loc = glGetUniformLocation(prog,"view");
-	viewLHtoRH(tmpmat,device->matView);
-	glUniformMatrix4fv(loc,1,false,tmpmat);
+	glUniformMatrix4fv(loc,1,false,device->matView);
 	loc = glGetUniformLocation(prog,"projection");
-	prjLHtoRH(tmpmat,device->matProjection);
-	glUniformMatrix4fv(loc,1,false,tmpmat);
+	glUniformMatrix4fv(loc,1,false,device->matProjection);
 	loc = glGetUniformLocation(prog,"normalmat");
 	glUniformMatrix4fv(loc,1,true,device->matNormal);
 	loc = glGetUniformLocation(prog,"material.diffuse");
@@ -1159,6 +1157,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
 	if(indices) glDrawRangeElements(mode,0,indexcount,count,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
+	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
+	device->glDDS7->dirty |= 2;
 	if(flags & D3DDP_WAIT) glFlush();
 	outputs[0] = (void*)D3D_OK;
 	wndbusy = false;

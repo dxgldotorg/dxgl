@@ -251,7 +251,8 @@ static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
-gl_Position = (projection*(view*world))*xyzw;\n";
+vec4 pos = (projection*(view*world))*xyzw;\n\
+gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
