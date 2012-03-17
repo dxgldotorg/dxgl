@@ -982,7 +982,8 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 	wndbusy = false;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
-	SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
+	if(target->zbuffer) SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
+	else SetFBO(target->texture,0,false);
 	int clearbits = 0;
 	if(D3DCLEAR_TARGET)
 	{
@@ -1037,8 +1038,11 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(transformed)
 	{
 		GLint xyzwloc = glGetAttribLocation(prog,"rhw");
-		glEnableVertexAttribArray(xyzwloc);
-		glVertexAttribPointer(xyzwloc,4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+		if(xyzwloc != -1)
+		{
+			glEnableVertexAttribArray(xyzwloc);
+			glVertexAttribPointer(xyzwloc,4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+		}
 	}
 	for(i = 0; i < 5; i++)
 	{
@@ -1150,7 +1154,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			}
 		}
 	}
-	SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
+	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
+	else SetFBO(device->glDDS7->texture,0,false);
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
 	if(indices) glDrawRangeElements(mode,0,indexcount,count,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);

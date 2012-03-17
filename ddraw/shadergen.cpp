@@ -37,6 +37,7 @@ struct GenShader
 	_GENSHADER shader;
 	__int64 id;
 	__int64 texids[8];
+	int texcoords[8];
 };
 GenShader genshaders[256];
 static __int64 current_shader = 0;
@@ -145,8 +146,11 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 			{
 				if(!memcmp(genshaders[i].texids,texstate,8*sizeof(__int64)))
 				{
-					shaderindex = i;
-					break;
+					if(!memcmp(genshaders[i].texcoords,texcoords,8*sizeof(int)))
+					{
+						shaderindex = i;
+						break;
+					}
 				}
 			}
 		}
@@ -171,6 +175,7 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 		}
 		genshaders[shaderindex].id = id;
 		memcpy(genshaders[shaderindex].texids,texstate,8*sizeof(__int64));
+		memcpy(genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
 		glUseProgram(genshaders[shaderindex].shader.prog);
 		current_prog = genshaders[shaderindex].shader.prog;
 	}
