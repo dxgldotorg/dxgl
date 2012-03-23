@@ -113,7 +113,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				palette = palettein;
 				palette->AddRef();
 			}
-			paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+			paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
 		}
 		else paltex = 0;
 	}
@@ -386,7 +386,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				return;
 			}
 		}
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 	}
 
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
@@ -970,8 +970,8 @@ void glDirectDrawSurface7::Restore2()
 		}
 		if(backbuffer) backbuffer->Restore2();
 		if(zbuffer) zbuffer->Restore2();
-		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
+		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 	}
 }
 HRESULT WINAPI glDirectDrawSurface7::Restore()
@@ -1014,8 +1014,8 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 			if(backbuffer) backbuffer->Restore();
 			if(zbuffer) zbuffer->Restore();
 		}
-		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP,GL_CLAMP,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP,GL_CLAMP,fakex,fakey,texformat,texformat2,texformat3);
+		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 		return DD_OK;
 	}
 	else return DD_OK;

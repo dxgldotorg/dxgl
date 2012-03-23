@@ -625,8 +625,6 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(dwFlags & DDBLT_COLORFILL)
 	{
 		SetShader(PROG_FILL,NULL,NULL,true);
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_ALPHA_TEST);
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
@@ -662,10 +660,6 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		default:
 			break;
 		}
-	}
-	else
-	{
-		glEnable(GL_TEXTURE_2D);
 	}
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
@@ -726,7 +720,6 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	glDisable(GL_TEXTURE_2D);
 	SetFBO(0,0,false);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
@@ -740,7 +733,6 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 	GLuint texture;
 	glGenTextures(1,&texture);
 	glBindTexture(GL_TEXTURE_2D,texture);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,(GLfloat)min);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,(GLfloat)mag);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,(GLfloat)wraps);
@@ -755,7 +747,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
 	glActiveTexture(GL_TEXTURE0);
 	if(!backbuffer)
 	{
-		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP,GL_CLAMP,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
+		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
 		backx = x;
 		backy = y;
 	}
@@ -869,7 +861,6 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		{
 			_DrawBackbuffer(&texture,dest->fakex,dest->fakey);
 			SetShader(PROG_TEXTURE,NULL,NULL,true);
-			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D,texture);
 			GLuint prog = GetProgram() & 0xFFFFFFFF;
 			GLint texloc = glGetUniformLocation(prog,"Texture");
@@ -879,7 +870,6 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	else
 	{
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
-		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,texture);
 		GLuint prog = GetProgram() & 0xFFFFFFFF;
 		GLint texloc = glGetUniformLocation(prog,"Texture");
@@ -916,7 +906,6 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	glDisable(GL_TEXTURE_2D);
 	glFlush();
 	if(hasHWnd) SwapBuffers(hDC);
 	else
@@ -965,8 +954,6 @@ void glRenderer::_InitD3D(int zbuffer)
 	if(zbuffer) glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_DITHER);
-	glEnable(GL_LIGHTING);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
 }
 
 void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)

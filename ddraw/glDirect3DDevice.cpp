@@ -1061,7 +1061,7 @@ void glDirect3DDevice7::UpdateNormalMatrix()
 	GLfloat tmp[16];
 	ZeroMemory(&worldview,sizeof(D3DMATRIX));
 	ZeroMemory(&tmp,sizeof(D3DMATRIX));
-	__gluMultMatricesf(matView,matWorld,worldview);	// Get worldview
+	__gluMultMatricesf(matWorld,matView,worldview);	// Get worldview
 	if(__gluInvertMatrixf(worldview,tmp)) // Invert
 		memcpy(matNormal,tmp,16*sizeof(GLfloat));
 	else memcpy(matNormal,worldview,16*sizeof(GLfloat));
