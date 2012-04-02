@@ -124,7 +124,7 @@ public:
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
-	GLfloat matNormal[16];
+	GLfloat matNormal[9];
 	bool normal_dirty;
 	D3DMATERIAL7 material;
 	D3DVIEWPORT7 viewport;

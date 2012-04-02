@@ -84,6 +84,7 @@ GLAPI void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfl
 GLAPI void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 GLAPI void (APIENTRY *glUniform3fv) (GLint location, GLsizei count, const GLfloat* value);
 GLAPI void (APIENTRY *glUniform4fv) (GLint location, GLsizei count, const GLfloat* value);
+GLAPI void (APIENTRY *glUniformMatrix3fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 GLAPI void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
 GLAPI void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);

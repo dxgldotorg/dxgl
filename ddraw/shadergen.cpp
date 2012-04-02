@@ -76,6 +76,7 @@ Bit 36 - Use specular color
 Bit 37 - Enable normals
 Bits 38-45 - Light types
 Bits 46-48 - Number of blending weights
+Bit 49 - Normalize normals
 */
 
 /* Bits in Texture Stage ID:
@@ -215,7 +216,7 @@ static const char attr_strq[] = "attribute vec4 strqX;\n";
 static const char unif_matrices[] = "uniform mat4 world;\n\
 uniform mat4 view;\n\
 uniform mat4 projection;\n\
-uniform mat4 normalmat;\n";
+uniform mat3 normalmat;\n";
 static const char unif_material[] = "struct Material\n\
 {\n\
 vec4 diffuse;\n\
@@ -244,15 +245,18 @@ static const char unif_light[] = "uniform Light lightX;\n";
 static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
 static const char unif_tex[] = "uniform sampler2d texX;\n";
 // Variables
-static const char var_colors[] = "vec4 diffuse;\n\
+static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
-vec4 ambient;\n";
+vec4 ambient;\n\
+vec3 N;";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
 vec4 pos = (projection*(view*world))*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
+static const char op_normalize[] = "N = normalize(normalmat*nxyz);\n";
+static const char op_normalpassthru[] = "N = normalmat*nxyz;\n";
 static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
@@ -268,8 +272,7 @@ static const char op_colorfragin[] = "color = gl_Color;\n";
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
 {\n\
 float NdotHV = 0.0;\n\
-vec3 N = normalize(vec3(normalmat*vec4(nxyz,1.0)));\n\
-vec3 dir = normalize(light.direction);\n\
+vec3 dir = normalize(-light.direction);\n\
 ambient += light.ambient;\n\
 float NdotL = max(dot(N,dir),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
@@ -277,7 +280,7 @@ if(NdotL > 0.0)\n\
 {\n\
 vec3 eye = (-view[3].xyz / view[3].w);\n\
 vec3 P = vec3((view*world)*xyzw);\n\
-vec3 L = normalize(light.direction.xyz - P);\n\
+vec3 L = normalize(-light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
 specular += (pow(NdotHV,float(material.power))*light.specular);\n\
@@ -348,7 +351,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	}
 	
 	// Variables
-	vsrc->append(var_colors);
+	vsrc->append(var_common);
 	if(!((id>>34)&1)) vsrc->append(var_xyzw);
 
 	// Functions
@@ -367,6 +370,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	if((id>>34)&1) vsrc->append(op_passthru);
 	else vsrc->append(op_transform);
 	vsrc->append(op_resetcolor);
+	if((id>>49)&1) vsrc->append(op_normalize);
+	else vsrc->append(op_normalpassthru);
 	if(numlights)
 	{
 		for(i = 0; i < numlights; i++)

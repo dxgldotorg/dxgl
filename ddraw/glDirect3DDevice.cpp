@@ -388,6 +388,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	for(i = 0; i < 5; i++)
 		if(VertexType[i+2].data) blendweights++;
 	shader |= (__int64)blendweights << 46;
+	if(renderstate[D3DRENDERSTATE_NORMALIZENORMALS]) shader |= (1i64 << 49);
 	//TODO:  Implement texture stages.
 	for(i = 0; i < 8; i++)
 	{
@@ -611,14 +612,22 @@ HRESULT WINAPI glDirect3DDevice7::GetInfo(DWORD dwDevInfoID, LPVOID pDevInfoStru
 HRESULT WINAPI glDirect3DDevice7::GetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLight)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetLight: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpLight) return DDERR_INVALIDPARAMS;
+	if(dwLightIndex >= lightsmax) ERR(DDERR_INVALIDOBJECT);
+	if(!lights[dwLightIndex]) ERR(DDERR_INVALIDOBJECT);
+	lights[dwLightIndex]->GetLight7(lpLight);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetLightEnable(DWORD dwLightIndex, BOOL* pbEnable)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetLightEnalbe: stub");
-	ERR(DDERR_GENERIC);
+	if(dwLightIndex >= lightsmax) ERR(DDERR_INVALIDOBJECT);
+	if(!lights[dwLightIndex]) ERR(DDERR_INVALIDOBJECT);
+	if(!pbEnable) return DDERR_INVALIDPARAMS;
+	*pbEnable = FALSE;
+	for(int i = 0; i < 8; i++)
+		if(gllights[i] == dwLightIndex) *pbEnable = TRUE;
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetMaterial(LPD3DMATERIAL7 lpMaterial)
 {
@@ -1059,11 +1068,22 @@ void glDirect3DDevice7::UpdateNormalMatrix()
 {
 	GLfloat worldview[16];
 	GLfloat tmp[16];
+
 	ZeroMemory(&worldview,sizeof(D3DMATRIX));
 	ZeroMemory(&tmp,sizeof(D3DMATRIX));
 	__gluMultMatricesf(matWorld,matView,worldview);	// Get worldview
 	if(__gluInvertMatrixf(worldview,tmp)) // Invert
-		memcpy(matNormal,tmp,16*sizeof(GLfloat));
-	else memcpy(matNormal,worldview,16*sizeof(GLfloat));
+	{
+		memcpy(matNormal,tmp,3*sizeof(GLfloat));
+		memcpy(matNormal+3,tmp+4,3*sizeof(GLfloat));
+		memcpy(matNormal+6,tmp+8,3*sizeof(GLfloat));
+	}
+	else
+	{
+		memcpy(matNormal,worldview,3*sizeof(GLfloat));
+		memcpy(matNormal+3,worldview+4,3*sizeof(GLfloat));
+		memcpy(matNormal+6,worldview+8,3*sizeof(GLfloat));
+	}
+
 	normal_dirty = false;
 }

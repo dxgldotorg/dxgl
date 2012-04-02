@@ -1076,7 +1076,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	loc = glGetUniformLocation(prog,"projection");
 	glUniformMatrix4fv(loc,1,false,device->matProjection);
 	loc = glGetUniformLocation(prog,"normalmat");
-	glUniformMatrix4fv(loc,1,true,device->matNormal);
+	glUniformMatrix3fv(loc,1,true,device->matNormal);
 	loc = glGetUniformLocation(prog,"material.diffuse");
 	glUniform4fv(loc,1,(GLfloat*)&device->material.diffuse);
 	loc = glGetUniformLocation(prog,"material.ambient");
@@ -1142,7 +1142,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
-	if(indices) glDrawRangeElements(mode,0,indexcount,count,GL_UNSIGNED_SHORT,indices);
+	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
 	device->glDDS7->dirty |= 2;
