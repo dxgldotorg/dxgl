@@ -18,27 +18,11 @@
 #include "common.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
-#include "shadergen.h"
-#include "shaders.h"
 #include <string>
 using namespace std;
+#include "shadergen.h"
+#include "shaders.h"
 
-typedef struct
-{
-	GLint vs;
-	GLint fs;
-	string *vsrc;
-	string *fsrc;
-	GLint prog;
-} _GENSHADER;
-
-struct GenShader
-{
-	_GENSHADER shader;
-	__int64 id;
-	__int64 texids[8];
-	int texcoords[8];
-};
 GenShader genshaders[256];
 static __int64 current_shader = 0;
 static __int64 current_texid[8];
@@ -47,6 +31,7 @@ static int genindex = 0;
 static bool initialized = false;
 static bool isbuiltin = true;
 GLuint current_prog;
+int current_genshader;
 
 /* Bits in Shader ID:
 Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel
@@ -119,6 +104,7 @@ void ClearShaders()
 		if(genshaders[i].shader.vsrc) delete genshaders[i].shader.vsrc;
 		ZeroMemory(&genshaders[i].shader,sizeof(_GENSHADER));
 	}
+	current_genshader = -1;
 	shadercount = 0;
 	genindex = 0;
 }
@@ -132,6 +118,7 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 		glUseProgram(shaders[id].prog);
 		current_shader = shaders[id].prog;
 		isbuiltin=true;
+		current_genshader = -1;
 	}
 	else
 	{
@@ -179,6 +166,7 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 		memcpy(genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
 		glUseProgram(genshaders[shaderindex].shader.prog);
 		current_prog = genshaders[shaderindex].shader.prog;
+		current_genshader = shaderindex;
 	}
 }
 
@@ -476,4 +464,86 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		free(infolog);
 	}
 #endif
+	// Attributes
+	genshaders[index].shader.attribs[0] = glGetAttribLocation(genshaders[index].shader.prog,"xyz");
+	genshaders[index].shader.attribs[1] = glGetAttribLocation(genshaders[index].shader.prog,"rhw");
+	genshaders[index].shader.attribs[2] = glGetAttribLocation(genshaders[index].shader.prog,"blend0");
+	genshaders[index].shader.attribs[3] = glGetAttribLocation(genshaders[index].shader.prog,"blend1");
+	genshaders[index].shader.attribs[4] = glGetAttribLocation(genshaders[index].shader.prog,"blend2");
+	genshaders[index].shader.attribs[5] = glGetAttribLocation(genshaders[index].shader.prog,"blend3");
+	genshaders[index].shader.attribs[6] = glGetAttribLocation(genshaders[index].shader.prog,"blend4");
+	genshaders[index].shader.attribs[7] = glGetAttribLocation(genshaders[index].shader.prog,"nxyz");
+	genshaders[index].shader.attribs[8] = glGetAttribLocation(genshaders[index].shader.prog,"rgba0");
+	genshaders[index].shader.attribs[9] = glGetAttribLocation(genshaders[index].shader.prog,"rgba1");
+	char attrS[] = "sX";
+	for(int i = 0; i < 8; i++)
+	{
+		attrS[1] = i + '0';
+		genshaders[index].shader.attribs[i+10] = glGetAttribLocation(genshaders[index].shader.prog,attrS);
+	}
+	char attrST[] = "stX";
+	for(int i = 0; i < 8; i++)
+	{
+		attrST[2] = i + '0';
+		genshaders[index].shader.attribs[i+18] = glGetAttribLocation(genshaders[index].shader.prog,attrST);
+	}
+	char attrSTR[] = "strX";
+	for(int i = 0; i < 8; i++)
+	{
+		attrSTR[3] = i + '0';
+		genshaders[index].shader.attribs[i+26] = glGetAttribLocation(genshaders[index].shader.prog,attrSTR);
+	}
+	char attrSTRQ[] = "strqX";
+	for(int i = 0; i < 8; i++)
+	{
+		attrSTRQ[4] = i + '0';
+		genshaders[index].shader.attribs[i+34] = glGetAttribLocation(genshaders[index].shader.prog,attrSTRQ);
+	}
+	// Uniforms
+	genshaders[index].shader.uniforms[0] = glGetUniformLocation(genshaders[index].shader.prog,"world");
+	genshaders[index].shader.uniforms[1] = glGetUniformLocation(genshaders[index].shader.prog,"view");
+	genshaders[index].shader.uniforms[2] = glGetUniformLocation(genshaders[index].shader.prog,"projection");
+	genshaders[index].shader.uniforms[3] = glGetUniformLocation(genshaders[index].shader.prog,"normalmat");
+	// TODO: 4-14 world1-3 and texture0-7
+	genshaders[index].shader.uniforms[15] = glGetUniformLocation(genshaders[index].shader.prog,"material.ambient");
+	genshaders[index].shader.uniforms[16] = glGetUniformLocation(genshaders[index].shader.prog,"material.diffuse");
+	genshaders[index].shader.uniforms[17] = glGetUniformLocation(genshaders[index].shader.prog,"material.specular");
+	genshaders[index].shader.uniforms[18] = glGetUniformLocation(genshaders[index].shader.prog,"material.emissive");
+	genshaders[index].shader.uniforms[19] = glGetUniformLocation(genshaders[index].shader.prog,"material.power");
+	char uniflight[] = "lightX.            ";
+	for(int i = 0; i < 8; i++)
+	{
+		uniflight[5] = i + '0';
+		strcpy(uniflight+7,"diffuse");
+		genshaders[index].shader.uniforms[20+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"specular");
+		genshaders[index].shader.uniforms[21+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"ambient");
+		genshaders[index].shader.uniforms[22+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"position");
+		genshaders[index].shader.uniforms[23+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"direction");
+		genshaders[index].shader.uniforms[24+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"range");
+		genshaders[index].shader.uniforms[25+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"falloff");
+		genshaders[index].shader.uniforms[26+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"constant");
+		genshaders[index].shader.uniforms[27+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"linear");
+		genshaders[index].shader.uniforms[28+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"quad");
+		genshaders[index].shader.uniforms[29+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"theta");
+		genshaders[index].shader.uniforms[30+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		strcpy(uniflight+7,"phi");
+		genshaders[index].shader.uniforms[31+(i*12)] = glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+	}
+	char uniftex[] = "texX";
+	for(int i = 0; i < 8; i++)
+	{
+		uniftex[3] = i + '0';
+		genshaders[index].shader.uniforms[128+i] = glGetUniformLocation(genshaders[index].shader.prog,uniftex);
+	}
+	genshaders[index].shader.uniforms[136] = glGetUniformLocation(genshaders[index].shader.prog,"ambientcolor");
 }

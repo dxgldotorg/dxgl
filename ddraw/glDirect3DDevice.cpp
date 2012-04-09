@@ -22,6 +22,8 @@
 #include "glDirectDrawSurface.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
+#include <string>
+using namespace std;
 #include "shadergen.h"
 #include "glutil.h"
 #include "matrix.h"

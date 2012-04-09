@@ -18,6 +18,8 @@
 #include "common.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
+#include <string>
+using namespace std;
 #include "shaders.h"
 #include "shadergen.h"
 

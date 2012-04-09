@@ -25,6 +25,8 @@
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
+#include <string>
+using namespace std;
 #include "shadergen.h"
 #include "shaders.h"
 #include "glutil.h"

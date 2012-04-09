@@ -18,10 +18,30 @@
 #ifndef _SHADERGEN_H
 #define _SHADERGEN_H
 
+typedef struct
+{
+	GLint vs;
+	GLint fs;
+	string *vsrc;
+	string *fsrc;
+	GLint prog;
+	GLint attribs[42];
+	GLint uniforms[256];
+} _GENSHADER;
+
+struct GenShader
+{
+	_GENSHADER shader;
+	__int64 id;
+	__int64 texids[8];
+	int texcoords[8];
+};
+
 void ClearShaders();
 void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin);
 GLuint GetProgram();
 void ZeroShaderArray();
 void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
-
+extern GenShader genshaders[256];
+extern int current_genshader;
 #endif
