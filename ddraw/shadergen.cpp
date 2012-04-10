@@ -249,6 +249,7 @@ static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
+static const char op_dirlightnospecular[] = "DirLightNoSpecular(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
 (material.specular * specular) + material.emissive;\n\
@@ -274,6 +275,14 @@ NdotHV = max(dot(N,L+V),0.0);\n\
 specular += (pow(NdotHV,float(material.power))*light.specular);\n\
 ambient += light.ambient;\n\
 }\n\
+}\n";
+static const char func_dirlightnospecular[] = "void DirLightNoSpecular(in Light light)\n\
+{\n\
+float NdotHV = 0.0;\n\
+vec3 dir = normalize(-light.direction);\n\
+ambient += light.ambient;\n\
+float NdotL = max(dot(N,dir),0.0);\n\
+diffuse += light.diffuse*NdotL;\n\
 }\n";
 
 void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
@@ -351,8 +360,13 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			else hasdir = true;
 		}
 	}
+	bool hasspecular = (id >> 11) & 1;
 	if(hasspot) FIXME("Add spot lights");
-	if(hasdir) vsrc->append(func_dirlight);
+	if(hasdir)
+	{
+		if(hasspecular) vsrc->append(func_dirlight);
+		else vsrc->append(func_dirlightnospecular);
+	}
 	//Main
 	vsrc->append(mainstart);
 	if((id>>34)&1) vsrc->append(op_passthru);
@@ -372,9 +386,18 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			}
 			else
 			{
-				tmp = op_dirlight;
-				tmp.replace(14,1,_itoa(i,idstring,10));
-				vsrc->append(tmp);
+				if(hasspecular)
+				{
+					tmp = op_dirlight;
+					tmp.replace(14,1,_itoa(i,idstring,10));
+					vsrc->append(tmp);
+				}
+				else
+				{
+					tmp = op_dirlightnospecular;
+					tmp.replace(24,1,_itoa(i,idstring,10));
+					vsrc->append(tmp);
+				}
 			}
 		}
 	}
