@@ -1067,7 +1067,24 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			switch(texformats[i])
 			{
-
+			case -1: // Null
+				break;
+			case 0: // st
+				glEnableVertexAttribArray(prog.attribs[i+18]);
+				glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				break;
+			case 1: // str
+				glEnableVertexAttribArray(prog.attribs[i+26]);
+				glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				break;
+			case 2: // strq
+				glEnableVertexAttribArray(prog.attribs[i+34]);
+				glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				break;
+			case 3: // s
+				glEnableVertexAttribArray(prog.attribs[i+10]);
+				glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				break;
 			}
 
 		}
