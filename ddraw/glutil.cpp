@@ -22,7 +22,8 @@ GLuint fbcolor = 0;
 GLuint fbz = 0;
 GLuint fbo = 0;
 bool stencil = false;
-
+GLint texlevel = 0;
+GLint texwrap[16];
 
 void InitFBO()
 {
@@ -102,4 +103,52 @@ GLenum SetFBO(GLint color, GLint z, bool stencil)
 	}
 	::stencil = stencil;
 	return error;
+}
+
+void SetActiveTexture(int level)
+{
+	if(level != texlevel)
+	{
+		texlevel = level;
+		glActiveTexture(GL_TEXTURE0+level);
+	}
+}
+
+void SetWrap(int level, DWORD coord, DWORD address)
+{
+	if(level == -1)
+	{
+		for(int i = 0; i < 16; i++)
+			texwrap[i] = GL_REPEAT;
+	}
+	if(coord > 1) return;
+	if(level > 8) return;
+	if(level < 0) return;
+	GLint wrapmode;
+	switch(address)
+	{
+	case D3DTADDRESS_WRAP:
+		wrapmode = GL_REPEAT;
+		break;
+	case D3DTADDRESS_MIRROR:
+		wrapmode = GL_MIRRORED_REPEAT;
+		break;
+	case D3DTADDRESS_CLAMP:
+		wrapmode = GL_CLAMP_TO_EDGE;
+		break;
+	case D3DTADDRESS_BORDER:
+		wrapmode = GL_CLAMP_TO_BORDER;
+		break;
+	default:
+		return;
+	}
+	if(texwrap[level*2+coord] == wrapmode) return;
+	else
+	{
+		int currtexture = texlevel;
+		SetActiveTexture(level);
+		if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
+		else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
+		SetActiveTexture(currtexture);
+	}
 }

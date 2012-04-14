@@ -547,6 +547,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SwapBuffers(hDC);
+	SetActiveTexture(0);
 	if(!hasHWnd)
 	{
 		dib.enabled = true;
@@ -700,7 +701,7 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
 		glUniform1i(texloc,0);
 	}
-	glActiveTexture(GL_TEXTURE0);
+	SetActiveTexture(0);
 	if(src) glBindTexture(GL_TEXTURE_2D,src->GetTexture());
 	GLuint prog = GetProgram()&0xffffffff;
 	GLint viewloc = glGetUniformLocation(prog,"view");
@@ -746,7 +747,7 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
 {
 	GLfloat view[4];
-	glActiveTexture(GL_TEXTURE0);
+	SetActiveTexture(0);
 	if(!backbuffer)
 	{
 		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
@@ -854,11 +855,11 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		GLint texloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"IndexTexture");
 		glUniform1i(texloc,0);
 		glUniform1i(palloc,1);
-		glActiveTexture(GL_TEXTURE0);
+		SetActiveTexture(0);
 		glBindTexture(GL_TEXTURE_2D,texture);
-		glActiveTexture(GL_TEXTURE1);
+		SetActiveTexture(1);
 		glBindTexture(GL_TEXTURE_2D,paltex);
-		glActiveTexture(GL_TEXTURE0);
+		SetActiveTexture(0);
 		if(dxglcfg.scalingfilter)
 		{
 			_DrawBackbuffer(&texture,dest->fakex,dest->fakey);

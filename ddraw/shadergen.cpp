@@ -34,55 +34,60 @@ GLuint current_prog;
 int current_genshader;
 
 /* Bits in Shader ID:
-Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel
-Bit 2 - Alpha test enable
-Bits 3-5 - Alpha test function:
+Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel VS/FS
+Bit 2 - Alpha test enable  FS
+Bits 3-5 - Alpha test function:  FS
 000=never  001=less  010=equal  011=lessequal
 100=greater  101=notequal  110=lessequal  111=always
-Bits 6-7 - Table fog:
+Bits 6-7 - Table fog:  FS
 00 = none  01=exp  10=exp2  11=linear
-Bits 8-9 - Vertex fog: same as table
-Bit 10 - Range based fog
-Bit 11 - Specular highlights
-Bit 12 - Stippled alpha
-Bit 13 - Color key transparency
-Bit 14-17 - Z bias
-Bits 18-20 - Number of lights
-Bit 21 - Camera relative specular highlights
-Bit 22 - Alpha blended color key
-Bits 23-24 - Diffuse material source
-Bits 25-26 - Specular material source
-Bits 27-28 - Ambient material source
-Bits 29-30 - Emissive material source
-Bits 31-33 - Number of textures
-Bit 34 - Use transformed vertices
-Bit 35 - Use diffuse color
-Bit 36 - Use specular color
-Bit 37 - Enable normals
-Bits 38-45 - Light types
-Bits 46-48 - Number of blending weights
-Bit 49 - Normalize normals
+Bits 8-9 - Vertex fog: same as table  VS
+Bit 10 - Range based fog  VS/FS
+Bit 11 - Specular highlights  VS/FS
+Bit 12 - Stippled alpha  FS
+Bit 13 - Color key transparency  FS
+Bit 14-17 - Z bias  FS
+Bits 18-20 - Number of lights  VS/FS
+Bit 21 - Camera relative specular highlights  VS/FS
+Bit 22 - Alpha blended color key  FS
+Bits 23-24 - Diffuse material source  VS
+Bits 25-26 - Specular material source  VS
+Bits 27-28 - Ambient material source  VS
+Bits 29-30 - Emissive material source  VS
+Bits 31-33 - Number of textures  VS/FS
+Bit 34 - Use transformed vertices  VS
+Bit 35 - Use diffuse color  VS
+Bit 36 - Use specular color  VS
+Bit 37 - Enable normals  VS
+Bits 38-45 - Light types  VS/FS
+Bits 46-48 - Number of blending weights  VS
+Bit 49 - Normalize normals  VS
 */
 
 /* Bits in Texture Stage ID:
-Bits 0-4: Texture color operation
-Bits 5-10: Texture color argument 1
-Bits 11-16: Texture color argument 2
-Bits 17-21: Texture alpha operation
-Bits 22-27: Texture alpha argument 1
-Bits 28-33: Texture alpha argument 2
-Bits 34-36: Texture coordinate index
-Bits 37-38: Texture coordinate flags
-Bits 39-40: U Texture address
-Bits 41-42: V Texture address
-Bits 43-45: Texture magnification filter
-Bits 46-47: Texture minification filter
-Bits 48-49: Texture mip filter
-Bit 50: Enable texture coordinate transform
-Bits 51-52: Number of texcoord dimensions
-Bit 53: Projected texcoord
+Bits 0-4: Texture color operation  FS
+Bits 5-10: Texture color argument 1  FS
+Bits 11-16: Texture color argument 2  FS
+Bits 17-21: Texture alpha operation  FS
+Bits 22-27: Texture alpha argument 1  FS
+Bits 28-33: Texture alpha argument 2  FS
+Bits 34-36: Texture coordinate index  VS
+Bits 37-38: Texture coordinate flags  VS
+Bits 39-40: U Texture address  GL
+Bits 41-42: V Texture address  GL
+Bits 43-45: Texture magnification filter  GL/FS
+Bits 46-47: Texture minification filter  GL/FS
+Bits 48-49: Texture mip filter  GL/FS
+Bit 50: Enable texture coordinate transform  VS
+Bits 51-52: Number of texcoord dimensions  VS
+Bit 53: Projected texcoord  VS
 Bits in texcoord ID:
 00=2dim  01=3dim 10=4dim 11=1dim
+Bits 54-56: Texture coordinate index  VS
+Bits 57-58: Texture coordinate flags  VS
+Bits in flags:
+00=passthru 01=cameraspacenormal
+10=cameraspaceposition 11=cameraspacereflectionvector
 */
 void ZeroShaderArray()
 {
@@ -256,6 +261,12 @@ static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (
 gl_FrontColor = color;\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_colorfragin[] = "color = gl_Color;\n";
+static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
+static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
+static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
+static const char op_texpassthru2str[] = "vec4(strX,1);\n";
+static const char op_texpassthru2strq[] = "strqX;\n";
+static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -330,6 +341,31 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			vsrc->append(tmp);
 		}
 	}
+	for(i = 0; i < 8; i++)
+	{
+		switch(texcoords[i])
+		{
+		case -1:
+			continue;
+		case 3:
+			tmp = attr_s;
+			tmp.replace(16,1,_itoa(i,idstring,10));
+			break;
+		case 0:
+			tmp = attr_st;
+			tmp.replace(17,1,_itoa(i,idstring,10));
+			break;
+		case 1:
+			tmp = attr_str;
+			tmp.replace(18,1,_itoa(i,idstring,10));
+			break;
+		case 2:
+			tmp = attr_strq;
+			tmp.replace(19,1,_itoa(i,idstring,10));
+			break;
+		}
+		vsrc->append(tmp);
+	}
 
 	// Uniforms
 	vsrc->append(unif_matrices); // Material
@@ -402,6 +438,48 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		}
 	}
 	vsrc->append(op_colorout);
+	int texindex;
+	for(i = 0; i < 8; i++)
+	{
+		if((texstate[i].shaderid>>50)&1)
+		{
+			FIXME("Support texture coordinate transform");
+		}
+		else
+		{
+			tmp = op_texpassthru1;
+			tmp.replace(12,1,_itoa(i,idstring,10));
+			vsrc->append(tmp);
+			texindex = (texstate[i].shaderid>>54)&3;
+			switch(texcoords[texindex])
+			{
+			case -1: // No texcoords
+				vsrc->append(op_texpassthru2null);
+				break;
+			case 0: // st
+				tmp = op_texpassthru2st;
+				tmp.replace(7,1,_itoa(texindex,idstring,10));
+				vsrc->append(tmp);
+			default:
+				break;
+			case 1: // str
+				tmp = op_texpassthru2str;
+				tmp.replace(8,1,_itoa(texindex,idstring,10));
+				vsrc->append(tmp);
+				break;
+			case 2: // strq
+				tmp = op_texpassthru2strq;
+				tmp.replace(4,1,_itoa(texindex,idstring,10));
+				vsrc->append(tmp);
+				break;
+			case 3: // s
+				tmp = op_texpassthru2s;
+				tmp.replace(6,1,_itoa(texindex,idstring,10));
+				vsrc->append(tmp);
+				break;
+			}
+		}
+	}
 	vsrc->append(mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("Vertex shader:\n");

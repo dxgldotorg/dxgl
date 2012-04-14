@@ -150,7 +150,7 @@ private:
 	GLubyte *specular;
 	GLubyte *ambient;
 	GLfloat *texcoords[8];
-	GLVERTEX vertdata[17];
+	GLVERTEX vertdata[18];
 	int texformats[8];
 };
 

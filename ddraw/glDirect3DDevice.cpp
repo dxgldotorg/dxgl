@@ -415,6 +415,8 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		}
 		if(texstages[i].textransform & D3DTTFF_PROJECTED) texstages[i].shaderid |= 1i64 << 53;
 	}
+	texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
+	texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
 	return shader;
 }
 
@@ -468,10 +470,11 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 	for(i = 0; i < 8; i++)
 		vertdata[i+10].data = NULL;
 	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
-	for(i = 0; i < numtex; i++)
+	for(i = 0; i < 8; i++)
 	{
-		vertdata[i+10].data = &vertptr[ptr];
-		texformats[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
+		vertdata[i+9].data = &vertptr[ptr];
+		if(i >= numtex) texformats[i] = -1;
+		else texformats[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
 		switch(texformats[i])
 		{
 		case 0: // st

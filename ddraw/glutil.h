@@ -25,6 +25,7 @@ extern bool stencil;
 
 void InitFBO();
 void DeleteFBO();
+void SetActiveTexture(int level);
 GLenum SetFBO(GLint color, GLint z, bool stencil);
 
 #endif //_GLUTIL_H
