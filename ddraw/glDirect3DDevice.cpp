@@ -417,6 +417,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	}
 	texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
 	texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
+	if(texstages[i].texture) texstages[i].shaderid |= 1i64 << 59;
 	return shader;
 }
 
@@ -904,6 +905,7 @@ HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	if(dwStage > 7) return DDERR_INVALIDPARAMS;
 	if(texstages[dwStage].texture) texstages[dwStage].texture->Release();
 	texstages[dwStage].texture = (glDirectDrawSurface7*)lpTexture;
+	texstages[dwStage].dirty = true;
 	if(lpTexture) lpTexture->AddRef();
 	return D3D_OK;
 }

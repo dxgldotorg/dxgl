@@ -1142,6 +1142,28 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		glUniform4f(prog.uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
 			RGBA_GETBLUE(ambient),RGBA_GETALPHA(ambient));
 
+	for(i = 0; i < 8; i++)
+	{
+		if(device->texstages[i].colorop == D3DTOP_DISABLE) break;
+		if(device->texstages[i].texture)
+		{
+			if(device->texstages[i].texture->dirty & 1)
+			{
+				_UploadTexture(device->texstages[i].texture->buffer,device->texstages[i].texture->bigbuffer,
+					device->texstages[i].texture->texture,device->texstages[i].texture->ddsd.dwWidth,
+					device->texstages[i].texture->ddsd.dwHeight,device->texstages[i].texture->fakex,
+					device->texstages[i].texture->fakey,device->texstages[i].texture->ddsd.lPitch,
+					(device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*device->texstages[i].texture->fakex),
+					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount,device->texstages[i].texture->texformat,
+					device->texstages[i].texture->texformat2,device->texstages[i].texture->texformat3);
+				device->texstages[i].texture->dirty &= ~1;
+			}
+			SetTexture(i,device->texstages[i].texture->texture);
+		}
+		else SetTexture(i,0);
+		glUniform1i(prog.uniforms[128+i],i);
+	}
+
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);

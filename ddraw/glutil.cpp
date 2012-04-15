@@ -114,6 +114,12 @@ void SetActiveTexture(int level)
 	}
 }
 
+void SetTexture(int level,GLuint texture)
+{
+	SetActiveTexture(level);
+	glBindTexture(GL_TEXTURE_2D,texture);
+}
+
 void SetWrap(int level, DWORD coord, DWORD address)
 {
 	if(level == -1)

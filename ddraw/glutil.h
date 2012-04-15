@@ -25,6 +25,7 @@ extern bool stencil;
 
 void InitFBO();
 void DeleteFBO();
+void SetTexture(int level,GLuint texture);
 void SetActiveTexture(int level);
 GLenum SetFBO(GLint color, GLint z, bool stencil);
 

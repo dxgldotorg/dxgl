@@ -68,6 +68,7 @@ LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		StopTimer();
+		Sleep(100);
 		for(int i = 0; i < 8; i++)
 		{
 			if(textures[i])

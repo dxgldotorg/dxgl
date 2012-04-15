@@ -88,6 +88,7 @@ Bits 57-58: Texture coordinate flags  VS
 Bits in flags:
 00=passthru 01=cameraspacenormal
 10=cameraspaceposition 11=cameraspacereflectionvector
+Bit 59: Texture image enabled
 */
 void ZeroShaderArray()
 {
@@ -236,13 +237,14 @@ float phi;\n\
 };\n";
 static const char unif_light[] = "uniform Light lightX;\n";
 static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
-static const char unif_tex[] = "uniform sampler2d texX;\n";
+static const char unif_tex[] = "uniform sampler2D texX;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
 vec4 ambient;\n\
 vec3 N;";
-static const char var_color[] = "vec4 color;\n";
+static const char var_color[] = "vec3 color;\n\
+float alpha;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
@@ -256,11 +258,11 @@ ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_dirlightnospecular[] = "DirLightNoSpecular(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "vec4 color = (material.diffuse * diffuse) + (material.ambient * ambient) + \n\
-(material.specular * specular) + material.emissive;\n\
-gl_FrontColor = color;\n";
-static const char op_colorfragout[] = "gl_FragColor = color;\n";
-static const char op_colorfragin[] = "color = gl_Color;\n";
+static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient) + material.emissive;\n\
+gl_FrontSecondaryColor = (material.specular * specular);\n";
+static const char op_colorfragout[] = "gl_FragColor = vec4(color,alpha);\n";
+static const char op_colorfragin[] = "color = gl_Color.rgb;\n\
+alpha = gl_Color.a;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
@@ -514,15 +516,97 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	fsrc->append(idheader);
 	fsrc->append(idstring);
 	// Uniforms
+	for(i = 0; i < 8; i++)
+	{
+		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
+		tmp = unif_tex;
+		tmp.replace(21,1,_itoa(i,idstring,10));
+		fsrc->append(tmp);
+	}
 	// Variables
 	fsrc->append(var_color);
 	// Functions
 	// Main
 	fsrc->append(mainstart);
 	fsrc->append(op_colorfragin);
-	for(int i = 0; i < 8; i++)
+	string arg1,arg2;
+	int args[4];
+	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
+		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1"};
+	for(i = 0; i < 8; i++)
 	{
-
+		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
+		// Color stage
+		args[0] = (texstate[i].shaderid>>5)&63;
+		switch(args[0]&7) //arg1
+		{
+			case D3DTA_CURRENT:
+			default:
+				arg1 = blendargs[0];
+				break;
+			case D3DTA_DIFFUSE:
+				arg1 = blendargs[1];
+				break;
+			case D3DTA_TEXTURE:
+				arg1 = blendargs[2];
+				arg1.replace(17,1,_itoa(i,idstring,10));
+				arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				break;
+			case D3DTA_TFACTOR:
+				FIXME("Support texture factor value");
+				arg1 = blendargs[4];
+				break;
+			case D3DTA_SPECULAR:
+				arg1 = blendargs[5];
+				break;
+		}
+		args[1] = (texstate[i].shaderid>>11)&63;
+		switch(args[1]&7) //arg2
+		{
+			case D3DTA_CURRENT:
+			default:
+				arg2 = blendargs[0];
+				break;
+			case D3DTA_DIFFUSE:
+				arg2 = blendargs[1];
+				break;
+			case D3DTA_TEXTURE:
+				arg2 = blendargs[3];
+				arg2.replace(17,1,_itoa(i,idstring,10));
+				arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				break;
+			case D3DTA_TFACTOR:
+				FIXME("Support texture factor value");
+				arg2 = blendargs[4];
+				break;
+			case D3DTA_SPECULAR:
+				arg2 = blendargs[5];
+				break;
+		}
+		switch(texstate[i].shaderid & 31)
+		{
+		case D3DTOP_DISABLE:
+		default:
+			break;
+		case D3DTOP_SELECTARG1:
+			fsrc->append("color = " + arg1 + ";\n");
+			break;
+		case D3DTOP_SELECTARG2:
+			fsrc->append("color = " + arg2 + ";\n");
+			break;
+		case D3DTOP_MODULATE:
+			fsrc->append("color = " + arg1 + " * " + arg2 + ";\n");
+			break;
+		case D3DTOP_MODULATE2X:
+			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 2;\n");
+			break;
+		case D3DTOP_MODULATE4X:
+			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 4;\n");
+			break;
+		case D3DTOP_ADD:
+			fsrc->append("color = " + arg1 + " + " + arg2 + ";\n");
+			break;
+		}
 	}
 	fsrc->append(op_colorfragout);
 	fsrc->append(mainend);

@@ -133,10 +133,10 @@ public:
 	glDirectDrawSurface7 *glDDS7;
 	DWORD renderstate[153];
 	TEXTURESTAGE texstages[8];
+	glDirect3D7 *glD3D7;
 
 private:
 	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);
-	glDirect3D7 *glD3D7;
 	ULONG refcount;
 	GLuint gltextures[8];
 	DWORD lightsmax;
