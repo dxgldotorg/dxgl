@@ -145,8 +145,10 @@ const TEXTURESTAGE texstagedefault0 =
 	0,
 	D3DTTFF_DISABLE,
 	NULL,
+	false,
 	0,
-	0
+	GL_NEAREST,
+	GL_NEAREST
 };
 const TEXTURESTAGE texstagedefault1 =
 {
@@ -995,16 +997,101 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 		if(!dwValue || (dwValue > 5)) return DDERR_INVALIDPARAMS;
 		texstages[dwStage].magfilter = (D3DTEXTUREMAGFILTER)dwValue;
 		texstages[dwStage].dirty = true;
+		switch(texstages[dwStage].magfilter)
+		{
+		case 1:
+		default:
+			texstages[dwStage].glmagfilter = GL_NEAREST;
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			texstages[dwStage].glmagfilter = GL_LINEAR;
+			break;
+		}
 		return D3D_OK;
 	case D3DTSS_MINFILTER:
 		if(!dwValue || (dwValue > 3)) return DDERR_INVALIDPARAMS;
 		texstages[dwStage].minfilter = (D3DTEXTUREMINFILTER)dwValue;
 		texstages[dwStage].dirty = true;
+		switch(texstages[dwStage].minfilter)
+		{
+		case 1:
+		default:
+			switch(texstages[dwStage].mipfilter)
+			{
+			case 1:
+			default:
+				texstages[dwStage].glminfilter = GL_NEAREST;
+				break;
+			case 2:
+				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
+				break;
+			case 3:
+				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
+				break;
+			}
+			break;
+		case 2:
+		case 3:
+			switch(texstages[dwStage].mipfilter)
+			{
+			case 1:
+			default:
+				texstages[dwStage].glminfilter = GL_LINEAR;
+				break;
+			case 2:
+				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
+				break;
+			case 3:
+				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
+				break;
+			}
+			break;
+		}
 		return D3D_OK;
 	case D3DTSS_MIPFILTER:
 		if(!dwValue || (dwValue > 3)) return DDERR_INVALIDPARAMS;
 		texstages[dwStage].mipfilter = (D3DTEXTUREMIPFILTER)dwValue;
 		texstages[dwStage].dirty = true;
+		switch(texstages[dwStage].mipfilter)
+		{
+		case 1:
+		default:
+			switch(texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				texstages[dwStage].glminfilter = GL_NEAREST;
+			case 2:
+			case 3:
+				texstages[dwStage].glminfilter = GL_LINEAR;
+			}
+			break;
+		case 2:
+			switch(texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
+			case 2:
+			case 3:
+				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
+			}
+			break;
+		case 3:
+			switch(texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
+			case 2:
+			case 3:
+				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
+			}
+			break;
+		}
 		return D3D_OK;
 	case D3DTSS_MIPMAPLODBIAS:
 		memcpy(&texstages[dwStage].lodbias,&dwValue,sizeof(D3DVALUE));

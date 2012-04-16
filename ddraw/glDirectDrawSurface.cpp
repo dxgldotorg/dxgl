@@ -56,7 +56,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bigbuffer = NULL;
 	zbuffer = NULL;
 	DWORD colormasks[3];
-	filter = GL_NEAREST;
+	magfilter = minfilter = GL_NEAREST;
 	if(copysurface)
 	{
 		FIXME("glDirectDrawSurface7::glDirectDrawSurface7: copy surface stub\n");
@@ -197,8 +197,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	case 2:
 	maketex:
 		buffer = NULL;
-		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) filter = GL_NEAREST;
-		else filter = GL_LINEAR;
+		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) magfilter = minfilter = GL_NEAREST;
+		else magfilter = minfilter = GL_LINEAR;
 		if(ddsd.dwFlags & DDSD_PIXELFORMAT)
 		{
 			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
@@ -388,7 +388,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				return;
 			}
 		}
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 	}
 
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
@@ -973,7 +973,7 @@ void glDirectDrawSurface7::Restore2()
 		if(backbuffer) backbuffer->Restore2();
 		if(zbuffer) zbuffer->Restore2();
 		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 	}
 }
 HRESULT WINAPI glDirectDrawSurface7::Restore()
@@ -1017,7 +1017,7 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 			if(zbuffer) zbuffer->Restore();
 		}
 		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(filter,filter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
 		return DD_OK;
 	}
 	else return DD_OK;
@@ -1189,6 +1189,47 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock2(LPVOID lpSurfaceData)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	return Unlock((LPRECT)lpSurfaceData);
+}
+void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min)
+{
+	switch(dxglcfg.texfilter)
+	{
+	default:
+		break;
+	case 1:
+		mag = min = GL_NEAREST;
+		break;
+	case 2:
+		mag = min = GL_LINEAR;
+		break;
+	case 3:
+		mag = GL_NEAREST;
+		min = GL_NEAREST_MIPMAP_NEAREST;
+		break;
+	case 4:
+		mag = GL_NEAREST;
+		min = GL_NEAREST_MIPMAP_LINEAR;
+		break;
+	case 5:
+		mag = GL_LINEAR;
+		min = GL_LINEAR_MIPMAP_NEAREST;
+		break;
+	case 6:
+		mag = GL_LINEAR;
+		min = GL_LINEAR_MIPMAP_LINEAR;
+		break;
+	}
+	if((magfilter != mag) || (minfilter != min)) ::SetTexture(level,texture);
+	if(magfilter != mag)
+	{
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
+		magfilter = mag;
+	}
+	if(minfilter != min)
+	{
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+		minfilter = min;
+	}
 }
 
 // DDRAW1 wrapper

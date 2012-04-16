@@ -92,6 +92,7 @@ public:
 	HRESULT WINAPI GetPriority(LPDWORD lpdwPriority);
 	HRESULT WINAPI SetLOD(DWORD dwMaxLOD);
 	HRESULT WINAPI GetLOD(LPDWORD lpdwMaxLOD);
+	void SetFilter(int level, GLint mag, GLint min);
 	// internal functions
 	GLuint GetTexture(){
 		return texture;
@@ -140,7 +141,7 @@ private:
 	glDirectDrawSurface7 *backbuffer;
 	glDirectDrawClipper *clipper;
 	int pagelocked;
-	GLint filter;
+	GLint magfilter,minfilter;
 };
 
 // Legacy DDRAW Interfaces

@@ -1053,7 +1053,6 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	}
 	for(i = 0; i < 2; i++)
 	{
-		GLint colorloc;
 		if(vertices[i+8].data)
 		{
 			if(prog.attribs[8+i] != -1)
@@ -1159,6 +1158,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 					device->texstages[i].texture->texformat2,device->texstages[i].texture->texformat3);
 				device->texstages[i].texture->dirty &= ~1;
 			}
+			if(device->texstages[i].texture)
+				device->texstages[i].texture->SetFilter(i,device->texstages[i].glmagfilter,device->texstages[i].glminfilter);
 			SetTexture(i,device->texstages[i].texture->texture);
 		}
 		else SetTexture(i,0);

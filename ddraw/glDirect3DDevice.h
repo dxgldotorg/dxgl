@@ -50,6 +50,8 @@ struct TEXTURESTAGE
 	glDirectDrawSurface7 *texture;
 	bool dirty;
 	__int64 shaderid;
+	GLint glmagfilter;
+	GLint glminfilter;
 };
 
 class glDirect3DLight;
