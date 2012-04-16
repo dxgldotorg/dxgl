@@ -845,6 +845,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		view[2] = 0;
 		view[3] = (GLfloat)dest->fakey;
 	}
+	SetFBO(0,0,false);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(ddInterface->GetBPP() == 8)
 	{
