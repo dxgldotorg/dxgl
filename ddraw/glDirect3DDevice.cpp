@@ -372,7 +372,6 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	for(int i = 0; i < 8; i++)
 		if(VertexType[i+10].data) numtextures++;
 	shader |= (__int64)numtextures << 31;
-	if(VertexType[1].data) shader |= (1i64 << 34);
 	if(VertexType[8].data) shader |= (1i64<<35);
 	if(VertexType[9].data) shader |= (1i64<<36);
 	if(VertexType[7].data) shader |= (1i64 << 37);
@@ -391,6 +390,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		if(VertexType[i+2].data) blendweights++;
 	shader |= (__int64)blendweights << 46;
 	if(renderstate[D3DRENDERSTATE_NORMALIZENORMALS]) shader |= (1i64 << 49);
+	if(VertexType[1].data) shader |= (1i64 << 50);
 	//TODO:  Implement texture stages.
 	for(i = 0; i < 8; i++)
 	{
@@ -473,7 +473,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
 	for(i = 0; i < 8; i++)
 	{
-		vertdata[i+9].data = &vertptr[ptr];
+		vertdata[i+10].data = &vertptr[ptr];
 		if(i >= numtex) texformats[i] = -1;
 		else texformats[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
 		switch(texformats[i])

@@ -55,13 +55,13 @@ Bits 25-26 - Specular material source  VS
 Bits 27-28 - Ambient material source  VS
 Bits 29-30 - Emissive material source  VS
 Bits 31-33 - Number of textures  VS/FS
-Bit 34 - Use transformed vertices  VS
 Bit 35 - Use diffuse color  VS
 Bit 36 - Use specular color  VS
 Bit 37 - Enable normals  VS
 Bits 38-45 - Light types  VS/FS
 Bits 46-48 - Number of blending weights  VS
 Bit 49 - Normalize normals  VS
+Bit 50 - Use transformed vertices  VS
 */
 
 /* Bits in Texture Stage ID:
@@ -320,7 +320,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	vsrc->append(idstring);
 	// Attributes
 	vsrc->append(attr_xyz);
-	if((id>>34)&1) vsrc->append(attr_rhw);
+	if((id>>50)&1) vsrc->append(attr_rhw);
 	tmp = attr_rgba;
 	if((id>>35)&1)
 	{
@@ -387,7 +387,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	
 	// Variables
 	vsrc->append(var_common);
-	if(!((id>>34)&1)) vsrc->append(var_xyzw);
+	if(!((id>>50)&1)) vsrc->append(var_xyzw);
 
 	// Functions
 	if(numlights)
@@ -407,7 +407,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	}
 	//Main
 	vsrc->append(mainstart);
-	if((id>>34)&1) vsrc->append(op_passthru);
+	if((id>>50)&1) vsrc->append(op_passthru);
 	else vsrc->append(op_transform);
 	vsrc->append(op_resetcolor);
 	if((id>>49)&1) vsrc->append(op_normalize);
