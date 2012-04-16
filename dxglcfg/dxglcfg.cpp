@@ -89,6 +89,7 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 	{
 		DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
 		TCHAR installpath[MAX_PATH+1];
+		TCHAR srcpath[MAX_PATH+1];
 		TCHAR destpath[MAX_PATH+1];
 		HKEY hKeyInstall;
 		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
@@ -105,11 +106,12 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 		}
 		if(dxgl_installdir) _tcscat(installpath,_T("\\"));
 		else (_tcsrchr(installpath,_T('\\')))[1] = 0;
-		_tcscat(installpath,_T("ddraw.dll"));
+		_tcsncpy(srcpath,installpath,MAX_PATH+1);
+		_tcscat(srcpath,_T("ddraw.dll"));
 		_tcsncpy(destpath,path,MAX_PATH+1);
 		(_tcsrchr(destpath,_T('\\')))[1] = 0;
 		_tcscat(destpath,_T("ddraw.dll"));
-		error = CopyFile(installpath,destpath,TRUE);
+		error = CopyFile(srcpath,destpath,TRUE);
 		error_loop:
 		if(!error)
 		{
@@ -124,7 +126,7 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 				}
 				if(old_dxgl)
 				{
-					error = CopyFile(installpath,destpath,FALSE);
+					error = CopyFile(srcpath,destpath,FALSE);
 					goto error_loop;
 				}
 			}
@@ -136,7 +138,9 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 				ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
 				shex.cbSize = sizeof(SHELLEXECUTEINFO);
 				shex.lpVerb = _T("runas");
-				shex.lpFile = destpath;
+				shex.fMask = SEE_MASK_NOCLOSEPROCESS;
+				_tcscat(installpath,_T("\\dxglcfg.exe"));
+				shex.lpFile = installpath;
 				shex.lpParameters = command.c_str();
 				ShellExecuteEx(&shex);
 				WaitForSingleObject(shex.hProcess,INFINITE);
@@ -175,7 +179,7 @@ DWORD DelApp(LPCTSTR path, bool admin)
 		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = false;
 		FreeLibrary(hmod);
 	}
-	if(old_dxgl) return 0;
+	if(!old_dxgl) return 0;
 	if(!DeleteFile(path))
 	{
 		error = GetLastError();
@@ -188,6 +192,7 @@ DWORD DelApp(LPCTSTR path, bool admin)
 			ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
 			shex.cbSize = sizeof(SHELLEXECUTEINFO);
 			shex.lpVerb = _T("runas");
+			shex.fMask = SEE_MASK_NOCLOSEPROCESS;
 			_tcscat(installpath,_T("\\dxglcfg.exe"));
 			shex.lpFile = installpath;
 			shex.lpParameters = command.c_str();
@@ -861,7 +866,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			*dirty = true;
 			break;
 		case IDC_HIGHRES:
-			cfg->highres = GetCheck(hWnd,IDC_COLOR,cfgmask->highres);
+			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,cfgmask->highres);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;
