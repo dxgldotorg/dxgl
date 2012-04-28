@@ -541,6 +541,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 		gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
 	}
 	else gl_caps.ShaderVer = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&gl_caps.TextureMax);
 	CompileShaders();
 	InitFBO();
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1070,20 +1071,32 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			case -1: // Null
 				break;
 			case 0: // st
-				glEnableVertexAttribArray(prog.attribs[i+18]);
-				glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				if(prog.attribs[i+18] != -1)
+				{
+					glEnableVertexAttribArray(prog.attribs[i+18]);
+					glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				}
 				break;
 			case 1: // str
-				glEnableVertexAttribArray(prog.attribs[i+26]);
-				glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				if(prog.attribs[i+26] != -1)
+				{
+					glEnableVertexAttribArray(prog.attribs[i+26]);
+					glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				}
 				break;
 			case 2: // strq
-				glEnableVertexAttribArray(prog.attribs[i+34]);
-				glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				if(prog.attribs[i+34] != -1)
+				{
+					glEnableVertexAttribArray(prog.attribs[i+34]);
+					glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				}
 				break;
 			case 3: // s
-				glEnableVertexAttribArray(prog.attribs[i+10]);
-				glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				if(prog.attribs[i+10] != -1)
+				{
+					glEnableVertexAttribArray(prog.attribs[i+10]);
+					glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+				}
 				break;
 			}
 

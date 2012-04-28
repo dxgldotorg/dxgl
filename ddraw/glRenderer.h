@@ -22,12 +22,7 @@ typedef struct
 {
 	float Version;
 	float ShaderVer;
-	int TextureMaxX;
-	int TextureMaxY;
-	bool NonPowerOfTwo;
-	int RenderToTexture; // 0 - no support, 1 -
-	int MultiTextureExt;
-	int PalettedTextures;
+	GLint TextureMax;
 } GLCAPS;
 typedef struct
 {
@@ -98,6 +93,7 @@ public:
 		DWORD indexcount, DWORD flags);
 	HGLRC hRC;
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	GLCAPS gl_caps;
 private:
 	// In-thread APIs
 	DWORD _Entry();
@@ -124,7 +120,6 @@ private:
 	HWND hWnd;
 	HWND hRenderWnd;
 	bool hasHWnd;
-	GLCAPS gl_caps;
 	DIB dib;
 	GLuint PBO;
 	CRITICAL_SECTION cs;

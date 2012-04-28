@@ -28,6 +28,8 @@ using namespace std;
 #include "glutil.h"
 #include "matrix.h"
 
+extern D3DDEVICEDESC7 d3ddesc;
+
 const DWORD renderstate_default[153] = {0, // 0
 	NULL, //texturehandle
 	D3DANTIALIAS_NONE, //antialias
@@ -173,8 +175,10 @@ const TEXTURESTAGE texstagedefault1 =
 	0,
 	D3DTTFF_DISABLE,
 	NULL,
+	false,
 	0,
-	0
+	GL_NEAREST,
+	GL_NEAREST
 };
 
 int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
@@ -228,6 +232,8 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
 	memset(gllights,0xff,8*sizeof(int));
 	memset(gltextures,0,8*sizeof(GLuint));
+	d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
+		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = glD3D7->glDD7->renderer->gl_caps.TextureMax;
 	glD3D7->glDD7->renderer->InitD3D(zbuffer);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
@@ -371,7 +377,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	shader |= ((renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
 	shader |= ((renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
 	int numtextures = 0;
-	for(int i = 0; i < 8; i++)
+	for(i = 0; i < 8; i++)
 		if(VertexType[i+10].data) numtextures++;
 	shader |= (__int64)numtextures << 31;
 	if(VertexType[8].data) shader |= (1i64<<35);
@@ -416,10 +422,10 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 			texstages[i].shaderid |= (__int64)(((texstages[i].textransform & 7) - 1)& 3) << 51;
 		}
 		if(texstages[i].textransform & D3DTTFF_PROJECTED) texstages[i].shaderid |= 1i64 << 53;
+		texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
+		texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
+		if(texstages[i].texture) texstages[i].shaderid |= 1i64 << 59;
 	}
-	texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
-	texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
-	if(texstages[i].texture) texstages[i].shaderid |= 1i64 << 59;
 	return shader;
 }
 
@@ -1154,8 +1160,24 @@ HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::ValidateDevice: stub");
-	ERR(DDERR_GENERIC);
+	for(int i = 0; i < 8; i++)
+	{
+		switch(texstages[i].colorop)
+		{
+		case D3DTOP_DISABLE:
+		case D3DTOP_SELECTARG1:
+		case D3DTOP_SELECTARG2:
+		case D3DTOP_MODULATE:
+		case D3DTOP_MODULATE2X:
+		case D3DTOP_MODULATE4X:
+		case D3DTOP_ADD:
+			break;
+		default:
+			return D3DERR_UNSUPPORTEDCOLOROPERATION;
+		}
+	}
+	if(lpdwPasses) *lpdwPasses = 1;
+	return D3D_OK;
 }
 
 void glDirect3DDevice7::UpdateNormalMatrix()

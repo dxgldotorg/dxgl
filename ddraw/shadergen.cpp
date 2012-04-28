@@ -197,6 +197,7 @@ static const char mainend[] = "} ";
 static const char attr_xyz[] = "attribute vec3 xyz;\n";
 static const char attr_rhw[] = "attribute float rhw;\n";
 static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
+static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
 static const char attr_blend[] = "attribute float blendX;\n";
 static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
 static const char attr_s[] = "attribute float sX;\n";
@@ -333,6 +334,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		vsrc->append(tmp);
 	}
 	if((id>>37)&1) vsrc->append(attr_nxyz);
+	else vsrc->append(const_nxyz);
 	count = (id>>46)&7;
 	if(count)
 	{
@@ -531,12 +533,14 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	fsrc->append(op_colorfragin);
 	string arg1,arg2;
 	int args[4];
+	bool texfail;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
 		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1"};
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
 		// Color stage
+		texfail = false;
 		args[0] = (texstate[i].shaderid>>5)&63;
 		switch(args[0]&7) //arg1
 		{
@@ -548,9 +552,13 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[1];
 				break;
 			case D3DTA_TEXTURE:
-				arg1 = blendargs[2];
-				arg1.replace(17,1,_itoa(i,idstring,10));
-				arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				if((texstate[i].shaderid >> 59)&1)
+				{
+					arg1 = blendargs[2];
+					arg1.replace(17,1,_itoa(i,idstring,10));
+					arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				}
+				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
@@ -571,9 +579,13 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[1];
 				break;
 			case D3DTA_TEXTURE:
-				arg2 = blendargs[3];
-				arg2.replace(17,1,_itoa(i,idstring,10));
-				arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				if((texstate[i].shaderid >> 59)&1)
+				{
+					arg2 = blendargs[3];
+					arg2.replace(17,1,_itoa(i,idstring,10));
+					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				}
+				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
@@ -583,7 +595,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[5];
 				break;
 		}
-		switch(texstate[i].shaderid & 31)
+		if(!texfail) switch(texstate[i].shaderid & 31)
 		{
 		case D3DTOP_DISABLE:
 		default:
