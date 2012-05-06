@@ -1,4 +1,4 @@
-DXGL 0.1.6
+DXGL 0.2.0
 http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
@@ -40,7 +40,7 @@ What partially works:
 
 What doesn't work:
 * Most functions are stubbed out and return an error
-* No 3D graphics support
+* 3D Graphics support is very preliminary
 
 == Installation ==
 
