@@ -568,6 +568,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[5]+blendargs[8];
 				break;
 		}
+		if(args[0] & D3DTA_COMPLEMENT)
+			arg1 = "(1.0 - " + arg1 + ")";
 		args[1] = (texstate[i].shaderid>>11)&63;
 		switch(args[1]&7) //arg2
 		{
@@ -595,6 +597,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[5]+blendargs[8];
 				break;
 		}
+		if(args[1] & D3DTA_COMPLEMENT)
+			arg2 = "(1.0 - " + arg2 + ")";
 		if(!texfail) switch(texstate[i].shaderid & 31)
 		{
 		case D3DTOP_DISABLE:
