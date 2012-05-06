@@ -535,7 +535,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	int args[4];
 	bool texfail;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
-		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1"};
+		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a"};
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
@@ -549,7 +549,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[0];
 				break;
 			case D3DTA_DIFFUSE:
-				arg1 = blendargs[1];
+				arg1 = blendargs[1]+blendargs[8];
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
@@ -565,7 +565,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[4];
 				break;
 			case D3DTA_SPECULAR:
-				arg1 = blendargs[5];
+				arg1 = blendargs[5]+blendargs[8];
 				break;
 		}
 		args[1] = (texstate[i].shaderid>>11)&63;
@@ -576,7 +576,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[0];
 				break;
 			case D3DTA_DIFFUSE:
-				arg2 = blendargs[1];
+				arg2 = blendargs[1]+blendargs[8];
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
@@ -592,7 +592,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[4];
 				break;
 			case D3DTA_SPECULAR:
-				arg2 = blendargs[5];
+				arg2 = blendargs[5]+blendargs[8];
 				break;
 		}
 		if(!texfail) switch(texstate[i].shaderid & 31)
@@ -610,10 +610,10 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			fsrc->append("color = " + arg1 + " * " + arg2 + ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
-			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 2;\n");
+			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
-			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 4;\n");
+			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
 			fsrc->append("color = " + arg1 + " + " + arg2 + ";\n");

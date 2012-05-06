@@ -1106,6 +1106,7 @@ void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *su
 HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	ddInterface->AddRef();
 	*lplpDD = ddInterface;
 	return DD_OK;
 }
