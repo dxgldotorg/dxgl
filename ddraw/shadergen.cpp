@@ -632,6 +632,12 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		case D3DTOP_ADDSIGNED:
 			fsrc->append("color = " + arg1 + " + " + arg2 + " - .5;\n");
 			break;
+		case D3DTOP_ADDSIGNED2X:
+			fsrc->append("color = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			break;
+		case D3DTOP_SUBTRACT:
+			fsrc->append("color = " + arg1 + " - " + arg2 + ";\n");
+			break;
 		}
 	}
 	fsrc->append(op_colorfragout);

@@ -1176,6 +1176,8 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 		case D3DTOP_MODULATE4X:
 		case D3DTOP_ADD:
 		case D3DTOP_ADDSIGNED:
+		case D3DTOP_ADDSIGNED2X:
+		case D3DTOP_SUBTRACT:
 			break;
 		default:
 			return D3DERR_UNSUPPORTEDCOLOROPERATION;
