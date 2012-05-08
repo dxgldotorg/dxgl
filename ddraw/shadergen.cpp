@@ -261,6 +261,8 @@ static const char op_dirlightnospecular[] = "DirLightNoSpecular(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient) + material.emissive;\n\
 gl_FrontSecondaryColor = (material.specular * specular);\n";
+static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
+static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorfragout[] = "gl_FragColor = vec4(color,alpha);\n";
 static const char op_colorfragin[] = "color = gl_Color.rgb;\n\
 alpha = gl_Color.a;\n";
@@ -411,11 +413,11 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	vsrc->append(mainstart);
 	if((id>>50)&1) vsrc->append(op_passthru);
 	else vsrc->append(op_transform);
-	vsrc->append(op_resetcolor);
 	if((id>>49)&1) vsrc->append(op_normalize);
 	else vsrc->append(op_normalpassthru);
 	if(numlights)
 	{
+		vsrc->append(op_resetcolor);
 		for(i = 0; i < numlights; i++)
 		{
 			if(id>>(38+i)&1)
@@ -440,8 +442,13 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				}
 			}
 		}
+		vsrc->append(op_colorout);
 	}
-	vsrc->append(op_colorout);
+	else
+	{
+		if((id>>35)&1) vsrc->append(op_colorvert);
+		if((id>>36)&1) vsrc->append(op_color2vert);
+	}
 	int texindex;
 	for(i = 0; i < 8; i++)
 	{
@@ -621,6 +628,9 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			break;
 		case D3DTOP_ADD:
 			fsrc->append("color = " + arg1 + " + " + arg2 + ";\n");
+			break;
+		case D3DTOP_ADDSIGNED:
+			fsrc->append("color = " + arg1 + " + " + arg2 + " - .5;\n");
 			break;
 		}
 	}
