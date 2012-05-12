@@ -35,6 +35,15 @@ DWORD timer;
 int vsyncstatus;
 bool ddenabled = false;
 
+/**
+  * Tests if a pointer is valid for reading from.  Compile ion Visual C++ with /EHa
+  * enabled Structed Exception Handling in C++ code, to prevent crashes on invalid
+  * pointers.
+  * @param ptr
+  *  Pointer to test for validity.
+  * @return
+  *  Returns false if the pointer is valid, or true if an error occurs.
+  */
 bool IsBadReadPointer(void *ptr)
 {
 	char a;
@@ -50,37 +59,62 @@ bool IsBadReadPointer(void *ptr)
 	}
 }
 
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI AcquireDDThreadLock()
 {
 	// FIXME:  Add thread lock
 	FIXME("AcquireDDThreadLock: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI CompleteCreateSystemSurface()
 {
 	FIXME("CompleteCreateSystemSurface: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI D3DParseUnknownCommand()
 {
 	FIXME("D3DParseUnknownCommand: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDGetAttachedSurfaceLcl()
 {
 	FIXME("DDGetAttachedSurfaceLcl: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDInternalLock()
 {
 	//FIXME:  Add locking code
 	FIXME("DDInternalLock: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDInternalUnlock()
 {
 	//FIXME:  Add unlocking code
 	FIXME("DDInternalUnlock: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DSoundHelp()
 {
 	FIXME("DSoundHelp: stub\n");
 }
+
+/**
+  * This function is used by DirectDrawCreate to test if opengl32.dll is calling
+  * these functions.  If so, DirectDrawCreate will load the system ddraw.dll and
+  * call its DirectDrawCreate function.
+  * @param returnaddress
+  *  The address to evaluate whether it is from opengl32.dll or not.
+  *  The return address of the calling function may be obtained with the
+  *  _ReturnAddress() function.
+  * @return
+  *  Returns nonzero if the address points to opengl32.dll, otherwise returns zero.
+  */
 int IsCallerOpenGL(void *returnaddress)
 {
 	int isgl = 0;
@@ -100,6 +134,22 @@ int IsCallerOpenGL(void *returnaddress)
 	CloseHandle(hSnapshot);
 	return isgl;
 }
+
+/**
+  * Creates an IDirectDraw compatible interface to the DXGL graphics library.
+  * @param lpGUID
+  *  Address to the GUID of the device to be created, or NULL for the current
+  *  display.  Currently, only NULL is supported.
+  * @param lplpDD
+  *  Pointer to an address to be filled with an IDirectDraw compatible interface.
+  *  To retreive a pointer to a later DirectDraw or Direct3D interface, call the
+  *  QueryInterface method in the returned object.
+  * @param pUnkOuter
+  *  Unused, should be NULL.
+  * @return
+  *  Returns DD_OK if lplpDD points to an IDirectDraw pointer, or an error code
+  *  otherwise.
+  */
 HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter)
 {
 	if(gllock || IsCallerOpenGL(_ReturnAddress()))
@@ -137,18 +187,50 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	*lplpDD = (LPDIRECTDRAW)myddraw;
 	return error;
 }
+
+/**
+  * Creates an IDirectDrawClipper compatible interface.
+  * @param dwFlags
+  *  Unused, set to 0.
+  * @param lplpDD
+  *  Pointer to an address to be filled with an IDirectDrawClipper compatible
+  *  interface.
+  * @param pUnkOuter
+  *  Unused, should be NULL.
+  * @return
+  *  Returns DD_OK if lplpDD points to an IDirectDrawClipper pointer, or an error
+  *  code otherwise.
+  */
 HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
 	*lplpDDClipper = new glDirectDrawClipper(dwFlags,NULL);
 	return DD_OK;
 }
+
+/**
+  * Creates an IDirectDraw7 compatible interface to the DXGL graphics library.
+  * @param lpGUID
+  *  Address to the GUID of the device to be created, or NULL for the current
+  *  display.  Currently, only NULL is supported.
+  * @param lplpDD
+  *  Pointer to an address to be filled with an IDirectDraw7 compatible interface.
+  *  To retreive a pointer to a later DirectDraw or Direct3D interface, call the
+  *  QueryInterface method in the returned object.
+  * @param iid
+  *  Must be set to IID_IDirectDraw7
+  * @param pUnkOuter
+  *  Unused, should be NULL.
+  * @return
+  *  Returns DD_OK if lplpDD points to an IDirectDraw7 pointer, or an error code
+  *  otherwise.
+  */
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
 	if(ddenabled) return DDERR_DIRECTDRAWALREADYCREATED;
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
-	if(iid != IID_IDirectDraw7) ERR(DDERR_UNSUPPORTED);
+	if(iid != IID_IDirectDraw7) ERR(DDERR_INVALIDPARAMS);
 	myddraw = new glDirectDraw7(lpGUID,pUnkOuter);
 	error = myddraw->err();
 	if(error != DD_OK)
@@ -161,6 +243,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	return error;
 }
 
+/// Callback wrapper for DirectDrawEnumerateA
 BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
 	int *context = (int *)lpContext;
@@ -168,6 +251,17 @@ BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverNam
 	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
 }
 
+/**
+  * Enumerates the available device GUIDs for DXGL, ANSI character format.
+  * Legacy call, uses DirectDrawEnumerateExA
+  * @param lpCallback
+  *  Address of the function to call for each enumerated object.
+  * @param lpContext
+  *  Pointer to be passed to the callback function.
+  * @return
+  *  Returns DD_OK if the call succeeds, or DDERR_INVALIDPARAMS if lpCallback
+  *  is invalid.
+  */
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)
 {
 	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
@@ -177,6 +271,7 @@ HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpConte
 	return DirectDrawEnumerateExA(DDEnumA,&context,0);
 }
 
+/// Callback wrapper for DirectDrawEnumerateW
 BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
 	int *context = (int *)lpContext;
@@ -184,6 +279,17 @@ BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverN
 	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
 }
 
+/**
+  * Enumerates the available device GUIDs for DXGL, Unicode character format.
+  * Legacy call, uses DirectDrawEnumerateExW
+  * @param lpCallback
+  *  Address of the function to call for each enumerated object.
+  * @param lpContext
+  *  Pointer to be passed to the callback function.
+  * @return
+  *  Returns DD_OK if the call succeeds, or DDERR_INVALIDPARAMS if lpCallback
+  *  is invalid.
+  */
 HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext)
 {
 	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
@@ -193,6 +299,8 @@ HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpConte
 	return DirectDrawEnumerateExW(DDEnumW,&context,0);
 }
 
+/// Callback wrapper for DirectDrawEnumerateExA
+/// Converts Unicode strings to ANSI.
 BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
 	int *context = (int *)lpContext;
@@ -204,6 +312,20 @@ BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDrive
 	return callback(guid,desc,driver,(LPVOID)context[1],hMonitor);
 }
 
+/**
+  * Enumerates the available device GUIDs for DXGL, ANSI character format.
+  * Uses DirectDrawEnumerateExW
+  * @param lpCallback
+  *  Address of the function to call for each enumerated object.
+  * @param lpContext
+  *  Pointer to be passed to the callback function.
+  * @param dwFlags
+  *  Use DDENUM_ATTACHEDSECONDARYDEVICES to enumerate display devices attached
+  *  to the system.
+  * @return
+  *  Returns DD_OK if the call succeeds, or DDERR_INVALIDPARAMS if lpCallback
+  *  is invalid.
+  */
 HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
 	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
@@ -213,6 +335,14 @@ HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpC
 	return DirectDrawEnumerateExW(DDEnumExA,&context,dwFlags);
 }
 
+/**
+  * Callback for EnumDisplayMonitors.
+  * @param hMonitor
+  *  Handle to display device found by EnumDisplayMonitors.
+  * @param ptr
+  *  Pointer to list of display devices.  First value is the number of devices
+  *  found so far.  Subsequent values are stored display device handles.
+  */
 BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM ptr)
 {
 	int * monitors = *(int**)ptr;
@@ -228,6 +358,19 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 	return TRUE;
 }
 
+/**
+  * Enumerates the available device GUIDs for DXGL, Unicode character format.
+  * @param lpCallback
+  *  Address of the function to call for each enumerated object.
+  * @param lpContext
+  *  Pointer to be passed to the callback function.
+  * @param dwFlags
+  *  Use DDENUM_ATTACHEDSECONDARYDEVICES to enumerate display devices attached
+  *  to the system.
+  * @return
+  *  Returns DD_OK if the call succeeds, or DDERR_INVALIDPARAMS if lpCallback
+  *  is invalid.
+  */
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
 	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
@@ -253,10 +396,30 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 	}
 	return DD_OK;
 }
+
+/**
+  * Tells the operating system whether it can unload the DLL.
+  * @return
+  *  Currently returns S_FALSE, preventing the operating system from unloading
+  *  the DLL until the application terminates.
+  */
 HRESULT WINAPI DllCanUnloadNow()
 {
 	return S_FALSE;
 }
+
+/**
+  * Creates an IClassFactory object to retrieve a DirectDraw object using COM.
+  * @param rclsid
+  *  Must be one of the following:  CLSID_DirectDraw, CLSID_DirectDraw7, or
+  *  CLSID_DirectDrawClipper
+  * @param riid
+  *  Must be IID_IUnknown or IID_IClassFactory.
+  * @param ppv
+  *  Pointer to an address to the IClassFactory object created by this call.
+  * @return
+  *  Returns S_OK if the call succeeds, or an error otherwise.
+  */
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
 	if((rclsid != CLSID_DirectDraw) && (rclsid != CLSID_DirectDraw7) &&
@@ -268,32 +431,48 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 	factory->Release();
 	return result;
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI GetDDSurfaceLocal()
 {
 	FIXME("GetDDSurfaceLocal: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
+/// This function gets called by the fnddraw.exe test application.
 DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 {
 	DEBUG("GetOleThunkData: stub\n");
 	return 0;
 }
+
+/// Stub for function found in system ddraw.dll
+/// Function import is GetSurfaceFromDC
 DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
 	FIXME("GetSurfaceFromDC: Verify proper referencing for LPDIRECTDRAW7\n");
 	return lpDD->GetSurfaceFromDC(hdc,lpDDS);
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI RegisterSpecialCase()
 {
 	FIXME("RegisterSpecialCase: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI ReleaseDDThreadLock()
 {
 	FIXME("ReleaseDDThreadLock: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI SetAppCompatData()
 {
 	FIXME("SetAppCompatData: stub\n");
 }
+
+/// Stub for function found in system ddraw.dll
 DDRAW_API BOOL IsDXGLDDraw()
 {
 	return TRUE;

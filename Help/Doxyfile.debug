@@ -45,7 +45,7 @@ PROJECT_BRIEF          =
 # exceed 55 pixels and the maximum width should not exceed 200 pixels. 
 # Doxygen will copy the logo to the output directory.
 
-PROJECT_LOGO           = C:/Programming/Projects/dxgl/common/dxgl.png
+PROJECT_LOGO           = ../common/dxgl.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -693,14 +693,14 @@ FILE_PATTERNS          = *.c \
 # should be searched for input files as well. Possible values are YES and NO. 
 # If left blank NO is used.
 
-RECURSIVE              = NO
+RECURSIVE              = YES
 
 # The EXCLUDE tag can be used to specify files and/or directories that should 
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag. 
 # Note that relative paths are relative to directory from which doxygen is run.
 
-EXCLUDE                = 
+EXCLUDE                = ../.svn
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix file system feature) are excluded 
