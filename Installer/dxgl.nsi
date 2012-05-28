@@ -4,7 +4,6 @@ SetCompressor /SOLID lzma
 
 !include 'LogicLib.nsh'
 
-
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
 !define PRODUCT_PUBLISHER "William Feely"
@@ -62,6 +61,15 @@ InstallDir "$PROGRAMFILES\DXGL"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
+
+VIProductVersion "${PRODUCT_VERSION}.0"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2012 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
 
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"

@@ -53,7 +53,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "FileDescription", "DXGL DDraw Library"
             VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
-            VALUE "LegalCopyright", "Copyright (C) 2011 William Feely"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2012 William Feely"
             VALUE "OriginalFilename", "DDraw.dll"
             VALUE "ProductName", "DXGL"
             VALUE "ProductVersion", DXGLVERSTRING

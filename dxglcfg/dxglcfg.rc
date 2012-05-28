@@ -106,7 +106,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "FileDescription", "DXGL Configuration Program"
             VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
-            VALUE "LegalCopyright", "Copyright © 2011 William Feely"
+            VALUE "LegalCopyright", "Copyright © 2011-2012 William Feely"
             VALUE "OriginalFilename", "dxglcfg.exe"
             VALUE "ProductName", "DXGL"
             VALUE "ProductVersion", DXGLVERSTRING
