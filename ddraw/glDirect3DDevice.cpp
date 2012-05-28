@@ -210,16 +210,14 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	diffuse = specular = NULL;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
-	__gluMakeIdentityf(matWorld);
-	__gluMakeIdentityf(matView);
-	__gluMakeIdentityf(matProjection);
-	__gluMakeIdentityf(matNormal);
+	__gluMakeIdentityf((GLfloat*)&matrices[0]);
+	for(int i = 1; i < 24; i++)
+		memcpy(&matrices[i],&matrices[0],sizeof(D3DMATRIX));
 	texstages[0] = texstagedefault0;
 	texstages[1] = texstages[2] = texstages[3] = texstages[4] = 
 		texstages[5] = texstages[6] = texstages[7] = texstagedefault1;
 	refcount = 1;
 	inscene = false;
-	normal_dirty = false;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
@@ -235,6 +233,8 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
 		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = glD3D7->glDD7->renderer->gl_caps.TextureMax;
 	glD3D7->glDD7->renderer->InitD3D(zbuffer);
+	glD3D7->glDD7->renderer->SetRenderState(0,153,renderstate);
+	glD3D7->glDD7->renderer->SetMatrix(0,24,matrices);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
@@ -513,8 +513,8 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	HRESULT err = fvftoglvertex(dwVertexTypeDesc,(LPDWORD)lpvVertices);
 	if(err != D3D_OK) return err;
-	return glD3D7->glDD7->renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
-		dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
+	return glD3D7->glDD7->renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),
+		vertdata,true,texformats,dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVerticexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
@@ -772,20 +772,9 @@ HRESULT WINAPI glDirect3DDevice7::GetTextureStageState(DWORD dwStage, D3DTEXTURE
 HRESULT WINAPI glDirect3DDevice7::GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	switch(dtstTransformStateType)
-	{
-	case D3DTRANSFORMSTATE_WORLD:
-		memcpy(lpD3DMatrix,&matWorld,sizeof(D3DMATRIX));
-		return D3D_OK;
-	case D3DTRANSFORMSTATE_VIEW:
-		memcpy(lpD3DMatrix,&matView,sizeof(D3DMATRIX));
-		return D3D_OK;
-	case D3DTRANSFORMSTATE_PROJECTION:
-		memcpy(lpD3DMatrix,&matProjection,sizeof(D3DMATRIX));
-		return D3D_OK;
-	default:
-		ERR(DDERR_INVALIDPARAMS);
-	}
+	if(dtstTransformStateType > D3DTRANSFORMSTATE_TEXTURE7) return DDERR_INVALIDPARAMS;
+	memcpy(lpD3DMatrix,&matrices[dtstTransformStateType],sizeof(D3DMATRIX));
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetViewport(LPD3DVIEWPORT7 lpViewport)
 {
@@ -1138,22 +1127,10 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	switch(dtstTransformStateType)
-	{
-	case D3DTRANSFORMSTATE_WORLD:
-		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
-		normal_dirty = true;
-		return D3D_OK;
-	case D3DTRANSFORMSTATE_VIEW:
-		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
-		normal_dirty = true;
-		return D3D_OK;
-	case D3DTRANSFORMSTATE_PROJECTION:
-		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
-		return D3D_OK;
-	default:
-		ERR(DDERR_INVALIDPARAMS);
-	}
+	if(dtstTransformStateType > D3DTRANSFORMSTATE_TEXTURE7) return DDERR_INVALIDPARAMS;
+	memcpy(&matrices[dtstTransformStateType],lpD3DMatrix,sizeof(D3DMATRIX));
+	glD3D7->glDD7->renderer->SetMatrix(dtstTransformStateType,1,lpD3DMatrix);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
@@ -1187,26 +1164,3 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 	return D3D_OK;
 }
 
-void glDirect3DDevice7::UpdateNormalMatrix()
-{
-	GLfloat worldview[16];
-	GLfloat tmp[16];
-
-	ZeroMemory(&worldview,sizeof(D3DMATRIX));
-	ZeroMemory(&tmp,sizeof(D3DMATRIX));
-	__gluMultMatricesf(matWorld,matView,worldview);	// Get worldview
-	if(__gluInvertMatrixf(worldview,tmp)) // Invert
-	{
-		memcpy(matNormal,tmp,3*sizeof(GLfloat));
-		memcpy(matNormal+3,tmp+4,3*sizeof(GLfloat));
-		memcpy(matNormal+6,tmp+8,3*sizeof(GLfloat));
-	}
-	else
-	{
-		memcpy(matNormal,worldview,3*sizeof(GLfloat));
-		memcpy(matNormal+3,worldview+4,3*sizeof(GLfloat));
-		memcpy(matNormal+6,worldview+8,3*sizeof(GLfloat));
-	}
-
-	normal_dirty = false;
-}

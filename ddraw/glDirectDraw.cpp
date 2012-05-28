@@ -1380,7 +1380,7 @@ HRESULT WINAPI glDirectDraw7::EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTi
 
 void glDirectDraw7::DeleteGL()
 {
-	delete renderer;
+	if(renderer) delete renderer;
 	renderer = NULL;
 }
 

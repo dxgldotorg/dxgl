@@ -52,18 +52,22 @@ struct BltVertex
 
 extern BltVertex bltvertices[4];
 
-#define GLEVENT_NULL WM_USER
-#define GLEVENT_DELETE WM_USER+1
-#define GLEVENT_CREATE WM_USER+2
-#define GLEVENT_UPLOAD WM_USER+3
-#define GLEVENT_DOWNLOAD WM_USER+4
-#define GLEVENT_DELETETEX WM_USER+5
-#define GLEVENT_BLT WM_USER+6
-#define GLEVENT_DRAWSCREEN WM_USER+7
-#define GLEVENT_INITD3D WM_USER+8
-#define GLEVENT_CLEAR WM_USER+9
-#define GLEVENT_FLUSH WM_USER+10
-#define GLEVENT_DRAWPRIMITIVES WM_USER+11
+#define OP_NULL 0
+#define OP_DELETE 1
+#define OP_CREATE 2
+#define OP_UPLOAD 3
+#define OP_DOWNLOAD 4
+#define OP_DELETETEX 5
+#define OP_BLT 6
+#define OP_DRAWSCREEN 7
+#define OP_INITD3D 8
+#define OP_CLEAR 9
+#define OP_FLUSH 10
+#define OP_DRAWPRIMITIVES 11
+#define OP_SETRENDERSTATE 12
+#define OP_SETMATRIX 13
+
+#define OP_RESETQUEUE 0xFFFFFFFF
 
 
 extern int swapinterval;
@@ -79,8 +83,8 @@ public:
 	glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwnd, glDirectDraw7 *glDD7);
 	~glRenderer();
 	static DWORD WINAPI ThreadEntry(void *entry);
-	int UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
-	int DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
+	void UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
+	void DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
 	HRESULT Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 	GLuint MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
@@ -88,8 +92,12 @@ public:
 	void DeleteTexture(GLuint texture);
 	void InitD3D(int zbuffer);
 	void Flush();
+	void SetRenderState(DWORD index, DWORD count, DWORD *data);
+	void SetMatrix(DWORD index, DWORD count, D3DMATRIX *data);
+	void Sync(int size);
+	int AddQueue(DWORD opcode, int mode, DWORD size, int paramcount, ...);
 	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, bool packed, DWORD *texformats, DWORD count, LPWORD indices,
 		DWORD indexcount, DWORD flags);
 	HGLRC hRC;
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -98,9 +106,9 @@ private:
 	// In-thread APIs
 	DWORD _Entry();
 	BOOL _InitGL(int width, int height, int bpp, int fullscreen, HWND hWnd, glDirectDraw7 *glDD7);
-	int _UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
-	int _DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
-	HRESULT _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
+	void _UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
+	void _DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
+	void _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 	GLuint _MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
 	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
@@ -108,21 +116,38 @@ private:
 	void _DrawBackbuffer(GLuint *texture, int x, int y);
 	void _InitD3D(int zbuffer);
 	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
+	void _DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 		DWORD indexcount, DWORD flags);
+	void _SetRenderState(DWORD index, DWORD count, DWORD *data);
+	void _SetMatrix(DWORD index, DWORD count, D3DMATRIX *data);
+	void _UpdateNormalMatrix();
 	glDirectDraw7 *ddInterface;
 	void _Flush();
-	void* inputs[32];
-	void* outputs[32];
+	void* inputs[7];
+	void* output;
 	HANDLE hThread;
-	bool wndbusy;
 	HDC hDC;
 	HWND hWnd;
 	HWND hRenderWnd;
 	bool hasHWnd;
 	DIB dib;
 	GLuint PBO;
-	CRITICAL_SECTION cs;
+	HANDLE busy;
+	HANDLE start;
+	HANDLE sync;
+	bool running;
+	CRITICAL_SECTION commandcs;
+	CRITICAL_SECTION queuecs;
+	LPDWORD queue;
+	int queuesize;
+	int queuelength;
+	int queue_read;
+	int queue_write;
+	int syncsize;
+	bool dead;
+	DWORD renderstate[153];
+	D3DMATRIX matrices[24];
+	bool normal_dirty;
 };
 
 #endif //_GLRENDERER_H

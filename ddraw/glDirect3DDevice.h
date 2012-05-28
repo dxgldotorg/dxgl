@@ -122,12 +122,7 @@ public:
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
 	__int64 SelectShader(GLVERTEX *VertexType);
-	void UpdateNormalMatrix();
-	GLfloat matWorld[16];
-	GLfloat matView[16];
-	GLfloat matProjection[16];
-	GLfloat matNormal[9];
-	bool normal_dirty;
+	D3DMATRIX matrices[24];
 	D3DMATERIAL7 material;
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
@@ -153,7 +148,7 @@ private:
 	GLubyte *ambient;
 	GLfloat *texcoords[8];
 	GLVERTEX vertdata[18];
-	int texformats[8];
+	DWORD texformats[8];
 };
 
 #endif //__GLDIRECT3DDEVICE_H
