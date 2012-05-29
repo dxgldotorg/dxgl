@@ -135,7 +135,6 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, GLuint texture, i
 		}
 		glTexImage2D(GL_TEXTURE_2D,0,texformat3,bigx,bigy,0,texformat,texformat2,bigbuffer);
 	}
-	return 0;
 }
 
 /**
@@ -191,7 +190,6 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, GLuint texture,
 		break;
 		}
 	}
-	return 0;
 }
 
 /**
@@ -343,7 +341,7 @@ GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, D
   * @param texformat3
   *  OpenGL internalformat parameter for glTexImage2D
   */
-int glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
+void glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3)
 {
 	EnterCriticalSection(&cs);
@@ -373,7 +371,6 @@ int glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int
 		Sleep(0);
 	}
 	LeaveCriticalSection(&cs);
-	return (int)outputs[0];
 }
 
 /**
@@ -400,7 +397,7 @@ int glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int
   * @param texformat2
   *  OpenGL type parameter for glGetTexImage
   */
-int glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
+void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2)
 {
 	EnterCriticalSection(&cs);
@@ -429,7 +426,6 @@ int glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, i
 		Sleep(0);
 	}
 	LeaveCriticalSection(&cs);
-	return (int)outputs[0];
 }
 
 /**
@@ -1560,13 +1556,13 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8]);
 		return 0;
 	case GLEVENT_UPLOAD:
-		outputs[0] = (void*)_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
+		_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
 			(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
 			(int)inputs[10],(int)inputs[11],(int)inputs[12]);
 		wndbusy = false;
 		return 0;
 	case GLEVENT_DOWNLOAD:
-		outputs[0] = (void*)_DownloadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
+		_DownloadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
 			(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
 			(int)inputs[10],(int)inputs[11]);
 		wndbusy = false;
