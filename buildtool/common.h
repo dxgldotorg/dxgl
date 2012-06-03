@@ -19,5 +19,7 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#include <cstdio>
+#include <iostream>
 
 #endif //_COMMON_H

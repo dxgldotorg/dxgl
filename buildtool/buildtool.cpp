@@ -16,11 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "../common/version.h"
 
-using namespace System;
+using namespace std;
 
-int main(array<System::String ^> ^args)
+int main(int arg, char *argv[])
 {
-    Console::WriteLine(L"DXGL Build Tool");
+    cout << "DXGL Build Tool, version " << DXGLVERSTRING << endl;
+
     return 0;
 }
