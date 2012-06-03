@@ -184,6 +184,7 @@
     <ClInclude Include="include\GL\wglext.h" />
     <ClInclude Include="include\winedef.h" />
     <ClInclude Include="matrix.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="scalers.h" />
     <ClInclude Include="shadergen.h" />
     <ClInclude Include="shaders.h" />
