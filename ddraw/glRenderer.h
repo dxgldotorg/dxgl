@@ -52,18 +52,18 @@ struct BltVertex
 
 extern BltVertex bltvertices[4];
 
-#define GLEVENT_NULL WM_USER
-#define GLEVENT_DELETE WM_USER+1
-#define GLEVENT_CREATE WM_USER+2
-#define GLEVENT_UPLOAD WM_USER+3
-#define GLEVENT_DOWNLOAD WM_USER+4
-#define GLEVENT_DELETETEX WM_USER+5
-#define GLEVENT_BLT WM_USER+6
-#define GLEVENT_DRAWSCREEN WM_USER+7
-#define GLEVENT_INITD3D WM_USER+8
-#define GLEVENT_CLEAR WM_USER+9
-#define GLEVENT_FLUSH WM_USER+10
-#define GLEVENT_DRAWPRIMITIVES WM_USER+11
+#define OP_NULL						0
+#define OP_DELETE					1
+#define OP_CREATE					2
+#define OP_UPLOAD					3
+#define OP_DOWNLOAD					4
+#define OP_DELETETEX				5
+#define OP_BLT						6
+#define OP_DRAWSCREEN				7
+#define OP_INITD3D					8
+#define OP_CLEAR					9
+#define OP_FLUSH					10
+#define OP_DRAWPRIMITIVES			11
 
 
 extern int swapinterval;
@@ -103,7 +103,7 @@ private:
 	HRESULT _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 	GLuint _MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
-	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
+	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync);
 	void _DeleteTexture(GLuint texture);
 	void _DrawBackbuffer(GLuint *texture, int x, int y);
 	void _InitD3D(int zbuffer);
@@ -112,10 +112,10 @@ private:
 		DWORD indexcount, DWORD flags);
 	glDirectDraw7 *ddInterface;
 	void _Flush();
+	int opcode;
 	void* inputs[32];
 	void* outputs[32];
 	HANDLE hThread;
-	bool wndbusy;
 	HDC hDC;
 	HWND hWnd;
 	HWND hRenderWnd;
@@ -123,6 +123,9 @@ private:
 	DIB dib;
 	GLuint PBO;
 	CRITICAL_SECTION cs;
+	HANDLE busy;
+	HANDLE start;
+	bool dead;
 };
 
 #endif //_GLRENDERER_H
