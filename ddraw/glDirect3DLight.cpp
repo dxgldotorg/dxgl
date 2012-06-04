@@ -66,6 +66,12 @@ HRESULT WINAPI glDirect3DLight::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return D3D_OK;
+	}
 	return E_NOINTERFACE;
 }
 

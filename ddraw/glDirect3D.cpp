@@ -147,6 +147,12 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return D3D_OK;
+	}
 	FIXME("glDirect3D7::QueryInterface: stub");
 	return E_NOINTERFACE;
 }

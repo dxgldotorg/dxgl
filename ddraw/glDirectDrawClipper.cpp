@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,12 @@ HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!obp) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*obp = this;
+		return DD_OK;
+	}
 	if(riid == IID_IDirectDrawClipper)
 	{
 		*obp = this;

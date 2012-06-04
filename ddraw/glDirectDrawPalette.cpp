@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -117,6 +117,12 @@ HRESULT WINAPI glDirectDrawPalette::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	ERR(E_NOINTERFACE);
 }
 

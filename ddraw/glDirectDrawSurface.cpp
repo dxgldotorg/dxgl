@@ -444,6 +444,12 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	if(riid == IID_IDirectDrawSurface7)
 	{
 		this->AddRef();
@@ -1247,6 +1253,12 @@ glDirectDrawSurface1::~glDirectDrawSurface1()
 HRESULT WINAPI glDirectDrawSurface1::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	return glDDS7->QueryInterface(riid,ppvObj);
 }
 ULONG WINAPI glDirectDrawSurface1::AddRef()
@@ -1467,6 +1479,12 @@ glDirectDrawSurface2::~glDirectDrawSurface2()
 HRESULT WINAPI glDirectDrawSurface2::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	return glDDS7->QueryInterface(riid,ppvObj);
 }
 ULONG WINAPI glDirectDrawSurface2::AddRef()
@@ -1701,6 +1719,12 @@ glDirectDrawSurface3::~glDirectDrawSurface3()
 HRESULT WINAPI glDirectDrawSurface3::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	return glDDS7->QueryInterface(riid,ppvObj);
 }
 ULONG WINAPI glDirectDrawSurface3::AddRef()
@@ -1940,6 +1964,12 @@ glDirectDrawSurface4::~glDirectDrawSurface4()
 HRESULT WINAPI glDirectDrawSurface4::QueryInterface(REFIID riid, void** ppvObj)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
 	return glDDS7->QueryInterface(riid,ppvObj);
 }
 ULONG WINAPI glDirectDrawSurface4::AddRef()
