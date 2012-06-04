@@ -143,6 +143,13 @@ void InitGLExt()
 		glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
 		glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
 	}
+	else
+	{
+		MessageBox(NULL,_T("DXGL requires an OpenGL 2.0 or higher compatible graphics card to function.  \
+Please contact your graphics card manufacturer for an updated driver.  This program will now exit."),_T("Fatal error"),
+			MB_OK|MB_ICONERROR);
+		ExitProcess(-1);
+	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;
 	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object")) GLEXT_EXT_framebuffer_object = 1;
@@ -150,6 +157,7 @@ void InitGLExt()
 	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) GLEXT_EXT_packed_depth_stencil = 1;
 	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float")) GLEXT_ARB_depth_buffer_float = 1;
 	if(strstr((char*)glextensions,"GL_ARB_depth_texture")) GLEXT_ARB_depth_texture = 1;
+	bool broken_fbo = true;
 	if(GLEXT_ARB_framebuffer_object)
 	{
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
@@ -160,6 +168,7 @@ void InitGLExt()
 		glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
 		glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
 		glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
+		broken_fbo = false;
 	}
 	if(GLEXT_EXT_framebuffer_object)
 	{
@@ -171,6 +180,14 @@ void InitGLExt()
 		glFramebufferTexture2DEXT = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)wglGetProcAddress("glFramebufferTexture2DEXT");
 		glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatusEXT");
 		glDeleteFramebuffersEXT = (PFNGLDELETEFRAMEBUFFERSEXTPROC)wglGetProcAddress("glDeleteFramebuffersEXT");
+		broken_fbo = false;
+	}
+	if(broken_fbo)
+	{
+		MessageBox(NULL,_T("DXGL requires support for OpenGL Framebuffer Objects to function.  \
+Please contact your graphics card manufacturer for an updated driver.  This program will now exit."),_T("Fatal error"),
+			MB_OK|MB_ICONERROR);
+		ExitProcess(-1);
 	}
 	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 	wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
