@@ -246,7 +246,11 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 		wndclasscreated = true;
 	}
 	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) DestroyWindow(hRenderWnd);
+	if(hRenderWnd) 
+	{
+		SetWindowLongPtr(hRenderWnd,GWLP_USERDATA,0);
+		PostMessage(hRenderWnd,WM_CLOSE,0,0);
+	}
 	RECT rectRender;
 	GetClientRect(hWnd,&rectRender);
 	if(hWnd)
@@ -673,10 +677,12 @@ DWORD glRenderer::_Entry()
 				}
 				wglMakeCurrent(NULL,NULL);
 				wglDeleteContext(hRC);
+				hRC = NULL;
 			};
 			if(hDC) ReleaseDC(hRenderWnd,hDC);
 			hDC = NULL;
-			DestroyWindow(hRenderWnd);
+			SetWindowLongPtr(hRenderWnd,GWLP_USERDATA,0);
+			PostMessage(hRenderWnd,WM_CLOSE,0,0);
 			hRenderWnd = NULL;
 			SetEvent(busy);
 			dead = true;
@@ -1468,9 +1474,6 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		SetWindowLongPtr(hwnd,GWLP_USERDATA,(LONG_PTR)this);
 		return 0;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
 	case WM_SETCURSOR:
 		hParent = GetParent(hwnd);
 		cursor = (HCURSOR)GetClassLong(hParent,GCL_HCURSOR);
@@ -1524,6 +1527,10 @@ LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	glRenderer* instance = reinterpret_cast<glRenderer*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
+	if(msg == WM_DESTROY)
+	{
+		return 0;
+	}
 	if(!instance)
 	{
 		if(msg == WM_CREATE)
