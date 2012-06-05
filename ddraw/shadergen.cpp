@@ -90,6 +90,10 @@ Bits in flags:
 10=cameraspaceposition 11=cameraspacereflectionvector
 Bit 59: Texture image enabled
 */
+
+/**
+  * Clears the array of shaders.
+  */
 void ZeroShaderArray()
 {
 	ZeroMemory(genshaders,256*sizeof(GenShader));
@@ -97,6 +101,9 @@ void ZeroShaderArray()
 	isbuiltin = true;
 }
 
+/**
+  * Deletes all shader programs in the array.
+  */
 void ClearShaders()
 {
 	for(int i = 0; i < shadercount; i++)
@@ -115,6 +122,17 @@ void ClearShaders()
 	genindex = 0;
 }
 
+/**
+  * Sets a shader by render state.  If the shader does not exist, generates it.
+  * @param id
+  *  64-bit value containing current render states
+  * @param texstate
+  *  Pointer to the texture stage state array, containing 8 64-bit state values
+  * @param texcoords
+  *  Pointer to number of texture coordinates in each texture stage
+  * @param builtin
+  *  If true, the id parameter is an index to a built-in shader for 2D blitting
+  */
 void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 {
 	int shaderindex = -1;
@@ -176,6 +194,12 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 	}
 }
 
+/**
+  * Retrieves the GLSL program currently in use
+  * @return
+  *  Number of the current GLSL program, or if using built-in shaders, the ID of
+  *  the shader
+  */
 GLuint GetProgram()
 {
 	if(isbuiltin) return current_shader & 0xFFFFFFFF;
@@ -301,6 +325,18 @@ float NdotL = max(dot(N,dir),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
 }\n";
 
+
+/**
+  * Creates an OpenGL shader program
+  * @param index
+  *  Index of the shader in the array to generate
+  * @param id
+  *  64-bit value containing current render states
+  * @param texstate
+  *  Pointer to the texture stage state array, containing 8 64-bit state values
+  * @param texcoords
+  *  Pointer to number of texture coordinates in each texture stage
+  */
 void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 {
 	string tmp;
@@ -637,6 +673,9 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			break;
 		case D3DTOP_SUBTRACT:
 			fsrc->append("color = " + arg1 + " - " + arg2 + ";\n");
+			break;
+		case D3DTOP_ADDSMOOTH:
+			fsrc->append("color = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
 			break;
 		}
 	}
