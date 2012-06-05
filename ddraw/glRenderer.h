@@ -125,7 +125,6 @@ private:
 	CRITICAL_SECTION cs;
 	HANDLE busy;
 	HANDLE start;
-	bool dead;
 };
 
 #endif //_GLRENDERER_H

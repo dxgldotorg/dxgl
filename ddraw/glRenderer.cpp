@@ -209,7 +209,6 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	hDC = NULL;
 	hRC = NULL;
 	PBO = 0;
-	dead = false;
 	hasHWnd = false;
 	dib.enabled = false;
 	hWnd = hwnd;
@@ -646,7 +645,7 @@ DWORD glRenderer::_Entry()
 	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4],(glDirectDraw7*)inputs[5]);
 	LeaveCriticalSection(&cs);
 	SetEvent(busy);
-	while(!dead)
+	while(0)
 	{
 		WaitForSingleObject(start,INFINITE);
 		switch(opcode)
@@ -685,7 +684,7 @@ DWORD glRenderer::_Entry()
 			PostMessage(hRenderWnd,WM_CLOSE,0,0);
 			hRenderWnd = NULL;
 			SetEvent(busy);
-			dead = true;
+			return 0;
 			break;
 		case OP_CREATE:
 			outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
