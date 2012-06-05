@@ -645,7 +645,7 @@ DWORD glRenderer::_Entry()
 	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4],(glDirectDraw7*)inputs[5]);
 	LeaveCriticalSection(&cs);
 	SetEvent(busy);
-	while(0)
+	while(1)
 	{
 		WaitForSingleObject(start,INFINITE);
 		switch(opcode)
