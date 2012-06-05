@@ -578,7 +578,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	int args[4];
 	bool texfail;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
-		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a"};
+		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a","alpha"};
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
@@ -634,7 +634,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg2 = blendargs[4];
+				arg2 = blendargs[4]+blendargs[8];
 				break;
 			case D3DTA_SPECULAR:
 				arg2 = blendargs[5]+blendargs[8];
@@ -676,6 +676,103 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			break;
 		case D3DTOP_ADDSMOOTH:
 			fsrc->append("color = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			break;
+		}
+		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)break;
+		// Alpha stage
+		texfail = false;
+		args[2] = (texstate[i].shaderid>>22)&63;
+		switch(args[2]&7) //arg1
+		{
+			case D3DTA_CURRENT:
+			default:
+				arg1 = blendargs[10];
+				break;
+			case D3DTA_DIFFUSE:
+				arg1 = blendargs[1]+blendargs[9];
+				break;
+			case D3DTA_TEXTURE:
+				if((texstate[i].shaderid >> 59)&1)
+				{
+					arg1 = blendargs[3];
+					arg1.replace(17,1,_itoa(i,idstring,10));
+					arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				}
+				else texfail = true;
+				break;
+			case D3DTA_TFACTOR:
+				FIXME("Support texture factor value");
+				arg1 = blendargs[4]+blendargs[9];
+				break;
+			case D3DTA_SPECULAR:
+				arg1 = blendargs[5]+blendargs[9];
+				break;
+		}
+		if(args[2] & D3DTA_COMPLEMENT)
+			arg1 = "(1.0 - " + arg1 + ")";
+		args[3] = (texstate[i].shaderid>>28)&63;
+		switch(args[3]&7) //arg2
+		{
+			case D3DTA_CURRENT:
+			default:
+				arg2 = blendargs[0];
+				break;
+			case D3DTA_DIFFUSE:
+				arg2 = blendargs[1]+blendargs[8];
+				break;
+			case D3DTA_TEXTURE:
+				if((texstate[i].shaderid >> 59)&1)
+				{
+					arg2 = blendargs[3];
+					arg2.replace(17,1,_itoa(i,idstring,10));
+					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				}
+				else texfail = true;
+				break;
+			case D3DTA_TFACTOR:
+				FIXME("Support texture factor value");
+				arg2 = blendargs[4]+blendargs[8];
+				break;
+			case D3DTA_SPECULAR:
+				arg2 = blendargs[5]+blendargs[8];
+				break;
+		}
+		if(args[3] & D3DTA_COMPLEMENT)
+			arg1 = "(1.0 - " + arg1 + ")";
+		if(!texfail) switch(texstate[i].shaderid & 31)
+		{
+		case D3DTOP_DISABLE:
+		default:
+			break;
+		case D3DTOP_SELECTARG1:
+			fsrc->append("alpha = " + arg1 + ";\n");
+			break;
+		case D3DTOP_SELECTARG2:
+			fsrc->append("alpha = " + arg2 + ";\n");
+			break;
+		case D3DTOP_MODULATE:
+			fsrc->append("alpha = " + arg1 + " * " + arg2 + ";\n");
+			break;
+		case D3DTOP_MODULATE2X:
+			fsrc->append("alpha = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
+			break;
+		case D3DTOP_MODULATE4X:
+			fsrc->append("alpha = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
+			break;
+		case D3DTOP_ADD:
+			fsrc->append("alpha = " + arg1 + " + " + arg2 + ";\n");
+			break;
+		case D3DTOP_ADDSIGNED:
+			fsrc->append("alpha = " + arg1 + " + " + arg2 + " - .5;\n");
+			break;
+		case D3DTOP_ADDSIGNED2X:
+			fsrc->append("alpha = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			break;
+		case D3DTOP_SUBTRACT:
+			fsrc->append("alpha = " + arg1 + " - " + arg2 + ";\n");
+			break;
+		case D3DTOP_ADDSMOOTH:
+			fsrc->append("alpha = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
 			break;
 		}
 	}

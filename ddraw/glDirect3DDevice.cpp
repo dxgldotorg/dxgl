@@ -1190,6 +1190,26 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 			return D3DERR_UNSUPPORTEDCOLOROPERATION;
 		}
 	}
+	for(int i = 0; i < 8; i++)
+	{
+		switch(texstages[i].alphaop)
+		{
+		case D3DTOP_DISABLE:
+		case D3DTOP_SELECTARG1:
+		case D3DTOP_SELECTARG2:
+		case D3DTOP_MODULATE:
+		case D3DTOP_MODULATE2X:
+		case D3DTOP_MODULATE4X:
+		case D3DTOP_ADD:
+		case D3DTOP_ADDSIGNED:
+		case D3DTOP_ADDSIGNED2X:
+		case D3DTOP_SUBTRACT:
+		case D3DTOP_ADDSMOOTH:
+			break;
+		default:
+			return D3DERR_UNSUPPORTEDALPHAOPERATION;
+		}
+	}
 	if(lpdwPasses) *lpdwPasses = 1;
 	return D3D_OK;
 }
