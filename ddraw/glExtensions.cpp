@@ -19,7 +19,7 @@
 #include "glExtensions.h"
 
 GLuint (APIENTRY *glCreateShader) (GLenum type) = NULL;
-void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length) = NULL;
+void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length) = NULL;
 void (APIENTRY *glCompileShader) (GLuint shader) = NULL;
 void (APIENTRY *glDeleteShader) (GLuint shader) = NULL;
 GLuint (APIENTRY *glCreateProgram) () = NULL;

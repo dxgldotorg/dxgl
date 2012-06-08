@@ -39,7 +39,7 @@ extern int GLEXT_ARB_depth_texture;
 #endif
 
 GLAPI GLuint (APIENTRY *glCreateShader) (GLenum type);
-GLAPI void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+GLAPI void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
 GLAPI void (APIENTRY *glCompileShader) (GLuint shader);
 GLAPI void (APIENTRY *glDeleteShader) (GLuint shader);
 GLAPI GLuint (APIENTRY *glCreateProgram) ();

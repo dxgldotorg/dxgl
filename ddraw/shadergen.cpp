@@ -715,10 +715,10 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg2 = blendargs[0];
+				arg2 = blendargs[10];
 				break;
 			case D3DTA_DIFFUSE:
-				arg2 = blendargs[1]+blendargs[8];
+				arg2 = blendargs[1]+blendargs[9];
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
@@ -731,14 +731,14 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg2 = blendargs[4]+blendargs[8];
+				arg2 = blendargs[4]+blendargs[9];
 				break;
 			case D3DTA_SPECULAR:
-				arg2 = blendargs[5]+blendargs[8];
+				arg2 = blendargs[5]+blendargs[9];
 				break;
 		}
 		if(args[3] & D3DTA_COMPLEMENT)
-			arg1 = "(1.0 - " + arg1 + ")";
+			arg2 = "(1.0 - " + arg2 + ")";
 		if(!texfail) switch(texstate[i].shaderid & 31)
 		{
 		case D3DTOP_DISABLE:
