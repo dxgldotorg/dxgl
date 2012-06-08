@@ -16,5 +16,9 @@
 		<param name="Name" value="Configuration">
 		<param name="Local" value="configuration.htm">
 		</OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Troubleshooting">
+    <param name="Local" value="troubleshooting.htm">
+    </OBJECT>
 </UL>
 </BODY></HTML>

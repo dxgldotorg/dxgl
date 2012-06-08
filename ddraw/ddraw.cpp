@@ -472,7 +472,17 @@ DDRAW_API void WINAPI SetAppCompatData()
 	FIXME("SetAppCompatData: stub\n");
 }
 
-/// Stub for function found in system ddraw.dll
+/**
+  * Test if the ddraw.dll file is DXGL.  Do not link to this entry point.
+  * Use LoadLibrary and GetProcAddress instead.
+  * @return
+  *  Returns TRUE
+  * @remark
+  *  Test for DXGL by testing if this function exists.  Please do not use
+  *  this function to test whether your program should run or not.  This
+  *  function may be changed or removed in case of abuse.
+  */
+
 DDRAW_API BOOL IsDXGLDDraw()
 {
 	return TRUE;

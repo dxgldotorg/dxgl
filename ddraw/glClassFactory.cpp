@@ -63,18 +63,21 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	{
 		glDD7 = new glDirectDraw7;
 		*ppvObject = new glDirectDraw1(glDD7);
+		glDD7->Release();
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw2)
 	{
 		glDD7 = new glDirectDraw7;
 		*ppvObject = new glDirectDraw2(glDD7);
+		glDD7->Release();
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw4)
 	{
 		glDD7 = new glDirectDraw7;
 		*ppvObject = new glDirectDraw4(glDD7);
+		glDD7->Release();
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw7)

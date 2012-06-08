@@ -27,5 +27,8 @@
     <None Include="dxgl.css">
       <Filter>Help files</Filter>
     </None>
+    <None Include="troubleshooting.htm">
+      <Filter>Help files</Filter>
+    </None>
   </ItemGroup>
 </Project>

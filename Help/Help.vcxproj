@@ -71,6 +71,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="toc.hhc" />
+    <None Include="troubleshooting.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

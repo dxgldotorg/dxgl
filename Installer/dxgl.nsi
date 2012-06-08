@@ -83,6 +83,7 @@ Section "MainSection" SEC01
   File "..\ReadMe.txt"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
+  File "dllpaths.reg"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   
   StrCpy $8 0
