@@ -292,6 +292,7 @@ glRenderer::~glRenderer()
 	CloseHandle(busy);
 	LeaveCriticalSection(&cs);
 	DeleteCriticalSection(&cs);
+	CloseHandle(hThread);
 }
 
 /**
@@ -1238,7 +1239,6 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 		return;
 	}
 	outputs[0] = (void*)D3D_OK;
-	SetEvent(busy);
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
 	if(target->zbuffer) SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
@@ -1262,12 +1262,13 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 	glClear(clearbits);
 	if(target->zbuffer) target->zbuffer->dirty |= 2;
 	target->dirty |= 2;
+	SetEvent(busy);
 }
 
 void glRenderer::_Flush()
 {
-	SetEvent(busy);
 	glFlush();
+	SetEvent(busy);
 }
 
 void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,

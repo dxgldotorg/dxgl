@@ -61,6 +61,7 @@ void StartTimer(HWND hWnd, UINT message, double framerate)
 	if(!hThread)
 	{
 		hThread = CreateThread(NULL,0,TimerThread,NULL,0,NULL);
+		CloseHandle(hThread);
 	}
 }
 void StopTimer()
