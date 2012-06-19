@@ -219,7 +219,7 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	if(fullscreen)
 	{
 		SetWindowLongPtrA(hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-		SetWindowLongPtrA(hWnd,GWL_STYLE,WS_POPUP);
+		SetWindowLongPtrA(hWnd,GWL_STYLE,WS_OVERLAPPED);
 		ShowWindow(hWnd,SW_MAXIMIZE);
 	}
 	if(width)

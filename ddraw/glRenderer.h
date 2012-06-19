@@ -73,6 +73,9 @@ class glDirectDraw7;
 class glDirect3DDevice7;
 class glDirectDrawSurface7;
 
+/** @brief glRenderer class
+  * OpenGL renderer class for DXGL.
+  */
 class glRenderer
 {
 public:
