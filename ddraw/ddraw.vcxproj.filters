@@ -101,6 +101,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="glRenderWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -158,6 +161,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glRenderWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

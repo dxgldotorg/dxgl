@@ -20,6 +20,7 @@
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
+#include "glRenderer.h"
 #include <intrin.h>
 #include <tlhelp32.h>
 
@@ -33,6 +34,7 @@ const GUID device_template =
 
 DWORD timer;
 int vsyncstatus;
+glRenderer *renderer = NULL;
 bool ddenabled = false;
 
 /**
@@ -57,6 +59,12 @@ bool IsBadReadPointer(void *ptr)
 	{
 		return true;
 	}
+}
+
+void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
+{
+	if(!renderer) renderer = new glRenderer(width,height,bpp,fullscreen,hWnd,glDD7);
+	else renderer->SetWnd(width,height,bpp,fullscreen,hWnd);
 }
 
 /// Stub for function found in system ddraw.dll

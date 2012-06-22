@@ -552,7 +552,6 @@ glDirectDraw7::glDirectDraw7()
 	glD3D7 = NULL;
 	clippers = NULL;
 	surfaces = NULL;
-	renderer = NULL;
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	refcount = 1;
@@ -593,7 +592,8 @@ glDirectDraw7::~glDirectDraw7()
 		}
 		free(surfaces);
 	}
-	DeleteGL();
+	if(renderer) delete renderer;
+	renderer = NULL;
 	ddenabled = false;
 	directdraw_created = false;
 }
@@ -1004,7 +1004,6 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	this->hWnd = hWnd;
-	if(renderer) DeleteGL();
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
 	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
 	bool exclusive = false;
@@ -1068,8 +1067,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	}
 	bpp = devmode.dmBitsPerPel;
 	primarybpp = bpp;
-	if(InitGL(x,y,bpp,fullscreen,hWnd)) return DD_OK;
-	ERR(DDERR_GENERIC);
+	InitGL(x,y,bpp,fullscreen,hWnd,this);
+	return DD_OK;
 }
 
 void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
@@ -1174,8 +1173,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			if(dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-			DeleteGL();
-			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
 			return DD_OK;
 		case DISP_CHANGE_BADMODE:
@@ -1205,8 +1203,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
 		primarybpp = dwBPP;
-		DeleteGL();
-		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 		primarylost = true;
 		return DD_OK;
 		break;
@@ -1231,8 +1228,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
 		primarybpp = dwBPP;
-		DeleteGL();
-		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 		primarylost = true;
 		return DD_OK;
 		break;
@@ -1244,8 +1240,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		DeleteGL();
-		InitGL(screenx,screeny,screenbpp,true,hWnd);
+		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 		break;
 	case 4: // Switch then stretch
 	case 5: // Switch then scale
@@ -1279,8 +1274,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 			primarybpp = dwBPP;
-			DeleteGL();
-			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
 			return DD_OK;
 			break;
@@ -1305,8 +1299,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 			primarybpp = dwBPP;
-			DeleteGL();
-			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
 			return DD_OK;
 			break;
@@ -1319,8 +1312,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
-			DeleteGL();
-			InitGL(screenx,screeny,screenbpp,true,hWnd);
+			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
 			return DD_OK;
 			break;
@@ -1384,17 +1376,6 @@ HRESULT WINAPI glDirectDraw7::EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTi
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDraw7::DeleteGL()
-{
-	delete renderer;
-	renderer = NULL;
-}
-
-BOOL glDirectDraw7::InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd)
-{
-	renderer = new glRenderer(width,height,bpp,fullscreen,hWnd,this);
-	return TRUE;
-}
 void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
 {
 	sizes[0] = internalx;

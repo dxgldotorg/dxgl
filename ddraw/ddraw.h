@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _DDRAW_H
-#define _DDRAW_H
+#ifndef _DDRAW_PRIVATE_H
+#define _DDRAW_PRIVATE_H
 
 #ifdef DDRAW_EXPORTS
 #define DDRAW_API __declspec(dllexport)
@@ -61,5 +61,9 @@ extern bool gllock;
 extern DWORD timer;
 extern int vsyncstatus;
 extern bool ddenabled;
+class glRenderer;
+extern glRenderer *renderer;
+class glDirectDraw7;
+void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7);
 
-#endif //_DDRAW_H
+#endif //_DDRAW_PRIVATE_H

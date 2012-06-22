@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "ddraw.h"
 #include "glDirect3D.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
@@ -233,8 +234,8 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	memset(gllights,0xff,8*sizeof(int));
 	memset(gltextures,0,8*sizeof(GLuint));
 	d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
-		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = glD3D7->glDD7->renderer->gl_caps.TextureMax;
-	glD3D7->glDD7->renderer->InitD3D(zbuffer);
+		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
+	renderer->InitD3D(zbuffer);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
@@ -323,7 +324,7 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(dwCount && !lpRects) return DDERR_INVALIDPARAMS;
-	return glD3D7->glDD7->renderer->Clear(glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil);
+	return renderer->Clear(glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil);
 }
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
@@ -519,7 +520,7 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	HRESULT err = fvftoglvertex(dwVertexTypeDesc,(LPDWORD)lpvVertices);
 	if(err != D3D_OK) return err;
-	return glD3D7->glDD7->renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
+	return renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
 		dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
@@ -561,7 +562,7 @@ HRESULT WINAPI glDirect3DDevice7::EndScene()
 	if(!this) return DDERR_INVALIDPARAMS;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	inscene = false;
-	glD3D7->glDD7->renderer->Flush();
+	renderer->Flush();
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)

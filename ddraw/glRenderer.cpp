@@ -19,6 +19,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
+#include "glRenderWindow.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
@@ -30,8 +31,6 @@ using namespace std;
 #include "shadergen.h"
 #include "matrix.h"
 
-WNDCLASSEXA wndclass;
-bool wndclasscreated = false;
 GLuint backbuffer = 0;
 int backx = 0;
 int backy = 0;
@@ -209,10 +208,8 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	hDC = NULL;
 	hRC = NULL;
 	PBO = 0;
-	hasHWnd = false;
 	dib.enabled = false;
 	hWnd = hwnd;
-	hRenderWnd = NULL;
 	InitializeCriticalSection(&cs);
 	busy = CreateEvent(NULL,FALSE,FALSE,NULL);
 	start = CreateEvent(NULL,FALSE,FALSE,NULL);
@@ -227,47 +224,7 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 		// TODO:  Adjust window rect
 	}
 	SetWindowPos(hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	if(!wndclasscreated)
-	{
-		wndclass.cbSize = sizeof(WNDCLASSEXA);
-		wndclass.style = 0;
-		wndclass.lpfnWndProc = RenderWndProc;
-		wndclass.cbClsExtra = 0;
-		wndclass.cbWndExtra = 0;
-		wndclass.hInstance = (HINSTANCE)GetModuleHandle(NULL);
-		wndclass.hIcon = NULL;
-		wndclass.hCursor = NULL;
-		wndclass.hbrBackground = NULL;
-		wndclass.lpszMenuName = NULL;
-		wndclass.lpszClassName = "DXGLRenderWindow";
-		wndclass.hIconSm = NULL;
-		RegisterClassExA(&wndclass);
-		wndclasscreated = true;
-	}
-	if(hDC) ReleaseDC(hRenderWnd,hDC);
-	if(hRenderWnd) 
-	{
-		SetWindowLongPtr(hRenderWnd,GWLP_USERDATA,0);
-		PostMessage(hRenderWnd,WM_CLOSE,0,0);
-	}
-	RECT rectRender;
-	GetClientRect(hWnd,&rectRender);
-	if(hWnd)
-	{
-		hRenderWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
-			rectRender.bottom - rectRender.top,hWnd,NULL,wndclass.hInstance,this);
-		hasHWnd = true;
-		SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-	}
-	else
-	{
-		width = GetSystemMetrics(SM_CXSCREEN);
-		height = GetSystemMetrics(SM_CYSCREEN);
-		hRenderWnd = CreateWindowExA(WS_EX_TOOLWINDOW|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,
-			"DXGLRenderWindow","Renderer",WS_POPUP,0,0,width,height,0,0,NULL,this);
-		hasHWnd = false;
-		SetWindowPos(hRenderWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW|SWP_NOACTIVATE);
-	}
+	RenderWnd = new glRenderWindow(width,height,fullscreen,hWnd,glDD7);
 	inputs[0] = (void*)width;
 	inputs[1] = (void*)height;
 	inputs[2] = (void*)bpp;
@@ -287,7 +244,7 @@ glRenderer::~glRenderer()
 	EnterCriticalSection(&cs);
 	opcode = OP_DELETE;
 	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
+	WaitForObjectAndMessages(busy);
 	CloseHandle(start);
 	CloseHandle(busy);
 	LeaveCriticalSection(&cs);
@@ -487,9 +444,9 @@ HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 	{
 		GetClientRect(hWnd,&r);
-		GetClientRect(hRenderWnd,&r2);
+		GetClientRect(RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		SetWindowPos(RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
 	inputs[0] = lpDestRect;
 	inputs[1] = src;
@@ -591,6 +548,33 @@ void glRenderer::Flush()
 }
 
 /**
+  * Changes the window used for rendering.
+  * @param width,height
+  *  Width and height of the new window.
+  * @param fullscreen
+  *  True if fullscreen
+  * @param newwnd
+  *  HWND of the new window
+  */
+void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, HWND newwnd)
+{
+	if(fullscreen && newwnd)
+	{
+		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
+		SetWindowLongPtrA(newwnd,GWL_STYLE,WS_OVERLAPPED);
+		ShowWindow(newwnd,SW_MAXIMIZE);
+	}
+	inputs[0] = (void*)width;
+	inputs[1] = (void*)height;
+	inputs[2] = (void*)bpp;
+	inputs[3] = (void*)fullscreen;
+	inputs[4] = (void*)newwnd;
+	opcode = OP_SETWND;
+	SetEvent(start);
+	WaitForSingleObject(busy,INFINITE);
+	LeaveCriticalSection(&cs);
+}
+/**
   * Draws one or more primitives to the currently selected render target.
   * @param device
   *  glDirect3DDevice7 interface to use for drawing
@@ -651,7 +635,7 @@ DWORD glRenderer::_Entry()
 		WaitForSingleObject(start,INFINITE);
 		switch(opcode)
 		{
-			case OP_DELETE:
+		case OP_DELETE:
 			if(hRC)
 			{
 				if(dib.enabled)
@@ -679,13 +663,15 @@ DWORD glRenderer::_Entry()
 				wglDeleteContext(hRC);
 				hRC = NULL;
 			};
-			if(hDC) ReleaseDC(hRenderWnd,hDC);
+			if(hDC) ReleaseDC(RenderWnd->GetHWnd(),hDC);
 			hDC = NULL;
-			SetWindowLongPtr(hRenderWnd,GWLP_USERDATA,0);
-			PostMessage(hRenderWnd,WM_CLOSE,0,0);
-			hRenderWnd = NULL;
+			delete RenderWnd;
+			RenderWnd = NULL;
 			SetEvent(busy);
 			return 0;
+			break;
+		case OP_SETWND:
+			_SetWnd((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4]);
 			break;
 		case OP_CREATE:
 			outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
@@ -762,44 +748,38 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
-	if(hasHWnd) pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	else pfd.dwFlags = pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
 	pfd.iPixelType = PFD_TYPE_RGBA;
-	if(hasHWnd) pfd.cColorBits = bpp;
-	else
-	{
-		pfd.cColorBits = 24;
-		pfd.cAlphaBits = 8;
-	}
+	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
-	hDC = GetDC(hRenderWnd);
+	gllock = true;
+	hDC = GetDC(RenderWnd->GetHWnd());
 	if(!hDC)
 	{
-		DEBUG("glDirectDraw7::InitGL: Can not create hDC\n");
+		DEBUG("glRenderer::InitGL: Can not create hDC\n");
 		return FALSE;
 	}
 	pf = ChoosePixelFormat(hDC,&pfd);
 	if(!pf)
 	{
-		DEBUG("glDirectDraw7::InitGL: Can not get pixelformat\n");
+		DEBUG("glRenderer::InitGL: Can not get pixelformat\n");
 		return FALSE;
 	}
 	if(!SetPixelFormat(hDC,pf,&pfd))
-		DEBUG("glDirectDraw7::InitGL: Can not set pixelformat\n");
-	gllock = true;
+		DEBUG("glRenderer::InitGL: Can not set pixelformat\n");
 	hRC = wglCreateContext(hDC);
 	if(!hRC)
 	{
-		DEBUG("glDirectDraw7::InitGL: Can not create GL context\n");
+		DEBUG("glRenderer::InitGL: Can not create GL context\n");
 		gllock = false;
 		return FALSE;
 	}
 	if(!wglMakeCurrent(hDC,hRC))
 	{
-		DEBUG("glDirectDraw7::InitGL: Can not activate GL context\n");
+		DEBUG("glRenderer::InitGL: Can not activate GL context\n");
 		wglDeleteContext(hRC);
 		hRC = NULL;
-		ReleaseDC(hRenderWnd,hDC);
+		ReleaseDC(RenderWnd->GetHWnd(),hDC);
 		hDC = NULL;
 		gllock = false;
 		return FALSE;
@@ -826,7 +806,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glFlush();
 	SwapBuffers(hDC);
 	SetActiveTexture(0);
-	if(!hasHWnd)
+	if(hWnd)
 	{
 		dib.enabled = true;
 		dib.width = width;
@@ -842,11 +822,11 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 		dib.info.bmiHeader.biCompression = BI_RGB;
 		dib.info.bmiHeader.biPlanes = 1;
 		dib.hbitmap = CreateDIBSection(dib.hdc,&dib.info,DIB_RGB_COLORS,(void**)&dib.pixels,NULL,0);
-		glGenBuffers(1,&PBO);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
-		glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
 	}
+	glGenBuffers(1,&PBO);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
+	glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
 	return TRUE;
 }
 
@@ -1062,9 +1042,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(hWnd,&r);
-		GetClientRect(hRenderWnd,&r2);
+		GetClientRect(RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(hRenderWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		SetWindowPos(RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
 	RECT *viewrect = &r2;
 	SetSwap(swapinterval);
@@ -1097,8 +1077,8 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = viewrect->right;
 			viewport[3] = viewrect->bottom;
-			ClientToScreen(hRenderWnd,(LPPOINT)&viewrect->left);
-			ClientToScreen(hRenderWnd,(LPPOINT)&viewrect->right);
+			ClientToScreen(RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
+			ClientToScreen(RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
 			view[2] = (GLfloat)dest->fakey-(GLfloat)viewrect->top;
@@ -1178,7 +1158,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
-	if(hasHWnd) SwapBuffers(hDC);
+	if(hWnd) SwapBuffers(hDC);
 	else
 	{
 		glReadBuffer(GL_FRONT);
@@ -1196,18 +1176,18 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
 		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
-		HDC hRenderDC = (HDC)::GetDC(hRenderWnd);
+		HDC hRenderDC = (HDC)::GetDC(RenderWnd->GetHWnd());
 		HGDIOBJ hPrevObj = 0;
 		POINT dest = {0,0};
 		POINT src = {0,0};
 		SIZE wnd = {dib.width,dib.height};
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
 		hPrevObj = SelectObject(dib.hdc,dib.hbitmap);
-		ClientToScreen(hRenderWnd,&dest);
-		UpdateLayeredWindow(hRenderWnd,hRenderDC,&dest,&wnd,
+		ClientToScreen(RenderWnd->GetHWnd(),&dest);
+		UpdateLayeredWindow(RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
 			dib.hdc,&src,0,&func,ULW_ALPHA);
 		SelectObject(dib.hdc,hPrevObj);
-		::ReleaseDC(hRenderWnd,hRenderDC);
+		ReleaseDC(RenderWnd->GetHWnd(),hRenderDC);
 	}
 	if(setsync) SetEvent(busy);
 
@@ -1268,6 +1248,43 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 void glRenderer::_Flush()
 {
 	glFlush();
+	SetEvent(busy);
+}
+
+void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, HWND newwnd)
+{
+	if(newwnd != hWnd)
+	{
+		wglMakeCurrent(NULL,NULL);
+		ReleaseDC(hWnd,hDC);
+		delete RenderWnd;
+		RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,ddInterface);
+		PIXELFORMATDESCRIPTOR pfd;
+		GLuint pf;
+		gllock = true;
+		ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
+		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+		pfd.nVersion = 1;
+		pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+		pfd.iPixelType = PFD_TYPE_RGBA;
+		pfd.cColorBits = bpp;
+		pfd.iLayerType = PFD_MAIN_PLANE;
+		hDC = GetDC(RenderWnd->GetHWnd());
+		if(!hDC)
+			DEBUG("glRenderer::SetWnd: Can not create hDC\n");
+		pf = ChoosePixelFormat(hDC,&pfd);
+		if(!pf)
+			DEBUG("glRenderer::SetWnd: Can not get pixelformat\n");
+		if(!SetPixelFormat(hDC,pf,&pfd))
+			DEBUG("glRenderer::SetWnd: Can not set pixelformat\n");
+		if(!wglMakeCurrent(hDC,hRC))
+			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
+		gllock = false;
+		SetSwap(1);
+		SetSwap(0);
+		glViewport(0,0,width,height);
+	}
+
 	SetEvent(busy);
 }
 
@@ -1458,84 +1475,4 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	outputs[0] = (void*)D3D_OK;
 	SetEvent(busy);
 	return;
-}
-
-LRESULT glRenderer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	int oldx,oldy;
-	float mulx, muly;
-	int translatex, translatey;
-	LPARAM newpos;
-	HWND hParent;
-	LONG sizes[6];
-	HCURSOR cursor;
-	switch(msg)
-	{
-	case WM_CREATE:
-		SetWindowLongPtr(hwnd,GWLP_USERDATA,(LONG_PTR)this);
-		return 0;
-	case WM_SETCURSOR:
-		hParent = GetParent(hwnd);
-		cursor = (HCURSOR)GetClassLong(hParent,GCL_HCURSOR);
-		SetCursor(cursor);
-		return SendMessage(hParent,msg,wParam,lParam);
-	case WM_MOUSEMOVE:
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_LBUTTONDBLCLK:
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONUP:
-	case WM_RBUTTONDBLCLK:
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONUP:
-	case WM_MBUTTONDBLCLK:
-	case WM_MOUSEWHEEL:
-	case WM_XBUTTONDOWN:
-	case WM_XBUTTONUP:
-	case WM_XBUTTONDBLCLK:
-	case WM_MOUSEHWHEEL:
-		hParent = GetParent(hwnd);
-		if((dxglcfg.scaler != 0) && ddInterface->GetFullscreen())
-		{
-			oldx = LOWORD(lParam);
-			oldy = HIWORD(lParam);
-			ddInterface->GetSizes(sizes);
-			mulx = (float)sizes[2] / (float)sizes[0];
-			muly = (float)sizes[3] / (float)sizes[1];
-			translatex = (sizes[4]-sizes[0])/2;
-			translatey = (sizes[5]-sizes[1])/2;
-			oldx -= translatex;
-			oldy -= translatey;
-			oldx = (int)((float)oldx * mulx);
-			oldy = (int)((float)oldy * muly);
-			if(oldx < 0) oldx = 0;
-			if(oldy < 0) oldy = 0;
-			if(oldx >= sizes[2]) oldx = sizes[2]-1;
-			if(oldy >= sizes[3]) oldy = sizes[3]-1;
-			newpos = oldx + (oldy << 16);
-			return SendMessage(hParent,msg,wParam,newpos);
-		}
-		else return SendMessage(hParent,msg,wParam,lParam);
-	default:
-		return DefWindowProc(hwnd,msg,wParam,lParam);
-	}
-	return 0;
-}
-
-
-// Render Window event handler
-LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	glRenderer* instance = reinterpret_cast<glRenderer*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
-	if(msg == WM_DESTROY)
-	{
-		return 0;
-	}
-	if(!instance)
-	{
-		if(msg == WM_CREATE)
-			instance = reinterpret_cast<glRenderer*>(*(LONG_PTR*)lParam);
-		else return DefWindowProc(hwnd,msg,wParam,lParam);
-	}
-	return instance->WndProc(hwnd,msg,wParam,lParam);
 }

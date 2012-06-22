@@ -26,7 +26,6 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
-class glRenderer;
 class glDirectDrawClipper;
 class glDirectDrawPalette;
 class glDirectDrawSurface1;
@@ -115,7 +114,6 @@ public:
 	GLint texformat3;
 	DWORD fakex,fakey;
 	DWORD dirty;
-	glRenderer *renderer;
 	// dirty bits:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw

@@ -24,8 +24,6 @@ class glDirectDrawClipper;
 class glDirect3D7;
 class glRenderer;
 
-LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 class glDirectDraw7 : public IDirectDraw7
 {
 public:
@@ -83,10 +81,7 @@ public:
 	void DeleteClipper(glDirectDrawClipper *clipper);
 	glDirectDrawSurface7 *primary;
 	bool primarylost;
-	glRenderer *renderer;
 private:
-	void DeleteGL();
-	BOOL InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd);
 	HRESULT error;
 	ULONG refcount;
 	HWND hWnd;

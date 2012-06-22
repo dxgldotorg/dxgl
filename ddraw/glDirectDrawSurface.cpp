@@ -66,8 +66,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	else
 	{
 		ddInterface = (glDirectDraw7 *)lpDD7;
-		renderer = ddInterface->renderer;
-		hRC = ddInterface->renderer->hRC;
+		hRC = renderer->hRC;
 		ddsd = *lpDDSurfaceDesc2;
 	}
 	LONG sizes[6];
@@ -895,7 +894,7 @@ HRESULT WINAPI glDirectDrawSurface7::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDE
 HRESULT WINAPI glDirectDrawSurface7::IsLost()
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	if(hRC == ddInterface->renderer->hRC) return DD_OK;
+	if(hRC == renderer->hRC) return DD_OK;
 	else return DDERR_SURFACELOST;
 }
 
@@ -951,7 +950,7 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 void glDirectDrawSurface7::Restore2()
 {
 	LONG sizes[6];
-	if(hRC != ddInterface->renderer->hRC)
+	if(hRC != renderer->hRC)
 	{
 		ddInterface->GetSizes(sizes);
 		if(ddInterface->GetFullscreen())
@@ -986,8 +985,8 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	LONG sizes[6];
-	if(!ddInterface->renderer) return DDERR_INVALIDOBJECT;
-	if(hRC != ddInterface->renderer->hRC)
+	if(!renderer) return DDERR_INVALIDOBJECT;
+	if(hRC != renderer->hRC)
 	{
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{

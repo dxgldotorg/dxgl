@@ -53,17 +53,18 @@ struct BltVertex
 extern BltVertex bltvertices[4];
 
 #define OP_NULL						0
-#define OP_DELETE					1
-#define OP_CREATE					2
-#define OP_UPLOAD					3
-#define OP_DOWNLOAD					4
-#define OP_DELETETEX				5
-#define OP_BLT						6
-#define OP_DRAWSCREEN				7
-#define OP_INITD3D					8
-#define OP_CLEAR					9
-#define OP_FLUSH					10
-#define OP_DRAWPRIMITIVES			11
+#define OP_SETWND					1
+#define OP_DELETE					2
+#define OP_CREATE					3
+#define OP_UPLOAD					4
+#define OP_DOWNLOAD					5
+#define OP_DELETETEX				6
+#define OP_BLT						7
+#define OP_DRAWSCREEN				8
+#define OP_INITD3D					9
+#define OP_CLEAR					10
+#define OP_FLUSH					11
+#define OP_DRAWPRIMITIVES			12
 
 
 extern int swapinterval;
@@ -72,6 +73,7 @@ extern inline void SetSwap(int swap);
 class glDirectDraw7;
 class glDirect3DDevice7;
 class glDirectDrawSurface7;
+class glRenderWindow;
 
 /** @brief glRenderer class
   * OpenGL renderer class for DXGL.
@@ -91,11 +93,11 @@ public:
 	void DeleteTexture(GLuint texture);
 	void InitD3D(int zbuffer);
 	void Flush();
+	void SetWnd(int width, int height, int fullscreen, int bpp, HWND newwnd);
 	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 		DWORD indexcount, DWORD flags);
 	HGLRC hRC;
-	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	GLCAPS gl_caps;
 private:
 	// In-thread APIs
@@ -115,14 +117,14 @@ private:
 		DWORD indexcount, DWORD flags);
 	glDirectDraw7 *ddInterface;
 	void _Flush();
+	void _SetWnd(int width, int height, int fullscreen, int bpp, HWND newwnd);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
 	HANDLE hThread;
 	HDC hDC;
 	HWND hWnd;
-	HWND hRenderWnd;
-	bool hasHWnd;
+	glRenderWindow *RenderWnd;
 	DIB dib;
 	GLuint PBO;
 	CRITICAL_SECTION cs;
