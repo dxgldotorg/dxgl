@@ -675,7 +675,8 @@ DWORD glRenderer::_Entry()
 			break;
 		case OP_CREATE:
 			outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
-				(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8],true);
+				(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8]);
+			SetEvent(busy);
 			break;
 		case OP_UPLOAD:
 			_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
@@ -693,7 +694,7 @@ DWORD glRenderer::_Entry()
 			_DeleteTexture((GLuint)inputs[0]);
 			break;
 		case OP_BLT:
-			outputs[0] = (void*)_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
+			_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
 				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
 			break;
 		case OP_DRAWSCREEN:
@@ -830,7 +831,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	return TRUE;
 }
 
-HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
+void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
 	LONG sizes[6];
@@ -974,11 +975,11 @@ HRESULT glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest,false);
+	outputs[0] = DD_OK;
 	SetEvent(busy);
-	return DD_OK;
 }
 
-GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3, bool setsync)
+GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3)
 {
 	GLuint texture;
 	glGenTextures(1,&texture);
@@ -988,7 +989,6 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,(GLfloat)wraps);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,(GLfloat)wrapt);
 	glTexImage2D(GL_TEXTURE_2D,0,texformat3,width,height,0,texformat1,texformat2,NULL);
-	if(setsync) SetEvent(busy);
 	return texture;
 }
 
@@ -998,7 +998,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
 	SetActiveTexture(0);
 	if(!backbuffer)
 	{
-		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8,false);
+		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
 		backx = x;
 		backy = y;
 	}
