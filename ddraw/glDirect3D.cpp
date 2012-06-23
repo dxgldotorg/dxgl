@@ -92,7 +92,7 @@ D3DDEVICEDESC7 d3ddesc =
 	IID_IDirect3DHALDevice, //deviceGUID
 	0, //wMaxUserClipPlanes
 	0, //wMaxVertexBlendMatrices
-	D3DVTXPCAPS_DIRECTIONALLIGHTS, //dwVertexProcessingCaps 
+	D3DVTXPCAPS_DIRECTIONALLIGHTS|D3DVTXPCAPS_POSITIONALLIGHTS, //dwVertexProcessingCaps 
 	0,0,0,0 //dwReserved1 through dwReserved4
 };
 

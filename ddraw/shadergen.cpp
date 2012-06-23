@@ -317,10 +317,11 @@ ambient += light.ambient;\n\
 }\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
-float NdotHV = 0.0\n\
-vec3 V = normalize(eye - P);\n\
-float d = length( light.position - V );\n\
-vec3  L = normalize( light.position - V );\n\
+float NdotHV = 0.0;\n\
+vec3 V = ((view*world)*xyzw).xyz;\n\
+float d = length(light.position - V);\n\
+vec3  L = normalize(light.position - V);\n\
+vec3  H = normalize(L + vec3(0.0, 0.0, 1.0));\n\
 float NdotL = max(dot(N,L),0.0);\n\
 float NdotH = max(dot(N,H),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
@@ -442,7 +443,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		}
 	}
 	bool hasspecular = (id >> 11) & 1;
-	if(hasspot) FIXME("Add spot lights");
+	if(hasspot) vsrc->append(func_spotlight);
 	if(hasdir) vsrc->append(func_dirlight);
 	//Main
 	vsrc->append(mainstart);
