@@ -1238,3 +1238,35 @@ void glDirect3DDevice7::UpdateNormalMatrix()
 
 	normal_dirty = false;
 }
+
+void glDirect3DDevice7::SetDepthComp()
+{
+	switch(renderstate[D3DRENDERSTATE_ZFUNC])
+	{
+	case D3DCMP_NEVER:
+		::SetDepthComp(GL_NEVER);
+		break;
+	case D3DCMP_LESS:
+		::SetDepthComp(GL_LESS);
+		break;
+	case D3DCMP_EQUAL:
+		::SetDepthComp(GL_EQUAL);
+		break;
+	case D3DCMP_LESSEQUAL:
+		::SetDepthComp(GL_LEQUAL);
+		break;
+	case D3DCMP_GREATER:
+		::SetDepthComp(GL_GREATER);
+		break;
+	case D3DCMP_NOTEQUAL:
+		::SetDepthComp(GL_NOTEQUAL);
+		break;
+	case D3DCMP_GREATEREQUAL:
+		::SetDepthComp(GL_GEQUAL);
+		break;
+	case D3DCMP_ALWAYS:
+	default:
+		::SetDepthComp(GL_ALWAYS);
+		break;
+	}
+}

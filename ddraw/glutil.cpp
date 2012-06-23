@@ -18,6 +18,8 @@
 #include "common.h"
 #include "glutil.h"
 
+GLuint depthcomp = 0;
+GLuint alphacomp = 0;
 GLuint fbcolor = 0;
 GLuint fbz = 0;
 GLuint fbo = 0;
@@ -156,5 +158,14 @@ void SetWrap(int level, DWORD coord, DWORD address)
 		if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 		else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
 		SetActiveTexture(currtexture);
+	}
+}
+
+void SetDepthComp(GLenum comp)
+{
+	if(comp != depthcomp)
+	{
+		depthcomp = comp;
+		glDepthFunc(comp);
 	}
 }

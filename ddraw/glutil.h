@@ -28,5 +28,6 @@ void DeleteFBO();
 void SetTexture(int level,GLuint texture);
 void SetActiveTexture(int level);
 GLenum SetFBO(GLint color, GLint z, bool stencil);
+void SetDepthComp(GLenum comp);
 
 #endif //_GLUTIL_H

@@ -791,6 +791,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	SetSwap(0);
 	glViewport(0,0,width,height);
 	glDisable(GL_DEPTH_TEST);
+	SetDepthComp(GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
 	gl_caps.Version = (GLfloat)atof((char*)glver);
 	if(gl_caps.Version >= 2)
@@ -1205,7 +1206,7 @@ void glRenderer::_InitD3D(int zbuffer)
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	if(zbuffer) glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	SetDepthComp(GL_LEQUAL);
 	glDisable(GL_DITHER);
 }
 
@@ -1307,6 +1308,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	}
 	__int64 shader = device->SelectShader(vertices);
 	SetShader(shader,device->texstages,texformats,0);
+	device->SetDepthComp();
 	_GENSHADER prog = genshaders[current_genshader].shader;
 	glEnableVertexAttribArray(prog.attribs[0]);
 	glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);

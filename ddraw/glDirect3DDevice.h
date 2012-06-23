@@ -121,6 +121,7 @@ public:
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT7 lpViewport);
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
+	void SetDepthComp();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	void UpdateNormalMatrix();
 	GLfloat matWorld[16];
