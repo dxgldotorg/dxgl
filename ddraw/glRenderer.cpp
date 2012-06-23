@@ -571,7 +571,7 @@ void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, HWND new
 	inputs[4] = (void*)newwnd;
 	opcode = OP_SETWND;
 	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
+	WaitForObjectAndMessages(busy);
 	LeaveCriticalSection(&cs);
 }
 /**
