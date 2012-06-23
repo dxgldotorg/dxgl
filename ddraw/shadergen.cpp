@@ -281,7 +281,6 @@ static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
-static const char op_dirlightnospecular[] = "DirLightNoSpecular(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient) + material.emissive;\n\
 gl_FrontSecondaryColor = (material.specular * specular);\n";
@@ -305,7 +304,7 @@ vec3 dir = normalize(-light.direction);\n\
 ambient += light.ambient;\n\
 float NdotL = max(dot(N,dir),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
-if(NdotL > 0.0)\n\
+if((NdotL > 0.0) && (material.power != 0.0))\n\
 {\n\
 vec3 eye = (-view[3].xyz / view[3].w);\n\
 vec3 P = vec3((view*world)*xyzw);\n\
@@ -316,14 +315,18 @@ specular += (pow(NdotHV,float(material.power))*light.specular);\n\
 ambient += light.ambient;\n\
 }\n\
 }\n";
-static const char func_dirlightnospecular[] = "void DirLightNoSpecular(in Light light)\n\
+static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
-float NdotHV = 0.0;\n\
-vec3 dir = normalize(-light.direction);\n\
-ambient += light.ambient;\n\
-float NdotL = max(dot(N,dir),0.0);\n\
+float NdotHV = 0.0\n\
+vec3 V = normalize(eye - P);\n\
+float d = length( light.position - V );\n\
+vec3  L = normalize( light.position - V );\n\
+float NdotL = max(dot(N,L),0.0);\n\
+float NdotH = max(dot(N,H),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
+ambient += light.ambient;\n\
 }\n";
+
 
 
 /**
@@ -440,11 +443,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	}
 	bool hasspecular = (id >> 11) & 1;
 	if(hasspot) FIXME("Add spot lights");
-	if(hasdir)
-	{
-		if(hasspecular) vsrc->append(func_dirlight);
-		else vsrc->append(func_dirlightnospecular);
-	}
+	if(hasdir) vsrc->append(func_dirlight);
 	//Main
 	vsrc->append(mainstart);
 	if((id>>50)&1) vsrc->append(op_passthru);
@@ -464,18 +463,9 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			}
 			else
 			{
-				if(hasspecular)
-				{
-					tmp = op_dirlight;
-					tmp.replace(14,1,_itoa(i,idstring,10));
-					vsrc->append(tmp);
-				}
-				else
-				{
-					tmp = op_dirlightnospecular;
-					tmp.replace(24,1,_itoa(i,idstring,10));
-					vsrc->append(tmp);
-				}
+				tmp = op_dirlight;
+				tmp.replace(14,1,_itoa(i,idstring,10));
+				vsrc->append(tmp);
 			}
 		}
 		vsrc->append(op_colorout);
