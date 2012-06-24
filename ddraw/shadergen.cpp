@@ -324,7 +324,8 @@ vec3  L = normalize(light.position - V);\n\
 vec3  H = normalize(L + vec3(0.0, 0.0, 1.0));\n\
 float NdotL = max(dot(N,L),0.0);\n\
 float NdotH = max(dot(N,H),0.0);\n\
-diffuse += light.diffuse*NdotL;\n\
+float attenuation = 1.0/(light.constant+(d*light.linear)+((d*d)*light.quad));\n\
+diffuse += light.diffuse*NdotL*attenuation;\n\
 ambient += light.ambient;\n\
 }\n";
 
