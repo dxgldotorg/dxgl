@@ -29,5 +29,7 @@ void SetTexture(int level,GLuint texture);
 void SetActiveTexture(int level);
 GLenum SetFBO(GLint color, GLint z, bool stencil);
 void SetDepthComp(GLenum comp);
+void DepthWrite(bool enabled);
+void DepthTest(bool enabled);
 
 #endif //_GLUTIL_H

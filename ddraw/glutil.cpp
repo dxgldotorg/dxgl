@@ -18,6 +18,8 @@
 #include "common.h"
 #include "glutil.h"
 
+bool depthwrite = true;
+bool depthtest = false;
 GLuint depthcomp = 0;
 GLuint alphacomp = 0;
 GLuint fbcolor = 0;
@@ -161,6 +163,24 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	}
 }
 
+void DepthWrite(bool enabled)
+{
+	if(enabled != depthwrite)
+	{
+		depthwrite = enabled;
+		if(depthwrite) glDepthMask(GL_TRUE);
+		else glDepthMask(GL_FALSE);
+	}
+}
+void DepthTest(bool enabled)
+{
+	if(enabled != depthtest)
+	{
+		depthtest = enabled;
+		if(depthtest) glEnable(
+		else glDepthMask(GL_FALSE);
+	}
+}
 void SetDepthComp(GLenum comp)
 {
 	if(comp != depthcomp)

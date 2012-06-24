@@ -790,6 +790,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	SetSwap(1);
 	SetSwap(0);
 	glViewport(0,0,width,height);
+	DepthWrite(true);
+	DepthTest(false);
 	glDisable(GL_DEPTH_TEST);
 	SetDepthComp(GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
@@ -844,6 +846,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	dest->GetSurfaceDesc(&ddsd);
+	DepthTest(false);
 	if(!lpDestRect)
 	{
 		destrect.left = 0;
@@ -1047,6 +1050,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		if(memcmp(&r2,&r,sizeof(RECT)))
 		SetWindowPos(RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
+	DepthTest(false);
 	RECT *viewrect = &r2;
 	SetSwap(swapinterval);
 	LONG sizes[6];
@@ -1128,6 +1132,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glUniform1i(texloc,0);
 	}
 	glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+	glDepthRange(viewport[4],viewport[5]);
 	GLuint prog = GetProgram();
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
@@ -1205,7 +1210,7 @@ void glRenderer::_InitD3D(int zbuffer)
 	SetEvent(busy);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
-	if(zbuffer) glEnable(GL_DEPTH_TEST);
+	if(zbuffer) DepthTest(true);
 	SetDepthComp(GL_LEQUAL);
 	glDisable(GL_DITHER);
 }
@@ -1309,6 +1314,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	__int64 shader = device->SelectShader(vertices);
 	SetShader(shader,device->texstages,texformats,0);
 	device->SetDepthComp();
+	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) DepthTest(true);
+	else DepthTest(false);
 	_GENSHADER prog = genshaders[current_genshader].shader;
 	glEnableVertexAttribArray(prog.attribs[0]);
 	glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
