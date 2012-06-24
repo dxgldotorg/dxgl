@@ -1132,7 +1132,6 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		glUniform1i(texloc,0);
 	}
 	glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
-	glDepthRange(viewport[4],viewport[5]);
 	GLuint prog = GetProgram();
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
