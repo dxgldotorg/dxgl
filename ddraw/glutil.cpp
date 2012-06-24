@@ -177,8 +177,8 @@ void DepthTest(bool enabled)
 	if(enabled != depthtest)
 	{
 		depthtest = enabled;
-		if(depthtest) glEnable(
-		else glDepthMask(GL_FALSE);
+		if(depthtest) glEnable(GL_DEPTH_TEST);
+		else glDisable(GL_DEPTH_TEST);
 	}
 }
 void SetDepthComp(GLenum comp)

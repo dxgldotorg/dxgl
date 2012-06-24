@@ -1315,6 +1315,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	device->SetDepthComp();
 	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) DepthTest(true);
 	else DepthTest(false);
+	if(device->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) DepthWrite(true);
+	else DepthWrite(false);
 	_GENSHADER prog = genshaders[current_genshader].shader;
 	glEnableVertexAttribArray(prog.attribs[0]);
 	glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
@@ -1475,6 +1477,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
 	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
+	glDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
