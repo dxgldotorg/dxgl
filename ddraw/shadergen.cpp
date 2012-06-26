@@ -58,10 +58,11 @@ Bits 31-33 - Number of textures  VS/FS
 Bit 35 - Use diffuse color  VS
 Bit 36 - Use specular color  VS
 Bit 37 - Enable normals  VS
-Bits 38-45 - Light types  VS/FS
+Bits 38-45 - Directional or point/spot light  VS/FS
 Bits 46-48 - Number of blending weights  VS
 Bit 49 - Normalize normals  VS
 Bit 50 - Use transformed vertices  VS
+Bits 51-58 - Point or spot light  VS/FS
 */
 
 /* Bits in Texture Stage ID:
@@ -281,6 +282,7 @@ static const char op_passthru[] = "gl_Position = xyzw;\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
+static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient) + material.emissive;\n\
 gl_FrontSecondaryColor = (material.specular * specular);\n";
@@ -315,6 +317,19 @@ specular += (pow(NdotHV,float(material.power))*light.specular);\n\
 ambient += light.ambient;\n\
 }\n\
 }\n";
+static const char func_pointlight[] = "void PointLight(in Light light)\n\
+{\n\
+float NdotHV = 0.0;\n\
+vec3 V = ((view*world)*xyzw).xyz;\n\
+float d = length(light.position - V);\n\
+vec3  L = normalize(light.position - V);\n\
+vec3  H = normalize(L + vec3(0.0, 0.0, 1.0));\n\
+float NdotL = max(dot(N,L),0.0);\n\
+float NdotH = max(dot(N,H),0.0);\n\
+float attenuation = 1.0/(light.constant+(d*light.linear)+((d*d)*light.quad));\n\
+diffuse += light.diffuse*NdotL*attenuation;\n\
+ambient += light.ambient;\n\
+}\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
 float NdotHV = 0.0;\n\
@@ -347,6 +362,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	string tmp;
 	int i;
 	bool hasdir = false;
+	bool haspoint = false;
 	bool hasspot = false;
 	int count;
 	int numlights;
@@ -439,12 +455,17 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	{
 		for(i = 0; i < numlights; i++)
 		{
-			if(id>>(38+i)&1) hasspot = true;
+			if(id>>(38+i)&1)
+			{
+				if(id>>(50+i)&1) hasspot = true;
+				else haspoint = true;
+			}
 			else hasdir = true;
 		}
 	}
 	bool hasspecular = (id >> 11) & 1;
 	if(hasspot) vsrc->append(func_spotlight);
+	if(haspoint) vsrc->append(func_pointlight);
 	if(hasdir) vsrc->append(func_dirlight);
 	//Main
 	vsrc->append(mainstart);
@@ -459,9 +480,18 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			if(id>>(38+i)&1)
 			{
-				tmp = op_spotlight;
-				tmp.replace(15,1,_itoa(i,idstring,10));
-				vsrc->append(tmp);
+				if(id>>(50+i)&1)
+				{
+					tmp = op_spotlight;
+					tmp.replace(15,1,_itoa(i,idstring,10));
+					vsrc->append(tmp);
+				}
+				else
+				{
+					tmp = op_pointlight;
+					tmp.replace(16,1,_itoa(i,idstring,10));
+					vsrc->append(tmp);
+				}
 			}
 			else
 			{

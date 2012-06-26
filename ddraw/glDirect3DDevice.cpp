@@ -397,6 +397,8 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		{
 			if(lights[gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
 				shader |= (1i64 << (38+lightindex));
+			if(lights[gllights[i]]->light.dltType == D3DLIGHT_SPOT)
+				shader |= (1i64 << (51+lightindex));
 			lightindex++;
 		}
 	}
