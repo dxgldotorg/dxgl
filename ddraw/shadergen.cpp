@@ -278,7 +278,7 @@ vec4 pos = (projection*(view*world))*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(normalmat*nxyz);\n";
 static const char op_normalpassthru[] = "N = normalmat*nxyz;\n";
-static const char op_passthru[] = "gl_Position = xyzw;\n";
+static const char op_passthru[] = "gl_Position = vec4(xyz/640.0,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
