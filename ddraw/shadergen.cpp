@@ -319,29 +319,42 @@ ambient += light.ambient;\n\
 }\n";
 static const char func_pointlight[] = "void PointLight(in Light light)\n\
 {\n\
-float NdotHV = 0.0;\n\
-vec3 V = ((view*world)*xyzw).xyz;\n\
-float d = length(light.position - V);\n\
-vec3  L = normalize(light.position - V);\n\
-vec3  H = normalize(L + vec3(0.0, 0.0, 1.0));\n\
-float NdotL = max(dot(N,L),0.0);\n\
-float NdotH = max(dot(N,H),0.0);\n\
+vec4 pos = ((view*world)*xyzw);\n\
+vec3 pos3 = pos.xyz / pos.w;\n\
+vec3 V = light.position - pos3;\n\
+float d = length(V);\n\
+V = normalize(V);\n\
 float attenuation = 1.0/(light.constant+(d*light.linear)+((d*d)*light.quad));\n\
-diffuse += light.diffuse*NdotL*attenuation;\n\
+float NdotV = max(0.0,dot(N,V));\n\
+float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
+float pf;\n\
+if(NdotV == 0.0) pf = 0.0;\n\
+else if(material.power > 0.0) pf = pow(NdotHV,material.power);\n\
+else pf = 0.0;\n\
+diffuse += light.diffuse*NdotV*attenuation;\n\
 ambient += light.ambient;\n\
+specular += light.specular*pf*attenuation;\n\
 }\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
-float NdotHV = 0.0;\n\
-vec3 V = ((view*world)*xyzw).xyz;\n\
-float d = length(light.position - V);\n\
-vec3  L = normalize(light.position - V);\n\
-vec3  H = normalize(L + vec3(0.0, 0.0, 1.0));\n\
-float NdotL = max(dot(N,L),0.0);\n\
-float NdotH = max(dot(N,H),0.0);\n\
+vec4 pos = ((view*world)*xyzw);\n\
+vec3 pos3 = pos.xyz / pos.w;\n\
+vec3 V = light.position - pos3;\n\
+float d = length(V);\n\
+V = normalize(V);\n\
 float attenuation = 1.0/(light.constant+(d*light.linear)+((d*d)*light.quad));\n\
-diffuse += light.diffuse*NdotL*attenuation;\n\
+float NdotV = max(0.0,dot(N,V));\n\
+float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
+float pf;\n\
+if(NdotV == 0.0) pf = 0.0;\n\
+else if(material.power > 0.0) pf = pow(NdotHV,material.power);\n\
+else pf = 0.0;\n\
+float spotangle = dot(-V,normalize(light.direction));\n\
+if(spotangle < cos(light.phi * (180.0/3.14159265)))\n\
+attenuation = 0.0;\n\
+diffuse += light.diffuse*NdotV*attenuation;\n\
 ambient += light.ambient;\n\
+specular += light.specular*pf*attenuation;\n\
 }\n";
 
 
@@ -457,7 +470,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			if(id>>(38+i)&1)
 			{
-				if(id>>(50+i)&1) hasspot = true;
+				if(id>>(51+i)&1) hasspot = true;
 				else haspoint = true;
 			}
 			else hasdir = true;
@@ -480,7 +493,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			if(id>>(38+i)&1)
 			{
-				if(id>>(50+i)&1)
+				if(id>>(51+i)&1)
 				{
 					tmp = op_spotlight;
 					tmp.replace(15,1,_itoa(i,idstring,10));
