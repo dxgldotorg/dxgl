@@ -286,7 +286,8 @@ ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient) + material.emissive;\n\
+static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient)\n\
++ (material.specular * specular) + material.emissive;\n\
 gl_FrontSecondaryColor = (material.specular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
