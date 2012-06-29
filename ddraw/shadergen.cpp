@@ -264,6 +264,8 @@ float phi;\n\
 static const char unif_light[] = "uniform Light lightX;\n";
 static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
 static const char unif_tex[] = "uniform sampler2D texX;\n";
+static const char unif_size[] = "uniform float width;\n\
+uniform float height;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -278,7 +280,7 @@ vec4 pos = (projection*(view*world))*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(normalmat*nxyz);\n";
 static const char op_normalpassthru[] = "N = normalmat*nxyz;\n";
-static const char op_passthru[] = "gl_Position = vec4(xyz/640.0,1.0/rhw);\n";
+static const char op_passthru[] = "gl_Position = vec4((xyz.x/(width/2.0))-1.0,(xyz.y/(height/2.0))-1.0,xyz.z,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
@@ -447,6 +449,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	vsrc->append(unif_matrices); // Material
 	vsrc->append(unif_material);
 	vsrc->append(unif_ambient);
+	if((id>>50)&1) vsrc->append(unif_size);
 	numlights = (id>>18)&7;
 	if(numlights) // Lighting
 	{
@@ -934,4 +937,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		genshaders[index].shader.uniforms[128+i] = glGetUniformLocation(genshaders[index].shader.prog,uniftex);
 	}
 	genshaders[index].shader.uniforms[136] = glGetUniformLocation(genshaders[index].shader.prog,"ambientcolor");
+	genshaders[index].shader.uniforms[137] = glGetUniformLocation(genshaders[index].shader.prog,"width");
+	genshaders[index].shader.uniforms[138] = glGetUniformLocation(genshaders[index].shader.prog,"height");
 }
