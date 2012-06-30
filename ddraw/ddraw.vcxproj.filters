@@ -104,6 +104,9 @@
     <ClInclude Include="glRenderWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="glDirect3DVertexBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -164,6 +167,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glRenderWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glDirect3DVertexBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

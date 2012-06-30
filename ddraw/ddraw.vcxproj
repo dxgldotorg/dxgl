@@ -170,6 +170,7 @@
     <ClInclude Include="glDirect3D.h" />
     <ClInclude Include="glDirect3DDevice.h" />
     <ClInclude Include="glDirect3DLight.h" />
+    <ClInclude Include="glDirect3DVertexBuffer.h" />
     <ClInclude Include="glDirectDraw.h" />
     <ClInclude Include="glDirectDrawClipper.h" />
     <ClInclude Include="glDirectDrawPalette.h" />
@@ -216,6 +217,7 @@
     <ClCompile Include="glDirect3D.cpp" />
     <ClCompile Include="glDirect3DDevice.cpp" />
     <ClCompile Include="glDirect3DLight.cpp" />
+    <ClCompile Include="glDirect3DVertexBuffer.cpp" />
     <ClCompile Include="glDirectDraw.cpp" />
     <ClCompile Include="glDirectDrawClipper.cpp" />
     <ClCompile Include="glDirectDrawPalette.cpp" />
