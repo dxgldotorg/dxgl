@@ -16,29 +16,26 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef __GLDIRECT3DLIGHT_H
-#define __GLDIRECT3DLIGHT_H
+#ifndef __GLDIRECT3DMATERIAL_H
+#define __GLDIRECT3DMATERIAL_H
 
-class glDirect3DViewport3;
-class glDirect3DLight : public IDirect3DLight
+class glDirect3DMaterial3 : public IDirect3DMaterial3
 {
 public:
-	glDirect3DLight();
-	glDirect3DLight(D3DLIGHT7 *light_in);
-	virtual ~glDirect3DLight();
+	glDirect3DMaterial3();
+	virtual ~glDirect3DMaterial3();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
-	HRESULT WINAPI GetLight(LPD3DLIGHT lpLight);
-	void GetLight7(LPD3DLIGHT7 lpLight7);
-	HRESULT WINAPI Initialize(LPDIRECT3D lpDirect3D);
-	HRESULT WINAPI SetLight(LPD3DLIGHT lpLight);
-	void SetLight7(LPD3DLIGHT7 lpLight7);
-	D3DLIGHT7 light;
-	glDirect3DViewport3 *viewport;
+	HRESULT WINAPI GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle);
+	HRESULT WINAPI GetMaterial(LPD3DMATERIAL lpMat);
+	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
+	void unbind();
+	D3DMATERIAL material;
 private:
 	ULONG refcount;
-	D3DLIGHT2 convert;
+	glDirect3DDevice7 *device;
+	D3DMATERIALHANDLE handle;
 };
 
-#endif //__GLDIRECT3DLIGHT_H
+#endif //__GLDIRECT3DMATERIAL_H

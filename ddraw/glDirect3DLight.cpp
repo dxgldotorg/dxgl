@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "glDirect3DViewport.h"
 #include "glDirect3DLight.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -25,6 +26,7 @@
 glDirect3DLight::glDirect3DLight()
 {
 	refcount=1;
+	viewport = NULL;
 	ZeroMemory(&light,sizeof(D3DLIGHT7));
 	light.dltType = D3DLIGHT_DIRECTIONAL;
 	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = 1.0f;

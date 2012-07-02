@@ -209,7 +209,6 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 		*ppvObj = new glDirect3D3(this);
 		return D3D_OK;
 	}
-	FIXME("glDirect3D7::QueryInterface: stub");
 	return E_NOINTERFACE;
 }
 
@@ -419,7 +418,6 @@ HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 glDirect3D3::glDirect3D3(glDirect3D7 *glD3D7)
 {
 	this->glD3D7 = glD3D7;
-	glD3D7->AddRef();
 	refcount = 1;
 }
 

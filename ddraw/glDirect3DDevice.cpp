@@ -21,6 +21,7 @@
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
+#include "glDirect3DMaterial.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
 #include <string>
@@ -207,6 +208,10 @@ int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
 	int zbuffer = 0;
+	maxmaterials = 32;
+	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
+	materialcount = 1;
+	materials[0] = NULL;
 	vertices = normals = NULL;
 	diffuse = specular = NULL;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
@@ -244,6 +249,15 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	delete lights;
 	for(int i = 0; i < 8; i++)
 		if(texstages[i].texture) texstages[i].texture->Release();
+	for(int i = 0; i < materialcount; i++)
+	{
+		if(materials[i])
+		{
+			materials[i]->unbind();
+			materials[i]->Release();
+		}
+	}
+	free(materials);
 	glD3D7->Release();
 	glDDS7->Release();
 }
@@ -268,6 +282,18 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		return D3D_OK;
+	}
+	if(riid == IID_IDirect3DDevice7)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return D3D_OK;
+	}
+	if(riid == IID_IDirect3DDevice3)
+	{
+		this->AddRef();
+		*ppvObj = new glDirect3DDevice3(this);
 		return D3D_OK;
 	}
 	ERR(E_NOINTERFACE);
@@ -1272,3 +1298,106 @@ void glDirect3DDevice7::SetDepthComp()
 		break;
 	}
 }
+
+D3DMATERIALHANDLE glDirect3DDevice7::AddMaterial(glDirect3DMaterial3 *material)
+{
+	materials[materialcount] = material;
+	material->AddRef();
+	materialcount++;
+	if(materialcount >= maxmaterials)
+	{
+		maxmaterials += 32;
+		materials = (glDirect3DMaterial3**)realloc(materials,maxmaterials*sizeof(glDirect3DMaterial3*));
+	}
+	return materialcount-1;
+}
+
+// IDirect3DDevice3 wrapper
+glDirect3DDevice3::glDirect3DDevice3(glDirect3DDevice7 *glD3DDev7)
+{
+	this->glD3DDev7 = glD3DDev7;
+	refcount = 1;
+}
+
+glDirect3DDevice3::~glDirect3DDevice3()
+{
+	glD3DDev7->Release();
+}
+
+HRESULT WINAPI glDirect3DDevice3::QueryInterface(REFIID riid, void** ppvObj)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
+	return glD3DDev7->QueryInterface(riid,ppvObj);
+}
+
+ULONG WINAPI glDirect3DDevice3::AddRef()
+{
+	if(!this) return 0;
+	refcount++;
+	return refcount;
+}
+
+ULONG WINAPI glDirect3DDevice3::Release()
+{
+	if(!this) return 0;
+	ULONG ret;
+	refcount--;
+	ret = refcount;
+	if(refcount == 0) delete this;
+	return ret;
+}
+
+HRESULT WINAPI glDirect3DDevice3::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
+{
+}
+
+	HRESULT WINAPI Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags);
+	HRESULT WINAPI BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD  dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags);
+	HRESULT WINAPI BeginScene();
+	HRESULT WINAPI ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
+	HRESULT WINAPI DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
+	HRESULT WINAPI DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+		LPVOID lpvVertices, DWORD  dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
+	HRESULT WINAPI DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+		LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVerticexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
+	HRESULT WINAPI DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
+		LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
+	HRESULT WINAPI DrawPrimitive(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
+		DWORD dwVertexCount, DWORD dwFlags);
+	HRESULT WINAPI DrawPrimitiveStrided(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc,
+		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags);
+	HRESULT WINAPI DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
+		DWORD dwStartVertex, DWORD dwNumVertices, DWORD dwFlags);
+	HRESULT WINAPI End(DWORD dwFlags);
+	HRESULT WINAPI EndScene();
+	HRESULT WINAPI EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg);
+	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
+	HRESULT WINAPI GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
+	HRESULT WINAPI GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
+	HRESULT WINAPI GetDirect3D(LPDIRECT3D3 *lplpD3D);
+	HRESULT WINAPI GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState);
+	HRESULT WINAPI GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState);
+	HRESULT WINAPI GetRenderTarget(LPDIRECTDRAWSURFACE4 *lplpRenderTarget);
+	HRESULT WINAPI GetStats(LPD3DSTATS lpD3DStats);
+	HRESULT WINAPI GetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 * lplpTexture); 
+	HRESULT WINAPI GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue);
+	HRESULT WINAPI GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
+	HRESULT WINAPI Index(WORD wVertexIndex);
+	HRESULT WINAPI MultiplyTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
+	HRESULT WINAPI NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
+	HRESULT WINAPI SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
+	HRESULT WINAPI SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
+	HRESULT WINAPI SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
+	HRESULT WINAPI SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
+	HRESULT WINAPI SetRenderTarget(LPDIRECTDRAWSURFACE4 lpNewRenderTarget, DWORD dwFlags);
+	HRESULT WINAPI SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture); 
+	HRESULT WINAPI SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
+	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
+	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
+	HRESULT WINAPI Vertex(LPVOID lpVertex);
