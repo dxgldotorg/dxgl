@@ -20,6 +20,7 @@
 #define __GLDIRECT3D_H
 
 extern D3DDEVICEDESC7 d3ddesc;
+extern D3DDEVICEDESC d3ddesc3;
 class glDirectDraw7;
 
 class glDirect3D7 : public IDirect3D7

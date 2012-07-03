@@ -129,8 +129,14 @@ public:
 	HRESULT DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 	HRESULT Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags);
 	HRESULT BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags);
+	HRESULT Index(WORD wVertexIndex);
 	HRESULT End(DWORD dwFlags);
 	HRESULT ComputeSphereVisibility3(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
+	HRESULT GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
+	HRESULT GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
+	HRESULT GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState);
+	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
+	HRESULT GetStats(LPD3DSTATS lpD3DStats);
 	__int64 SelectShader(GLVERTEX *VertexType);
 	void UpdateNormalMatrix();
 	GLfloat matWorld[16];

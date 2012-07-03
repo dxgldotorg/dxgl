@@ -1464,21 +1464,111 @@ HRESULT WINAPI glDirect3DDevice3::End(DWORD dwFlags)
 	if(!this) return DDERR_INVALIDOBJECT;
 	return glD3DDev7->End(dwFlags);
 }
-	HRESULT WINAPI EndScene();
-	HRESULT WINAPI EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg);
-	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
-	HRESULT WINAPI GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
-	HRESULT WINAPI GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
-	HRESULT WINAPI GetDirect3D(LPDIRECT3D3 *lplpD3D);
-	HRESULT WINAPI GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState);
-	HRESULT WINAPI GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState);
-	HRESULT WINAPI GetRenderTarget(LPDIRECTDRAWSURFACE4 *lplpRenderTarget);
-	HRESULT WINAPI GetStats(LPD3DSTATS lpD3DStats);
-	HRESULT WINAPI GetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 * lplpTexture); 
-	HRESULT WINAPI GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue);
-	HRESULT WINAPI GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
-	HRESULT WINAPI Index(WORD wVertexIndex);
-	HRESULT WINAPI MultiplyTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
+	
+HRESULT WINAPI glDirect3DDevice3::EndScene()
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->EndScene();
+}
+
+HRESULT WINAPI glDirect3DDevice3::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->EnumTextureFormats(lpd3dEnumPixelProc,lpArg);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetCaps3(lpD3DHWDevDesc,lpD3DHELDevDesc);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetClipStatus(lpD3DClipStatus);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetCurrentViewport(lplpd3dViewport);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetDirect3D(LPDIRECT3D3 *lplpD3D)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	LPDIRECT3D7 d3d7;
+	HRESULT err = glD3DDev7->GetDirect3D(&d3d7);
+	if(!d3d7) return err;
+	d3d7->QueryInterface(IID_IDirect3D3,(void**)lplpD3D);
+	d3d7->Release();
+	return err;
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetLightState(dwLightStateType,lpdwLightState);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetRenderState(dwRenderStateType,lpdwRenderState);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetRenderTarget(LPDIRECTDRAWSURFACE4 *lplpRenderTarget)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT err = glD3DDev7->GetRenderTarget(&dds7);
+	if(!dds7) return err;
+	dds7->QueryInterface(IID_IDirectDrawSurface7,(void**)lplpRenderTarget);
+	dds7->Release();
+	return err;
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetStats(LPD3DSTATS lpD3DStats)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetStats(lpD3DStats);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 * lplpTexture)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT err = glD3DDev7->GetTexture(dwStage,&dds7);
+	if(!dds7) return err;
+	dds7->QueryInterface(IID_IDirect3DTexture2,(void**)lplpTexture);
+	dds7->Release();
+	return err;
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, LPDWORD lpdwValue)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetTextureStageState(dwStage,dwState,lpdwValue);
+}
+
+HRESULT WINAPI glDirect3DDevice3::GetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetTransform(dtstTransformStateType,lpD3DMatrix);
+}
+
+HRESULT WINAPI glDirect3DDevice3::Index(WORD wVertexIndex)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->Index(wVertexIndex);
+}
+
+HRESULT WINAPI glDirect3DDevice3::MultiplyTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->MultiplyTransform(dtstTransformStateType,lpD3DMatrix);
+}
 	HRESULT WINAPI NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
 	HRESULT WINAPI SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
 	HRESULT WINAPI SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
