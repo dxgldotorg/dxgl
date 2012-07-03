@@ -22,6 +22,8 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DMaterial.h"
+#include "glDirect3DViewport.h"
+#include "glDirect3DVertexBuffer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
 #include <string>
@@ -212,6 +214,10 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
 	materialcount = 1;
 	materials[0] = NULL;
+	maxviewports = 32;
+	viewportcount = 0;
+	viewports = (glDirect3DViewport3**)malloc(32*sizeof(glDirect3DViewport3*));
+	ZeroMemory(viewports,32*sizeof(glDirect3DViewport3*));
 	vertices = normals = NULL;
 	diffuse = specular = NULL;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
@@ -1312,6 +1318,25 @@ D3DMATERIALHANDLE glDirect3DDevice7::AddMaterial(glDirect3DMaterial3 *material)
 	return materialcount-1;
 }
 
+HRESULT glDirect3DDevice7::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	for(int i = 0; i < maxviewports; i++)
+	{
+		if(viewports[i] == lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	}
+	viewports[viewportcount] = (glDirect3DViewport3*)lpDirect3DViewport;
+	viewports[viewportcount]->AddRef();
+	viewportcount++;
+	if(viewportcount >= maxviewports)
+	{
+		maxviewports += 32;
+		viewports = (glDirect3DViewport3**)realloc(viewports,maxviewports*sizeof(glDirect3DViewport3*));
+	}
+	return D3D_OK;
+}
+
 // IDirect3DDevice3 wrapper
 glDirect3DDevice3::glDirect3DDevice3(glDirect3DDevice7 *glD3DDev7)
 {
@@ -1355,26 +1380,90 @@ ULONG WINAPI glDirect3DDevice3::Release()
 
 HRESULT WINAPI glDirect3DDevice3::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
 {
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->AddViewport(lpDirect3DViewport);	
 }
 
-	HRESULT WINAPI Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags);
-	HRESULT WINAPI BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD  dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags);
-	HRESULT WINAPI BeginScene();
-	HRESULT WINAPI ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
-	HRESULT WINAPI DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
-	HRESULT WINAPI DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-		LPVOID lpvVertices, DWORD  dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
-	HRESULT WINAPI DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
-		LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVerticexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
-	HRESULT WINAPI DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
-		LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags);
-	HRESULT WINAPI DrawPrimitive(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
-		DWORD dwVertexCount, DWORD dwFlags);
-	HRESULT WINAPI DrawPrimitiveStrided(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc,
-		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags);
-	HRESULT WINAPI DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
-		DWORD dwStartVertex, DWORD dwNumVertices, DWORD dwFlags);
-	HRESULT WINAPI End(DWORD dwFlags);
+HRESULT WINAPI glDirect3DDevice3::Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->Begin(d3dpt,dwVertexTypeDesc,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->BeginIndexed(dptPrimitiveType,dwVertexTypeDesc,lpvVertices,dwNumVertices,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::BeginScene()
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->BeginScene();
+}
+
+HRESULT WINAPI glDirect3DDevice3::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->ComputeSphereVisibility3(lpCenters,lpRadii,dwNumSpheres,dwFlags,lpdwReturnValues);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->DeleteViewport(lpDirect3DViewport);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+	LPVOID lpvVertices, DWORD  dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->DrawIndexedPrimitive(d3dptPrimitiveType,dwVertexTypeDesc,lpvVertices,dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
+	LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->DrawIndexedPrimitiveStrided(d3dptPrimitiveType,dwVertexTypeDesc,lpVertexArray,dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
+	LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpd3dVertexBuffer) return DDERR_INVALIDPARAMS;
+	return glD3DDev7->DrawIndexedPrimitiveVB(d3dptPrimitiveType,
+		((glDirect3DVertexBuffer1*)lpd3dVertexBuffer)->GetGLD3DVB7(),0,-1,lpwIndices,dwIndexCount,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawPrimitive(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
+	DWORD dwVertexCount, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->DrawPrimitive(dptPrimitiveType,dwVertexTypeDesc,lpVertices,dwVertexCount,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawPrimitiveStrided(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc,
+	LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags)
+{
+	if(!this) return  DDERR_INVALIDOBJECT;
+	return glD3DDev7->DrawPrimitiveStrided(dptPrimitiveType,dwVertexTypeDesc,lpVertexArray,dwVertexCount,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER lpd3dVertexBuffer,
+	DWORD dwStartVertex, DWORD dwNumVertices, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpd3dVertexBuffer) return DDERR_INVALIDPARAMS;
+	return glD3DDev7->DrawPrimitiveVB(d3dptPrimitiveType,((glDirect3DVertexBuffer1*)lpd3dVertexBuffer)->GetGLD3DVB7(),
+		dwStartVertex,dwNumVertices,dwFlags);
+}
+HRESULT WINAPI glDirect3DDevice3::End(DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->End(dwFlags);
+}
 	HRESULT WINAPI EndScene();
 	HRESULT WINAPI EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg);
 	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
