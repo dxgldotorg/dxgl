@@ -127,9 +127,12 @@ public:
 	D3DMATERIALHANDLE AddMaterial(glDirect3DMaterial3* material);
 	HRESULT AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 	HRESULT DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
+	HRESULT NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
+	HRESULT SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
 	HRESULT Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags);
 	HRESULT BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags);
 	HRESULT Index(WORD wVertexIndex);
+	HRESULT Vertex(LPVOID lpVertex);
 	HRESULT End(DWORD dwFlags);
 	HRESULT ComputeSphereVisibility3(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
 	HRESULT GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);

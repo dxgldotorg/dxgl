@@ -21,6 +21,7 @@
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
+#include "glDirect3DTexture.h"
 #include "glDirect3DMaterial.h"
 #include "glDirect3DViewport.h"
 #include "glDirect3DVertexBuffer.h"
@@ -1569,14 +1570,68 @@ HRESULT WINAPI glDirect3DDevice3::MultiplyTransform(D3DTRANSFORMSTATETYPE dtstTr
 	if(!this) return DDERR_INVALIDOBJECT;
 	return glD3DDev7->MultiplyTransform(dtstTransformStateType,lpD3DMatrix);
 }
-	HRESULT WINAPI NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
-	HRESULT WINAPI SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
-	HRESULT WINAPI SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
-	HRESULT WINAPI SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
-	HRESULT WINAPI SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
-	HRESULT WINAPI SetRenderTarget(LPDIRECTDRAWSURFACE4 lpNewRenderTarget, DWORD dwFlags);
-	HRESULT WINAPI SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture); 
-	HRESULT WINAPI SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
-	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
-	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
-	HRESULT WINAPI Vertex(LPVOID lpVertex);
+HRESULT WINAPI glDirect3DDevice3::NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->NextViewport(lpDirect3DViewport,lplpAnotherViewport,dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetClipStatus(lpD3DClipStatus);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetCurrentViewport(lpd3dViewport);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetLightState(dwLightStateType,dwLightState);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetRenderState(dwRendStateType,dwRenderState);
+}
+	
+HRESULT WINAPI glDirect3DDevice3::SetRenderTarget(LPDIRECTDRAWSURFACE4 lpNewRenderTarget, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetRenderTarget(((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetTexture(dwStage,((glDirect3DTexture2*)lpTexture)->GetDDS7());
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetTextureStageState(dwStage,dwState,dwValue);
+}
+
+HRESULT WINAPI glDirect3DDevice3::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetTransform(dtstTransformStateType,lpD3DMatrix);
+}
+
+HRESULT WINAPI glDirect3DDevice3::ValidateDevice(LPDWORD lpdwPasses)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->ValidateDevice(lpdwPasses);
+}
+
+HRESULT WINAPI glDirect3DDevice3::Vertex(LPVOID lpVertex)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->Vertex(lpVertex);
+}
