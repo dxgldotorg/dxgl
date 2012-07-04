@@ -266,6 +266,16 @@ glDirect3DDevice7::~glDirect3DDevice7()
 			materials[i]->Release();
 		}
 	}
+	for(int i = 0; i < viewportcount; i++)
+	{
+		if(viewports[i])
+		{
+			viewports[i]->SetDevice(NULL);
+			viewports[i]->SetCurrent(false);
+			viewports[i]->Release();
+		}
+	}
+	free(viewports);
 	free(materials);
 	glD3D7->Release();
 	glDDS7->Release();
@@ -1331,6 +1341,7 @@ HRESULT glDirect3DDevice7::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
 	}
 	viewports[viewportcount] = (glDirect3DViewport3*)lpDirect3DViewport;
 	viewports[viewportcount]->AddRef();
+	viewports[viewportcount]->SetDevice(this);
 	viewportcount++;
 	if(viewportcount >= maxviewports)
 	{
@@ -1349,6 +1360,7 @@ HRESULT glDirect3DDevice7::DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport
 		if(viewports[i] == lpDirect3DViewport)
 		{
 			viewports[i]->SetCurrent(false);
+			viewports[i]->SetDevice(NULL);
 			viewports[i]->Release();
 			if(currentviewport == viewports[i]) currentviewport = NULL;
 			viewports[i] = NULL;

@@ -49,6 +49,7 @@ public:
 	HRESULT WINAPI SetViewport2(LPD3DVIEWPORT2 lpData);
 	HRESULT WINAPI TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
 	void SetCurrent(bool current);
+	void SetDevice(glDirect3DDevice7 *device){this->device = device;};
 	void Sync();
 private:
 	ULONG refcount;
