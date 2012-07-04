@@ -22,6 +22,8 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DVertexBuffer.h"
+#include "glDirect3DViewport.h"
+#include "glDirect3DMaterial.h"
 
 D3DDEVICEDESC7 d3ddesc = 
 {
@@ -230,9 +232,10 @@ HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnk
 HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lplpDirect3DMaterial) return D3D_OK;
 	if(pUnkOuter) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3D7::CreateMaterial: stub");
-	return DDERR_GENERIC;
+	*lplpDirect3DMaterial = new glDirect3DMaterial3();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
 {
@@ -245,9 +248,10 @@ HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, L
 HRESULT WINAPI glDirect3D7::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lplpD3DViewport) return DDERR_INVALIDPARAMS;
 	if(pUnkOuter) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3D7::CreateViewport: stub");
-	return DDERR_GENERIC;
+	*lplpD3DViewport = new glDirect3DViewport3();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {
