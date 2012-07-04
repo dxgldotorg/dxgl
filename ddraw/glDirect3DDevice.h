@@ -128,6 +128,7 @@ public:
 	HRESULT AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 	HRESULT DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 	HRESULT NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
+	HRESULT GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
 	HRESULT SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
 	HRESULT Begin(D3DPRIMITIVETYPE d3dpt, DWORD dwVertexTypeDesc, DWORD dwFlags);
 	HRESULT BeginIndexed(D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwNumVertices, DWORD dwFlags);
@@ -136,7 +137,6 @@ public:
 	HRESULT End(DWORD dwFlags);
 	HRESULT ComputeSphereVisibility3(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
 	HRESULT GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
-	HRESULT GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
 	HRESULT GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState);
 	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
 	HRESULT GetStats(LPD3DSTATS lpD3DStats);
@@ -156,6 +156,7 @@ public:
 	TEXTURESTAGE texstages[8];
 	glDirect3D7 *glD3D7;
 	glDirect3DMaterial3 **materials;
+	glDirect3DMaterial3 *currentmaterial;
 	int materialcount;
 
 private:
@@ -177,6 +178,7 @@ private:
 	int texformats[8];
 	int maxmaterials;
 	glDirect3DViewport3 **viewports;
+	glDirect3DViewport3 *currentviewport;
 	int viewportcount;
 	int maxviewports;
 };

@@ -44,6 +44,7 @@ glDirect3DViewport3::glDirect3DViewport3()
 	for(int i = 0; i < 8; i++)
 		lights[i] = NULL;
 	refcount = 1;
+	current = false;
 }
 
 glDirect3DViewport3::~glDirect3DViewport3()
@@ -242,6 +243,7 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 	vp.dvClipX = viewport.dvClipX;
 	vp.dvClipY = viewport.dvClipY;
 	viewport = vp;
+	if(current && device) Sync();
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DViewport3::SetViewport2(LPD3DVIEWPORT2 lpData)
@@ -250,6 +252,7 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport2(LPD3DVIEWPORT2 lpData)
 	if(!device) return D3DERR_VIEWPORTHASNODEVICE;
 	if(!lpData) return DDERR_INVALIDPARAMS;
 	viewport = *lpData;
+	if(current && device) Sync();
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DViewport3::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
@@ -257,4 +260,23 @@ HRESULT WINAPI glDirect3DViewport3::TransformVertices(DWORD dwVertexCount, LPD3D
 	if(!this) return DDERR_INVALIDOBJECT;
 	FIXME("glDirect3DViewport3::TransformVertices: stub");
 	return DDERR_GENERIC;
+}
+
+void glDirect3DViewport3::SetCurrent(bool current)
+{
+	if(this->current && current) return;
+	this->current = current;
+	if(current && device) Sync();
+}
+
+void glDirect3DViewport3::Sync()
+{
+	D3DVIEWPORT7 vp7;
+	vp7.dwX = viewport.dwX;
+	vp7.dwY = viewport.dwY;
+	vp7.dwHeight = viewport.dwHeight;
+	vp7.dwWidth = viewport.dwWidth;
+	vp7.dvMinZ = viewport.dvMinZ;
+	vp7.dvMaxZ = viewport.dvMaxZ;
+	device->SetViewport(&vp7);
 }

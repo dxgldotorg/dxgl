@@ -65,14 +65,17 @@ HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	FIXME("glDirect3DTexture2::GetHandle: stub");
+	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3DTexture2::Load(LPDIRECT3DTEXTURE2 lpD3DTexture2)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	FIXME("glDirect3DTexture2::Load: stub");
+	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3DTexture2::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	FIXME("glDirect3DTexture2::PaletteChanged: stub");
+	return DDERR_GENERIC;
 }

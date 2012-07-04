@@ -48,6 +48,8 @@ public:
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT lpData);
 	HRESULT WINAPI SetViewport2(LPD3DVIEWPORT2 lpData);
 	HRESULT WINAPI TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
+	void SetCurrent(bool current);
+	void Sync();
 private:
 	ULONG refcount;
 	glDirect3DLight *lights[8];
@@ -59,6 +61,7 @@ private:
 	D3DVALUE maxY;
 	D3DVALUE scaleX;
 	D3DVALUE scaleY;
+	bool current;
 };
 
 #endif //__GLDIRECT3DVIEWPORT_H

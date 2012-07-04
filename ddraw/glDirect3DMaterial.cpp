@@ -98,11 +98,31 @@ HRESULT WINAPI glDirect3DMaterial3::SetMaterial(LPD3DMATERIAL lpMat)
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(lpMat->dwSize != sizeof(D3DMATERIAL)) return DDERR_INVALIDPARAMS;
 	memcpy(&material,lpMat,sizeof(D3DMATERIAL));
+	if(device && current) Sync();
 	return D3D_OK;
 }
 
 void glDirect3DMaterial3::unbind()
 {
 	device = NULL;
+	current = false;
 	handle = 0;
+}
+
+void glDirect3DMaterial3::SetCurrent(bool current)
+{
+	if(this->current == current) return;
+	this->current = current;
+	if(current) Sync();
+}
+
+void glDirect3DMaterial3::Sync()
+{
+	D3DMATERIAL7 mat7;
+	mat7.diffuse = material.diffuse;
+	mat7.ambient = material.ambient;
+	mat7.specular = material.specular;
+	mat7.emissive = material.emissive;
+	mat7.power = material.power;
+	device->SetMaterial(&mat7);
 }

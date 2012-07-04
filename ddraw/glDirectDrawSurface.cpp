@@ -22,6 +22,7 @@
 #include "glDirect3DDevice.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
+#include "glDirect3DTexture.h"
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
@@ -518,6 +519,12 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			dds1 = (glDirectDrawSurface1*)*ppvObj;
 			return DD_OK;
 		}
+	}
+	if(riid == IID_IDirect3DTexture2)
+	{
+		this->AddRef();
+		*ppvObj = new glDirect3DTexture2(this);
+		return DD_OK;
 	}
 	ERR(E_NOINTERFACE);
 }

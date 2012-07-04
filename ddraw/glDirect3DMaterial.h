@@ -30,10 +30,13 @@ public:
 	HRESULT WINAPI GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle);
 	HRESULT WINAPI GetMaterial(LPD3DMATERIAL lpMat);
 	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
+	void Sync();
+	void SetCurrent(bool current);
 	void unbind();
 	D3DMATERIAL material;
 private:
 	ULONG refcount;
+	bool current;
 	glDirect3DDevice7 *device;
 	D3DMATERIALHANDLE handle;
 };
