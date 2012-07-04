@@ -672,6 +672,7 @@ HRESULT WINAPI glDirect3DDevice7::GetDirect3D(LPDIRECT3D7 *lplpD3D)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	*lplpD3D = glD3D7;
+	glD3D7->AddRef();
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::GetInfo(DWORD dwDevInfoID, LPVOID pDevInfoStruct, DWORD dwSize)
@@ -1801,7 +1802,10 @@ HRESULT WINAPI glDirect3DDevice3::SetRenderTarget(LPDIRECTDRAWSURFACE4 lpNewRend
 HRESULT WINAPI glDirect3DDevice3::SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
-	return glD3DDev7->SetTexture(dwStage,((glDirect3DTexture2*)lpTexture)->GetDDS7());
+	glDirectDrawSurface7 *dds7;
+	if(lpTexture) dds7 = ((glDirect3DTexture2*)lpTexture)->GetDDS7();
+	else dds7 = NULL;
+	return glD3DDev7->SetTexture(dwStage,dds7);
 }
 
 HRESULT WINAPI glDirect3DDevice3::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)

@@ -32,6 +32,7 @@ class glDirectDrawSurface1;
 class glDirectDrawSurface2;
 class glDirectDrawSurface3;
 class glDirectDrawSurface4;
+class glDirect3DTexture2;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
@@ -108,6 +109,7 @@ public:
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
 	glDirectDrawSurface4 *dds4;
+	glDirect3DTexture2 *d3dt2;
 	DWORD flipcount;
 	GLenum texformat;
 	GLenum texformat2;

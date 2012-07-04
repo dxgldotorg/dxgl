@@ -24,6 +24,7 @@
 #include "glDirect3DVertexBuffer.h"
 #include "glDirect3DViewport.h"
 #include "glDirect3DMaterial.h"
+#include "glDirect3DLight.h"
 
 D3DDEVICEDESC7 d3ddesc = 
 {
@@ -172,10 +173,12 @@ glDirect3D7::glDirect3D7(glDirectDraw7 *glDD7)
 	refcount=1;
 	this->glDD7 = glDD7;
 	glDD7->AddRef();
+	glD3D3 = NULL;
 }
 
 glDirect3D7::~glDirect3D7()
 {
+	if(glD3D3) glD3D3->Release();
 	glDD7->Release();
 }
 
@@ -197,7 +200,7 @@ ULONG WINAPI glDirect3D7::Release()
 
 HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	if(!this) return DDERR_INVALIDOBJECT;
 	if(!ppvObj) return DDERR_INVALIDPARAMS;
 	if(riid == IID_IUnknown)
 	{
@@ -207,9 +210,19 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D3)
 	{
-		this->AddRef();
-		*ppvObj = new glDirect3D3(this);
-		return D3D_OK;
+		if(glD3D3)
+		{
+			*ppvObj = glD3D3;
+			glD3D3->AddRef();
+			return D3D_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3D3(this);
+			glD3D3 = (glDirect3D3*)*ppvObj;
+			return D3D_OK;
+		}
 	}
 	return E_NOINTERFACE;
 }
@@ -225,9 +238,10 @@ HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 l
 HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lplpDirect3DLight) return DDERR_INVALIDPARAMS;
 	if(pUnkOuter) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3D7::CreateLight: stub");
-	return DDERR_GENERIC;
+	*lplpDirect3DLight = new glDirect3DLight();
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {

@@ -23,6 +23,7 @@ extern D3DDEVICEDESC7 d3ddesc;
 extern D3DDEVICEDESC d3ddesc3;
 class glDirectDraw7;
 
+class glDirect3D3;
 class glDirect3D7 : public IDirect3D7
 {
 public:
@@ -44,6 +45,7 @@ public:
 	glDirectDraw7 *glDD7;
 private:
 	ULONG refcount;
+	glDirect3D3 *glD3D3;
 };
 
 class glDirect3D3 : public IDirect3D3

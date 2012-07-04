@@ -522,9 +522,19 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DTexture2)
 	{
-		this->AddRef();
-		*ppvObj = new glDirect3DTexture2(this);
-		return DD_OK;
+		if(d3dt2)
+		{
+			*ppvObj = d3dt2;
+			d3dt2->AddRef();
+			return DD_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3DTexture2(this);
+			d3dt2 = (glDirect3DTexture2*)*ppvObj;
+			return DD_OK;
+		}
 	}
 	ERR(E_NOINTERFACE);
 }
