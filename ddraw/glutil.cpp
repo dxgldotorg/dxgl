@@ -25,6 +25,11 @@ GLuint alphacomp = 0;
 GLuint fbcolor = 0;
 GLuint fbz = 0;
 GLuint fbo = 0;
+GLint scissorx = 0;
+GLint scissory = 0;
+GLsizei scissorwidth = 0;
+GLsizei scissorheight = 0;
+bool scissorenabled = false;
 bool stencil = false;
 GLint texlevel = 0;
 GLint texwrap[16];
@@ -187,5 +192,23 @@ void SetDepthComp(GLenum comp)
 	{
 		depthcomp = comp;
 		glDepthFunc(comp);
+	}
+}
+
+void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	if(enabled != scissorenabled)
+	{
+		scissorenabled = enabled;
+		if(enabled) glEnable(GL_SCISSOR_TEST);
+		else glDisable(GL_SCISSOR_TEST);
+	}
+	if((x != scissorx) || (y != scissory) || (width != scissorwidth) || (height != scissorheight))
+	{
+		scissorx = x;
+		scissory = y;
+		scissorwidth = width;
+		scissorheight = height;
+		glScissor(x,y,width,height);
 	}
 }

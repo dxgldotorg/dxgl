@@ -31,5 +31,6 @@ GLenum SetFBO(GLint color, GLint z, bool stencil);
 void SetDepthComp(GLenum comp);
 void DepthWrite(bool enabled);
 void DepthTest(bool enabled);
+void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height);
 
 #endif //_GLUTIL_H

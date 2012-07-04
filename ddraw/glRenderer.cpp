@@ -808,6 +808,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
+	SetScissor(false,0,0,0,0);
+	glDisable(GL_SCISSOR_TEST);
 	SwapBuffers(hDC);
 	SetActiveTexture(0);
 	if(hWnd)
@@ -1216,13 +1218,6 @@ void glRenderer::_InitD3D(int zbuffer)
 
 void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	if(dwCount)
-	{
-		outputs[0] = (void*)DDERR_INVALIDPARAMS;
-		FIXME("glDirect3DDevice7::Clear:  Cannot clear rects yet.");
-		SetEvent(busy);
-		return;
-	}
 	outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
@@ -1244,7 +1239,16 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 		clearbits |= GL_STENCIL_BUFFER_BIT;
 		glClearStencil(dwStencil);
 	}
-	glClear(clearbits);
+	if(dwCount)
+	{
+		for(int i = 0; i < dwCount; i++)
+		{
+			SetScissor(true,lpRects[i].x1,lpRects[i].y1,lpRects[i].x2,lpRects[i].y2);
+			glClear(clearbits);
+		}
+		SetScissor(false,0,0,0,0);
+	}
+	else glClear(clearbits);
 	if(target->zbuffer) target->zbuffer->dirty |= 2;
 	target->dirty |= 2;
 	SetEvent(busy);
