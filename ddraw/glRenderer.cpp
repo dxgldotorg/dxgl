@@ -1473,6 +1473,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			if(device->texstages[i].texture)
 				device->texstages[i].texture->SetFilter(i,device->texstages[i].glmagfilter,device->texstages[i].glminfilter);
 			SetTexture(i,device->texstages[i].texture->texture);
+			SetWrap(i,0,device->texstages[i].addressu);
+			SetWrap(i,1,device->texstages[i].addressv);
 		}
 		else SetTexture(i,0);
 		glUniform1i(prog.uniforms[128+i],i);

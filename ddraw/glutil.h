@@ -27,6 +27,7 @@ void InitFBO();
 void DeleteFBO();
 void SetTexture(int level,GLuint texture);
 void SetActiveTexture(int level);
+void SetWrap(int level, DWORD coord, DWORD address);
 GLenum SetFBO(GLint color, GLint z, bool stencil);
 void SetDepthComp(GLenum comp);
 void DepthWrite(bool enabled);
