@@ -25,6 +25,8 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_PAGE_WELCOME
 ; License page
 !insertmacro MUI_PAGE_LICENSE "..\COPYING.txt"
+; Components page
+!insertmacro MUI_PAGE_COMPONENTS
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 ; Instfiles page
@@ -42,7 +44,6 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_LANGUAGE "English"
 
 ; MUI end ------
-
 
 !define HKEY_CURRENT_USER 0x80000001
 !define RegOpenKeyEx     "Advapi32::RegOpenKeyEx(i, t, i, i, *i) i"
@@ -71,7 +72,8 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
 
-Section "MainSection" SEC01
+Section "DXGL Components (required)" SEC01
+  SectionIn RO
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   File "..\Release\dxgltest.exe"
@@ -151,19 +153,16 @@ Section "MainSection" SEC01
   regdone:
   SetPluginUnload manual
   ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
-  StrCmp $0 1 skipvcredist
-  MessageBox MB_YESNO|MB_ICONQUESTION  "The Microsoft Visual C++ 2010 Runtime does not seem to be installed.  Do you want to download and install it now?" IDNO novc
+  WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
+  ExecWait '"$INSTDIR\dxgltest.exe" install'
+SectionEnd
+
+Section "Visual C++ 2010 Redistributable" SEC_VCREDIST
   DetailPrint "Downloading Visual C++ 2010 Runtime"
   NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
   DetailPrint "Installing Visual C++ 2010 Runtime"
   ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
   Delete $TEMP\vcredist_x86.exe
-  goto skipvcredist
-  novc:
-  MessageBox MB_OK|MB_ICONEXCLAMATION "DXGL will not work if the Visual C++ 2010 Runtime is not installed.  Please install the Visual C++ 2010 Runtime before running DXGL."
-  skipvcredist:
-  WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
-  ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
 Section -AdditionalIcons
@@ -182,6 +181,18 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 SectionEnd
+
+
+
+Function .onInit
+  ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
+  StrCmp $0 1 skipvcredist
+  goto vcinstall
+  skipvcredist:
+  SectionSetFlags ${SEC_VCREDIST} 0
+  SectionSetText ${SEC_VCREDIST} ""
+  vcinstall:
+FunctionEnd
 
 
 Function un.onUninstSuccess
