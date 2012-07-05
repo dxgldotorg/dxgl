@@ -157,7 +157,10 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 		{
 			if(genshaders[i].id == id)
 			{
-				if(!memcmp(genshaders[i].texids,texstate,8*sizeof(__int64)))
+				bool texidmatch = true;
+				for(int j = 0; j < 8; j++)
+					if(genshaders[i].texids[j] != texstate[j].shaderid) texidmatch = false;
+				if(texidmatch)
 				{
 					if(!memcmp(genshaders[i].texcoords,texcoords,8*sizeof(int)))
 					{
@@ -187,7 +190,8 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 			if(genindex >= 256) genindex = 0;
 		}
 		genshaders[shaderindex].id = id;
-		memcpy(genshaders[shaderindex].texids,texstate,8*sizeof(__int64));
+		for(int i = 0; i < 8; i++)
+			genshaders[shaderindex].texids[i] = texstate[i].shaderid;
 		memcpy(genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
 		glUseProgram(genshaders[shaderindex].shader.prog);
 		current_prog = genshaders[shaderindex].shader.prog;
