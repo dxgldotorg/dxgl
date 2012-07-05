@@ -10,8 +10,8 @@
     <h3>Cause:  No application profile</h3>
     Solution:  Open "Configure DXGL" and click the Add button.  Browse to your program and double click it.
     <h3>Cause:  System ddraw.dll registered under absolute path</h3>
-    Solution:  Open the file dllpaths.reg in the DXGL installation folder.  This will fix initialization for the
-    current user.
+    Solution:  Make sure the "Fix DDraw COM Registration" option is selected when installing DXGL.  After upgrading to Windows
+    8, you may need to re-run the installer to set the registry keys.
     <h3>Cause:  Program does not use DirectDraw</h3>
     Solution:  Make sure your program is configured to use DirectDraw or Direct3D up to version 7.
     <h2>Problem:  Program crashes</h2>

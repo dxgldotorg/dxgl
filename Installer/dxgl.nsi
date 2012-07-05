@@ -3,6 +3,7 @@
 SetCompressor /SOLID lzma
 
 !include 'LogicLib.nsh'
+!include 'x64.nsh'
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
@@ -86,7 +87,6 @@ Section "DXGL Components (required)" SEC01
   File "..\ReadMe.txt"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
-  File "dllpaths.reg"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   
   StrCpy $8 0
@@ -168,6 +168,15 @@ SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
+  ${If} ${RunningX64}
+  SetRegView 32
+  WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "" "ddraw.dll"
+  WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "ThreadingModel" "Both"
+  WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "" "ddraw.dll"
+  WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "ThreadingModel" "Both"
+  WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "" "ddraw.dll"
+  WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "ThreadingModel" "Both"
+  ${EndIf}
 SectionEnd
 
 Section -AdditionalIcons
@@ -211,8 +220,6 @@ Function .onInit
   BelowEight:
   SectionSetFlags ${SEC_COMFIX} 0
   VersionFinish:
-
-  
 FunctionEnd
 
 
