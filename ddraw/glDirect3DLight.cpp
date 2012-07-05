@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "glRenderer.h"
+#include "glDirect3DDevice.h"
 #include "glDirect3DViewport.h"
 #include "glDirect3DLight.h"
 #define _USE_MATH_DEFINES
@@ -27,6 +29,7 @@ glDirect3DLight::glDirect3DLight()
 {
 	refcount=1;
 	viewport = NULL;
+	device = NULL;
 	ZeroMemory(&light,sizeof(D3DLIGHT7));
 	light.dltType = D3DLIGHT_DIRECTIONAL;
 	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = 1.0f;
@@ -89,12 +92,54 @@ void glDirect3DLight::SetLight7(LPD3DLIGHT7 lpLight7)
 HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DLight::GetLight: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpLight) return DDERR_INVALIDPARAMS;
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) return DDERR_INVALIDPARAMS;
+	lpLight->dltType = light.dltType;
+	lpLight->dcvColor = light.dcvDiffuse;
+	lpLight->dvPosition = light.dvPosition;
+	lpLight->dvDirection = light.dvDirection;
+	lpLight->dvRange = light.dvRange;
+	lpLight->dvFalloff = light.dvFalloff;
+	lpLight->dvAttenuation0 = light.dvAttenuation0;
+	lpLight->dvAttenuation1 = light.dvAttenuation1;
+	lpLight->dvAttenuation2 = light.dvAttenuation2;
+	lpLight->dvTheta = light.dvTheta;
+	lpLight->dvPhi = light.dvPhi;
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DLight::SetLight: stub");
-	ERR(DDERR_GENERIC);
+	if(!lpLight) return DDERR_INVALIDPARAMS;
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) return DDERR_INVALIDPARAMS;
+	light.dltType = lpLight->dltType;
+	light.dcvDiffuse = lpLight->dcvColor;
+	light.dvPosition = lpLight->dvPosition;
+	light.dvDirection = lpLight->dvDirection;
+	light.dvRange = lpLight->dvRange;
+	light.dvFalloff = lpLight->dvFalloff;
+	light.dvAttenuation0 = lpLight->dvAttenuation0;
+	light.dvAttenuation1 = lpLight->dvAttenuation1;
+	light.dvAttenuation2 = lpLight->dvAttenuation2;
+	light.dvTheta = lpLight->dvTheta;
+	light.dvPhi = lpLight->dvPhi;
+	bool enablelight = false;
+	if(device && (lpLight->dwSize >= sizeof(D3DLIGHT2))) enablelight = true;
+	else if(device) enablelight = true;
+	if(enablelight)
+	{
+		if(((LPD3DLIGHT2)lpLight)->dwFlags & D3DLIGHT_ACTIVE)
+		{
+			device->SetLight(index,&light);
+			device->LightEnable(index,TRUE);
+		}
+		else device->LightEnable(index,FALSE);
+	}
+	return D3D_OK;
+}
+
+void glDirect3DLight::SetDevice(glDirect3DDevice7 *device, int index)
+{
+	this->device = device;
+	this->index = index;
 }

@@ -34,11 +34,14 @@ public:
 	HRESULT WINAPI Initialize(LPDIRECT3D lpDirect3D);
 	HRESULT WINAPI SetLight(LPD3DLIGHT lpLight);
 	void SetLight7(LPD3DLIGHT7 lpLight7);
+	void SetDevice(glDirect3DDevice7 *device, int index);
 	D3DLIGHT7 light;
 	glDirect3DViewport3 *viewport;
 private:
 	ULONG refcount;
 	D3DLIGHT2 convert;
+	glDirect3DDevice7 *device;
+	int index;
 };
 
 #endif //__GLDIRECT3DLIGHT_H

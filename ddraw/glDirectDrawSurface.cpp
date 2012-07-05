@@ -53,6 +53,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dds2 = NULL;
 	dds3 = NULL;
 	dds4 = NULL;
+	d3dt2 = NULL;
 	buffer = gdibuffer = NULL;
 	bigbuffer = NULL;
 	zbuffer = NULL;

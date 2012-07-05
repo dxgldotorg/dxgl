@@ -122,6 +122,7 @@ HRESULT WINAPI glDirect3DViewport3::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
 		if(lights[i] == lpDirect3DLight)
 		{
 			lights[i]->Release();
+			lights[i]->SetDevice(NULL,0);
 			lights[i] = NULL;
 			return D3D_OK;
 		}
@@ -266,7 +267,11 @@ void glDirect3DViewport3::SetCurrent(bool current)
 {
 	if(this->current && current) return;
 	this->current = current;
-	if(current && device) Sync();
+	if(current && device)
+	{
+		Sync();
+		SyncLights();
+	}
 }
 
 void glDirect3DViewport3::Sync()
@@ -279,4 +284,20 @@ void glDirect3DViewport3::Sync()
 	vp7.dvMinZ = viewport.dvMinZ;
 	vp7.dvMaxZ = viewport.dvMaxZ;
 	device->SetViewport(&vp7);
+}
+
+void glDirect3DViewport3::SyncLights()
+{
+	D3DLIGHT7 light;
+	for(int i = 0; i < 8; i++)
+	{
+		if(lights[i])
+		{
+			lights[i]->SetDevice(device,i);
+			lights[i]->GetLight7(&light);
+			device->SetLight(i,&light);
+			device->LightEnable(i,TRUE);
+		}
+		else device->LightEnable(i,FALSE);
+	}
 }

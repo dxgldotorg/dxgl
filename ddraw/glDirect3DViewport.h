@@ -51,6 +51,7 @@ public:
 	void SetCurrent(bool current);
 	void SetDevice(glDirect3DDevice7 *device){this->device = device;};
 	void Sync();
+	void SyncLights();
 private:
 	ULONG refcount;
 	glDirect3DLight *lights[8];
