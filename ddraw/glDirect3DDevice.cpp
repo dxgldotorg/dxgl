@@ -1467,7 +1467,8 @@ HRESULT glDirect3DDevice7::GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPD
 	default:
 		return DDERR_INVALIDPARAMS;
 	case D3DLIGHTSTATE_MATERIAL:
-		*lpdwLightState = (DWORD)currentmaterial;
+		if(currentmaterial) *lpdwLightState = currentmaterial->handle;
+		else *lpdwLightState = 0;
 		return D3D_OK;
 	case D3DLIGHTSTATE_AMBIENT:
 		return GetRenderState(D3DRENDERSTATE_AMBIENT,lpdwLightState);
@@ -1494,15 +1495,15 @@ HRESULT glDirect3DDevice7::SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWO
 	default:
 		return DDERR_INVALIDPARAMS;
 	case D3DLIGHTSTATE_MATERIAL:
-		if(dwLightState == (DWORD)currentmaterial) return D3D_OK;
 		if(!dwLightState) return DDERR_INVALIDPARAMS;
-		for(int i = 0; i < materialcount; i++)
+		if(dwLightState < materialcount)
 		{
-			if((DWORD)materials[i] == dwLightState)
+			if(materials[dwLightState] == currentmaterial) return D3D_OK;
+			if(materials[dwLightState])
 			{
-				if(currentmaterial) currentmaterial->SetCurrent(false);
-				materials[i]->SetCurrent(true);
-				currentmaterial = materials[i];
+				if(currentmaterial)currentmaterial->SetCurrent(false);
+				materials[dwLightState]->SetCurrent(true);
+				currentmaterial = materials[dwLightState];
 			}
 		}
 		return D3D_OK;

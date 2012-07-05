@@ -88,9 +88,12 @@ HRESULT WINAPI glDirect3DViewport3::AddLight(LPDIRECT3DLIGHT lpDirect3DLight)
 	{
 		if(!lights[i])
 		{
+			if(lights[i] == lpDirect3DLight) return D3D_OK;
 			lights[i] = (glDirect3DLight*)lpDirect3DLight;
 			lights[i]->AddRef();
 			lights[i]->viewport = this;
+			if(device) lights[i]->SetDevice(device,i);
+			lights[i]->Sync();
 			return D3D_OK;
 		}
 	}

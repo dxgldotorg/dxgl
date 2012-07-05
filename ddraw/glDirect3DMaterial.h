@@ -34,11 +34,11 @@ public:
 	void SetCurrent(bool current);
 	void unbind();
 	D3DMATERIAL material;
+	D3DMATERIALHANDLE handle;
 private:
 	ULONG refcount;
 	bool current;
 	glDirect3DDevice7 *device;
-	D3DMATERIALHANDLE handle;
 };
 
 #endif //__GLDIRECT3DMATERIAL_H

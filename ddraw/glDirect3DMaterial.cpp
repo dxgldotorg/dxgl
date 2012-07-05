@@ -23,6 +23,7 @@
 glDirect3DMaterial3::glDirect3DMaterial3()
 {
 	device = NULL;
+	current = FALSE;
 	refcount = 1;	
 	material.dwSize = sizeof(D3DMATERIAL);
 	const D3DCOLORVALUE defaultcolor = {1.0f,1.0f,1.0f,1.0f};

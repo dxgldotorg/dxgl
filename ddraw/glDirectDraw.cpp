@@ -987,7 +987,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		break;
 	default:
 		useguid = true;
-		FIXME("Display GUIDs not yet supported, using primary.\n");
+		DEBUG("Display GUIDs not yet supported, using primary.\n");
 	}
 	directdraw_created = true;
 	initialized = true;

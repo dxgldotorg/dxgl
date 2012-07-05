@@ -114,6 +114,7 @@ HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 	if(lpLight->dwSize < sizeof(D3DLIGHT)) return DDERR_INVALIDPARAMS;
 	light.dltType = lpLight->dltType;
 	light.dcvDiffuse = lpLight->dcvColor;
+	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = light.dcvAmbient.a = 0;
 	light.dvPosition = lpLight->dvPosition;
 	light.dvDirection = lpLight->dvDirection;
 	light.dvRange = lpLight->dvRange;
@@ -128,7 +129,7 @@ HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 	else if(device) enablelight = true;
 	if(enablelight)
 	{
-		if(((LPD3DLIGHT2)lpLight)->dwFlags & D3DLIGHT_ACTIVE)
+		if((((LPD3DLIGHT2)lpLight)->dwFlags & D3DLIGHT_ACTIVE) || lpLight->dwSize == sizeof(D3DLIGHT))
 		{
 			device->SetLight(index,&light);
 			device->LightEnable(index,TRUE);
@@ -142,4 +143,11 @@ void glDirect3DLight::SetDevice(glDirect3DDevice7 *device, int index)
 {
 	this->device = device;
 	this->index = index;
+}
+
+void glDirect3DLight::Sync()
+{
+	if(!this) return;
+	device->SetLight(index,&light);
+	device->LightEnable(index,TRUE);
 }
