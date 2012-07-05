@@ -54,6 +54,7 @@ SetCompressor /SOLID lzma
 !define KEY_QUERY_VALUE          0x0001
 !define KEY_ENUMERATE_SUB_KEYS   0x0008
 !define ROOT_KEY         ${HKEY_CURRENT_USER}
+!define GetVersion       "Kernel32::GetVersion() i"
 Var SUBKEY
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -157,12 +158,16 @@ Section "DXGL Components (required)" SEC01
   ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
-Section "Visual C++ 2010 Redistributable" SEC_VCREDIST
+Section "Download Visual C++ 2010 Redistributable" SEC_VCREDIST
   DetailPrint "Downloading Visual C++ 2010 Runtime"
   NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
   DetailPrint "Installing Visual C++ 2010 Runtime"
   ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
   Delete $TEMP\vcredist_x86.exe
+SectionEnd
+
+Section "Fix DDraw COM registration" SEC_COMFIX
+  DetailPrint "Setting DDraw Runtime path in registry"
 SectionEnd
 
 Section -AdditionalIcons
@@ -192,6 +197,22 @@ Function .onInit
   SectionSetFlags ${SEC_VCREDIST} 0
   SectionSetText ${SEC_VCREDIST} ""
   vcinstall:
+  
+  System::Call "${GetVersion} () .r0"
+  IntOp $1 $0 & 255
+  IntOp $2 $0 >> 8
+  IntOp $2 $2 & 255
+  IntCmp $1 6 CheckMinor BelowEight EightOrAbove
+  CheckMinor:
+  IntCmp $2 2 EightOrAbove BelowEight EightOrAbove
+  EightOrAbove:
+  SectionSetText ${SEC_COMFIX} "Fix DDraw COM registration (recommended)"
+  goto VersionFinish
+  BelowEight:
+  SectionSetFlags ${SEC_COMFIX} 0
+  VersionFinish:
+
+  
 FunctionEnd
 
 
