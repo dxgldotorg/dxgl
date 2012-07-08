@@ -8,6 +8,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ddraw", "ddraw\ddraw.vcxpro
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common\common.vcxproj", "{87D591EB-B598-431B-9B3B-D0FF771AB473}"
+	ProjectSection(ProjectDependencies) = postProject
+		{34883A93-DFE4-42EF-9DAE-BEE4D3FC87D0} = {34883A93-DFE4-42EF-9DAE-BEE4D3FC87D0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxglcfg", "dxglcfg\dxglcfg.vcxproj", "{DF380DA1-90DE-4174-9A1F-EEC16C5B5879}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -23,6 +26,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxgltest", "dxgltest\dxglte
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Help", "Help\Help.vcxproj", "{8041FD11-3A2E-4EE9-A3FF-A9755803B7FB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{34883A93-DFE4-42EF-9DAE-BEE4D3FC87D0} = {34883A93-DFE4-42EF-9DAE-BEE4D3FC87D0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "buildtool", "buildtool\buildtool.vcxproj", "{34883A93-DFE4-42EF-9DAE-BEE4D3FC87D0}"
 EndProject

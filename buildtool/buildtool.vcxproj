@@ -48,7 +48,6 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
@@ -56,12 +55,17 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>$(OutDir)$(TargetName)$(TargetExt) makeheader $(SolutionDir)common</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build headers</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
@@ -69,9 +73,14 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>$(OutDir)$(TargetName)$(TargetExt) makeheader $(SolutionDir)common</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build headers</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="common.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -79,10 +88,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="buildtool.cpp" />
-    <ClCompile Include="precomp.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

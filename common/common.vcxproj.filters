@@ -27,12 +27,15 @@
     <None Include="dxglicon.svg">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="version.nsh">
+    <None Include="version.nsh.in">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="version.h">
+    <ClInclude Include="releasever.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="version.h.in">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

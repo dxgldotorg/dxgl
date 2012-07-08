@@ -111,10 +111,11 @@
     <None Include="dxglicon.svg" />
     <None Include="dxglsm.ico" />
     <None Include="star.ico" />
-    <None Include="version.nsh" />
+    <None Include="version.nsh.in" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="version.h" />
+    <ClInclude Include="releasever.h" />
+    <ClInclude Include="version.h.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
