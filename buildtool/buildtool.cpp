@@ -17,9 +17,62 @@
 
 #include <cstdio>
 #include <iostream>
+#include <windows.h>
 #include "../common/releasever.h"
 
 using namespace std;
+
+int GetSVNRev(char *path)
+{
+	char pathbase[FILENAME_MAX+1];
+	char pathin[FILENAME_MAX+1];
+	char pathout[FILENAME_MAX+1];
+	char command[1024];
+	strncpy(pathbase,path,FILENAME_MAX);
+	strncpy(pathin,path,FILENAME_MAX);
+	strncpy(pathout,path,FILENAME_MAX);
+	pathbase[strlen(pathbase)-7] = 0;
+	strncat(pathin,"\\rev.in",FILENAME_MAX-strlen(pathin));
+	strncat(pathout,"\\rev",FILENAME_MAX-strlen(pathin));
+	strcpy(command,"subwcrev ");
+	strcat(command,pathbase);
+	strcat(command," ");
+	strcat(command,pathin);
+	strcat(command," ");
+	strcat(command,pathout);
+	STARTUPINFOA startinfo;
+	ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
+	startinfo.cb = sizeof(STARTUPINFO);
+	PROCESS_INFORMATION process;
+	if(CreateProcessA(NULL,command,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
+	{
+		WaitForSingleObject(process.hProcess,INFINITE);
+		CloseHandle(process.hProcess);
+		CloseHandle(process.hThread);
+		FILE *revfile = fopen(pathout,"r");
+		if(!revfile)
+		{
+			cout << "WARNING:  Failed to create revision file" << endl;
+			return 0;
+		}
+		char revstring[32];
+		fgets(revstring,32,revfile);
+		fclose(revfile);
+		return atoi(revstring);
+	}
+	else
+	{
+		int result = MessageBoxA(NULL,"Could not find subwcrev.exe, would you like to download TortoiseSVN?","TortoiseSVN not found",
+			MB_YESNO|MB_ICONWARNING);
+		if(result == IDYES)
+		{
+			MessageBoxA(NULL,"Please try again after installing TortoiseSVN.","TortoiseSVN not found",MB_OK|MB_ICONINFORMATION);
+			ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
+			exit(-1);
+		}
+		else return 0;
+	}
+}
 
 int ProcessHeaders(char *path)
 {
@@ -29,7 +82,7 @@ int ProcessHeaders(char *path)
 	char verbuffer[20];
 	char numstring[16];
 	char *findptr;
-	int revision = 0; //FIXME:  Get SVN Rev.
+	int revision = GetSVNRev(path);
 	strncpy(pathin,path,FILENAME_MAX);
 	strncpy(pathout,path,FILENAME_MAX);
 	strncat(pathin,"\\version.h.in",FILENAME_MAX-strlen(pathin));
