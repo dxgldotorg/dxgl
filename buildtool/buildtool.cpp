@@ -160,7 +160,7 @@ int ProcessHeaders(char *path)
 		{
 			if(revision)
 			{
-				strcpy(verbuffer,"\"r");
+				strcpy(verbuffer,"\"");
 				_itoa(revision,numstring,10);
 				strcat(verbuffer,numstring);
 				strcat(verbuffer,"\"\n");
@@ -169,7 +169,7 @@ int ProcessHeaders(char *path)
 			else strncpy(findptr,"\"\"\n",17);
 		}
 #ifdef _DEBUG
-		if(strstr(buffer,";!define DEBUG")) strcpy(buffer,"!define DEBUG");
+		if(strstr(buffer,";!define _DEBUG")) strcpy(buffer,"!define _DEBUG");
 #endif
 		fputs(buffer,fileout);
 	}

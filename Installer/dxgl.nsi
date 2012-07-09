@@ -14,6 +14,13 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
+!ifdef _DEBUG
+!define SRCDIR "Debug"
+!else
+!define SRCDIR "Release"
+!endif
+
+
 ; MUI2
 !include "MUI2.nsh"
 
@@ -58,14 +65,18 @@ SetCompressor /SOLID lzma
 !define GetVersion       "Kernel32::GetVersion() i"
 Var SUBKEY
 
+!ifdef _DEBUG
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
+!else
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+!endif
 OutFile "DXGL-${PRODUCT_VERSION}-win32.exe"
 InstallDir "$PROGRAMFILES\DXGL"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
-VIProductVersion "${PRODUCT_VERSION}.0"
+VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_REVISION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
@@ -78,12 +89,12 @@ Section "DXGL Components (required)" SEC01
   SectionIn RO
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "..\Release\dxgltest.exe"
+  File "..\${SRCDIR}\dxgltest.exe"
   CreateDirectory "$SMPROGRAMS\DXGL"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Test.lnk" "$INSTDIR\dxgltest.exe"
-  File "..\Release\dxglcfg.exe"
+  File "..\${SRCDIR}\dxglcfg.exe"
   CreateShortCut "$SMPROGRAMS\DXGL\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
-  File "..\Release\ddraw.dll"
+  File "..\${SRCDIR}\ddraw.dll"
   File "..\ReadMe.txt"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
@@ -153,11 +164,11 @@ Section "DXGL Components (required)" SEC01
     goto regloop
   regdone:
   SetPluginUnload manual
-  ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
-  ExecWait '"$INSTDIR\dxgltest.exe" install'
+  ExecWait '"$INSTDIR\dxgltest.exe" instaill'
 SectionEnd
 
+!ifndef _DEBUG
 Section "Download Visual C++ 2010 Redistributable" SEC_VCREDIST
   DetailPrint "Downloading Visual C++ 2010 Runtime"
   NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
@@ -165,6 +176,7 @@ Section "Download Visual C++ 2010 Redistributable" SEC_VCREDIST
   ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
   Delete $TEMP\vcredist_x86.exe
 SectionEnd
+!endif
 
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
@@ -199,6 +211,10 @@ SectionEnd
 
 
 Function .onInit
+  !ifdef _DEBUG
+  MessageBox MB_OK|MB_ICONEXCLAMATION "This is a debug build of DXGL.  It is not meant for regular \
+  usage and requires the debug version of the Visual C++ runtime to work."
+  !else
   ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86 Installed
   StrCmp $0 1 skipvcredist
   goto vcinstall
@@ -206,6 +222,7 @@ Function .onInit
   SectionSetFlags ${SEC_VCREDIST} 0
   SectionSetText ${SEC_VCREDIST} ""
   vcinstall:
+  !endif
   
   System::Call "${GetVersion} () .r0"
   IntOp $1 $0 & 255
