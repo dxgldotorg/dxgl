@@ -54,12 +54,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>$(OutDir)$(TargetName)$(TargetExt) makeheader $(SolutionDir)common</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Build headers</Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -71,12 +67,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>$(OutDir)$(TargetName)$(TargetExt) makeheader $(SolutionDir)common</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Build headers</Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />

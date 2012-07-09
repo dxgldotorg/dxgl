@@ -92,6 +92,12 @@
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
       <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Create version headers</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
     <ClCompile>
@@ -112,6 +118,12 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Create version headers</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -134,6 +146,12 @@
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
       <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Create version headers</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
     <ClCompile>
@@ -158,6 +176,12 @@
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
     </Link>
     <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Create version headers</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ddraw.def" />
