@@ -66,7 +66,7 @@ int GetSVNRev(char *path)
 			MB_YESNO|MB_ICONWARNING);
 		if(result == IDYES)
 		{
-			MessageBoxA(NULL,"Please try again after installing TortoiseSVN.","TortoiseSVN not found",MB_OK|MB_ICONINFORMATION);
+			cout << "ERROR:  Please try again after installing TortoiseSVN." << endl;
 			ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
 			exit(-1);
 		}
@@ -180,6 +180,51 @@ int ProcessHeaders(char *path)
 	return 0;
 }
 
+int MakeHelp(char *path)
+{
+	HKEY hKey;
+	bool foundhhc = false;
+	char hhcpath[(MAX_PATH+1)*2];
+	DWORD buffersize = MAX_PATH+1;
+	if(RegOpenKeyExA(HKEY_CURRENT_USER,"Software\\Microsoft\\HTML Help Workshop",0,KEY_READ,&hKey) == ERROR_SUCCESS)
+	{
+		if(RegQueryValueExA(hKey,"InstallDir",NULL,NULL,(LPBYTE)hhcpath,&buffersize) == ERROR_SUCCESS)
+		{
+			strcat(hhcpath,"\\hhc.exe");
+			PROCESS_INFORMATION process;
+			STARTUPINFOA startinfo;
+			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
+			startinfo.cb = sizeof(STARTUPINFOA);
+			strcat(hhcpath," ");
+			strcat(hhcpath,path);
+			if(CreateProcessA(NULL,hhcpath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
+			{
+				foundhhc = true;
+				WaitForSingleObject(process.hProcess,INFINITE);
+				CloseHandle(process.hProcess);
+				CloseHandle(process.hThread);
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	if(!foundhhc)
+	{
+		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?","HTML Help Workshop not found",
+			MB_YESNO|MB_ICONERROR);
+		if(result == IDYES) ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
+		cout << "ERROR:  HTML Help Compiler not found." << endl;
+		return -1;
+	}
+	return 0;
+}
+
+int MakeInstaller(char *path)
+{
+	// Registry path:  HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\(Default)
+	return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
 
@@ -196,8 +241,25 @@ int main(int argc, char *argv[])
 				cout << "ERROR:  No working directory specified." << endl;
 				return 1;
 			}
-			ProcessHeaders(argv[2]);
-			return 0;
+			return ProcessHeaders(argv[2]);
+		}
+		if(!strcmp(argv[1],"makehelp"))
+		{
+			if(argc < 3)
+			{
+				cout << "ERROR:  No working directory specified." << endl;
+				return 1;
+			}
+			return MakeHelp(argv[2]);
+		}
+		if(!strcmp(argv[1],"makeinstaller"))
+		{
+			if(argc < 3)
+			{
+				cout << "ERROR:  No working directory specified." << endl;
+				return 1;
+			}
+			return MakeInstaller(argv[2]);
 		}
 	}
 	else

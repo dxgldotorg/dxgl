@@ -45,6 +45,12 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>$(OutDir)buildtool.exe makehelp $(ProjectDir)dxgl.hhp</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Building help...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
