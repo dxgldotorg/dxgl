@@ -15,6 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _CRT_SECURE_NO_DEPRECATE
 #include <cstdio>
 #include <iostream>
 #include <windows.h>
@@ -211,7 +212,7 @@ int MakeHelp(char *path)
 	{
 		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?","HTML Help Workshop not found",
 			MB_YESNO|MB_ICONERROR);
-		if(result == IDYES) ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
+		if(result == IDYES) ShellExecuteA(NULL,"open","http://www.microsoft.com/en-us/download/details.aspx?id=21138",NULL,NULL,SW_SHOWNORMAL);
 		cout << "ERROR:  HTML Help Compiler not found." << endl;
 		return -1;
 	}
