@@ -221,7 +221,39 @@ int MakeHelp(char *path)
 
 int MakeInstaller(char *path)
 {
-	// Registry path:  HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\(Default)
+	HKEY hKey;
+	bool foundnsis = false;
+	char nsispath[(MAX_PATH+1)*2];
+	DWORD buffersize = MAX_PATH+1;
+	if(RegOpenKeyExA(HKEY_LOCAL_MACHINE,"Software\\NSIS",0,KEY_READ,&hKey) == ERROR_SUCCESS)
+	{
+		if(RegQueryValueExA(hKey,"",NULL,NULL,(LPBYTE)nsispath,&buffersize) == ERROR_SUCCESS)
+		{
+			strcat(nsispath,"\\makensis.exe");
+			PROCESS_INFORMATION process;
+			STARTUPINFOA startinfo;
+			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
+			startinfo.cb = sizeof(STARTUPINFOA);
+			strcat(nsispath," ");
+			strcat(nsispath,path);
+			if(CreateProcessA(NULL,nsispath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
+			{
+				foundnsis = true;
+				WaitForSingleObject(process.hProcess,INFINITE);
+				CloseHandle(process.hProcess);
+				CloseHandle(process.hThread);
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	if(!foundnsis)
+	{
+		int result = MessageBoxA(NULL,"Could not find NSIS, would you like to download it?","NSIS not found",
+			MB_YESNO|MB_ICONERROR);
+		if(result == IDYES) ShellExecuteA(NULL,"open","http://nsis.sourceforge.net/Main_Page",NULL,NULL,SW_SHOWNORMAL);
+		cout << "ERROR:  NSIS not found." << endl;
+		return -1;
+	}
 	return 0;
 }
 
