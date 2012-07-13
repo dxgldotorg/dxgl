@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <cstdio>
 #include <Windows.h>
+#include <ShellAPI.h>
 #include <string>
 #ifndef LSTATUS
 typedef LONG LSTATUS;

@@ -304,6 +304,56 @@ void GetCurrentConfig(DXGLCFG *cfg)
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,false,true,NULL);
 	RegCloseKey(hKey);
+	hKey = NULL;
+	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+	BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
+	iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
+	BOOL is64 = FALSE;
+	if(iswow64) iswow64(GetCurrentProcess(),&is64);
+	FreeLibrary(hKernel32);
+	LRESULT error;
+	if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ|KEY_WOW64_64KEY,&hKey);
+	else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ,&hKey);
+	if(error == ERROR_SUCCESS)
+	{
+		GetModuleFileName(NULL,filename,MAX_PATH);
+		TCHAR buffer[1024];
+		ZeroMemory(buffer,1024*sizeof(TCHAR));
+		DWORD sizeout = 1024*sizeof(TCHAR);
+		if(RegQueryValueEx(hKey,filename,NULL,NULL,(LPBYTE)buffer,&sizeout) == ERROR_SUCCESS)
+		{
+			if(_tcsstr(buffer,_T("DWM8And16BitMitigation")))
+			{
+				MessageBox(NULL,_T("DXGL has detected an incompatible AppCompat flag for the program you are currently running.  To continue, the registry value must be deleted.\nIf you see a UAC prompt, you must click Yes."),
+					_T("AppCompat error"),MB_OK|MB_ICONHAND);
+				error = RegDeleteValue(hKey,filename);
+				if(error == ERROR_ACCESS_DENIED)
+				{
+					tstring command;
+					if(is64) command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v "));
+					else command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v "));
+					command.append(filename);
+					SHELLEXECUTEINFO info;
+					ZeroMemory(&info,sizeof(SHELLEXECUTEINFO));
+					info.cbSize = sizeof(SHELLEXECUTEINFO);
+					info.lpVerb = _T("runas");
+					info.lpFile = _T("reg.exe");
+					info.lpParameters = command.c_str();
+					info.nShow = SW_SHOWNORMAL;
+					info.fMask = SEE_MASK_NOCLOSEPROCESS;
+					ShellExecuteEx(&info);
+					WaitForSingleObject(info.hProcess,INFINITE);
+					GetExitCodeProcess(info.hProcess,(LPDWORD)&error);
+				}
+				if(!error)
+				{
+					MessageBox(NULL,_T("Registry value successfully deleted.  Please restart the program."),_T("Success"),MB_OK|MB_ICONINFORMATION);
+					exit(0);
+				}
+				else MessageBox(NULL,_T("Registry value could not be deleted.  Your program may crash as a result."),_T("Error"),MB_OK|MB_ICONWARNING);
+			}
+		}
+	}
 }
 void GetGlobalConfig(DXGLCFG *cfg)
 {
