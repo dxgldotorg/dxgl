@@ -169,7 +169,7 @@ Section "DXGL Components (required)" SEC01
   regdone:
   SetPluginUnload manual
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
-  ExecWait '"$INSTDIR\dxgltest.exe" instaill'
+  ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
 !ifndef _DEBUG
