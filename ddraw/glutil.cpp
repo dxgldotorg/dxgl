@@ -29,6 +29,12 @@ GLint scissorx = 0;
 GLint scissory = 0;
 GLsizei scissorwidth = 0;
 GLsizei scissorheight = 0;
+GLenum matrixmode = GL_MODELVIEW;
+GLfloat materialambient[4] = {0,0,0,0};
+GLfloat materialdiffuse[4] = {0,0,0,0};
+GLfloat materialspecular[4] = {0,0,0,0};
+GLfloat materialemission[4] = {0,0,0,0};
+GLfloat materialshininess = 0;
 bool scissorenabled = false;
 bool stencil = false;
 GLint texlevel = 0;
@@ -210,5 +216,51 @@ void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
 		scissorwidth = width;
 		scissorheight = height;
 		glScissor(x,y,width,height);
+	}
+}
+
+void MatrixMode(GLenum mode)
+{
+	if(mode != matrixmode)
+	{
+		matrixmode = mode;
+		glMatrixMode(mode);
+	}
+}
+
+void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
+{
+	MatrixMode(mode);
+	glLoadMatrixf(mat1);
+	if(mode == GL_MODELVIEW) glMultMatrixf(mat2);
+	if(dirty) *dirty = false;
+}
+
+void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
+{
+	if(ambient != materialambient)
+	{
+		memcpy(materialambient,ambient,4*sizeof(GLfloat));
+		glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
+	}
+	if(diffuse != materialdiffuse)
+	{
+		memcpy(materialdiffuse,diffuse,4*sizeof(GLfloat));
+		glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+	}
+	if(specular != materialspecular)
+	{
+		memcpy(materialspecular,specular,4*sizeof(GLfloat));
+		glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
+	}
+	if(emission != materialemission)
+	{
+		memcpy(materialemission,emission,4*sizeof(GLfloat));
+		glMaterialfv(GL_FRONT,GL_EMISSION,emission);
+	}
+	if(shininess != materialshininess)
+	{
+		materialshininess = shininess;
+		glMaterialf(GL_FRONT,GL_SHININESS,shininess);
 	}
 }

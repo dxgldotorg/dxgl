@@ -228,13 +228,13 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	__gluMakeIdentityf(matWorld);
 	__gluMakeIdentityf(matView);
 	__gluMakeIdentityf(matProjection);
-	__gluMakeIdentityf(matNormal);
 	texstages[0] = texstagedefault0;
 	texstages[1] = texstages[2] = texstages[3] = texstages[4] = 
 		texstages[5] = texstages[6] = texstages[7] = texstagedefault1;
 	refcount = 1;
 	inscene = false;
-	normal_dirty = false;
+	modelview_dirty = false;
+	projection_dirty = false;
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
@@ -1197,14 +1197,15 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 	{
 	case D3DTRANSFORMSTATE_WORLD:
 		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
-		normal_dirty = true;
+		modelview_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_VIEW:
 		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
-		normal_dirty = true;
+		modelview_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_PROJECTION:
 		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
+		projection_dirty = true;
 		return D3D_OK;
 	default:
 		ERR(DDERR_INVALIDPARAMS);
@@ -1261,30 +1262,6 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 	}
 	if(lpdwPasses) *lpdwPasses = 1;
 	return D3D_OK;
-}
-
-void glDirect3DDevice7::UpdateNormalMatrix()
-{
-	GLfloat worldview[16];
-	GLfloat tmp[16];
-
-	ZeroMemory(&worldview,sizeof(D3DMATRIX));
-	ZeroMemory(&tmp,sizeof(D3DMATRIX));
-	__gluMultMatricesf(matWorld,matView,worldview);	// Get worldview
-	if(__gluInvertMatrixf(worldview,tmp)) // Invert
-	{
-		memcpy(matNormal,tmp,3*sizeof(GLfloat));
-		memcpy(matNormal+3,tmp+4,3*sizeof(GLfloat));
-		memcpy(matNormal+6,tmp+8,3*sizeof(GLfloat));
-	}
-	else
-	{
-		memcpy(matNormal,worldview,3*sizeof(GLfloat));
-		memcpy(matNormal+3,worldview+4,3*sizeof(GLfloat));
-		memcpy(matNormal+6,worldview+8,3*sizeof(GLfloat));
-	}
-
-	normal_dirty = false;
 }
 
 void glDirect3DDevice7::SetDepthComp()

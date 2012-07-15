@@ -237,19 +237,6 @@ static const char attr_str[] = "attribute vec3 strX;\n";
 static const char conv_str[] = "vec4 strqX = vec4(strX[0],strX[1],strX[2],1);\n";
 static const char attr_strq[] = "attribute vec4 strqX;\n";
 // Uniforms
-static const char unif_matrices[] = "uniform mat4 world;\n\
-uniform mat4 view;\n\
-uniform mat4 projection;\n\
-uniform mat3 normalmat;\n";
-static const char unif_material[] = "struct Material\n\
-{\n\
-vec4 diffuse;\n\
-vec4 ambient;\n\
-vec4 specular;\n\
-vec4 emissive;\n\
-float power;\n\
-};\n\
-uniform Material material;\n";
 static const char lightstruct[] = "struct Light\n\
 {\n\
 vec4 diffuse;\n\
@@ -280,19 +267,19 @@ float alpha;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
-vec4 pos = (projection*(view*world))*xyzw;\n\
+vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
-static const char op_normalize[] = "N = normalize(normalmat*nxyz);\n";
-static const char op_normalpassthru[] = "N = normalmat*nxyz;\n";
+static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
+static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
 static const char op_passthru[] = "gl_Position = vec4((xyz.x/(width/2.0))-1.0,(xyz.y/(height/2.0))-1.0,xyz.z,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "gl_FrontColor = (material.diffuse * diffuse) + (material.ambient * ambient)\n\
-+ (material.specular * specular) + material.emissive;\n\
-gl_FrontSecondaryColor = (material.specular * specular);\n";
+static const char op_colorout[] = "gl_FrontColor = (gl_FrontMaterial.diffuse * diffuse) + (gl_FrontMaterial.ambient * ambient)\n\
++ (gl_FrontMaterial.specular * specular) + gl_FrontMaterial.emission;\n\
+gl_FrontSecondaryColor = (gl_FrontMaterial.specular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorfragout[] = "gl_FragColor = vec4(color,alpha);\n";
@@ -313,20 +300,20 @@ vec3 dir = normalize(-light.direction);\n\
 ambient += light.ambient;\n\
 float NdotL = max(dot(N,dir),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
-if((NdotL > 0.0) && (material.power != 0.0))\n\
+if((NdotL > 0.0) && (gl_FrontMaterial.shininess != 0.0))\n\
 {\n\
-vec3 eye = (-view[3].xyz / view[3].w);\n\
-vec3 P = vec3((view*world)*xyzw);\n\
+vec3 eye = vec3(0.0,0.0,1.0);\n\
+vec3 P = vec3(gl_ModelViewMatrix*xyzw);\n\
 vec3 L = normalize(-light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
-specular += (pow(NdotHV,float(material.power))*light.specular);\n\
+specular += (pow(NdotHV,float(gl_FrontMaterial.shininess))*light.specular);\n\
 ambient += light.ambient;\n\
 }\n\
 }\n";
 static const char func_pointlight[] = "void PointLight(in Light light)\n\
 {\n\
-vec4 pos = ((view*world)*xyzw);\n\
+vec4 pos = gl_ModelViewMatrix*xyzw;\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
 float d = length(V);\n\
@@ -336,7 +323,7 @@ float NdotV = max(0.0,dot(N,V));\n\
 float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
 float pf;\n\
 if(NdotV == 0.0) pf = 0.0;\n\
-else if(material.power > 0.0) pf = pow(NdotHV,material.power);\n\
+else if(gl_FrontMaterial.shininess > 0.0) pf = pow(NdotHV,gl_FrontMaterial.shininess);\n\
 else pf = 0.0;\n\
 diffuse += light.diffuse*NdotV*attenuation;\n\
 ambient += light.ambient;\n\
@@ -344,7 +331,7 @@ specular += light.specular*pf*attenuation;\n\
 }\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
-vec4 pos = ((view*world)*xyzw);\n\
+vec4 pos = (gl_ModelViewMatrix*xyzw);\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
 float d = length(V);\n\
@@ -354,7 +341,7 @@ float NdotV = max(0.0,dot(N,V));\n\
 float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
 float pf;\n\
 if(NdotV == 0.0) pf = 0.0;\n\
-else if(material.power > 0.0) pf = pow(NdotHV,material.power);\n\
+else if(gl_FrontMaterial.shininess > 0.0) pf = pow(NdotHV,gl_FrontMaterial.shininess);\n\
 else pf = 0.0;\n\
 float spotangle = dot(-V,normalize(light.direction));\n\
 if(spotangle < cos(light.phi * (180.0/3.14159265)))\n\
@@ -451,8 +438,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	}
 
 	// Uniforms
-	vsrc->append(unif_matrices); // Material
-	vsrc->append(unif_material);
 	vsrc->append(unif_ambient);
 	if((id>>50)&1) vsrc->append(unif_size);
 	numlights = (id>>18)&7;
@@ -896,16 +881,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		genshaders[index].shader.attribs[i+34] = glGetAttribLocation(genshaders[index].shader.prog,attrSTRQ);
 	}
 	// Uniforms
-	genshaders[index].shader.uniforms[0] = glGetUniformLocation(genshaders[index].shader.prog,"world");
-	genshaders[index].shader.uniforms[1] = glGetUniformLocation(genshaders[index].shader.prog,"view");
-	genshaders[index].shader.uniforms[2] = glGetUniformLocation(genshaders[index].shader.prog,"projection");
-	genshaders[index].shader.uniforms[3] = glGetUniformLocation(genshaders[index].shader.prog,"normalmat");
 	// TODO: 4-14 world1-3 and texture0-7
-	genshaders[index].shader.uniforms[15] = glGetUniformLocation(genshaders[index].shader.prog,"material.ambient");
-	genshaders[index].shader.uniforms[16] = glGetUniformLocation(genshaders[index].shader.prog,"material.diffuse");
-	genshaders[index].shader.uniforms[17] = glGetUniformLocation(genshaders[index].shader.prog,"material.specular");
-	genshaders[index].shader.uniforms[18] = glGetUniformLocation(genshaders[index].shader.prog,"material.emissive");
-	genshaders[index].shader.uniforms[19] = glGetUniformLocation(genshaders[index].shader.prog,"material.power");
 	char uniflight[] = "lightX.            ";
 	for(int i = 0; i < 8; i++)
 	{

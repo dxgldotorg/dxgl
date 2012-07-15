@@ -792,6 +792,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glViewport(0,0,width,height);
 	DepthWrite(true);
 	DepthTest(false);
+	MatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
 	SetDepthComp(GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
@@ -1213,7 +1214,13 @@ void glRenderer::_InitD3D(int zbuffer)
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	if(zbuffer) DepthTest(true);
 	SetDepthComp(GL_LEQUAL);
-	glDisable(GL_DITHER);
+	GLfloat identity[16];
+	__gluMakeIdentityf(identity);
+	SetMatrix(GL_MODELVIEW,identity,identity,NULL);
+	SetMatrix(GL_PROJECTION,identity,NULL,NULL);
+	GLfloat one[4] = {1,1,1,1};
+	GLfloat zero[4] = {0,0,0,1};
+	SetMaterial(one,one,zero,zero,0);
 }
 
 void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
@@ -1401,17 +1408,12 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 
 		}
 	}
-	if(device->normal_dirty) device->UpdateNormalMatrix();
-	if(prog.uniforms[0] != -1) glUniformMatrix4fv(prog.uniforms[0],1,false,device->matWorld);
-	if(prog.uniforms[1] != -1) glUniformMatrix4fv(prog.uniforms[1],1,false,device->matView);
-	if(prog.uniforms[2] != -1) glUniformMatrix4fv(prog.uniforms[2],1,false,device->matProjection);
-	if(prog.uniforms[3] != -1) glUniformMatrix3fv(prog.uniforms[3],1,true,device->matNormal);
+	if(device->modelview_dirty) SetMatrix(GL_MODELVIEW,device->matView,device->matWorld,&device->modelview_dirty);
+	if(device->projection_dirty) SetMatrix(GL_PROJECTION,device->matProjection,NULL,&device->projection_dirty);
 
-	if(prog.uniforms[15] != -1) glUniform4fv(prog.uniforms[15],1,(GLfloat*)&device->material.ambient);
-	if(prog.uniforms[16] != -1) glUniform4fv(prog.uniforms[16],1,(GLfloat*)&device->material.diffuse);
-	if(prog.uniforms[17] != -1) glUniform4fv(prog.uniforms[17],1,(GLfloat*)&device->material.specular);
-	if(prog.uniforms[18] != -1) glUniform4fv(prog.uniforms[18],1,(GLfloat*)&device->material.emissive);
-	if(prog.uniforms[19] != -1) glUniform1f(prog.uniforms[19],device->material.power);
+	SetMaterial((GLfloat*)&device->material.ambient,(GLfloat*)&device->material.diffuse,(GLfloat*)&device->material.specular,
+		(GLfloat*)&device->material.emissive,device->material.power);
+
 	int lightindex = 0;
 	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
 	for(i = 0; i < 8; i++)

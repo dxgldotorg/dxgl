@@ -141,12 +141,9 @@ public:
 	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
 	HRESULT GetStats(LPD3DSTATS lpD3DStats);
 	__int64 SelectShader(GLVERTEX *VertexType);
-	void UpdateNormalMatrix();
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
-	GLfloat matNormal[9];
-	bool normal_dirty;
 	D3DMATERIAL7 material;
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
@@ -158,7 +155,8 @@ public:
 	glDirect3DMaterial3 **materials;
 	glDirect3DMaterial3 *currentmaterial;
 	int materialcount;
-
+	bool modelview_dirty;
+	bool projection_dirty;
 private:
 	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);
 	ULONG refcount;
