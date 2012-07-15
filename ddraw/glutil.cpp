@@ -29,6 +29,12 @@ GLint scissorx = 0;
 GLint scissory = 0;
 GLsizei scissorwidth = 0;
 GLsizei scissorheight = 0;
+GLint viewportx = 0;
+GLint viewporty = 0;
+GLsizei viewportwidth = 0;
+GLsizei viewportheight = 0;
+GLclampd depthnear = 0.0;
+GLclampd depthfar = 1.0;
 GLenum matrixmode = GL_MODELVIEW;
 GLfloat materialambient[4] = {0,0,0,0};
 GLfloat materialdiffuse[4] = {0,0,0,0};
@@ -132,7 +138,7 @@ void SetActiveTexture(int level)
 void SetTexture(int level,GLuint texture)
 {
 	SetActiveTexture(level);
-	glBindTexture(GL_TEXTURE_2D,texture);
+	if(texture) glBindTexture(GL_TEXTURE_2D,texture);
 }
 
 void SetWrap(int level, DWORD coord, DWORD address)
@@ -238,22 +244,22 @@ void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
 
 void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
 {
-	if(ambient != materialambient)
+	if(memcmp(ambient,materialambient,4*sizeof(GLfloat)))
 	{
 		memcpy(materialambient,ambient,4*sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
 	}
-	if(diffuse != materialdiffuse)
+	if(memcmp(diffuse,materialdiffuse,4*sizeof(GLfloat)))
 	{
 		memcpy(materialdiffuse,diffuse,4*sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 	}
-	if(specular != materialspecular)
+	if(memcmp(specular,materialspecular,4*sizeof(GLfloat)))
 	{
 		memcpy(materialspecular,specular,4*sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
 	}
-	if(emission != materialemission)
+	if(memcmp(emission,materialemission,4*sizeof(GLfloat)))
 	{
 		memcpy(materialemission,emission,4*sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_EMISSION,emission);
@@ -262,5 +268,27 @@ void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLflo
 	{
 		materialshininess = shininess;
 		glMaterialf(GL_FRONT,GL_SHININESS,shininess);
+	}
+}
+
+void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	if((x != viewportx) || (y != viewporty) || (width != viewportwidth) || (height != viewportheight))
+	{
+		viewportx = x;
+		viewporty = y;
+		viewportwidth = width;
+		viewportheight = height;
+		glViewport(x,y,width,height);
+	}
+}
+
+void SetDepthRange(GLclampd rangenear, GLclampd rangefar)
+{
+	if((rangenear != depthnear) || (rangefar != depthfar))
+	{
+		depthnear = rangenear;
+		depthfar = rangefar;
+		glDepthRange(rangenear,rangefar);
 	}
 }

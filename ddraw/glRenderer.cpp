@@ -789,7 +789,9 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	InitGLExt();
 	SetSwap(1);
 	SetSwap(0);
+	SetViewport(0,0,width,height);
 	glViewport(0,0,width,height);
+	SetDepthRange(0.0,1.0);
 	DepthWrite(true);
 	DepthTest(false);
 	MatrixMode(GL_MODELVIEW);
@@ -844,7 +846,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	ddInterface->GetSizes(sizes);
 	int error;
 	error = SetFBO(dest->texture,0,false);
-	glViewport(0,0,dest->fakex,dest->fakey);
+	SetViewport(0,0,dest->fakex,dest->fakey);
 	RECT destrect;
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
@@ -1020,7 +1022,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)x;
 	view[3] = (GLfloat)y;
-	glViewport(0,0,x,y);
+	SetViewport(0,0,x,y);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glBindTexture(GL_TEXTURE_2D,*texture);
 	*texture = backbuffer;
@@ -1134,7 +1136,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		GLint texloc = glGetUniformLocation(prog,"Texture");
 		glUniform1i(texloc,0);
 	}
-	glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+	SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
 	GLuint prog = GetProgram();
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
@@ -1298,7 +1300,7 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, HWND ne
 		gllock = false;
 		SetSwap(1);
 		SetSwap(0);
-		glViewport(0,0,width,height);
+		SetViewport(0,0,width,height);
 	}
 
 	SetEvent(busy);
@@ -1485,8 +1487,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(prog.uniforms[138]!= -1) glUniform1f(prog.uniforms[138],device->glDDS7->fakey);
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
-	glViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
-	glDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
+	SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
+	SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;

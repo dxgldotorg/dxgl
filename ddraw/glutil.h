@@ -36,5 +36,7 @@ void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height);
 void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty);
 void MatrixMode(GLenum mode);
 void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess);
+void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+void SetDepthRange(GLclampd rangenear, GLclampd rangefar);
 
 #endif //_GLUTIL_H
