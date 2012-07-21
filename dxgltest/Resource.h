@@ -31,7 +31,7 @@
 #define IDC_SPINSTAGE                           1000
 #define IDC_VIDMODES                            1000
 #define IDC_RESIZABLE                           1001
-#define IDC_SPINREFALPHA                        1001
+#define IDC_SPINALPHAREF                        1001
 #define IDC_DDTYPE                              1002
 #define IDC_SPINLINEREPEAT                      1002
 #define IDC_TABS                                1002
