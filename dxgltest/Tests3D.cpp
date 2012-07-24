@@ -44,7 +44,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,0};
+static int testtypes[] = {0,0,0};
 
 static D3DVECTOR points[256];
 static D3DVECTOR normals[256];
@@ -192,9 +192,16 @@ static HRESULT WINAPI zcallback(DDPIXELFORMAT *ddpf, VOID *context)
 	return D3DENUMRET_OK;
 }
 
+INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
 void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter,	int msaa, double fps, bool fullscreen, bool resizable)
 {	
+	if(testnum == 2)
+	{
+		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_TEXSHADER),NULL,TexShader7Proc);
+		return;
+	}
 	DDSCAPS2 caps;
 	DDSURFACEDESC2 ddsd;
 	DDPIXELFORMAT ddpfz;
@@ -622,4 +629,23 @@ void RunTestTimed3D(int test)
 
 void RunTestLooped3D(int test)
 {
+}
+
+
+INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch(Msg)
+	{
+	case WM_INITDIALOG:
+
+		break;
+    case WM_CLOSE:
+        EndDialog(hWnd,IDCANCEL);
+        break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+
+
 }

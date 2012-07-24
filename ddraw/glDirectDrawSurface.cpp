@@ -932,6 +932,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 			renderer->DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
 				(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2);
 		ddsd.lpSurface = buffer;
+		dirty &= ~2;
 		break;
 	case 1:
 		FIXME("glDirectDrawSurface7::Lock: surface type 1 not supported yet");
