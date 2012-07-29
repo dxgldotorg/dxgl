@@ -466,11 +466,11 @@ void InitTest3D(int test)
 	D3DMATRIX matView;
 	D3DMATRIX matProj;
 	D3DMATRIX mat;
+	D3DMATERIAL7 material;
 	switch(test)
 	{
 	case 0:
 		MakeCube3D(points,normals,vertices);
-		D3DMATERIAL7 material;
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 0.5f;
 		material.ambient.g = 0.5f;
@@ -553,6 +553,35 @@ void InitTest3D(int test)
 		lights[0].dvAttenuation1 = 0.4f;
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
+	case 2:
+		MakeCube3D(points,normals,vertices);
+		ZeroMemory(&material,sizeof(D3DMATERIAL7));
+		material.ambient.r = 1.0f;
+		material.ambient.g = 1.0f;
+		material.ambient.b = 1.0f;
+		material.diffuse.r = 1.0f;
+		material.diffuse.g = 1.0f;
+		material.diffuse.b = 1.0f;
+		error = d3d7dev->SetMaterial(&material);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xffffffff);
+		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
+		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
+		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
+		mat._31 = mat._32 = mat._34 = mat._43 = 0.0f;
+		matWorld = mat;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD,&matWorld);
+		matView = mat;
+		matView._43 = 10.0f;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_VIEW,&matView);
+		matProj = mat;
+	    matProj._11 =  2.0f;
+	    matProj._22 =  2.0f;
+	    matProj._34 =  1.0f;
+	    matProj._43 = -1.0f;
+	    matProj._44 =  0.0f;
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_PROJECTION,&matProj);
+		break;
 	default:
 		break;
 	}
@@ -569,7 +598,7 @@ void RunTestTimed3D(int test)
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 	if(d3dver >= 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
-	d3d7dev->Clear(0,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0,1.0,0);
+	error = d3d7dev->Clear(0,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0,1.0,0);
 	float time = (float)clock() / (float)CLOCKS_PER_SEC;
 	switch(test)
 	{
@@ -598,14 +627,28 @@ void RunTestTimed3D(int test)
 	    mat._31 = (FLOAT)sin( (float)time );
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
 		error = d3d7dev->BeginScene();
-		d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[0]->GetSurface());
+		error = d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[0]->GetSurface());
 		error = d3d7dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,D3DFVF_VERTEX,vertices,4,0);
-		d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[1]->GetSurface());
+		error = d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[1]->GetSurface());
 		error = d3d7dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,D3DFVF_VERTEX,vertices+4,4,0);
-		d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[2]->GetSurface());
+		error = d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[2]->GetSurface());
 		error = d3d7dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,D3DFVF_VERTEX,vertices+8,4,0);
-		d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[3]->GetSurface());
+		error = d3d7dev->SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[3]->GetSurface());
 		error = d3d7dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,D3DFVF_VERTEX,vertices+12,4,0);
+		error = d3d7dev->EndScene();
+		break;
+	case 2:
+		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
+		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
+		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
+		mat._31 = mat._32 = mat._34 = mat._43 = 0.0f;
+	    mat._11 = (FLOAT)cos( (float)time );
+	    mat._33 = (FLOAT)cos( (float)time );
+	    mat._13 = -(FLOAT)sin( (float)time );
+	    mat._31 = (FLOAT)sin( (float)time );
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
+		error = d3d7dev->BeginScene();
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,24,cube_mesh,36,0);
 		error = d3d7dev->EndScene();
 		break;
 	default:
@@ -623,6 +666,7 @@ void RunTestTimed3D(int test)
 		GetClientRect(hWnd,&destrect);
 		OffsetRect(&destrect,p.x,p.y);
 		SetRect(&srcrect,0,0,width,height);
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 	}
 }
@@ -634,14 +678,67 @@ void RunTestLooped3D(int test)
 
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	HRESULT error;
+	D3DVIEWPORT7 vp;
+	HWND hDisplay;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
-
+		RECT r;
+		DDSCAPS2 caps;
+		DDSURFACEDESC2 ddsd;
+		DDPIXELFORMAT ddpfz;
+		testnum = 2;
+		ddinterface = new MultiDirectDraw(7,&error,NULL);
+		hDisplay = GetDlgItem(hWnd,IDC_DISPLAY);
+		::hWnd = hDisplay;
+		error = ddinterface->SetCooperativeLevel(hDisplay,DDSCL_NORMAL);
+		ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwFlags = DDSD_CAPS;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+		error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
+		error = ddinterface->CreateClipper(0,&ddclipper,NULL);
+		error = ddclipper->SetHWnd(0,hDisplay);
+		ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN|DDSCAPS_3DDEVICE;
+		GetClientRect(hDisplay,&r);
+		ddsd.dwWidth = r.right;
+		ddsd.dwHeight = r.bottom;
+		error = ddinterface->CreateSurface(&ddsd,&ddsrender,NULL);
+		error = ddinterface->QueryInterface(IID_IDirect3D7,(VOID**)&d3d7);
+		error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice,zcallback,&ddpfz);
+		error = ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER|DDSCAPS_VIDEOMEMORY;
+		memcpy(&ddsd.ddpfPixelFormat,&ddpfz,sizeof(DDPIXELFORMAT));
+		error = ddinterface->CreateSurface(&ddsd,&zbuffer,NULL);
+		error = ddsrender->AddAttachedSurface(zbuffer);
+		error = d3d7->CreateDevice(IID_IDirect3DHALDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
+		if(error != D3D_OK)
+			error = d3d7->CreateDevice(IID_IDirect3DRGBDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
+		ddsrender->GetSurfaceDesc(&ddsd);
+		vp.dvMaxZ = 1.0f;
+		vp.dvMinZ = 0.0f;
+		vp.dwX = vp.dwY = 0;
+		vp.dwWidth = ddsd.dwWidth;
+		vp.dwHeight = ddsd.dwHeight;
+		error = d3d7dev->SetViewport(&vp);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
+		InitTest3D(2);
+		::width = ddsd.dwWidth;
+		::height = ddsd.dwHeight;
+		StartTimer(hWnd,WM_APP,60);
 		break;
     case WM_CLOSE:
+		ddinterface->Release();
         EndDialog(hWnd,IDCANCEL);
         break;
+	case WM_APP:
+		RunTestTimed3D(testnum);
+		break;
 	default:
 		return FALSE;
 	}

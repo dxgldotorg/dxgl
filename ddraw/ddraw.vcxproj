@@ -93,7 +93,7 @@
       <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+      <Command>"$(OutDir)buildtool.exe" makeheader $(SolutionDir)common</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create version headers</Message>
@@ -119,7 +119,7 @@
     <PostBuildEvent />
     <PostBuildEvent />
     <PreBuildEvent>
-      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+      <Command>"$(OutDir)buildtool.exe" makeheader $(SolutionDir)common</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create version headers</Message>
@@ -147,7 +147,7 @@
       <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+      <Command>"$(OutDir)buildtool.exe" makeheader $(SolutionDir)common</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create version headers</Message>
@@ -177,7 +177,7 @@
     </Link>
     <PostBuildEvent />
     <PreBuildEvent>
-      <Command>$(OutDir)buildtool.exe makeheader $(SolutionDir)common</Command>
+      <Command>"$(OutDir)buildtool.exe" makeheader $(SolutionDir)common</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create version headers</Message>
