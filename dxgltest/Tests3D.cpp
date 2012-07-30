@@ -666,7 +666,6 @@ void RunTestTimed3D(int test)
 		GetClientRect(hWnd,&destrect);
 		OffsetRect(&destrect,p.x,p.y);
 		SetRect(&srcrect,0,0,width,height);
-		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 	}
 }
@@ -700,6 +699,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
 		error = ddinterface->CreateClipper(0,&ddclipper,NULL);
 		error = ddclipper->SetHWnd(0,hDisplay);
+		error = ddsurface->SetClipper(ddclipper);
 		ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
