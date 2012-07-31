@@ -282,6 +282,7 @@ static const char op_colorout[] = "gl_FrontColor = (gl_FrontMaterial.diffuse * d
 gl_FrontSecondaryColor = (gl_FrontMaterial.specular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
+static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = vec4(color,alpha);\n";
 static const char op_colorfragin[] = "color = gl_Color.rgb;\n\
 alpha = gl_Color.a;\n";
@@ -511,6 +512,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	else
 	{
 		if((id>>35)&1) vsrc->append(op_colorvert);
+		else vsrc->append(op_colorwhite);
 		if((id>>36)&1) vsrc->append(op_color2vert);
 	}
 	int texindex;
