@@ -54,6 +54,84 @@ static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14
 		18,17,19, 20,21,22, 22,21,23 };
 static D3DLIGHT7 lights[8];
 
+typedef struct
+{
+	D3DTEXTUREOP colorop;
+	DWORD colorarg1;
+	DWORD colorarg2;
+	D3DTEXTUREOP alphaop;
+	DWORD alphaarg1;
+	DWORD alphaarg2;
+	DWORD texturetype;
+	TCHAR texturefile[MAX_PATH+1];
+	MultiDirectDrawSurface* texture;
+	BOOL colorkey;
+	DWORD keycolor;
+} TEXSTAGE;
+
+typedef struct
+{
+	int currentstage;
+	TEXSTAGE texstages[8];
+	DWORD diffuse;
+	DWORD specular;
+	DWORD factor;
+	D3DFOGMODE vertexfog;
+	D3DFOGMODE pixelfog;
+	FLOAT fogstart;
+	FLOAT fogend;
+	FLOAT fogdensity;
+	BOOL rangefog;
+	DWORD fogcolor;
+	BOOL alphatest;
+	BOOL alphastipple;
+	BOOL colorkey;
+	BOOL colorkeyblend;
+	D3DBLEND srcblend;
+	D3DBLEND destblend;
+	BYTE refalpha;
+	D3DCMPFUNC alphafunc;
+	D3DLINEPATTERN linepattern;
+	DWORD fillstippletype;
+	TCHAR fillstipplefile[MAX_PATH+1];
+	DWORD fillstipple[32];
+} TEXSHADERSTATE;
+
+static TEXSHADERSTATE texshaderstate;
+const TEXSHADERSTATE defaulttexshaderstate = 
+{
+	0,
+	{
+		{D3DTOP_MODULATE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_SELECTARG1,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+		{D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,D3DTOP_DISABLE,D3DTA_TEXTURE,D3DTA_CURRENT,0,_T(""),NULL,FALSE,0},
+	},
+	0xFFFFFFFF,
+	0,
+	0,
+	D3DFOG_NONE,
+	D3DFOG_NONE,
+	0.0,
+	1.0,
+	1.0,
+	FALSE,
+	0,
+	FALSE,
+	FALSE,
+	FALSE,
+	FALSE,
+	D3DBLEND_ONE,
+	D3DBLEND_ZERO,
+	0,
+	D3DCMP_ALWAYS,
+	{0,0}
+};
+
 LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	bool paintwnd = true;
@@ -556,14 +634,11 @@ void InitTest3D(int test)
 	case 2:
 		MakeCube3D(points,normals,vertices);
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
-		material.ambient.r = 1.0f;
-		material.ambient.g = 1.0f;
-		material.ambient.b = 1.0f;
 		material.diffuse.r = 1.0f;
 		material.diffuse.g = 1.0f;
 		material.diffuse.b = 1.0f;
 		error = d3d7dev->SetMaterial(&material);
-		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, TRUE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xffffffff);
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
 		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
@@ -581,6 +656,7 @@ void InitTest3D(int test)
 	    matProj._43 = -1.0f;
 	    matProj._44 =  0.0f;
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_PROJECTION,&matProj);
+		texshaderstate = defaulttexshaderstate;
 		break;
 	default:
 		break;
@@ -728,6 +804,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = d3d7dev->SetViewport(&vp);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
 		InitTest3D(2);
+		
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		StartTimer(hWnd,WM_APP,60);
