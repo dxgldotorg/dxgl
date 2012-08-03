@@ -634,9 +634,10 @@ void InitTest3D(int test)
 	case 2:
 		MakeCube3D(points,normals,vertices);
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
-		material.diffuse.r = 1.0f;
-		material.diffuse.g = 1.0f;
-		material.diffuse.b = 1.0f;
+		material.ambient.r = 1.0f;
+		material.ambient.g = 1.0f;
+		material.ambient.b = 1.0f;
+		material.ambient.a = 1.0f;
 		error = d3d7dev->SetMaterial(&material);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, TRUE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xffffffff);
@@ -750,6 +751,92 @@ void RunTestLooped3D(int test)
 {
 }
 
+void PopulateArgCombo(HWND hWnd)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Diffuse"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Current"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Texture"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Factor"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Specular"));
+}
+
+void PopulateOpCombo(HWND hWnd, bool color)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Disable"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Select Arg 1"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Select Arg 2"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate 2x"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate 4x"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Add"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Add Signed"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Add Signed 2x"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Subtract"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Add Smooth"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Blend Diffuse Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Blend Texture Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Blend Factor Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Blend Texture Alpha PM"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Blend Current Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Premodulate"));
+	if(color)
+	{
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate Alpha Add Color"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate Color Add Alpha"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate Inv. Alpha Add Color"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Modulate Inv. Color Add Alpha"));
+	}
+	else
+	{
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("(invalid)"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("(invalid)"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("(invalid)"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("(invalid)"));
+	}
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Bump Env. Map"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Bump Env. Map Luminance"));
+	if(color) SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Dot Product3"));
+}
+
+void PopulateBlendCombo(HWND hWnd, bool src)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Zero"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("One"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Source Color"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Inv. Src. Color"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Source Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Inv. Src. Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Dest. Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Inv. Dest. Alpha"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Dest. Color"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Inv. Dest. Color"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Src. Alpha Sat."));
+	if(src)
+	{
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Both Src. Alpha"));
+		SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Both Inv. Src. Alpha"));
+	}
+}
+
+void PopulateCompareCombo(HWND hWnd)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Never"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Less"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Equal"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Less or Equal"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Greater"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Not Equal"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Greater or Equal"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Always"));
+}
+
+void PopulateFogCombo(HWND hWnd)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("None"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Exponential"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Exp. Squared"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Linear"));
+}
 
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -804,7 +891,43 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = d3d7dev->SetViewport(&vp);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
 		InitTest3D(2);
-		
+		SendDlgItemMessage(hWnd,IDC_SPINSTAGE,UDM_SETRANGE32,0,7);
+		SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("None"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Gradients"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (small)"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (large)"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Texture file"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,0,0);
+		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG1));
+		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG2));
+		PopulateArgCombo(GetDlgItem(hWnd,IDC_AARG1));
+		PopulateArgCombo(GetDlgItem(hWnd,IDC_AARG2));
+		SendDlgItemMessage(hWnd,IDC_CARG1,CB_SETCURSEL,D3DTA_TEXTURE,0);
+		SendDlgItemMessage(hWnd,IDC_CARG2,CB_SETCURSEL,D3DTA_CURRENT,0);
+		SendDlgItemMessage(hWnd,IDC_AARG1,CB_SETCURSEL,D3DTA_TEXTURE,0);
+		SendDlgItemMessage(hWnd,IDC_AARG2,CB_SETCURSEL,D3DTA_CURRENT,0);
+		PopulateOpCombo(GetDlgItem(hWnd,IDC_COLOROP),true);
+		PopulateOpCombo(GetDlgItem(hWnd,IDC_ALPHAOP),false);
+		SendDlgItemMessage(hWnd,IDC_COLOROP,CB_SETCURSEL,D3DTOP_MODULATE-1,0);
+		SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_SETCURSEL,D3DTOP_SELECTARG1-1,0);
+		SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_FACTOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		PopulateBlendCombo(GetDlgItem(hWnd,IDC_SRCBLEND),true);
+		PopulateBlendCombo(GetDlgItem(hWnd,IDC_DESTBLEND),true);
+		SendDlgItemMessage(hWnd,IDC_SRCBLEND,CB_SETCURSEL,D3DBLEND_ONE-1,0);
+		SendDlgItemMessage(hWnd,IDC_DESTBLEND,CB_SETCURSEL,D3DBLEND_ZERO-1,0);
+		PopulateCompareCombo(GetDlgItem(hWnd,IDC_ALPHAFUNC));
+		SendDlgItemMessage(hWnd,IDC_ALPHAFUNC,CB_SETCURSEL,D3DCMP_ALWAYS-1,0);
+		PopulateFogCombo(GetDlgItem(hWnd,IDC_VERTEXFOGMODE));
+		PopulateFogCombo(GetDlgItem(hWnd,IDC_PIXELFOGMODE));
+		SendDlgItemMessage(hWnd,IDC_VERTEXFOGMODE,CB_SETCURSEL,D3DFOG_NONE,0);
+		SendDlgItemMessage(hWnd,IDC_PIXELFOGMODE,CB_SETCURSEL,D3DFOG_NONE,0);
+		SendDlgItemMessage(hWnd,IDC_FOGSTART,WM_SETTEXT,0,(LPARAM)_T("0.0"));
+		SendDlgItemMessage(hWnd,IDC_FOGEND,WM_SETTEXT,0,(LPARAM)_T("1.0"));
+		SendDlgItemMessage(hWnd,IDC_FOGDENSITY,WM_SETTEXT,0,(LPARAM)_T("1.0"));
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		StartTimer(hWnd,WM_APP,60);
