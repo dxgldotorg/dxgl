@@ -862,8 +862,98 @@ void paddwordzeroes(TCHAR *str)
 	}
 }
 
+HRESULT CALLBACK SelectTextureFormatCallback(LPDDPIXELFORMAT lpDDPixFmt, LPVOID lpContext)
+{
+	if(lpDDPixFmt->dwFlags & (DDPF_LUMINANCE|DDPF_BUMPLUMINANCE|DDPF_BUMPDUDV)) return D3DENUMRET_OK;
+	if(lpDDPixFmt->dwFourCC != 0) return D3DENUMRET_OK;
+	if(!(lpDDPixFmt->dwFlags & DDPF_ALPHAPIXELS)) return D3DENUMRET_OK;
+	if(lpDDPixFmt->dwRGBBitCount < 32) return D3DENUMRET_OK;
+	memcpy(lpContext,lpDDPixFmt,sizeof(DDPIXELFORMAT));
+	return D3DENUMRET_CANCEL;
+}
+
+void CreateSurfaceFromBitmap(MultiDirectDrawSurface **surface, DDSURFACEDESC2 *ddsd, HDC hdc, int width, int height)
+{
+	ddinterface->CreateSurface(ddsd,surface,NULL);
+	HDC surfacedc;
+	if(surface)
+	{
+		(*surface)->GetDC(&surfacedc);
+		BitBlt(surfacedc,0,0,width,height,hdc,0,0,SRCCOPY);
+		(*surface)->ReleaseDC(surfacedc);
+	}
+}
+
 void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, LPCTSTR file)
 {
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	BITMAPV4HEADER bi;
+	HBITMAP bitmap;
+	HDC hdc;
+	HDC hmemdc;
+	HBITMAP holdbmp;
+	HICON icon;
+	VOID *bmpbits;
+	ZeroMemory(&bi,sizeof(BITMAPV4HEADER));
+	bi.bV4Size = sizeof(BITMAPV4HEADER);
+	bi.bV4Planes = 1;
+	bi.bV4BitCount = 32;
+	bi.bV4V4Compression = BI_BITFIELDS;
+	bi.bV4RedMask   =  0x00FF0000;
+    bi.bV4GreenMask =  0x0000FF00;
+    bi.bV4BlueMask  =  0x000000FF;
+    bi.bV4AlphaMask =  0xFF000000; 
+	d3d7dev->EnumTextureFormats(SelectTextureFormatCallback,&ddsd.ddpfPixelFormat);
+	ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+	ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT|DDSD_TEXTURESTAGE;
+	if(*surface)
+	{
+		d3d7dev->SetTexture(texshaderstate.currentstage,NULL);
+		(*surface)->Release();
+		*surface = NULL;
+	}
+	switch(type)
+	{
+	case 0:
+	default:
+		break;
+	case 1:
+		break;
+	case 2:
+		hdc = GetDC(NULL);
+		bi.bV4Width = ddsd.dwWidth = bi.bV4Height = ddsd.dwHeight = 16;
+		bitmap = CreateDIBSection(hdc,(BITMAPINFO*)&bi,DIB_RGB_COLORS,&bmpbits,NULL,0);
+		hmemdc = CreateCompatibleDC(hdc);
+		ReleaseDC(NULL,hdc);
+		holdbmp = (HBITMAP)SelectObject(hmemdc,bitmap);
+		icon = (HICON)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_DXGL),IMAGE_ICON,16,16,0);
+		DrawIconEx(hmemdc,0,0,icon,16,16,0,NULL,DI_NORMAL);
+		CreateSurfaceFromBitmap(surface,&ddsd,hmemdc,16,16);
+		SelectObject(hmemdc,holdbmp);
+		DeleteDC(hmemdc);
+		DeleteObject(bitmap);
+		if(*surface) d3d7dev->SetTexture(texshaderstate.currentstage,(LPDIRECTDRAWSURFACE7)(*surface)->GetSurface());
+		break;
+	case 3:
+		hdc = GetDC(NULL);
+		bi.bV4Width = ddsd.dwWidth = bi.bV4Height = ddsd.dwHeight = 256;
+		bitmap = CreateDIBSection(hdc,(BITMAPINFO*)&bi,DIB_RGB_COLORS,&bmpbits,NULL,0);
+		hmemdc = CreateCompatibleDC(hdc);
+		ReleaseDC(NULL,hdc);
+		holdbmp = (HBITMAP)SelectObject(hmemdc,bitmap);
+		icon = (HICON)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_DXGL),IMAGE_ICON,256,256,0);
+		DrawIconEx(hmemdc,0,0,icon,256,256,0,NULL,DI_NORMAL);
+		CreateSurfaceFromBitmap(surface,&ddsd,hmemdc,256,256);
+		SelectObject(hmemdc,holdbmp);
+		DeleteDC(hmemdc);
+		DeleteObject(bitmap);
+		if(*surface) d3d7dev->SetTexture(texshaderstate.currentstage,(LPDIRECTDRAWSURFACE7)(*surface)->GetSurface());
+		break;
+	case 4:
+		break;
+	}
 }
 
 void SetShaderArg(HWND hWnd, UINT dropdown, UINT checkalpha, UINT checkinv, DWORD *texarg)
@@ -1020,6 +1110,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SendDlgItemMessage(hWnd,IDC_COLOROP,CB_SETCURSEL,texshaderstate.texstages[number].colorop-1,0);
 				SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_SETCURSEL,texshaderstate.texstages[number].alphaop-1,0);
 			}
+			break;
 		case IDC_TEXTURE:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1029,6 +1120,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
 					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
 			}
+			break;
 		case IDC_TEXTUREFILE:
 			if(HIWORD(wParam) == EN_KILLFOCUS)
 			{
@@ -1038,6 +1130,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
 					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
 			}
+			break;
 		case IDC_CARG1:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1045,6 +1138,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_CARG1,IDC_CARG1A,IDC_CARG1INV,&texshaderstate.texstages[number].colorarg1);
 				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG1,texshaderstate.texstages[number].colorarg1);
 			}
+			break;
 		case IDC_CARG1A:
 		case IDC_CARG1INV:
 			if(HIWORD(wParam) == BN_CLICKED)
@@ -1053,6 +1147,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_CARG1,IDC_CARG1A,IDC_CARG1INV,&texshaderstate.texstages[number].colorarg2);
 				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG1,texshaderstate.texstages[number].colorarg2);
 			}
+			break;
 		case IDC_CARG2:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1060,6 +1155,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_CARG2,IDC_CARG2A,IDC_CARG2INV,&texshaderstate.texstages[number].colorarg2);
 				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG2,texshaderstate.texstages[number].colorarg2);
 			}
+			break;
 		case IDC_CARG2A:
 		case IDC_CARG2INV:
 			if(HIWORD(wParam) == BN_CLICKED)
@@ -1068,6 +1164,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_CARG2,IDC_CARG2A,IDC_CARG2INV,&texshaderstate.texstages[number].colorarg1);
 				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG2,texshaderstate.texstages[number].colorarg1);
 			}
+			break;
 		case IDC_AARG1:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1075,6 +1172,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_AARG1,IDC_AARG1A,IDC_AARG1INV,&texshaderstate.texstages[number].alphaarg1);
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG1,texshaderstate.texstages[number].alphaarg1);
 			}
+			break;
 		case IDC_AARG1A:
 		case IDC_AARG1INV:
 			if(HIWORD(wParam) == BN_CLICKED)
@@ -1083,6 +1181,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_AARG1,IDC_AARG1A,IDC_AARG1INV,&texshaderstate.texstages[number].alphaarg1);
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG1,texshaderstate.texstages[number].alphaarg1);
 			}
+			break;
 		case IDC_AARG2:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1090,6 +1189,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_AARG2,IDC_AARG2A,IDC_AARG2INV,&texshaderstate.texstages[number].alphaarg2);
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG2,texshaderstate.texstages[number].alphaarg2);
 			}
+			break;
 		case IDC_AARG2A:
 		case IDC_AARG2INV:
 			if(HIWORD(wParam) == BN_CLICKED)
@@ -1098,7 +1198,23 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SetShaderArg(hWnd,IDC_AARG2,IDC_AARG2A,IDC_AARG2INV,&texshaderstate.texstages[number].alphaarg2);
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG2,texshaderstate.texstages[number].alphaarg2);
 			}
+			break;
 		}
+		case IDC_COLOROP:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				texshaderstate.texstages[number].colorop = (D3DTEXTUREOP)(SendDlgItemMessage(hWnd,IDC_COLOROP,CB_GETCURSEL,0,0)+1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_COLOROP,texshaderstate.texstages[number].colorop);
+			}
+		break;
+		case IDC_ALPHAOP:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				texshaderstate.texstages[number].alphaop = (D3DTEXTUREOP)(SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_GETCURSEL,0,0)+1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAOP,texshaderstate.texstages[number].alphaop);
+			}
 		break;
     case WM_CLOSE:
 		ddinterface->Release();
