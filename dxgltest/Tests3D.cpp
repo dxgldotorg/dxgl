@@ -53,6 +53,7 @@ static WORD mesh[256];
 static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14, 14,13,15, 16,17,18,
 		18,17,19, 20,21,22, 22,21,23 };
 static D3DLIGHT7 lights[8];
+static DWORD bgcolor = 0;
 
 typedef struct
 {
@@ -465,30 +466,30 @@ void MakeCube3D(D3DVECTOR *points, D3DVECTOR *normals, D3DVERTEX *vertices)
 	normals[3] = D3DVECTOR(-1.0f,0.0f,0.0f);
 	normals[4] = D3DVECTOR(0.0f,1.0f,0.0f);
 	normals[5] = D3DVECTOR(0.0f,-10.0f,0.0f);
-	vertices[0] = D3DVERTEX(points[0],normals[0],0,0);
-	vertices[1] = D3DVERTEX(points[1],normals[0],1,0);
-	vertices[2] = D3DVERTEX(points[2],normals[0],0,1);
-	vertices[3] = D3DVERTEX(points[3],normals[0],1,1);
-	vertices[4] = D3DVERTEX(points[2],normals[1],0,0);
-	vertices[5] = D3DVERTEX(points[3],normals[1],1,0);
-	vertices[6] = D3DVERTEX(points[4],normals[1],0,1);
-	vertices[7] = D3DVERTEX(points[5],normals[1],1,1);
-	vertices[8] = D3DVERTEX(points[4],normals[2],0,0);
-	vertices[9] = D3DVERTEX(points[5],normals[2],1,0);
-	vertices[10] = D3DVERTEX(points[6],normals[2],0,1);
-	vertices[11] = D3DVERTEX(points[7],normals[2],1,1);
-	vertices[12] = D3DVERTEX(points[6],normals[3],0,0);
-	vertices[13] = D3DVERTEX(points[7],normals[3],1,0);
-	vertices[14] = D3DVERTEX(points[0],normals[3],0,1);
-	vertices[15] = D3DVERTEX(points[1],normals[3],1,1);
-	vertices[16] = D3DVERTEX(points[1],normals[4],0,0);
-	vertices[17] = D3DVERTEX(points[7],normals[4],1,0);
-	vertices[18] = D3DVERTEX(points[3],normals[4],0,1);
-	vertices[19] = D3DVERTEX(points[5],normals[4],1,1);
-	vertices[20] = D3DVERTEX(points[6],normals[5],0,0);
-	vertices[21] = D3DVERTEX(points[0],normals[5],1,0);
-	vertices[22] = D3DVERTEX(points[4],normals[5],0,1);
-	vertices[23] = D3DVERTEX(points[2],normals[5],1,1);
+	vertices[0] = D3DVERTEX(points[0],normals[0],0,1);
+	vertices[1] = D3DVERTEX(points[1],normals[0],0,0);
+	vertices[2] = D3DVERTEX(points[2],normals[0],1,1);
+	vertices[3] = D3DVERTEX(points[3],normals[0],1,0);
+	vertices[4] = D3DVERTEX(points[2],normals[1],0,1);
+	vertices[5] = D3DVERTEX(points[3],normals[1],0,0);
+	vertices[6] = D3DVERTEX(points[4],normals[1],1,1);
+	vertices[7] = D3DVERTEX(points[5],normals[1],1,0);
+	vertices[8] = D3DVERTEX(points[4],normals[2],0,1);
+	vertices[9] = D3DVERTEX(points[5],normals[2],0,0);
+	vertices[10] = D3DVERTEX(points[6],normals[2],1,1);
+	vertices[11] = D3DVERTEX(points[7],normals[2],1,0);
+	vertices[12] = D3DVERTEX(points[6],normals[3],0,1);
+	vertices[13] = D3DVERTEX(points[7],normals[3],0,0);
+	vertices[14] = D3DVERTEX(points[0],normals[3],1,1);
+	vertices[15] = D3DVERTEX(points[1],normals[3],1,0);
+	vertices[16] = D3DVERTEX(points[1],normals[4],0,1);
+	vertices[17] = D3DVERTEX(points[7],normals[4],0,0);
+	vertices[18] = D3DVERTEX(points[3],normals[4],1,1);
+	vertices[19] = D3DVERTEX(points[5],normals[4],1,0);
+	vertices[20] = D3DVERTEX(points[6],normals[5],0,1);
+	vertices[21] = D3DVERTEX(points[0],normals[5],0,0);
+	vertices[22] = D3DVERTEX(points[4],normals[5],1,1);
+	vertices[23] = D3DVERTEX(points[2],normals[5],1,0);
 }
 
 DDPIXELFORMAT texformats[256];
@@ -545,6 +546,7 @@ void InitTest3D(int test)
 	D3DMATRIX matProj;
 	D3DMATRIX mat;
 	D3DMATERIAL7 material;
+	bgcolor = 0;
 	switch(test)
 	{
 	case 0:
@@ -675,7 +677,7 @@ void RunTestTimed3D(int test)
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
 	if(d3dver >= 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
-	error = d3d7dev->Clear(0,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0,1.0,0);
+	error = d3d7dev->Clear(0,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,bgcolor,1.0,0);
 	float time = (float)clock() / (float)CLOCKS_PER_SEC;
 	switch(test)
 	{
@@ -1199,7 +1201,6 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG2,texshaderstate.texstages[number].alphaarg2);
 			}
 			break;
-		}
 		case IDC_COLOROP:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1215,6 +1216,15 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				texshaderstate.texstages[number].alphaop = (D3DTEXTUREOP)(SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_GETCURSEL,0,0)+1);
 				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAOP,texshaderstate.texstages[number].alphaop);
 			}
+		break;
+		case IDC_BGCOLOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&bgcolor);
+			}
+			break;
+		}
 		break;
     case WM_CLOSE:
 		ddinterface->Release();

@@ -39,6 +39,7 @@
 #define IDC_TEXTUREPREVIEW                      1003
 #define IDC_DISPLAY                             1004
 #define IDC_TESTLIST                            1004
+#define IDC_BGCOLOR                             1007
 #define IDC_WINDOWED                            1008
 #define IDC_FULLSCREEN                          1009
 #define IDC_APIVER                              1012
@@ -111,3 +112,4 @@
 #define IDC_FOGEND                              1099
 #define IDC_FOGDENSITY                          1100
 #define IDC_RANGEBASEDFOG                       1101
+#define IDC_BGCOLORSELECT                       1102
