@@ -60,4 +60,11 @@ typedef string tstring;
 // DirectX/DXGL headers
 #include <ddraw.h>
 extern const unsigned char DefaultPalette[1024];
+
+#ifdef _UNICODE
+#define _ttof _wtof
+#else
+#define _ttof atof
+#endif
+
 #endif //_COMMON_H

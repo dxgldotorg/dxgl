@@ -838,11 +838,37 @@ void PopulateFogCombo(HWND hWnd)
 	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Linear"));
 }
 
+void strupper(TCHAR *str)
+{
+	TCHAR *ptr = str;
+	while(*ptr != 0)
+	{
+		*ptr = _totupper(*ptr);
+		ptr++;
+	}
+}
+
+void paddwordzeroes(TCHAR *str)
+{
+	TCHAR str2[16];
+	str2[0] = 0;
+	int len = _tcslen(str);
+	if(len < 8)
+	{
+		for(int i = 0; i < 8-len; i++)
+			_tcscat(str2,_T("0"));
+		_tcscat(str2,str);
+		_tcscpy(str,str2);
+	}
+}
+
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HRESULT error;
 	D3DVIEWPORT7 vp;
 	HWND hDisplay;
+	int number;
+	TCHAR tmpstring[MAX_PATH+1];
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -891,14 +917,11 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		error = d3d7dev->SetViewport(&vp);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
 		InitTest3D(2);
-		SendDlgItemMessage(hWnd,IDC_SPINSTAGE,UDM_SETRANGE32,0,7);
-		SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("None"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Gradients"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (small)"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (large)"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Texture file"));
-		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,0,0);
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG1));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG2));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_AARG1));
@@ -928,9 +951,60 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hWnd,IDC_FOGSTART,WM_SETTEXT,0,(LPARAM)_T("0.0"));
 		SendDlgItemMessage(hWnd,IDC_FOGEND,WM_SETTEXT,0,(LPARAM)_T("1.0"));
 		SendDlgItemMessage(hWnd,IDC_FOGDENSITY,WM_SETTEXT,0,(LPARAM)_T("1.0"));
+		SendDlgItemMessage(hWnd,IDC_SPINSTAGE,UDM_SETRANGE32,0,7);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		StartTimer(hWnd,WM_APP,60);
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wParam))
+		{
+		case IDC_TEXSTAGE:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_TEXSTAGE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				number = _ttoi(tmpstring);
+				if(number < 0) SendDlgItemMessage(hWnd,IDC_TEXSTAGE,WM_SETTEXT,0,(LPARAM)_T("0"));
+				if(number > 7) SendDlgItemMessage(hWnd,IDC_TEXSTAGE,WM_SETTEXT,0,(LPARAM)_T("7"));
+				texshaderstate.currentstage = number;
+				_itot(texshaderstate.texstages[number].keycolor,tmpstring,16);
+				strupper(tmpstring);
+				paddwordzeroes(tmpstring);
+				SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)tmpstring);
+				SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,texshaderstate.texstages[number].texturetype,0);
+				SendDlgItemMessage(hWnd,IDC_TEXTUREFILE,WM_SETTEXT,0,(LPARAM)texshaderstate.texstages[number].texturefile);
+				SendDlgItemMessage(hWnd,IDC_CARG1,CB_SETCURSEL,texshaderstate.texstages[number].colorarg1 & D3DTA_SELECTMASK,0);
+				SendDlgItemMessage(hWnd,IDC_CARG2,CB_SETCURSEL,texshaderstate.texstages[number].colorarg2 & D3DTA_SELECTMASK,0);
+				SendDlgItemMessage(hWnd,IDC_AARG1,CB_SETCURSEL,texshaderstate.texstages[number].alphaarg1 & D3DTA_SELECTMASK,0);
+				SendDlgItemMessage(hWnd,IDC_AARG2,CB_SETCURSEL,texshaderstate.texstages[number].alphaarg2 & D3DTA_SELECTMASK,0);
+				if(texshaderstate.texstages[number].colorarg1 & D3DTA_ALPHAREPLICATE)
+					SendDlgItemMessage(hWnd,IDC_CARG1A,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_CARG1A,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].colorarg2 & D3DTA_ALPHAREPLICATE)
+					SendDlgItemMessage(hWnd,IDC_CARG2A,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_CARG2A,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].alphaarg1 & D3DTA_ALPHAREPLICATE)
+					SendDlgItemMessage(hWnd,IDC_AARG1A,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_AARG1A,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].alphaarg2 & D3DTA_ALPHAREPLICATE)
+					SendDlgItemMessage(hWnd,IDC_AARG2A,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_AARG2A,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].colorarg1 & D3DTA_COMPLEMENT)
+					SendDlgItemMessage(hWnd,IDC_CARG1INV,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_CARG1INV,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].colorarg2 & D3DTA_COMPLEMENT)
+					SendDlgItemMessage(hWnd,IDC_CARG2INV,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_CARG2INV,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].alphaarg1 & D3DTA_COMPLEMENT)
+					SendDlgItemMessage(hWnd,IDC_AARG1INV,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_AARG1INV,BM_SETCHECK,BST_UNCHECKED,0);
+				if(texshaderstate.texstages[number].alphaarg2 & D3DTA_COMPLEMENT)
+					SendDlgItemMessage(hWnd,IDC_AARG2INV,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_AARG2INV,BM_SETCHECK,BST_UNCHECKED,0);
+				SendDlgItemMessage(hWnd,IDC_COLOROP,CB_SETCURSEL,texshaderstate.texstages[number].colorop-1,0);
+				SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_SETCURSEL,texshaderstate.texstages[number].alphaop-1,0);
+			}
+		}
 		break;
     case WM_CLOSE:
 		ddinterface->Release();

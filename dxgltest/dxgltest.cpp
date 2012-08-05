@@ -18,11 +18,6 @@
 #include "common.h"
 #include "dxgltest.h"
 #include "tests.h"
-#ifdef _UNICODE
-#define _ttof _wtof
-#else
-#define _ttof atof
-#endif
 
 HINSTANCE hinstance;
 bool gradientavailable;
@@ -523,10 +518,33 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					maxbuffer3d = Tests3D[i].buffermax;
 					fps_enabled3d = Tests3D[i].usesfps;
 					if(Tests3D[i].usesfps) framerate3d = Tests3D[i].defaultfps;
-					EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
-					EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
-					EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),fps_enabled3d);
-					EnableWindow(GetDlgItem(hWnd,IDC_TEST),TRUE);
+					if(i != 2)
+					{
+						EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),fps_enabled3d);
+						EnableWindow(GetDlgItem(hWnd,IDC_TEST),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_WINDOWED),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_VSYNC),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),TRUE);
+					}
+					else
+					{
+						EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_TEST),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_WINDOWED),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_VSYNC),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),FALSE);
+						SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,BST_CHECKED,0);
+						SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,BST_UNCHECKED,0);
+						fullscreen3d = false;
+					}
 					SendDlgItemMessage(hWnd,IDC_BUFFERS,EM_SETLIMITTEXT,2,0);
 					SendDlgItemMessage(hWnd,IDC_APIVER,EM_SETLIMITTEXT,1,0);
 					SendDlgItemMessage(hWnd,IDC_FRAMERATE,EM_SETLIMITTEXT,5,0);
