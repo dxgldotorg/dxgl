@@ -113,7 +113,7 @@ const TEXSHADERSTATE defaulttexshaderstate =
 	},
 	0xFFFFFFFF,
 	0,
-	0,
+	0xFFFFFFFF,
 	D3DFOG_NONE,
 	D3DFOG_NONE,
 	0.0,
@@ -862,6 +862,20 @@ void paddwordzeroes(TCHAR *str)
 	}
 }
 
+void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, LPCTSTR file)
+{
+}
+
+void SetShaderArg(HWND hWnd, UINT dropdown, UINT checkalpha, UINT checkinv, DWORD *texarg)
+{
+	DWORD arg = SendDlgItemMessage(hWnd,dropdown,CB_GETCURSEL,0,0);
+	if(SendDlgItemMessage(hWnd,checkalpha,BM_GETCHECK,0,0) == BST_CHECKED)
+		arg |= D3DTA_ALPHAREPLICATE;
+	if(SendDlgItemMessage(hWnd,checkinv,BM_GETCHECK,0,0) == BST_CHECKED)
+		arg |= D3DTA_COMPLEMENT;
+	*texarg = arg;
+}
+
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HRESULT error;
@@ -922,6 +936,8 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (small)"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (large)"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Texture file"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,0,0);
+		SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG1));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG2));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_AARG1));
@@ -1003,6 +1019,84 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				else SendDlgItemMessage(hWnd,IDC_AARG2INV,BM_SETCHECK,BST_UNCHECKED,0);
 				SendDlgItemMessage(hWnd,IDC_COLOROP,CB_SETCURSEL,texshaderstate.texstages[number].colorop-1,0);
 				SendDlgItemMessage(hWnd,IDC_ALPHAOP,CB_SETCURSEL,texshaderstate.texstages[number].alphaop-1,0);
+			}
+		case IDC_TEXTURE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				texshaderstate.texstages[number].texturetype =
+					SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_GETCURSEL,0,0);
+				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
+					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
+			}
+		case IDC_TEXTUREFILE:
+			if(HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				number = texshaderstate.currentstage;
+				SendDlgItemMessage(hWnd,IDC_TEXTUREFILE,WM_GETTEXT,MAX_PATH+1,
+					(LPARAM)texshaderstate.texstages[number].texturefile);
+				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
+					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
+			}
+		case IDC_CARG1:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_CARG1,IDC_CARG1A,IDC_CARG1INV,&texshaderstate.texstages[number].colorarg1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG1,texshaderstate.texstages[number].colorarg1);
+			}
+		case IDC_CARG1A:
+		case IDC_CARG1INV:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_CARG1,IDC_CARG1A,IDC_CARG1INV,&texshaderstate.texstages[number].colorarg2);
+				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG1,texshaderstate.texstages[number].colorarg2);
+			}
+		case IDC_CARG2:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_CARG2,IDC_CARG2A,IDC_CARG2INV,&texshaderstate.texstages[number].colorarg2);
+				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG2,texshaderstate.texstages[number].colorarg2);
+			}
+		case IDC_CARG2A:
+		case IDC_CARG2INV:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_CARG2,IDC_CARG2A,IDC_CARG2INV,&texshaderstate.texstages[number].colorarg1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_COLORARG2,texshaderstate.texstages[number].colorarg1);
+			}
+		case IDC_AARG1:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_AARG1,IDC_AARG1A,IDC_AARG1INV,&texshaderstate.texstages[number].alphaarg1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG1,texshaderstate.texstages[number].alphaarg1);
+			}
+		case IDC_AARG1A:
+		case IDC_AARG1INV:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_AARG1,IDC_AARG1A,IDC_AARG1INV,&texshaderstate.texstages[number].alphaarg1);
+				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG1,texshaderstate.texstages[number].alphaarg1);
+			}
+		case IDC_AARG2:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_AARG2,IDC_AARG2A,IDC_AARG2INV,&texshaderstate.texstages[number].alphaarg2);
+				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG2,texshaderstate.texstages[number].alphaarg2);
+			}
+		case IDC_AARG2A:
+		case IDC_AARG2INV:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				number = texshaderstate.currentstage;
+				SetShaderArg(hWnd,IDC_AARG2,IDC_AARG2A,IDC_AARG2INV,&texshaderstate.texstages[number].alphaarg2);
+				d3d7dev->SetTextureStageState(number,D3DTSS_ALPHAARG2,texshaderstate.texstages[number].alphaarg2);
 			}
 		}
 		break;
