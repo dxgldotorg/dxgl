@@ -808,7 +808,9 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&gl_caps.TextureMax);
 	CompileShaders();
 	InitFBO();
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	ClearDepth(1.0);
+	ClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SetScissor(false,0,0,0,0);
@@ -1236,17 +1238,17 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 	if(D3DCLEAR_TARGET)
 	{
 		clearbits |= GL_COLOR_BUFFER_BIT;
-		glClearColor(color[0],color[1],color[2],color[3]);
+		ClearColor(color[0],color[1],color[2],color[3]);
 	}
 	if(D3DCLEAR_ZBUFFER)
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
-		glClearDepth(dvZ);
+		ClearDepth(dvZ);
 	}
 	if(D3DCLEAR_STENCIL)
 	{
 		clearbits |= GL_STENCIL_BUFFER_BIT;
-		glClearStencil(dwStencil);
+		ClearStencil(dwStencil);
 	}
 	if(dwCount)
 	{

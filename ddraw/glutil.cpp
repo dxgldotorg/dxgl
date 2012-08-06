@@ -45,6 +45,12 @@ bool scissorenabled = false;
 bool stencil = false;
 GLint texlevel = 0;
 GLint texwrap[16];
+GLclampf clearr = 0.0;
+GLclampf clearg = 0.0;
+GLclampf clearb = 0.0;
+GLclampf cleara = 0.0;
+GLclampd cleardepth = 1.0;
+GLint clearstencil = 0;
 
 void InitFBO()
 {
@@ -290,5 +296,35 @@ void SetDepthRange(GLclampd rangenear, GLclampd rangefar)
 		depthnear = rangenear;
 		depthfar = rangefar;
 		glDepthRange(rangenear,rangefar);
+	}
+}
+
+void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
+{
+	if((clearr != r) || (clearg != g) || (clearb != b) || (cleara != a))
+	{
+		clearr = r;
+		clearg = g;
+		clearb = b;
+		cleara = a;
+		glClearColor(r,g,b,a);
+	}
+}
+
+void ClearDepth(GLclampd depth)
+{
+	if(cleardepth != depth)
+	{
+		cleardepth = depth;
+		glClearDepth(depth);
+	}
+}
+
+void ClearStencil(GLint stencil)
+{
+	if(clearstencil != stencil)
+	{
+		clearstencil = stencil;
+		glClearStencil(stencil);
 	}
 }

@@ -38,5 +38,8 @@ void MatrixMode(GLenum mode);
 void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess);
 void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void SetDepthRange(GLclampd rangenear, GLclampd rangefar);
+void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
+void ClearDepth(GLclampd depth);
+void ClearStencil(GLint stencil);
 
 #endif //_GLUTIL_H
