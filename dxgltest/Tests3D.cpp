@@ -49,6 +49,7 @@ static int testtypes[] = {0,0,0};
 static D3DVECTOR points[256];
 static D3DVECTOR normals[256];
 static D3DVERTEX vertices[256];
+static D3DLVERTEX litvertices[256];
 static WORD mesh[256];
 static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14, 14,13,15, 16,17,18,
 		18,17,19, 20,21,22, 22,21,23 };
@@ -450,7 +451,7 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	StopTimer();
 }
 
-void MakeCube3D(D3DVECTOR *points, D3DVECTOR *normals, D3DVERTEX *vertices)
+void MakeCube3D()
 {
 	points[0] = D3DVECTOR(-2.5f,-2.5f,-2.5f);
 	points[1] = D3DVECTOR(-2.5f,2.5f,-2.5f);
@@ -490,6 +491,30 @@ void MakeCube3D(D3DVECTOR *points, D3DVECTOR *normals, D3DVERTEX *vertices)
 	vertices[21] = D3DVERTEX(points[0],normals[5],0,0);
 	vertices[22] = D3DVERTEX(points[4],normals[5],1,1);
 	vertices[23] = D3DVERTEX(points[2],normals[5],1,0);
+	litvertices[0] = D3DLVERTEX(points[0],0xFFFFFFFF,0,0,1);
+	litvertices[1] = D3DLVERTEX(points[1],0xFFFFFFFF,0,0,0);
+	litvertices[2] = D3DLVERTEX(points[2],0xFFFFFFFF,0,1,1);
+	litvertices[3] = D3DLVERTEX(points[3],0xFFFFFFFF,0,1,0);
+	litvertices[4] = D3DLVERTEX(points[2],0xFFFFFFFF,0,0,1);
+	litvertices[5] = D3DLVERTEX(points[3],0xFFFFFFFF,0,0,0);
+	litvertices[6] = D3DLVERTEX(points[4],0xFFFFFFFF,0,1,1);
+	litvertices[7] = D3DLVERTEX(points[5],0xFFFFFFFF,0,1,0);
+	litvertices[8] = D3DLVERTEX(points[4],0xFFFFFFFF,0,0,1);
+	litvertices[9] = D3DLVERTEX(points[5],0xFFFFFFFF,0,0,0);
+	litvertices[10] = D3DLVERTEX(points[6],0xFFFFFFFF,0,1,1);
+	litvertices[11] = D3DLVERTEX(points[7],0xFFFFFFFF,0,1,0);
+	litvertices[12] = D3DLVERTEX(points[6],0xFFFFFFFF,0,0,1);
+	litvertices[13] = D3DLVERTEX(points[7],0xFFFFFFFF,0,0,0);
+	litvertices[14] = D3DLVERTEX(points[0],0xFFFFFFFF,0,1,1);
+	litvertices[15] = D3DLVERTEX(points[1],0xFFFFFFFF,0,1,0);
+	litvertices[16] = D3DLVERTEX(points[1],0xFFFFFFFF,0,0,1);
+	litvertices[17] = D3DLVERTEX(points[7],0xFFFFFFFF,0,0,0);
+	litvertices[18] = D3DLVERTEX(points[3],0xFFFFFFFF,0,1,1);
+	litvertices[19] = D3DLVERTEX(points[5],0xFFFFFFFF,0,1,0);
+	litvertices[20] = D3DLVERTEX(points[6],0xFFFFFFFF,0,0,1);
+	litvertices[21] = D3DLVERTEX(points[0],0xFFFFFFFF,0,0,0);
+	litvertices[22] = D3DLVERTEX(points[4],0xFFFFFFFF,0,1,1);
+	litvertices[23] = D3DLVERTEX(points[2],0xFFFFFFFF,0,1,0);
 }
 
 DDPIXELFORMAT texformats[256];
@@ -550,7 +575,7 @@ void InitTest3D(int test)
 	switch(test)
 	{
 	case 0:
-		MakeCube3D(points,normals,vertices);
+		MakeCube3D();
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 0.5f;
 		material.ambient.g = 0.5f;
@@ -589,7 +614,7 @@ void InitTest3D(int test)
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
 	case 1:
-		MakeCube3D(points,normals,vertices);
+		MakeCube3D();
 		cleartexformats();		
 		d3d7dev->EnumTextureFormats(gettexformat,NULL);
 		gentexture(fmt_rgba4444,&textures[0],256,256,0);
@@ -634,7 +659,7 @@ void InitTest3D(int test)
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
 	case 2:
-		MakeCube3D(points,normals,vertices);
+		MakeCube3D();
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 1.0f;
 		material.ambient.g = 1.0f;
@@ -727,7 +752,7 @@ void RunTestTimed3D(int test)
 	    mat._31 = (FLOAT)sin( (float)time );
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
 		error = d3d7dev->BeginScene();
-		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,24,cube_mesh,36,0);
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_LVERTEX,litvertices,24,cube_mesh,36,0);
 		error = d3d7dev->EndScene();
 		break;
 	default:
