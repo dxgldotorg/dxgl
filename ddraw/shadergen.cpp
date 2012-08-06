@@ -656,7 +656,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg2 = blendargs[3];
+					arg2 = blendargs[2];
 					arg2.replace(17,1,_itoa(i,idstring,10));
 					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
