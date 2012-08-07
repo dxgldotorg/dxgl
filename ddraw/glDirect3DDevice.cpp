@@ -494,6 +494,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 		vertdata[0].data = vertptr;
 		vertdata[1].data = NULL;
 		ptr += 3;
+		if(dwVertexTypeDesc & D3DFVF_RESERVED1) ptr++;
 	}
 	else if(dwVertexTypeDesc & D3DFVF_XYZRHW)
 	{
