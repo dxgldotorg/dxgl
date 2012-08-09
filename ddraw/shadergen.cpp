@@ -262,8 +262,7 @@ static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
 vec4 ambient;\n\
 vec3 N;";
-static const char var_color[] = "vec3 color;\n\
-float alpha;\n";
+static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
@@ -283,9 +282,8 @@ gl_FrontSecondaryColor = (gl_FrontMaterial.specular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
-static const char op_colorfragout[] = "gl_FragColor = vec4(color,alpha);\n";
-static const char op_colorfragin[] = "color = gl_Color.rgb;\n\
-alpha = gl_Color.a;\n";
+static const char op_colorfragout[] = "gl_FragColor = color;\n";
+static const char op_colorfragin[] = "color = gl_Color;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
@@ -607,8 +605,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	string arg1,arg2;
 	int args[4];
 	bool texfail;
-	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
-		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a","alpha"};
+	const string blendargs[] = {"color.rgb","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
+		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a","color.a"};
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
@@ -678,34 +676,34 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		default:
 			break;
 		case D3DTOP_SELECTARG1:
-			fsrc->append("color = " + arg1 + ";\n");
+			fsrc->append("color.rgb = " + arg1 + ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
-			fsrc->append("color = " + arg2 + ";\n");
+			fsrc->append("color.rgb = " + arg2 + ";\n");
 			break;
 		case D3DTOP_MODULATE:
-			fsrc->append("color = " + arg1 + " * " + arg2 + ";\n");
+			fsrc->append("color.rgb = " + arg1 + " * " + arg2 + ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
-			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
+			fsrc->append("color.rgb = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
-			fsrc->append("color = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
+			fsrc->append("color.rgb = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
-			fsrc->append("color = " + arg1 + " + " + arg2 + ";\n");
+			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
-			fsrc->append("color = " + arg1 + " + " + arg2 + " - .5;\n");
+			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
-			fsrc->append("color = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			fsrc->append("color.rgb = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
-			fsrc->append("color = " + arg1 + " - " + arg2 + ";\n");
+			fsrc->append("color.rgb = " + arg1 + " - " + arg2 + ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
-			fsrc->append("color = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
 			break;
 		}
 		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)break;
@@ -775,34 +773,34 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		default:
 			break;
 		case D3DTOP_SELECTARG1:
-			fsrc->append("alpha = " + arg1 + ";\n");
+			fsrc->append("color.a = " + arg1 + ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
-			fsrc->append("alpha = " + arg2 + ";\n");
+			fsrc->append("color.a = " + arg2 + ";\n");
 			break;
 		case D3DTOP_MODULATE:
-			fsrc->append("alpha = " + arg1 + " * " + arg2 + ";\n");
+			fsrc->append("color.a = " + arg1 + " * " + arg2 + ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
-			fsrc->append("alpha = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
+			fsrc->append("color.a = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
-			fsrc->append("alpha = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
+			fsrc->append("color.a = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
-			fsrc->append("alpha = " + arg1 + " + " + arg2 + ";\n");
+			fsrc->append("color.a = " + arg1 + " + " + arg2 + ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
-			fsrc->append("alpha = " + arg1 + " + " + arg2 + " - .5;\n");
+			fsrc->append("color.a = " + arg1 + " + " + arg2 + " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
-			fsrc->append("alpha = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			fsrc->append("color.a = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
-			fsrc->append("alpha = " + arg1 + " - " + arg2 + ";\n");
+			fsrc->append("color.a = " + arg1 + " - " + arg2 + ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
-			fsrc->append("alpha = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			fsrc->append("color.a = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
 			break;
 		}
 	}
