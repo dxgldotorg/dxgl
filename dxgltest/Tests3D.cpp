@@ -517,6 +517,19 @@ void MakeCube3D()
 	litvertices[23] = D3DLVERTEX(points[2],0xFFFFFFFF,0,1,0);
 }
 
+void SetVertexColor(D3DLVERTEX *start, int count, DWORD color)
+{
+	for(int i = 0; i < count; i++)
+		start[i].color = color;
+}
+
+void SetVertexSpecular(D3DLVERTEX *start, int count, DWORD color)
+{
+	for(int i = 0; i < count; i++)
+		start[i].specular = color;
+}
+
+
 DDPIXELFORMAT texformats[256];
 int texformatindex = 0;
 
@@ -1247,6 +1260,30 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			{
 				SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&bgcolor);
+			}
+			break;
+		case IDC_DIFFUSE:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				SetVertexColor(litvertices,24,number);
+			}
+			break;
+		case IDC_SPECULAR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				SetVertexSpecular(litvertices,24,number);
+			}
+			break;
+		case IDC_FACTOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_FACTOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
 		}
