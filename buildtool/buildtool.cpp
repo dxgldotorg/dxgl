@@ -28,40 +28,55 @@ int GetSVNRev(char *path)
 	char pathbase[FILENAME_MAX+1];
 	char pathin[FILENAME_MAX+1];
 	char pathout[FILENAME_MAX+1];
-	char command[1024];
 	strncpy(pathbase,path,FILENAME_MAX);
 	strncpy(pathin,path,FILENAME_MAX);
 	strncpy(pathout,path,FILENAME_MAX);
 	pathbase[strlen(pathbase)-7] = 0;
 	strncat(pathin,"\\rev.in",FILENAME_MAX-strlen(pathin));
 	strncat(pathout,"\\rev",FILENAME_MAX-strlen(pathin));
-	strcpy(command,"subwcrev ");
-	strcat(command,pathbase);
-	strcat(command," ");
-	strcat(command,pathin);
-	strcat(command," ");
-	strcat(command,pathout);
-	STARTUPINFOA startinfo;
-	ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
-	startinfo.cb = sizeof(STARTUPINFO);
-	PROCESS_INFORMATION process;
-	if(CreateProcessA(NULL,command,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
+	HKEY hKey;
+	char svnpath[(MAX_PATH+1)*4];
+	bool foundsvn = false;
+	DWORD buffersize = MAX_PATH+1;
+	if(RegOpenKeyExA(HKEY_LOCAL_MACHINE,"Software\\TortoiseSVN",0,KEY_READ,&hKey) == ERROR_SUCCESS)
 	{
-		WaitForSingleObject(process.hProcess,INFINITE);
-		CloseHandle(process.hProcess);
-		CloseHandle(process.hThread);
-		FILE *revfile = fopen(pathout,"r");
-		if(!revfile)
+		if(RegQueryValueExA(hKey,"Directory",NULL,NULL,(LPBYTE)svnpath,&buffersize) == ERROR_SUCCESS)
 		{
-			cout << "WARNING:  Failed to create revision file" << endl;
-			return 0;
+			foundsvn = true;
+			strcat(svnpath,"bin\\subwcrev.exe ");
+			strcat(svnpath,pathbase);
+			strcat(svnpath," ");
+			strcat(svnpath,pathin);
+			strcat(svnpath," ");
+			strcat(svnpath,pathout);
+			STARTUPINFOA startinfo;
+			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
+			startinfo.cb = sizeof(STARTUPINFO);
+			PROCESS_INFORMATION process;
+			cout << svnpath << endl;
+			if(CreateProcessA(NULL,svnpath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
+			{
+				WaitForSingleObject(process.hProcess,INFINITE);
+				CloseHandle(process.hProcess);
+				CloseHandle(process.hThread);
+				FILE *revfile = fopen(pathout,"r");
+				if(!revfile)
+				{
+					cout << "WARNING:  Failed to create revision file" << endl;
+					RegCloseKey(hKey);
+					return 0;
+				}
+				char revstring[32];
+				fgets(revstring,32,revfile);
+				fclose(revfile);
+				RegCloseKey(hKey);
+				return atoi(revstring);
+			}
+			else foundsvn = false;
 		}
-		char revstring[32];
-		fgets(revstring,32,revfile);
-		fclose(revfile);
-		return atoi(revstring);
+		RegCloseKey(hKey);
 	}
-	else
+	if(!foundsvn)
 	{
 		int result = MessageBoxA(NULL,"Could not find subwcrev.exe, would you like to download TortoiseSVN?","TortoiseSVN not found",
 			MB_YESNO|MB_ICONWARNING);
@@ -73,6 +88,7 @@ int GetSVNRev(char *path)
 		}
 		else return 0;
 	}
+	return 0;
 }
 
 int ProcessHeaders(char *path)
@@ -212,7 +228,9 @@ int MakeHelp(char *path)
 	{
 		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?","HTML Help Workshop not found",
 			MB_YESNO|MB_ICONERROR);
-		if(result == IDYES) ShellExecuteA(NULL,"open","http://www.microsoft.com/en-us/download/details.aspx?id=21138",NULL,NULL,SW_SHOWNORMAL);
+		if(result == IDYES) ShellExecuteA(NULL,"open",
+			"http://web.archive.org/web/20070216084201/http://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe"
+			,NULL,NULL,SW_SHOWNORMAL);
 		cout << "ERROR:  HTML Help Compiler not found." << endl;
 		return -1;
 	}

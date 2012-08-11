@@ -605,8 +605,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	string arg1,arg2;
 	int args[4];
 	bool texfail;
-	const string blendargs[] = {"color.rgb","gl_Color","texture2DProj(texX,gl_TexCoord[Y]).rgb",
-		"texture2DProj(texX,gl_TexCoord[Y]).a","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a","color.a"};
+	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
+		"","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a",".aaa"};
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
@@ -620,7 +620,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[0];
 				break;
 			case D3DTA_DIFFUSE:
-				arg1 = blendargs[1]+blendargs[8];
+				arg1 = blendargs[1];
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
@@ -636,11 +636,12 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg1 = blendargs[4];
 				break;
 			case D3DTA_SPECULAR:
-				arg1 = blendargs[5]+blendargs[8];
+				arg1 = blendargs[5];
 				break;
 		}
-		if(args[0] & D3DTA_COMPLEMENT)
-			arg1 = "(1.0 - " + arg1 + ")";
+		if(args[0] & D3DTA_COMPLEMENT) arg1 = "(1.0 - " + arg1 + ")";
+		if(args[0] & D3DTA_ALPHAREPLICATE) arg1.append(blendargs[10]);
+		else arg1.append(blendargs[8]);
 		args[1] = (texstate[i].shaderid>>11)&63;
 		switch(args[1]&7) //arg2
 		{
@@ -649,7 +650,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				arg2 = blendargs[0];
 				break;
 			case D3DTA_DIFFUSE:
-				arg2 = blendargs[1]+blendargs[8];
+				arg2 = blendargs[1];
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
@@ -662,14 +663,15 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg2 = blendargs[4]+blendargs[8];
+				arg2 = blendargs[4];
 				break;
 			case D3DTA_SPECULAR:
-				arg2 = blendargs[5]+blendargs[8];
+				arg2 = blendargs[5];
 				break;
 		}
-		if(args[1] & D3DTA_COMPLEMENT)
-			arg2 = "(1.0 - " + arg2 + ")";
+		if(args[1] & D3DTA_COMPLEMENT) arg2 = "(1.0 - " + arg2 + ")";
+		if(args[1] & D3DTA_ALPHAREPLICATE) arg2.append(blendargs[10]);
+		else arg2.append(blendargs[8]);
 		if(!texfail) switch(texstate[i].shaderid & 31)
 		{
 		case D3DTOP_DISABLE:
@@ -714,7 +716,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg1 = blendargs[10];
+				arg1 = blendargs[0]+blendargs[9];
 				break;
 			case D3DTA_DIFFUSE:
 				arg1 = blendargs[1]+blendargs[9];
@@ -722,7 +724,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg1 = blendargs[3];
+					arg1 = blendargs[2]+blendargs[9];
 					arg1.replace(17,1,_itoa(i,idstring,10));
 					arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
@@ -743,7 +745,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg2 = blendargs[10];
+				arg2 = blendargs[1]+blendargs[9];
 				break;
 			case D3DTA_DIFFUSE:
 				arg2 = blendargs[1]+blendargs[9];
@@ -751,7 +753,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg2 = blendargs[3];
+					arg2 = blendargs[2]+blendargs[9];
 					arg2.replace(17,1,_itoa(i,idstring,10));
 					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
