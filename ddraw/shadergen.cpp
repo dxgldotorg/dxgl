@@ -603,6 +603,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	fsrc->append(mainstart);
 	fsrc->append(op_colorfragin);
 	string arg1,arg2;
+	string texarg;
 	int args[4];
 	bool texfail;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
@@ -707,6 +708,28 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		case D3DTOP_ADDSMOOTH:
 			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
 			break;
+		case D3DTOP_BLENDDIFFUSEALPHA:
+			fsrc->append("color.rgb = " + arg1 + " * gl_Color.a + " + arg2 + " * (1.0-gl_Color.a);\n");
+			break;
+		case D3DTOP_BLENDTEXTUREALPHA:
+			texarg = blendargs[2];
+			texarg.replace(17,1,_itoa(i,idstring,10));
+			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			fsrc->append("color.rgb = " + arg1 + " * " + texarg + ".a + " + arg2 + " * (1.0-"
+				+ texarg + ".a);\n");
+			break;
+		case D3DTOP_BLENDFACTORALPHA:
+			fsrc->append("color.rgb = " + arg1 + " * texfactor.a + " + arg2 + " * (1.0-texfactor.a);\n");
+			break;
+		case D3DTOP_BLENDTEXTUREALPHAPM:
+			texarg = blendargs[2];
+			texarg.replace(17,1,_itoa(i,idstring,10));
+			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " * (1.0-" + texarg + ".a);\n");
+			break;
+		case D3DTOP_BLENDCURRENTALPHA:
+			fsrc->append("color.rgb = " + arg1 + " * color.a + " + arg2 + " * (1.0-color.a);\n");
+			break;
 		}
 		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)break;
 		// Alpha stage
@@ -803,6 +826,28 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			break;
 		case D3DTOP_ADDSMOOTH:
 			fsrc->append("color.a = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			break;
+		case D3DTOP_BLENDDIFFUSEALPHA:
+			fsrc->append("color.a = " + arg1 + " * gl_Color.a + " + arg2 + " * (1.0-gl_Color.a);\n");
+			break;
+		case D3DTOP_BLENDTEXTUREALPHA:
+			texarg = blendargs[2];
+			texarg.replace(17,1,_itoa(i,idstring,10));
+			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			fsrc->append("color.a = " + arg1 + " * " + texarg + ".a + " + arg2 + " * (1.0-"
+				+ texarg + ".a);\n");
+			break;
+		case D3DTOP_BLENDFACTORALPHA:
+			fsrc->append("color.a = " + arg1 + " * texfactor.a + " + arg2 + " * (1.0-texfactor.a);\n");
+			break;
+		case D3DTOP_BLENDTEXTUREALPHAPM:
+			texarg = blendargs[2];
+			texarg.replace(17,1,_itoa(i,idstring,10));
+			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			fsrc->append("color.a = " + arg1 + " + " + arg2 + " * (1.0-" + texarg + ".a);\n");
+			break;
+		case D3DTOP_BLENDCURRENTALPHA:
+			fsrc->append("color.a = " + arg1 + " * color.a + " + arg2 + " * (1.0-color.a);\n");
 			break;
 		}
 	}
