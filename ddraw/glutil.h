@@ -42,5 +42,7 @@ void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
 void ClearDepth(GLclampd depth);
 void ClearStencil(GLint stencil);
 void EnableArray(int index, bool enabled);
+void BlendFunc(GLenum src, GLenum dest);
+void BlendEnable(bool enabled);
 
 #endif //_GLUTIL_H

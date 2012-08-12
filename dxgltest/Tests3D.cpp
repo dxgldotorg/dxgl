@@ -1286,6 +1286,28 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
+		case IDC_ALPHABLEND:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_ALPHABLEND,BM_GETCHECK,0,0) == BST_CHECKED)
+					d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,TRUE);
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,FALSE);
+			}
+			break;
+		case IDC_SRCBLEND:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_SRCBLEND,SendDlgItemMessage(hWnd,
+					IDC_SRCBLEND,CB_GETCURSEL,0,0)+1);
+			}
+		case IDC_DESTBLEND:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_DESTBLEND,SendDlgItemMessage(hWnd,
+					IDC_DESTBLEND,CB_GETCURSEL,0,0)+1);
+			}
+			break;
+
 		}
 		break;
     case WM_CLOSE:

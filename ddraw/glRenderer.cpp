@@ -812,6 +812,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	ClearDepth(1.0);
 	ClearStencil(0);
 	EnableArray(-1,false);
+	BlendFunc(GL_ONE,GL_ZERO);
+	BlendEnable(false);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SetScissor(false,0,0,0,0);
@@ -848,6 +850,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	int progtype;
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
+	BlendEnable(false);
 	int error;
 	error = SetFBO(dest->texture,0,false);
 	SetViewport(0,0,dest->fakex,dest->fakey);
@@ -1043,6 +1046,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 {
 	int progtype;
 	RECT r,r2;
+	BlendEnable(false);
 	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(hWnd,&r);
@@ -1293,6 +1297,108 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, HWND ne
 	SetEvent(busy);
 }
 
+void SetBlend(DWORD src, DWORD dest)
+{
+	GLenum glsrc, gldest;
+	bool bothalpha = false;
+	switch(src)
+	{
+	case D3DBLEND_ZERO:
+		glsrc = GL_ZERO;
+		break;
+	case D3DBLEND_ONE:
+	default:
+		glsrc = GL_ONE;
+		break;
+	case D3DBLEND_SRCCOLOR:
+		glsrc = GL_SRC_COLOR;
+		break;
+	case D3DBLEND_INVSRCCOLOR:
+		glsrc = GL_ONE_MINUS_SRC_COLOR;
+		break;
+	case D3DBLEND_SRCALPHA:
+		glsrc = GL_SRC_ALPHA;
+		break;
+	case D3DBLEND_INVSRCALPHA:
+		glsrc = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	case D3DBLEND_DESTALPHA:
+		glsrc = GL_DST_ALPHA;
+		break;
+	case D3DBLEND_INVDESTALPHA:
+		glsrc = GL_ONE_MINUS_DST_ALPHA;
+		break;
+	case D3DBLEND_DESTCOLOR:
+		glsrc = GL_DST_COLOR;
+		break;
+	case D3DBLEND_INVDESTCOLOR:
+		glsrc = GL_ONE_MINUS_DST_COLOR;
+		break;
+	case D3DBLEND_SRCALPHASAT:
+		glsrc = GL_SRC_ALPHA_SATURATE;
+		break;
+	case D3DBLEND_BOTHSRCALPHA:
+		bothalpha = true;
+		glsrc = GL_SRC_ALPHA;
+		gldest = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	case D3DBLEND_BOTHINVSRCALPHA:
+		bothalpha = true;
+		glsrc = GL_ONE_MINUS_SRC_ALPHA;
+		gldest = GL_SRC_ALPHA;
+		break;
+	}
+
+	if(!bothalpha) switch(dest)
+	{
+	case D3DBLEND_ZERO:
+	default:
+		gldest = GL_ZERO;
+		break;
+	case D3DBLEND_ONE:
+		gldest = GL_ONE;
+		break;
+	case D3DBLEND_SRCCOLOR:
+		gldest = GL_SRC_COLOR;
+		break;
+	case D3DBLEND_INVSRCCOLOR:
+		gldest = GL_ONE_MINUS_SRC_COLOR;
+		break;
+	case D3DBLEND_SRCALPHA:
+		gldest = GL_SRC_ALPHA;
+		break;
+	case D3DBLEND_INVSRCALPHA:
+		gldest = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	case D3DBLEND_DESTALPHA:
+		gldest = GL_DST_ALPHA;
+		break;
+	case D3DBLEND_INVDESTALPHA:
+		gldest = GL_ONE_MINUS_DST_ALPHA;
+		break;
+	case D3DBLEND_DESTCOLOR:
+		gldest = GL_DST_COLOR;
+		break;
+	case D3DBLEND_INVDESTCOLOR:
+		gldest = GL_ONE_MINUS_DST_COLOR;
+		break;
+	case D3DBLEND_SRCALPHASAT:
+		gldest = GL_SRC_ALPHA_SATURATE;
+		break;
+	case D3DBLEND_BOTHSRCALPHA:
+		bothalpha = true;
+		glsrc = GL_SRC_ALPHA;
+		gldest = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	case D3DBLEND_BOTHINVSRCALPHA:
+		bothalpha = true;
+		glsrc = GL_ONE_MINUS_SRC_ALPHA;
+		gldest = GL_SRC_ALPHA;
+		break;
+	}
+	BlendFunc(glsrc,gldest);
+}
+
 void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
@@ -1476,6 +1582,9 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	else SetFBO(device->glDDS7->texture,0,false);
 	SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
 	SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
+	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) BlendEnable(true);
+	else BlendEnable(false);
+	SetBlend(device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;

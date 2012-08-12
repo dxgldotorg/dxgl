@@ -39,6 +39,7 @@
 #define IDC_TEXTUREPREVIEW                      1003
 #define IDC_DISPLAY                             1004
 #define IDC_TESTLIST                            1004
+#define IDC_ALPHABLEND                          1006
 #define IDC_BGCOLOR                             1007
 #define IDC_WINDOWED                            1008
 #define IDC_FULLSCREEN                          1009
@@ -98,7 +99,6 @@
 #define IDC_FACTORSELECT                        1085
 #define IDC_FOGCOLOR                            1086
 #define IDC_FOGCOLORSELECT                      1087
-#define IDC_ALPHATEST                           1088
 #define IDC_SRCBLEND                            1089
 #define IDC_DESTBLEND                           1090
 #define IDC_ALPHAREF                            1091
@@ -113,3 +113,4 @@
 #define IDC_FOGDENSITY                          1100
 #define IDC_RANGEBASEDFOG                       1101
 #define IDC_BGCOLORSELECT                       1102
+#define IDC_ALPHATEST                           1103

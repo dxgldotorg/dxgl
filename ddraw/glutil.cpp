@@ -51,6 +51,9 @@ GLclampf clearb = 0.0;
 GLclampf cleara = 0.0;
 GLclampd cleardepth = 1.0;
 GLint clearstencil = 0;
+GLenum blendsrc = GL_ONE;
+GLenum blenddest = GL_ZERO;
+bool blendenabled = false;
 bool arrays[42];
 
 void InitFBO()
@@ -344,5 +347,25 @@ void EnableArray(int index, bool enabled)
 		arrays[index] = enabled;
 		if(enabled) glEnableVertexAttribArray(index);
 		else glDisableVertexAttribArray(index);
+	}
+}
+
+void BlendFunc(GLenum src, GLenum dest)
+{
+	if((blendsrc != src) || (blenddest != dest))
+	{
+		blendsrc = src;
+		blenddest = dest;
+		glBlendFunc(src,dest);
+	}
+}
+
+void BlendEnable(bool enabled)
+{
+	if(enabled != blendenabled)
+	{
+		blendenabled = enabled;
+		if(enabled) glEnable(GL_BLEND);
+		else glDisable(GL_BLEND);
 	}
 }
