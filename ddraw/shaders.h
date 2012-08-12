@@ -26,6 +26,9 @@ typedef struct
 	const char *vsrc;
 	const char *fsrc;
 	GLint prog;
+	GLint pos;
+	GLint rgb;
+	GLint texcoord;
 } SHADER;
 
 extern SHADER shaders[];

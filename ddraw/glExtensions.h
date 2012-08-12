@@ -56,6 +56,7 @@ GLAPI void (APIENTRY *glGetProgramInfoLog) (GLuint program, GLsizei maxLength, G
 GLAPI GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name);
 GLAPI void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
 GLAPI void (APIENTRY *glEnableVertexAttribArray) (GLuint index);
+GLAPI void (APIENTRY *glDisableVertexAttribArray) (GLuint index);
 
 GLAPI void (APIENTRY *glGenFramebuffers) (GLsizei n, GLuint* ids);
 GLAPI void (APIENTRY *glBindFramebuffer) (GLenum target, GLuint framebuffer);

@@ -120,12 +120,12 @@ void main()\n\
 const int SHADER_START = __LINE__;
 SHADER shaders[] = 
 {
-	{0,0,	vert_ortho,			frag_Color,			0},
-	{0,0,	vert_ortho,			frag_Texture,		0},
-	{0,0,	vert_ortho,			frag_Pal256,		0},
-	{0,0,	vert_ortho,			frag_ColorKey,		0},
-	{0,0,	vert_ortho,			frag_ColorKeyMask,	0},
-	{0,0,	vert_ortho,			frag_2ColorKey,		0}
+	{0,0,	vert_ortho,			frag_Color,			0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_ColorKey,		0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_ColorKeyMask,	0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_2ColorKey,		0,-1,-1,-1}
 };
 const int SHADER_END = __LINE__ - 4;
 const int NumberOfShaders = SHADER_END - SHADER_START;
@@ -157,6 +157,9 @@ void CompileShaders()
 			glAttachShader(shaders[i].prog,shaders[i].fs);
 		}
 		glLinkProgram(shaders[i].prog);
+		shaders[i].pos = glGetAttribLocation(shaders[i].prog,"xy");
+		shaders[i].rgb = glGetAttribLocation(shaders[i].prog,"rgb");
+		shaders[i].texcoord = glGetAttribLocation(shaders[i].prog,"st");
 	}
 }
 

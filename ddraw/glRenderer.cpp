@@ -811,6 +811,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	ClearDepth(1.0);
 	ClearStencil(0);
+	EnableArray(-1,false);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
 	SetScissor(false,0,0,0,0);
@@ -844,6 +845,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
+	int progtype;
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	int error;
@@ -886,6 +888,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(dwFlags & DDBLT_COLORFILL)
 	{
 		SetShader(PROG_FILL,NULL,NULL,true);
+		progtype = PROG_FILL;
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
@@ -925,6 +928,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
 		SetShader(PROG_CKEY,NULL,NULL,true);
+		progtype = PROG_CKEY;
 		GLint keyloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"keyIn");
 		switch(ddInterface->GetBPP())
 		{
@@ -956,6 +960,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
+		progtype = PROG_TEXTURE;
 		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
 		glUniform1i(texloc,0);
 	}
@@ -965,20 +970,17 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	GLint viewloc = glGetUniformLocation(prog,"view");
 	glUniform4f(viewloc,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
-	GLint xyloc = glGetAttribLocation(prog,"xy");
-	glEnableVertexAttribArray(xyloc);
-	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	GLint rgbloc = glGetAttribLocation(prog,"rgb");
-	if(rgbloc != -1)
+	EnableArray(shaders[progtype].pos,true);
+	glVertexAttribPointer(shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	if(shaders[progtype].rgb != -1)
 	{
-		glEnableVertexAttribArray(rgbloc);
-		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+		EnableArray(shaders[progtype].rgb,true);
+		glVertexAttribPointer(shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		GLint stloc = glGetAttribLocation(prog,"st");
-		glEnableVertexAttribArray(stloc);
-		glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+		EnableArray(shaders[progtype].texcoord,true);
+		glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
@@ -1003,7 +1005,7 @@ GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, 
 	return texture;
 }
 
-void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
+void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y, int progtype)
 {
 	GLfloat view[4];
 	SetActiveTexture(0);
@@ -1037,18 +1039,17 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y)
 	bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
 	bltvertices[0].x = bltvertices[2].x = (float)x;
 	bltvertices[2].y = bltvertices[3].y = (float)y;
-	GLint xyloc = glGetAttribLocation(prog,"xy");
-	glEnableVertexAttribArray(xyloc);
-	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	GLint stloc = glGetAttribLocation(prog,"st");
-	glEnableVertexAttribArray(stloc);
-	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	EnableArray(shaders[progtype].pos,true);
+	glVertexAttribPointer(shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	EnableArray(shaders[progtype].texcoord,true);
+	glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
 }
 
 void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync)
 {
+	int progtype;
 	RECT r,r2;
 	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
@@ -1109,6 +1110,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	if(ddInterface->GetBPP() == 8)
 	{
 		SetShader(PROG_PAL256,NULL,NULL,true);
+		progtype = PROG_PAL256;
 		glBindTexture(GL_TEXTURE_2D,paltex);
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,dest->palette->GetPalette(NULL));
 		GLint palloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"ColorTable");
@@ -1122,8 +1124,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		SetActiveTexture(0);
 		if(dxglcfg.scalingfilter)
 		{
-			_DrawBackbuffer(&texture,dest->fakex,dest->fakey);
+			_DrawBackbuffer(&texture,dest->fakex,dest->fakey,progtype);
 			SetShader(PROG_TEXTURE,NULL,NULL,true);
+			progtype = PROG_TEXTURE;
 			glBindTexture(GL_TEXTURE_2D,texture);
 			GLuint prog = GetProgram() & 0xFFFFFFFF;
 			GLint texloc = glGetUniformLocation(prog,"Texture");
@@ -1133,6 +1136,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	else
 	{
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
+		progtype = PROG_TEXTURE;
 		glBindTexture(GL_TEXTURE_2D,texture);
 		GLuint prog = GetProgram() & 0xFFFFFFFF;
 		GLint texloc = glGetUniformLocation(prog,"Texture");
@@ -1156,17 +1160,14 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	}
 	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
 	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
-	GLint xyloc = glGetAttribLocation(prog,"xy");
-	glEnableVertexAttribArray(xyloc);
-	glVertexAttribPointer(xyloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	GLint stloc = glGetAttribLocation(prog,"st");
-	glEnableVertexAttribArray(stloc);
-	glVertexAttribPointer(stloc,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
-	GLint rgbloc = glGetAttribLocation(prog,"rgb");
-	if(rgbloc != -1)
+	EnableArray(shaders[progtype].pos,true);
+	glVertexAttribPointer(shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	EnableArray(shaders[progtype].texcoord,true);
+	glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	if(shaders[progtype].rgb != -1)
 	{
-		glEnableVertexAttribArray(rgbloc);
-		glVertexAttribPointer(rgbloc,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+		EnableArray(shaders[progtype].rgb,true);
+		glVertexAttribPointer(shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
@@ -1333,13 +1334,13 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(device->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) DepthWrite(true);
 	else DepthWrite(false);
 	_GENSHADER prog = genshaders[current_genshader].shader;
-	glEnableVertexAttribArray(prog.attribs[0]);
+	EnableArray(prog.attribs[0],true);
 	glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
 	if(transformed)
 	{
 		if(prog.attribs[1] != -1)
 		{
-			glEnableVertexAttribArray(prog.attribs[1]);
+			EnableArray(prog.attribs[1],true);
 			glVertexAttribPointer(prog.attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
 		}
 	}
@@ -1349,7 +1350,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			if(prog.attribs[i+2] != -1)
 			{
-				glEnableVertexAttribArray(prog.attribs[i+2]);
+				EnableArray(prog.attribs[i+2],true);
 				glVertexAttribPointer(prog.attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
 			}
 		}
@@ -1358,7 +1359,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	{
 		if(prog.attribs[7] != -1)
 		{
-			glEnableVertexAttribArray(prog.attribs[7]);
+			EnableArray(prog.attribs[7],true);
 			glVertexAttribPointer(prog.attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
 		}
 	}
@@ -1368,7 +1369,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			if(prog.attribs[8+i] != -1)
 			{
-				glEnableVertexAttribArray(prog.attribs[8+i]);
+				EnableArray(prog.attribs[8+i],true);
 				glVertexAttribPointer(prog.attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
 			}
 		}
@@ -1383,28 +1384,28 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			case 0: // st
 				if(prog.attribs[i+18] != -1)
 				{
-					glEnableVertexAttribArray(prog.attribs[i+18]);
+					EnableArray(prog.attribs[i+18],true);
 					glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 1: // str
 				if(prog.attribs[i+26] != -1)
 				{
-					glEnableVertexAttribArray(prog.attribs[i+26]);
+					EnableArray(prog.attribs[i+26],true);
 					glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 2: // strq
 				if(prog.attribs[i+34] != -1)
 				{
-					glEnableVertexAttribArray(prog.attribs[i+34]);
+					EnableArray(prog.attribs[i+34],true);
 					glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 3: // s
 				if(prog.attribs[i+10] != -1)
 				{
-					glEnableVertexAttribArray(prog.attribs[i+10]);
+					EnableArray(prog.attribs[i+10],true);
 					glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;

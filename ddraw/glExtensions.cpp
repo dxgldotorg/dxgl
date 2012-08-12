@@ -36,6 +36,7 @@ void (APIENTRY *glGetProgramInfoLog) (GLuint program, GLsizei maxLength, GLsizei
 GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name) = NULL;
 void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) = NULL;
 void (APIENTRY *glEnableVertexAttribArray) (GLuint index) = NULL;
+void (APIENTRY *glDisableVertexAttribArray) (GLuint index) = NULL;
 
 void (APIENTRY *glGenFramebuffers) (GLsizei n, GLuint* ids) = NULL;
 void (APIENTRY *glBindFramebuffer) (GLenum target, GLuint framebuffer) = NULL;
@@ -142,6 +143,7 @@ void InitGLExt()
 		glGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
 		glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
 		glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
+		glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArray");
 	}
 	else
 	{

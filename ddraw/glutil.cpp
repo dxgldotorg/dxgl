@@ -51,6 +51,7 @@ GLclampf clearb = 0.0;
 GLclampf cleara = 0.0;
 GLclampd cleardepth = 1.0;
 GLint clearstencil = 0;
+bool arrays[42];
 
 void InitFBO()
 {
@@ -326,5 +327,22 @@ void ClearStencil(GLint stencil)
 	{
 		clearstencil = stencil;
 		glClearStencil(stencil);
+	}
+}
+
+void EnableArray(int index, bool enabled)
+{
+	if(index == -1)
+	{
+		for(int i = 0; i < 42; i++)
+			arrays[i] = false;
+		return;
+	}
+	if(index >= 42) return;
+	if(arrays[index] != enabled)
+	{
+		arrays[index] = enabled;
+		if(enabled) glEnableVertexAttribArray(index);
+		else glDisableVertexAttribArray(index);
 	}
 }
