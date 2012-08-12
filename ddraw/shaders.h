@@ -29,6 +29,11 @@ typedef struct
 	GLint pos;
 	GLint rgb;
 	GLint texcoord;
+	GLint tex0;
+	GLint tex1;
+	GLint ckey;
+	GLint pal;
+	GLint view;
 } SHADER;
 
 extern SHADER shaders[];

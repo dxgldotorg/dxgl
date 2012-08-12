@@ -929,46 +929,41 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	{
 		SetShader(PROG_CKEY,NULL,NULL,true);
 		progtype = PROG_CKEY;
-		GLint keyloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"keyIn");
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
-			glUniform3i(keyloc,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
+			glUniform3i(shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
 				src->colorkey[0].key.dwColorSpaceHighValue);
 			break;
 		case 15:
-			glUniform3i(keyloc,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
+			glUniform3i(shaders[progtype].ckey,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 16:
-			glUniform3i(keyloc,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
+			glUniform3i(shaders[progtype].ckey,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
 				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 24:
 		case 32:
 		default:
-			glUniform3i(keyloc,(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
+			glUniform3i(shaders[progtype].ckey,(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
 			break;
 		}
-		GLint texloc = glGetUniformLocation(shaders[PROG_CKEY].prog,"myTexture");
-		glUniform1i(texloc,0);
+		glUniform1i(shaders[progtype].tex0,0);
 	}
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
 		progtype = PROG_TEXTURE;
-		GLint texloc = glGetUniformLocation(shaders[PROG_TEXTURE].prog,"Texture");
-		glUniform1i(texloc,0);
+		glUniform1i(shaders[progtype].tex0,0);
 	}
 	SetActiveTexture(0);
 	if(src) glBindTexture(GL_TEXTURE_2D,src->GetTexture());
-	GLuint prog = GetProgram()&0xffffffff;
-	GLint viewloc = glGetUniformLocation(prog,"view");
-	glUniform4f(viewloc,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
+	glUniform4f(shaders[progtype].view,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
 	EnableArray(shaders[progtype].pos,true);
 	glVertexAttribPointer(shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
@@ -1030,10 +1025,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y, int progtype)
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glBindTexture(GL_TEXTURE_2D,*texture);
 	*texture = backbuffer;
-	GLuint prog = GetProgram();
-	GLint viewloc = glGetUniformLocation(prog,"view");
-	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
-
+	glUniform4f(shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
 	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
 	bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
@@ -1113,10 +1105,8 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		progtype = PROG_PAL256;
 		glBindTexture(GL_TEXTURE_2D,paltex);
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,dest->palette->GetPalette(NULL));
-		GLint palloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"ColorTable");
-		GLint texloc = glGetUniformLocation(shaders[PROG_PAL256].prog,"IndexTexture");
-		glUniform1i(texloc,0);
-		glUniform1i(palloc,1);
+		glUniform1i(shaders[progtype].tex0,0);
+		glUniform1i(shaders[progtype].pal,1);
 		SetActiveTexture(0);
 		glBindTexture(GL_TEXTURE_2D,texture);
 		SetActiveTexture(1);
@@ -1128,9 +1118,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 			SetShader(PROG_TEXTURE,NULL,NULL,true);
 			progtype = PROG_TEXTURE;
 			glBindTexture(GL_TEXTURE_2D,texture);
-			GLuint prog = GetProgram() & 0xFFFFFFFF;
-			GLint texloc = glGetUniformLocation(prog,"Texture");
-			glUniform1i(texloc,0);
+			glUniform1i(shaders[progtype].tex0,0);
 		}
 	}
 	else
@@ -1138,14 +1126,10 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
 		progtype = PROG_TEXTURE;
 		glBindTexture(GL_TEXTURE_2D,texture);
-		GLuint prog = GetProgram() & 0xFFFFFFFF;
-		GLint texloc = glGetUniformLocation(prog,"Texture");
-		glUniform1i(texloc,0);
+		glUniform1i(shaders[progtype].tex0,0);
 	}
 	SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
-	GLuint prog = GetProgram();
-	GLint viewloc = glGetUniformLocation(prog,"view");
-	glUniform4f(viewloc,view[0],view[1],view[2],view[3]);
+	glUniform4f(shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(ddInterface->GetFullscreen())
 	{
 		bltvertices[0].x = bltvertices[2].x = (float)sizes[0];

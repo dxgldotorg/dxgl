@@ -32,61 +32,61 @@ void main() \n\
 
 const char frag_Texture[] = "\
 #version 110\n\
-uniform sampler2D Texture;\n\
+uniform sampler2D tex0;\n\
 void main() \n\
 { \n\
-    gl_FragColor = texture2D( Texture, gl_TexCoord[0].st ); \n\
+    gl_FragColor = texture2D( tex0, gl_TexCoord[0].st ); \n\
 } ";
 
 const char frag_Pal256[] =  "\
 #version 110\n\
-uniform sampler2D ColorTable; \n\
-uniform sampler2D IndexTexture; \n\
+uniform sampler2D pal; \n\
+uniform sampler2D tex0; \n\
 void main() \n\
 { \n\
-	vec4 myindex = texture2D(IndexTexture, gl_TexCoord[0].xy); \n\
-	vec4 texel = texture2D(ColorTable, myindex.xy); \n\
+	vec4 myindex = texture2D(tex0, gl_TexCoord[0].xy); \n\
+	vec4 texel = texture2D(pal, myindex.xy); \n\
 	gl_FragColor = texel; \n\
 } ";
 
 const char frag_ColorKey[] = "\
 #version 110\n\
-uniform sampler2D myTexture;\n\
-uniform ivec3 keyIn;\n\
+uniform sampler2D tex0;\n\
+uniform ivec3 ckey;\n\
 void main (void)\n\
 {\n\
- vec4 value = texture2D(myTexture, vec2(gl_TexCoord[0]));\n\
- ivec3 comp = ivec3(texture2D(myTexture, vec2(gl_TexCoord[0]))*255.0);\n\
- if (comp == keyIn)\n\
+ vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
+ ivec3 comp = ivec3(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ if (comp == ckey)\n\
   discard;\n\
  gl_FragColor = value;\n\
 } ";
 
 const char frag_ColorKeyMask[] = "\
 #version 110\n\
-uniform sampler2D myTexture;\n\
-uniform ivec4 keyIn;\n\
+uniform sampler2D tex0;\n\
+uniform ivec4 ckey;\n\
 void main (void)\n\
 {\n\
- vec4 value = texture2D(myTexture, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(myTexture, vec2(gl_TexCoord[0]))*255.0);\n\
- if (comp == keyIn)\n\
+ vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
+ ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ if (comp == ckey)\n\
   gl_FragColor[0] = 1.0;\n\
  else gl_FragColor[0] = 0.0;\n\
 } ";
 
 const char frag_2ColorKey[] = "\
 #version 110\n\
-uniform sampler2D myTexture;\n\
-uniform sampler2D maskTexture;\n\
-uniform ivec4 keyIn;\n\
+uniform sampler2D tex0;\n\
+uniform sampler2D tex1;\n\
+uniform ivec4 ckey;\n\
 void main (void)\n\
 {\n\
- vec4 value = texture2D(myTexture, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(myTexture, vec2(gl_TexCoord[0]))*255.0);\n\
- if (comp == keyIn)\n\
+ vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
+ ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ if (comp == ckey)\n\
   discard;\n\
- ivec4 comp2 = ivec4(texture2D(maskTexture,vec2(gl_TexCoord[1]))*255.0);\n\
+ ivec4 comp2 = ivec4(texture2D(tex1,vec2(gl_TexCoord[1]))*255.0);\n\
  if(comp2[0] == 0)\n\
   discard;\n\
  gl_FragColor = value;\n\
@@ -160,6 +160,11 @@ void CompileShaders()
 		shaders[i].pos = glGetAttribLocation(shaders[i].prog,"xy");
 		shaders[i].rgb = glGetAttribLocation(shaders[i].prog,"rgb");
 		shaders[i].texcoord = glGetAttribLocation(shaders[i].prog,"st");
+		shaders[i].tex0 = glGetUniformLocation(shaders[i].prog,"tex0");
+		shaders[i].tex1 = glGetUniformLocation(shaders[i].prog,"tex1");
+		shaders[i].ckey = glGetUniformLocation(shaders[i].prog,"ckey");
+		shaders[i].pal = glGetUniformLocation(shaders[i].prog,"pal");
+		shaders[i].view = glGetUniformLocation(shaders[i].prog,"view");
 	}
 }
 
