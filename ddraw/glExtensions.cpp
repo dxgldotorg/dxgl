@@ -89,7 +89,10 @@ int GLEXT_NV_packed_depth_stencil = 0;
 int GLEXT_EXT_packed_depth_stencil = 0;
 int GLEXT_ARB_depth_buffer_float = 0;
 int GLEXT_ARB_depth_texture = 0;
+int GLEXT_NVX_gpu_memory_info = 0;
+int GLEXT_ATI_meminfo = 0;
 int glver_major, glver_minor = 0;
+bool atimem = false;
 
 void InitGLExt()
 {
@@ -159,6 +162,8 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) GLEXT_EXT_packed_depth_stencil = 1;
 	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float")) GLEXT_ARB_depth_buffer_float = 1;
 	if(strstr((char*)glextensions,"GL_ARB_depth_texture")) GLEXT_ARB_depth_texture = 1;
+	if(strstr((char*)glextensions,"GL_NVX_gpu_memory_info")) GLEXT_NVX_gpu_memory_info = 1;
+	if(strstr((char*)glextensions,"GL_ATI_meminfo")) GLEXT_ATI_meminfo = 1;
 	bool broken_fbo = true;
 	if(GLEXT_ARB_framebuffer_object)
 	{

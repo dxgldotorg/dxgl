@@ -32,6 +32,10 @@ extern int GLEXT_NV_packed_depth_stencil;
 extern int GLEXT_EXT_packed_depth_stencil;
 extern int GLEXT_ARB_depth_buffer_float;
 extern int GLEXT_ARB_depth_texture;
+extern int GLEXT_NVX_gpu_memory_info;
+extern int GLEXT_ATI_meminfo;
+#define GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX 0x9047
+#define GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX 0x9049
 
 #ifdef __GNUC__
 #undef GLAPI

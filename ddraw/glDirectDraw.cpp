@@ -1342,8 +1342,20 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("IDirectDraw::GetAvailableVidMem: stub\n");
-	ERR(DDERR_GENERIC);
+	if(GLEXT_NVX_gpu_memory_info)
+	{
+		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
+		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
+		return DD_OK;
+	}
+	else
+	{
+		MEMORYSTATUS memstat;
+		GlobalMemoryStatus(&memstat);
+		if(lpdwTotal) *lpdwTotal = memstat.dwTotalVirtual;
+		if(lpdwFree) *lpdwFree = memstat.dwAvailVirtual;
+		return DD_OK;
+	}
 }
 HRESULT WINAPI glDirectDraw7::GetSurfaceFromDC(HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
