@@ -558,6 +558,7 @@ void glRenderer::Flush()
   */
 void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, HWND newwnd)
 {
+	EnterCriticalSection(&cs);
 	if(fullscreen && newwnd)
 	{
 		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
