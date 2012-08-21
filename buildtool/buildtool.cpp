@@ -228,8 +228,7 @@ int MakeHelp(char *path)
 	{
 		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?","HTML Help Workshop not found",
 			MB_YESNO|MB_ICONERROR);
-		if(result == IDYES) ShellExecuteA(NULL,"open",
-			"http://web.archive.org/web/20070216084201/http://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe"
+		if(result == IDYES) ShellExecuteA(NULL,"open", "http://www.microsoft.com/en-us/download/details.aspx?id=21138"
 			,NULL,NULL,SW_SHOWNORMAL);
 		cout << "ERROR:  HTML Help Compiler not found." << endl;
 		return -1;
