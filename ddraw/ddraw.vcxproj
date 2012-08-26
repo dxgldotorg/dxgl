@@ -217,6 +217,7 @@
     <ClInclude Include="scalers.h" />
     <ClInclude Include="shadergen.h" />
     <ClInclude Include="shaders.h" />
+    <ClInclude Include="texture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp" />
@@ -266,6 +267,7 @@
     <ClCompile Include="scalers.cpp" />
     <ClCompile Include="shadergen.cpp" />
     <ClCompile Include="shaders.cpp" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ddraw.rc" />

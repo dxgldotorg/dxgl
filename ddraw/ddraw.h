@@ -60,10 +60,10 @@ extern DXGLCFG dxglcfg;
 extern bool gllock;
 extern DWORD timer;
 extern int vsyncstatus;
-extern bool ddenabled;
 class glRenderer;
 extern glRenderer *renderer;
 class glDirectDraw7;
+extern glDirectDraw7 *dxglinterface;
 void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7);
 
 #endif //_DDRAW_PRIVATE_H

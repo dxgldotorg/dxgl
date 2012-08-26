@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "texture.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
@@ -31,7 +32,7 @@ using namespace std;
 #include "shadergen.h"
 #include "matrix.h"
 
-GLuint backbuffer = 0;
+TEXTURE *backbuffer = NULL;
 int backx = 0;
 int backy = 0;
 BltVertex bltvertices[4];
@@ -87,7 +88,7 @@ inline void SetSwap(int swap)
   *  Optional buffer to receive the rescaled surface contents, for when primary
   *  scaling is enabled.
   * @param texture
-  *  OpenGL texture name to upload to
+  *  Texture object to upload to
   * @param x,y
   *  Width and height of the surface
   * @param bigx,bigy
@@ -98,21 +99,14 @@ inline void SetSwap(int swap)
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
-  * @param texformat
-  *  OpenGL format parameter for glTexImage2D
-  * @param texformat2
-  *  OpenGL type parameter for glTexImage2D
-  * @param texformat3
-  *  OpenGL internalformat parameter for glTexImage2D
   */
-void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3)
+void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
 	if(bpp == 15) bpp = 16;
-	glBindTexture(GL_TEXTURE_2D,texture);  // Select surface's texture
 	if((x == bigx && y == bigy) || !bigbuffer)
 	{
-		glTexImage2D(GL_TEXTURE_2D,0,texformat3,x,y,0,texformat,texformat2,buffer);
+		::_UploadTexture(texture,0,buffer,x,y);
 	}
 	else
 	{
@@ -132,7 +126,7 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, GLuint texture, i
 			break;
 		break;
 		}
-		glTexImage2D(GL_TEXTURE_2D,0,texformat3,bigx,bigy,0,texformat,texformat2,bigbuffer);
+		::_UploadTexture(texture,0,bigbuffer,bigx,bigy);
 	}
 }
 
@@ -144,7 +138,7 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, GLuint texture, i
   *  Optional buffer to receive the rescaled surface contents, for when primary
   *  scaling is enabled.
   * @param texture
-  *  OpenGL texture name to download from
+  *  Texture object to download from
   * @param x,y
   *  Width and height of the surface
   * @param bigx,bigy
@@ -155,22 +149,17 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, GLuint texture, i
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
-  * @param texformat
-  *  OpenGL format parameter for glGetTexImage
-  * @param texformat2
-  *  OpenGL type parameter for glGetTexImage
   */
-void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2)
+void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
-	glBindTexture(GL_TEXTURE_2D,texture);  // Select surface's texture
 	if((bigx == x && bigy == y) || !bigbuffer)
 	{
-		glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,buffer); // Shortcut for no scaling
+		::_DownloadTexture(texture,0,buffer);
 	}
 	else
 	{
-		glGetTexImage(GL_TEXTURE_2D,0,texformat,texformat2,bigbuffer);
+		::_DownloadTexture(texture,0,bigbuffer);
 		switch(bpp)
 		{
 		case 8:
@@ -281,23 +270,16 @@ DWORD WINAPI glRenderer::ThreadEntry(void *entry)
   * @return
   *  Number representing the texture created by OpenGL.
   */
-GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3)
+void glRenderer::MakeTexture(TEXTURE *texture, DWORD width, DWORD height)
 {
 	EnterCriticalSection(&cs);
-	inputs[0] = (void*)min;
-	inputs[1] = (void*)mag;
-	inputs[2] = (void*)wraps;
-	inputs[3] = (void*)wrapt;
-	inputs[4] = (void*)width;
-	inputs[5] = (void*)height;
-	inputs[6] = (void*)texformat1;
-	inputs[7] = (void*)texformat2;
-	inputs[8] = (void*)texformat3;
+	inputs[0] = texture;
+	inputs[1] = (void*)width;
+	inputs[2] = (void*)height;
 	opcode = OP_CREATE;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
 	LeaveCriticalSection(&cs);
-	return (GLuint)outputs[0];
 }
 
 /**
@@ -308,7 +290,7 @@ GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, D
   *  Optional buffer to receive the rescaled surface contents, for when primary
   *  scaling is enabled.
   * @param texture
-  *  OpenGL texture name to upload to
+  *  Texture object to upload to
   * @param x,y
   *  Width and height of the surface
   * @param bigx,bigy
@@ -319,20 +301,14 @@ GLuint glRenderer::MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, D
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
-  * @param texformat
-  *  OpenGL format parameter for glTexImage2D
-  * @param texformat2
-  *  OpenGL type parameter for glTexImage2D
-  * @param texformat3
-  *  OpenGL internalformat parameter for glTexImage2D
   */
-void glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3)
+void glRenderer::UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
 	EnterCriticalSection(&cs);
 	inputs[0] = buffer;
 	inputs[1] = bigbuffer;
-	inputs[2] = (void*)texture;
+	inputs[2] = texture;
 	inputs[3] = (void*)x;
 	inputs[4] = (void*)y;
 	inputs[5] = (void*)bigx;
@@ -340,9 +316,6 @@ void glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, in
 	inputs[7] = (void*)pitch;
 	inputs[8] = (void*)bigpitch;
 	inputs[9] = (void*)bpp;
-	inputs[10] = (void*)texformat;
-	inputs[11] = (void*)texformat2;
-	inputs[12] = (void*)texformat3;
 	opcode = OP_UPLOAD;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
@@ -357,7 +330,7 @@ void glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, in
   *  Optional buffer to receive the rescaled surface contents, for when primary
   *  scaling is enabled.
   * @param texture
-  *  OpenGL texture name to download from
+  *  Texture object to download from
   * @param x,y
   *  Width and height of the surface
   * @param bigx,bigy
@@ -368,18 +341,14 @@ void glRenderer::UploadTexture(char *buffer, char *bigbuffer, GLuint texture, in
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
-  * @param texformat
-  *  OpenGL format parameter for glGetTexImage
-  * @param texformat2
-  *  OpenGL type parameter for glGetTexImage
   */
-void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2)
+void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
 	EnterCriticalSection(&cs);
 	inputs[0] = buffer;
 	inputs[1] = bigbuffer;
-	inputs[2] = (void*)texture;
+	inputs[2] = texture;
 	inputs[3] = (void*)x;
 	inputs[4] = (void*)y;
 	inputs[5] = (void*)bigx;
@@ -387,8 +356,6 @@ void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, 
 	inputs[7] = (void*)pitch;
 	inputs[8] = (void*)bigpitch;
 	inputs[9] = (void*)bpp;
-	inputs[10] = (void*)texformat;
-	inputs[11] = (void*)texformat2;
 	opcode = OP_DOWNLOAD;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
@@ -400,10 +367,10 @@ void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, 
   * @param texture
   *  OpenGL texture to be deleted
   */
-void glRenderer::DeleteTexture(GLuint texture)
+void glRenderer::DeleteTexture(TEXTURE * texture)
 {
 	EnterCriticalSection(&cs);
-	inputs[0] = (void*)texture;
+	inputs[0] = texture;
 	opcode = OP_DELETETEX;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
@@ -472,11 +439,11 @@ HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
   * @param src
   *  Source surface to be updated
   */
-void glRenderer::DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
+void glRenderer::DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
 {
 	EnterCriticalSection(&cs);
-	inputs[0] = (void*)texture;
-	inputs[1] = (void*)paltex;
+	inputs[0] = texture;
+	inputs[1] = paltex;
 	inputs[2] = dest;
 	inputs[3] = src;
 	opcode = OP_DRAWSCREEN;
@@ -655,8 +622,9 @@ DWORD glRenderer::_Entry()
 				}
 				if(backbuffer)
 				{
-					glDeleteTextures(1,&backbuffer);
-					backbuffer = 0;
+					::_DeleteTexture(backbuffer);
+					delete backbuffer;
+					backbuffer = NULL;
 					backx = 0;
 					backy = 0;
 				}
@@ -675,31 +643,28 @@ DWORD glRenderer::_Entry()
 			_SetWnd((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4]);
 			break;
 		case OP_CREATE:
-			outputs[0] = (void*)_MakeTexture((GLint)inputs[0],(GLint)inputs[1],(GLint)inputs[2],(GLint)inputs[3],
-				(DWORD)inputs[4],(DWORD)inputs[5],(GLint)inputs[6],(GLint)inputs[7],(GLint)inputs[8]);
+			_MakeTexture((TEXTURE*)inputs[0],(DWORD)inputs[1],(DWORD)inputs[2]);
 			SetEvent(busy);
 			break;
 		case OP_UPLOAD:
-			_UploadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
-				(int)inputs[10],(int)inputs[11],(int)inputs[12]);
+			_UploadTexture((char*)inputs[0],(char*)inputs[1],(TEXTURE*)inputs[2],(int)inputs[3],
+				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9]);
 			SetEvent(busy);
 			break;
 		case OP_DOWNLOAD:
-			_DownloadTexture((char*)inputs[0],(char*)inputs[1],(GLuint)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9],
-				(int)inputs[10],(int)inputs[11]);
+			_DownloadTexture((char*)inputs[0],(char*)inputs[1],(TEXTURE*)inputs[2],(int)inputs[3],
+				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9]);
 			SetEvent(busy);
 			break;
 		case OP_DELETETEX:
-			_DeleteTexture((GLuint)inputs[0]);
+			_DeleteTexture((TEXTURE*)inputs[0]);
 			break;
 		case OP_BLT:
 			_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
 				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
 			break;
 		case OP_DRAWSCREEN:
-			_DrawScreen((GLuint)inputs[0],(GLuint)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],true);
+			_DrawScreen((TEXTURE*)inputs[0],(TEXTURE*)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],true);
 			break;
 		case OP_INITD3D:
 			_InitD3D((int)inputs[0]);
@@ -965,8 +930,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		progtype = PROG_TEXTURE;
 		glUniform1i(shaders[progtype].tex0,0);
 	}
-	SetActiveTexture(0);
-	if(src) glBindTexture(GL_TEXTURE_2D,src->GetTexture());
+	SetTexture(0,src->GetTexture());
 	glUniform4f(shaders[progtype].view,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
 	EnableArray(shaders[progtype].pos,true);
@@ -991,33 +955,33 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	SetEvent(busy);
 }
 
-GLuint glRenderer::_MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3)
+void glRenderer::_MakeTexture(TEXTURE *texture, DWORD width, DWORD height)
 {
-	GLuint texture;
-	glGenTextures(1,&texture);
-	glBindTexture(GL_TEXTURE_2D,texture);
-	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,(GLfloat)min);
-	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,(GLfloat)mag);
-	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,(GLfloat)wraps);
-	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,(GLfloat)wrapt);
-	glTexImage2D(GL_TEXTURE_2D,0,texformat3,width,height,0,texformat1,texformat2,NULL);
-	return texture;
+	_CreateTexture(texture,width,height);
 }
 
-void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y, int progtype)
+void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 {
 	GLfloat view[4];
 	SetActiveTexture(0);
 	if(!backbuffer)
 	{
-		backbuffer = _MakeTexture(GL_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,x,y,GL_BGRA,GL_UNSIGNED_BYTE,GL_RGBA8);
+		backbuffer = new TEXTURE;
+		ZeroMemory(backbuffer,sizeof(TEXTURE));
+			backbuffer->minfilter = backbuffer->magfilter = GL_LINEAR;
+			backbuffer->wraps = backbuffer->wrapt = GL_CLAMP_TO_EDGE;
+			backbuffer->pixelformat.dwFlags = DDPF_RGB;
+			backbuffer->pixelformat.dwBBitMask = 0xFF;
+			backbuffer->pixelformat.dwGBitMask = 0xFF00;
+			backbuffer->pixelformat.dwRBitMask = 0xFF0000;
+			backbuffer->pixelformat.dwRGBBitCount = 32;
+		_CreateTexture(backbuffer,x,y);
 		backx = x;
 		backy = y;
 	}
 	if((backx != x) || (backy != y))
 	{
-		glBindTexture(GL_TEXTURE_2D,backbuffer);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,x,y,0,GL_BGRA,GL_UNSIGNED_BYTE,NULL);
+		::_UploadTexture(backbuffer,0,NULL,x,y);
 		backx = x;
 		backy = y;
 	}
@@ -1027,7 +991,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y, int progtype)
 	view[3] = (GLfloat)y;
 	SetViewport(0,0,x,y);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glBindTexture(GL_TEXTURE_2D,*texture);
+	SetTexture(0,*texture);
 	*texture = backbuffer;
 	glUniform4f(shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
@@ -1043,7 +1007,7 @@ void glRenderer::_DrawBackbuffer(GLuint *texture, int x, int y, int progtype)
 	SetFBO(0,0,false);
 }
 
-void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync)
+void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync)
 {
 	int progtype;
 	RECT r,r2;
@@ -1066,7 +1030,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 		_UploadTexture(src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
 			(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
-			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->texformat,src->texformat2,src->texformat3);
+			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		src->dirty &= ~1;
 	}
 	if(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
@@ -1108,21 +1072,17 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	{
 		SetShader(PROG_PAL256,NULL,NULL,true);
 		progtype = PROG_PAL256;
-		glBindTexture(GL_TEXTURE_2D,paltex);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,1,0,GL_RGBA,GL_UNSIGNED_BYTE,dest->palette->GetPalette(NULL));
+		::_UploadTexture(paltex,0,dest->palette->GetPalette(NULL),256,1);
 		glUniform1i(shaders[progtype].tex0,0);
 		glUniform1i(shaders[progtype].pal,1);
-		SetActiveTexture(0);
-		glBindTexture(GL_TEXTURE_2D,texture);
-		SetActiveTexture(1);
-		glBindTexture(GL_TEXTURE_2D,paltex);
-		SetActiveTexture(0);
+		::SetTexture(0,texture);
+		::SetTexture(1,paltex);
 		if(dxglcfg.scalingfilter)
 		{
 			_DrawBackbuffer(&texture,dest->fakex,dest->fakey,progtype);
 			SetShader(PROG_TEXTURE,NULL,NULL,true);
 			progtype = PROG_TEXTURE;
-			glBindTexture(GL_TEXTURE_2D,texture);
+			SetTexture(0,texture);
 			glUniform1i(shaders[progtype].tex0,0);
 		}
 	}
@@ -1130,7 +1090,7 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 	{
 		SetShader(PROG_TEXTURE,NULL,NULL,true);
 		progtype = PROG_TEXTURE;
-		glBindTexture(GL_TEXTURE_2D,texture);
+		SetTexture(0,texture);
 		glUniform1i(shaders[progtype].tex0,0);
 	}
 	SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
@@ -1195,9 +1155,9 @@ void glRenderer::_DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7
 
 }
 
-void glRenderer::_DeleteTexture(GLuint texture)
+void glRenderer::_DeleteTexture(TEXTURE *texture)
 {
-	glDeleteTextures(1,&texture);
+	::_DeleteTexture(texture);
 	SetEvent(busy);
 }
 
@@ -1564,8 +1524,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 					device->texstages[i].texture->ddsd.dwHeight,device->texstages[i].texture->fakex,
 					device->texstages[i].texture->fakey,device->texstages[i].texture->ddsd.lPitch,
 					(device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*device->texstages[i].texture->fakex),
-					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount,device->texstages[i].texture->texformat,
-					device->texstages[i].texture->texformat2,device->texstages[i].texture->texformat3);
+					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount);
 				device->texstages[i].texture->dirty &= ~1;
 			}
 			if(device->texstages[i].texture)

@@ -36,19 +36,28 @@ typedef struct
 	BYTE *pixels;
 } DIB;
 
-struct GLVERTEX
+typedef struct
+{
+	GLuint buffer;
+	GLsizei size;
+	void *pointer;
+	bool mapped;
+	bool busy;
+} PBO;
+
+typedef struct
 {
 	void *data;
 	int stride;
-};
+} GLVERTEX;
 
-struct BltVertex
+typedef struct
 {
 	GLfloat x,y;
 	GLubyte r,g,b,a;
 	GLfloat s,t;
 	GLfloat padding[3];
-};
+} BltVertex;
 
 extern BltVertex bltvertices[4];
 
@@ -84,13 +93,13 @@ public:
 	glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwnd, glDirectDraw7 *glDD7);
 	~glRenderer();
 	static DWORD WINAPI ThreadEntry(void *entry);
-	void UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
-	void DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
+	void UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+	void DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
 	HRESULT Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
-	GLuint MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
-	void DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
-	void DeleteTexture(GLuint texture);
+	void MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
+	void DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
+	void DeleteTexture(TEXTURE *texture);
 	void InitD3D(int zbuffer);
 	void Flush();
 	void SetWnd(int width, int height, int fullscreen, int bpp, HWND newwnd);
@@ -103,14 +112,14 @@ private:
 	// In-thread APIs
 	DWORD _Entry();
 	BOOL _InitGL(int width, int height, int bpp, int fullscreen, HWND hWnd, glDirectDraw7 *glDD7);
-	void _UploadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2, int texformat3);
-	void _DownloadTexture(char *buffer, char *bigbuffer, GLuint texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp, int texformat, int texformat2);
+	void _UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+	void _DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
 	void _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
-	GLuint _MakeTexture(GLint min, GLint mag, GLint wraps, GLint wrapt, DWORD width, DWORD height, GLint texformat1, GLint texformat2, GLint texformat3);
-	void _DrawScreen(GLuint texture, GLuint paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync);
-	void _DeleteTexture(GLuint texture);
-	void _DrawBackbuffer(GLuint *texture, int x, int y, int progtype);
+	void _MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
+	void _DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync);
+	void _DeleteTexture(TEXTURE *texture);
+	void _DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype);
 	void _InitD3D(int zbuffer);
 	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 	void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,

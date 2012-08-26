@@ -558,8 +558,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// shader path
 		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,false);
 		// texture format
-		if(cfg->texformat) SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETCHECK,BST_UNCHECKED,0);
+		_tcscpy(buffer,_T("Automatic"));
+		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_SETCURSEL,cfg->TextureFormat,0);
+		// Texture upload
+		_tcscpy(buffer,_T("Automatic"));
+		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
@@ -777,7 +782,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 				}
 				else if(!current_app && tristate)
 				{
@@ -802,7 +808,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_TEXFORMAT,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
+					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 				}
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
@@ -816,7 +825,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
 				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
 				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
-				SetCheck(hWnd,IDC_TEXFORMAT,cfg->texformat,cfgmask->texformat,tristate);
+				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
+				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 			}
@@ -880,8 +890,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;
-		case IDC_TEXFORMAT:
-			cfg->texformat = GetCheck(hWnd,IDC_TEXFORMAT,cfgmask->texformat);
+		case IDC_TEXTUREFORMAT:
+			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,cfgmask->TextureFormat);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+			*dirty = true;
+			break;
+		case IDC_TEXUPLOAD:
+			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,cfgmask->TexUpload);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;

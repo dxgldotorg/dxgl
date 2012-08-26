@@ -20,14 +20,13 @@
 #include "ddraw.h"
 #include "glDirect3D.h"
 #include "glDirectDraw.h"
+#include "texture.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glRenderer.h"
 #include "glutil.h"
 #include "../common/version.h"
-
-bool directdraw_created = false; // emulate only one ddraw device
 
 DDDEVICEIDENTIFIER2 devid = {
 	"ddraw.dll",
@@ -559,6 +558,7 @@ glDirectDraw7::glDirectDraw7()
 
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 {
+	dxglinterface = this;
 	initialized = false;
 	if(pUnkOuter)
 	{
@@ -572,6 +572,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 
 glDirectDraw7::~glDirectDraw7()
 {
+	dxglinterface = NULL;
 	if(glD3D7) glD3D7->Release();
 	RestoreDisplayMode();
 	if(clippers)
@@ -594,8 +595,6 @@ glDirectDraw7::~glDirectDraw7()
 	}
 	if(renderer) delete renderer;
 	renderer = NULL;
-	ddenabled = false;
-	directdraw_created = false;
 }
 
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
@@ -980,7 +979,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	ZeroMemory(clippers,1024*sizeof(glDirectDrawClipper *));
 	clippercount = 0;
 	clippercountmax = 1024;
-	if(directdraw_created) error = DDERR_DIRECTDRAWALREADYCREATED;
 	bool useguid = false;
 	switch((INT_PTR)lpGUID)
 	{
@@ -996,7 +994,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		useguid = true;
 		DEBUG("Display GUIDs not yet supported, using primary.\n");
 	}
-	directdraw_created = true;
 	initialized = true;
 	return DD_OK;
 }

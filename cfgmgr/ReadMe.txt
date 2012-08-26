@@ -108,9 +108,15 @@ Valid settings:
 1 - Off
 2 - On
 
-Member texformat
-REG_DWORD HKCU\DXGL\<app>\TexFormat
+Member TextureFormat
+REG_DWORD HKCU\DXGL\<app>\TextureFormat
 Texture format
 Valid settings:
-0 - RGBA8
-1 - Optimized
+0 - Automatic
+
+Member TexUpload
+REG_DWORD HKCU\DXGL\<app>\TexUpload
+Method used to upload textures
+Valid settings:
+0 - Automatic
+1 - OpenGL Standard

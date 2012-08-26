@@ -16,14 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "texture.h"
 #include "glutil.h"
 
 bool depthwrite = true;
 bool depthtest = false;
 GLuint depthcomp = 0;
 GLuint alphacomp = 0;
-GLuint fbcolor = 0;
-GLuint fbz = 0;
+TEXTURE *fbcolor = NULL;
+TEXTURE *fbz = NULL;
 GLuint fbo = 0;
 GLint scissorx = 0;
 GLint scissory = 0;
@@ -43,7 +44,6 @@ GLfloat materialemission[4] = {0,0,0,0};
 GLfloat materialshininess = 0;
 bool scissorenabled = false;
 bool stencil = false;
-GLint texlevel = 0;
 GLint texwrap[16];
 GLclampf clearr = 0.0;
 GLclampf clearg = 0.0;
@@ -84,7 +84,7 @@ void DeleteFBO()
 	}
 }
 
-GLenum SetFBO(GLint color, GLint z, bool stencil)
+GLenum SetFBO(TEXTURE *color, TEXTURE *z, bool stencil)
 {
 	GLenum error;
 	if((fbcolor == color) && (fbz == z)) return 0;
@@ -98,16 +98,18 @@ GLenum SetFBO(GLint color, GLint z, bool stencil)
 			return 0;
 		}
 		else glBindFramebuffer(GL_FRAMEBUFFER,fbo);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color,0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
 		if(stencil)
 		{
 			if(!::stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z,0);
+			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
 			if(::stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z,0);
+			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	}
@@ -119,36 +121,23 @@ GLenum SetFBO(GLint color, GLint z, bool stencil)
 			return 0;
 		}
 		else glBindFramebufferEXT(GL_FRAMEBUFFER,fbo);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color,0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
 		if(stencil)
 		{
 			if(!::stencil) glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z,0);
+			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
 			if(::stencil) glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z,0);
+			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		error = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER);
 	}
 	::stencil = stencil;
 	return error;
-}
-
-void SetActiveTexture(int level)
-{
-	if(level != texlevel)
-	{
-		texlevel = level;
-		glActiveTexture(GL_TEXTURE0+level);
-	}
-}
-
-void SetTexture(int level,GLuint texture)
-{
-	SetActiveTexture(level);
-	if(texture) glBindTexture(GL_TEXTURE_2D,texture);
 }
 
 void SetWrap(int level, DWORD coord, DWORD address)
@@ -182,11 +171,11 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	if(texwrap[level*2+coord] == wrapmode) return;
 	else
 	{
-		int currtexture = texlevel;
+		//int currtexture = texlevel;
 		SetActiveTexture(level);
 		if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 		else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
-		SetActiveTexture(currtexture);
+		//SetActiveTexture(currtexture);
 	}
 }
 

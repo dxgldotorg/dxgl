@@ -94,15 +94,15 @@ public:
 	HRESULT WINAPI GetLOD(LPDWORD lpdwMaxLOD);
 	void SetFilter(int level, GLint mag, GLint min);
 	// internal functions
-	GLuint GetTexture(){
+	TEXTURE *GetTexture(){
 		return texture;
 	}
 	void Restore2();
 	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags);
-	void SetTexture(GLuint newtexture){texture = newtexture;};
+	void SetTexture(TEXTURE *newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(GLuint texture, glDirectDrawSurface7 *surface);
+	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	glDirectDrawSurface1 *dds1;
@@ -111,17 +111,14 @@ public:
 	glDirectDrawSurface4 *dds4;
 	glDirect3DTexture2 *d3dt2;
 	DWORD flipcount;
-	GLenum texformat;
-	GLenum texformat2;
-	GLint texformat3;
 	DWORD fakex,fakey;
 	DWORD dirty;
 	// dirty bits:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
-	GLuint texture;
-	GLuint paltex;
+	TEXTURE *texture;
+	TEXTURE *paltex;
 	bool hasstencil;
 	char *buffer;
 	char *bigbuffer;

@@ -34,8 +34,12 @@ extern int GLEXT_ARB_depth_buffer_float;
 extern int GLEXT_ARB_depth_texture;
 extern int GLEXT_NVX_gpu_memory_info;
 extern int GLEXT_ATI_meminfo;
+extern int GLEXT_ARB_ES2_compatibility;
+extern int glver_major;
+extern int glver_minor;
 #define GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX 0x9047
 #define GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX 0x9049
+#define GL_RGB565 0x8D62
 
 #ifdef __GNUC__
 #undef GLAPI

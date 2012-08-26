@@ -16,8 +16,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "texture.h"
 #include "scalers.h"
 #include "ddraw.h"
+#include "texture.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirectDraw.h"
@@ -116,9 +118,18 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				palette = palettein;
 				palette->AddRef();
 			}
-			paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
+			paltex = new TEXTURE;
+			ZeroMemory(paltex,sizeof(TEXTURE));
+			paltex->minfilter = paltex->magfilter = GL_NEAREST;
+			paltex->wraps = paltex->wrapt = GL_CLAMP_TO_EDGE;
+			paltex->pixelformat.dwFlags = DDPF_RGB;
+			paltex->pixelformat.dwBBitMask = 0xFF0000;
+			paltex->pixelformat.dwGBitMask = 0xFF00;
+			paltex->pixelformat.dwRBitMask = 0xFF;
+			paltex->pixelformat.dwRGBBitCount = 32;
+			renderer->MakeTexture(paltex,256,1);
 		}
-		else paltex = 0;
+		else paltex = NULL;
 	}
 	else
 	{
@@ -183,6 +194,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bitmapinfo->bmiHeader.biWidth = ddsd.dwWidth;
 	bitmapinfo->bmiHeader.biHeight = -(signed)ddsd.dwHeight;
 	bitmapinfo->bmiHeader.biPlanes = 1;
+	texture = new TEXTURE;
 	switch(surfacetype)
 	{
 	case 0:
@@ -200,140 +212,12 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		buffer = NULL;
 		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) magfilter = minfilter = GL_NEAREST;
 		else magfilter = minfilter = GL_LINEAR;
-		if(ddsd.dwFlags & DDSD_PIXELFORMAT)
-		{
-			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
-			{
-				switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
-				{
-				case 8:
-					if(ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8)
-					{
-						texformat = GL_LUMINANCE;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
-						else texformat3 = GL_RGBA8;
-						if(!palettein) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
-						bitmapinfo->bmiHeader.biBitCount = 8;
-					}
-					else
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_BYTE_3_3_2;
-						if(dxglcfg.texformat) texformat3 = GL_R3_G3_B2;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.ddpfPixelFormat.dwRBitMask = 0;
-					ddsd.ddpfPixelFormat.dwGBitMask = 0;
-					ddsd.ddpfPixelFormat.dwBBitMask = 0;
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
-					break;
-				case 16:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0x7C00) && (ddsd.ddpfPixelFormat.dwGBitMask == 0x3E0)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0x1F))
-					{
-						texformat = GL_BGRA;
-						texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-						if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
-						else texformat3 = GL_RGBA8;
-					}
-					else // fixme:  support more formats
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-						if(dxglcfg.texformat) texformat3 = GL_RGB;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
-					break;
-				case 24:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
-					{
-						texformat = GL_BGR;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_RGB8;
-						else texformat3 = GL_RGBA8;
-					}
-					else // fixme:  support more formats
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_RGB8;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*3);
-					break;
-				case 32:
-				default:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
-					{
-						texformat = GL_BGRA;
-						texformat2 = GL_UNSIGNED_BYTE;
-						texformat3 = GL_RGBA8;
-					}
-					else // fixme: support more formats
-					{
-						texformat = GL_RGBA;
-						texformat2 = GL_UNSIGNED_BYTE;
-						texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*4);
-				}
-			}
-			else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
-			{
-				switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
-				{
-				case 16:
-				default:
-					texformat = GL_DEPTH_COMPONENT;
-					texformat2 = GL_UNSIGNED_BYTE;
-					texformat3 = GL_DEPTH_COMPONENT16;
-					break;
-				case 24:
-					texformat = GL_DEPTH_COMPONENT;
-					texformat2 = GL_UNSIGNED_BYTE;
-					texformat3 = GL_DEPTH_COMPONENT24;
-					break;
-				case 32:
-					if((ddsd.ddpfPixelFormat.dwRGBZBitMask == 0x00ffffff) &&
-						!(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER))
-					{
-						texformat = GL_DEPTH_COMPONENT;
-						texformat2 = GL_UNSIGNED_INT;
-						texformat3 = GL_DEPTH_COMPONENT24;
-						break;
-					}
-					else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER)
-					{
-						texformat = GL_DEPTH_STENCIL;
-						texformat2 = GL_UNSIGNED_INT_24_8;
-						texformat3 = GL_DEPTH24_STENCIL8;
-						hasstencil = true;
-						break;
-					}
-					else
-					{
-						texformat = GL_DEPTH_COMPONENT;
-						texformat2 = GL_UNSIGNED_INT;
-						texformat3 = GL_DEPTH_COMPONENT32;
-						break;
-					}
-				}
-			}
-		}
-		else
+		if(!(ddsd.dwFlags & DDSD_PIXELFORMAT))
 		{
 			ddsd.ddpfPixelFormat.dwRGBBitCount = ddInterface->GetBPP();
 			switch(ddInterface->GetBPP())
 			{
 			case 8:
-				texformat = GL_LUMINANCE;
-				texformat2 = GL_UNSIGNED_BYTE;
-				if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
-				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0;
@@ -341,10 +225,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
 				break;
 			case 15:
-				texformat = GL_BGRA;
-				texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-				if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
-				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0x7C00;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0x3E0;
@@ -353,10 +233,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsd.ddpfPixelFormat.dwRGBBitCount = 16;
 				break;
 			case 16:
-				texformat = GL_RGB;
-				texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-				if(dxglcfg.texformat) texformat3 = GL_RGB;
-				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
@@ -364,10 +240,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
 				break;
 			case 24:
-				texformat = GL_BGR;
-				texformat2 = GL_UNSIGNED_BYTE;
-				if(dxglcfg.texformat) texformat3 = GL_RGB8;
-				else texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
@@ -375,9 +247,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*3);
 				break;
 			case 32:
-				texformat = GL_BGRA;
-				texformat2 = GL_UNSIGNED_BYTE;
-				texformat3 = GL_RGBA8;
 				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 				ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
 				ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
@@ -389,7 +258,16 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				return;
 			}
 		}
-		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		texture->pixelformat = ddsd.ddpfPixelFormat;
+		if((ddsd.dwFlags & DDSD_CAPS) && (ddsd.ddsCaps.dwCaps & DDSCAPS_TEXTURE))
+			texture->minfilter = texture->magfilter = GL_NEAREST;
+		else
+		{
+			if(dxglcfg.scalingfilter) texture->minfilter = texture->magfilter = GL_LINEAR;
+			else texture->minfilter = texture->magfilter = GL_NEAREST;
+		}
+		texture->wraps = texture->wrapt = GL_CLAMP_TO_EDGE;
+		renderer->MakeTexture(texture,fakex,fakey);
 	}
 
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
@@ -431,8 +309,16 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(dds2) dds2->Release();
 	if(dds3) dds3->Release();
 	if(dds4) dds4->Release();
-	if(paltex) renderer->DeleteTexture(paltex);
-	if(texture) renderer->DeleteTexture(texture);
+	if(paltex)
+	{
+		renderer->DeleteTexture(paltex);
+		delete paltex;
+	}
+	if(texture)
+	{
+		renderer->DeleteTexture(texture);
+		delete texture;
+	}
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) palette->Release();
 	if(backbuffer) backbuffer->Release();
@@ -586,7 +472,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	{
 		renderer->UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
 			fakex,fakey,ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*fakex)),
-			ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2,texformat3);
+			ddsd.ddpfPixelFormat.dwRGBBitCount);
 		dirty &= ~1;
 	}
 	if(src && (src->dirty & 1))
@@ -594,7 +480,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		renderer->UploadTexture(src->buffer,src->bigbuffer,src->texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
 			(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
-			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->texformat,src->texformat2,src->texformat3);
+			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		src->dirty &= ~1;
 	}
 	return renderer->Blt(lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx);
@@ -699,14 +585,14 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)
 	{
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) return DDERR_INVALIDOBJECT;
-		GLuint *textures = new GLuint[ddsd.dwBackBufferCount+1];
+		TEXTURE **textures = new TEXTURE*[ddsd.dwBackBufferCount+1];
 		textures[0] = texture;
 		tmp = this;
 		if(dirty & 1)
 		{
 			renderer->UploadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
 				fakex,fakey,ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*fakex)),
-				ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2,texformat3);
+				ddsd.ddpfPixelFormat.dwRGBBitCount);
 			dirty &= ~1;
 		}
 		this->dirty |= 2;
@@ -717,13 +603,13 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 			{
 				renderer->UploadTexture(tmp->buffer,tmp->bigbuffer,tmp->texture,tmp->ddsd.dwWidth,tmp->ddsd.dwHeight,
 					tmp->fakex,tmp->fakey,tmp->ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*tmp->fakex)),
-					tmp->ddsd.ddpfPixelFormat.dwRGBBitCount,tmp->texformat,tmp->texformat2,tmp->texformat3);
+					tmp->ddsd.ddpfPixelFormat.dwRGBBitCount);
 				tmp->dirty &= ~1;
 			}
 			tmp->dirty |= 2;
 			textures[i+1] = tmp->GetTexture();
 		}
-		GLuint tmptex = textures[0];
+		TEXTURE *tmptex = textures[0];
 		memmove(textures,&textures[1],ddsd.dwBackBufferCount*sizeof(GLuint));
 		textures[ddsd.dwBackBufferCount] = tmptex;
 		tmp = this;
@@ -930,7 +816,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 	case 0:
 		if(dirty & 2)
 			renderer->DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
-				(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2);
+				(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount);
 		ddsd.lpSurface = buffer;
 		dirty &= ~2;
 		break;
@@ -944,7 +830,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 			bigbuffer = (char *)malloc((ddsd.ddpfPixelFormat.dwRGBBitCount * NextMultipleOfWord(fakex) * fakey)/8);
 		else bigbuffer = NULL;
 		renderer->DownloadTexture(buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
-			(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,texformat,texformat2);
+			(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount);
 		dirty &= ~2;
 		surfacetype = 0;
 		goto retry;
@@ -996,8 +882,8 @@ void glDirectDrawSurface7::Restore2()
 		}
 		if(backbuffer) backbuffer->Restore2();
 		if(zbuffer) zbuffer->Restore2();
-		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		if(paltex) renderer->MakeTexture(paltex,256,1);
+		renderer->MakeTexture(texture,fakex,fakey);
 	}
 }
 HRESULT WINAPI glDirectDrawSurface7::Restore()
@@ -1040,8 +926,8 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 			if(backbuffer) backbuffer->Restore();
 			if(zbuffer) zbuffer->Restore();
 		}
-		if(paltex) paltex = renderer->MakeTexture(GL_NEAREST,GL_NEAREST,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,256,1,GL_RGBA,GL_UNSIGNED_BYTE,GL_RGB);
-		texture = renderer->MakeTexture(minfilter,magfilter,GL_CLAMP_TO_EDGE,GL_CLAMP_TO_EDGE,fakex,fakey,texformat,texformat2,texformat3);
+		if(paltex) renderer->MakeTexture(paltex,256,1);
+		renderer->MakeTexture(texture,fakex,fakey);
 		return DD_OK;
 	}
 	else return DD_OK;
@@ -1122,7 +1008,7 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDrawSurface7::RenderScreen(GLuint texture, glDirectDrawSurface7 *surface)
+void glDirectDrawSurface7::RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface)
 {
 	renderer->DrawScreen(texture,paltex,this,surface);
 }

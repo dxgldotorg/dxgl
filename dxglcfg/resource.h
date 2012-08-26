@@ -23,7 +23,6 @@
 #define IDI_DXGL                                107
 #define IDI_DXGLSM                              109
 #define IDI_STAR                                111
-#define IDC_TEXFORMAT                           1001
 #define IDC_HIGHRES                             1002
 #define IDC_SORTMODES                           1003
 #define IDC_UNCOMMONCOLOR                       1004
@@ -42,3 +41,5 @@
 #define IDC_COLOR                               1049
 #define IDC_ASPECT                              1050
 #define IDC_EXTRAMODES                          1055
+#define IDC_TEXTUREFORMAT                       1058
+#define IDC_TEXUPLOAD                           1059

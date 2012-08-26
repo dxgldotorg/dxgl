@@ -20,6 +20,7 @@
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
+#include "texture.h"
 #include "glRenderer.h"
 #include <intrin.h>
 #include <tlhelp32.h>
@@ -35,10 +36,10 @@ const GUID device_template =
 DWORD timer;
 int vsyncstatus;
 glRenderer *renderer = NULL;
-bool ddenabled = false;
+glDirectDraw7 *dxglinterface = NULL;
 
 /**
-  * Tests if a pointer is valid for reading from.  Compile ion Visual C++ with /EHa
+  * Tests if a pointer is valid for reading from.  Compile in Visual C++ with /EHa
   * enabled Structed Exception Handling in C++ code, to prevent crashes on invalid
   * pointers.
   * @param ptr
@@ -177,7 +178,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		}
 		return sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
 	}
-	if(ddenabled) return DDERR_DIRECTDRAWALREADYCREATED;
+	if(dxglinterface) return DDERR_DIRECTDRAWALREADYCREATED;
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
@@ -189,7 +190,6 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		delete myddraw7;
 		return error;
 	}
-	ddenabled = true;
 	myddraw7->QueryInterface(IID_IDirectDraw,(VOID**)&myddraw);
 	myddraw7->Release();
 	*lplpDD = (LPDIRECTDRAW)myddraw;
@@ -234,7 +234,7 @@ HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *l
   */
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
-	if(ddenabled) return DDERR_DIRECTDRAWALREADYCREATED;
+	if(dxglinterface) return DDERR_DIRECTDRAWALREADYCREATED;
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
@@ -246,7 +246,6 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 		delete myddraw;
 		return error;
 	}
-	ddenabled = true;
 	*lplpDD = (LPDIRECTDRAW7)myddraw;
 	return error;
 }

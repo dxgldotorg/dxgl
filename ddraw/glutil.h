@@ -19,16 +19,15 @@
 #ifndef _GLUTIL_H
 #define _GLUTIL_H
 
-extern GLuint fbcolor,fbz;
+extern TEXTURE *fbcolor;
+extern TEXTURE *fbz;
 extern GLuint fbo;
 extern bool stencil;
 
 void InitFBO();
 void DeleteFBO();
-void SetTexture(int level,GLuint texture);
-void SetActiveTexture(int level);
 void SetWrap(int level, DWORD coord, DWORD address);
-GLenum SetFBO(GLint color, GLint z, bool stencil);
+GLenum SetFBO(TEXTURE *color, TEXTURE *z, bool stencil);
 void SetDepthComp(GLenum comp);
 void DepthWrite(bool enabled);
 void DepthTest(bool enabled);

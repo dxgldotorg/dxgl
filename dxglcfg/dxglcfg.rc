@@ -65,7 +65,10 @@ FONT 8, "Ms Shell Dlg 2"
     AUTOCHECKBOX    "Add Extra Display Modes", IDC_EXTRAMODES, 299, 42, 100, 8
     LTEXT           "Sort video modes", IDC_STATIC, 195, 39, 56, 8, SS_LEFT
     COMBOBOX        IDC_SORTMODES, 195, 49, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-	AUTOCHECKBOX    "Use optimized texture internal formats", IDC_TEXFORMAT, 196, 173, 149, 10
+    LTEXT           "Texture format", IDC_STATIC, 196, 170, 50, 8, SS_LEFT
+    COMBOBOX        IDC_TEXTUREFORMAT, 196, 180, 101, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    LTEXT           "Texture access method", IDC_STATIC, 300, 170, 76, 8, SS_LEFT
+    COMBOBOX        IDC_TEXUPLOAD, 299, 180, 100, 30, CBS_DROPDOWN | CBS_HASSTRINGS
 }
 
 
