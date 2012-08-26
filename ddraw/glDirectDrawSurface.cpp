@@ -258,6 +258,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				return;
 			}
 		}
+		else ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*(ddsd.ddpfPixelFormat.dwRGBBitCount / 8));
 		texture->pixelformat = ddsd.ddpfPixelFormat;
 		if((ddsd.dwFlags & DDSD_CAPS) && (ddsd.ddsCaps.dwCaps & DDSCAPS_TEXTURE))
 			texture->minfilter = texture->magfilter = GL_NEAREST;
