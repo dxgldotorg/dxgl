@@ -930,7 +930,8 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		progtype = PROG_TEXTURE;
 		glUniform1i(shaders[progtype].tex0,0);
 	}
-	SetTexture(0,src->GetTexture());
+	if(src) SetTexture(0,src->GetTexture());
+	else SetTexture(0,NULL);
 	glUniform4f(shaders[progtype].view,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
 	EnableArray(shaders[progtype].pos,true);

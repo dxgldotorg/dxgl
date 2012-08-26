@@ -264,7 +264,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			texture->minfilter = texture->magfilter = GL_NEAREST;
 		else
 		{
-			if(dxglcfg.scalingfilter) texture->minfilter = texture->magfilter = GL_LINEAR;
+			if(dxglcfg.scalingfilter && (ddInterface->GetBPP() > 8)) texture->minfilter = texture->magfilter = GL_LINEAR;
 			else texture->minfilter = texture->magfilter = GL_NEAREST;
 		}
 		texture->wraps = texture->wrapt = GL_CLAMP_TO_EDGE;

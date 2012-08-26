@@ -1,11 +1,11 @@
-DXGL 0.3.1
+DXGL 0.3.2
 http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
 
-DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL 2.0. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
+DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL 2.x. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
 
-DXGL is currently in an alpha stage of development and very little works at this point.
+DXGL is currently in an alpha stage, but several applications and games already work.
 
 == System Requirements ==
 
@@ -15,16 +15,15 @@ DXGL is currently in an alpha stage of development and very little works at this
 
 == Build Requirements ==
 * Visual Studio 2010 or Visual C++ 2010 Express
-* Latest version of Windows SDK may be required
+* The following components are optional.  The build process will ask for these if they do not exist:
+** TortoiseSVN (to fill in revision on SVN builds)
+** HTML Help Workshop (to build help)
+** NSIS (to build installer, requires TortoiseSVN and HTML Help Workshop to succeed)
 
 == Build Instructions ==
-These instructions assume that you do not have any of the required software installed.  If you already have any or all of this software installed and set up, skip those steps.
-* Install Visual C++ 2010 Express at http://www.microsoft.com/express/downloads/#2010-Visual-CPP
-* Install the Windows SDK at:
-http://www.microsoft.com/downloads/en/details.aspx?familyid=6b6c21d2-2006-4afa-9702-529fa782d63b 
-Warning:  If you have installed Visual Studio 2010 SP1, install the Windows SDK update at:
-http://www.microsoft.com/downloads/en/details.aspx?FamilyID=689655B4-C55D-4F9B-9665-2C547E637B70 
-* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F5.
+These instructions assume that you do not have any of the required software installed. If you already have any or all of this software installed and set up, skip those steps.
+* Install Visual C++ 2010 Express at http://www.microsoft.com/express/downloads/#2010-Visual-CPP .
+* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F7.
 
 == Progress ==
 For detailed progress information, please check http://www.williamfeely.info/wiki/DXGL_Features
@@ -33,14 +32,13 @@ What works:
 * Display mode enumeration and switching (with emulated mode switching)
 * Fullscreen and windowed modes.
 * Basic Blt() functionality
-* 8-bit color with GLSL shader
+* 8-bit color emulated with GLSL shader
 
 What partially works:
-* SetCooperativeLevel (destroys the GL context if switching between windowed and fullscreen modes)
+* 3D graphics are only partially supported, and only advertised in Debug builds.
 
 What doesn't work:
-* Most functions are stubbed out and return an error
-* 3D Graphics support is very preliminary
+* Many functions are stubbed out and return an error
 
 == Installation ==
 
