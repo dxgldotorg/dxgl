@@ -653,29 +653,15 @@ HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
 	ERR(DDERR_GENERIC);
 }
 
-// Use EXACTLY one line per entry.  Don't change layout of the list.
-const int TEXFMT_START = __LINE__;
-const DDPIXELFORMAT texpixelformats[] = 
-{
-	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0xF00,0xF0,0xF,0xF000},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0x7C00,0x3E0,0x1F,0x8000},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB,0,16,0x7C00,0x3E0,0x1F,0},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB,0,16,0xF800,0x7E0,0x1F,0},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,32,0xFF0000,0xFF00,0xFF,0xFF000000},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB,0,32,0xFF0000,0xFF00,0xFF,0},
-	{sizeof(DDPIXELFORMAT),DDPF_RGB,0,24,0xFF0000,0xFF00,0xFF,0}
-};
-const int TEXFMT_END = __LINE__ - 4;
-const int numtexfmt = TEXFMT_END-TEXFMT_START;
-
 HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	HRESULT result;
 	DDPIXELFORMAT fmt;
-	for(int i = 0; i < numtexfmt; i++)
+	for(int i = 0; i < numtexformats; i++)
 	{
-		memcpy(&fmt,&texpixelformats[i],sizeof(DDPIXELFORMAT));
+		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+		memcpy(&fmt,&::texformats[i],sizeof(DDPIXELFORMAT));
 		result = lpd3dEnumPixelProc(&fmt,lpArg);
 		if(result != D3DENUMRET_OK) return D3D_OK;
 	}

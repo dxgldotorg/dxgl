@@ -45,6 +45,7 @@ extern void (*_CreateTexture)(TEXTURE *texture, int width, int height);
 extern void (*_DeleteTexture)(TEXTURE *texture);
 extern void (*_UploadTexture)(TEXTURE *texture, int level, const void *data, int width, int height);
 extern void (*_DownloadTexture)(TEXTURE *texture, int level, void *data);
-
+extern const DDPIXELFORMAT texformats[];
+extern const int numtexformats;
 
 #endif //_TEXTURE_H

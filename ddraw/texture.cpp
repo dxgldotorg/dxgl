@@ -19,6 +19,7 @@
 #include "texture.h"
 #include "glRenderer.h"
 
+// Use EXACTLY one line per entry.  Don't change layout of the list.
 const int START_TEXFORMATS = __LINE__;
 const DDPIXELFORMAT texformats[] = 
 { // Size					Flags							FOURCC	bits	R/Ymask		G/U/Zmask	B/V/STmask	A/Zmask
