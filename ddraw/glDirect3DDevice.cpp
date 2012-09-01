@@ -212,6 +212,8 @@ int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
 glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
 	int zbuffer = 0;
+	glD3DDev3 = NULL;
+	glD3DDev2 = NULL;
 	maxmaterials = 32;
 	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
 	materialcount = 1;
