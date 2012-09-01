@@ -22,6 +22,7 @@
 class glDirect3DLight;
 class glDirect3DDevice7;
 class glDirectDrawSurface7;
+class glDirect3DViewport2;
 class glDirect3DViewport3 : public IDirect3DViewport3
 {
 public:
@@ -52,6 +53,7 @@ public:
 	void SetDevice(glDirect3DDevice7 *device){this->device = device;};
 	void Sync();
 	void SyncLights();
+	glDirect3DViewport2 *glD3DV2;
 private:
 	ULONG refcount;
 	glDirect3DLight *lights[8];
@@ -64,6 +66,34 @@ private:
 	D3DVALUE scaleX;
 	D3DVALUE scaleY;
 	bool current;
+};
+
+class glDirect3DViewport2 : public IDirect3DViewport2
+{
+public:
+	glDirect3DViewport2(glDirect3DViewport3 *glD3DV3);
+	virtual ~glDirect3DViewport2();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI AddLight(LPDIRECT3DLIGHT lpLight);
+	HRESULT WINAPI Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags);
+	HRESULT WINAPI DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight);
+	HRESULT WINAPI GetBackground(LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid);
+	HRESULT WINAPI GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid);
+	HRESULT WINAPI GetViewport(LPD3DVIEWPORT lpData);
+	HRESULT WINAPI GetViewport2(LPD3DVIEWPORT2 lpData);
+	HRESULT WINAPI Initialize(LPDIRECT3D lpDirect3D);
+	HRESULT WINAPI LightElements(DWORD dwElementCount, LPD3DLIGHTDATA lpData);
+	HRESULT WINAPI NextLight(LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags);
+	HRESULT WINAPI SetBackground(D3DMATERIALHANDLE hMat);
+	HRESULT WINAPI SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDSurface);
+	HRESULT WINAPI SetViewport(LPD3DVIEWPORT lpData);
+	HRESULT WINAPI SetViewport2(LPD3DVIEWPORT2 lpData);
+	HRESULT WINAPI TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
+private:
+	glDirect3DViewport3 *glD3DV3;
+	int refcount;
 };
 
 #endif //__GLDIRECT3DVIEWPORT_H

@@ -33,6 +33,7 @@ class glDirectDrawSurface2;
 class glDirectDrawSurface3;
 class glDirectDrawSurface4;
 class glDirect3DTexture2;
+class glDirect3DDevice7;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
@@ -105,6 +106,7 @@ public:
 	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
+	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
 	glDirectDrawSurface1 *dds1;
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
@@ -127,6 +129,7 @@ public:
 	glDirectDrawPalette *palette;
 	HGLRC hRC;
 	glDirectDrawSurface7 *zbuffer;
+	D3DMATERIALHANDLE handle;
 private:
 	ULONG refcount;
 	int locked;
@@ -139,6 +142,7 @@ private:
 	glDirectDrawClipper *clipper;
 	int pagelocked;
 	GLint magfilter,minfilter;
+	glDirect3DDevice7 *device;
 };
 
 // Legacy DDRAW Interfaces

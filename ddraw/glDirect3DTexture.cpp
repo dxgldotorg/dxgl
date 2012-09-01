@@ -21,6 +21,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirect3DTexture.h"
+#include "glDirect3DDevice.h"
 
 glDirect3DTexture2::glDirect3DTexture2(glDirectDrawSurface7 *glDDS7)
 {
@@ -65,6 +66,12 @@ ULONG WINAPI glDirect3DTexture2::Release()
 HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2, LPD3DTEXTUREHANDLE lpHandle)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDirect3DDevice2) return DDERR_INVALIDPARAMS;
+	glDirect3DDevice7 *glD3DDev7;
+	lpDirect3DDevice2->QueryInterface(IID_IDirect3DDevice7,(void**)&glD3DDev7);
+	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
+	glD3DDev7->Release();
+	return ret;
 	FIXME("glDirect3DTexture2::GetHandle: stub");
 	return DDERR_GENERIC;
 }

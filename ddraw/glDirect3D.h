@@ -24,6 +24,7 @@ extern D3DDEVICEDESC d3ddesc3;
 class glDirectDraw7;
 
 class glDirect3D3;
+class glDirect3D2;
 class glDirect3D7 : public IDirect3D7
 {
 public:
@@ -46,17 +47,18 @@ public:
 private:
 	ULONG refcount;
 	glDirect3D3 *glD3D3;
+	glDirect3D2 *glD3D2;
 };
 
 class glDirect3D3 : public IDirect3D3
 {
 public:
-	glDirect3D3(glDirect3D7 *glDD7);
+	glDirect3D3(glDirect3D7 *glD3D7);
 	virtual ~glDirect3D3();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
-	HRESULT WINAPI CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *  lplpD3DDevice, LPUNKNOWN pUnkOuter);
+	HRESULT WINAPI CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter);
 	HRESULT WINAPI CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
 	HRESULT WINAPI CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter);
 	HRESULT WINAPI CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter);
@@ -70,5 +72,23 @@ private:
 	glDirect3D7 *glD3D7;
 };
 
+class glDirect3D2 : public IDirect3D2
+{
+public:
+	glDirect3D2(glDirect3D7 *glD3D7);
+	virtual ~glDirect3D2();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice2);
+	HRESULT WINAPI CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
+	HRESULT WINAPI CreateMaterial(LPDIRECT3DMATERIAL2* lplpDirect3DMaterial2, IUnknown* pUnkOuter);
+	HRESULT WINAPI CreateViewport(LPDIRECT3DVIEWPORT2* lplpD3DViewport2, IUnknown* pUnkOuter);
+	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
+	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
+private:
+	ULONG refcount;
+	glDirect3D7 *glD3D7;
+};
 
 #endif //__GLDIRECT3D_H

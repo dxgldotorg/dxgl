@@ -567,10 +567,11 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	GLint srclen = strlen(src);
 	glShaderSource(genshaders[index].shader.vs,1,&src,&srclen);
 	glCompileShader(genshaders[index].shader.vs);
-	GLint loglen,result;
+	GLint result;
 	char *infolog = NULL;
 	glGetShaderiv(genshaders[index].shader.vs,GL_COMPILE_STATUS,&result);
 #ifdef _DEBUG
+	GLint loglen;
 	if(!result)
 	{
 		glGetShaderiv(genshaders[index].shader.vs,GL_INFO_LOG_LENGTH,&loglen);

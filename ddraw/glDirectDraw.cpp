@@ -644,8 +644,10 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D2)
 	{
-		FIXME("Add IDirect3D Interfaces\n");
-		ERR(DDERR_GENERIC);
+		glDirect3D7 *tmp = new glDirect3D7(this);
+		tmp->QueryInterface(IID_IDirect3D2,ppvObj);
+		tmp->Release();
+		return DD_OK;
 	}
 	if(riid == IID_IDirect3D3)
 	{

@@ -40,6 +40,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 {
 	hasstencil = false;
 	dirty = 2;
+	handle = 0;
+	device = NULL;
 	locked = 0;
 	pagelocked = 0;
 	flipcount = 0;
@@ -326,6 +328,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer->Release();
+	if(device) device->Release();
 	ddInterface->DeleteSurface(this);
 }
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
@@ -1144,6 +1147,22 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min)
 	}
 }
 
+HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!glD3DDev7) return DDERR_INVALIDPARAMS;
+	if(handle)
+	{
+		if(device != glD3DDev7) return DDERR_INVALIDOBJECT;
+		*lpHandle = handle;
+		return D3D_OK;
+	}
+	device = glD3DDev7;
+	handle = device->AddTexture(this);
+	*lpHandle = handle;
+	return D3D_OK;
+}
+
 // DDRAW1 wrapper
 glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
 {
@@ -1184,7 +1203,7 @@ ULONG WINAPI glDirectDrawSurface1::Release()
 HRESULT WINAPI glDirectDrawSurface1::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	return glDDS7->AddAttachedSurface((LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface);
+	return glDDS7->AddAttachedSurface(((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface1::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -1410,7 +1429,7 @@ ULONG WINAPI glDirectDrawSurface2::Release()
 HRESULT WINAPI glDirectDrawSurface2::AddAttachedSurface(LPDIRECTDRAWSURFACE2 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	return glDDS7->AddAttachedSurface((LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface);
+	return glDDS7->AddAttachedSurface(((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface2::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -1650,7 +1669,7 @@ ULONG WINAPI glDirectDrawSurface3::Release()
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	return glDDS7->AddAttachedSurface((LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface);
+	return glDDS7->AddAttachedSurface(((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface3::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -1895,7 +1914,7 @@ ULONG WINAPI glDirectDrawSurface4::Release()
 HRESULT WINAPI glDirectDrawSurface4::AddAttachedSurface(LPDIRECTDRAWSURFACE4 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
-	return glDDS7->AddAttachedSurface((LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface);
+	return glDDS7->AddAttachedSurface(((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface4::AddOverlayDirtyRect(LPRECT lpRect)
 {
