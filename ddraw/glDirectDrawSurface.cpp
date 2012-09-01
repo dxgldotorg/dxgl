@@ -216,6 +216,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		else magfilter = minfilter = GL_LINEAR;
 		if(!(ddsd.dwFlags & DDSD_PIXELFORMAT))
 		{
+			ZeroMemory(&ddsd.ddpfPixelFormat,sizeof(DDPIXELFORMAT));
+			ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 			ddsd.ddpfPixelFormat.dwRGBBitCount = ddInterface->GetBPP();
 			switch(ddInterface->GetBPP())
 			{
