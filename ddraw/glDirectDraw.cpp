@@ -337,6 +337,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID 
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC));
 	ddmode.dwSize = sizeof(DDSURFACEDESC);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
+	ddmode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	while(EnumDisplaySettings(NULL,modenum++,&mode))
 	{
 		modes[modenum-1] = mode;
