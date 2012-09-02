@@ -841,6 +841,13 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		surfacetype = 0;
 		goto retry;
 	}
+	if(lpDestRect)
+	{
+		ULONG_PTR ptr = (ULONG_PTR)ddsd.lpSurface;
+		ptr += (lpDestRect->left * (ddsd.ddpfPixelFormat.dwRGBBitCount/8));
+		ptr += (lpDestRect->top * (ddsd.lPitch));
+		ddsd.lpSurface = (LPVOID)ptr;
+	}
 	memcpy(lpDDSurfaceDesc,&ddsd,lpDDSurfaceDesc->dwSize);
 	locked++;
 	return DD_OK;
