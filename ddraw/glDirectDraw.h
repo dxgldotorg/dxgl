@@ -24,6 +24,9 @@ class glDirectDrawClipper;
 class glDirect3D7;
 class glRenderer;
 
+class glDirectDraw1;
+class glDirectDraw2;
+class glDirectDraw4;
 class glDirectDraw7 : public IDirectDraw7
 {
 public:
@@ -81,6 +84,9 @@ public:
 	void DeleteClipper(glDirectDrawClipper *clipper);
 	glDirectDrawSurface7 *primary;
 	bool primarylost;
+	glDirectDraw1 *glDD1;
+	glDirectDraw2 *glDD2;
+	glDirectDraw4 *glDD4;
 private:
 	HRESULT error;
 	ULONG refcount;

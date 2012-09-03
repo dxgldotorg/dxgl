@@ -1168,6 +1168,7 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 	}
 	device = glD3DDev7;
 	handle = device->AddTexture(this);
+	device->AddRef();
 	*lpHandle = handle;
 	return D3D_OK;
 }

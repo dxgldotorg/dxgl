@@ -610,26 +610,54 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirectDraw)
 	{
-		// Create an IDirectDraw1 interface
-		this->AddRef();
-		*ppvObj = new glDirectDraw1(this);
-		this->Release();
-		return DD_OK;
+		if(glDD1)
+		{
+			*ppvObj = glDD1;
+			glDD1->AddRef();
+			return DD_OK;
+		}
+		else
+		{
+			// Create an IDirectDraw1 interface
+			this->AddRef();
+			*ppvObj = new glDirectDraw1(this);
+			glDD1 = (glDirectDraw1*)*ppvObj;
+			return DD_OK;
+		}
 	}
 	if(riid == IID_IDirectDraw2)
 	{
-		// Create an IDirectDraw2 interface
-		this->AddRef();
-		*ppvObj = new glDirectDraw2(this);
-		this->Release();
-		return DD_OK;
+		if(glDD2)
+		{
+			*ppvObj = glDD2;
+			glDD2->AddRef();
+			return DD_OK;
+		}
+		else
+		{
+			// Create an IDirectDraw2 interface
+			this->AddRef();
+			*ppvObj = new glDirectDraw2(this);
+			glDD2 = (glDirectDraw2*)*ppvObj;
+			return DD_OK;
+		}
 	}
 	if(riid == IID_IDirectDraw4)
 	{
-		// Create an IDirectDraw4 interface
-		this->AddRef();
-		*ppvObj = new glDirectDraw4(this);
-		return DD_OK;
+		if(glDD4)
+		{
+			*ppvObj = glDD4;
+			glDD4->AddRef();
+			return DD_OK;
+		}
+		else
+		{
+			// Create an IDirectDraw4 interface
+			this->AddRef();
+			*ppvObj = new glDirectDraw4(this);
+			glDD4 = (glDirectDraw4*)*ppvObj;
+			return DD_OK;
+		}
 	}
 	if(riid == IID_IDirectDraw7)
 	{
@@ -963,6 +991,9 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	if(initialized) return DDERR_ALREADYINITIALIZED;
 	primarylost = true;
 	glD3D7 = NULL;
+	glDD1 = NULL;
+	glDD2 = NULL;
+	glDD4 = NULL;
 	renderer = NULL;
 	primary = NULL;
 	fullscreen = false;
@@ -1424,7 +1455,6 @@ void glDirectDraw7::DeleteClipper(glDirectDrawClipper *clipper)
 glDirectDraw1::glDirectDraw1(glDirectDraw7 *gl_DD7)
 {
 	glDD7 = gl_DD7;
-	glDD7->AddRef();
 	refcount = 1;
 }
 glDirectDraw1::~glDirectDraw1()
@@ -1572,7 +1602,6 @@ HRESULT WINAPI glDirectDraw1::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 glDirectDraw2::glDirectDraw2(glDirectDraw7 *gl_DD7)
 {
 	glDD7 = gl_DD7;
-	glDD7->AddRef();
 	refcount = 1;
 }
 glDirectDraw2::~glDirectDraw2()
