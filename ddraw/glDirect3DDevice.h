@@ -144,6 +144,7 @@ public:
 	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
 	HRESULT GetStats(LPD3DSTATS lpD3DStats);
 	HRESULT SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDIRECT3DTEXTURE2 lpD3DTex2);
+	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	GLfloat matWorld[16];
 	GLfloat matView[16];

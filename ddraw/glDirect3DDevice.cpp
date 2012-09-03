@@ -661,6 +661,7 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 	for(int i = 0; i < numtexformats; i++)
 	{
 		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
 		memcpy(&fmt,&::texformats[i],sizeof(DDPIXELFORMAT));
 		result = lpd3dEnumPixelProc(&fmt,lpArg);
 		if(result != D3DENUMRET_OK) return D3D_OK;
@@ -961,6 +962,114 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	switch(dwRendStateType)
+	{
+	case D3DRENDERSTATE_TEXTUREHANDLE:
+		if(dwRenderState > texturecount-1) return DDERR_INVALIDPARAMS;
+		if(dwRenderState)
+		{
+			if(!textures[dwRenderState]) return DDERR_INVALIDPARAMS;
+			SetTexture(0,textures[dwRenderState]);
+		}
+		else SetTexture(0,NULL);
+		break;
+	case D3DRENDERSTATE_TEXTUREADDRESS:
+		SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSU,dwRenderState);
+		SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSV,dwRenderState);
+		break;
+	case D3DRENDERSTATE_WRAPU:
+		if(dwRenderState) renderstate[D3DRENDERSTATE_WRAP0] |= D3DWRAP_U;
+		else renderstate[D3DRENDERSTATE_WRAP0] &= ~D3DWRAP_U;
+		break;
+	case D3DRENDERSTATE_WRAPV:
+		if(dwRenderState) renderstate[D3DRENDERSTATE_WRAP0] |= D3DWRAP_V;
+		else renderstate[D3DRENDERSTATE_WRAP0] &= ~D3DWRAP_V;
+		break;
+	case D3DRENDERSTATE_TEXTUREMAG:
+		switch(dwRenderState)
+		{
+		case D3DFILTER_NEAREST:
+		default:
+			SetTextureStageState(0,D3DTSS_MAGFILTER,D3DTFG_POINT);
+			break;
+		case D3DFILTER_LINEAR:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFG_POINT);
+		}
+		break;
+	case D3DRENDERSTATE_TEXTUREMIN:
+		switch(dwRenderState)
+		{
+		case D3DFILTER_NEAREST:
+		default:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_POINT);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_NONE);
+			break;
+		case D3DFILTER_LINEAR:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_LINEAR);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_NONE);
+			break;
+		case D3DFILTER_MIPNEAREST:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_POINT);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_POINT);
+			break;
+		case D3DFILTER_MIPLINEAR:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_LINEAR);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_POINT);
+			break;
+		case D3DFILTER_LINEARMIPNEAREST:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_POINT);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_LINEAR);
+			break;
+		case D3DFILTER_LINEARMIPLINEAR:
+			SetTextureStageState(0,D3DTSS_MINFILTER,D3DTFN_LINEAR);
+			SetTextureStageState(0,D3DTSS_MIPFILTER,D3DTFP_LINEAR);
+			break;
+		}
+		break;
+	case D3DRENDERSTATE_TEXTUREMAPBLEND:
+		if(!dwRenderState || (dwRenderState > D3DTBLEND_ADD)) return DDERR_INVALIDPARAMS;
+		switch(dwRenderState)
+		{
+		case D3DTBLEND_DECAL:
+		case D3DTBLEND_COPY:
+		default:
+			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_SELECTARG1);
+			SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG1);
+			break;
+		case D3DTBLEND_MODULATE:
+			FIXME("DX5 modulate not yet supported.");
+			ERR(DDERR_GENERIC);
+		case D3DTBLEND_DECALALPHA:
+			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_BLENDTEXTUREALPHA);
+			SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG2);
+			break;
+		case D3DTBLEND_MODULATEALPHA:
+			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_MODULATE);
+			SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_MODULATE);
+			break;
+		case D3DTBLEND_DECALMASK:
+		case D3DTBLEND_MODULATEMASK:
+			FIXME("DX5 masked blend modes not supported.");
+			return DDERR_UNSUPPORTED;
+		case D3DTBLEND_ADD:
+			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_ADD);
+			SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG2);
+			break;
+		}
+		break;
+	}
 	if(dwRendStateType > 152) return DDERR_INVALIDPARAMS;
 	if(dwRendStateType < 0) return DDERR_INVALIDPARAMS;
 	renderstate[dwRendStateType] = dwRenderState;
@@ -1470,9 +1579,17 @@ HRESULT glDirect3DDevice7::GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICED
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!lpD3DHWDevDesc && !lpD3DHELDevDesc) return DDERR_INVALIDPARAMS;
 	D3DDEVICEDESC desc = d3ddesc3;
-	if(lpD3DHELDevDesc) *lpD3DHELDevDesc = desc;
+	if(lpD3DHELDevDesc)
+	{
+		if(lpD3DHELDevDesc->dwSize < sizeof(D3DDEVICEDESC)) return DDERR_INVALIDPARAMS;
+		memcpy(lpD3DHELDevDesc, &desc, sizeof(D3DDEVICEDESC));
+	}
 	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
-	if(lpD3DHWDevDesc) *lpD3DHWDevDesc = desc;
+	if(lpD3DHWDevDesc)
+	{
+		if(lpD3DHWDevDesc->dwSize < sizeof(D3DDEVICEDESC)) return DDERR_INVALIDPARAMS;
+		memcpy(lpD3DHWDevDesc, &desc, sizeof(D3DDEVICEDESC));
+	}
 	return D3D_OK;
 }
 
@@ -1557,6 +1674,18 @@ HRESULT glDirect3DDevice7::SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDI
 	if(!lpD3DTex2) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice7::SwapTextureHandles: stub");
 	return DDERR_GENERIC;
+}
+
+void glDirect3DDevice7::InitDX5()
+{
+	SetRenderState(D3DRENDERSTATE_TEXTUREHANDLE,0);
+	SetRenderState(D3DRENDERSTATE_TEXTUREADDRESS,D3DTADDRESS_WRAP);
+	SetRenderState(D3DRENDERSTATE_WRAPU,FALSE);
+	SetRenderState(D3DRENDERSTATE_WRAPV,FALSE);
+	SetRenderState(D3DRENDERSTATE_TEXTUREMAG,D3DFILTER_NEAREST);
+	SetRenderState(D3DRENDERSTATE_TEXTUREMIN,D3DFILTER_NEAREST);
+	//SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND,D3DTBLEND_MODULATE);
+	SetRenderState(D3DRENDERSTATE_SPECULARENABLE,TRUE);
 }
 
 // IDirect3DDevice3 wrapper
@@ -1865,6 +1994,7 @@ HRESULT WINAPI glDirect3DDevice3::Vertex(LPVOID lpVertex)
 glDirect3DDevice2::glDirect3DDevice2(glDirect3DDevice7 *glD3DDev7)
 {
 	this->glD3DDev7 = glD3DDev7;
+	glD3DDev7->InitDX5();
 	refcount = 1;
 }
 
