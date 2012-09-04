@@ -256,6 +256,8 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	memset(gltextures,0,8*sizeof(GLuint));
 	d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
 		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
+	d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
+		d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	renderer->InitD3D(zbuffer);
 }
 glDirect3DDevice7::~glDirect3DDevice7()
@@ -486,7 +488,16 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	shader |= (__int64)blendweights << 46;
 	if(renderstate[D3DRENDERSTATE_NORMALIZENORMALS]) shader |= (1i64 << 49);
 	if(VertexType[1].data) shader |= (1i64 << 50);
-	//TODO:  Implement texture stages.
+	if(renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
+	{
+		bool noalpha = false;;
+		if(!texstages[0].texture) noalpha = true;
+		if(texstages[0].texture)
+			if(!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+				noalpha = true;
+		if(noalpha) texstages[0].alphaop = D3DTOP_SELECTARG2;
+		else texstages[0].alphaop = D3DTOP_MODULATE;
+	}
 	for(i = 0; i < 8; i++)
 	{
 		if(!texstages[i].dirty) continue;
@@ -1039,8 +1050,12 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 			SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG1);
 			break;
 		case D3DTBLEND_MODULATE:
-			FIXME("DX5 modulate not yet supported.");
-			ERR(DDERR_GENERIC);
+			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
+			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_MODULATE);
+			break; // Automatically selected based on texture
 		case D3DTBLEND_DECALALPHA:
 			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
 			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
@@ -1113,6 +1128,7 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 	{
 	case D3DTSS_COLOROP:
 		if(!dwValue || (dwValue > 24)) return DDERR_INVALIDPARAMS;
+		if(dwStage == 0)renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] = 0;
 		texstages[dwStage].colorop = (D3DTEXTUREOP)dwValue;
 		texstages[dwStage].dirty = true;
 		return D3D_OK;
@@ -1130,6 +1146,7 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 		return D3D_OK;
 	case D3DTSS_ALPHAOP:
 		if(!dwValue || (dwValue > 24)) return DDERR_INVALIDPARAMS;
+		if(dwStage == 0)renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] = 0;
 		texstages[dwStage].alphaop = (D3DTEXTUREOP )dwValue;
 		texstages[dwStage].dirty = true;
 		return D3D_OK;
