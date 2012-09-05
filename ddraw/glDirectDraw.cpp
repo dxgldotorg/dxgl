@@ -549,6 +549,9 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 
 glDirectDraw7::glDirectDraw7()
 {
+	glDD1 = NULL;
+	glDD2 = NULL;
+	glDD4 = NULL;
 	glD3D7 = NULL;
 	clippers = NULL;
 	surfaces = NULL;
@@ -1460,6 +1463,7 @@ glDirectDraw1::glDirectDraw1(glDirectDraw7 *gl_DD7)
 glDirectDraw1::~glDirectDraw1()
 {
 	glDD7->Release();
+	glDD7->glDD1 = NULL;
 }
 HRESULT WINAPI glDirectDraw1::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -1607,6 +1611,7 @@ glDirectDraw2::glDirectDraw2(glDirectDraw7 *gl_DD7)
 glDirectDraw2::~glDirectDraw2()
 {
 	glDD7->Release();
+	glDD7->glDD2 = NULL;
 }
 HRESULT WINAPI glDirectDraw2::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -1765,6 +1770,7 @@ glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
 glDirectDraw4::~glDirectDraw4()
 {
 	glDD7->Release();
+	glDD7->glDD4 = NULL;
 }
 HRESULT WINAPI glDirectDraw4::QueryInterface(REFIID riid, void** ppvObj)
 {
