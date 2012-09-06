@@ -1213,6 +1213,7 @@ ULONG WINAPI glDirectDrawSurface1::Release()
 HRESULT WINAPI glDirectDrawSurface1::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDDSAttachedSurface) return DDERR_INVALIDPARAMS;
 	return glDDS7->AddAttachedSurface(((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface1::AddOverlayDirtyRect(LPRECT lpRect)
@@ -1439,6 +1440,7 @@ ULONG WINAPI glDirectDrawSurface2::Release()
 HRESULT WINAPI glDirectDrawSurface2::AddAttachedSurface(LPDIRECTDRAWSURFACE2 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDDSAttachedSurface) return DDERR_INVALIDPARAMS;
 	return glDDS7->AddAttachedSurface(((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface2::AddOverlayDirtyRect(LPRECT lpRect)
@@ -1684,6 +1686,7 @@ ULONG WINAPI glDirectDrawSurface3::Release()
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDDSAttachedSurface) return DDERR_INVALIDPARAMS;
 	return glDDS7->AddAttachedSurface(((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
 }
 HRESULT WINAPI glDirectDrawSurface3::AddOverlayDirtyRect(LPRECT lpRect)
