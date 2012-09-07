@@ -198,13 +198,9 @@ void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int wid
 {
 	SetActiveTexture(0);
 	SetTexture(0,texture);
-	if((width != texture->width) || (height != texture->height))
-	{
-		texture->width = width;
-		texture->height = height;
-		glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
-	}
-	else glTexSubImage2D(GL_TEXTURE_2D,level,0,0,width,height,texture->format,texture->type,data);
+	texture->width = width;
+	texture->height = height;
+	glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
 }
 
 void DownloadTextureClassic(TEXTURE *texture, int level, void *data)
