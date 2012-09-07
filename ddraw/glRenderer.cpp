@@ -784,6 +784,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glFlush();
 	SetScissor(false,0,0,0,0);
 	glDisable(GL_SCISSOR_TEST);
+	SetCull(D3DCULL_CCW);
+	glEnable(GL_CULL_FACE);
 	SwapBuffers(hDC);
 	SetActiveTexture(0);
 	if(hWnd)
@@ -946,6 +948,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		EnableArray(shaders[progtype].texcoord,true);
 		glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	}
+	SetCull(D3DCULL_NONE);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
@@ -1004,6 +1007,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 	glVertexAttribPointer(shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
 	EnableArray(shaders[progtype].texcoord,true);
 	glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+	SetCull(D3DCULL_NONE);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
 }
@@ -1119,6 +1123,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		EnableArray(shaders[progtype].rgb,true);
 		glVertexAttribPointer(shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
+	SetCull(D3DCULL_NONE);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
 	if(hWnd) SwapBuffers(hDC);
@@ -1546,6 +1551,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) BlendEnable(true);
 	else BlendEnable(false);
 	SetBlend(device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
+	SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;

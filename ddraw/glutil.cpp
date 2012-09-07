@@ -55,6 +55,8 @@ GLenum blendsrc = GL_ONE;
 GLenum blenddest = GL_ZERO;
 bool blendenabled = false;
 bool arrays[42];
+D3DCULL cullmode = D3DCULL_NONE;
+bool cullenabled = false;
 
 void InitFBO()
 {
@@ -356,5 +358,36 @@ void BlendEnable(bool enabled)
 		blendenabled = enabled;
 		if(enabled) glEnable(GL_BLEND);
 		else glDisable(GL_BLEND);
+	}
+}
+
+void EnableCull(bool enabled)
+{
+	if(cullenabled != enabled)
+	{
+		cullenabled = enabled;
+		if(enabled) glEnable(GL_CULL_FACE);
+		else glDisable(GL_CULL_FACE);
+	}
+}
+void SetCull(D3DCULL mode)
+{
+	if(cullmode != mode)
+	{
+		cullmode = mode;
+		switch(mode)
+		{
+		case D3DCULL_CCW:
+			EnableCull(true);
+			glFrontFace(GL_CCW);
+			break;
+		case D3DCULL_CW:
+			EnableCull(true);
+			glFrontFace(GL_CW);
+			break;
+		case D3DCULL_NONE:
+			EnableCull(false);
+			break;
+		}
 	}
 }

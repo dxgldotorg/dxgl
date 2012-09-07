@@ -43,5 +43,7 @@ void ClearStencil(GLint stencil);
 void EnableArray(int index, bool enabled);
 void BlendFunc(GLenum src, GLenum dest);
 void BlendEnable(bool enabled);
+void EnableCull(bool enabled);
+void SetCull(D3DCULL mode);
 
 #endif //_GLUTIL_H
