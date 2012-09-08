@@ -110,15 +110,15 @@ void CreateTextureClassic(TEXTURE *texture, int width, int height)
 		texture->format = GL_RGBA;
 		texture->type = GL_UNSIGNED_INT_8_8_8_8_REV;
 		break;
-	case 7: // 16-bit RGBA3328
-		FIXME("Unusual texture format RGBA3328 not supported");
+	case 7: // 16-bit RGBA8332
+		FIXME("Unusual texture format RGBA8332 not supported");
 		break;
 	case 8: // 16-bit RGBA4444
 		texture->internalformat = GL_RGBA4;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_4_4_4_4_REV;
 		break;
-	case 9: // 16-bit RGBA5551
+	case 9: // 16-bit RGBA1555
 		texture->internalformat = GL_RGB5_A1;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;

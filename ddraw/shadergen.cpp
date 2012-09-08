@@ -608,6 +608,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	string texarg;
 	int args[4];
 	bool texfail;
+	bool alphadisabled = false;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
 		"","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a",".aaa"};
 	for(i = 0; i < 8; i++)
@@ -733,7 +734,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			fsrc->append("color.rgb = " + arg1 + " * color.a + " + arg2 + " * (1.0-color.a);\n");
 			break;
 		}
-		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)break;
+		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)alphadisabled = true;
+		if(alphadisabled) continue;
 		// Alpha stage
 		texfail = false;
 		args[2] = (texstate[i].shaderid>>22)&63;
@@ -794,7 +796,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		}
 		if(args[3] & D3DTA_COMPLEMENT)
 			arg2 = "(1.0 - " + arg2 + ")";
-		if(!texfail) switch(texstate[i].shaderid & 31)
+		if(!texfail) switch((texstate[i].shaderid>>17) & 31)
 		{
 		case D3DTOP_DISABLE:
 		default:
