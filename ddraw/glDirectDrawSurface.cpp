@@ -962,10 +962,26 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 	if(dwFlags & DDCKEY_COLORSPACE) key.colorspace = true;
 	else key.colorspace = false;
 	key.key = *lpDDColorKey;
-	if(dwFlags & DDCKEY_SRCBLT) colorkey[0] = key;
-	if(dwFlags & DDCKEY_DESTBLT) colorkey[1] = key;
-	if(dwFlags & DDCKEY_SRCOVERLAY) colorkey[2] = key;
-	if(dwFlags & DDCKEY_DESTOVERLAY) colorkey[3] = key;
+	if(dwFlags & DDCKEY_SRCBLT)
+	{
+		ddsd.dwFlags |= DDSD_CKSRCBLT;
+		colorkey[0] = key;
+	}
+	if(dwFlags & DDCKEY_DESTBLT)
+	{
+		ddsd.dwFlags |= DDSD_CKDESTBLT;
+		colorkey[1] = key;
+	}
+	if(dwFlags & DDCKEY_SRCOVERLAY)
+	{
+		ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
+		colorkey[2] = key;
+	}
+	if(dwFlags & DDCKEY_DESTOVERLAY)
+	{
+		ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
+		colorkey[3] = key;
+	}
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::SetOverlayPosition(LONG lX, LONG lY)

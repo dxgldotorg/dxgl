@@ -37,6 +37,9 @@ struct GenShader
 	int texcoords[8];
 };
 
+#define D3DTOP_DXGL_DECALMASK 0x101;
+#define D3DTOP_DXGL_MODULATEMASK 0x102;
+
 void ClearShaders();
 void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin);
 GLuint GetProgram();

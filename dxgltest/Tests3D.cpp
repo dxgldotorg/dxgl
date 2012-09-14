@@ -679,7 +679,7 @@ void InitTest3D(int test)
 		material.ambient.b = 1.0f;
 		material.ambient.a = 1.0f;
 		error = d3d7dev->SetMaterial(&material);
-		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, TRUE);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xffffffff);
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
 		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
@@ -924,7 +924,7 @@ void CreateSurfaceFromBitmap(MultiDirectDrawSurface **surface, DDSURFACEDESC2 *d
 	}
 }
 
-void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, LPCTSTR file)
+void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, bool haskey, LPCTSTR file)
 {
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
@@ -948,6 +948,9 @@ void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, L
 	d3d7dev->EnumTextureFormats(SelectTextureFormatCallback,&ddsd.ddpfPixelFormat);
 	ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
 	ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT|DDSD_TEXTURESTAGE;
+	DDCOLORKEY ckey;
+	ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = colorkey;
+	if(haskey) ddsd.dwFlags |= DDSD_CKSRCBLT;
 	if(*surface)
 	{
 		d3d7dev->SetTexture(texshaderstate.currentstage,NULL);
@@ -974,6 +977,7 @@ void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, L
 		SelectObject(hmemdc,holdbmp);
 		DeleteDC(hmemdc);
 		DeleteObject(bitmap);
+		if(*surface && haskey) (*surface)->SetColorKey(DDCKEY_SRCBLT,&ckey);
 		if(*surface) d3d7dev->SetTexture(texshaderstate.currentstage,(LPDIRECTDRAWSURFACE7)(*surface)->GetSurface());
 		break;
 	case 3:
@@ -989,6 +993,7 @@ void SelectTexture(MultiDirectDrawSurface **surface, int type, DWORD colorkey, L
 		SelectObject(hmemdc,holdbmp);
 		DeleteDC(hmemdc);
 		DeleteObject(bitmap);
+		if(*surface && haskey) (*surface)->SetColorKey(DDCKEY_SRCBLT,&ckey);
 		if(*surface) d3d7dev->SetTexture(texshaderstate.currentstage,(LPDIRECTDRAWSURFACE7)(*surface)->GetSurface());
 		break;
 	case 4:
@@ -1067,7 +1072,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (large)"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Texture file"));
 		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,0,0);
-		SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)_T(""));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG1));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_CARG2));
 		PopulateArgCombo(GetDlgItem(hWnd,IDC_AARG1));
@@ -1116,6 +1121,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				_itot(texshaderstate.texstages[number].keycolor,tmpstring,16);
 				strupper(tmpstring);
 				paddwordzeroes(tmpstring);
+				if(texshaderstate.texstages[number].colorkey == FALSE) tmpstring[0] = 0;
 				SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_SETTEXT,0,(LPARAM)tmpstring);
 				SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,texshaderstate.texstages[number].texturetype,0);
 				SendDlgItemMessage(hWnd,IDC_TEXTUREFILE,WM_SETTEXT,0,(LPARAM)texshaderstate.texstages[number].texturefile);
@@ -1158,7 +1164,8 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				texshaderstate.texstages[number].texturetype =
 					SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_GETCURSEL,0,0);
 				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
-					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
+					texshaderstate.texstages[number].keycolor, texshaderstate.texstages[number].colorkey,
+					texshaderstate.texstages[number].texturefile);
 			}
 			break;
 		case IDC_TEXTUREFILE:
@@ -1168,7 +1175,8 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				SendDlgItemMessage(hWnd,IDC_TEXTUREFILE,WM_GETTEXT,MAX_PATH+1,
 					(LPARAM)texshaderstate.texstages[number].texturefile);
 				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
-					texshaderstate.texstages[number].colorkey,texshaderstate.texstages[number].texturefile);
+					texshaderstate.texstages[number].keycolor, texshaderstate.texstages[number].colorkey,
+					texshaderstate.texstages[number].texturefile);
 			}
 			break;
 		case IDC_CARG1:
@@ -1286,6 +1294,25 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
+		case IDC_TEXCOLORKEY:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_TEXCOLORKEY,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				number = texshaderstate.currentstage;
+				if(tmpstring[0] == 0)
+				{
+					texshaderstate.texstages[number].colorkey = FALSE;
+					texshaderstate.texstages[number].keycolor = 0;
+				}
+				else
+				{
+					texshaderstate.texstages[number].colorkey = TRUE;
+					_stscanf(tmpstring,_T("%x"),&texshaderstate.texstages[number].keycolor);
+				}
+				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
+					texshaderstate.texstages[number].keycolor, texshaderstate.texstages[number].colorkey,
+					texshaderstate.texstages[number].texturefile);
+			}
 		case IDC_ALPHABLEND:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
@@ -1307,7 +1334,13 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					IDC_DESTBLEND,CB_GETCURSEL,0,0)+1);
 			}
 			break;
-
+		case IDC_COLORKEY:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_COLORKEY,BM_GETCHECK,0,0) == BST_CHECKED)
+					d3d7dev->SetRenderState(D3DRENDERSTATE_COLORKEYENABLE,TRUE);
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_COLORKEYENABLE,FALSE);
+			}
 		}
 		break;
     case WM_CLOSE:
