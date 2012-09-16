@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="68"
+   height="68"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.1 "
+   sodipodi:docname="dxglicon.svg">
+  <title
+     id="title3798">DXGL Logo</title>
+  <defs
+     id="defs15">
+    <filter
+       inkscape:collect="always"
+       id="filter4302"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.96"
+         id="feGaussianBlur4304" />
+    </filter>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath4308">
+      <rect
+         style="opacity:0.5528571;fill:#7f7f7f;fill-opacity:1;stroke:none"
+         id="rect4310"
+         width="64"
+         height="64"
+         x="593.71429"
+         y="723.2193" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1680"
+     inkscape:window-height="988"
+     id="namedview13"
+     showgrid="true"
+     inkscape:snap-global="true"
+     inkscape:zoom="7.9965461"
+     inkscape:cx="46.928546"
+     inkscape:cy="32.872218"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3760"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>DXGL Logo</dc:title>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/LGPL/2.1/" />
+        <dc:date>1/8/2011</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>William Feely</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>LGPL 2.1</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>William Feely</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:description>Template used to create DXGL icons.  Actual icon files are touched up for display.</dc:description>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-593.71429,-719.2193)">
+    <g
+       id="g4270"
+       transform="translate(2,-2.04163)"
+       style="stroke:#7f7f7f;stroke-opacity:1;filter:url(#filter4302)">
+      <path
+         style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         d="m 28,44 0,18 15,0"
+         id="path4272"
+         inkscape:connector-curvature="0"
+         transform="translate(593.71429,723.2193)" />
+      <g
+         id="g4274"
+         style="stroke:#7f7f7f;stroke-opacity:1">
+        <path
+           sodipodi:open="true"
+           sodipodi:end="5.4977871"
+           sodipodi:start="0"
+           transform="translate(593.71429,723.2193)"
+           d="m 62,32 c 0,5.522847 -3.581722,10 -8,10 -4.418278,0 -8,-4.477153 -8,-10 0,-5.522847 3.581722,-10 8,-10 2.121732,0 4.156563,1.053568 5.656854,2.928932"
+           sodipodi:ry="10"
+           sodipodi:rx="8"
+           sodipodi:cy="32"
+           sodipodi:cx="54"
+           id="path4276"
+           style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           sodipodi:type="arc" />
+        <path
+           transform="translate(593.71429,723.2193)"
+           inkscape:connector-curvature="0"
+           id="path4278"
+           d="m 54,34 8,0"
+           style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g4280"
+         style="stroke:#7f7f7f;stroke-opacity:1">
+        <path
+           transform="translate(593.71429,723.2193)"
+           inkscape:connector-curvature="0"
+           id="path4282"
+           d="M 0,64 64,0"
+           style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+        <path
+           transform="translate(593.71429,723.2193)"
+           inkscape:connector-curvature="0"
+           id="path4284"
+           d="M 0,0 64,64"
+           style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker-start:none" />
+      </g>
+      <g
+         id="g4286"
+         inkscape:label="#X"
+         style="stroke:#7f7f7f;stroke-opacity:1">
+        <path
+           inkscape:connector-curvature="0"
+           id="path4288"
+           d="m 617.71429,725.26093 16,16"
+           style="fill:#ff00ff;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+        <path
+           inkscape:connector-curvature="0"
+           id="path4290"
+           d="M 633.57744,725.35616 617.71429,741.2193"
+           style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           inkscape:label="#X2" />
+      </g>
+      <path
+         sodipodi:type="arc"
+         style="fill:none;stroke:#7f7f7f;stroke-width:4;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="path4292"
+         sodipodi:cx="2"
+         sodipodi:cy="32"
+         sodipodi:rx="13"
+         sodipodi:ry="10"
+         d="M 2.0000003,22 C 9.179702,22 15,26.477153 15,32 15,37.522847 9.1797019,42 2.0000004,42 L 2,32 z"
+         transform="translate(593.71429,723.2193)"
+         sodipodi:start="4.712389"
+         sodipodi:end="7.8539816" />
+    </g>
+    <g
+       id="g4253"
+       clip-path="url(#clipPath4308)"
+       transform="translate(0,-4.04163)">
+      <path
+         transform="translate(593.71429,723.2193)"
+         inkscape:connector-curvature="0"
+         id="L"
+         d="m 28,44 0,18 15,0"
+         style="fill:none;stroke:#0000ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <g
+         id="G">
+        <path
+           sodipodi:type="arc"
+           style="fill:none;stroke:#00ff00;stroke-width:4;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           id="G1"
+           sodipodi:cx="54"
+           sodipodi:cy="32"
+           sodipodi:rx="8"
+           sodipodi:ry="10"
+           d="m 62,32 c 0,5.522847 -3.581722,10 -8,10 -4.418278,0 -8,-4.477153 -8,-10 0,-5.522847 3.581722,-10 8,-10 2.121732,0 4.156563,1.053568 5.656854,2.928932"
+           transform="translate(593.71429,723.2193)"
+           sodipodi:start="0"
+           sodipodi:end="5.4977871"
+           sodipodi:open="true" />
+        <path
+           style="fill:none;stroke:#00ff00;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 54,34 8,0"
+           id="G2"
+           inkscape:connector-curvature="0"
+           transform="translate(593.71429,723.2193)" />
+      </g>
+      <g
+         id="Cross">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="M 0,64 64,0"
+           id="Cross2"
+           inkscape:connector-curvature="0"
+           transform="translate(593.71429,723.2193)" />
+        <path
+           style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker-start:none"
+           d="M 0,0 64,64"
+           id="Cross1"
+           inkscape:connector-curvature="0"
+           transform="translate(593.71429,723.2193)" />
+      </g>
+      <g
+         inkscape:label="#X"
+         id="X">
+        <path
+           style="fill:#ff00ff;stroke:#ff00ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 617.71429,725.26093 16,16"
+           id="X1"
+           inkscape:connector-curvature="0" />
+        <path
+           inkscape:label="#X2"
+           style="fill:none;stroke:#ff00ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="M 633.57744,725.35616 617.71429,741.2193"
+           id="X2"
+           inkscape:connector-curvature="0" />
+      </g>
+      <path
+         sodipodi:end="7.8539816"
+         sodipodi:start="4.712389"
+         transform="translate(593.71429,723.2193)"
+         d="M 2.0000003,22 C 9.179702,22 15,26.477153 15,32 15,37.522847 9.1797019,42 2.0000004,42 L 2,32 z"
+         sodipodi:ry="10"
+         sodipodi:rx="13"
+         sodipodi:cy="32"
+         sodipodi:cx="2"
+         id="Dee"
+         style="fill:none;stroke:#ff0000;stroke-width:4;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         sodipodi:type="arc" />
+    </g>
+  </g>
+</svg>

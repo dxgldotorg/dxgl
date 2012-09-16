@@ -248,7 +248,8 @@ const TEST_ITEM Tests3D[] =
 { // minver maxver  buffermin max   usesfps		defaultfps		usestexture	usesfsaa	name
 	{7,		7,		0,		2,		true,		60.0,			false,		true,		_T("DrawIndexedPrimitive cube with directional light (DX7)")},
 	{7,		7,		0,		2,		true,		60.0,			true,		true,		_T("DrawPrimitive textured cube (DX7)")},
-	{7,		7,		0,		0,		true,		60.0,			true,		true,		_T("Texture Stage shaders (Interactive, DX7)")}
+	{7,		7,		0,		0,		true,		60.0,			true,		true,		_T("Texture Stage shaders (Interactive, DX7)")},
+	{7,		7,		0,		0,		true,		60.0,			true,		true,		_T("Vertex shaders (Interactive, DX7)")}
 };
 const int END_3D = __LINE__ - 4;
 const int numtests3d = END_3D - START_3D;
@@ -518,7 +519,7 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					maxbuffer3d = Tests3D[i].buffermax;
 					fps_enabled3d = Tests3D[i].usesfps;
 					if(Tests3D[i].usesfps) framerate3d = Tests3D[i].defaultfps;
-					if(i != 2)
+					if((i != 2) && (i !=3))
 					{
 						EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
