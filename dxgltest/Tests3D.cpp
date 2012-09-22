@@ -273,6 +273,7 @@ static HRESULT WINAPI zcallback(DDPIXELFORMAT *ddpf, VOID *context)
 }
 
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter,	int msaa, double fps, bool fullscreen, bool resizable)
@@ -280,6 +281,11 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	if(testnum == 2)
 	{
 		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_TEXSHADER),NULL,TexShader7Proc);
+		return;
+	}
+	if(testnum == 3)
+	{
+		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_TEXSHADER),NULL,VertexShader7Proc);
 		return;
 	}
 	DDSCAPS2 caps;
@@ -672,6 +678,7 @@ void InitTest3D(int test)
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
 	case 2:
+	case 3:
 		MakeCube3D();
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 1.0f;
@@ -1089,6 +1096,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		SendDlgItemMessage(hWnd,IDC_FACTOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		PopulateBlendCombo(GetDlgItem(hWnd,IDC_SRCBLEND),true);
 		PopulateBlendCombo(GetDlgItem(hWnd,IDC_DESTBLEND),true);
 		SendDlgItemMessage(hWnd,IDC_SRCBLEND,CB_SETCURSEL,D3DBLEND_ONE-1,0);
@@ -1356,4 +1364,90 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	return TRUE;
 
 
+}
+
+INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	HRESULT error;
+	D3DVIEWPORT7 vp;
+	HWND hDisplay;
+	int number;
+	TCHAR tmpstring[MAX_PATH+1];
+	switch(Msg)
+	{
+	case WM_INITDIALOG:
+		RECT r;
+		DDSCAPS2 caps;
+		DDSURFACEDESC2 ddsd;
+		DDPIXELFORMAT ddpfz;
+		testnum = 3;
+		ddinterface = new MultiDirectDraw(7,&error,NULL);
+		hDisplay = GetDlgItem(hWnd,IDC_DISPLAY);
+		::hWnd = hDisplay;
+		error = ddinterface->SetCooperativeLevel(hDisplay,DDSCL_NORMAL);
+		ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwFlags = DDSD_CAPS;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+		error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
+		error = ddinterface->CreateClipper(0,&ddclipper,NULL);
+		error = ddclipper->SetHWnd(0,hDisplay);
+		error = ddsurface->SetClipper(ddclipper);
+		ZeroMemory(&ddsd,sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN|DDSCAPS_3DDEVICE;
+		GetClientRect(hDisplay,&r);
+		ddsd.dwWidth = r.right;
+		ddsd.dwHeight = r.bottom;
+		error = ddinterface->CreateSurface(&ddsd,&ddsrender,NULL);
+		error = ddinterface->QueryInterface(IID_IDirect3D7,(VOID**)&d3d7);
+		error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice,zcallback,&ddpfz);
+		error = ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS|DDSD_WIDTH|DDSD_HEIGHT|DDSD_PIXELFORMAT;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER|DDSCAPS_VIDEOMEMORY;
+		memcpy(&ddsd.ddpfPixelFormat,&ddpfz,sizeof(DDPIXELFORMAT));
+		error = ddinterface->CreateSurface(&ddsd,&zbuffer,NULL);
+		error = ddsrender->AddAttachedSurface(zbuffer);
+		error = d3d7->CreateDevice(IID_IDirect3DHALDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
+		if(error != D3D_OK)
+			error = d3d7->CreateDevice(IID_IDirect3DRGBDevice,(LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(),&d3d7dev);
+		ddsrender->GetSurfaceDesc(&ddsd);
+		vp.dvMaxZ = 1.0f;
+		vp.dvMinZ = 0.0f;
+		vp.dwX = vp.dwY = 0;
+		vp.dwWidth = ddsd.dwWidth;
+		vp.dwHeight = ddsd.dwHeight;
+		error = d3d7dev->SetViewport(&vp);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE,TRUE);
+		InitTest3D(3);
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("None"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Gradients"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (small)"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("DXGL logo (large)"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_ADDSTRING,0,(LPARAM)_T("Texture file"));
+		SendDlgItemMessage(hWnd,IDC_TEXTURE,CB_SETCURSEL,0,0);
+		SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_FACTOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_AMBIENT,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_EMISSIVE,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		::width = ddsd.dwWidth;
+		::height = ddsd.dwHeight;
+		StartTimer(hWnd,WM_APP,60);
+		break;
+    case WM_CLOSE:
+		ddinterface->Release();
+        EndDialog(hWnd,IDCANCEL);
+        break;
+	case WM_APP:
+		RunTestTimed3D(testnum);
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
 }
