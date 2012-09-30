@@ -1313,6 +1313,14 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
+		case IDC_FOGCOLOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGCOLOR,number);
+			}
+			break;
 		case IDC_TEXCOLORKEY:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1390,6 +1398,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGSTART, *((LPDWORD)(&f)));
 			}
+			break;
 		case IDC_FOGEND:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1397,6 +1406,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGEND, *((LPDWORD)(&f)));
 			}
+			break;
 		case IDC_FOGDENSITY:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1404,6 +1414,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGDENSITY, *((LPDWORD)(&f)));
 			}
+			break;
 		default:
 			return FALSE;
 		}
@@ -1495,9 +1506,23 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
 		PopulateFogCombo(GetDlgItem(hWnd,IDC_VERTEXFOGMODE));
 		PopulateFogCombo(GetDlgItem(hWnd,IDC_PIXELFOGMODE));
+		SendDlgItemMessage(hWnd,IDC_VERTEXFOGMODE,CB_SETCURSEL,D3DFOG_NONE,0);
+		SendDlgItemMessage(hWnd,IDC_PIXELFOGMODE,CB_SETCURSEL,D3DFOG_NONE,0);
 		SendDlgItemMessage(hWnd,IDC_FOGSTART,WM_SETTEXT,0,(LPARAM)_T("0.0"));
 		SendDlgItemMessage(hWnd,IDC_FOGEND,WM_SETTEXT,0,(LPARAM)_T("1.0"));
 		SendDlgItemMessage(hWnd,IDC_FOGDENSITY,WM_SETTEXT,0,(LPARAM)_T("1.0"));
+		SendDlgItemMessage(hWnd,IDC_FILLMODE,CB_ADDSTRING,0,(LPARAM)_T("Points"));
+		SendDlgItemMessage(hWnd,IDC_FILLMODE,CB_ADDSTRING,0,(LPARAM)_T("Wireframe"));
+		SendDlgItemMessage(hWnd,IDC_FILLMODE,CB_ADDSTRING,0,(LPARAM)_T("Solid"));
+		SendDlgItemMessage(hWnd,IDC_FILLMODE,CB_SETCURSEL,2,0);
+		SendDlgItemMessage(hWnd,IDC_SHADEMODE,CB_ADDSTRING,0,(LPARAM)_T("Flat"));
+		SendDlgItemMessage(hWnd,IDC_SHADEMODE,CB_ADDSTRING,0,(LPARAM)_T("Gouraud"));
+		SendDlgItemMessage(hWnd,IDC_SHADEMODE,CB_ADDSTRING,0,(LPARAM)_T("Phong"));
+		SendDlgItemMessage(hWnd,IDC_SHADEMODE,CB_SETCURSEL,1,0);
+		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("None"));
+		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CW"));
+		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CCW"));
+		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_SETCURSEL,2,0);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		vertexshaderstate.texture = NULL;
@@ -1560,6 +1585,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGSTART, *((LPDWORD)(&f)));
 			}
+			break;
 		case IDC_FOGEND:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1567,6 +1593,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGEND, *((LPDWORD)(&f)));
 			}
+			break;
 		case IDC_FOGDENSITY:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1574,6 +1601,67 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				f = (float)_ttof(tmpstring);
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGDENSITY, *((LPDWORD)(&f)));
 			}
+			break;
+		case IDC_FILLMODE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_FILLMODE,SendDlgItemMessage(hWnd,
+					IDC_FILLMODE,CB_GETCURSEL,0,0)+1);
+			}
+			break;
+		case IDC_SHADEMODE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_SHADEMODE,SendDlgItemMessage(hWnd,
+					IDC_SHADEMODE,CB_GETCURSEL,0,0)+1);
+			}
+			break;
+		case IDC_CULLMODE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_CULLMODE,SendDlgItemMessage(hWnd,
+					IDC_CULLMODE,CB_GETCURSEL,0,0)+1);
+			}
+			break;
+		case IDC_DIFFUSE:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				SetVertexColor(litvertices,24,number);
+			}
+			break;
+		case IDC_SPECULAR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				SetVertexSpecular(litvertices,24,number);
+			}
+			break;
+		case IDC_FACTOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_FACTOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
+			}
+			break;
+		case IDC_FOGCOLOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGCOLOR,number);
+			}
+			break;
+		case IDC_BGCOLOR:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&bgcolor);
+			}
+			break;
 		default:
 			return FALSE;
 		}

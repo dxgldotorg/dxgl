@@ -31,6 +31,7 @@
 #define IDC_DXDIAG                              1000
 #define IDC_SPINSTAGE                           1000
 #define IDC_VIDMODES                            1000
+#define IDC_LIGHTENABLED                        1001
 #define IDC_RESIZABLE                           1001
 #define IDC_SPINALPHAREF                        1001
 #define IDC_DDTYPE                              1002
