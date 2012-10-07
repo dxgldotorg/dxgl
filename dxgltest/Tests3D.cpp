@@ -37,6 +37,7 @@ static MultiDirectDrawSurface *zbuffer;
 static MultiDirectDrawSurface *textures[8];
 static IDirect3D7 *d3d7;
 static IDirect3DDevice7 *d3d7dev;
+D3DMATERIAL7 material;
 static LPDIRECTDRAWCLIPPER ddclipper;
 static int width,height,bpp,refresh,backbuffers;
 static double fps;
@@ -46,14 +47,40 @@ static int testnum;
 static unsigned int randnum;
 static int testtypes[] = {0,0,0};
 
-static D3DVECTOR points[256];
-static D3DVECTOR normals[256];
-static D3DVERTEX vertices[256];
-static D3DLVERTEX litvertices[256];
-static WORD mesh[256];
-static WORD cube_mesh[] = {0,1,2, 2,1,3, 4,5,6, 6,5,7, 8,9,10, 10,9,11, 12,13,14, 14,13,15, 16,17,18,
-		18,17,19, 20,21,22, 22,21,23 };
+#define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
+struct COLORVERTEX
+{
+	D3DVALUE x;
+	D3DVALUE y;
+	D3DVALUE z;
+	D3DVALUE nx;
+	D3DVALUE ny;
+	D3DVALUE nz;
+	D3DCOLOR color;
+	D3DCOLOR specular;
+	D3DVALUE tu;
+	D3DVALUE tv;
+public:
+	COLORVERTEX() {};
+	COLORVERTEX(const D3DVECTOR& v, const D3DVECTOR& n, D3DCOLOR _color,
+		D3DCOLOR _specular, D3DVALUE _tu, D3DVALUE _tv)
+	{
+		x = v.x; y = v.y; z = v.z;
+		nx = n.x; ny = n.y; nz = n.z;
+		color = _color; specular = _specular;
+		tu = _tu; tv = _tv;
+	}
+
+};
+
+static int numpoints = 0;
+static int numindices = 0;
+static D3DVERTEX *vertices = NULL;
+static D3DLVERTEX *litvertices = NULL;
+static COLORVERTEX *colorvertices = NULL;
+static WORD *mesh = NULL;
 static D3DLIGHT7 lights[8];
+static BOOL lightenable[8];
 static DWORD bgcolor = 0;
 
 typedef struct
@@ -200,6 +227,26 @@ LRESULT CALLBACK D3DWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 			ddinterface->Release();
 			ddinterface = NULL;
+		}
+		if(mesh)
+		{
+			free(mesh);
+			mesh = NULL;
+		}
+		if(vertices)
+		{
+			free(vertices);
+			vertices = NULL;
+		}
+		if(litvertices)
+		{
+			free(litvertices);
+			litvertices = NULL;
+		}
+		if(colorvertices)
+		{
+			free(colorvertices);
+			colorvertices = NULL;
 		}
 		PostQuitMessage(0);
 		break;
@@ -466,82 +513,182 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	StopTimer();
 }
 
-void MakeCube3D()
+void MakeCube3D(float size, int detail)
 {
-	points[0] = D3DVECTOR(-2.5f,-2.5f,-2.5f);
-	points[1] = D3DVECTOR(-2.5f,2.5f,-2.5f);
-	points[2] = D3DVECTOR(2.5f,-2.5f,-2.5f);
-	points[3] = D3DVECTOR(2.5f,2.5f,-2.5f);
-	points[4] = D3DVECTOR(2.5f,-2.5f,2.5f);
-	points[5] = D3DVECTOR(2.5f,2.5f,2.5f);
-	points[6] = D3DVECTOR(-2.5f,-2.5f,2.5f);
-	points[7] = D3DVECTOR(-2.5f,2.5f,2.5f);
+	if(detail < 2) return;
+	D3DVECTOR normals[6];
 	normals[0] = D3DVECTOR(0.0f,0.0f,-1.0f);
 	normals[1] = D3DVECTOR(1.0f,0.0f,0.0f);
 	normals[2] = D3DVECTOR(0.0f,0.0f,1.0f);
 	normals[3] = D3DVECTOR(-1.0f,0.0f,0.0f);
 	normals[4] = D3DVECTOR(0.0f,1.0f,0.0f);
-	normals[5] = D3DVECTOR(0.0f,-10.0f,0.0f);
-	vertices[0] = D3DVERTEX(points[0],normals[0],0,1);
-	vertices[1] = D3DVERTEX(points[1],normals[0],0,0);
-	vertices[2] = D3DVERTEX(points[2],normals[0],1,1);
-	vertices[3] = D3DVERTEX(points[3],normals[0],1,0);
-	vertices[4] = D3DVERTEX(points[2],normals[1],0,1);
-	vertices[5] = D3DVERTEX(points[3],normals[1],0,0);
-	vertices[6] = D3DVERTEX(points[4],normals[1],1,1);
-	vertices[7] = D3DVERTEX(points[5],normals[1],1,0);
-	vertices[8] = D3DVERTEX(points[4],normals[2],0,1);
-	vertices[9] = D3DVERTEX(points[5],normals[2],0,0);
-	vertices[10] = D3DVERTEX(points[6],normals[2],1,1);
-	vertices[11] = D3DVERTEX(points[7],normals[2],1,0);
-	vertices[12] = D3DVERTEX(points[6],normals[3],0,1);
-	vertices[13] = D3DVERTEX(points[7],normals[3],0,0);
-	vertices[14] = D3DVERTEX(points[0],normals[3],1,1);
-	vertices[15] = D3DVERTEX(points[1],normals[3],1,0);
-	vertices[16] = D3DVERTEX(points[1],normals[4],0,1);
-	vertices[17] = D3DVERTEX(points[7],normals[4],0,0);
-	vertices[18] = D3DVERTEX(points[3],normals[4],1,1);
-	vertices[19] = D3DVERTEX(points[5],normals[4],1,0);
-	vertices[20] = D3DVERTEX(points[6],normals[5],0,1);
-	vertices[21] = D3DVERTEX(points[0],normals[5],0,0);
-	vertices[22] = D3DVERTEX(points[4],normals[5],1,1);
-	vertices[23] = D3DVERTEX(points[2],normals[5],1,0);
-	litvertices[0] = D3DLVERTEX(points[0],0xFFFFFFFF,0,0,1);
-	litvertices[1] = D3DLVERTEX(points[1],0xFFFFFFFF,0,0,0);
-	litvertices[2] = D3DLVERTEX(points[2],0xFFFFFFFF,0,1,1);
-	litvertices[3] = D3DLVERTEX(points[3],0xFFFFFFFF,0,1,0);
-	litvertices[4] = D3DLVERTEX(points[2],0xFFFFFFFF,0,0,1);
-	litvertices[5] = D3DLVERTEX(points[3],0xFFFFFFFF,0,0,0);
-	litvertices[6] = D3DLVERTEX(points[4],0xFFFFFFFF,0,1,1);
-	litvertices[7] = D3DLVERTEX(points[5],0xFFFFFFFF,0,1,0);
-	litvertices[8] = D3DLVERTEX(points[4],0xFFFFFFFF,0,0,1);
-	litvertices[9] = D3DLVERTEX(points[5],0xFFFFFFFF,0,0,0);
-	litvertices[10] = D3DLVERTEX(points[6],0xFFFFFFFF,0,1,1);
-	litvertices[11] = D3DLVERTEX(points[7],0xFFFFFFFF,0,1,0);
-	litvertices[12] = D3DLVERTEX(points[6],0xFFFFFFFF,0,0,1);
-	litvertices[13] = D3DLVERTEX(points[7],0xFFFFFFFF,0,0,0);
-	litvertices[14] = D3DLVERTEX(points[0],0xFFFFFFFF,0,1,1);
-	litvertices[15] = D3DLVERTEX(points[1],0xFFFFFFFF,0,1,0);
-	litvertices[16] = D3DLVERTEX(points[1],0xFFFFFFFF,0,0,1);
-	litvertices[17] = D3DLVERTEX(points[7],0xFFFFFFFF,0,0,0);
-	litvertices[18] = D3DLVERTEX(points[3],0xFFFFFFFF,0,1,1);
-	litvertices[19] = D3DLVERTEX(points[5],0xFFFFFFFF,0,1,0);
-	litvertices[20] = D3DLVERTEX(points[6],0xFFFFFFFF,0,0,1);
-	litvertices[21] = D3DLVERTEX(points[0],0xFFFFFFFF,0,0,0);
-	litvertices[22] = D3DLVERTEX(points[4],0xFFFFFFFF,0,1,1);
-	litvertices[23] = D3DLVERTEX(points[2],0xFFFFFFFF,0,1,0);
+	normals[5] = D3DVECTOR(0.0f,-1.0f,0.0f);
+	int numfacevertices = detail*detail;
+	D3DVECTOR *face = (D3DVECTOR*)malloc(numfacevertices*sizeof(D3DVECTOR));
+	int numfaceindices = ((detail-1)*(detail-1))*6;
+	WORD *faceindex = (WORD*)malloc(numfaceindices*sizeof(WORD));
+	int ptr = 0;
+	float fx,fy;
+	// Generate points
+	for(int y = 0; y < detail; y++)
+	{
+		fy = (((float)(y / (float)(detail-1)))-.5f)*size;
+		for(int x = 0; x < detail; x++)
+		{
+			fx = (((float)(x / (float)(detail-1)))-.5f)*size;
+			face[ptr] = D3DVECTOR(fx,fy,0);
+			ptr++;
+		}
+	}
+	// Generate triangle indices
+	ptr = 0;
+	for(int y = 0; y < (detail-1); y++)
+	{
+		for(int x = 0; x < (detail-1); x++)
+		{
+			faceindex[ptr++] = x + (detail*y);
+			faceindex[ptr++] = x + (detail*(y+1));
+			faceindex[ptr++] = (x+1) + (detail*y);
+			faceindex[ptr++] = (x+1) + (detail*y);
+			faceindex[ptr++] = x + (detail*(y+1));
+			faceindex[ptr++] = (x+1) + (detail*(y+1));
+		}
+	}
+	numpoints = (detail*detail)*6;
+	numindices = ((detail-1)*(detail-1))*36;
+	if(vertices) free(vertices);
+	if(litvertices) free(litvertices);
+	if(colorvertices) free(colorvertices);
+	if(mesh) free(mesh);
+	vertices = (D3DVERTEX*)malloc(numpoints*sizeof(D3DVERTEX));
+	litvertices = (D3DLVERTEX*)malloc(numpoints*sizeof(D3DLVERTEX));
+	colorvertices = (COLORVERTEX*)malloc(numpoints*sizeof(COLORVERTEX));
+	mesh = (WORD*)malloc(numindices*sizeof(WORD));
+	// Generate vertex list
+	float u,v;
+	D3DVECTOR pos;
+	D3DVECTOR normal;
+	// Front face
+	ptr = 0;
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(face[ptr].x,face[ptr].y,-size/2.f);
+			normal = D3DVECTOR(0,0,-1);
+			vertices[ptr] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	// Right face
+	ptr = 0;
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(size/2.f,face[ptr].y,face[ptr].x);
+			normal = D3DVECTOR(1,0,0);
+			vertices[ptr+numfacevertices] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr+numfacevertices] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr+numfacevertices] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	// Back face
+	ptr = 0;
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(-face[ptr].x,face[ptr].y,size/2.f);
+			normal = D3DVECTOR(0,0,1);
+			vertices[ptr+(numfacevertices*2)] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr+(numfacevertices*2)] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr+(numfacevertices*2)] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	// Left face
+	ptr = 0;
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(-size/2.f,face[ptr].y,-face[ptr].x);
+			normal = D3DVECTOR(-1,0,0);
+			vertices[ptr+(numfacevertices*3)] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr+(numfacevertices*3)] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr+(numfacevertices*3)] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	// Top face
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(face[ptr].x,size/2.f,face[ptr].y);
+			normal = D3DVECTOR(0,1,0);
+			vertices[ptr+(numfacevertices*4)] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr+(numfacevertices*4)] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr+(numfacevertices*4)] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	// Bottom face
+	for(int y = 0; y < detail; y++)
+	{
+		for(int x = 0; x < detail; x++)
+		{
+			u = (float)x/(float)(detail-1);
+			v = 1.f-((float)y/(float)(detail-1));
+			ptr = x+(detail*y);
+			pos = D3DVECTOR(face[ptr].x,-size/2.f,-face[ptr].y);
+			normal = D3DVECTOR(0,-1,0);
+			vertices[ptr+(numfacevertices*5)] = D3DVERTEX(pos,normal,u,v);
+			litvertices[ptr+(numfacevertices*5)] = D3DLVERTEX(pos,0xFFFFFFFF,0,u,v);
+			colorvertices[ptr+(numfacevertices*5)] = COLORVERTEX(pos,normal,0xFFFFFFFF,0,u,v);
+		}
+	}
+	free(face);
+	// Generate index table
+	ptr = 0;
+	for(int i = 0; i < 6; i++)
+	{
+		for(int j = 0; j < numfaceindices; j++)
+			mesh[ptr++] = faceindex[j]+(i*numfacevertices);
+	}
+	free(faceindex);
 }
 
-void SetVertexColor(D3DLVERTEX *start, int count, DWORD color)
+void SetVertexColor(D3DLVERTEX *start, COLORVERTEX *start_color, int count, DWORD color)
 {
 	for(int i = 0; i < count; i++)
+	{
 		start[i].color = color;
+		start_color[i].color = color;
+	}
 }
 
-void SetVertexSpecular(D3DLVERTEX *start, int count, DWORD color)
+void SetVertexSpecular(D3DLVERTEX *start, COLORVERTEX *start_color, int count, DWORD color)
 {
 	for(int i = 0; i < count; i++)
+	{
 		start[i].specular = color;
+		start_color[i].specular = color;
+	}
 }
 
 
@@ -586,6 +733,34 @@ static bool gentexture(const DDPIXELFORMAT format, MultiDirectDrawSurface **surf
 	return true;
 }
 
+void MakeLights()
+{
+	for(int i = 0; i < 8; i++)
+	{
+		lightenable[i] = FALSE;
+		ZeroMemory(&lights[i],sizeof(D3DLIGHT7));
+		lights[i].dcvDiffuse.r = lights[i].dcvDiffuse.g = lights[i].dcvDiffuse.b = 1;
+		lights[i].dltType = D3DLIGHT_DIRECTIONAL;
+	}
+	lightenable[0] = TRUE;
+	lights[0].dvPosition = D3DVECTOR(-10,-10,-10);
+	lights[1].dvPosition = D3DVECTOR(10,-10,-10);
+	lights[2].dvPosition = D3DVECTOR(-10,10,-10);
+	lights[3].dvPosition = D3DVECTOR(10,10,-10);
+	lights[4].dvPosition = D3DVECTOR(-10,-10,10);
+	lights[5].dvPosition = D3DVECTOR(10,-10,10);
+	lights[6].dvPosition = D3DVECTOR(-10,10,10);
+	lights[7].dvPosition = D3DVECTOR(10,10,10);
+	lights[0].dvDirection = D3DVECTOR(1,1,1);
+	lights[1].dvDirection = D3DVECTOR(-1,1,1);
+	lights[2].dvDirection = D3DVECTOR(1,-1,1);
+	lights[3].dvDirection = D3DVECTOR(-1,-1,1);
+	lights[4].dvDirection = D3DVECTOR(1,1,-1);
+	lights[5].dvDirection = D3DVECTOR(-1,1,-1);
+	lights[6].dvDirection = D3DVECTOR(1,-1,-1);
+	lights[7].dvDirection = D3DVECTOR(-1,-1,-1);
+}
+
 static const DDPIXELFORMAT fmt_rgba4444 = {sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0xF00,0xF0,0xF,0xF000};
 static const DDPIXELFORMAT fmt_rgba1555 = {sizeof(DDPIXELFORMAT),DDPF_RGB|DDPF_ALPHAPIXELS,0,16,0x7C00,0x3E0,0x1F,0x8000};
 static const DDPIXELFORMAT fmt_rgb565 = {sizeof(DDPIXELFORMAT),DDPF_RGB,0,16,0xF800,0x7E0,0x1F,0};
@@ -598,12 +773,11 @@ void InitTest3D(int test)
 	D3DMATRIX matView;
 	D3DMATRIX matProj;
 	D3DMATRIX mat;
-	D3DMATERIAL7 material;
 	bgcolor = 0;
 	switch(test)
 	{
 	case 0:
-		MakeCube3D();
+		MakeCube3D(5,2);
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 0.5f;
 		material.ambient.g = 0.5f;
@@ -642,7 +816,7 @@ void InitTest3D(int test)
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
 	case 1:
-		MakeCube3D();
+		MakeCube3D(5,2);
 		cleartexformats();		
 		d3d7dev->EnumTextureFormats(gettexformat,NULL);
 		gentexture(fmt_rgba4444,&textures[0],256,256,0);
@@ -660,6 +834,7 @@ void InitTest3D(int test)
 		error = d3d7dev->LightEnable(0,TRUE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, TRUE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xFFFFFFFF);
+		error = d3d7dev->SetRenderState(D3DRENDERSTATE_CULLMODE,D3DCULL_CW);
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
 		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
 		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
@@ -686,14 +861,20 @@ void InitTest3D(int test)
 		lights[0].dvAttenuation1 = 0.4f;
 		error = d3d7dev->SetLight(0,&lights[0]);
 		break;
-	case 2:
 	case 3:
-		MakeCube3D();
+		ZeroMemory(lights,8*sizeof(D3DLIGHT7));
+		MakeLights();
+	case 2:
+		MakeCube3D(5,8);
 		ZeroMemory(&material,sizeof(D3DMATERIAL7));
 		material.ambient.r = 1.0f;
 		material.ambient.g = 1.0f;
 		material.ambient.b = 1.0f;
 		material.ambient.a = 1.0f;
+		material.diffuse.r = 1.0f;
+		material.diffuse.g = 1.0f;
+		material.diffuse.b = 1.0f;
+		material.diffuse.a = 1.0f;
 		error = d3d7dev->SetMaterial(&material);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
 		error = d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT, 0xffffffff);
@@ -746,7 +927,7 @@ void RunTestTimed3D(int test)
 	    mat._31 = (FLOAT)sin( (float)time );
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
 		error = d3d7dev->BeginScene();
-		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,24,cube_mesh,36,0);
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_VERTEX,vertices,numpoints,mesh,numindices,0);
 		error = d3d7dev->EndScene();
 		break;
 	case 1:
@@ -771,6 +952,19 @@ void RunTestTimed3D(int test)
 		error = d3d7dev->EndScene();
 		break;
 	case 2:
+		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
+		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
+		mat._21 = mat._23 = mat._24 = mat._42 = 0.0f;
+		mat._31 = mat._32 = mat._34 = mat._43 = 0.0f;
+	    mat._11 = (FLOAT)cos( (float)time );
+	    mat._33 = (FLOAT)cos( (float)time );
+	    mat._13 = -(FLOAT)sin( (float)time );
+	    mat._31 = (FLOAT)sin( (float)time );
+		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
+		error = d3d7dev->BeginScene();
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_LVERTEX,litvertices,numpoints,mesh,numindices,0);
+		error = d3d7dev->EndScene();
+		break;
 	case 3:
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
 		mat._12 = mat._13 = mat._14 = mat._41 = 0.0f;
@@ -782,7 +976,7 @@ void RunTestTimed3D(int test)
 	    mat._31 = (FLOAT)sin( (float)time );
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_WORLD, &mat);
 		error = d3d7dev->BeginScene();
-		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_LVERTEX,litvertices,24,cube_mesh,36,0);
+		error = d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,FVF_COLORVERTEX,colorvertices,numpoints,mesh,numindices,0);
 		error = d3d7dev->EndScene();
 		break;
 	default:
@@ -893,6 +1087,13 @@ void PopulateFogCombo(HWND hWnd)
 	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Exponential"));
 	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Exp. Squared"));
 	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Linear"));
+}
+
+void PopulateSourceCombo(HWND hWnd)
+{
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Material"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Color 1"));
+	SendMessage(hWnd,CB_ADDSTRING,0,(LPARAM)_T("Color 2"));
 }
 
 void strupper(TCHAR *str)
@@ -1294,7 +1495,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			{
 				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
-				SetVertexColor(litvertices,24,number);
+				SetVertexColor(litvertices,colorvertices,numpoints,number);
 			}
 			break;
 		case IDC_SPECULAR:
@@ -1302,7 +1503,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			{
 				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
-				SetVertexSpecular(litvertices,24,number);
+				SetVertexSpecular(litvertices,colorvertices,numpoints,number);
 			}
 			break;
 		case IDC_FACTOR:
@@ -1420,7 +1621,61 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
     case WM_CLOSE:
-		ddinterface->Release();
+		if(d3d7dev)
+		{
+			d3d7dev->Release();
+			d3d7dev = NULL;
+		}
+		if(d3d7)
+		{
+			d3d7->Release();
+			d3d7dev = NULL;
+		}
+		if(ddsrender)
+		{
+			ddsrender->Release();
+			ddsrender = NULL;
+		}
+		if(ddsurface)
+		{
+			ddsurface->Release();
+			ddsurface = NULL;
+		}
+		if(zbuffer)
+		{
+			zbuffer->Release();
+			zbuffer = NULL;
+		}
+		if(ddclipper)
+		{
+			ddclipper->Release();
+			ddclipper = NULL;
+		}
+		if(ddinterface)
+		{
+			ddinterface->Release();
+			ddinterface = NULL;
+		}
+		if(mesh)
+		{
+			free(mesh);
+			mesh = NULL;
+		}
+		if(vertices)
+		{
+			free(vertices);
+			vertices = NULL;
+		}
+		if(litvertices)
+		{
+			free(litvertices);
+			litvertices = NULL;
+		}
+		if(colorvertices)
+		{
+			free(colorvertices);
+			colorvertices = NULL;
+		}
         EndDialog(hWnd,IDCANCEL);
         break;
 	case WM_APP:
@@ -1504,6 +1759,8 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendDlgItemMessage(hWnd,IDC_AMBIENT,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
 		SendDlgItemMessage(hWnd,IDC_EMISSIVE,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_MATDIFFUSE,WM_SETTEXT,0,(LPARAM)_T("FFFFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_MATSPECULAR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
 		PopulateFogCombo(GetDlgItem(hWnd,IDC_VERTEXFOGMODE));
 		PopulateFogCombo(GetDlgItem(hWnd,IDC_PIXELFOGMODE));
 		SendDlgItemMessage(hWnd,IDC_VERTEXFOGMODE,CB_SETCURSEL,D3DFOG_NONE,0);
@@ -1523,6 +1780,16 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CW"));
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CCW"));
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_SETCURSEL,2,0);
+		PopulateSourceCombo(GetDlgItem(hWnd,IDC_DIFFUSESOURCE));
+		PopulateSourceCombo(GetDlgItem(hWnd,IDC_SPECULARSOURCE));
+		PopulateSourceCombo(GetDlgItem(hWnd,IDC_AMBIENTSOURCE));
+		PopulateSourceCombo(GetDlgItem(hWnd,IDC_EMISSIVESOURCE));
+		SendDlgItemMessage(hWnd,IDC_DIFFUSESOURCE,CB_SETCURSEL,D3DMCS_COLOR1,0);
+		SendDlgItemMessage(hWnd,IDC_SPECULARSOURCE,CB_SETCURSEL,D3DMCS_COLOR2,0);
+		SendDlgItemMessage(hWnd,IDC_AMBIENTSOURCE,CB_SETCURSEL,D3DMCS_COLOR2,0);
+		SendDlgItemMessage(hWnd,IDC_EMISSIVESOURCE,CB_SETCURSEL,D3DMCS_MATERIAL,0);
+		SendDlgItemMessage(hWnd,IDC_SPINDETAIL,UDM_SETRANGE32,2,64);
+		SendDlgItemMessage(hWnd,IDC_SPINDETAIL,UDM_SETPOS32,0,8);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		vertexshaderstate.texture = NULL;
@@ -1628,7 +1895,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
-				SetVertexColor(litvertices,24,number);
+				SetVertexColor(litvertices,colorvertices,numpoints,number);
 			}
 			break;
 		case IDC_SPECULAR:
@@ -1636,7 +1903,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
-				SetVertexSpecular(litvertices,24,number);
+				SetVertexSpecular(litvertices,colorvertices,numpoints,number);
 			}
 			break;
 		case IDC_FACTOR:
@@ -1662,12 +1929,150 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				_stscanf(tmpstring,_T("%x"),&bgcolor);
 			}
 			break;
+		case IDC_AMBIENT:
+			{
+				SendDlgItemMessage(hWnd,IDC_AMBIENT,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT,number);
+			}
+			break;
+		case IDC_EMISSIVE:
+			{
+				SendDlgItemMessage(hWnd,IDC_EMISSIVE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				material.emissive.b = (float)(number & 255) / 255.0;
+				material.emissive.g = (float)((number>>8) & 255) / 255.0;
+				material.emissive.r = (float)((number>>16) & 255) / 255.0;
+				material.emissive.a = (float)((number>>24) & 255) / 255.0;
+				d3d7dev->SetMaterial(&material);
+			}
+			break;
+		case IDC_MATAMBIENT:
+			{
+				SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				material.ambient.b = (float)(number & 255) / 255.0;
+				material.ambient.g = (float)((number>>8) & 255) / 255.0;
+				material.ambient.r = (float)((number>>16) & 255) / 255.0;
+				material.ambient.a = (float)((number>>24) & 255) / 255.0;
+				d3d7dev->SetMaterial(&material);
+			}
+			break;
+		case IDC_MATDIFFUSE:
+			{
+				SendDlgItemMessage(hWnd,IDC_MATDIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				material.diffuse.b = (float)(number & 255) / 255.0;
+				material.diffuse.g = (float)((number>>8) & 255) / 255.0;
+				material.diffuse.r = (float)((number>>16) & 255) / 255.0;
+				material.diffuse.a = (float)((number>>24) & 255) / 255.0;
+				d3d7dev->SetMaterial(&material);
+			}
+			break;
+		case IDC_MATSPECULAR:
+			{
+				SendDlgItemMessage(hWnd,IDC_MATSPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				_stscanf(tmpstring,_T("%x"),&number);
+				material.specular.b = (float)(number & 255) / 255.0;
+				material.specular.g = (float)((number>>8) & 255) / 255.0;
+				material.specular.r = (float)((number>>16) & 255) / 255.0;
+				material.specular.a = (float)((number>>24) & 255) / 255.0;
+				d3d7dev->SetMaterial(&material);
+			}
+			break;
+		case IDC_ENABLELIGHT:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_ENABLELIGHT,BM_GETCHECK,0,0) == BST_CHECKED)
+				{
+					d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING,TRUE);
+					for(int i = 0; i < 8; i++)
+					{
+						d3d7dev->SetLight(i,&lights[i]);
+						d3d7dev->LightEnable(i,lightenable[i]);
+					}
+				}
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_LIGHTING,FALSE);
+			}
+			break;
+		case IDC_VERTEXCOLOR:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_VERTEXCOLOR,BM_GETCHECK,0,0) == BST_CHECKED)
+					d3d7dev->SetRenderState(D3DRENDERSTATE_COLORVERTEX,TRUE);
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_COLORVERTEX,FALSE);
+			}
+			break;
+		case IDC_DETAIL:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_DETAIL,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				number = _ttoi(tmpstring);
+				if(number < 2) SendDlgItemMessage(hWnd,IDC_DETAIL,WM_SETTEXT,0,(LPARAM)_T("2"));
+				if(number > 64) SendDlgItemMessage(hWnd,IDC_DETAIL,WM_SETTEXT,0,(LPARAM)_T("64"));
+				MakeCube3D(5,number);
+			}
+			break;
 		default:
 			return FALSE;
 		}
 		break;
     case WM_CLOSE:
-		ddinterface->Release();
+		if(d3d7dev)
+		{
+			d3d7dev->Release();
+			d3d7dev = NULL;
+		}
+		if(d3d7)
+		{
+			d3d7->Release();
+			d3d7dev = NULL;
+		}
+		if(ddsrender)
+		{
+			ddsrender->Release();
+			ddsrender = NULL;
+		}
+		if(ddsurface)
+		{
+			ddsurface->Release();
+			ddsurface = NULL;
+		}
+		if(zbuffer)
+		{
+			zbuffer->Release();
+			zbuffer = NULL;
+		}
+		if(ddclipper)
+		{
+			ddclipper->Release();
+			ddclipper = NULL;
+		}
+		if(ddinterface)
+		{
+			ddinterface->Release();
+			ddinterface = NULL;
+		}
+		if(mesh)
+		{
+			free(mesh);
+			mesh = NULL;
+		}
+		if(vertices)
+		{
+			free(vertices);
+			vertices = NULL;
+		}
+		if(litvertices)
+		{
+			free(litvertices);
+			litvertices = NULL;
+		}
+		if(colorvertices)
+		{
+			free(colorvertices);
+			colorvertices = NULL;
+		}
         EndDialog(hWnd,IDCANCEL);
         break;
 	case WM_APP:

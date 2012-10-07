@@ -35,6 +35,7 @@
 #define IDC_RESIZABLE                           1001
 #define IDC_SPINALPHAREF                        1001
 #define IDC_DDTYPE                              1002
+#define IDC_SPINDETAIL                          1002
 #define IDC_SPINLINEREPEAT                      1002
 #define IDC_TABS                                1002
 #define IDC_TESTHEADER                          1002
@@ -43,6 +44,7 @@
 #define IDC_TESTLIST                            1004
 #define IDC_FILLMODE                            1005
 #define IDC_ALPHABLEND                          1006
+#define IDC_DIFFUSESOURCE                       1006
 #define IDC_BGCOLOR                             1007
 #define IDC_SHADEMODE                           1008
 #define IDC_WINDOWED                            1008
@@ -50,14 +52,22 @@
 #define IDC_CULLMODE                            1010
 #define IDC_FOGENABLE                           1011
 #define IDC_APIVER                              1012
+#define IDC_MATDIFFUSESELECT                    1012
+#define IDC_MATDIFFUSE                          1013
 #define IDC_SPINAPI                             1013
 #define IDC_ENABLELIGHT                         1014
 #define IDC_ENABLESPECULAR                      1015
 #define IDC_VSYNC                               1015
+#define IDC_DETAIL                              1016
 #define IDC_AMBIENT                             1017
 #define IDC_BUFFERS                             1017
+#define IDC_SPECULARSOURCE                      1018
 #define IDC_SPINBACK                            1019
+#define IDC_MATSPECULARSELECT                   1020
+#define IDC_MATSPECULAR                         1021
+#define IDC_AMBIENTSOURCE                       1022
 #define IDC_FRAMERATE                           1023
+#define IDC_EMISSIVESOURCE                      1024
 #define IDC_SPINFRAME                           1024
 #define IDC_FSAA                                1026
 #define IDC_FILTERLABEL                         1027
@@ -132,7 +142,7 @@
 #define IDC_MATAMBIENTSELECT                    1116
 #define IDC_POWER                               1118
 #define IDC_LIGHTNUMBER                         1120
-#define IDC_SPIN1                               1121
+#define IDC_SPINLIGHT                           1121
 #define IDC_LIGHTTYPE                           1123
 #define IDC_LIGHTDIFFUSE                        1126
 #define IDC_LIGHTDIFFUSESELECT                  1127
