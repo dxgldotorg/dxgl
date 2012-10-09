@@ -85,6 +85,14 @@ static DWORD bgcolor = 0;
 
 typedef struct
 {
+	DWORD ambient;
+	DWORD diffuse;
+	DWORD specular;
+} HEXLIGHTCOLOR;
+HEXLIGHTCOLOR hexlightcolor[8];
+
+typedef struct
+{
 	D3DTEXTUREOP colorop;
 	DWORD colorarg1;
 	DWORD colorarg2;
@@ -166,6 +174,7 @@ typedef struct
 	DWORD texturetype;
 	TCHAR texturefile[MAX_PATH+1];
 	MultiDirectDrawSurface* texture;
+	int currentlight;
 } VERTEXSHADERSTATE;
 static VERTEXSHADERSTATE vertexshaderstate;
 	
@@ -741,6 +750,7 @@ void MakeLights()
 		ZeroMemory(&lights[i],sizeof(D3DLIGHT7));
 		lights[i].dcvDiffuse.r = lights[i].dcvDiffuse.g = lights[i].dcvDiffuse.b = 1;
 		lights[i].dltType = D3DLIGHT_DIRECTIONAL;
+		hexlightcolor[i].diffuse = 0xFFFFFF;
 	}
 	lightenable[0] = TRUE;
 	lights[0].dvPosition = D3DVECTOR(-10,-10,-10);
@@ -1780,21 +1790,41 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CW"));
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_ADDSTRING,0,(LPARAM)_T("CCW"));
 		SendDlgItemMessage(hWnd,IDC_CULLMODE,CB_SETCURSEL,2,0);
+		SendDlgItemMessage(hWnd,IDC_VERTEXCOLOR,BM_SETCHECK,BST_CHECKED,0);
 		PopulateSourceCombo(GetDlgItem(hWnd,IDC_DIFFUSESOURCE));
 		PopulateSourceCombo(GetDlgItem(hWnd,IDC_SPECULARSOURCE));
 		PopulateSourceCombo(GetDlgItem(hWnd,IDC_AMBIENTSOURCE));
 		PopulateSourceCombo(GetDlgItem(hWnd,IDC_EMISSIVESOURCE));
 		SendDlgItemMessage(hWnd,IDC_DIFFUSESOURCE,CB_SETCURSEL,D3DMCS_COLOR1,0);
 		SendDlgItemMessage(hWnd,IDC_SPECULARSOURCE,CB_SETCURSEL,D3DMCS_COLOR2,0);
-		SendDlgItemMessage(hWnd,IDC_AMBIENTSOURCE,CB_SETCURSEL,D3DMCS_COLOR2,0);
+		SendDlgItemMessage(hWnd,IDC_AMBIENTSOURCE,CB_SETCURSEL,D3DMCS_MATERIAL,0);
 		SendDlgItemMessage(hWnd,IDC_EMISSIVESOURCE,CB_SETCURSEL,D3DMCS_MATERIAL,0);
 		SendDlgItemMessage(hWnd,IDC_SPINDETAIL,UDM_SETRANGE32,2,64);
 		SendDlgItemMessage(hWnd,IDC_SPINDETAIL,UDM_SETPOS32,0,8);
+		SendDlgItemMessage(hWnd,IDC_SPINLIGHT,UDM_SETRANGE32,0,7);
+		SendDlgItemMessage(hWnd,IDC_LIGHTDIFFUSE,WM_SETTEXT,0,(LPARAM)_T("00FFFFFF"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTAMBIENT,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTSPECULAR,WM_SETTEXT,0,(LPARAM)_T("00000000"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTRANGE,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTFALLOFF,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTHETA,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTPHI,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTATTEN0,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTATTEN1,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTATTEN2,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_POWER,WM_SETTEXT,0,(LPARAM)_T("0"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("Point"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("Spot"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("Directional"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("Parallel Point"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("GL Spot"));
+		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_SETCURSEL,D3DLIGHT_DIRECTIONAL-1,0);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		vertexshaderstate.texture = NULL;
 		vertexshaderstate.texturefile[0] = 0;
 		vertexshaderstate.texturetype = 0;
+		vertexshaderstate.currentlight = 0;
 		StartTimer(hWnd,WM_APP,60);
 		break;
 	case WM_COMMAND:
@@ -1937,6 +1967,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_EMISSIVE:
+			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_EMISSIVE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
@@ -1948,6 +1979,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_MATAMBIENT:
+			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
@@ -1959,6 +1991,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_MATDIFFUSE:
+			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATDIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
@@ -1970,6 +2003,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_MATSPECULAR:
+			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATSPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
 				_stscanf(tmpstring,_T("%x"),&number);
@@ -1977,6 +2011,14 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				material.specular.g = (float)((number>>8) & 255) / 255.0;
 				material.specular.r = (float)((number>>16) & 255) / 255.0;
 				material.specular.a = (float)((number>>24) & 255) / 255.0;
+				d3d7dev->SetMaterial(&material);
+			}
+			break;
+		case IDC_POWER:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_POWER,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				material.power = (float)_ttof(tmpstring);
 				d3d7dev->SetMaterial(&material);
 			}
 			break;
@@ -2013,6 +2055,53 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				MakeCube3D(5,number);
 			}
 			break;
+		case IDC_DIFFUSESOURCE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_DIFFUSEMATERIALSOURCE,SendDlgItemMessage(hWnd,
+					IDC_DIFFUSESOURCE,CB_GETCURSEL,0,0));
+			}
+			break;
+		case IDC_SPECULARSOURCE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_SPECULARMATERIALSOURCE,SendDlgItemMessage(hWnd,
+					IDC_SPECULARSOURCE,CB_GETCURSEL,0,0));
+			}
+			break;
+		case IDC_AMBIENTSOURCE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENTMATERIALSOURCE,SendDlgItemMessage(hWnd,
+					IDC_AMBIENTSOURCE,CB_GETCURSEL,0,0));
+			}
+			break;
+		case IDC_EMISSIVESOURCE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_EMISSIVEMATERIALSOURCE,SendDlgItemMessage(hWnd,
+					IDC_EMISSIVESOURCE,CB_GETCURSEL,0,0));
+			}
+			break;
+		case IDC_LIGHTNUMBER:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_LIGHTNUMBER,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				number = _ttoi(tmpstring);
+				if(number < 0) SendDlgItemMessage(hWnd,IDC_LIGHTNUMBER,WM_SETTEXT,0,(LPARAM)_T("0"));
+				if(number > 7) SendDlgItemMessage(hWnd,IDC_LIGHTNUMBER,WM_SETTEXT,0,(LPARAM)_T("7"));
+				vertexshaderstate.currentlight = number;
+				_itot(hexlightcolor[vertexshaderstate.currentlight].ambient,tmpstring,16);
+				strupper(tmpstring); paddwordzeroes(tmpstring);
+				SendDlgItemMessage(hWnd,IDC_LIGHTAMBIENT,WM_SETTEXT,0,(LPARAM)tmpstring);
+				_itot(hexlightcolor[vertexshaderstate.currentlight].diffuse,tmpstring,16);
+				strupper(tmpstring); paddwordzeroes(tmpstring);
+				SendDlgItemMessage(hWnd,IDC_LIGHTDIFFUSE,WM_SETTEXT,0,(LPARAM)tmpstring);
+				_itot(hexlightcolor[vertexshaderstate.currentlight].specular,tmpstring,16);
+				strupper(tmpstring); paddwordzeroes(tmpstring);
+				SendDlgItemMessage(hWnd,IDC_LIGHTSPECULAR,WM_SETTEXT,0,(LPARAM)tmpstring);
+				SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_SETCURSEL,lights[vertexshaderstate.currentlight].dltType-1,0);
+			}
 		default:
 			return FALSE;
 		}
