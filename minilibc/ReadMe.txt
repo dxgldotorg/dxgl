@@ -1,0 +1,1 @@
+This library is intended to replace standard C/C++ functions from the standard runtime libraries.
