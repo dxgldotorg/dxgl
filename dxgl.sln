@@ -136,15 +136,11 @@ Global
 		{4DC98095-5F42-4A44-962C-346ABEE2C9B6}.Release|Win32.ActiveCfg = Release|Win32
 		{4DC98095-5F42-4A44-962C-346ABEE2C9B6}.Release|Win32.Build.0 = Release|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug no DXGL|Win32.ActiveCfg = Debug|Win32
-		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug no DXGL|Win32.Build.0 = Debug|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug No MSVCRT|Win32.ActiveCfg = Debug|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug No MSVCRT|Win32.Build.0 = Debug|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug|Win32.Build.0 = Debug|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release no DXGL|Win32.ActiveCfg = Release|Win32
-		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release no DXGL|Win32.Build.0 = Release|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release|Win32.ActiveCfg = Release|Win32
-		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,1 +1,2 @@
 This library is intended to replace standard C/C++ functions from the standard runtime libraries.
+It is not intended for use in regular projects, as it only contains the functions required for DXGL to work.
