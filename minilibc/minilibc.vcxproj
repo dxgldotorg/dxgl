@@ -99,6 +99,9 @@
     <CustomBuild Include="rtcapi_x86.asm">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="strlen_x86.asm">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.c">
