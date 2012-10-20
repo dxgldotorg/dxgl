@@ -125,7 +125,7 @@ FILE *fopen(const char *filename, const char *mode)
 		minilibc_files = (minilibc_FILE*)malloc(128*sizeof(minilibc_FILE));
 		if(!minilibc_files)
 		{
-			errno = ENOMEM;
+			_set_errno(ENOMEM);
 			return NULL;
 		}
 		memset(minilibc_files,0,128*sizeof(minilibc_FILE));
@@ -145,7 +145,7 @@ FILE *fopen(const char *filename, const char *mode)
 		minilibc_FILE *tmpptr = (minilibc_FILE*)realloc(minilibc_files,(128+maxfiles)*sizeof(minilibc_FILE));
 		if(!tmpptr)
 		{
-			errno = ENOMEM;
+			_set_errno(ENOMEM);
 			return NULL;
 		}
 		maxfiles += 128;
@@ -154,7 +154,7 @@ FILE *fopen(const char *filename, const char *mode)
 	minilibc_files[ptr].mode = decode_filemode(mode,&minilibc_files[ptr]);
 	if(minilibc_files[ptr].mode & MODE_ERROR)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return NULL;
 	}
 	minilibc_files[ptr].handle = CreateFileA(filename,minilibc_files[ptr].DesiredAccess,
@@ -162,7 +162,7 @@ FILE *fopen(const char *filename, const char *mode)
 		FILE_ATTRIBUTE_NORMAL,NULL);
 	if(minilibc_files[ptr].handle == INVALID_HANDLE_VALUE)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return NULL;
 	}
 	return (FILE*)&minilibc_files[ptr];
@@ -251,7 +251,7 @@ FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
 		minilibc_files = (minilibc_FILE*)malloc(128*sizeof(minilibc_FILE));
 		if(!minilibc_files)
 		{
-			errno = ENOMEM;
+			_set_errno(ENOMEM);
 			return NULL;
 		}
 		memset(minilibc_files,0,128*sizeof(minilibc_FILE));
@@ -271,7 +271,7 @@ FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
 		minilibc_FILE *tmpptr = (minilibc_FILE*)realloc(minilibc_files,(128+maxfiles)*sizeof(minilibc_FILE));
 		if(!tmpptr)
 		{
-			errno = ENOMEM;
+			_set_errno(ENOMEM);
 			return NULL;
 		}
 		maxfiles += 128;
@@ -280,7 +280,7 @@ FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
 	minilibc_files[ptr].mode = _w_decode_filemode(mode,&minilibc_files[ptr]);
 	if(minilibc_files[ptr].mode & MODE_ERROR)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return NULL;
 	}
 	minilibc_files[ptr].handle = CreateFileW(filename,minilibc_files[ptr].DesiredAccess,
@@ -288,7 +288,7 @@ FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
 		FILE_ATTRIBUTE_NORMAL,NULL);
 	if(minilibc_files[ptr].handle == INVALID_HANDLE_VALUE)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return NULL;
 	}
 	return (FILE*)&minilibc_files[ptr];
@@ -300,18 +300,18 @@ int fclose(FILE *stream)
 	minilibc_FILE *file;
 	if(!stream)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return EOF;
 	}
 	file = (minilibc_FILE *)stream;
 	if(file->handle == INVALID_HANDLE_VALUE)
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return EOF;
 	}
 	if(!CloseHandle(file->handle))
 	{
-		errno = EINVAL;
+		_set_errno(EINVAL);
 		return EOF;
 	}
 	return 0;

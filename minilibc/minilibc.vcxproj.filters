@@ -50,6 +50,9 @@
     <ClCompile Include="file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="errno.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
