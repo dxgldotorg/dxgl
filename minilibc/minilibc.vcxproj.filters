@@ -36,6 +36,12 @@
     <CustomBuild Include="strlen_x86.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="strcpy_x86.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="strncpy_x86.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="exit.c">

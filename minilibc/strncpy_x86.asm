@@ -15,7 +15,27 @@
 ; License along with this library; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-EXTERN C itoachars:ptr byte
-EXTERN C memset_ptr:ptr dword
-EXTERN C strlen:proc
-EXTERN C memcpy:proc
+.model flat, c
+.code
+INCLUDE common.inc
+
+strncpy PROC dest:ptr byte, src:ptr byte, count:dword
+	push src
+	call strlen
+	add esp, 4
+	cmp eax, count
+	jl shortstring
+	push count
+	jmp longstring
+shortstring:
+	push eax
+longstring:
+	push src
+	push dest
+	call memcpy
+	add esp, 12
+	mov eax, dest
+	ret
+strncpy ENDP
+
+end

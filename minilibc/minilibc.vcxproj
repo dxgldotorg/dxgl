@@ -102,6 +102,12 @@
     <CustomBuild Include="strlen_x86.asm">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="strcpy_x86.asm">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="strncpy_x86.asm">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.c">
