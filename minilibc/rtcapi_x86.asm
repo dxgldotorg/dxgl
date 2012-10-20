@@ -26,4 +26,12 @@ esp_wrong:
 	ret
 _RTC_CheckEsp ENDP
 
+_RTC_InitBase PROC
+	ret
+_RTC_InitBase ENDP
+
+_RTC_Shutdown PROC
+	ret
+_RTC_Shutdown ENDP
+
 end

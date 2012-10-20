@@ -30,7 +30,7 @@
     <CustomBuild Include="_itoa_x86.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="_RTC_CheckEsp_x86.asm">
+    <CustomBuild Include="rtcapi_x86.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>
