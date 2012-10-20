@@ -293,3 +293,42 @@ FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
 	}
 	return (FILE*)&minilibc_files[ptr];
 }
+
+
+int fclose(FILE *stream)
+{
+	minilibc_FILE *file;
+	if(!stream)
+	{
+		errno = EINVAL;
+		return EOF;
+	}
+	file = (minilibc_FILE *)stream;
+	if(file->handle == INVALID_HANDLE_VALUE)
+	{
+		errno = EINVAL;
+		return EOF;
+	}
+	if(!CloseHandle(file->handle))
+	{
+		errno = EINVAL;
+		return EOF;
+	}
+	return 0;
+}
+
+int _fcloseall()
+{
+	int i;
+	int count;
+	if(!minilibc_files) return 0;
+	for(i = 0; i < filecount; i++)
+	{
+		if(!fclose((FILE*)&minilibc_files[i])) count++;
+	}
+	free(minilibc_files);
+	minilibc_files = NULL;
+	filecount = 0;
+	maxfiles = 0;
+	return count;
+}
