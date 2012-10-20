@@ -116,6 +116,8 @@ static unsigned int decode_filemode(const char *mode, minilibc_FILE *file)
 
 FILE *fopen(const char *filename, const char *mode)
 {
+	int ptr = -1;
+	int i;
 	if(!filename) return NULL;
 	if(!mode) return NULL;
 	if(!minilibc_files)
@@ -129,23 +131,165 @@ FILE *fopen(const char *filename, const char *mode)
 		memset(minilibc_files,0,128*sizeof(minilibc_FILE));
 		maxfiles = 128;
 	}
-	minilibc_files[filecount].mode = decode_filemode(mode);
-	if(minilibc_files[filecount].mode & MODE_ERROR)
+	for(i = 0; i < filecount; i++)
+	{
+		if(minilibc_files[i].handle == INVALID_HANDLE_VALUE)
+		{
+			ptr = i;
+			break;
+		}
+	}
+	if(ptr == -1) ptr = filecount++;
+	if(filecount >= maxfiles)
+	{
+		minilibc_FILE *tmpptr = (minilibc_FILE*)realloc(minilibc_files,(128+maxfiles)*sizeof(minilibc_FILE));
+		if(!tmpptr)
+		{
+			errno = ENOMEM;
+			return NULL;
+		}
+		maxfiles += 128;
+		minilibc_files = tmpptr;
+	}
+	minilibc_files[ptr].mode = decode_filemode(mode,&minilibc_files[ptr]);
+	if(minilibc_files[ptr].mode & MODE_ERROR)
 	{
 		errno = EINVAL;
 		return NULL;
 	}
-	minilibc_files[filecount].handle = CreateFileA(filename,minilibc_files[filecount].DesiredAccess,
-		minilibc_files[filecount].ShareMode,NULL,minilibc_files[filecount].CreationDisposition,
+	minilibc_files[ptr].handle = CreateFileA(filename,minilibc_files[ptr].DesiredAccess,
+		minilibc_files[ptr].ShareMode,NULL,minilibc_files[ptr].CreationDisposition,
 		FILE_ATTRIBUTE_NORMAL,NULL);
-	if(minilibc_files[filecount].handle == INVALID_HANDLE_VALUE)
+	if(minilibc_files[ptr].handle == INVALID_HANDLE_VALUE)
 	{
 		errno = EINVAL;
 		return NULL;
 	}
-	filecount++;
-	if(filecount > maxfiles)
-	{
+	return (FILE*)&minilibc_files[ptr];
+}
 
+static unsigned int _w_decode_filemode(const WCHAR *mode, minilibc_FILE *file)
+{
+	unsigned int ret = 0;
+	int i = 0;
+	while(mode[i] != 0)
+	{
+		switch(mode[i])
+		{
+		case L'r':
+			ret |= MODE_READ;
+			break;
+		case L'w':
+			ret |= MODE_WRITE;
+			break;
+		case L'a':
+			ret |= MODE_APPEND;
+			break;
+		case L'+':
+			ret |= MODE_PLUS;
+			break;
+		case L't':
+			ret |= MODE_TEXT;
+			break;
+		case L'b':
+			ret |= MODE_BINARY;
+			break;
+		}
+		i++;
 	}
+	if(((ret & MODE_READ) && (ret & MODE_WRITE)) || ((ret & MODE_READ) && (ret & MODE_APPEND))
+		|| ((ret & MODE_WRITE) && (ret & MODE_APPEND)) || ((ret & MODE_TEXT) && (ret & MODE_BINARY)))
+		ret |= MODE_ERROR;
+	switch(ret & MODE_RWMASK)
+	{
+	case 0:
+	case MODE_PLUS:
+		ret |= MODE_ERROR;
+		break;
+	case MODE_READ: 
+		file->DesiredAccess = GENERIC_READ;
+		file->ShareMode = FILE_SHARE_READ;
+		file->CreationDisposition = OPEN_EXISTING;
+		break;
+	case MODE_WRITE:
+		file->DesiredAccess = GENERIC_WRITE;
+		file->ShareMode = 0;
+		file->CreationDisposition = CREATE_ALWAYS;
+		break;
+	case MODE_APPEND:
+		file->DesiredAccess = GENERIC_READ|GENERIC_WRITE;
+		file->ShareMode = 0;
+		file->CreationDisposition = OPEN_ALWAYS;
+		break;
+	case MODE_READ|MODE_PLUS:
+		file->DesiredAccess = GENERIC_READ|GENERIC_WRITE;
+		file->ShareMode = 0;
+		file->CreationDisposition = OPEN_EXISTING;
+		break;
+	case MODE_WRITE|MODE_PLUS:
+		file->DesiredAccess = GENERIC_READ|GENERIC_WRITE;
+		file->ShareMode = 0;
+		file->CreationDisposition = CREATE_ALWAYS;
+		break;
+	case MODE_APPEND|MODE_PLUS:
+		file->DesiredAccess = GENERIC_READ|GENERIC_WRITE;
+		file->ShareMode = 0;
+		file->CreationDisposition = OPEN_ALWAYS;
+		break;
+	}
+	return ret;
+}
+
+FILE *_wfopen(const WCHAR *filename, const WCHAR *mode)
+{
+	int ptr = -1;
+	int i;
+	if(!filename) return NULL;
+	if(!mode) return NULL;
+	if(!minilibc_files)
+	{
+		minilibc_files = (minilibc_FILE*)malloc(128*sizeof(minilibc_FILE));
+		if(!minilibc_files)
+		{
+			errno = ENOMEM;
+			return NULL;
+		}
+		memset(minilibc_files,0,128*sizeof(minilibc_FILE));
+		maxfiles = 128;
+	}
+	for(i = 0; i < filecount; i++)
+	{
+		if(minilibc_files[i].handle == INVALID_HANDLE_VALUE)
+		{
+			ptr = i;
+			break;
+		}
+	}
+	if(ptr == -1) ptr = filecount++;
+	if(filecount >= maxfiles)
+	{
+		minilibc_FILE *tmpptr = (minilibc_FILE*)realloc(minilibc_files,(128+maxfiles)*sizeof(minilibc_FILE));
+		if(!tmpptr)
+		{
+			errno = ENOMEM;
+			return NULL;
+		}
+		maxfiles += 128;
+		minilibc_files = tmpptr;
+	}
+	minilibc_files[ptr].mode = _w_decode_filemode(mode,&minilibc_files[ptr]);
+	if(minilibc_files[ptr].mode & MODE_ERROR)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+	minilibc_files[ptr].handle = CreateFileW(filename,minilibc_files[ptr].DesiredAccess,
+		minilibc_files[ptr].ShareMode,NULL,minilibc_files[ptr].CreationDisposition,
+		FILE_ATTRIBUTE_NORMAL,NULL);
+	if(minilibc_files[ptr].handle == INVALID_HANDLE_VALUE)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+	return (FILE*)&minilibc_files[ptr];
 }
