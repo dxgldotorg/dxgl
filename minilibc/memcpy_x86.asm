@@ -15,9 +15,29 @@
 ; License along with this library; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-EXTERN C itoachars:ptr byte
-EXTERN C memset_ptr:ptr dword
-EXTERN C memcpy_ptr:ptr dword
-ifndef MEMCPY_ASM
-EXTERN C memcpy:proc
-endif
+.model flat, c
+.code
+
+MEMCPY_ASM = 1
+
+INCLUDE common.inc
+
+memcpy PROC dest: ptr byte, src: ptr byte, count: dword
+	jmp dword ptr memcpy_ptr
+memcpy ENDP
+
+memcpy_386 PROC dest: ptr byte, src: ptr byte, count: dword
+	push esi
+	push edi
+	push ecx
+	mov esi, src
+	mov edi, dest
+	mov ecx, count
+	rep movsb
+	mov eax, dest
+	pop ecx
+	pop edi
+	pop esi
+memcpy_386 ENDP
+
+end

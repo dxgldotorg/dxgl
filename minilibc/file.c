@@ -320,7 +320,7 @@ int fclose(FILE *stream)
 int _fcloseall()
 {
 	int i;
-	int count;
+	int count = 0;
 	if(!minilibc_files) return 0;
 	for(i = 0; i < filecount; i++)
 	{

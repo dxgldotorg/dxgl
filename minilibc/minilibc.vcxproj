@@ -92,6 +92,9 @@
     <CustomBuild Include="memset_x86.asm">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="memcpy_x86.asm">
+      <FileType>Document</FileType>
+    </CustomBuild>
     <None Include="ReadMe.txt" />
     <CustomBuild Include="_itoa_x86.asm">
       <FileType>Document</FileType>
@@ -112,6 +115,7 @@
     <ClCompile Include="exit.c" />
     <ClCompile Include="file.c" />
     <ClCompile Include="init.c" />
+    <ClCompile Include="memcpy.c" />
     <ClCompile Include="memory.c" />
     <ClCompile Include="memset.c" />
   </ItemGroup>

@@ -15,18 +15,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
+#include "common.h"
 
-extern const char itoachars[37];
+void* (*memcpy_ptr)(void *dest, const void *src, size_t count) = memcpy_init;
 
-void minilibc_init();
 
-extern void* (*memset_ptr)(void *dest, int c, size_t count);
-void *memset_init(void *dest, int c, size_t count);
-void *memset_386(void *dest, int c, size_t count);
-
-extern void* (*memcpy_ptr)(void *dest, const void *src, size_t count);
-void *memcpy_init(void *dest, const void *src, size_t count);
-void *memcpy_386(void *dest, const void *src, size_t count);
+void *memcpy_init(void *dest, const void *src, size_t count)
+{
+	minilibc_init();
+	return memcpy_ptr(dest,src,count);
+}

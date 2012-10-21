@@ -36,6 +36,9 @@
     <CustomBuild Include="string_x86.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="memcpy_x86.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="exit.c">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memcpy.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
