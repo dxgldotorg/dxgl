@@ -17,5 +17,4 @@
 
 EXTERN C itoachars:ptr byte
 EXTERN C memset_ptr:ptr dword
-EXTERN C strlen:proc
 EXTERN C memcpy:proc

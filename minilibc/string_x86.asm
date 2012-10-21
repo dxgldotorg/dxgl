@@ -19,6 +19,19 @@
 .code
 INCLUDE common.inc
 
+strcpy PROC dest:ptr byte, src:ptr byte
+	push src
+	call strlen
+	add esp, 4
+	push eax
+	push src
+	push dest
+	call memcpy
+	add esp, 12
+	mov eax, dest
+	ret
+strcpy ENDP
+
 strlen PROC string:ptr byte
 	push ecx
 	push ebx
@@ -63,5 +76,24 @@ return:
 	pop ecx
 	ret
 strlen ENDP
+
+strncpy PROC dest:ptr byte, src:ptr byte, count:dword
+	push src
+	call strlen
+	add esp, 4
+	cmp eax, count
+	jl shortstring
+	push count
+	jmp longstring
+shortstring:
+	push eax
+longstring:
+	push src
+	push dest
+	call memcpy
+	add esp, 12
+	mov eax, dest
+	ret
+strncpy ENDP
 
 end

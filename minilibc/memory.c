@@ -16,5 +16,40 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include <Windows.h>
 
-const char itoachars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+void *malloc(size_t size)
+{
+	void *ptr;
+	ptr = HeapAlloc(GetProcessHeap(),0,size);
+	if(!ptr)
+	{
+		_set_errno(ENOMEM);
+		return NULL;
+	}
+	return ptr;
+}
+
+void *realloc(void *memblock, size_t size)
+{
+	void *ptr;
+	if(!size)
+	{
+		free(memblock);
+		return NULL;
+	}
+	if(!memblock) ptr = HeapAlloc(GetProcessHeap(),0,size);
+	else ptr = HeapReAlloc(GetProcessHeap(),0,memblock,size);
+	if(!ptr)
+	{
+		_set_errno(ENOMEM);
+		return NULL;
+	}
+	return ptr;
+}
+
+void free(void *memblock)
+{
+	if(!memblock) return;
+	if(HeapFree(GetProcessHeap(),0,memblock)) errno = EINVAL;
+}

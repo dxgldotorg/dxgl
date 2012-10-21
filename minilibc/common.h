@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 extern const char itoachars[37];
 

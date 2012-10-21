@@ -99,13 +99,7 @@
     <CustomBuild Include="rtcapi_x86.asm">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="strlen_x86.asm">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="strcpy_x86.asm">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="strncpy_x86.asm">
+    <CustomBuild Include="string_x86.asm">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>
@@ -118,6 +112,7 @@
     <ClCompile Include="exit.c" />
     <ClCompile Include="file.c" />
     <ClCompile Include="init.c" />
+    <ClCompile Include="memory.c" />
     <ClCompile Include="memset.c" />
   </ItemGroup>
   <ItemGroup>
