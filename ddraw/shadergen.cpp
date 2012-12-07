@@ -64,6 +64,8 @@ Bits 46-48 - Number of blending weights  VS
 Bit 49 - Normalize normals  VS
 Bit 50 - Use transformed vertices  VS
 Bits 51-58 - Point or spot light  VS/FS
+Bit 59 - Enable lights  VS/FS
+Bit 60 - Use vertex colors  VS
 */
 
 /* Bits in Texture Stage ID:
@@ -440,7 +442,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	// Uniforms
 	vsrc->append(unif_ambient);
 	if((id>>50)&1) vsrc->append(unif_size);
-	numlights = (id>>18)&7;
+	if((id>>59)&1) numlights = (id>>18)&7;
+	else numlights = 0;
 	if(numlights) // Lighting
 	{
 		vsrc->append(lightstruct);

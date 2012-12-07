@@ -498,6 +498,8 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		if(noalpha) texstages[0].alphaop = D3DTOP_SELECTARG2;
 		else texstages[0].alphaop = D3DTOP_MODULATE;
 	}
+	if(renderstate[D3DRENDERSTATE_LIGHTING]) shader |= (1i64 << 59);
+	if(renderstate[D3DRENDERSTATE_COLORVERTEX]) shader |= (1i64 << 60);
 	for(i = 0; i < 8; i++)
 	{
 		if(!texstages[i].dirty) continue;
