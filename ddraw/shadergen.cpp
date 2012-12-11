@@ -279,7 +279,7 @@ ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "gl_FrontColor = (gl_FrontMaterial.diffuse * diffuse) + (gl_FrontMaterial.ambient + ambient)\n\
+static const char op_colorout[] = "gl_FrontColor = (gl_FrontMaterial.diffuse * diffuse) + (gl_FrontMaterial.ambient * ambient)\n\
 + (gl_FrontMaterial.specular * specular) + gl_FrontMaterial.emission;\n\
 gl_FrontSecondaryColor = (gl_FrontMaterial.specular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
@@ -528,7 +528,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
 			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
 			else vsrc->append(colorargs[1]);
-			vsrc->append(" + ambient)\n+ (");
+			vsrc->append(" * ambient)\n+ (");
 			matcolor = ((id>>25)&3);
 			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
 			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
