@@ -123,7 +123,7 @@ const DWORD renderstate_default[153] = {0, // 0
 	0, //colorblendkeyenable
 	D3DMCS_COLOR1, //diffusematerialsource
 	D3DMCS_COLOR2, //specularmaterialsource
-	D3DMCS_COLOR2, //ambientmaterialsource
+	D3DMCS_MATERIAL, //ambientmaterialsource
 	D3DMCS_MATERIAL, //emissivematerialsource
 	0,0,                                                  //150
 	D3DVBLEND_DISABLE, //vertexblend
