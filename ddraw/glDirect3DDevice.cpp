@@ -524,7 +524,11 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		if(texstages[i].textransform & D3DTTFF_PROJECTED) texstages[i].shaderid |= 1i64 << 53;
 		texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
 		texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
-		if(texstages[i].texture) texstages[i].shaderid |= 1i64 << 59;
+		if(texstages[i].texture)
+		{
+			texstages[i].shaderid |= 1i64 << 59;
+			if(texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT) texstages[i].shaderid |= 1i64 << 60;
+		}
 	}
 	return shader;
 }

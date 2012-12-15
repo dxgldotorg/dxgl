@@ -93,6 +93,7 @@ Bits in flags:
 00=passthru 01=cameraspacenormal
 10=cameraspaceposition 11=cameraspacereflectionvector
 Bit 59: Texture image enabled
+Bit 60: Texture has color key
 */
 
 /**
