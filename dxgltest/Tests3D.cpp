@@ -1333,6 +1333,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hWnd,IDC_FOGEND,WM_SETTEXT,0,(LPARAM)_T("1.0"));
 		SendDlgItemMessage(hWnd,IDC_FOGDENSITY,WM_SETTEXT,0,(LPARAM)_T("1.0"));
 		SendDlgItemMessage(hWnd,IDC_SPINSTAGE,UDM_SETRANGE32,0,7);
+		SendDlgItemMessage(hWnd,IDC_SPINALPHAREF,UDM_SETRANGE32,0,255);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		StartTimer(hWnd,WM_APP,60);
@@ -1347,6 +1348,8 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				number = _ttoi(tmpstring);
 				if(number < 0) SendDlgItemMessage(hWnd,IDC_TEXSTAGE,WM_SETTEXT,0,(LPARAM)_T("0"));
 				if(number > 7) SendDlgItemMessage(hWnd,IDC_TEXSTAGE,WM_SETTEXT,0,(LPARAM)_T("7"));
+				if(number < 0) number = 0;
+				if(number > 7) number = 7;
 				texshaderstate.currentstage = number;
 				_itot(texshaderstate.texstages[number].keycolor,tmpstring,16);
 				strupper(tmpstring);
@@ -1572,6 +1575,31 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					IDC_DESTBLEND,CB_GETCURSEL,0,0)+1);
 			}
 			break;
+		case IDC_ALPHATEST:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_ALPHATEST,BM_GETCHECK,0,0) == BST_CHECKED)
+					d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE,TRUE);
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE,FALSE);
+			}
+		case IDC_ALPHAFUNC:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHAFUNC,SendDlgItemMessage(hWnd,
+					IDC_ALPHAFUNC,CB_GETCURSEL,0,0)+1);
+			}
+			break;
+		case IDC_ALPHAREF:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_ALPHAREF,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				number = _ttoi(tmpstring);
+				if(number < 0) SendDlgItemMessage(hWnd,IDC_ALPHAREF,WM_SETTEXT,0,(LPARAM)_T("0"));
+				if(number > 255) SendDlgItemMessage(hWnd,IDC_ALPHAREF,WM_SETTEXT,0,(LPARAM)_T("255"));
+				if(number < 0) number = 0;
+				if(number > 255) number = 255;
+				if(d3d7dev) d3d7dev->SetRenderState(D3DRENDERSTATE_ALPHAREF,number);
+			}
 		case IDC_COLORKEY:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
