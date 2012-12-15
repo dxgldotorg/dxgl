@@ -1544,6 +1544,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	}
 	if(prog.uniforms[137]!= -1) glUniform1f(prog.uniforms[137],device->glDDS7->fakex);
 	if(prog.uniforms[138]!= -1) glUniform1f(prog.uniforms[138],device->glDDS7->fakey);
+	if(prog.uniforms[139]!= -1) glUniform1i(prog.uniforms[139],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
 	SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);

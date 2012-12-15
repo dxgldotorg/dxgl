@@ -39,7 +39,7 @@ Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel VS/FS
 Bit 2 - Alpha test enable  FS
 Bits 3-5 - Alpha test function:  FS
 000=never  001=less  010=equal  011=lessequal
-100=greater  101=notequal  110=lessequal  111=always
+100=greater  101=notequal  110=greaterequal  111=always
 Bits 6-7 - Table fog:  FS
 00 = none  01=exp  10=exp2  11=linear
 Bits 8-9 - Vertex fog: same as table  VS
@@ -260,6 +260,7 @@ static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
 static const char unif_tex[] = "uniform sampler2D texX;\n";
 static const char unif_size[] = "uniform float width;\n\
 uniform float height;\n";
+static const char unif_alpharef[] = "uniform int alpharef;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -632,6 +633,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		tmp.replace(21,1,_itoa(i,idstring,10));
 		fsrc->append(tmp);
 	}
+	if((id>>2)&1) fsrc->append(unif_alpharef);
 	// Variables
 	fsrc->append(var_color);
 	// Functions
@@ -889,6 +891,36 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			break;
 		}
 	}
+	if((id>>2)&1)
+	{
+		switch((id>>3)&7)
+		{
+		case 0:
+			fsrc->append("discard;\n");
+			break;
+		case 1:
+			fsrc->append("if(int(color.a * 255.0) >= alpharef) discard;");
+			break;
+		case 2:
+			fsrc->append("if(int(color.a * 255.0) != alpharef) discard;");
+			break;
+		case 3:
+			fsrc->append("if(int(color.a * 255.0) > alpharef) discard;");
+			break;
+		case 4:
+			fsrc->append("if(int(color.a * 255.0) <= alpharef) discard;");
+			break;
+		case 5:
+			fsrc->append("if(int(color.a * 255.0) == alpharef) discard;");
+			break;
+		case 6:
+			fsrc->append("if(int(color.a * 255.0) < alpharef) discard;");
+			break;
+		case 7:
+		default:
+			break;
+		}
+	}
 	fsrc->append(op_colorfragout);
 	fsrc->append(mainend);
 #ifdef _DEBUG
@@ -1005,4 +1037,5 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	genshaders[index].shader.uniforms[136] = glGetUniformLocation(genshaders[index].shader.prog,"ambientcolor");
 	genshaders[index].shader.uniforms[137] = glGetUniformLocation(genshaders[index].shader.prog,"width");
 	genshaders[index].shader.uniforms[138] = glGetUniformLocation(genshaders[index].shader.prog,"height");
+	genshaders[index].shader.uniforms[139] = glGetUniformLocation(genshaders[index].shader.prog,"alpharef");
 }
