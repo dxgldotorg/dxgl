@@ -59,6 +59,7 @@ void (APIENTRY *glUniform1i) (GLint location, GLint v0) = NULL;
 void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1) = NULL;
 void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2) = NULL;
 void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3) = NULL;
+void (APIENTRY *glUniform4iv) (GLint location, GLsizei count, const GLint* value) = NULL;
 void (APIENTRY *glUniform1f) (GLint location, GLfloat v0) = NULL;
 void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1) = NULL;
 void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2) = NULL;
@@ -136,6 +137,7 @@ void InitGLExt()
 		glUniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
 		glUniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
 		glUniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
+		glUniform4iv = (PFNGLUNIFORM4IVPROC)wglGetProcAddress("glUniform4iv");
 		glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
 		glUniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
 		glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");

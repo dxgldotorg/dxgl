@@ -636,6 +636,18 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		tmp.replace(21,1,_itoa(i,idstring,10));
 		fsrc->append(tmp);
 	}
+	if((id>>13)&1)
+	{
+		for(i = 0; i < 8; i++)
+		{
+			if((texstate[i].shaderid>>60)&1)
+			{
+				tmp = unif_key;
+				tmp.replace(17,1,_itoa(i,idstring,10));
+				fsrc->append(tmp);
+			}
+		}
+	}
 	if((id>>2)&1) fsrc->append(unif_alpharef);
 	// Variables
 	fsrc->append(var_color);

@@ -1517,7 +1517,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(prog.uniforms[136] != -1)
 		glUniform4f(prog.uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
 			RGBA_GETBLUE(ambient),RGBA_GETALPHA(ambient));
-
+	GLint keycolor[4];
 	for(i = 0; i < 8; i++)
 	{
 		if(device->texstages[i].colorop == D3DTOP_DISABLE) break;
@@ -1541,6 +1541,14 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		}
 		else SetTexture(i,0);
 		glUniform1i(prog.uniforms[128+i],i);
+		if(device->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && device->texstages[i].texture && (prog.uniforms[140+i] != -1))
+		{
+			if(device->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
+			{
+				dwordto4int(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,keycolor);
+				glUniform4iv(prog.uniforms[140+i],1,keycolor);
+			}
+		}
 	}
 	if(prog.uniforms[137]!= -1) glUniform1f(prog.uniforms[137],device->glDDS7->fakex);
 	if(prog.uniforms[138]!= -1) glUniform1f(prog.uniforms[138],device->glDDS7->fakey);

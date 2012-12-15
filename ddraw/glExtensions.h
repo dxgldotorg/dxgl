@@ -87,6 +87,7 @@ GLAPI void (APIENTRY *glUniform1i) (GLint location, GLint v0);
 GLAPI void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1);
 GLAPI void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2);
 GLAPI void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+GLAPI void (APIENTRY *glUniform4iv) (GLint location, GLsizei count, const GLint* value);
 GLAPI void (APIENTRY *glUniform1f) (GLint location, GLfloat v0);
 GLAPI void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1);
 GLAPI void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2);

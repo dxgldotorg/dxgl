@@ -90,6 +90,14 @@ static inline void dwordto4float(DWORD in, GLfloat *out)
 	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
 }
 
+static inline void dwordto4int(DWORD in, GLint *out)
+{
+	out[0] = (GLint)((in>>16) & 0xff);
+	out[1] = (GLint)((in>>8) & 0xff);
+	out[2] = (GLint)(in& 0xff);
+	out[3] = (GLint)((in>>24) & 0xff);
+}
+
 #ifdef _M_X64
 #define NextMultipleOfWord NextMultipleOf8
 #else
