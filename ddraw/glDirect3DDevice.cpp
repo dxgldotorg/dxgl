@@ -57,7 +57,7 @@ const DWORD renderstate_default[153] = {0, // 0
 	D3DFILTER_NEAREST, //texturemin
 	D3DBLEND_ONE, //srcblend
 	D3DBLEND_ZERO, //destblend                               20
-	D3DTBLEND_MODULATE, //texturemapblend
+	0, //texturemapblend
 	D3DCULL_CCW, //cullmode
 	D3DCMP_LESSEQUAL, //zfunc
 	0, //alpharef
@@ -1703,7 +1703,7 @@ void glDirect3DDevice7::InitDX5()
 	SetRenderState(D3DRENDERSTATE_WRAPV,FALSE);
 	SetRenderState(D3DRENDERSTATE_TEXTUREMAG,D3DFILTER_NEAREST);
 	SetRenderState(D3DRENDERSTATE_TEXTUREMIN,D3DFILTER_NEAREST);
-	//SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND,D3DTBLEND_MODULATE);
+	SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND,D3DTBLEND_MODULATE);
 	SetRenderState(D3DRENDERSTATE_SPECULARENABLE,TRUE);
 }
 

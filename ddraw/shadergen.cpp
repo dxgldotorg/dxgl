@@ -276,7 +276,7 @@ static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
 static const char op_passthru[] = "gl_Position = vec4(((xyz.x/rhw)/(width/2.0))-1.0,((xyz.y/rhw)/(height/2.0))-1.0,(xyz.z/rhw),1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
-ambient = ambientcolor / 255.0;\n";
+ambient = ambientcolor / 255.5;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
@@ -899,22 +899,22 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			fsrc->append("discard;\n");
 			break;
 		case 1:
-			fsrc->append("if(int(color.a * 255.0) >= alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) >= alpharef) discard;");
 			break;
 		case 2:
-			fsrc->append("if(int(color.a * 255.0) != alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) != alpharef) discard;");
 			break;
 		case 3:
-			fsrc->append("if(int(color.a * 255.0) > alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) > alpharef) discard;");
 			break;
 		case 4:
-			fsrc->append("if(int(color.a * 255.0) <= alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) <= alpharef) discard;");
 			break;
 		case 5:
-			fsrc->append("if(int(color.a * 255.0) == alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) == alpharef) discard;");
 			break;
 		case 6:
-			fsrc->append("if(int(color.a * 255.0) < alpharef) discard;");
+			fsrc->append("if(int(color.a * 255.5) < alpharef) discard;");
 			break;
 		case 7:
 		default:
