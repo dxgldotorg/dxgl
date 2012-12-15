@@ -262,6 +262,7 @@ static const char unif_tex[] = "uniform sampler2D texX;\n";
 static const char unif_size[] = "uniform float width;\n\
 uniform float height;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
+static const char unif_key[] = "uniform ivec4 keyX;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -277,7 +278,7 @@ static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
 static const char op_passthru[] = "gl_Position = vec4(((xyz.x/rhw)/(width/2.0))-1.0,((xyz.y/rhw)/(height/2.0))-1.0,(xyz.z/rhw),1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
-ambient = ambientcolor / 255.5;\n";
+ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
@@ -289,6 +290,7 @@ static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_colorfragin[] = "color = gl_Color;\n";
+static const char op_colorkey[] = "if(ivec4(texture2DProj(texX,gl_TexCoord[Y])*255.5) == keyZ) discard;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
@@ -648,12 +650,29 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	bool alphadisabled = false;
 	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
 		"","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a",".aaa"};
+	bool usecolorkey = false;
+	if((id>>13)&1) usecolorkey = true;
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
+		args[0] = (texstate[i].shaderid>>5)&63;
+		args[1] = (texstate[i].shaderid>>11)&63;
+		args[2] = (texstate[i].shaderid>>22)&63;
+		args[3] = (texstate[i].shaderid>>28)&63;
+		// Color key
+		if(usecolorkey)
+		{
+			if((texstate[i].shaderid>>60)&1)
+			{
+				arg1.assign(op_colorkey);
+				arg1.replace(26,1,_itoa(i,idstring,10));
+				arg1.replace(40,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				arg1.replace(57,1,_itoa(i,idstring,10));
+				fsrc->append(arg1);
+			}
+		}
 		// Color stage
 		texfail = false;
-		args[0] = (texstate[i].shaderid>>5)&63;
 		switch(args[0]&7) //arg1
 		{
 			case D3DTA_CURRENT:
@@ -683,7 +702,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		if(args[0] & D3DTA_COMPLEMENT) arg1 = "(1.0 - " + arg1 + ")";
 		if(args[0] & D3DTA_ALPHAREPLICATE) arg1.append(blendargs[10]);
 		else arg1.append(blendargs[8]);
-		args[1] = (texstate[i].shaderid>>11)&63;
 		switch(args[1]&7) //arg2
 		{
 			case D3DTA_CURRENT:
@@ -775,7 +793,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		if(alphadisabled) continue;
 		// Alpha stage
 		texfail = false;
-		args[2] = (texstate[i].shaderid>>22)&63;
 		switch(args[2]&7) //arg1
 		{
 			case D3DTA_CURRENT:
@@ -804,7 +821,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		}
 		if(args[2] & D3DTA_COMPLEMENT)
 			arg1 = "(1.0 - " + arg1 + ")";
-		args[3] = (texstate[i].shaderid>>28)&63;
 		switch(args[3]&7) //arg2
 		{
 			case D3DTA_CURRENT:
@@ -1039,4 +1055,10 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	genshaders[index].shader.uniforms[137] = glGetUniformLocation(genshaders[index].shader.prog,"width");
 	genshaders[index].shader.uniforms[138] = glGetUniformLocation(genshaders[index].shader.prog,"height");
 	genshaders[index].shader.uniforms[139] = glGetUniformLocation(genshaders[index].shader.prog,"alpharef");
+	char unifkey[] = "keyX";
+	for(int i = 0; i < 8; i++)
+	{
+		unifkey[3] = i + '0';
+		genshaders[index].shader.uniforms[128+i] = glGetUniformLocation(genshaders[index].shader.prog,unifkey);
+	}
 }
