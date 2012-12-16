@@ -1071,6 +1071,6 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	for(int i = 0; i < 8; i++)
 	{
 		unifkey[3] = i + '0';
-		genshaders[index].shader.uniforms[128+i] = glGetUniformLocation(genshaders[index].shader.prog,unifkey);
+		genshaders[index].shader.uniforms[140+i] = glGetUniformLocation(genshaders[index].shader.prog,unifkey);
 	}
 }
