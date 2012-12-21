@@ -1,4 +1,4 @@
-DXGL 0.4.0
+DXGL 0.4.1
 http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
@@ -48,7 +48,7 @@ To uninstall, go to the Add/Remove Programs or Programs and Features control pan
 == SVN ==
 
 SVN readonly access is available at:
-https://www.williamfeely.info/svn/dxgl
+svn://www.williamfeely.info/dxgl
 
 There is a Mediawiki-based SVN log at:
 http://www.williamfeely.info/wiki/Special:Code/DXGL
