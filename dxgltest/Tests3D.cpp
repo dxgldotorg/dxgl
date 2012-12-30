@@ -1927,6 +1927,14 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGDENSITY, *((LPDWORD)(&f)));
 			}
 			break;
+		case IDC_RANGEBASEDFOG:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_RANGEBASEDFOG,BM_GETCHECK,0,0) == BST_CHECKED)
+					d3d7dev->SetRenderState(D3DRENDERSTATE_RANGEFOGENABLE,TRUE);
+				else d3d7dev->SetRenderState(D3DRENDERSTATE_RANGEFOGENABLE,FALSE);
+			}
+			break;
 		case IDC_FILLMODE:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
