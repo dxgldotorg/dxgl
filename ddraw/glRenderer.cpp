@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "texture.h"
+#include "fog.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
@@ -788,6 +789,10 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glEnable(GL_CULL_FACE);
 	SwapBuffers(hDC);
 	SetActiveTexture(0);
+	SetFogColor(0);
+	SetFogStart(0);
+	SetFogEnd(1);
+	SetFogDensity(1);
 	if(hWnd)
 	{
 		dib.enabled = true;
