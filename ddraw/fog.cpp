@@ -28,10 +28,10 @@ void SetFogColor(DWORD color)
 	if(color == fogcolor) return;
 	fogcolor = color;
 	GLfloat colors[4];
-	colors[0] = (color >> 16) & 255;
-	colors[1] = (color >> 8) & 255;
-	colors[2] = color & 255;
-	colors[3] = (color >> 24) & 255;
+	colors[0] = (GLfloat)((color >> 16) & 255)/255.0f;
+	colors[1] = (GLfloat)((color >> 8) & 255)/255.0f;
+	colors[2] = (GLfloat)(color & 255)/255.0f;
+	colors[3] = (GLfloat)((color >> 24) & 255)/255.0f;
 	glFogfv(GL_FOG_COLOR,colors);
 }
 
