@@ -270,6 +270,8 @@ vec4 ambient;\n\
 vec3 N;";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
+static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
+static const char var_fogfactorpixel[] = "float fogfactor;\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1);\n\
 vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
@@ -297,6 +299,16 @@ static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
 static const char op_texpassthru2str[] = "vec4(strX,1);\n";
 static const char op_texpassthru2strq[] = "strqX;\n";
 static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
+static const char op_fogcoordstandard[] = "gl_FogFragCoord = (gl_ModelViewMatrix*gl_Vertex).z;\n";
+static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*gl_Vertex;\n\
+vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
+gl_FragFogCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
+static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - glFog.start);\n";
+static const char op_fogexp[] = "fogfactor = 1 / exp(gl_FogFragCoord * gl_Fog.density);\n";
+static const char op_fogexp2[] = "fogfactor = 1 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
+gl_Fog.density * gl_Fog.density)\n";
+static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
+static const char op_fogblend[] = "color = mix(color,gl_Fog.color,fogfactor);\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
