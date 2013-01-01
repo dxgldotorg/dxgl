@@ -42,7 +42,7 @@ Bits 3-5 - Alpha test function:  FS
 100=greater  101=notequal  110=greaterequal  111=always
 Bits 6-7 - Table fog:  FS
 00 = none  01=exp  10=exp2  11=linear
-Bits 8-9 - Vertex fog: same as table  VS
+Bits 8-9 - Vertex fog: same as table  VS/FS
 Bit 10 - Range based fog  VS/FS
 Bit 11 - Specular highlights  VS/FS
 Bit 12 - Stippled alpha  FS
@@ -66,6 +66,7 @@ Bit 50 - Use transformed vertices  VS
 Bits 51-58 - Point or spot light  VS/FS
 Bit 59 - Enable lights  VS/FS
 Bit 60 - Use vertex colors  VS
+Bit 61 - Enable fog  VS/FS
 */
 
 /* Bits in Texture Stage ID:
@@ -299,6 +300,7 @@ static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
 static const char op_texpassthru2str[] = "vec4(strX,1);\n";
 static const char op_texpassthru2strq[] = "strqX;\n";
 static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
+static const char op_fogcoordstandardpixel[] = "gl_FogFragCoord = gl_FragCoord.z;\n";
 static const char op_fogcoordstandard[] = "gl_FogFragCoord = (gl_ModelViewMatrix*gl_Vertex).z;\n";
 static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*gl_Vertex;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
@@ -391,6 +393,12 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	bool hasspot = false;
 	int count;
 	int numlights;
+	int vertexfog,pixelfog;
+	if((id>>61)&1)
+	{
+		vertexfog = (id>>8)&3;
+		pixelfog = (id>>6)&3;
+	}
 	char idstring[22];
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
@@ -474,6 +482,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	// Variables
 	vsrc->append(var_common);
 	if(!((id>>50)&1)) vsrc->append(var_xyzw);
+	if(vertexfog && !pixelfog) vsrc->append(var_fogfactorvertex);
 
 	// Functions
 	if(numlights)
@@ -606,6 +615,23 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			}
 		}
 	}
+	if(vertexfog && !pixelfog)
+	{
+		if((id>>10)&1) vsrc->append(op_fogcoordrange);
+		else vsrc->append(op_fogcoordstandard);
+		switch(vertexfog)
+		{
+		case D3DFOG_LINEAR:
+			vsrc->append(op_foglinear);
+			break;
+		case D3DFOG_EXP:
+			vsrc->append(op_fogexp);
+			break;
+		case D3DFOG_EXP2:
+			vsrc->append(op_fogexp2);
+			break;
+		}
+	}
 	vsrc->append(mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("Vertex shader:\n");
@@ -663,6 +689,8 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	if((id>>2)&1) fsrc->append(unif_alpharef);
 	// Variables
 	fsrc->append(var_color);
+	if(vertexfog && !pixelfog) fsrc->append(var_fogfactorvertex);
+	if(pixelfog) fsrc->append(var_fogfactorpixel);
 	// Functions
 	// Main
 	fsrc->append(mainstart);
@@ -961,6 +989,24 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		default:
 			break;
 		}
+	}
+	if(vertexfog && !pixelfog) fsrc->append(op_fogblend);
+	if(pixelfog)
+	{
+		fsrc->append(op_fogcoordstandardpixel);
+		switch(pixelfog)
+		{
+		case D3DFOG_LINEAR:
+			vsrc->append(op_foglinear);
+			break;
+		case D3DFOG_EXP:
+			vsrc->append(op_fogexp);
+			break;
+		case D3DFOG_EXP2:
+			vsrc->append(op_fogexp2);
+			break;
+		}
+		fsrc->append(op_fogblend);
 	}
 	fsrc->append(op_colorfragout);
 	fsrc->append(mainend);
