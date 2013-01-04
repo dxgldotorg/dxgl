@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,7 @@ GLuint current_prog;
 int current_genshader;
 
 /* Bits in Shader ID:
-Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel VS/FS
+Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel GL/VS/FS
 Bit 2 - Alpha test enable  FS
 Bits 3-5 - Alpha test function:  FS
 000=never  001=less  010=equal  011=lessequal
@@ -80,9 +80,9 @@ Bits 34-36: Texture coordinate index  VS
 Bits 37-38: Texture coordinate flags  VS
 Bits 39-40: U Texture address  GL
 Bits 41-42: V Texture address  GL
-Bits 43-45: Texture magnification filter  GL/FS
-Bits 46-47: Texture minification filter  GL/FS
-Bits 48-49: Texture mip filter  GL/FS
+Bits 43-45: Texture magnification filter  GL/FS?
+Bits 46-47: Texture minification filter  GL/FS?
+Bits 48-49: Texture mip filter  GL/FS?
 Bit 50: Enable texture coordinate transform  VS
 Bits 51-52: Number of texcoord dimensions  VS
 Bit 53: Projected texcoord  VS
@@ -305,10 +305,10 @@ static const char op_fogcoordstandard[] = "gl_FogFragCoord = (gl_ModelViewMatrix
 static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*gl_Vertex;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
 gl_FragFogCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
-static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - glFog.start);\n";
-static const char op_fogexp[] = "fogfactor = 1 / exp(gl_FogFragCoord * gl_Fog.density);\n";
-static const char op_fogexp2[] = "fogfactor = 1 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
-gl_Fog.density * gl_Fog.density)\n";
+static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - gl_Fog.start);\n";
+static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_Fog.density);\n";
+static const char op_fogexp2[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
+gl_Fog.density * gl_Fog.density);\n";
 static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
 static const char op_fogblend[] = "color = mix(color,gl_Fog.color,fogfactor);\n";
 
@@ -394,6 +394,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	int count;
 	int numlights;
 	int vertexfog,pixelfog;
+	vertexfog = pixelfog = 0;
 	if((id>>61)&1)
 	{
 		vertexfog = (id>>8)&3;
