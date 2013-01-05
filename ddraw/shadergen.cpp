@@ -268,7 +268,7 @@ static const char unif_key[] = "uniform ivec4 keyX;\n";
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
 vec4 ambient;\n\
-vec3 N;";
+vec3 N;\n";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
@@ -632,6 +632,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 			vsrc->append(op_fogexp2);
 			break;
 		}
+		vsrc->append(op_fogclamp);
 	}
 	vsrc->append(mainend);
 #ifdef _DEBUG

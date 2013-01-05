@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,7 @@ bool blendenabled = false;
 bool arrays[42];
 D3DCULL cullmode = D3DCULL_NONE;
 bool cullenabled = false;
+D3DFILLMODE polymode = D3DFILL_SOLID;
 
 void InitFBO()
 {
@@ -387,6 +388,26 @@ void SetCull(D3DCULL mode)
 			break;
 		case D3DCULL_NONE:
 			EnableCull(false);
+			break;
+		}
+	}
+}
+void SetPolyMode(D3DFILLMODE mode)
+{
+	if(polymode != mode)
+	{
+		polymode = mode;
+		switch(mode)
+		{
+		case D3DFILL_POINT:
+			glPolygonMode(GL_FRONT_AND_BACK,GL_POINT);
+			break;
+		case D3DFILL_WIREFRAME:
+			glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+			break;
+		case D3DFILL_SOLID:
+		default:
+			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 			break;
 		}
 	}

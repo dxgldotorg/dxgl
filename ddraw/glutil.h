@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -45,5 +45,6 @@ void BlendFunc(GLenum src, GLenum dest);
 void BlendEnable(bool enabled);
 void EnableCull(bool enabled);
 void SetCull(D3DCULL mode);
+void SetPolyMode(D3DFILLMODE mode);
 
 #endif //_GLUTIL_H
