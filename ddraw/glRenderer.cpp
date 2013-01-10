@@ -955,6 +955,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	}
 	SetCull(D3DCULL_NONE);
+	SetPolyMode(D3DFILL_SOLID);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
@@ -1014,6 +1015,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 	EnableArray(shaders[progtype].texcoord,true);
 	glVertexAttribPointer(shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	SetCull(D3DCULL_NONE);
+	SetPolyMode(D3DFILL_SOLID);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	SetFBO(0,0,false);
 }
@@ -1130,6 +1132,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		glVertexAttribPointer(shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
 	SetCull(D3DCULL_NONE);
+	SetPolyMode(D3DFILL_SOLID);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
 	if(hWnd) SwapBuffers(hDC);
