@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -625,7 +625,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 			tmp = tmp->GetBackbuffer();
 			tmp->SetTexture(textures[i+1]);
 		}
-		delete textures;
+		delete[] textures;
 	}
 	else return DDERR_NOTFLIPPABLE;
 	flipcount+=flips;
@@ -1184,6 +1184,7 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 	}
 	device = glD3DDev7;
 	handle = device->AddTexture(this);
+	if(handle == -1) return DDERR_OUTOFMEMORY;
 	device->AddRef();
 	*lpHandle = handle;
 	return D3D_OK;

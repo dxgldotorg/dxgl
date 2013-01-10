@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -812,7 +812,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 			GetProcAddress(msimg32,"GradientFill");
 		if(!_GradientFill)
 		{
-			FreeLibrary(msimg32);
+			if(msimg32)FreeLibrary(msimg32);
 			msimg32 = NULL;
 			gradientavailable = false;
 		}
@@ -821,10 +821,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
 	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
-	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) =
-		(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
+	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
+	if(comctl32) iccex =(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))
+		GetProcAddress(comctl32,"InitCommonControlsEx");
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
+	if(comctl32) FreeLibrary(comctl32);
     hinstance = hInstance;
     DialogBox(hinstance,MAKEINTRESOURCE(IDD_DXGLTEST),NULL,DXGLTestCallback);
 	if(msimg32) FreeLibrary(msimg32);

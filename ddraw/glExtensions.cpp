@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -99,7 +99,8 @@ bool atimem = false;
 void InitGLExt()
 {
 	const GLubyte *glversion = glGetString(GL_VERSION);
-	sscanf((char*)glversion,"%d.%d",&glver_major,&glver_minor);
+	glver_minor = 0;
+	if(!sscanf((char*)glversion,"%d.%d",&glver_major,&glver_minor)) glver_major = 0;
 	if((glver_major >= 2) || ((glver_major >= 1) && (glver_minor >= 2)))
 		glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC)wglGetProcAddress("glDrawRangeElements");
 	if((glver_major >= 2) || ((glver_major >= 1) && (glver_minor >= 3)))

@@ -151,7 +151,7 @@ void SetWrap(int level, DWORD coord, DWORD address)
 			texwrap[i] = GL_REPEAT;
 	}
 	if(coord > 1) return;
-	if(level > 8) return;
+	if(level > 7) return;
 	if(level < 0) return;
 	GLint wrapmode;
 	switch(address)
@@ -174,6 +174,7 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	if(texwrap[level*2+coord] == wrapmode) return;
 	else
 	{
+		texwrap[level*2+coord] = wrapmode;
 		//int currtexture = texlevel;
 		SetActiveTexture(level);
 		if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);

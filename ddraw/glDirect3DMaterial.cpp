@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -106,6 +106,7 @@ HRESULT WINAPI glDirect3DMaterial3::GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice
 	}
 	device = dev3->GetGLD3DDev7();
 	handle = device->AddMaterial(this);
+	if(handle == -1) return DDERR_OUTOFMEMORY;
 	*lpHandle = handle;
 	return D3D_OK;
 }

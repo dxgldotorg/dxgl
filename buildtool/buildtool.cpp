@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -30,10 +30,14 @@ int GetSVNRev(char *path)
 	char pathout[FILENAME_MAX+1];
 	strncpy(pathbase,path,FILENAME_MAX);
 	strncpy(pathin,path,FILENAME_MAX);
+	pathin[FILENAME_MAX] = 0;
 	strncpy(pathout,path,FILENAME_MAX);
+	pathout[FILENAME_MAX] = 0;
 	pathbase[strlen(pathbase)-7] = 0;
 	strncat(pathin,"\\rev.in",FILENAME_MAX-strlen(pathin));
+	pathin[FILENAME_MAX] = 0;
 	strncat(pathout,"\\rev",FILENAME_MAX-strlen(pathin));
+	pathout[FILENAME_MAX] = 0;
 	HKEY hKey;
 	char svnpath[(MAX_PATH+1)*4];
 	bool foundsvn = false;
@@ -101,9 +105,13 @@ int ProcessHeaders(char *path)
 	char *findptr;
 	int revision = GetSVNRev(path);
 	strncpy(pathin,path,FILENAME_MAX);
+	pathin[FILENAME_MAX] = 0;
 	strncpy(pathout,path,FILENAME_MAX);
+	pathout[FILENAME_MAX] = 0;
 	strncat(pathin,"\\version.h.in",FILENAME_MAX-strlen(pathin));
+	pathin[FILENAME_MAX] = 0;
 	strncat(pathout,"\\version.h",FILENAME_MAX-strlen(pathin));
+	pathout[FILENAME_MAX] = 0;
 	FILE *filein = fopen(pathin,"r");
 	if(!filein)
 	{
@@ -153,9 +161,13 @@ int ProcessHeaders(char *path)
 	fclose(fileout);
 	fileout = NULL;
 	strncpy(pathin,path,FILENAME_MAX);
+	pathin[FILENAME_MAX] = 0;
 	strncpy(pathout,path,FILENAME_MAX);
+	pathout[FILENAME_MAX] = 0;
 	strncat(pathin,"\\version.nsh.in",FILENAME_MAX-strlen(pathin));
+	pathin[FILENAME_MAX] = 0;
 	strncat(pathout,"\\version.nsh",FILENAME_MAX-strlen(pathin));
+	pathout[FILENAME_MAX] = 0;
 	filein = fopen(pathin,"r");
 	if(!filein)
 	{

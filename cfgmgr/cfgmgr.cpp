@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -153,6 +153,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 		{
 			sizeout = (_tcslen(path)*2)+4;
 			paths = (LPTSTR)malloc(sizeout*sizeof(TCHAR));
+			if(!paths) return;
 			ZeroMemory(paths,sizeout*sizeof(TCHAR));
 			_tcscpy(paths,path);
 			error = RegSetValueEx(hKey,_T("InstallPaths"),0,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
@@ -161,6 +162,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 		else
 		{
 			paths = (LPTSTR)malloc(sizeout+(MAX_PATH*2)+4);
+			if(!paths) return;
 			ZeroMemory(paths,sizeout+(MAX_PATH*2)+4);
 			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,(LPBYTE)paths,&sizeout);
 			if(!FindStringInMultiSz(paths,path))
@@ -237,6 +239,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	int i;
 	TCHAR filename[MAX_PATH+1];
 	_tcsncpy(filename,path,MAX_PATH);
+	filename[MAX_PATH] = 0;
 	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
 	regkey.append(&filename[i]);
@@ -309,10 +312,10 @@ void GetCurrentConfig(DXGLCFG *cfg)
 	hKey = NULL;
 	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
 	BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
-	iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
+	if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
 	BOOL is64 = FALSE;
 	if(iswow64) iswow64(GetCurrentProcess(),&is64);
-	FreeLibrary(hKernel32);
+	if(hKernel32) FreeLibrary(hKernel32);
 	LRESULT error;
 	if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ|KEY_WOW64_64KEY,&hKey);
 	else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ,&hKey);

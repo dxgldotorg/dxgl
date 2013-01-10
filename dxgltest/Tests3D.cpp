@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1500,14 +1500,14 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&bgcolor);
+				if(!_stscanf(tmpstring,_T("%x"),&bgcolor)) bgcolor = 0;
 			}
 			break;
 		case IDC_DIFFUSE:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				SetVertexColor(litvertices,colorvertices,numpoints,number);
 			}
 			break;
@@ -1515,7 +1515,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				SetVertexSpecular(litvertices,colorvertices,numpoints,number);
 			}
 			break;
@@ -1523,7 +1523,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_FACTOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
@@ -1531,7 +1531,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGCOLOR,number);
 			}
 			break;
@@ -1548,7 +1548,8 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				else
 				{
 					texshaderstate.texstages[number].colorkey = TRUE;
-					_stscanf(tmpstring,_T("%x"),&texshaderstate.texstages[number].keycolor);
+					if(!_stscanf(tmpstring,_T("%x"),&texshaderstate.texstages[number].keycolor))
+						texshaderstate.texstages[number].keycolor = 0;
 				}
 				SelectTexture(&texshaderstate.texstages[number].texture,texshaderstate.texstages[number].texturetype,
 					texshaderstate.texstages[number].keycolor, texshaderstate.texstages[number].colorkey,
@@ -1960,7 +1961,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_DIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				SetVertexColor(litvertices,colorvertices,numpoints,number);
 			}
 			break;
@@ -1968,7 +1969,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_SPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				SetVertexSpecular(litvertices,colorvertices,numpoints,number);
 			}
 			break;
@@ -1976,7 +1977,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_FACTOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				d3d7dev->SetRenderState(D3DRENDERSTATE_TEXTUREFACTOR,number);
 			}
 			break;
@@ -1984,7 +1985,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_FOGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGCOLOR,number);
 			}
 			break;
@@ -1992,13 +1993,13 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_BGCOLOR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&bgcolor);
+				if(!_stscanf(tmpstring,_T("%x"),&bgcolor)) bgcolor = 0;
 			}
 			break;
 		case IDC_AMBIENT:
 			{
 				SendDlgItemMessage(hWnd,IDC_AMBIENT,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				d3d7dev->SetRenderState(D3DRENDERSTATE_AMBIENT,number);
 			}
 			break;
@@ -2006,7 +2007,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_EMISSIVE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				material.emissive.b = (float)(number & 255) / 255.0;
 				material.emissive.g = (float)((number>>8) & 255) / 255.0;
 				material.emissive.r = (float)((number>>16) & 255) / 255.0;
@@ -2018,7 +2019,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATAMBIENT,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				material.ambient.b = (float)(number & 255) / 255.0;
 				material.ambient.g = (float)((number>>8) & 255) / 255.0;
 				material.ambient.r = (float)((number>>16) & 255) / 255.0;
@@ -2030,7 +2031,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATDIFFUSE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				material.diffuse.b = (float)(number & 255) / 255.0;
 				material.diffuse.g = (float)((number>>8) & 255) / 255.0;
 				material.diffuse.r = (float)((number>>16) & 255) / 255.0;
@@ -2042,7 +2043,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				SendDlgItemMessage(hWnd,IDC_MATSPECULAR,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
-				_stscanf(tmpstring,_T("%x"),&number);
+				if(!_stscanf(tmpstring,_T("%x"),&number)) number = 0;
 				material.specular.b = (float)(number & 255) / 255.0;
 				material.specular.g = (float)((number>>8) & 255) / 255.0;
 				material.specular.r = (float)((number>>16) & 255) / 255.0;

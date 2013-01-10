@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -356,6 +356,7 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 	if(!monitors)
 	{
 		monitors = (int*)malloc(256*sizeof(int));
+		if(!monitors) return FALSE;
 		monitors[0] = 1;
 	}
 	else monitors[0]++;
@@ -391,6 +392,7 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 	if(dwFlags & DDENUM_ATTACHEDSECONDARYDEVICES)
 	{
 		EnumDisplayMonitors(NULL,NULL,MonitorEnum,(LPARAM)&monitors);
+		if(!monitors) return DDERR_OUTOFMEMORY;
 		for(int i = 1; i < monitors[0]; i++)
 		{
 			guid = device_template;

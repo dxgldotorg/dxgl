@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -157,6 +157,7 @@ void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRE
 	DWORD bitmasks[3];
 	LPBYTE bits;
 	BITMAPINFO *bmi = (BITMAPINFO*) malloc(sizeof(BITMAPINFOHEADER) + 1024);
+	if(!bmi) return;
 	ZeroMemory(bmi,sizeof(BITMAPINFOHEADER) + 1024);
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 	{
@@ -387,7 +388,7 @@ void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type)
 	switch(type)
 	{
 	case 0: // Text
-		y = 16;
+		y = y2 = 16;
 		SetBkColor(hDC,RGB(0,0,0));
 		SetTextColor(hDC,RGB(255,0,0));
 		DrawTextBlock(hDC,0,y,FW_NORMAL,FALSE,ArialName);
@@ -484,7 +485,7 @@ void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type)
 			SelectObject(hDC,tmphandle);
 			DeleteObject(pen);
 		}
-		for(x = 10; x >= 0; x--)
+		for(x = 10; x > 0; x--)
 		{
 			g = (int)(x * 25.5);
 			b = (int)((10-x) * 25.5);

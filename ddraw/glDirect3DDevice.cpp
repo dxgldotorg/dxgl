@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -216,17 +216,35 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	glD3DDev2 = NULL;
 	maxmaterials = 32;
 	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
+	if(!materials)
+	{
+		error = DDERR_OUTOFMEMORY;
+		return;
+	}
 	materialcount = 1;
 	materials[0] = NULL;
 	currentmaterial = NULL;
 	maxtextures = 32;
 	textures = (glDirectDrawSurface7**)malloc(32*sizeof(glDirectDrawSurface7*));
+	if(!textures)
+	{
+		free(materials);
+		error = DDERR_OUTOFMEMORY;
+		return;
+	}
 	texturecount = 1;
 	textures[0] = NULL;
 	maxviewports = 32;
 	currentviewport = NULL;
 	viewportcount = 0;
 	viewports = (glDirect3DViewport3**)malloc(32*sizeof(glDirect3DViewport3*));
+	if(!viewports)
+	{
+		free(materials);
+		free(textures);
+		error = DDERR_OUTOFMEMORY;
+		return;
+	}
 	ZeroMemory(viewports,32*sizeof(glDirect3DViewport3*));
 	vertices = normals = NULL;
 	diffuse = specular = NULL;
@@ -251,6 +269,14 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	ZeroMemory(&material,sizeof(D3DMATERIAL7));
 	lightsmax = 16;
 	lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
+	if(!lights)
+	{
+		free(materials);
+		free(textures);
+		free(viewports);
+		error = DDERR_OUTOFMEMORY;
+		return;
+	}
 	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
 	memset(gllights,0xff,8*sizeof(int));
 	memset(gltextures,0,8*sizeof(GLuint));
@@ -259,6 +285,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
 		d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	renderer->InitD3D(zbuffer);
+	error = D3D_OK;
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
@@ -445,24 +472,24 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 		break;
 	}
 	if(renderstate[D3DRENDERSTATE_ALPHATESTENABLE]) shader |= 4;
-	shader |= (((renderstate[D3DRENDERSTATE_ALPHAFUNC]-1) & 7) << 3);
-	shader |= ((renderstate[D3DRENDERSTATE_FOGTABLEMODE] & 3) << 6);
-	shader |= ((renderstate[D3DRENDERSTATE_FOGVERTEXMODE] & 3) << 8);
-	if(renderstate[D3DRENDERSTATE_RANGEFOGENABLE]) shader |= (1 << 10);
-	if(renderstate[D3DRENDERSTATE_SPECULARENABLE]) shader |= (1 << 11);
-	if(renderstate[D3DRENDERSTATE_STIPPLEDALPHA]) shader |= (1 << 12);
-	if(renderstate[D3DRENDERSTATE_COLORKEYENABLE]) shader |= (1 << 13);
-	shader |= ((renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
+	shader |= ((((__int64)renderstate[D3DRENDERSTATE_ALPHAFUNC]-1) & 7) << 3);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_FOGTABLEMODE] & 3) << 6);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_FOGVERTEXMODE] & 3) << 8);
+	if(renderstate[D3DRENDERSTATE_RANGEFOGENABLE]) shader |= (1i64 << 10);
+	if(renderstate[D3DRENDERSTATE_SPECULARENABLE]) shader |= (1i64 << 11);
+	if(renderstate[D3DRENDERSTATE_STIPPLEDALPHA]) shader |= (1i64 << 12);
+	if(renderstate[D3DRENDERSTATE_COLORKEYENABLE]) shader |= (1i64 << 13);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
 	int numlights = 0;
 	for(i = 0; i < 8; i++)
 		if(gllights[i] != -1) numlights++;
-	shader |= numlights << 18;
-	if(renderstate[D3DRENDERSTATE_LOCALVIEWER]) shader |= (1 << 21);
-	if(renderstate[D3DRENDERSTATE_COLORKEYBLENDENABLE]) shader |= (1 << 22);
-	shader |= ((renderstate[D3DRENDERSTATE_DIFFUSEMATERIALSOURCE] & 3) << 23);
-	shader |= ((renderstate[D3DRENDERSTATE_SPECULARMATERIALSOURCE] & 3) << 25);
-	shader |= ((renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
-	shader |= ((renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
+	shader |= (__int64)numlights << 18;
+	if(renderstate[D3DRENDERSTATE_LOCALVIEWER]) shader |= (1i64 << 21);
+	if(renderstate[D3DRENDERSTATE_COLORKEYBLENDENABLE]) shader |= (1i64 << 22);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_DIFFUSEMATERIALSOURCE] & 3) << 23);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_SPECULARMATERIALSOURCE] & 3) << 25);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
 	int numtextures = 0;
 	for(i = 0; i < 8; i++)
 		if(VertexType[i+10].data) numtextures++;
@@ -505,10 +532,10 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	{
 		if(!texstages[i].dirty) continue;
 		texstages[i].shaderid = texstages[i].colorop & 31;
-		texstages[i].shaderid |= (texstages[i].colorarg1 & 63) << 5;
-		texstages[i].shaderid |= (texstages[i].colorarg2 & 63) << 11;
-		texstages[i].shaderid |= (texstages[i].alphaop & 31) << 17;
-		texstages[i].shaderid |= (texstages[i].alphaarg1 & 63) << 22;
+		texstages[i].shaderid |= (__int64)(texstages[i].colorarg1 & 63) << 5;
+		texstages[i].shaderid |= (__int64)(texstages[i].colorarg2 & 63) << 11;
+		texstages[i].shaderid |= (__int64)(texstages[i].alphaop & 31) << 17;
+		texstages[i].shaderid |= (__int64)(texstages[i].alphaarg1 & 63) << 22;
 		texstages[i].shaderid |= (__int64)(texstages[i].alphaarg2 & 63) << 28;
 		texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex & 7) << 34;
 		texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex >> 16) & 3) << 37;
@@ -1464,8 +1491,18 @@ D3DMATERIALHANDLE glDirect3DDevice7::AddMaterial(glDirect3DMaterial3 *material)
 	materialcount++;
 	if(materialcount >= maxmaterials)
 	{
+		glDirect3DMaterial3 **newmat;
 		maxmaterials += 32;
-		materials = (glDirect3DMaterial3**)realloc(materials,maxmaterials*sizeof(glDirect3DMaterial3*));
+		newmat = (glDirect3DMaterial3**)realloc(materials,maxmaterials*sizeof(glDirect3DMaterial3*));
+		if(!newmat)
+		{
+			maxmaterials -= 32;
+			materialcount--;
+			materials[materialcount] = NULL;
+			material->Release();
+			return -1;
+		}
+		materials = newmat;
 	}
 	return materialcount-1;
 }
@@ -1477,8 +1514,18 @@ D3DTEXTUREHANDLE glDirect3DDevice7::AddTexture(glDirectDrawSurface7 *texture)
 	texturecount++;
 	if(texturecount >= maxtextures)
 	{
+		glDirectDrawSurface7 **newtex;
 		maxtextures += 32;
-		textures = (glDirectDrawSurface7**)realloc(textures,maxtextures*sizeof(glDirectDrawSurface7*));
+		newtex = (glDirectDrawSurface7**)realloc(textures,maxtextures*sizeof(glDirectDrawSurface7*));
+		if(!newtex)
+		{
+			maxtextures -= 32;
+			texturecount--;
+			textures[texturecount] = NULL;
+			texture->Release();
+			return -1;
+		}
+		textures = newtex;
 	}
 	return texturecount-1;
 }
@@ -1493,13 +1540,22 @@ HRESULT glDirect3DDevice7::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
 	}
 	viewports[viewportcount] = (glDirect3DViewport3*)lpDirect3DViewport;
 	viewports[viewportcount]->AddRef();
-	viewports[viewportcount]->SetDevice(this);
 	viewportcount++;
 	if(viewportcount >= maxviewports)
 	{
+		glDirect3DViewport3 **newviewport;
 		maxviewports += 32;
-		viewports = (glDirect3DViewport3**)realloc(viewports,maxviewports*sizeof(glDirect3DViewport3*));
+		newviewport = (glDirect3DViewport3**)realloc(viewports,maxviewports*sizeof(glDirect3DViewport3*));
+		if(!newviewport)
+		{
+			viewports--;
+			viewports[viewportcount]->Release();
+			viewports[viewportcount] = NULL;
+			maxviewports -= 32;
+			return DDERR_OUTOFMEMORY;
+		}
 	}
+	viewports[viewportcount-1]->SetDevice(this);
 	return D3D_OK;
 }
 

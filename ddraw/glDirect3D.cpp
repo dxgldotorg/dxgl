@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -269,7 +269,15 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
 {
 	if(!this) return DDERR_INVALIDPARAMS;
+	HRESULT ret;
 	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(this,(glDirectDrawSurface7*)lpDDS);
+	if(!glD3DDev7) return DDERR_OUTOFMEMORY;
+	if(FAILED(glD3DDev7->err()))
+	{
+		ret = glD3DDev7->err();
+		delete glD3DDev7;
+		return ret;
+	}
 	*lplpD3DDevice = (LPDIRECT3DDEVICE7) glD3DDev7;
 	return D3D_OK;
 }
@@ -645,7 +653,7 @@ HRESULT WINAPI glDirect3D2::CreateMaterial(LPDIRECT3DMATERIAL2* lplpDirect3DMate
 	if(!lplpDirect3DMaterial2) return DDERR_INVALIDPARAMS;
 	glDirect3DMaterial3 *glD3DM3;
 	HRESULT error = glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
-	if(error) return error;
+	if(FAILED(error)) return error;
 	glD3DM3->QueryInterface(IID_IDirect3DMaterial2,(void**)lplpDirect3DMaterial2);
 	glD3DM3->Release();
 	return D3D_OK;
@@ -657,7 +665,7 @@ HRESULT WINAPI glDirect3D2::CreateViewport(LPDIRECT3DVIEWPORT2* lplpD3DViewport2
 	if(!lplpD3DViewport2) return DDERR_INVALIDPARAMS;
 	glDirect3DMaterial3 *glD3DV3;
 	HRESULT error = glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
-	if(error) return error;
+	if(FAILED(error)) return error;
 	glD3DV3->QueryInterface(IID_IDirect3DViewport2,(void**)lplpD3DViewport2);
 	glD3DV3->Release();
 	return D3D_OK;

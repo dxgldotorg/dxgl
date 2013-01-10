@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -124,6 +124,7 @@ public:
 	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 	HRESULT WINAPI SetViewport(LPD3DVIEWPORT7 lpViewport);
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
+	HRESULT err() {return error;}
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
 	void SetDepthComp();
 	D3DMATERIALHANDLE AddMaterial(glDirect3DMaterial3* material);
@@ -167,6 +168,7 @@ public:
 	glDirect3DDevice3 *glD3DDev3;
 	glDirect3DDevice2 *glD3DDev2;
 private:
+	HRESULT error;
 	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);
 	ULONG refcount;
 	GLuint gltextures[8];

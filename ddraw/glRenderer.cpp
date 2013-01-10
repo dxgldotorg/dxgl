@@ -1140,6 +1140,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		GLint packalign;
 		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
 		glPixelStorei(GL_PACK_ALIGNMENT,1);
+		ddInterface->GetSizes(sizes);
 		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
 		GLubyte *pixels = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
 		for(int i = 0; i < sizes[5];i++)
@@ -1153,13 +1154,13 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		HDC hRenderDC = (HDC)::GetDC(RenderWnd->GetHWnd());
 		HGDIOBJ hPrevObj = 0;
 		POINT dest = {0,0};
-		POINT src = {0,0};
+		POINT srcpoint = {0,0};
 		SIZE wnd = {dib.width,dib.height};
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
 		hPrevObj = SelectObject(dib.hdc,dib.hbitmap);
 		ClientToScreen(RenderWnd->GetHWnd(),&dest);
 		UpdateLayeredWindow(RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
-			dib.hdc,&src,0,&func,ULW_ALPHA);
+			dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
 		SelectObject(dib.hdc,hPrevObj);
 		ReleaseDC(RenderWnd->GetHWnd(),hRenderDC);
 	}

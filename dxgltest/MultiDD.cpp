@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@ MultiDirectDraw::MultiDirectDraw(int version, HRESULT *error, GUID *lpGUID)
 	this->version = version;
 	*error = DD_OK;
 	if(version < 7) *error = DirectDrawCreate(lpGUID,&dd1,NULL);
-	if(*error) return;
+	if(FAILED(*error)) return;
 	switch(version)
 	{
 	case 1:

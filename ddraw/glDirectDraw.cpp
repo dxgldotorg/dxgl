@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2013 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,7 @@ DDDEVICEIDENTIFIER2 devid = {
 void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 {
 	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	if(!newarray) return;
 	DWORD newcount = 0;
 	bool match;
 	for(DWORD x = 0; x < (*count); x++)
@@ -57,7 +58,8 @@ void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 		}
 		if(!match) newcount++;
 	}
-	newarray = (DEVMODE*)realloc(newarray,sizeof(DEVMODE)*newcount);
+	DEVMODE *newarray2 = (DEVMODE*)realloc(newarray,sizeof(DEVMODE)*newcount);
+	if(newarray2) newarray = newarray2;
 	free(*array);
 	*array = newarray;
 	*count = newcount;
@@ -871,6 +873,8 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	ddsdMode.dwFlags = DDSD_REFRESHRATE | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_WIDTH | DDSD_HEIGHT;
 	ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB;
 	DEVMODE currmode;
+	ZeroMemory(&currmode,sizeof(DEVMODE));
+	currmode.dmSize = sizeof(DEVMODE);
 	if(fullscreen)
 	{
 		if(primarybpp == 8)
@@ -1090,6 +1094,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	if(dwFlags & DDSCL_SETFOCUSWINDOW)
 		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETFOCUSWINDOW unsupported\n");
 	DEVMODE devmode;
+	ZeroMemory(&devmode,sizeof(DEVMODE));
+	devmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
 	int x,y,bpp;
 	if(fullscreen)
@@ -1117,6 +1123,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
 {
 	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	if(!newarray) return;
 	DWORD newcount = 0;
 	bool match;
 	for(DWORD x = 0; x < (*count); x++)
@@ -1135,7 +1142,7 @@ void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
 		}
 		if(!match) newcount++;
 	}
-	realloc(newarray,sizeof(DEVMODE)*newcount);
+	newarray = (DEVMODE*)realloc(newarray,sizeof(DEVMODE)*newcount);
 	free(*array);
 	*array = newarray;
 	*count = newcount;
@@ -1147,6 +1154,8 @@ DEVMODE FindClosestMode(const DEVMODE in)
 	DEVMODE newmode;
 	DEVMODE *candidates = (DEVMODE *)malloc(128*sizeof(DEVMODE));
 	DEVMODE mode;
+	ZeroMemory(&mode,sizeof(DEVMODE));
+	mode.dmSize = sizeof(DEVMODE);
 	DEVMODE *tmp = NULL;
 	DWORD modenum = 0;
 	DWORD modemax = 128;
