@@ -58,6 +58,7 @@ bool arrays[42];
 D3DCULL cullmode = D3DCULL_NONE;
 bool cullenabled = false;
 D3DFILLMODE polymode = D3DFILL_SOLID;
+D3DSHADEMODE shademode = D3DSHADE_GOURAUD;
 
 void InitFBO()
 {
@@ -409,6 +410,26 @@ void SetPolyMode(D3DFILLMODE mode)
 		case D3DFILL_SOLID:
 		default:
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+			break;
+		}
+	}
+}
+
+void SetShadeMode(D3DSHADEMODE mode)
+{
+	if(shademode != mode)
+	{
+		shademode = mode;
+		switch(mode)
+		{
+		case D3DSHADE_FLAT:
+		case 4:
+			glShadeModel(GL_FLAT);
+			break;
+		case D3DSHADE_GOURAUD:
+		case D3DSHADE_PHONG:
+		default:
+			glShadeModel(GL_SMOOTH);
 			break;
 		}
 	}

@@ -794,6 +794,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	SetFogEnd(1);
 	SetFogDensity(1);
 	SetPolyMode(D3DFILL_SOLID);
+	SetShadeMode(D3DSHADE_GOURAUD);
 	if(hWnd)
 	{
 		dib.enabled = true;
@@ -1576,6 +1577,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	SetFogEnd(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
 	SetFogDensity(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
 	SetPolyMode((D3DFILLMODE)device->renderstate[D3DRENDERSTATE_FILLMODE]);
+	SetShadeMode((D3DSHADEMODE)device->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;

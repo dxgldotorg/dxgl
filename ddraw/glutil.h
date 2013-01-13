@@ -46,5 +46,6 @@ void BlendEnable(bool enabled);
 void EnableCull(bool enabled);
 void SetCull(D3DCULL mode);
 void SetPolyMode(D3DFILLMODE mode);
+void SetShadeMode(D3DSHADEMODE mode);
 
 #endif //_GLUTIL_H
