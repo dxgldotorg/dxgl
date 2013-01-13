@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2012 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -705,7 +705,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemAction & ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
+			if((drawitem->itemAction | ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
 				!(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
@@ -1042,7 +1042,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(!apps[current_app].icon_shared) DeleteObject(apps[current_app].icon);
 				if(apps[current_app].name) delete apps[current_app].name;
 				if(apps[current_app].regkey) delete apps[current_app].regkey;
-				for(i = current_app; i < appcount; i++)
+				for(int i = current_app; i < appcount; i++)
 				{
 					apps[i] = apps[i+1];
 				}
@@ -1073,12 +1073,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
 	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
-	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) = NULL;
-	if(comctl32) iccex =(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))
-		GetProcAddress(comctl32,"InitCommonControlsEx");
+	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) =
+		(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
-	if(comctl32) FreeLibrary(comctl32);
 	hinstance = hInstance;
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
