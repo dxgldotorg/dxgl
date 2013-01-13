@@ -342,6 +342,7 @@ vec4 pos = gl_ModelViewMatrix*xyzw;\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
 float d = length(V);\n\
+if(d > light.range) return;\n\
 V = normalize(V);\n\
 float attenuation = 1.0/(light.constant+(d*light.linear)+((d*d)*light.quad));\n\
 float NdotV = max(0.0,dot(N,V));\n\
