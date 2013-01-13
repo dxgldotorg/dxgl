@@ -300,7 +300,7 @@ static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
 static const char op_texpassthru2str[] = "vec4(strX,1);\n";
 static const char op_texpassthru2strq[] = "strqX;\n";
 static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
-static const char op_fogcoordstandardpixel[] = "gl_FogFragCoord = gl_FragCoord.z;\n";
+static const char op_fogcoordstandardpixel[] = "float fogcoord = gl_FragCoord.z / gl_FragCoord.w;\n";
 static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(gl_ModelViewMatrix*xyzw).z;\n";
 static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*xyzw;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
@@ -308,6 +308,10 @@ gl_FragFogCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyep
 static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - gl_Fog.start);\n";
 static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_Fog.density);\n";
 static const char op_fogexp2[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
+gl_Fog.density * gl_Fog.density);\n";
+static const char op_foglinearpixel[] = "fogfactor = (gl_Fog.end - fogcoord) / (gl_Fog.end - gl_Fog.start);\n";
+static const char op_fogexppixel[] = "fogfactor = 1.0 / exp(fogcoord * gl_Fog.density);\n";
+static const char op_fogexp2pixel[] = "fogfactor = 1.0 / exp(fogcoord * fogcoord *\n\
 gl_Fog.density * gl_Fog.density);\n";
 static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
 static const char op_fogblend[] = "color = mix(gl_Fog.color,color,fogfactor);\n";
@@ -999,15 +1003,16 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		switch(pixelfog)
 		{
 		case D3DFOG_LINEAR:
-			vsrc->append(op_foglinear);
+			fsrc->append(op_foglinearpixel);
 			break;
 		case D3DFOG_EXP:
-			vsrc->append(op_fogexp);
+			fsrc->append(op_fogexppixel);
 			break;
 		case D3DFOG_EXP2:
-			vsrc->append(op_fogexp2);
+			fsrc->append(op_fogexp2pixel);
 			break;
 		}
+		fsrc->append(op_fogclamp);
 		fsrc->append(op_fogblend);
 	}
 	fsrc->append(op_colorfragout);
