@@ -1848,6 +1848,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("Parallel Point"));
 		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_ADDSTRING,0,(LPARAM)_T("GL Spot"));
 		SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_SETCURSEL,D3DLIGHT_DIRECTIONAL-1,0);
+		SendDlgItemMessage(hWnd,IDC_LIGHTENABLED,BM_SETCHECK,BST_CHECKED,0);
 		::width = ddsd.dwWidth;
 		::height = ddsd.dwHeight;
 		vertexshaderstate.texture = NULL;
@@ -2138,7 +2139,42 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				strupper(tmpstring); paddwordzeroes(tmpstring);
 				SendDlgItemMessage(hWnd,IDC_LIGHTSPECULAR,WM_SETTEXT,0,(LPARAM)tmpstring);
 				SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_SETCURSEL,lights[vertexshaderstate.currentlight].dltType-1,0);
+				if(lightenable[vertexshaderstate.currentlight])
+					SendDlgItemMessage(hWnd,IDC_LIGHTENABLED,BM_SETCHECK,BST_CHECKED,0);
+				else SendDlgItemMessage(hWnd,IDC_LIGHTENABLED,BM_SETCHECK,BST_UNCHECKED,0);
 			}
+			break;
+		case IDC_LIGHTENABLED:
+			if(HIWORD(wParam) == BN_CLICKED)
+			{
+				if(SendDlgItemMessage(hWnd,IDC_LIGHTENABLED,BM_GETCHECK,0,0) == BST_CHECKED)
+				{
+					lightenable[vertexshaderstate.currentlight] = TRUE;
+					d3d7dev->LightEnable(vertexshaderstate.currentlight,TRUE);
+				}
+				else
+				{
+					lightenable[vertexshaderstate.currentlight] = FALSE;
+					d3d7dev->LightEnable(vertexshaderstate.currentlight,FALSE);
+				}
+			}
+			break;
+		case IDC_LIGHTTYPE:
+			if(HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				lights[vertexshaderstate.currentlight].dltType = (D3DLIGHTTYPE)
+					(SendDlgItemMessage(hWnd,IDC_LIGHTTYPE,CB_GETCURSEL,0,0) + 1);
+				d3d7dev->SetLight(vertexshaderstate.currentlight,&lights[vertexshaderstate.currentlight]);
+			}
+			break;
+		case IDC_LIGHTRANGE:
+			if(HIWORD(wParam) == EN_CHANGE)
+			{
+				SendDlgItemMessage(hWnd,IDC_LIGHTRANGE,WM_GETTEXT,MAX_PATH,(LPARAM)tmpstring);
+				lights[vertexshaderstate.currentlight].dvRange = (float)_ttof(tmpstring);
+				d3d7dev->SetLight(vertexshaderstate.currentlight,&lights[vertexshaderstate.currentlight]);
+			}
+			break;
 		default:
 			return FALSE;
 		}
