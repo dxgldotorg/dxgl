@@ -304,7 +304,7 @@ static const char op_fogcoordstandardpixel[] = "float fogcoord = gl_FragCoord.z 
 static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(gl_ModelViewMatrix*xyzw).z;\n";
 static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*xyzw;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
-gl_FragFogCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
+gl_FogFragCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
 static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - gl_Fog.start);\n";
 static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_Fog.density);\n";
 static const char op_fogexp2[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
