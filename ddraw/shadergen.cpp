@@ -315,6 +315,7 @@ static const char op_fogexp2pixel[] = "fogfactor = 1.0 / exp(fogcoord * fogcoord
 gl_Fog.density * gl_Fog.density);\n";
 static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
 static const char op_fogblend[] = "color = mix(gl_Fog.color,color,fogfactor);\n";
+static const char op_fogassign[] = "color = gl_Fog.color;\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -1015,6 +1016,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		fsrc->append(op_fogclamp);
 		fsrc->append(op_fogblend);
 	}
+	if(((id>>61)&1) && !vertexfog && !pixelfog) fsrc->append(op_fogassign);
 	fsrc->append(op_colorfragout);
 	fsrc->append(mainend);
 #ifdef _DEBUG
