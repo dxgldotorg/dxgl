@@ -1493,6 +1493,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	{
 		if(device->gllights[i] != -1)
 		{
+			if(prog.uniforms[0] != -1) glUniformMatrix4fv(prog.uniforms[0],1,false,device->matWorld);
 			if(prog.uniforms[20+(i*12)] != -1)
 				glUniform4fv(prog.uniforms[20+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
 			if(prog.uniforms[21+(i*12)] != -1)

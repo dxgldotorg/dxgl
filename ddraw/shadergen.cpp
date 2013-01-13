@@ -264,6 +264,7 @@ static const char unif_size[] = "uniform float width;\n\
 uniform float height;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec4 keyX;\n";
+static const char unif_world[] = "uniform mat4 matWorld;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -338,7 +339,7 @@ ambient += light.ambient;\n\
 }\n";
 static const char func_pointlight[] = "void PointLight(in Light light)\n\
 {\n\
-vec4 pos = gl_ModelViewMatrix*xyzw;\n\
+vec4 pos = matWorld*xyzw;\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
 float d = length(V);\n\
@@ -478,6 +479,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	if(numlights) // Lighting
 	{
 		vsrc->append(lightstruct);
+		vsrc->append(unif_world);
 		tmp = unif_light;
 		for(i = 0; i < numlights; i++)
 		{
@@ -1094,6 +1096,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 		attrSTRQ[4] = i + '0';
 		genshaders[index].shader.attribs[i+34] = glGetAttribLocation(genshaders[index].shader.prog,attrSTRQ);
 	}
+	genshaders[index].shader.uniforms[0] = glGetUniformLocation(genshaders[index].shader.prog,"matWorld");
 	// Uniforms
 	// TODO: 4-14 world1-3 and texture0-7
 	char uniflight[] = "lightX.            ";
