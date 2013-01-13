@@ -358,7 +358,7 @@ specular += light.specular*pf*attenuation;\n\
 }\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\
 {\n\
-vec4 pos = (gl_ModelViewMatrix*xyzw);\n\
+vec4 pos = (matWorld*xyzw);\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
 float d = length(V);\n\
