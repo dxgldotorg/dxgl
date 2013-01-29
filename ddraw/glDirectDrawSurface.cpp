@@ -429,7 +429,23 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			return DD_OK;
 		}
 	}
-	ERR(E_NOINTERFACE);
+	if(riid == IID_IDirect3DTexture)
+	{
+		if(d3dt1)
+		{
+			*ppvObj = d3dt1;
+			d3dt1->AddRef();
+			return DD_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3DTexture1(this);
+			d3dt1 = (glDirect3DTexture1*)*ppvObj;
+			return DD_OK;
+		}
+	}
+	return E_NOINTERFACE;
 }
 ULONG WINAPI glDirectDrawSurface7::AddRef()
 {

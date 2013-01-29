@@ -33,6 +33,7 @@ class glDirectDrawSurface2;
 class glDirectDrawSurface3;
 class glDirectDrawSurface4;
 class glDirect3DTexture2;
+class glDirect3DTexture1;
 class glDirect3DDevice7;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
@@ -112,6 +113,7 @@ public:
 	glDirectDrawSurface3 *dds3;
 	glDirectDrawSurface4 *dds4;
 	glDirect3DTexture2 *d3dt2;
+	glDirect3DTexture1 *d3dt1;
 	DWORD flipcount;
 	DWORD fakex,fakey;
 	DWORD dirty;

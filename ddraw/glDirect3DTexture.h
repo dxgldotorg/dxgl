@@ -36,4 +36,23 @@ private:
 	ULONG refcount;
 };
 
+class glDirect3DTexture1 : public IDirect3DTexture
+{
+public:
+	glDirect3DTexture1(glDirectDrawSurface7 *glDDS7);
+	virtual ~glDirect3DTexture1();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DTEXTUREHANDLE lpHandle);
+	HRESULT WINAPI Initialize(LPDIRECT3DDEVICE lpD3DDevice, LPDIRECTDRAWSURFACE lpDDSurface);
+	HRESULT WINAPI Load(LPDIRECT3DTEXTURE lpD3DTexture);
+	HRESULT WINAPI PaletteChanged(DWORD dwStart, DWORD dwCount);
+	HRESULT WINAPI Unload();
+	glDirectDrawSurface7 *GetDDS7(){return glDDS7;}
+private:
+	glDirectDrawSurface7 *glDDS7;
+	ULONG refcount;
+};
+
 #endif //__GLDIRECT3DTEXTURE_H
