@@ -25,6 +25,7 @@ class glDirectDraw7;
 
 class glDirect3D3;
 class glDirect3D2;
+class glDirect3D1;
 class glDirect3D7 : public IDirect3D7
 {
 public:
@@ -44,10 +45,11 @@ public:
 	HRESULT WINAPI EvictManagedTextures();
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 	glDirectDraw7 *glDD7;
-private:
-	ULONG refcount;
 	glDirect3D3 *glD3D3;
 	glDirect3D2 *glD3D2;
+	glDirect3D1 *glD3D1;
+private:
+	ULONG refcount;
 };
 
 class glDirect3D3 : public IDirect3D3
@@ -86,6 +88,25 @@ public:
 	HRESULT WINAPI CreateViewport(LPDIRECT3DVIEWPORT2* lplpD3DViewport2, IUnknown* pUnkOuter);
 	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
+private:
+	ULONG refcount;
+	glDirect3D7 *glD3D7;
+};
+
+class glDirect3D1 : public IDirect3D
+{
+public:
+	glDirect3D1(glDirect3D7 *glD3D7);
+	virtual ~glDirect3D1();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
+	HRESULT WINAPI CreateMaterial(LPDIRECT3DMATERIAL* lplpDirect3DMaterial, IUnknown* pUnkOuter);
+	HRESULT WINAPI CreateViewport(LPDIRECT3DVIEWPORT* lplpD3DViewport, IUnknown* pUnkOuter);
+	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
+	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
+	HRESULT WINAPI Initialize(REFIID lpREFIID);
 private:
 	ULONG refcount;
 	glDirect3D7 *glD3D7;

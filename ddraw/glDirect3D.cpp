@@ -197,6 +197,7 @@ glDirect3D7::glDirect3D7(glDirectDraw7 *glDD7)
 	glDD7->AddRef();
 	glD3D3 = NULL;
 	glD3D2 = NULL;
+	glD3D1 = NULL;
 }
 
 glDirect3D7::~glDirect3D7()
@@ -261,6 +262,22 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirect3D2(this);
 			glD3D2 = (glDirect3D2*)*ppvObj;
+			return D3D_OK;
+		}
+	}
+	if(riid == IID_IDirect3D)
+	{
+		if(glD3D1)
+		{
+			*ppvObj = glD3D1;
+			glD3D1->AddRef();
+			return D3D_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3D1(this);
+			glD3D1 = (glDirect3D1*)*ppvObj;
 			return D3D_OK;
 		}
 	}
@@ -490,6 +507,7 @@ glDirect3D3::glDirect3D3(glDirect3D7 *glD3D7)
 glDirect3D3::~glDirect3D3()
 {
 	glD3D7->Release();
+	glD3D7->glD3D3 = NULL;
 }
 
 HRESULT WINAPI glDirect3D3::QueryInterface(REFIID riid, void** ppvObj)
@@ -598,6 +616,7 @@ glDirect3D2::glDirect3D2(glDirect3D7 *glD3D7)
 glDirect3D2::~glDirect3D2()
 {
 	glD3D7->Release();
+	glD3D7->glD3D2 = NULL;
 }
 
 HRESULT WINAPI glDirect3D2::QueryInterface(REFIID riid, void** ppvObj)
@@ -683,4 +702,93 @@ HRESULT WINAPI glDirect3D2::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 {
 	if(!this) return DDERR_INVALIDPARAMS;
 	return glD3D7->FindDevice(lpD3DFDS,lpD3DFDR);
+}
+
+glDirect3D1::glDirect3D1(glDirect3D7 *glD3D7)
+{
+	this->glD3D7 = glD3D7;
+	refcount = 1;
+}
+
+glDirect3D1::~glDirect3D1()
+{
+	glD3D7->Release();
+	glD3D7->glD3D1 = NULL;
+}
+
+HRESULT WINAPI glDirect3D1::QueryInterface(REFIID riid, void** ppvObj)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
+	return glD3D7->QueryInterface(riid,ppvObj);
+}
+
+ULONG WINAPI glDirect3D1::AddRef()
+{
+	if(!this) return 0;
+	refcount++;
+	return refcount;
+}
+
+ULONG WINAPI glDirect3D1::Release()
+{
+	if(!this) return 0;
+	ULONG ret;
+	refcount--;
+	ret = refcount;
+	if(refcount == 0) delete this;
+	return ret;
+}
+
+HRESULT WINAPI glDirect3D1::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter);
+}
+
+HRESULT WINAPI glDirect3D1::CreateMaterial(LPDIRECT3DMATERIAL* lplpDirect3DMaterial, IUnknown* pUnkOuter)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lplpDirect3DMaterial) return DDERR_INVALIDPARAMS;
+	glDirect3DMaterial3 *glD3DM3;
+	HRESULT error = glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
+	if(FAILED(error)) return error;
+	glD3DM3->QueryInterface(IID_IDirect3DMaterial,(void**)lplpDirect3DMaterial);
+	glD3DM3->Release();
+	return D3D_OK;
+}
+
+HRESULT WINAPI glDirect3D1::CreateViewport(LPDIRECT3DVIEWPORT* lplpD3DViewport, IUnknown* pUnkOuter)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	if(!lplpD3DViewport) return DDERR_INVALIDPARAMS;
+	glDirect3DMaterial3 *glD3DV3;
+	HRESULT error = glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
+	if(FAILED(error)) return error;
+	glD3DV3->QueryInterface(IID_IDirect3DViewport,(void**)lplpD3DViewport);
+	glD3DV3->Release();
+	return D3D_OK;
+}
+
+HRESULT WINAPI glDirect3D1::EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg);
+}
+
+HRESULT WINAPI glDirect3D1::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3D7->FindDevice(lpD3DFDS,lpD3DFDR);
+}
+
+HRESULT WINAPI glDirect3D1::Initialize(REFIID lpREFIID)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return DDERR_ALREADYINITIALIZED;
 }

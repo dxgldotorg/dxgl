@@ -54,12 +54,19 @@ struct TEXTURESTAGE
 	GLint glminfilter;
 };
 
+struct D3D1MATRIX
+{
+	BOOL active;
+	D3DMATRIX matrix;
+};
+
 class glDirect3DLight;
 class glDirectDrawSurface7;
 class glDirect3DMaterial3;
 class glDirect3DViewport3;
 class glDirect3DDevice3;
 class glDirect3DDevice2;
+class glDirect3DDevice1;
 class glDirect3DDevice7 : public IDirect3DDevice7
 {
 public:
@@ -145,11 +152,23 @@ public:
 	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);
 	HRESULT GetStats(LPD3DSTATS lpD3DStats);
 	HRESULT SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDIRECT3DTEXTURE2 lpD3DTex2);
+	HRESULT CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
+		IUnknown* pUnkOuter);
+	HRESULT Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags);
+	HRESULT CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle);
+	HRESULT DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle);
+	HRESULT GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec); 
+	HRESULT Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
+		LPD3DRECT lpRect);
 	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
+	D3D1MATRIX *matrices;
+	int matrixcount;
 	D3DMATERIAL7 material;
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
@@ -167,6 +186,7 @@ public:
 	bool projection_dirty;
 	glDirect3DDevice3 *glD3DDev3;
 	glDirect3DDevice2 *glD3DDev2;
+	glDirect3DDevice1 *glD3DDev1;
 private:
 	HRESULT error;
 	HRESULT fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr);
@@ -295,6 +315,40 @@ public:
 	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDIRECT3DTEXTURE2 lpD3DTex2);
 	HRESULT WINAPI Vertex(LPVOID lpVertexType);
+private:
+	glDirect3DDevice7 *glD3DDev7;
+	ULONG refcount;
+};
+
+class glDirect3DDevice1 : public IDirect3DDevice
+{
+public:
+	glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7);
+	virtual ~glDirect3DDevice1();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport);
+	HRESULT WINAPI BeginScene();
+	HRESULT WINAPI CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
+		IUnknown* pUnkOuter);
+	HRESULT WINAPI CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle);
+	HRESULT WINAPI DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle);
+	HRESULT WINAPI DeleteViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport);
+	HRESULT WINAPI EndScene();
+	HRESULT WINAPI EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
+	HRESULT WINAPI Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags);
+	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
+	HRESULT WINAPI GetDirect3D(LPDIRECT3D* lpD3D);
+	HRESULT WINAPI GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT WINAPI GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec); 
+	HRESULT WINAPI GetStats(LPD3DSTATS lpD3DStats);
+	HRESULT WINAPI Initialize(LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc); 
+	HRESULT WINAPI NextViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT* lplpDirect3DViewport, DWORD dwFlags);
+	HRESULT WINAPI Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
+		LPD3DRECT lpRect);
+	HRESULT WINAPI SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
 private:
 	glDirect3DDevice7 *glD3DDev7;
 	ULONG refcount;

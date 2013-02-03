@@ -34,6 +34,43 @@ using namespace std;
 #include "glutil.h"
 #include "matrix.h"
 
+typedef struct _D3DDeviceDesc1 {
+        DWORD           dwSize;
+        DWORD           dwFlags;
+        D3DCOLORMODEL   dcmColorModel;
+        DWORD           dwDevCaps;
+        D3DTRANSFORMCAPS dtcTransformCaps;
+        BOOL            bClipping;
+        D3DLIGHTINGCAPS dlcLightingCaps;
+        D3DPRIMCAPS     dpcLineCaps;
+        D3DPRIMCAPS     dpcTriCaps;
+        DWORD           dwDeviceRenderBitDepth;
+        DWORD           dwDeviceZBufferBitDepth;
+        DWORD           dwMaxBufferSize;
+        DWORD           dwMaxVertexCount;
+} D3DDEVICEDESC1,*LPD3DDEVICEDESC1;
+
+typedef struct _D3DDeviceDesc2 {
+        DWORD           dwSize;
+        DWORD           dwFlags;
+        D3DCOLORMODEL   dcmColorModel;
+        DWORD           dwDevCaps;
+        D3DTRANSFORMCAPS dtcTransformCaps;
+        BOOL            bClipping;
+        D3DLIGHTINGCAPS dlcLightingCaps;
+        D3DPRIMCAPS     dpcLineCaps;
+        D3DPRIMCAPS     dpcTriCaps;
+        DWORD           dwDeviceRenderBitDepth;
+        DWORD           dwDeviceZBufferBitDepth;
+        DWORD           dwMaxBufferSize;
+        DWORD           dwMaxVertexCount;
+
+        DWORD           dwMinTextureWidth,dwMinTextureHeight;
+        DWORD           dwMaxTextureWidth,dwMaxTextureHeight;
+        DWORD           dwMinStippleWidth,dwMaxStippleWidth;
+        DWORD           dwMinStippleHeight,dwMaxStippleHeight;
+} D3DDEVICEDESC2,*LPD3DDEVICEDESC2;
+
 extern D3DDEVICEDESC7 d3ddesc;
 
 const DWORD renderstate_default[153] = {0, // 0
@@ -214,6 +251,7 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	int zbuffer = 0;
 	glD3DDev3 = NULL;
 	glD3DDev2 = NULL;
+	glD3DDev1 = NULL;
 	maxmaterials = 32;
 	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
 	if(!materials)
@@ -253,6 +291,8 @@ glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *
 	__gluMakeIdentityf(matWorld);
 	__gluMakeIdentityf(matView);
 	__gluMakeIdentityf(matProjection);
+	matrices = NULL;
+	matrixcount = 0;
 	texstages[0] = texstagedefault0;
 	texstages[1] = texstages[2] = texstages[3] = texstages[4] = 
 		texstages[5] = texstages[6] = texstages[7] = texstagedefault1;
@@ -313,6 +353,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	}
 	free(viewports);
 	free(materials);
+	if(matrices) free(matrices);
 	glD3D7->Release();
 	glDDS7->Release();
 }
@@ -1661,14 +1702,18 @@ HRESULT glDirect3DDevice7::GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICED
 	D3DDEVICEDESC desc = d3ddesc3;
 	if(lpD3DHELDevDesc)
 	{
-		if(lpD3DHELDevDesc->dwSize < sizeof(D3DDEVICEDESC)) return DDERR_INVALIDPARAMS;
-		memcpy(lpD3DHELDevDesc, &desc, sizeof(D3DDEVICEDESC));
+		desc.dwSize = lpD3DHELDevDesc->dwSize;
+		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) return DDERR_INVALIDPARAMS;
+		if(desc.dwSize > sizeof(D3DDEVICEDESC1)) desc.dwSize = sizeof(D3DDEVICEDESC);
+		memcpy(lpD3DHELDevDesc, &desc, desc.dwSize);
 	}
 	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
 	if(lpD3DHWDevDesc)
 	{
-		if(lpD3DHWDevDesc->dwSize < sizeof(D3DDEVICEDESC)) return DDERR_INVALIDPARAMS;
-		memcpy(lpD3DHWDevDesc, &desc, sizeof(D3DDEVICEDESC));
+		desc.dwSize = lpD3DHWDevDesc->dwSize;
+		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) return DDERR_INVALIDPARAMS;
+		if(desc.dwSize > sizeof(D3DDEVICEDESC1)) desc.dwSize = sizeof(D3DDEVICEDESC);
+		memcpy(lpD3DHWDevDesc, &desc, desc.dwSize);
 	}
 	return D3D_OK;
 }
@@ -1766,6 +1811,113 @@ void glDirect3DDevice7::InitDX5()
 	SetRenderState(D3DRENDERSTATE_TEXTUREMIN,D3DFILTER_NEAREST);
 	SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND,D3DTBLEND_MODULATE);
 	SetRenderState(D3DRENDERSTATE_SPECULARENABLE,TRUE);
+}
+
+HRESULT glDirect3DDevice7::CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpD3DMatHandle) return DDERR_INVALIDPARAMS;
+	int foundslot = 0;
+	if(!matrices)
+	{
+		matrices = (D3D1MATRIX*)malloc(16*sizeof(D3D1MATRIX));
+		if(!matrices) return DDERR_OUTOFMEMORY;
+		ZeroMemory(matrices,16*sizeof(D3D1MATRIX));
+		matrixcount = 16;
+	}
+	for(int i = 0; i < matrixcount; i++)
+	{
+		if(i == 0) continue;
+		if(!matrices[i].active)
+		{
+			foundslot = i;
+			break;
+		}
+	}
+	if(!foundslot)
+	{
+		int newcount;
+		D3D1MATRIX *newmatrices;
+		newcount = matrixcount + 16;
+		newmatrices = (D3D1MATRIX*)realloc(matrices,newcount*sizeof(D3D1MATRIX));
+		if(!newmatrices) return DDERR_OUTOFMEMORY;
+		ZeroMemory(&newmatrices[matrixcount],16*sizeof(D3D1MATRIX));
+		matrices = newmatrices;
+		foundslot = matrixcount;
+		matrixcount = newcount;
+	}
+	*lpD3DMatHandle = foundslot;
+	__gluMakeIdentityf((GLfloat*)&matrices[foundslot].matrix);
+	matrices[foundslot].active = TRUE;
+	return D3D_OK;
+}
+
+HRESULT glDirect3DDevice7::DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!d3dMatHandle) return DDERR_INVALIDPARAMS;
+	if(d3dMatHandle >= matrixcount) return DDERR_INVALIDPARAMS;
+	if(!matrices[d3dMatHandle].active) return D3DERR_MATRIX_DESTROY_FAILED;
+	matrices[d3dMatHandle].active = FALSE;
+	return D3D_OK;
+}
+
+HRESULT glDirect3DDevice7::GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpD3DMatHandle) return DDERR_INVALIDPARAMS;
+	if(lpD3DMatHandle >= matrixcount) return DDERR_INVALIDPARAMS;
+	if(!matrices[lpD3DMatHandle].active) return D3DERR_MATRIX_GETDATA_FAILED;
+	memcpy(lpD3DMatrix,&matrices[lpD3DMatHandle].matrix,sizeof(D3DMATRIX));
+	return D3D_OK;
+}
+
+HRESULT glDirect3DDevice7::SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!d3dMatHandle) return DDERR_INVALIDPARAMS;
+	if(d3dMatHandle >= matrixcount) return DDERR_INVALIDPARAMS;
+	if(!matrices[d3dMatHandle].active) return D3DERR_MATRIX_SETDATA_FAILED;
+	memcpy(&matrices[d3dMatHandle],lpD3DMatrix,sizeof(D3DMATRIX));
+	return D3D_OK;
+}
+
+HRESULT glDirect3DDevice7::CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
+	IUnknown* pUnkOuter)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDesc) return DDERR_INVALIDPARAMS;
+	if(!lplpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
+	if(pUnkOuter) return DDERR_INVALIDPARAMS;
+	FIXME("glDirect3DDevice1::CreateExecuteBuffer: stub");
+	ERR(DDERR_GENERIC);
+}
+
+HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
+	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	FIXME("glDirect3DDevice1::Execute: stub");
+	ERR(DDERR_GENERIC);
+}
+
+HRESULT glDirect3DDevice7::GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpCount) return DDERR_INVALIDOBJECT;
+	FIXME("glDirect3DDevice1::GetPickRecords: stub");
+	ERR(DDERR_GENERIC);
+}
+
+HRESULT glDirect3DDevice7::Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
+	LPD3DRECT lpRect)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(lpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
+	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	if(!lpRect) return DDERR_INVALIDPARAMS;
+	FIXME("glDirect3DDevice1::Pick: stub");
 }
 
 // IDirect3DDevice3 wrapper
@@ -2365,4 +2517,179 @@ HRESULT WINAPI glDirect3DDevice2::Vertex(LPVOID lpVertexType)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	return glD3DDev7->Vertex(lpVertexType);
+}
+
+// IDirect3DDevice wrapper
+glDirect3DDevice1::glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7)
+{
+	this->glD3DDev7 = glD3DDev7;
+	glD3DDev7->InitDX5();
+	refcount = 1;
+}
+
+glDirect3DDevice1::~glDirect3DDevice1()
+{
+	glD3DDev7->glD3DDev1 = NULL;
+	glD3DDev7->Release();
+}
+
+HRESULT WINAPI glDirect3DDevice1::QueryInterface(REFIID riid, void** ppvObj)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return DD_OK;
+	}
+	return glD3DDev7->QueryInterface(riid,ppvObj);
+}
+
+ULONG WINAPI glDirect3DDevice1::AddRef()
+{
+	if(!this) return 0;
+	refcount++;
+	return refcount;
+}
+
+ULONG WINAPI glDirect3DDevice1::Release()
+{
+	if(!this) return 0;
+	ULONG ret;
+	refcount--;
+	ret = refcount;
+	if(refcount == 0) delete this;
+	return ret;
+}
+
+HRESULT WINAPI glDirect3DDevice1::AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	glDirect3DViewport3 *glD3DV3;
+	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
+	HRESULT ret = glD3DDev7->AddViewport(glD3DV3);
+	glD3DV3->Release();
+	return ret;
+}
+HRESULT WINAPI glDirect3DDevice1::BeginScene()
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->BeginScene();
+}
+HRESULT WINAPI glDirect3DDevice1::CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc,
+		LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,	IUnknown* pUnkOuter)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->CreateExecuteBuffer(lpDesc,lplpDirect3DExecuteBuffer,pUnkOuter);
+}
+HRESULT WINAPI glDirect3DDevice1::CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->CreateMatrix(lpD3DMatHandle);
+}
+HRESULT WINAPI glDirect3DDevice1::DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->DeleteMatrix(d3dMatHandle);
+}
+HRESULT WINAPI glDirect3DDevice1::DeleteViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	glDirect3DViewport3 *glD3DV3;
+	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
+	HRESULT ret = glD3DDev7->DeleteViewport(glD3DV3);
+	glD3DV3->Release();
+	return ret;
+}
+HRESULT WINAPI glDirect3DDevice1::EndScene()
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->EndScene();
+}
+HRESULT WINAPI glDirect3DDevice1::EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	LPVOID context[2];
+	context[0] = (LPVOID)lpd3dEnumTextureProc;
+	context[1] = lpArg;
+	return glD3DDev7->EnumTextureFormats(EnumTex2,&context);
+}
+HRESULT WINAPI glDirect3DDevice1::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->Execute(lpDirect3DExecuteBuffer,lpDirect3DViewport,dwFlags);
+}
+HRESULT WINAPI glDirect3DDevice1::GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->GetCaps3(lpD3DHWDevDesc,lpD3DHELDevDesc);
+}
+HRESULT WINAPI glDirect3DDevice1::GetDirect3D(LPDIRECT3D* lpD3D)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	LPDIRECT3D7 d3d7;
+	HRESULT err = glD3DDev7->GetDirect3D(&d3d7);
+	if(!d3d7) return err;
+	d3d7->QueryInterface(IID_IDirect3D,(void**)lpD3D);
+	d3d7->Release();
+	return err;
+}
+
+HRESULT WINAPI glDirect3DDevice1::GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3DDev7->GetMatrix(lpD3DMatHandle,lpD3DMatrix);
+}
+
+HRESULT WINAPI glDirect3DDevice1::GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3DDev7->GetPickRecords(lpCount,lpD3DPickRec);
+}
+
+HRESULT WINAPI glDirect3DDevice1::GetStats(LPD3DSTATS lpD3DStats)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return glD3DDev7->GetStats(lpD3DStats);
+}
+
+HRESULT WINAPI glDirect3DDevice1::Initialize(LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc)
+{
+	if(!this) return DDERR_INVALIDPARAMS;
+	return DDERR_ALREADYINITIALIZED;
+}
+HRESULT WINAPI glDirect3DDevice1::NextViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT *lplpDirect3DViewport, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	if(!lplpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	FIXME("glDirect3DDevice1::NextViewport: stub");
+	ERR(DDERR_GENERIC);
+}
+HRESULT WINAPI glDirect3DDevice1::Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport,
+	DWORD dwFlags, LPD3DRECT lpRect)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->Pick(lpDirect3DExecuteBuffer, lpDirect3DViewport, dwFlags, lpRect);
+}
+
+HRESULT WINAPI glDirect3DDevice1::SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DDev7->SetMatrix(d3dMatHandle,lpD3DMatrix);
+}
+
+HRESULT WINAPI glDirect3DDevice1::SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpD3DTex1) return DDERR_INVALIDPARAMS;
+	if(!lpD3DTex2) return DDERR_INVALIDPARAMS;
+	LPDIRECT3DTEXTURE2 tex1, tex2;
+	lpD3DTex1->QueryInterface(IID_IDirect3DTexture2,(void**)&tex1);
+	lpD3DTex2->QueryInterface(IID_IDirect3DTexture2,(void**)&tex2);
+	HRESULT ret = glD3DDev7->SwapTextureHandles(tex1,tex2);
+	tex2->Release();
+	tex1->Release();
+	return ret;
 }

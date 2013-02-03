@@ -19,6 +19,7 @@
 #ifndef __GLDIRECT3DMATERIAL_H
 #define __GLDIRECT3DMATERIAL_H
 
+class glDirect3DMaterial1;
 class glDirect3DMaterial2;
 class glDirect3DMaterial3 : public IDirect3DMaterial3
 {
@@ -37,6 +38,7 @@ public:
 	D3DMATERIAL material;
 	D3DMATERIALHANDLE handle;
 	glDirect3DMaterial2 *glD3DM2;
+	glDirect3DMaterial1 *glD3DM1;
 private:
 	ULONG refcount;
 	bool current;
@@ -54,6 +56,25 @@ public:
 	HRESULT WINAPI GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle);
 	HRESULT WINAPI GetMaterial(LPD3DMATERIAL lpMat);
 	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
+private:
+	ULONG refcount;
+	glDirect3DMaterial3 *glD3DM3;
+};
+
+class glDirect3DMaterial1 : public IDirect3DMaterial
+{
+public:
+	glDirect3DMaterial1(glDirect3DMaterial3 *glD3DM3);
+	virtual ~glDirect3DMaterial1();
+	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
+	ULONG WINAPI AddRef();
+	ULONG WINAPI Release();
+	HRESULT WINAPI GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle);
+	HRESULT WINAPI GetMaterial(LPD3DMATERIAL lpMat);
+	HRESULT WINAPI Initialize(LPDIRECT3D lpDirect3D);
+	HRESULT WINAPI Reserve();
+	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
+	HRESULT WINAPI Unreserve();
 private:
 	ULONG refcount;
 	glDirect3DMaterial3 *glD3DM3;
