@@ -21,6 +21,7 @@
 #include "ddraw.h"
 #include "texture.h"
 #include "glRenderer.h"
+#include "glDirect3D.h"
 #include "glDirect3DDevice.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
@@ -444,6 +445,32 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			*ppvObj = new glDirect3DTexture1(this);
 			d3dt1 = (glDirect3DTexture1*)*ppvObj;
 			return DD_OK;
+		}
+	}
+	if((riid == IID_IDirect3DDevice) || (riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
+		(riid == IID_IDirect3DRampDevice) || (riid == IID_IDirect3DRefDevice))
+	{
+
+		if(!device)
+		{
+			glDirect3D7 *tmpd3d;
+			glDirect3DDevice7 *tmpdev;
+			ddInterface->QueryInterface(IID_IDirect3D7,(void**)&tmpd3d);
+			if(!tmpd3d) return E_NOINTERFACE;
+			tmpd3d->CreateDevice(riid,this,(LPDIRECT3DDEVICE7*)&tmpdev);
+			if(!tmpdev)
+			{
+				tmpdev->Release();
+				return E_NOINTERFACE;
+			}
+			HRESULT ret = tmpdev->QueryInterface(IID_IDirect3DDevice,ppvObj);
+			tmpdev->Release();
+			tmpd3d->Release();
+			return ret;
+		}
+		else
+		{
+			return device->QueryInterface(IID_IDirect3DDevice,ppvObj);
 		}
 	}
 	return E_NOINTERFACE;

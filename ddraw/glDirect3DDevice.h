@@ -70,7 +70,7 @@ class glDirect3DDevice1;
 class glDirect3DDevice7 : public IDirect3DDevice7
 {
 public:
-	glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7);
+	glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7);
 	virtual ~glDirect3DDevice7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();

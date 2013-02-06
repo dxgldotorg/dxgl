@@ -246,7 +246,7 @@ int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
 }
 
 
-glDirect3DDevice7::glDirect3DDevice7(glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
+glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
 	int zbuffer = 0;
 	glD3DDev3 = NULL;
@@ -1918,6 +1918,7 @@ HRESULT glDirect3DDevice7::Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer,
 	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
 	if(!lpRect) return DDERR_INVALIDPARAMS;
 	FIXME("glDirect3DDevice1::Pick: stub");
+	ERR(DDERR_GENERIC);
 }
 
 // IDirect3DDevice3 wrapper
