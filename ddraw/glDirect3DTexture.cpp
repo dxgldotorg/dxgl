@@ -88,7 +88,8 @@ HRESULT WINAPI glDirect3DTexture2::PaletteChanged(DWORD dwStart, DWORD dwCount)
 
 glDirect3DTexture1::glDirect3DTexture1(glDirectDrawSurface7 *glDDS7)
 {
-	glDDS7->Release();
+	this->glDDS7 = glDDS7;
+	refcount = 1;
 }
 glDirect3DTexture1::~glDirect3DTexture1()
 {

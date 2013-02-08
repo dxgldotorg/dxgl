@@ -2372,6 +2372,8 @@ HRESULT WINAPI glDirect3DDevice2::EndScene()
 
 HRESULT WINAPI EnumTex2(LPDDPIXELFORMAT ddpf, LPVOID lpUserArg)
 {
+	if(ddpf->dwFlags & DDPF_LUMINANCE) return D3DENUMRET_OK;
+	if(ddpf->dwFlags & DDPF_ALPHA) return D3DENUMRET_OK;
 	int *args = (int*)lpUserArg;
 	LPD3DENUMTEXTUREFORMATSCALLBACK callback = (LPD3DENUMTEXTUREFORMATSCALLBACK)args[0];
 	DDSURFACEDESC ddsd;
