@@ -108,6 +108,7 @@ public:
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
+	HRESULT Load(glDirectDrawSurface7 *src);
 	glDirectDrawSurface1 *dds1;
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;

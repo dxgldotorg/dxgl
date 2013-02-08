@@ -1234,6 +1234,16 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 	return D3D_OK;
 }
 
+HRESULT glDirectDrawSurface7::Load(glDirectDrawSurface7 *src)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(!src) return DDERR_INVALIDPARAMS;
+	this->Blt(NULL,src,NULL,DDBLT_WAIT,NULL);
+	ddsd.ddsCaps.dwCaps &= ~DDSCAPS_ALLOCONLOAD;
+	return D3D_OK;
+}
+
+
 // DDRAW1 wrapper
 glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
 {

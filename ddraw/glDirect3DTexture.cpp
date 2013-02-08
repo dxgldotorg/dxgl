@@ -76,8 +76,8 @@ HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2
 HRESULT WINAPI glDirect3DTexture2::Load(LPDIRECT3DTEXTURE2 lpD3DTexture2)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
-	FIXME("glDirect3DTexture2::Load: stub");
-	return DDERR_GENERIC;
+	if(!lpD3DTexture2) return DDERR_INVALIDPARAMS;
+	return glDDS7->Load(((glDirect3DTexture2*)lpD3DTexture2)->GetDDS7());
 }
 HRESULT WINAPI glDirect3DTexture2::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
@@ -140,8 +140,8 @@ HRESULT WINAPI glDirect3DTexture1::Initialize(LPDIRECT3DDEVICE lpD3DDevice, LPDI
 HRESULT WINAPI glDirect3DTexture1::Load(LPDIRECT3DTEXTURE lpD3DTexture)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
-	FIXME("glDirect3DTexture1::Load: stub");
-	return DDERR_GENERIC;
+	if(!lpD3DTexture) return DDERR_INVALIDPARAMS;
+	return glDDS7->Load(((glDirect3DTexture1*)lpD3DTexture)->GetDDS7());
 }
 HRESULT WINAPI glDirect3DTexture1::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
@@ -152,6 +152,5 @@ HRESULT WINAPI glDirect3DTexture1::PaletteChanged(DWORD dwStart, DWORD dwCount)
 HRESULT WINAPI glDirect3DTexture1::Unload()
 {
 	if(!this) return DDERR_INVALIDOBJECT;
-	FIXME("glDirect3DTexture1::Unload: stub");
-	return DDERR_GENERIC;
+	return DDERR_UNSUPPORTED;
 }
