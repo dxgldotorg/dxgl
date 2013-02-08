@@ -47,10 +47,17 @@ glDirect3DViewport3::glDirect3DViewport3()
 	refcount = 1;
 	current = false;
 	glD3DV2 = NULL;
+	glD3DV1 = NULL;
 }
 
 glDirect3DViewport3::~glDirect3DViewport3()
 {
+	if(device) device->Release();
+	if(backZ) backZ->Release();
+	for(int i = 0; i < 8; i++)
+	{
+		if(lights[i]) lights[i]->Release();
+	}
 }
 
 HRESULT WINAPI glDirect3DViewport3::QueryInterface(REFIID riid, void** ppvObj)
@@ -81,6 +88,22 @@ HRESULT WINAPI glDirect3DViewport3::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirect3DViewport2(this);
 			glD3DV2 = (glDirect3DViewport2*)*ppvObj;
+			return D3D_OK;
+		}
+	}
+	if(riid == IID_IDirect3DViewport)
+	{
+		if(glD3DV1)
+		{
+			*ppvObj = glD3DV1;
+			glD3DV1->AddRef();
+			return D3D_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3DViewport1(this);
+			glD3DV1 = (glDirect3DViewport1*)*ppvObj;
 			return D3D_OK;
 		}
 	}
@@ -442,6 +465,114 @@ HRESULT WINAPI glDirect3DViewport2::SetViewport2(LPD3DVIEWPORT2 lpData)
 	return glD3DV3->SetViewport2(lpData);
 }
 HRESULT WINAPI glDirect3DViewport2::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen);
+}
+
+
+glDirect3DViewport1::glDirect3DViewport1(glDirect3DViewport3 *glD3DV3)
+{
+	this->glD3DV3 = glD3DV3;
+	refcount = 1;
+}
+
+glDirect3DViewport1::~glDirect3DViewport1()
+{
+	glD3DV3->glD3DV1 = NULL;
+	glD3DV3->Release();
+}
+
+ULONG WINAPI glDirect3DViewport1::AddRef()
+{
+	if(!this) return 0;
+	refcount++;
+	return refcount;
+}
+
+ULONG WINAPI glDirect3DViewport1::Release()
+{
+	if(!this) return 0;
+	ULONG ret;
+	refcount--;
+	ret = refcount;
+	if(refcount == 0) delete this;
+	return ret;
+}
+
+HRESULT WINAPI glDirect3DViewport1::QueryInterface(REFIID riid, void** ppvObj)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	if(riid == IID_IUnknown)
+	{
+		this->AddRef();
+		*ppvObj = this;
+		return D3D_OK;
+	}
+	return glD3DV3->QueryInterface(riid,ppvObj);
+}
+
+HRESULT WINAPI glDirect3DViewport1::AddLight(LPDIRECT3DLIGHT lpLight)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->AddLight(lpLight);
+}
+HRESULT WINAPI glDirect3DViewport1::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->Clear(dwCount,lpRects,dwFlags);
+}
+HRESULT WINAPI glDirect3DViewport1::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->DeleteLight(lpDirect3DLight);
+}
+HRESULT WINAPI glDirect3DViewport1::GetBackground(LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->GetBackground(lphMat,lpValid);
+}
+HRESULT WINAPI glDirect3DViewport1::GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->GetBackgroundDepth(lplpDDSurface,lpValid);
+}
+HRESULT WINAPI glDirect3DViewport1::GetViewport(LPD3DVIEWPORT lpData)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->GetViewport(lpData);
+}
+HRESULT WINAPI glDirect3DViewport1::Initialize(LPDIRECT3D lpDirect3D)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->Initialize(lpDirect3D);
+}
+HRESULT WINAPI glDirect3DViewport1::LightElements(DWORD dwElementCount, LPD3DLIGHTDATA lpData)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->LightElements(dwElementCount,lpData);
+}
+HRESULT WINAPI glDirect3DViewport1::NextLight(LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->NextLight(lpDirect3DLight,lplpDirect3DLight,dwFlags);
+}
+HRESULT WINAPI glDirect3DViewport1::SetBackground(D3DMATERIALHANDLE hMat)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->SetBackground(hMat);
+}
+HRESULT WINAPI glDirect3DViewport1::SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDSurface)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->SetBackgroundDepth(lpDDSurface);
+}
+HRESULT WINAPI glDirect3DViewport1::SetViewport(LPD3DVIEWPORT lpData)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return glD3DV3->SetViewport(lpData);
+}
+HRESULT WINAPI glDirect3DViewport1::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	return glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen);
