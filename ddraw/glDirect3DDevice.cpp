@@ -418,7 +418,23 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 			return D3D_OK;
 		}
 	}
-	ERR(E_NOINTERFACE);
+	if(riid == IID_IDirect3DDevice)
+	{
+		if(glD3DDev1)
+		{
+			*ppvObj = glD3DDev1;
+			glD3DDev1->AddRef();
+			return D3D_OK;
+		}
+		else
+		{
+			this->AddRef();
+			*ppvObj = new glDirect3DDevice1(this);
+			glD3DDev1 = (glDirect3DDevice1*)*ppvObj;
+			return D3D_OK;
+		}
+	}
+	return E_NOINTERFACE;
 }
 
 ULONG WINAPI glDirect3DDevice7::AddRef()

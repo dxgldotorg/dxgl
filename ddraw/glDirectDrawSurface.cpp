@@ -499,7 +499,7 @@ HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpD
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	attached->GetSurfaceDesc(&ddsd);
-	if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
+	if((ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER) || (ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER))
 	{
 		attached->AddRef();
 		zbuffer = attached;
