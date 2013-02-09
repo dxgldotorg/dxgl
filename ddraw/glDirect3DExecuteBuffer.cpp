@@ -127,6 +127,12 @@ HRESULT WINAPI glDirect3DExecuteBuffer::Unlock()
 	return D3D_OK;
 }
 
+HRESULT WINAPI glDirect3DExecuteBuffer::Validate(LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved)
+{
+	if(!this) return DDERR_INVALIDOBJECT;
+	return DDERR_UNSUPPORTED;
+}
+
 HRESULT glDirect3DExecuteBuffer::ExecuteLock(LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
