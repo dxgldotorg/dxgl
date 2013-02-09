@@ -232,6 +232,7 @@
     <ClInclude Include="glClassFactory.h" />
     <ClInclude Include="glDirect3D.h" />
     <ClInclude Include="glDirect3DDevice.h" />
+    <ClInclude Include="glDirect3DExecuteBuffer.h" />
     <ClInclude Include="glDirect3DLight.h" />
     <ClInclude Include="glDirect3DMaterial.h" />
     <ClInclude Include="glDirect3DTexture.h" />
@@ -289,6 +290,7 @@
     </ClCompile>
     <ClCompile Include="glDirect3D.cpp" />
     <ClCompile Include="glDirect3DDevice.cpp" />
+    <ClCompile Include="glDirect3DExecuteBuffer.cpp" />
     <ClCompile Include="glDirect3DLight.cpp" />
     <ClCompile Include="glDirect3DMaterial.cpp" />
     <ClCompile Include="glDirect3DTexture.cpp" />

@@ -28,6 +28,7 @@
 #include "glDirect3DVertexBuffer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
+#include "glDirect3DExecuteBuffer.h"
 #include <string>
 using namespace std;
 #include "shadergen.h"
@@ -1905,8 +1906,11 @@ HRESULT glDirect3DDevice7::CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LP
 	if(!lpDesc) return DDERR_INVALIDPARAMS;
 	if(!lplpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
 	if(pUnkOuter) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice1::CreateExecuteBuffer: stub");
-	ERR(DDERR_GENERIC);
+	if(lpDesc->dwSize != sizeof(D3DEXECUTEBUFFERDESC)) return DDERR_INVALIDPARAMS;
+	if(!(lpDesc->dwFlags & D3DDEB_BUFSIZE)) return DDERR_INVALIDPARAMS;
+	*lplpDirect3DExecuteBuffer = new glDirect3DExecuteBuffer(lpDesc);
+	if(!*lplpDirect3DExecuteBuffer) return DDERR_OUTOFMEMORY;
+	return D3D_OK;
 }
 
 HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
