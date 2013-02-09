@@ -114,7 +114,7 @@ HRESULT WINAPI glDirect3DExecuteBuffer::SetExecuteData(LPD3DEXECUTEDATA lpData)
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!lpData) return DDERR_INVALIDPARAMS;
 	if(lpData->dwSize != sizeof(D3DEXECUTEDATA)) return DDERR_INVALIDPARAMS;
-	memcpy(&data,lpData,sizeof(D3DEXECUTEDATA));
+	memcpy(&datadesc,lpData,sizeof(D3DEXECUTEDATA));
 	return D3D_OK;
 }
 
