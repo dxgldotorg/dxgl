@@ -54,5 +54,6 @@ int __gluInvertMatrixf(const GLfloat m[16], GLfloat invOut[16]);
 void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 				GLfloat r[16]);
 void __gluMakeIdentityf(GLfloat m[16]);
+void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4], GLfloat out[4]);
 
 #endif //_MATRIX_H

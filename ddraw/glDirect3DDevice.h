@@ -162,11 +162,18 @@ public:
 	HRESULT GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec); 
 	HRESULT Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
 		LPD3DRECT lpRect);
+	INT TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
+	INT TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
+	INT TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
+	INT CopyVertices(D3DTLVERTEX **output, DWORD *outsize, D3DTLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
+	void UpdateTransform();
 	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
+	GLfloat matTransform[16];
+	bool transform_dirty;
 	D3D1MATRIX *matrices;
 	int matrixcount;
 	D3DMATERIAL7 material;
@@ -211,6 +218,10 @@ private:
 	glDirect3DViewport3 *currentviewport;
 	int viewportcount;
 	int maxviewports;
+	unsigned char *ebBuffer;
+	DWORD ebBufferSize;
+	unsigned char *outbuffer;
+	DWORD outbuffersize;
 };
 
 #endif //__GLDIRECT3DDEVICE_H

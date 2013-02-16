@@ -154,11 +154,13 @@ HRESULT glDirect3DExecuteBuffer::ExecuteLock(LPD3DEXECUTEBUFFERDESC lpDesc,LPD3D
 	return D3D_OK;
 }
 
-HRESULT glDirect3DExecuteBuffer::ExecuteUnlock()
+HRESULT glDirect3DExecuteBuffer::ExecuteUnlock(LPD3DEXECUTEDATA lpData)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
+	if(!lpData) return DDERR_INVALIDPARAMS;
 	if(!inuse) return D3DERR_EXECUTE_NOT_LOCKED;
 	inuse = false;
 	locked = false;
+	memcpy(&datadesc,lpData,sizeof(D3DEXECUTEDATA));
 	return D3D_OK;
 }

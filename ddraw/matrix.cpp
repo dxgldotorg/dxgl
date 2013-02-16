@@ -128,3 +128,16 @@ void __gluMakeIdentityf(GLfloat m[16])
     m[2+4*0] = 0; m[2+4*1] = 0; m[2+4*2] = 1; m[2+4*3] = 0;
     m[3+4*0] = 0; m[3+4*1] = 0; m[3+4*2] = 0; m[3+4*3] = 1;
 }
+
+void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4], GLfloat out[4])
+{
+    int i;
+
+    for (i=0; i<4; i++) {
+	out[i] = 
+	    in[0] * matrix[0*4+i] +
+	    in[1] * matrix[1*4+i] +
+	    in[2] * matrix[2*4+i] +
+	    in[3] * matrix[3*4+i];
+    }
+}

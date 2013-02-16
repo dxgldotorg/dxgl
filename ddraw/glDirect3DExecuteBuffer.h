@@ -32,7 +32,7 @@ public:
 	HRESULT WINAPI Unlock();
 	HRESULT WINAPI Validate(LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved);
 	HRESULT ExecuteLock(LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData);
-	HRESULT ExecuteUnlock();
+	HRESULT ExecuteUnlock(LPD3DEXECUTEDATA lpData);
 private:
 	ULONG refcount;
 	D3DEXECUTEBUFFERDESC desc;

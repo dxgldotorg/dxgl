@@ -287,11 +287,16 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	ZeroMemory(viewports,32*sizeof(glDirect3DViewport3*));
 	vertices = normals = NULL;
 	diffuse = specular = NULL;
+	ebBuffer = NULL;
+	ebBufferSize = 0;
+	outbuffer = NULL;
+	outbuffersize = 0;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
 	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
 	__gluMakeIdentityf(matWorld);
 	__gluMakeIdentityf(matView);
 	__gluMakeIdentityf(matProjection);
+	transform_dirty = true;
 	matrices = NULL;
 	matrixcount = 0;
 	texstages[0] = texstagedefault0;
@@ -1436,14 +1441,17 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 	case D3DTRANSFORMSTATE_WORLD:
 		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
 		modelview_dirty = true;
+		transform_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_VIEW:
 		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
 		modelview_dirty = true;
+		transform_dirty = true;
 		return D3D_OK;
 	case D3DTRANSFORMSTATE_PROJECTION:
 		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
 		projection_dirty = true;
+		transform_dirty = true;
 		return D3D_OK;
 	default:
 		ERR(DDERR_INVALIDPARAMS);
@@ -1453,6 +1461,7 @@ HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	memcpy(&viewport,lpViewport,sizeof(D3DVIEWPORT7));
+	transform_dirty = true;
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
@@ -1882,7 +1891,11 @@ HRESULT glDirect3DDevice7::DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle)
 HRESULT glDirect3DDevice7::GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
-	if(!lpD3DMatHandle) return DDERR_INVALIDPARAMS;
+	if(!lpD3DMatHandle)
+	{
+		__gluMakeIdentityf((GLfloat*)lpD3DMatrix);
+		return D3D_OK;
+	}
 	if(lpD3DMatHandle >= matrixcount) return DDERR_INVALIDPARAMS;
 	if(!matrices[lpD3DMatHandle].active) return D3DERR_MATRIX_GETDATA_FAILED;
 	memcpy(lpD3DMatrix,&matrices[lpD3DMatHandle].matrix,sizeof(D3DMATRIX));
@@ -1913,13 +1926,392 @@ HRESULT glDirect3DDevice7::CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LP
 	return D3D_OK;
 }
 
+BOOL ExpandBuffer(void **buffer, DWORD *size, DWORD increment)
+{
+	void *ptr = realloc(*buffer,*size+increment);
+	if(!ptr) return FALSE;
+	*buffer = ptr;
+	*size += increment;
+	return TRUE;
+}
+
+INT AddTriangle(unsigned char **buffer, DWORD *buffersize, DWORD *offset, const D3DTRIANGLE *triangle)
+{
+	if(*buffersize < (*offset + sizeof(D3DTRIANGLE)))
+	{
+		if(!ExpandBuffer((void**)buffer,buffersize,1024)) return -1;
+	}
+	// FIXME:  Process triangle strips and fans.
+	memcpy(*buffer+*offset,triangle,3*sizeof(WORD));
+	*offset += 3*sizeof(WORD);
+	return 0;
+}
+
+void glDirect3DDevice7::UpdateTransform()
+{
+	GLfloat mat1[16];
+	GLfloat mat2[16];
+	GLfloat matViewport[16];
+	__gluMultMatricesf(matWorld,matView,mat1);
+	__gluMultMatricesf(mat1,matProjection,mat2);
+	matViewport[1] = matViewport[2] = matViewport[3] = matViewport[4] = matViewport[6] = matViewport[7] = 
+		matViewport[8] = matViewport[9] = matViewport[11] = matViewport[15] = 0;
+	matViewport[0] = (GLfloat)viewport.dwWidth / 2.0f;
+	matViewport[5] = (GLfloat)viewport.dwHeight / 2.0f;
+	matViewport[10] = (viewport.dvMaxZ - viewport.dvMinZ) / 2.0f;
+	matViewport[12] = (GLfloat)viewport.dwX + ((GLfloat)viewport.dwWidth / 2.0f);
+	matViewport[13] = (GLfloat)viewport.dwY + ((GLfloat)viewport.dwHeight / 2.0f);
+	matViewport[14] = (viewport.dvMinZ + viewport.dvMaxZ) / 2.0f;
+	__gluMultMatricesf(mat2,matViewport,matTransform);
+	transform_dirty = false;
+}
+
+void CalculateExtents(D3DRECT *extents, D3DTLVERTEX *vertices, DWORD count)
+{
+	if(!count) return;
+	D3DVALUE minX,minY,maxX,maxY;
+	minX = maxX = vertices[0].dvSX;
+	minY = maxY = vertices[0].dvSY;
+	for(int i = 0; i < count; i++)
+	{
+		if(vertices[i].dvSX < minX) minX = vertices[i].dvSX;
+		if(vertices[i].dvSX > maxX) maxX = vertices[i].dvSX;
+		if(vertices[i].dvSY < minY) minY = vertices[i].dvSY;
+		if(vertices[i].dvSY > maxY) maxY = vertices[i].dvSY;
+	}
+	if((LONG)minX < extents->x1) extents->x1 = (LONG)minX;
+	if((LONG)maxX > extents->x2) extents->x2 = (LONG)maxX;
+	if((LONG)minY < extents->y1) extents->y1 = (LONG)minY;
+	if((LONG)maxY > extents->y2) extents->y2 = (LONG)maxY;
+}
+
+INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
+{
+	GLfloat in[4];
+	in[3] = 1.0f;
+	if(transform_dirty) UpdateTransform();
+	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
+	{
+		D3DTLVERTEX *tmpptr = (D3DTLVERTEX*)realloc(*output,(dest+count)*sizeof(D3DTLVERTEX));
+		if(!tmpptr) return -1;
+		*output = tmpptr;
+		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
+	}
+	for(int i = 0; i < count; i++)
+	{
+		in[0] = input[i+start].dvX;
+		in[1] = input[i+start].dvY;
+		in[2] = input[i+start].dvZ;
+		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
+		// Do lighting
+		(*output)[i+dest].dvTU = input[i+start].dvTU;
+		(*output)[i+dest].dvTV = input[i+start].dvTV;
+	}
+	if(extents) CalculateExtents(extents,*output,count);
+	return 0;
+}
+INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
+{
+	GLfloat in[4];
+	in[3] = 1.0f;
+	if(transform_dirty) UpdateTransform();
+	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
+	{
+		D3DTLVERTEX *tmpptr = (D3DTLVERTEX*)realloc(*output,(dest+count)*sizeof(D3DTLVERTEX));
+		if(!tmpptr) return -1;
+		*output = tmpptr;
+		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
+	}
+	for(int i = 0; i < count; i++)
+	{
+		in[0] = input[i+start].dvX;
+		in[1] = input[i+start].dvY;
+		in[2] = input[i+start].dvZ;
+		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
+		(*output)[i+dest].dcColor = 0xFFFFFFFF;
+		(*output)[i+dest].dcSpecular = 0;
+		(*output)[i+dest].dvTU = input[i+start].dvTU;
+		(*output)[i+dest].dvTV = input[i+start].dvTV;
+	}
+	if(extents) CalculateExtents(extents,*output,count);
+	return 0;
+}
+INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
+{
+	GLfloat in[4];
+	in[3] = 1.0f;
+	if(transform_dirty) UpdateTransform();
+	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
+	{
+		D3DTLVERTEX *tmpptr = (D3DTLVERTEX*)realloc(*output,(dest+count)*sizeof(D3DTLVERTEX));
+		if(!tmpptr) return -1;
+		*output = tmpptr;
+		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
+	}
+	for(int i = 0; i < count; i++)
+	{
+		in[0] = input[i+start].dvX;
+		in[1] = input[i+start].dvY;
+		in[2] = input[i+start].dvZ;
+		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
+		(*output)[i+dest].dcColor = input[i+start].dcColor;
+		(*output)[i+dest].dcSpecular = input[i+start].dcSpecular;
+		(*output)[i+dest].dvTU = input[i+start].dvTU;
+		(*output)[i+dest].dvTV = input[i+start].dvTV;
+	}
+	if(extents) CalculateExtents(extents,*output,count);
+	return 0;
+}
+INT glDirect3DDevice7::CopyVertices(D3DTLVERTEX **output, DWORD *outsize, D3DTLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
+{
+	if(transform_dirty) UpdateTransform();
+	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
+	{
+		D3DTLVERTEX *tmpptr = (D3DTLVERTEX*)realloc(*output,(dest+count)*sizeof(D3DTLVERTEX));
+		if(!tmpptr) return -1;
+		*output = tmpptr;
+		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
+	}
+	memcpy(&(*output)[dest],&input[start],count*sizeof(D3DTLVERTEX));
+	if(extents) CalculateExtents(extents,*output,count);
+	return 0;
+}
+
 HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!lpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
 	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice1::Execute: stub");
-	ERR(DDERR_GENERIC);
+	D3DEXECUTEBUFFERDESC desc;
+	D3DEXECUTEDATA data;
+	HRESULT err = ((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer)->ExecuteLock(&desc,&data);
+	if(FAILED(err)) return err;
+	unsigned char *opptr = (unsigned char *)desc.lpData + data.dwInstructionOffset;
+	unsigned char *in_vertptr = (unsigned char *)desc.lpData + data.dwVertexOffset;
+	DWORD offset;
+	INT result;
+	D3DMATRIX mat1,mat2,mat3;
+	bool ebExit = false;
+	int i;
+	if(outbuffersize < desc.dwBufferSize)
+	{
+		unsigned char *tmpbuffer = (unsigned char *)realloc(outbuffer,desc.dwBufferSize);
+		if(!tmpbuffer) return DDERR_OUTOFMEMORY;
+		outbuffer = tmpbuffer;
+		outbuffersize = desc.dwBufferSize;
+	}	
+	D3DVERTEX *vert_ptr = (D3DVERTEX*)outbuffer;
+	while(1)
+	{
+		D3DINSTRUCTION *instruction = (D3DINSTRUCTION*) opptr;
+		offset = 0;
+		switch(instruction->bOpcode)
+		{
+		case D3DOP_POINT:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DPOINT))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				if(ebBufferSize < (offset + ((D3DPOINT*)opptr)->wCount*sizeof(D3DVERTEX)))
+				{
+					if(!ExpandBuffer((void**)&ebBuffer,&ebBufferSize,(((D3DPOINT*)opptr)->wCount*sizeof(D3DVERTEX) > 1024) ?
+						((D3DPOINT*)opptr)->wCount*sizeof(D3DVERTEX) : 1024))
+						return DDERR_OUTOFMEMORY;
+				}
+				memcpy(&ebBuffer+offset,&vert_ptr[((D3DPOINT*)opptr)->wFirst],((D3DPOINT*)opptr)->wCount*sizeof(D3DVERTEX));
+				offset+=((D3DPOINT*)opptr)->wCount;
+				opptr += instruction->bSize;
+			}
+			DrawPrimitive(D3DPT_POINTLIST,D3DFVF_TLVERTEX,ebBuffer,offset/sizeof(D3DVERTEX),0);
+			break;
+		case D3DOP_LINE:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DLINE))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				if(ebBufferSize < (offset + sizeof(D3DLINE)))
+				{
+					if(!ExpandBuffer((void**)&ebBuffer,&ebBufferSize,1024)) return DDERR_OUTOFMEMORY;
+				}
+				memcpy(&ebBuffer+offset,opptr,sizeof(D3DLINE));
+				offset += sizeof(D3DLINE);
+				opptr += instruction->bSize;
+			}
+			DrawIndexedPrimitive(D3DPT_LINELIST,D3DFVF_TLVERTEX,vert_ptr,(desc.dwBufferSize-data.dwVertexOffset)/sizeof(D3DVERTEX),
+				(WORD*)ebBuffer,instruction->wCount*2,0);
+			break;
+		case D3DOP_TRIANGLE:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DTRIANGLE))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				result = AddTriangle(&ebBuffer,&ebBufferSize,&offset,(D3DTRIANGLE*)opptr);
+				if(result == -1) return DDERR_OUTOFMEMORY;
+				opptr += instruction->bSize;
+			}
+			DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_TLVERTEX,vert_ptr,(desc.dwBufferSize-data.dwVertexOffset)/sizeof(D3DVERTEX),
+				(WORD*)ebBuffer,instruction->wCount*3,0);
+			break;
+		case D3DOP_MATRIXLOAD:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DMATRIXLOAD))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				GetMatrix(((D3DMATRIXLOAD*)opptr)->hSrcMatrix,&mat1);
+				SetMatrix(((D3DMATRIXLOAD*)opptr)->hDestMatrix,&mat1);
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_MATRIXMULTIPLY:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DMATRIXMULTIPLY))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				GetMatrix(((D3DMATRIXMULTIPLY*)opptr)->hSrcMatrix1,&mat1);
+				GetMatrix(((D3DMATRIXMULTIPLY*)opptr)->hSrcMatrix2,&mat2);
+				__gluMultMatricesf((GLfloat*)&mat1,(GLfloat*)&mat2,(GLfloat*)&mat3);
+				SetMatrix(((D3DMATRIXMULTIPLY*)opptr)->hDestMatrix,&mat3);
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_STATETRANSFORM:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DSTATE))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				GetMatrix(((D3DSTATE*)opptr)->dwArg[0],&mat1);
+				SetTransform(((D3DSTATE*)opptr)->dtstTransformStateType,&mat1);
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_STATELIGHT:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DSTATE))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				SetLightState(((D3DSTATE*)opptr)->dlstLightStateType,((D3DSTATE*)opptr)->dwArg[0]);
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_STATERENDER:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DSTATE))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				SetRenderState(((D3DSTATE*)opptr)->drstRenderStateType,((D3DSTATE*)opptr)->dwArg[0]);
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_PROCESSVERTICES:
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DPROCESSVERTICES))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				switch(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_OPMASK)
+				{
+				case D3DPROCESSVERTICES_TRANSFORM:
+					if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_UPDATEEXTENTS)
+						TransformOnly((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DLVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+						((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					else TransformOnly((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DLVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+						((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					break;
+				case D3DPROCESSVERTICES_TRANSFORMLIGHT:
+					if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_NOCOLOR)
+					{
+						if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_UPDATEEXTENTS)
+							TransformOnly((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+							((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+						else TransformOnly((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+							((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					}
+					else
+					{
+						if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_UPDATEEXTENTS)
+							TransformAndLight((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+							((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+						else TransformAndLight((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+							((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					}
+				case D3DPROCESSVERTICES_COPY:
+					if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_UPDATEEXTENTS)
+						CopyVertices((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DTLVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+						((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					else CopyVertices((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DTLVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
+						((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
+					break;
+				default:
+					break;
+				}
+				opptr += instruction->bSize;
+			}
+			break;
+		case D3DOP_TEXTURELOAD:
+			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
+			FIXME("D3DOP_TEXTURELOAD: stub");
+			break;
+		case D3DOP_EXIT:
+			ebExit = true;
+			break;
+		case D3DOP_BRANCHFORWARD:
+			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
+			FIXME("D3DOP_BRANCHFORWARD: stub");
+			break;
+		case D3DOP_SPAN:
+			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
+			FIXME("D3DOP_SPAN: stub");
+			break;
+		case D3DOP_SETSTATUS:
+			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
+			FIXME("D3DOP_SETSTATUS: stub");
+			break;
+		default:
+			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
+			break;
+		}
+		if(ebExit) break;
+	}
+	((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer)->ExecuteUnlock(&data);
+	return D3D_OK;
 }
 
 HRESULT glDirect3DDevice7::GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec)
