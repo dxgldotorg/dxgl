@@ -2114,6 +2114,14 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!lpDirect3DExecuteBuffer) return DDERR_INVALIDPARAMS;
 	if(!lpDirect3DViewport) return DDERR_INVALIDPARAMS;
+	LPDIRECT3DVIEWPORT3 vp;
+	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&vp);
+	if(FAILED(SetCurrentViewport(vp)))
+	{
+		vp->Release();
+		return DDERR_INVALIDPARAMS;
+	}
+	vp->Release();
 	D3DEXECUTEBUFFERDESC desc;
 	D3DEXECUTEDATA data;
 	HRESULT err = ((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer)->ExecuteLock(&desc,&data);

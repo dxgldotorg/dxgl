@@ -464,6 +464,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 				return E_NOINTERFACE;
 			}
 			HRESULT ret = tmpdev->QueryInterface(IID_IDirect3DDevice,ppvObj);
+			tmpdev->SetRenderTarget(this,0);
 			tmpdev->Release();
 			tmpd3d->Release();
 			return ret;

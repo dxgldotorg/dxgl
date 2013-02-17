@@ -172,8 +172,8 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	default:
 		return;
 	}
-	if(texwrap[level*2+coord] == wrapmode) return;
-	else
+	//if(texwrap[level*2+coord] == wrapmode) return;
+	//else
 	{
 		texwrap[level*2+coord] = wrapmode;
 		//int currtexture = texlevel;
