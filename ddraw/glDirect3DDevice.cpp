@@ -246,6 +246,30 @@ int setdrawmode(D3DPRIMITIVETYPE d3dptPrimitiveType)
 	}
 }
 
+void AddStats(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwCount, D3DSTATS *stats)
+{
+	switch(d3dptPrimitiveType)
+	{
+	case D3DPT_POINTLIST:
+		stats->dwPointsDrawn += dwCount;
+		break;
+	case D3DPT_LINELIST:
+		stats->dwLinesDrawn += dwCount / 2;
+		break;
+	case D3DPT_LINESTRIP:
+		if(dwCount > 1) stats->dwLinesDrawn += dwCount - 1;
+		break;
+	case D3DPT_TRIANGLELIST:
+		stats->dwTrianglesDrawn += dwCount / 3;
+		break;
+	case D3DPT_TRIANGLESTRIP:
+	case D3DPT_TRIANGLEFAN:
+		if(dwCount > 2) stats->dwTrianglesDrawn += dwCount - 2;
+		break;
+	default:
+		break;
+	}
+}
 
 glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
@@ -326,6 +350,8 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	ZeroMemory(lights,16*sizeof(glDirect3DLight*));
 	memset(gllights,0xff,8*sizeof(int));
 	memset(gltextures,0,8*sizeof(GLuint));
+	ZeroMemory(&stats,sizeof(D3DSTATS));
+	stats.dwSize = sizeof(D3DSTATS);
 	d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
 		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
@@ -708,6 +734,8 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!inscene) return D3DERR_SCENE_NOT_IN_SCENE;
 	HRESULT err = fvftoglvertex(dwVertexTypeDesc,(LPDWORD)lpvVertices);
+	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&stats);
+	else AddStats(d3dptPrimitiveType,dwVertexCount,&stats);
 	if(err != D3D_OK) return err;
 	return renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
 		dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
@@ -1814,8 +1842,9 @@ HRESULT glDirect3DDevice7::GetStats(LPD3DSTATS lpD3DStats)
 {
 	if(!this) return DDERR_INVALIDOBJECT;
 	if(!lpD3DStats) return DDERR_INVALIDPARAMS;
-	FIXME("glDirect3DDevice7::GetStats: stub");
-	return DDERR_GENERIC;
+	if(lpD3DStats->dwSize < sizeof(D3DSTATS)) return DDERR_INVALIDPARAMS;
+	memcpy(lpD3DStats,&stats,sizeof(D3DSTATS));
+	return D3D_OK;
 }
 
 HRESULT glDirect3DDevice7::SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDIRECT3DTEXTURE2 lpD3DTex2)
@@ -2282,6 +2311,7 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 				default:
 					break;
 				}
+				stats.dwVerticesProcessed += ((D3DPROCESSVERTICES*)opptr)->dwCount;
 				opptr += instruction->bSize;
 			}
 			break;
@@ -2301,8 +2331,20 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 			FIXME("D3DOP_SPAN: stub");
 			break;
 		case D3DOP_SETSTATUS:
-			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);
-			FIXME("D3DOP_SETSTATUS: stub");
+			opptr += sizeof(D3DINSTRUCTION);
+			if(instruction->bSize < sizeof(D3DSTATUS))
+			{
+				opptr += (instruction->bSize*instruction->wCount);
+				break;
+			}
+			for(i = 0; i < instruction->wCount; i++)
+			{
+				if(((D3DSTATUS*)opptr)->dwFlags & D3DSETSTATUS_STATUS)
+					data.dsStatus.dwStatus = ((D3DSTATUS*)opptr)->dwStatus;
+				if(((D3DSTATUS*)opptr)->dwFlags & D3DSETSTATUS_EXTENTS)
+					data.dsStatus.drExtent = ((D3DSTATUS*)opptr)->drExtent;
+				opptr += instruction->bSize;
+			}
 			break;
 		default:
 			opptr += sizeof(D3DINSTRUCTION)+(instruction->bSize*instruction->wCount);

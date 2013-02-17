@@ -476,6 +476,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	if((id>>50)&1) vsrc->append(unif_size);
 	if((id>>59)&1) numlights = (id>>18)&7;
 	else numlights = 0;
+	if((id>>50)&1) numlights = 0;
 	if(numlights) // Lighting
 	{
 		vsrc->append(lightstruct);

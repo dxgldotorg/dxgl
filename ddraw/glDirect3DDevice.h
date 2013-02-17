@@ -191,6 +191,7 @@ public:
 	int texturecount;
 	bool modelview_dirty;
 	bool projection_dirty;
+	D3DSTATS stats;
 	glDirect3DDevice3 *glD3DDev3;
 	glDirect3DDevice2 *glD3DDev2;
 	glDirect3DDevice1 *glD3DDev1;
