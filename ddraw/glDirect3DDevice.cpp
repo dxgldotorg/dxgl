@@ -2201,8 +2201,8 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 				if(result == -1) return DDERR_OUTOFMEMORY;
 				opptr += instruction->bSize;
 			}
-			DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_TLVERTEX,vert_ptr,(desc.dwBufferSize-data.dwVertexOffset)/sizeof(D3DVERTEX),
-				(WORD*)ebBuffer,instruction->wCount*3,0);
+			if(instruction->wCount) DrawIndexedPrimitive(D3DPT_TRIANGLELIST,D3DFVF_TLVERTEX,vert_ptr,
+				(desc.dwBufferSize-data.dwVertexOffset)/sizeof(D3DVERTEX), (WORD*)ebBuffer,instruction->wCount*3,0);
 			break;
 		case D3DOP_MATRIXLOAD:
 			opptr += sizeof(D3DINSTRUCTION);

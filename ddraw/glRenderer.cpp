@@ -1202,17 +1202,17 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 	if(target->zbuffer) SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
 	else SetFBO(target->texture,0,false);
 	int clearbits = 0;
-	if(D3DCLEAR_TARGET)
+	if(dwFlags & D3DCLEAR_TARGET)
 	{
 		clearbits |= GL_COLOR_BUFFER_BIT;
 		ClearColor(color[0],color[1],color[2],color[3]);
 	}
-	if(D3DCLEAR_ZBUFFER)
+	if(dwFlags & D3DCLEAR_ZBUFFER)
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
 		ClearDepth(dvZ);
 	}
-	if(D3DCLEAR_STENCIL)
+	if(dwFlags & D3DCLEAR_STENCIL)
 	{
 		clearbits |= GL_STENCIL_BUFFER_BIT;
 		ClearStencil(dwStencil);

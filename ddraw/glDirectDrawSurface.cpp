@@ -216,6 +216,28 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		buffer = NULL;
 		if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) magfilter = minfilter = GL_NEAREST;
 		else magfilter = minfilter = GL_LINEAR;
+		if(ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
+		{
+			ddsd.dwFlags |= DDSD_PIXELFORMAT;
+			ddsd.ddpfPixelFormat.dwFlags = DDPF_ZBUFFER;
+			ddsd.ddpfPixelFormat.dwZBufferBitDepth = ddsd.dwRefreshRate;
+			switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
+			{
+			case 8:
+				ddsd.ddpfPixelFormat.dwZBitMask = 0xFF;
+				break;
+			case 16:
+				ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFF;
+				break;
+			case 24:
+				ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFF;
+				break;
+			case 32:
+			default:
+				ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFFFF;
+				break;
+			}
+		}
 		if(!(ddsd.dwFlags & DDSD_PIXELFORMAT))
 		{
 			ZeroMemory(&ddsd.ddpfPixelFormat,sizeof(DDPIXELFORMAT));
