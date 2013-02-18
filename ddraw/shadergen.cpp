@@ -339,6 +339,7 @@ ambient += light.ambient;\n\
 }\n";
 static const char func_pointlight[] = "void PointLight(in Light light)\n\
 {\n\
+ambient += light.ambient;\n\
 vec4 pos = matWorld*xyzw;\n\
 vec3 pos3 = pos.xyz / pos.w;\n\
 vec3 V = light.position - pos3;\n\
@@ -353,7 +354,6 @@ if(NdotV == 0.0) pf = 0.0;\n\
 else if(gl_FrontMaterial.shininess > 0.0) pf = pow(NdotHV,gl_FrontMaterial.shininess);\n\
 else pf = 0.0;\n\
 diffuse += light.diffuse*NdotV*attenuation;\n\
-ambient += light.ambient;\n\
 specular += light.specular*pf*attenuation;\n\
 }\n";
 static const char func_spotlight[] = "void SpotLight(in Light light)\n\

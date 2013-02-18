@@ -2080,6 +2080,11 @@ inline float dot3(float a[3], float b[3])
 	return (a[0]*b[0])+(a[1]*b[1])+(a[2]*b[2]);
 }
 
+inline float len3(float in[3])
+{
+	return sqrt((in[0]*in[0])+(in[1]*in[1])+(in[2]*in[2]));
+}
+
 INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
 {
 	D3DVALUE dir[3];
@@ -2094,7 +2099,11 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 	D3DCOLORVALUE color1;
 	D3DCOLORVALUE color2;
 	D3DVALUE NdotHV;
+	D3DVALUE NdotV;
 	D3DVALUE NdotL;
+	D3DVALUE length;
+	D3DVALUE attenuation;
+	D3DVALUE pf;
 	in[3] = 1.0f;
 	if(transform_dirty) UpdateTransform();
 	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
@@ -2124,13 +2133,13 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 		{
 			if(gllights[l] != -1)
 			{
+				AddD3DCV(&ambient,&lights[gllights[l]]->light.dcvAmbient);
 				switch(lights[gllights[l]]->light.dltType)
 				{
 				case D3DLIGHT_DIRECTIONAL:
 					NdotHV = 0;
 					memcpy(dir,&lights[gllights[l]]->light.dvDirection,3*sizeof(D3DVALUE));
 					normalize(dir);
-					AddD3DCV(&ambient,&lights[gllights[l]]->light.dcvAmbient);
 					NdotL = max(dot3((float*)&input[i+start].dvNX,(float*)&dir),0.0f);
 					color1 = lights[gllights[l]]->light.dcvDiffuse;
 					MulD3DCVFloat(&color1,NdotL);
@@ -2138,7 +2147,7 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 					if((NdotL > 0.0) && (material.dvPower != 0.0))
 					{
 						__gluMultMatrixVecf(matWorld,&input[i+start].dvX,P);
-						memcpy(L ,&lights[gllights[l]]->light.dvDirection,3*sizeof(D3DVALUE));
+						memcpy(L,&lights[gllights[l]]->light.dvDirection,3*sizeof(D3DVALUE));
 						NegativeVec3(L);
 						SubVec3(L,P);
 						normalize(L);
@@ -2153,6 +2162,27 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 					}
 				break;
 				case D3DLIGHT_POINT:
+					__gluMultMatrixVecf(matWorld,&input[i+start].dvX,P);
+					memcpy(V,&lights[gllights[l]]->light.dvPosition,3*sizeof(D3DVALUE));
+					SubVec3(V,P);
+					length = len3(V);
+					if((length > lights[gllights[l]]->light.dvRange) && (lights[gllights[l]]->light.dvRange != 0.0)) continue;
+					normalize(V);
+					attenuation = 1.0/(lights[gllights[l]]->light.dvAttenuation0+(length*lights[gllights[l]]->light.dvAttenuation1)
+						+((length*length)*lights[gllights[l]]->light.dvAttenuation2));
+					NdotV = max(0.0,dot3((float*)&input[i+start].dvNX,V));
+					AddVec3(V,eye);
+					normalize(V);
+					NdotHV = max(0.0,dot3((float*)&input[i+start].dvNX,V));
+					if(NdotV == 0.0) pf = 0.0;
+					else if(material.dvPower != 0.0) pf = pow(NdotHV,material.dvPower);
+					else pf = 0.0;
+					color1 = lights[gllights[l]]->light.dcvDiffuse;
+					MulD3DCVFloat(&color1,NdotV*attenuation);
+					AddD3DCV(&diffuse,&color1);
+					color1 = lights[gllights[l]]->light.dcvSpecular;
+					MulD3DCVFloat(&color1,pf*attenuation);
+					AddD3DCV(&specular,&color1);
 					break;
 				case D3DLIGHT_SPOT:
 					break;
