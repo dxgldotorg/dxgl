@@ -30,6 +30,7 @@
 #include "glDirect3DLight.h"
 #include "glDirect3DExecuteBuffer.h"
 #include <string>
+#include <cmath>
 using namespace std;
 #include "shadergen.h"
 #include "glutil.h"
@@ -356,6 +357,8 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 		d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
 		d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
+	scalex = scaley = 0;
+	mhWorld = mhView = mhProjection = 0;
 	renderer->InitD3D(zbuffer);
 	error = D3D_OK;
 }
@@ -1937,7 +1940,10 @@ HRESULT glDirect3DDevice7::SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX l
 	if(!d3dMatHandle) return DDERR_INVALIDPARAMS;
 	if(d3dMatHandle >= matrixcount) return DDERR_INVALIDPARAMS;
 	if(!matrices[d3dMatHandle].active) return D3DERR_MATRIX_SETDATA_FAILED;
-	memcpy(&matrices[d3dMatHandle],lpD3DMatrix,sizeof(D3DMATRIX));
+	memcpy(&matrices[d3dMatHandle].matrix,lpD3DMatrix,sizeof(D3DMATRIX));
+	if(d3dMatHandle == mhWorld) SetTransform(D3DTRANSFORMSTATE_WORLD,lpD3DMatrix);
+	if(d3dMatHandle == mhView) SetTransform(D3DTRANSFORMSTATE_VIEW,lpD3DMatrix);
+	if(d3dMatHandle == mhProjection) SetTransform(D3DTRANSFORMSTATE_PROJECTION,lpD3DMatrix);
 	return D3D_OK;
 }
 
@@ -1979,19 +1985,8 @@ INT AddTriangle(unsigned char **buffer, DWORD *buffersize, DWORD *offset, const 
 void glDirect3DDevice7::UpdateTransform()
 {
 	GLfloat mat1[16];
-	GLfloat mat2[16];
-	GLfloat matViewport[16];
 	__gluMultMatricesf(matWorld,matView,mat1);
-	__gluMultMatricesf(mat1,matProjection,mat2);
-	matViewport[1] = matViewport[2] = matViewport[3] = matViewport[4] = matViewport[6] = matViewport[7] = 
-		matViewport[8] = matViewport[9] = matViewport[11] = matViewport[15] = 0;
-	matViewport[0] = (GLfloat)viewport.dwWidth / 2.0f;
-	matViewport[5] = (GLfloat)viewport.dwHeight / 2.0f;
-	matViewport[10] = (viewport.dvMaxZ - viewport.dvMinZ) / 2.0f;
-	matViewport[12] = (GLfloat)viewport.dwX + ((GLfloat)viewport.dwWidth / 2.0f);
-	matViewport[13] = (GLfloat)viewport.dwY + ((GLfloat)viewport.dwHeight / 2.0f);
-	matViewport[14] = (viewport.dvMinZ + viewport.dvMaxZ) / 2.0f;
-	__gluMultMatricesf(mat2,matViewport,matTransform);
+	__gluMultMatricesf(mat1,matProjection,matTransform);
 	transform_dirty = false;
 }
 
@@ -2014,9 +2009,92 @@ void CalculateExtents(D3DRECT *extents, D3DTLVERTEX *vertices, DWORD count)
 	if((LONG)maxY > extents->y2) extents->y2 = (LONG)maxY;
 }
 
+inline void glDirect3DDevice7::TransformViewport(D3DTLVERTEX *vertex)
+{
+	vertex->dvSX = vertex->dvSX / vertex->dvRHW * scalex + viewport.dwX + viewport.dwWidth / 2;
+	vertex->dvSY = vertex->dvSY / vertex->dvRHW * scaley + viewport.dwY + viewport.dwHeight / 2;
+	vertex->dvSZ /= vertex->dvRHW;
+	vertex->dvRHW = 1 / vertex->dvRHW;
+}
+
+// function from project.c from Mesa source code.  See matrix.cpp for license.
+static void normalize(float v[3])
+{
+    float r;
+
+    r = sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
+    if (r == 0.0) return;
+
+    v[0] /= r;
+    v[1] /= r;
+    v[2] /= r;
+}
+
+inline void AddD3DCV(D3DCOLORVALUE *dest, D3DCOLORVALUE *src)
+{
+	dest->r += src->r;
+	dest->g += src->g;
+	dest->b += src->b;
+	dest->a += src->a;
+}
+
+inline void MulD3DCV(D3DCOLORVALUE *dest, D3DCOLORVALUE *src)
+{
+	dest->r *= src->r;
+	dest->g *= src->g;
+	dest->b *= src->b;
+	dest->a *= src->a;
+}
+
+inline void MulD3DCVFloat(D3DCOLORVALUE *dest, float src)
+{
+	dest->r *= src;
+	dest->g *= src;
+	dest->b *= src;
+	dest->a *= src;
+}
+
+inline void NegativeVec3(float v[3])
+{
+	v[0] = -v[0];
+	v[1] = -v[1];
+	v[2] = -v[2];
+}
+
+inline void SubVec3(float dest[3], float src[3])
+{
+	dest[0] -= src[0];
+	dest[1] -= src[1];
+	dest[2] -= src[2];
+}
+
+inline void AddVec3(float dest[3], float src[3])
+{
+	dest[0] += src[0];
+	dest[1] += src[1];
+	dest[2] += src[2];
+}
+
+inline float dot3(float a[3], float b[3])
+{
+	return (a[0]*b[0])+(a[1]*b[1])+(a[2]*b[2]);
+}
+
 INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents)
 {
-	GLfloat in[4];
+	D3DVALUE dir[3];
+	D3DVALUE eye[3] = {0.0,0.0,1.0};
+	D3DVALUE P[4];
+	D3DVALUE L[4];
+	D3DVALUE V[4];
+	D3DVALUE in[4];
+	D3DCOLORVALUE ambient;
+	D3DCOLORVALUE diffuse;
+	D3DCOLORVALUE specular;
+	D3DCOLORVALUE color1;
+	D3DCOLORVALUE color2;
+	D3DVALUE NdotHV;
+	D3DVALUE NdotL;
 	in[3] = 1.0f;
 	if(transform_dirty) UpdateTransform();
 	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
@@ -2032,10 +2110,72 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 		in[1] = input[i+start].dvY;
 		in[2] = input[i+start].dvZ;
 		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		TransformViewport(&(*output)[i+dest]);
 		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
-		// Do lighting
 		(*output)[i+dest].dvTU = input[i+start].dvTU;
 		(*output)[i+dest].dvTV = input[i+start].dvTV;
+		diffuse.r = diffuse.g = diffuse.b = diffuse.a = 0;
+		specular.r = specular.g = specular.b = specular.a = 0;
+		ambient.r = (D3DVALUE)RGBA_GETRED(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
+		ambient.g = (D3DVALUE)RGBA_GETGREEN(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
+		ambient.b = (D3DVALUE)RGBA_GETBLUE(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
+		ambient.a = (D3DVALUE)RGBA_GETALPHA(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
+		for(int l = 0; l < 8; l++)
+		{
+			if(gllights[l] != -1)
+			{
+				switch(lights[gllights[l]]->light.dltType)
+				{
+				case D3DLIGHT_DIRECTIONAL:
+					NdotHV = 0;
+					memcpy(dir,&lights[gllights[l]]->light.dvDirection,3*sizeof(D3DVALUE));
+					normalize(dir);
+					AddD3DCV(&ambient,&lights[gllights[l]]->light.dcvAmbient);
+					NdotL = max(dot3((float*)&input[i+start].dvNX,(float*)&dir),0.0f);
+					color1 = lights[gllights[l]]->light.dcvDiffuse;
+					MulD3DCVFloat(&color1,NdotL);
+					AddD3DCV(&diffuse,&color1);
+					if((NdotL > 0.0) && (material.dvPower != 0.0))
+					{
+						__gluMultMatrixVecf(matWorld,&input[i+start].dvX,P);
+						memcpy(L ,&lights[gllights[l]]->light.dvDirection,3*sizeof(D3DVALUE));
+						NegativeVec3(L);
+						SubVec3(L,P);
+						normalize(L);
+						memcpy(V,eye,3*sizeof(D3DVALUE));
+						SubVec3(V,P);
+						normalize(V);
+						AddVec3(L,V);
+						NdotHV = max(dot3((float*)&input[i+start].dvNX,L),0.0f);
+						color1 = lights[gllights[l]]->light.dcvSpecular;
+						MulD3DCVFloat(&color1,pow(NdotHV,material.dvPower));
+						AddD3DCV(&specular,&color1);
+					}
+				break;
+				case D3DLIGHT_POINT:
+					break;
+				case D3DLIGHT_SPOT:
+					break;
+				case D3DLIGHT_PARALLELPOINT:
+					break;
+				case D3DLIGHT_GLSPOT:
+					break;
+				default:
+					break;
+				}
+			}
+			color1 = material.dcvDiffuse;
+			MulD3DCV(&color1,&diffuse);
+			color2 = material.dcvAmbient;
+			MulD3DCV(&color2,&ambient);
+			AddD3DCV(&color1,&color2);
+			AddD3DCV(&color1,&material.dcvEmissive);
+			color2 = material.dcvSpecular;
+			MulD3DCV(&color2,&specular);
+			AddD3DCV(&color1,&color2);
+			(*output)[i+dest].dcColor = D3DRGBA(color1.r,color1.g,color1.b,color1.a);
+			(*output)[i+dest].dcSpecular = D3DRGBA(color2.r,color2.g,color2.b,color2.a);
+		}
 	}
 	if(extents) CalculateExtents(extents,*output,count);
 	return 0;
@@ -2058,6 +2198,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVE
 		in[1] = input[i+start].dvY;
 		in[2] = input[i+start].dvZ;
 		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		TransformViewport(&(*output)[i+dest]);
 		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
 		(*output)[i+dest].dcColor = 0xFFFFFFFF;
 		(*output)[i+dest].dcSpecular = 0;
@@ -2085,6 +2226,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLV
 		in[1] = input[i+start].dvY;
 		in[2] = input[i+start].dvZ;
 		__gluMultMatrixVecf(matTransform,in,&(*output)[i+dest].dvSX);
+		TransformViewport(&(*output)[i+dest]);
 		(*output)[i+dest].dvRHW = 1.0f/(*output)[i+dest].dvRHW;
 		(*output)[i+dest].dcColor = input[i+start].dcColor;
 		(*output)[i+dest].dcSpecular = input[i+start].dcSpecular;
@@ -2245,6 +2387,20 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 			{
 				GetMatrix(((D3DSTATE*)opptr)->dwArg[0],&mat1);
 				SetTransform(((D3DSTATE*)opptr)->dtstTransformStateType,&mat1);
+				switch(((D3DSTATE*)opptr)->dtstTransformStateType)
+				{
+				case D3DTRANSFORMSTATE_WORLD:
+					mhWorld = ((D3DSTATE*)opptr)->dwArg[0];
+					break;
+				case D3DTRANSFORMSTATE_VIEW:
+					mhView = ((D3DSTATE*)opptr)->dwArg[0];
+					break;
+				case D3DTRANSFORMSTATE_PROJECTION:
+					mhProjection = ((D3DSTATE*)opptr)->dwArg[0];
+					break;
+				default:
+					break;
+				}
 				opptr += instruction->bSize;
 			}
 			break;
@@ -2309,6 +2465,7 @@ HRESULT glDirect3DDevice7::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuff
 						else TransformAndLight((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,
 							((D3DPROCESSVERTICES*)opptr)->wDest,((D3DPROCESSVERTICES*)opptr)->dwCount,&data.dsStatus.drExtent);
 					}
+					break;
 				case D3DPROCESSVERTICES_COPY:
 					if(((D3DPROCESSVERTICES*)opptr)->dwFlags & D3DPROCESSVERTICES_UPDATEEXTENTS)
 						CopyVertices((D3DTLVERTEX**)&outbuffer,&outbuffersize,(D3DTLVERTEX*)in_vertptr,((D3DPROCESSVERTICES*)opptr)->wStart,

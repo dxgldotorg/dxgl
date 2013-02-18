@@ -294,6 +294,8 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 	vp.dvClipX = viewport.dvClipX;
 	vp.dvClipY = viewport.dvClipY;
 	viewport = vp;
+	scaleX = lpData->dvScaleX;
+	scaleY = lpData->dvScaleY;
 	if(current && device) Sync();
 	return D3D_OK;
 }
@@ -334,6 +336,7 @@ void glDirect3DViewport3::Sync()
 	vp7.dvMinZ = viewport.dvMinZ;
 	vp7.dvMaxZ = viewport.dvMaxZ;
 	device->SetViewport(&vp7);
+	device->SetScale(scaleX,scaleY);
 }
 
 void glDirect3DViewport3::SyncLights()

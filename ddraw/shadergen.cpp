@@ -280,7 +280,7 @@ vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
-static const char op_passthru[] = "gl_Position = vec4(((xyz.x/rhw)/(width/2.0))-1.0,((xyz.y/rhw)/(height/2.0))-1.0,(xyz.z/rhw),1.0/rhw);\n";
+static const char op_passthru[] = "gl_Position = vec4(((xyz.x)/(width/2.0))-1.0,((xyz.y)/(height/2.0))-1.0,(xyz.z),1.0);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";

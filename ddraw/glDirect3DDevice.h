@@ -162,6 +162,7 @@ public:
 	HRESULT GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec); 
 	HRESULT Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
 		LPD3DRECT lpRect);
+	inline void TransformViewport(D3DTLVERTEX *vertex);
 	INT TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
 	INT TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
 	INT TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
@@ -169,6 +170,7 @@ public:
 	void UpdateTransform();
 	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
+	void SetScale(D3DVALUE x, D3DVALUE y){scalex = x; scaley = y;}
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
@@ -223,6 +225,11 @@ private:
 	DWORD ebBufferSize;
 	unsigned char *outbuffer;
 	DWORD outbuffersize;
+	D3DVALUE scalex;
+	D3DVALUE scaley;
+	D3DMATRIXHANDLE mhWorld;
+	D3DMATRIXHANDLE mhView;
+	D3DMATRIXHANDLE mhProjection;
 };
 
 #endif //__GLDIRECT3DDEVICE_H
