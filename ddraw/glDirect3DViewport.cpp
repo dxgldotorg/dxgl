@@ -294,6 +294,8 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 	vp.dvClipX = viewport.dvClipX;
 	vp.dvClipY = viewport.dvClipY;
 	viewport = vp;
+	maxX = lpData->dvMaxX;
+	maxY = lpData->dvMaxY;
 	scaleX = lpData->dvScaleX;
 	scaleY = lpData->dvScaleY;
 	if(current && device) Sync();
