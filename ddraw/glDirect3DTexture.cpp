@@ -31,6 +31,7 @@ glDirect3DTexture2::glDirect3DTexture2(glDirectDrawSurface7 *glDDS7)
 
 glDirect3DTexture2::~glDirect3DTexture2()
 {
+	glDDS7->d3dt2 = NULL;
 	glDDS7->Release();
 }
 
@@ -93,6 +94,7 @@ glDirect3DTexture1::glDirect3DTexture1(glDirectDrawSurface7 *glDDS7)
 }
 glDirect3DTexture1::~glDirect3DTexture1()
 {
+	glDDS7->d3dt1 = NULL;
 	glDDS7->Release();
 }
 HRESULT WINAPI glDirect3DTexture1::QueryInterface(REFIID riid, void** ppvObj)
