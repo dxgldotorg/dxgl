@@ -335,9 +335,10 @@ void GetCurrentConfig(DXGLCFG *cfg)
 				if(error == ERROR_ACCESS_DENIED)
 				{
 					tstring command;
-					if(is64) command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v "));
-					else command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v "));
+					if(is64) command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
+					else command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
 					command.append(filename);
+					command.append(_T("\""));
 					SHELLEXECUTEINFO info;
 					ZeroMemory(&info,sizeof(SHELLEXECUTEINFO));
 					info.cbSize = sizeof(SHELLEXECUTEINFO);
