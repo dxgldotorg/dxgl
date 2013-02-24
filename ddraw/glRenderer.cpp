@@ -1553,18 +1553,20 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		}
 		else SetTexture(i,0);
 		glUniform1i(prog.uniforms[128+i],i);
-		if(device->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && device->texstages[i].texture && (prog.uniforms[140+i] != -1))
+		if(device->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && device->texstages[i].texture && (prog.uniforms[142+i] != -1))
 		{
 			if(device->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
 			{
 				dwordto4int(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,keycolor);
-				glUniform4iv(prog.uniforms[140+i],1,keycolor);
+				glUniform4iv(prog.uniforms[142+i],1,keycolor);
 			}
 		}
 	}
-	if(prog.uniforms[137]!= -1) glUniform1f(prog.uniforms[137],device->glDDS7->fakex);
-	if(prog.uniforms[138]!= -1) glUniform1f(prog.uniforms[138],device->glDDS7->fakey);
-	if(prog.uniforms[139]!= -1) glUniform1i(prog.uniforms[139],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
+	if(prog.uniforms[137]!= -1) glUniform1f(prog.uniforms[137],device->viewport.dwWidth);
+	if(prog.uniforms[138]!= -1) glUniform1f(prog.uniforms[138],device->viewport.dwHeight);
+	if(prog.uniforms[139]!= -1) glUniform1f(prog.uniforms[139],device->viewport.dwX);
+	if(prog.uniforms[140]!= -1) glUniform1f(prog.uniforms[140],device->viewport.dwY);
+	if(prog.uniforms[141]!= -1) glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
 	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
 	else SetFBO(device->glDDS7->texture,0,false);
 	SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);

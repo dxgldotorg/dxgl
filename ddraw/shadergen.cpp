@@ -260,8 +260,10 @@ float phi;\n\
 static const char unif_light[] = "uniform Light lightX;\n";
 static const char unif_ambient[] = "uniform vec4 ambientcolor;\n";
 static const char unif_tex[] = "uniform sampler2D texX;\n";
-static const char unif_size[] = "uniform float width;\n\
-uniform float height;\n";
+static const char unif_viewport[] = "uniform float width;\n\
+uniform float height;\n\
+uniform float xoffset;\n\
+uniform float yoffset;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec4 keyX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
@@ -280,7 +282,7 @@ vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
-static const char op_passthru[] = "gl_Position = vec4(((xyz.x+.5)/(width/2.0))-1.0,((xyz.y+.5)/(height/2.0))-1.0,(xyz.z),1.0);\n";
+static const char op_tlvertex[] = "gl_Position = vec4((((xyz.x-xoffset)+.5)/(width/2.0))-1.0,(((xyz.y-yoffset)+.5)/(height/2.0))-1.0,(xyz.z),1.0);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
@@ -473,7 +475,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 
 	// Uniforms
 	vsrc->append(unif_ambient);
-	if((id>>50)&1) vsrc->append(unif_size);
+	if((id>>50)&1) vsrc->append(unif_viewport);
 	if((id>>59)&1) numlights = (id>>18)&7;
 	else numlights = 0;
 	if((id>>50)&1) numlights = 0;
@@ -513,7 +515,7 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	if(hasdir) vsrc->append(func_dirlight);
 	//Main
 	vsrc->append(mainstart);
-	if((id>>50)&1) vsrc->append(op_passthru);
+	if((id>>50)&1) vsrc->append(op_tlvertex);
 	else vsrc->append(op_transform);
 	if((id>>49)&1) vsrc->append(op_normalize);
 	else vsrc->append(op_normalpassthru);
@@ -1138,11 +1140,13 @@ void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 	genshaders[index].shader.uniforms[136] = glGetUniformLocation(genshaders[index].shader.prog,"ambientcolor");
 	genshaders[index].shader.uniforms[137] = glGetUniformLocation(genshaders[index].shader.prog,"width");
 	genshaders[index].shader.uniforms[138] = glGetUniformLocation(genshaders[index].shader.prog,"height");
-	genshaders[index].shader.uniforms[139] = glGetUniformLocation(genshaders[index].shader.prog,"alpharef");
+	genshaders[index].shader.uniforms[139] = glGetUniformLocation(genshaders[index].shader.prog,"xoffset");
+	genshaders[index].shader.uniforms[140] = glGetUniformLocation(genshaders[index].shader.prog,"yoffset");
+	genshaders[index].shader.uniforms[141] = glGetUniformLocation(genshaders[index].shader.prog,"alpharef");
 	char unifkey[] = "keyX";
 	for(int i = 0; i < 8; i++)
 	{
 		unifkey[3] = i + '0';
-		genshaders[index].shader.uniforms[140+i] = glGetUniformLocation(genshaders[index].shader.prog,unifkey);
+		genshaders[index].shader.uniforms[142+i] = glGetUniformLocation(genshaders[index].shader.prog,unifkey);
 	}
 }

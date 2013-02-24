@@ -293,6 +293,7 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 	vp.dvClipWidth = viewport.dvClipWidth;
 	vp.dvClipX = viewport.dvClipX;
 	vp.dvClipY = viewport.dvClipY;
+	if((vp.dvMinZ == 0) && (vp.dvMaxZ == 0)) vp.dvMaxZ = 1.0f;
 	viewport = vp;
 	maxX = lpData->dvMaxX;
 	maxY = lpData->dvMaxY;
