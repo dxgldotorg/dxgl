@@ -77,6 +77,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		hRC = renderer->hRC;
 		ddsd = *lpDDSurfaceDesc2;
 	}
+	if(!(ddsd.ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY)) ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)

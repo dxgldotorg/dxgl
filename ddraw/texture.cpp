@@ -82,7 +82,6 @@ void CreateTextureClassic(TEXTURE *texture, int width, int height)
 		texture->internalformat = GL_R3_G3_B2;
 		texture->format = GL_RGB;
 		texture->type = GL_UNSIGNED_BYTE_3_3_2;
-		FIXME("Untested texture format RGB332\n");
 		break;
 	case 2: // 16-bit RGB555
 		texture->internalformat = GL_RGB5_A1;
