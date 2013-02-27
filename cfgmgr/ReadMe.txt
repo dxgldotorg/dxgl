@@ -120,3 +120,10 @@ Method used to upload textures
 Valid settings:
 0 - Automatic
 1 - OpenGL Standard
+
+Member Windows8Detected
+REG_DWORD HKCU\DXGL\Global\Windows8Detected
+Nonzero if Windows 8 (or later) is detected.
+If zero or undefined and Windows 8 (or later) is detected, AllColorDepths in
+Global key is set to 1 and Windows8Detected is also set to 1.
+If nonzero, AllColorDepths is not affected.

@@ -211,7 +211,7 @@
     <ClCompile Include="glDirect3DExecuteBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="trace.c">
+    <ClCompile Include="trace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

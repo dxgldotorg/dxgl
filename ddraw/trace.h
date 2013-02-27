@@ -20,10 +20,6 @@
 #define _TRACE_H
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _TRACE
 void TRACE_ENTER(const char *function, int argtype, void *arg, int end);
 void TRACE_ARG(int argtype, void *arg, int end);
@@ -34,9 +30,4 @@ void TRACE_EXIT(const char *function, int argtype, void *arg);
 #define TRACE_EXIT(a,b,c)
 #endif
 
-
-
-#ifdef __cplusplus
-}
-#endif
 #endif //_TRACE_H
