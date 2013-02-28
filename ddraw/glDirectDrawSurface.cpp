@@ -1227,17 +1227,18 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min)
 		min = GL_LINEAR_MIPMAP_LINEAR;
 		break;
 	}
-	if((magfilter != mag) || (minfilter != min)) ::SetTexture(level,texture);
-	if(magfilter != mag)
-	{
+	//if((magfilter != mag) || (minfilter != min)) 
+	::SetTexture(level,texture);
+	//if(magfilter != mag)
+	//{
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
 		magfilter = mag;
-	}
-	if(minfilter != min)
-	{
+	//}
+	//if(minfilter != min)
+	//{
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
 		minfilter = min;
-	}
+	//}
 }
 
 HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle)

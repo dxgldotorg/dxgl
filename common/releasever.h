@@ -3,8 +3,8 @@
 #define __VERSION_H
 
 #define DXGLMAJORVER 0
-#define DXGLMINORVER 4
-#define DXGLPOINTVER 2
+#define DXGLMINORVER 5
+#define DXGLPOINTVER 0
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
