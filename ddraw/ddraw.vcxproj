@@ -143,10 +143,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)..\Debug\cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" makeheader $(SolutionDir)common</Command>
+      <Command>"$(OutDir)..\Debug\buildtool.exe" makeheader $(SolutionDir)common</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create version headers</Message>
