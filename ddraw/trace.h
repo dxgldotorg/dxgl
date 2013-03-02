@@ -21,12 +21,11 @@
 
 
 #ifdef _TRACE
-void TRACE_ENTER(const char *function, int argtype, void *arg, int end);
-void TRACE_ARG(int argtype, void *arg, int end);
+void TRACE_ENTER(const char *function, int paramcount, ...);
 void TRACE_EXIT(const char *function, int argtype, void *arg);
+void TRACE_VAR(const char *function, const char *var, int argtype, void *arg);
 #else
-#define TRACE_ENTER(a,b,c,d)
-#define TRACE_ARG(a,b,c)
+#define TRACE_ENTER(a,...)
 #define TRACE_EXIT(a,b,c)
 #endif
 

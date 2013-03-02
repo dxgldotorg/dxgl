@@ -49,68 +49,94 @@ glDirectDraw7 *dxglinterface = NULL;
   */
 bool IsBadReadPointer(void *ptr)
 {
+	TRACE_ENTER("IsBadReadPointer",1,14,ptr);
 	char a;
 	try
 	{
 		a = *(char*)ptr;
-		if(a == *(char*)ptr) return false;
-		else return true;
+		if(a == *(char*)ptr)
+		{
+			TRACE_EXIT("IsBadReadPointer",21,0);
+			return false;
+		}
+		else 
+		{
+			TRACE_EXIT("IsBadReadPointer",21,(void*)1);
+			return true;
+		}
 	}
 	catch(...)
 	{
+		TRACE_EXIT("IsBadReadPointer",21,(void*)1);
 		return true;
 	}
 }
 
 void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
 {
+	TRACE_ENTER("InitGL",6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
 	if(!renderer) renderer = new glRenderer(width,height,bpp,fullscreen,hWnd,glDD7);
 	else renderer->SetWnd(width,height,bpp,fullscreen,hWnd);
+	TRACE_EXIT("InitGL",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI AcquireDDThreadLock()
 {
+	TRACE_ENTER("AcquireDDThreadLock",0);
 	// FIXME:  Add thread lock
 	FIXME("AcquireDDThreadLock: stub\n");
+	TRACE_EXIT("AcquireDDThreadLock",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI CompleteCreateSystemSurface()
 {
+	TRACE_ENTER("CompleteCreateSystemSurface",0);
 	FIXME("CompleteCreateSystemSurface: stub\n");
+	TRACE_EXIT("CompleteCreateSystemSurface",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI D3DParseUnknownCommand()
 {
+	TRACE_ENTER("D3DParseUnknownCommand",0);
 	FIXME("D3DParseUnknownCommand: stub\n");
+	TRACE_EXIT("D3DParseUnknownCommand",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDGetAttachedSurfaceLcl()
 {
+	TRACE_ENTER("DDGetAttachedSurfaceLcl",0);
 	FIXME("DDGetAttachedSurfaceLcl: stub\n");
+	TRACE_EXIT("DDGetAttachedSurfaceLcl",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDInternalLock()
 {
+	TRACE_ENTER("DDInternalLock",0);
 	//FIXME:  Add locking code
 	FIXME("DDInternalLock: stub\n");
+	TRACE_EXIT("DDInternalLock",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DDInternalUnlock()
 {
+	TRACE_ENTER("DDInternalUnlock",0);
 	//FIXME:  Add unlocking code
 	FIXME("DDInternalUnlock: stub\n");
+	TRACE_EXIT("DDInternalUnlock",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI DSoundHelp()
 {
+	TRACE_ENTER("DSoundHelp",0);
 	FIXME("DSoundHelp: stub\n");
+	TRACE_EXIT("DSoundHelp",0,0);
 }
 
 /**
@@ -124,8 +150,9 @@ DDRAW_API void WINAPI DSoundHelp()
   * @return
   *  Returns nonzero if the address points to opengl32.dll, otherwise returns zero.
   */
-int IsCallerOpenGL(void *returnaddress)
+BOOL IsCallerOpenGL(void *returnaddress)
 {
+	TRACE_ENTER("IsCallerOpenGL",1,14,returnaddress);
 	int isgl = 0;
 	MODULEENTRY32 modentry = {0};
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE,0);
@@ -141,6 +168,7 @@ int IsCallerOpenGL(void *returnaddress)
 		}
 	} while(Module32Next(hSnapshot,&modentry));
 	CloseHandle(hSnapshot);
+	TRACE_EXIT("IsCallerOpenGL",22,(void*)isgl);
 	return isgl;
 }
 
@@ -161,6 +189,8 @@ int IsCallerOpenGL(void *returnaddress)
   */
 HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter)
 {
+	TRACE_ENTER("DirectDrawCreate",3,24,lpGUID,14,lplpDD,14,pUnkOuter);
+	HRESULT ret;
 	if(gllock || IsCallerOpenGL(_ReturnAddress()))
 	{
 		if(!sysddraw)
@@ -169,16 +199,31 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 			GetSystemDirectoryA(buffer,MAX_PATH);
 			strcat(buffer,"\\ddraw.dll");
 			sysddraw = LoadLibraryA(buffer);
-			if(!sysddraw) ERR(DDERR_GENERIC);
+			if(!sysddraw)
+			{
+				TRACE_EXIT("DirectDrawCreate",23,(void*)DDERR_GENERIC);
+				ERR(DDERR_GENERIC);
+			}
 		}
 		if(!sysddrawcreate)
 		{
 			sysddrawcreate = (HRESULT(WINAPI *)(GUID FAR*,LPDIRECTDRAW FAR*, IUnknown FAR*))GetProcAddress(sysddraw,"DirectDrawCreate");
-			if(!sysddrawcreate) ERR(DDERR_GENERIC);
+			if(!sysddrawcreate)
+			{
+				TRACE_EXIT("DirectDrawCreate",23,(void*)DDERR_GENERIC);
+				ERR(DDERR_GENERIC);
+			}
 		}
-		return sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
+		ret = sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
+		TRACE_VAR("DirectDrawCreate","lplpDD",14,*lplpDD);
+		TRACE_EXIT("DirectDrawCreate",23,(void*)ret);
+		return ret;
 	}
-	if(dxglinterface) return DDERR_DIRECTDRAWALREADYCREATED;
+	if(dxglinterface)
+	{
+		TRACE_EXIT("DirectDrawCreate",23,(void*)DDERR_DIRECTDRAWALREADYCREATED);
+		return DDERR_DIRECTDRAWALREADYCREATED;
+	}
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
@@ -188,11 +233,14 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	if(error != DD_OK)
 	{
 		delete myddraw7;
+		TRACE_EXIT("DirectDrawCreate",23,(void*)error);
 		return error;
 	}
 	myddraw7->QueryInterface(IID_IDirectDraw,(VOID**)&myddraw);
 	myddraw7->Release();
 	*lplpDD = (LPDIRECTDRAW)myddraw;
+	TRACE_VAR("DirectDrawCreate","*lplpDD",14,*lplpDD);
+	TRACE_EXIT("DirectDrawCreate",23,(void*)error);
 	return error;
 }
 
@@ -211,7 +259,15 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
   */
 HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
+	TRACE_ENTER("DirectDrawCreateClipper",3,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	*lplpDDClipper = new glDirectDrawClipper(dwFlags,NULL);
+	if(!lplpDDClipper)
+	{
+		TRACE_EXIT("DirectDrawCreateClipper",23,(void*)DDERR_OUTOFMEMORY);
+		return DDERR_OUTOFMEMORY;
+	}
+	TRACE_VAR("DirectDrawCreateClipper","*lplpDDClipper",14,*lplpDDClipper);
+	TRACE_EXIT("DirectDrawCreateClipper",23,(void*)DD_OK);
 	return DD_OK;
 }
 
@@ -234,28 +290,43 @@ HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *l
   */
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
-	if(dxglinterface) return DDERR_DIRECTDRAWALREADYCREATED;
+	TRACE_ENTER("DirectDrawCreateEx",4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
+	if(dxglinterface)
+	{
+		TRACE_EXIT("DirectDrawCreateEx",23,(void*)DDERR_DIRECTDRAWALREADYCREATED);
+		return DDERR_DIRECTDRAWALREADYCREATED;
+	}
 	GetCurrentConfig(&dxglcfg);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
-	if(iid != IID_IDirectDraw7) ERR(DDERR_INVALIDPARAMS);
+	if(iid != IID_IDirectDraw7)
+	{
+		TRACE_EXIT("DirectDrawCreateEx",23,(void*)DDERR_INVALIDPARAMS);
+		return DDERR_INVALIDPARAMS;
+	}
 	myddraw = new glDirectDraw7(lpGUID,pUnkOuter);
 	error = myddraw->err();
 	if(error != DD_OK)
 	{
 		delete myddraw;
+		TRACE_EXIT("DirectDrawCreateEx",23,(void*)error);
 		return error;
 	}
 	*lplpDD = (LPDIRECTDRAW7)myddraw;
+	TRACE_VAR("DirectDrawCreateEx","*lplpDD",14,*lplpDD);
+	TRACE_EXIT("DirectDrawCreateEx",23,(void*)error);
 	return error;
 }
 
 /// Callback wrapper for DirectDrawEnumerateA
 BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
+	TRACE_ENTER("DDEnumA",5,24,guid,15,lpDriverDescription,15,lpDriverName,14,lpContext,13,hMonitor);
 	int *context = (int *)lpContext;
 	LPDDENUMCALLBACKA callback = (LPDDENUMCALLBACKA)context[0];
-	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+	BOOL ret =  callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+	TRACE_EXIT("DDEnumA",22,(void*)ret);
+	return ret;
 }
 
 /**
@@ -271,19 +342,29 @@ BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverNam
   */
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)
 {
-	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER("DirectDrawEnumerateA",2,14,lpCallback,14,lpContext);
+	if(IsBadReadPointer(lpCallback))
+	{
+		TRACE_EXIT("DirectDrawEnumerateA",23,(void*)DDERR_INVALIDPARAMS);
+		return DDERR_INVALIDPARAMS;
+	}
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
-	return DirectDrawEnumerateExA(DDEnumA,&context,0);
+	HRESULT ret = DirectDrawEnumerateExA(DDEnumA,&context,0);
+	TRACE_EXIT("DirectDrawEnumerateA",23,(void*)ret);
+	return ret;
 }
 
 /// Callback wrapper for DirectDrawEnumerateW
 BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
+	TRACE_ENTER("DDEnumW",5,24,guid,16,lpDriverDescription,16,lpDriverName,14,lpContext,13,hMonitor);
 	int *context = (int *)lpContext;
 	LPDDENUMCALLBACKW callback = (LPDDENUMCALLBACKW)context[0];
-	return callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+	BOOL ret = callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
+	TRACE_EXIT("DDEnumW",22,(void*)ret);
+	return ret;
 }
 
 /**
@@ -299,24 +380,34 @@ BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverN
   */
 HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext)
 {
-	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER("DirectDrawEnumerateW",2,14,lpCallback,14,lpContext);
+	if(IsBadReadPointer(lpCallback))
+	{
+		TRACE_EXIT("DirectDrawEnumerateW",23,(void*)DDERR_INVALIDPARAMS);
+		return DDERR_INVALIDPARAMS;
+	}
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
-	return DirectDrawEnumerateExW(DDEnumW,&context,0);
+	HRESULT ret = DirectDrawEnumerateExW(DDEnumW,&context,0);
+	TRACE_EXIT("DirectDrawEnumerateW",23,(void*)ret);
+	return ret;
 }
 
 /// Callback wrapper for DirectDrawEnumerateExA
 /// Converts Unicode strings to ANSI.
 BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
+	TRACE_ENTER("DDEnumExA",5,24,guid,16,lpDriverDescription,16,lpDriverName,14,lpContext,13,hMonitor);
 	int *context = (int *)lpContext;
 	LPDDENUMCALLBACKEXA callback = (LPDDENUMCALLBACKEXA)context[0];
 	CHAR desc[MAX_PATH];
 	CHAR driver[MAX_PATH];
 	WideCharToMultiByte(CP_ACP,0,lpDriverDescription,-1,desc,MAX_PATH,NULL,NULL);
 	WideCharToMultiByte(CP_ACP,0,lpDriverName,-1,driver,MAX_PATH,NULL,NULL);
-	return callback(guid,desc,driver,(LPVOID)context[1],hMonitor);
+	BOOL ret = callback(guid,desc,driver,(LPVOID)context[1],hMonitor);
+	TRACE_EXIT("DDEnumExA",22,(void*)ret);
+	return ret;
 }
 
 /**
@@ -335,11 +426,18 @@ BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDrive
   */
 HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
-	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER("DirectDrawEnumerateExA",3,14,lpCallback,14,lpContext,9,dwFlags);
+	if(IsBadReadPointer(lpCallback))
+	{
+		TRACE_EXIT("DirectDrawEnumerateExA",23,(void*)DDERR_INVALIDPARAMS);
+		return DDERR_INVALIDPARAMS;
+	}
 	LPVOID context[2];
 	context[0] = (LPVOID) lpCallback;
 	context[1] = lpContext;
-	return DirectDrawEnumerateExW(DDEnumExA,&context,dwFlags);
+	HRESULT ret = DirectDrawEnumerateExW(DDEnumExA,&context,dwFlags);
+	TRACE_EXIT("DirectDrawEnumerateExA",23,(void*)ret);
+	return ret;
 }
 
 /**
@@ -352,18 +450,25 @@ HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpC
   */
 BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM ptr)
 {
+	TRACE_ENTER("MonitorEnum",4,13,hMonitor,13,unused,26,unused2,13,ptr);
 	int * monitors = *(int**)ptr;
 	if(!monitors)
 	{
 		monitors = (int*)malloc(256*sizeof(int));
-		if(!monitors) return FALSE;
+		if(!monitors)
+		{
+			TRACE_EXIT("MonitorEnum",22,(void*)FALSE);
+			return FALSE;
+		}
 		monitors[0] = 1;
 	}
 	else monitors[0]++;
 	monitors[monitors[0]] = (int)hMonitor;
 	*(int**)ptr = monitors;
-	if(monitors[0] == 255) return FALSE;
-	return TRUE;
+	BOOL ret;
+	if(monitors[0] == 255) ret = FALSE;
+	else ret = TRUE;
+	TRACE_EXIT("MonitorEnum",22,(void*)ret);
 }
 
 /**
@@ -381,7 +486,12 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
   */
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
-	if(IsBadReadPointer(lpCallback)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER("DirectDrawEnumerateExW",3,14,lpCallback,14,lpContext,9,dwFlags);
+	if(IsBadReadPointer(lpCallback))
+	{
+		TRACE_EXIT("DirectDrawEnumerateExW",23,(void*)DDERR_GENERIC);
+		return DDERR_INVALIDPARAMS;
+	}
 	int *monitors = NULL;
 	GUID guid;
 	MONITORINFOEXW monitorinfo;
@@ -392,7 +502,11 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 	if(dwFlags & DDENUM_ATTACHEDSECONDARYDEVICES)
 	{
 		EnumDisplayMonitors(NULL,NULL,MonitorEnum,(LPARAM)&monitors);
-		if(!monitors) return DDERR_OUTOFMEMORY;
+		if(!monitors)
+		{
+			TRACE_EXIT("DirectDrawEnumerateExW",23,(void*)DDERR_OUTOFMEMORY);
+			return DDERR_OUTOFMEMORY;
+		}
 		for(int i = 1; i < monitors[0]; i++)
 		{
 			guid = device_template;
@@ -403,6 +517,7 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 		}
 		free(monitors);
 	}
+	TRACE_EXIT("DirectDrawEnumerateExW",23,(void*)DDERR_OUTOFMEMORY);
 	return DD_OK;
 }
 
@@ -414,6 +529,8 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
   */
 HRESULT WINAPI DllCanUnloadNow()
 {
+	TRACE_ENTER("DllCanUnloadNow",0);
+	TRACE_EXIT("DllCanUnloadNow",23,(void*)S_FALSE);
 	return S_FALSE;
 }
 
@@ -431,19 +548,32 @@ HRESULT WINAPI DllCanUnloadNow()
   */
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
+	TRACE_ENTER("DllGetClassObject",3,24,&rclsid,24,&riid,14,ppv);
 	if((rclsid != CLSID_DirectDraw) && (rclsid != CLSID_DirectDraw7) &&
-		(rclsid != CLSID_DirectDrawClipper)) return CLASS_E_CLASSNOTAVAILABLE;
+		(rclsid != CLSID_DirectDrawClipper))
+	{
+		TRACE_EXIT("DllGetClassObject",23,(void*)CLASS_E_CLASSNOTAVAILABLE);
+		return CLASS_E_CLASSNOTAVAILABLE;
+	}
 	GetCurrentConfig(&dxglcfg);
 	glClassFactory *factory = new glClassFactory;
-	if(factory == NULL) return E_OUTOFMEMORY;
+	if(factory == NULL)
+	{
+		TRACE_EXIT("DllGetClassObject",23,(void*)E_OUTOFMEMORY);
+		return E_OUTOFMEMORY;
+	}
 	HRESULT result = factory->QueryInterface(riid,ppv);
+	TRACE_VAR("DllGetClassObject","*ppv",14,*ppv);
 	factory->Release();
+	TRACE_EXIT("DllGetClassObject",23,(void*)result);
 	return result;
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI GetDDSurfaceLocal()
 {
+	TRACE_ENTER("GetDDSurfaceLocal",0);
+	TRACE_EXIT("GetDDSurfaceLocal",0,0);
 	FIXME("GetDDSurfaceLocal: stub\n");
 }
 
@@ -451,6 +581,8 @@ DDRAW_API void WINAPI GetDDSurfaceLocal()
 /// This function gets called by the fnddraw.exe test application.
 DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 {
+	TRACE_ENTER("GetOLEThunkData",1,9,i1);
+	TRACE_EXIT("GetOleThunkData",14,NULL);
 	DEBUG("GetOleThunkData: stub\n");
 	return 0;
 }
@@ -459,26 +591,36 @@ DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 /// Function import is GetSurfaceFromDC
 DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
+	TRACE_ENTER("GetSurfaceFromDC",3,14,lpDD,9,hdc,14,lpDDS);
 	FIXME("GetSurfaceFromDC: Verify proper referencing for LPDIRECTDRAW7\n");
-	return lpDD->GetSurfaceFromDC(hdc,lpDDS);
+	HRESULT ret = lpDD->GetSurfaceFromDC(hdc,lpDDS);
+	TRACE_VAR("GetSurfaceFromDC","*lpDDS",14,*lpDDS);
+	TRACE_EXIT("GetSurfaceFromDC",23,(void*)ret);
+	return ret;
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI RegisterSpecialCase()
 {
+	TRACE_ENTER("RegisterSpecialCase",0);
 	FIXME("RegisterSpecialCase: stub\n");
+	TRACE_EXIT("RegisterSpecialCase",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI ReleaseDDThreadLock()
 {
+	TRACE_ENTER("ReleaseDDThreadLock",0);
 	FIXME("ReleaseDDThreadLock: stub\n");
+	TRACE_EXIT("ReleaseDDThreadLock",0,0);
 }
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI SetAppCompatData()
 {
+	TRACE_ENTER("SetAppCompatData",0);
 	FIXME("SetAppCompatData: stub\n");
+	TRACE_EXIT("SetAppCompatData",0,0);
 }
 
 /**
@@ -494,5 +636,7 @@ DDRAW_API void WINAPI SetAppCompatData()
 
 DDRAW_API BOOL IsDXGLDDraw()
 {
+	TRACE_ENTER("IsDXGLDDraw",0);
+	TRACE_EXIT("IsDXGLDDraw",0,0);
 	return TRUE;
 }
