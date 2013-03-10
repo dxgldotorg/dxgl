@@ -612,7 +612,7 @@ glDirectDraw7::~glDirectDraw7()
 
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(3,this,24,riid,14,ppvObj);
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
