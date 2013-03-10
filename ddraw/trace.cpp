@@ -18,6 +18,7 @@
 #include "common.h"
 
 /* Data types:
+-1 - C++ constructor/destructor
 0 - void
 1 - 8-bit signed
 2 - 8-bit unsigned
@@ -43,7 +44,7 @@
 22 - int BOOL
 23 - HRESULT
 24 - GUID pointer
-25 - 
+25 - SIZE pointer
 26 - RECT pointer
 */
 
@@ -277,6 +278,13 @@ static void trace_decode_guid(GUID *guid)
 	}
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 }
+static void trace_decode_size(SIZE *size)
+{
+	DWORD byteswritten;
+	char str[64];
+	sprintf(str,"{%d,%d}",size->cx,size->cy);
+	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+}
 static void trace_decode_rect(RECT *rect)
 {
 	DWORD byteswritten;
@@ -309,6 +317,9 @@ static void trace_decode_arg(int type, void *arg)
 	str[0] = 0;
 	switch(type)
 	{
+	case -1: // C++ constructor/destructor
+		// No return type in a constructor or destructor.
+		break;
 	case 0: // void
 		WriteFile(outfile,"void",4,&byteswritten,NULL);
 		break;
@@ -368,8 +379,13 @@ static void trace_decode_arg(int type, void *arg)
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
 		else
 		{
+#ifdef _M_X64
+			sprintf(str,"0x%016I64X",arg);
+			WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+#else
 			sprintf(str,"0x%08X",arg);
 			WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+#endif
 		}
 		break;
 	case 15: // ASCII string
@@ -455,10 +471,13 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	case 24: // GUID pointer
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
+		else if(arg == (void*)DDCREATE_HARDWAREONLY) WriteFile(outfile,"DDCREATE_HARDWAREONLY",21,&byteswritten,NULL);
+		else if(arg == (void*)DDCREATE_EMULATIONONLY) WriteFile(outfile,"DDCREATE_EMULATIONONLY",22,&byteswritten,NULL);
 		else trace_decode_guid((GUID*)arg);
 		break;
-	case 25: // reserved
-		WriteFile(outfile,"Unknown type",12,&byteswritten,NULL);
+	case 25: // SIZE pointer
+		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
+		else trace_decode_size((SIZE*)arg);
 		break;
 	case 26: // RECT pointer
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
@@ -469,7 +488,7 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	}
 }
-void TRACE_ENTER(const char *function, int paramcount, ...)
+void trace_enter(const char *function, int paramcount, ...)
 {
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
@@ -491,7 +510,7 @@ void TRACE_ENTER(const char *function, int paramcount, ...)
 	trace_depth++;
 	LeaveCriticalSection(&trace_cs);
 }
-void TRACE_EXIT(const char *function, int argtype, void *arg)
+void trace_exit(const char *function, int argtype, void *arg)
 {
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
@@ -506,7 +525,7 @@ void TRACE_EXIT(const char *function, int argtype, void *arg)
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
 	LeaveCriticalSection(&trace_cs);
 }
-void TRACE_VAR(const char *function, const char *var, int argtype, void *arg)
+void trace_var(const char *function, const char *var, int argtype, void *arg)
 {
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();

@@ -21,12 +21,22 @@
 
 
 #ifdef _TRACE
-void TRACE_ENTER(const char *function, int paramcount, ...);
-void TRACE_EXIT(const char *function, int argtype, void *arg);
-void TRACE_VAR(const char *function, const char *var, int argtype, void *arg);
+#define TRACE_ENTER(paramcount,...) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
+#define TRACE_EXIT(argtype,arg) trace_exit(__FUNCTION__,argtype,(void*)arg);
+#define TRACE_VAR(var,argtype,arg) trace_var(__FUNCTION__,var,argtype,(void*)arg);
+void trace_enter(const char *function, int paramcount, ...);
+void trace_exit(const char *function, int argtype, void *arg);
+void trace_var(const char *function, const char *var, int argtype, void *arg);
+#define TRACE_RET(argtype, arg) \
+{\
+	trace_exit(__FUNCTION__,argtype,(void*)arg);\
+	return arg;\
+}
 #else
 #define TRACE_ENTER(a,...)
-#define TRACE_EXIT(a,b,c)
+#define TRACE_EXIT(a,b)
+#define TRACE_VAR(a,b,c)
+#define TRACE_RET(argtype, arg) return arg;
 #endif
 
 #endif //_TRACE_H

@@ -551,6 +551,7 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 
 glDirectDraw7::glDirectDraw7()
 {
+	TRACE_ENTER(1,14,this);
 	glDD1 = NULL;
 	glDD2 = NULL;
 	glDD4 = NULL;
@@ -560,24 +561,29 @@ glDirectDraw7::glDirectDraw7()
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	refcount = 1;
+	TRACE_EXIT(-1,0);
 }
 
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 {
+	TRACE_ENTER(3,14,this,24,lpGUID,14,pUnkOuter);
 	dxglinterface = this;
 	initialized = false;
 	if(pUnkOuter)
 	{
 		error = DDERR_INVALIDPARAMS ;
+		TRACE_EXIT(-1,0);
 		return;
 	}
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	error = glDirectDraw7::Initialize(lpGUID);
 	refcount = 1;
+	TRACE_EXIT(-1,0);
 }
 
 glDirectDraw7::~glDirectDraw7()
 {
+	TRACE_ENTER(1,14,this);
 	dxglinterface = NULL;
 	if(glD3D7) glD3D7->Release();
 	RestoreDisplayMode();
@@ -601,16 +607,20 @@ glDirectDraw7::~glDirectDraw7()
 	}
 	if(renderer) delete renderer;
 	renderer = NULL;
+	TRACE_EXIT(-1,0);
 }
 
 HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,this,24,riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirectDraw)
@@ -619,6 +629,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glDD1;
 			glDD1->AddRef();
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 		else
@@ -627,6 +639,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirectDraw1(this);
 			glDD1 = (glDirectDraw1*)*ppvObj;
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 	}
@@ -636,6 +650,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glDD2;
 			glDD2->AddRef();
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 		else
@@ -644,6 +660,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirectDraw2(this);
 			glDD2 = (glDirectDraw2*)*ppvObj;
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 	}
@@ -653,6 +671,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glDD4;
 			glDD4->AddRef();
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 		else
@@ -661,6 +681,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirectDraw4(this);
 			glDD4 = (glDirectDraw4*)*ppvObj;
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
 	}
@@ -669,6 +691,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		// Probably non-DX compliant, but give a copy of the IDirectDraw7 interface
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D)
@@ -676,6 +700,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D,ppvObj);
 		tmp->Release();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D2)
@@ -683,6 +709,8 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D2,ppvObj);
 		tmp->Release();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D3)
@@ -690,73 +718,96 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D3,ppvObj);
 		tmp->Release();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D7)
 	{
 		*ppvObj = new glDirect3D7(this);
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawGammaControl)
 	{
 		FIXME("Add gamma control\n");
+		TRACE_EXIT(23,DDERR_GENERIC);
 		ERR(DDERR_GENERIC);
 	}
 	/*if(riid == IID_IDDVideoPortContainer)
 	{
 		ERR(DDERR_GENERIC);
 	}*/
+	TRACE_EXIT(23,E_NOINTERFACE);
 	ERR(E_NOINTERFACE);
 }
 ULONG WINAPI glDirectDraw7::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirectDraw7::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0)
 		delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDraw7::Compact()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lplpDDClipper) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(pUnkOuter) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	clippercount++;
 	if(clippercount > clippercountmax)
 	{
 		glDirectDrawClipper **clippers2;
 		clippers2 = (glDirectDrawClipper **)realloc(clippers,(clippercountmax+1024)*sizeof(glDirectDrawClipper *));
-		if(!clippers2)
-			ERR(DDERR_OUTOFMEMORY);
+		if(!clippers2)	TRACE_RET(23,DDERR_OUTOFMEMORY);
 		clippers = clippers2;
 		ZeroMemory(&clippers[clippercountmax],1024*sizeof(glDirectDrawClipper *));
 		clippercountmax += 1024;
 	}
 	clippers[clippercount-1] = new glDirectDrawClipper(dwFlags,this);
 	*lplpDDClipper = clippers[clippercount-1];
+	TRACE_VAR("*lplpDDClipper",14,*lplpDDClipper);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lplpDDPalette) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(pUnkOuter) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	glDirectDrawPalette *pal = new glDirectDrawPalette(dwFlags,lpDDColorArray,lplpDDPalette);
+	TRACE_VAR("*lplpDDPalette",14,*lplpDDPalette);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc2,14,lplpDDSurface,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurfaceDesc2) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(pUnkOuter) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer->hRC == primary->hRC) )
 	{
 		if(primarylost)
@@ -764,17 +815,17 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 			primary->Restore();
 			*lplpDDSurface = primary;
 			primarylost = false;
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		}
-		else return DDERR_PRIMARYSURFACEALREADYEXISTS;
+		else TRACE_RET(23,DDERR_PRIMARYSURFACEALREADYEXISTS);
 	}
 	surfacecount++;
 	if(surfacecount > surfacecountmax)
 	{
 		glDirectDrawSurface7 **surfaces2;
 		surfaces2 = (glDirectDrawSurface7 **)realloc(surfaces,(surfacecountmax+1024)*sizeof(glDirectDrawSurface7 *));
-		if(!surfaces2)
-			ERR(DDERR_OUTOFMEMORY);
+		if(!surfaces2) TRACE_RET(23,DDERR_OUTOFMEMORY);
 		surfaces = surfaces2;
 		ZeroMemory(&surfaces[surfacecountmax],1024*sizeof(glDirectDrawSurface7 *));
 		surfacecountmax += 1024;
@@ -787,28 +838,44 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 		primarylost = false;
 	}
 	*lplpDDSurface = surfaces[surfacecount-1];
+	TRACE_VAR("*lplpDDSurface",14,*lplpDDSurface);
+	TRACE_EXIT(23,error);
 	return error;
 }
 HRESULT WINAPI glDirectDraw7::DuplicateSurface(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDIRECTDRAWSURFACE7 FAR *lplpDupDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!lplpDupDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::DuplicateSurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc2,lpContext,lpEnumModesCallback);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSurfaceDesc2,14,lpContext,14,lpEnumModesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurfaceDesc2) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!lpEnumModesCallback) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	HRESULT ret = ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc2,lpContext,lpEnumModesCallback);
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw7::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpEnumSurfacesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD2,14,lpContext,14,lpEnumSurfacesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDDSD2) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!lpEnumSurfacesCallback) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::EnumSurfaces: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	HRESULT error = DD_OK;
 	if(primary)
 	{
@@ -820,19 +887,21 @@ HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 				if(error != DD_OK) break;
 			}
 		}
+		TRACE_EXIT(23,error);
 		return(error);
 	}
-	else ERR(DDERR_NOTFOUND);
+	else TRACE_RET(23,DDERR_NOTFOUND);
 }
 HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDDDriverCaps,14,lpDDHELCaps);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	//TODO:  Fill in as implemented.
 	DDCAPS_DX7 ddCaps;
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
 	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
 	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
-	else return DDERR_INVALIDPARAMS;
+	else TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTSTRETCH |
 		DDCAPS_COLORKEY | DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM |
@@ -857,12 +926,14 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		if(lpDDHELCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDHELCaps->dwSize = sizeof(DDCAPS_DX7);
 		memcpy(lpDDHELCaps,&ddCaps,lpDDHELCaps->dwSize);
 	}
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpDDSurfaceDesc2) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc2);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurfaceDesc2) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsdMode;
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
@@ -909,6 +980,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 			lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
 		memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
@@ -945,53 +1017,69 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	if(currmode.dmBitsPerPel == 15) ddsdMode.lPitch = currmode.dmPelsWidth * 2;
 		else if(currmode.dmBitsPerPel == 4) ddsdMode.lPitch = currmode.dmPelsWidth / 2;
 		else ddsdMode.lPitch = currmode.dmPelsWidth * (currmode.dmBitsPerPel / 8);
-	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
+	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 		lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
 	memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpNumCodes) return DDERR_INVALIDPARAMS;
-	if(!lpCodes) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpNumCodes,14,lpCodes);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpNumCodes) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!lpCodes) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::GetFourCCCodes: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lplpGDIDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lplpGDIDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::GetGDISurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpdwFrequency) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpdwFrequency);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpdwFrequency) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	DEBUG("IDirectDraw::GetMonitorFrequency: support multi-monitor\n");
 	DEVMODE devmode;
 	devmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
 	*lpdwFrequency = devmode.dmDisplayFrequency;
+	TRACE_VAR("*lpdwFrequency",8,*lpdwFrequency);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetScanLine(LPDWORD lpdwScanLine)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpdwScanLine);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpdwScanLine) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::GetScanLine: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpbIsInVB);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpbIsInVB) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	FIXME("IDirectDraw::GetVerticalBlankStatus: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(initialized) return DDERR_ALREADYINITIALIZED;
+	TRACE_ENTER(2,14,this,24,lpGUID);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(initialized) TRACE_RET(23,DDERR_ALREADYINITIALIZED);
 	primarylost = true;
 	glD3D7 = NULL;
 	glDD1 = NULL;
@@ -1007,12 +1095,12 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	timer = timeGetTime();
 	ZeroMemory(&oldmode,sizeof(DEVMODE));
 	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
-	if(!surfaces) return DDERR_OUTOFMEMORY;
+	if(!surfaces) TRACE_RET(23,DDERR_OUTOFMEMORY);
 	ZeroMemory(surfaces,1024*sizeof(glDirectDrawSurface7 *));
 	surfacecount = 0;
 	surfacecountmax = 1024;
 	clippers = (glDirectDrawClipper **)malloc(1024*sizeof(glDirectDrawClipper *));
-	if(!clippers) return DDERR_OUTOFMEMORY;
+	if(!clippers) TRACE_RET(23,DDERR_OUTOFMEMORY);
 	ZeroMemory(clippers,1024*sizeof(glDirectDrawClipper *));
 	clippercount = 0;
 	clippercountmax = 1024;
@@ -1032,20 +1120,24 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		DEBUG("Display GUIDs not yet supported, using primary.\n");
 	}
 	initialized = true;
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(oldmode.dmSize != 0)
 	{
 		ChangeDisplaySettingsEx(NULL,&oldmode,NULL,0,NULL);
 	}
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	this->hWnd = hWnd;
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
 	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
@@ -1070,7 +1162,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		fullscreen = true;
 	else fullscreen = false;
 	if(exclusive)
-		if(!fullscreen) ERR(DDERR_INVALIDPARAMS);
+		if(!fullscreen) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(dwFlags & DDSCL_FPUPRESERVE)
 		fpupreserve = true;
 	else fpupreserve = false;
@@ -1081,7 +1173,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		threadsafe = true;
 	else threadsafe = false;
 	if(dwFlags & DDSCL_NORMAL)
-		if(exclusive) ERR(DDERR_INVALIDPARAMS);
+		if(exclusive) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(dwFlags & DDSCL_NOWINDOWCHANGES)
 		nowindowchanges = true;
 	else nowindowchanges = false;
@@ -1113,6 +1205,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	bpp = devmode.dmBitsPerPel;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,hWnd,this);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 
@@ -1181,7 +1274,8 @@ DEVMODE FindClosestMode(const DEVMODE in)
 
 HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
@@ -1223,25 +1317,26 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 		case DISP_CHANGE_BADMODE:
-			ERR(DDERR_INVALIDMODE);
+			TRACE_RET(23,DDERR_INVALIDMODE);
 		case DISP_CHANGE_BADFLAGS:
-			ERR(DDERR_INVALIDPARAMS);
+			TRACE_RET(23,DDERR_INVALIDPARAMS);
 		case DISP_CHANGE_BADDUALVIEW:
-			ERR(DDERR_GENERIC);
+			TRACE_RET(23,DDERR_GENERIC);
 		case DISP_CHANGE_BADPARAM:
-			ERR(DDERR_INVALIDPARAMS);
+			TRACE_RET(23,DDERR_INVALIDPARAMS);
 		case DISP_CHANGE_FAILED:
-			ERR(DDERR_GENERIC);
+			TRACE_RET(23,DDERR_GENERIC);
 		case DISP_CHANGE_NOTUPDATED:
-			ERR(DDERR_GENERIC);
+			TRACE_RET(23,DDERR_GENERIC);
 		case DISP_CHANGE_RESTART:
-			ERR(DDERR_UNSUPPORTEDMODE);
+			TRACE_RET(23,DDERR_UNSUPPORTEDMODE);
 		default:
-			ERR(DDERR_GENERIC);
+			TRACE_RET(23,DDERR_GENERIC);
 		}
-		ERR(DDERR_GENERIC);
+		TRACE_RET(23,DDERR_GENERIC);
 		break;
 	case 1: // Stretch to screen
 		primaryx = dwWidth;
@@ -1253,6 +1348,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 		primarylost = true;
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 		break;
 	case 2: // Scale to screen
@@ -1278,6 +1374,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 		primarylost = true;
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 		break;
 	case 3: // Center image
@@ -1289,6 +1386,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
 		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 		break;
 	case 4: // Switch then stretch
 	case 5: // Switch then scale
@@ -1324,6 +1423,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 			break;
 		case 5:
@@ -1349,6 +1449,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 			break;
 		case 6:
@@ -1362,29 +1463,38 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
 			primarylost = true;
+			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
 			break;
 		}
 		break;
 	}
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT) return DDERR_UNSUPPORTED;
+	TRACE_ENTER(3,14,this,9,dwFlags,14,hEvent);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT)
+		TRACE_RET(23,DDERR_UNSUPPORTED);
 	swapinterval=1;
 	primary->RenderScreen(primary->texture,primary);
 	swapinterval=0;
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,lpDDSCaps2,14,lpdwTotal,14,lpdwFree);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(GLEXT_NVX_gpu_memory_info)
 	{
 		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
 		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
+		TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
+		TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	else
@@ -1393,46 +1503,59 @@ HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD 
 		GlobalMemoryStatus(&memstat);
 		if(lpdwTotal) *lpdwTotal = memstat.dwTotalVirtual;
 		if(lpdwFree) *lpdwFree = memstat.dwAvailVirtual;
+		TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
+		TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 }
 HRESULT WINAPI glDirectDraw7::GetSurfaceFromDC(HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,13,hdc,14,lpDDS);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDraw::GetSurfaceFromDC: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::RestoreAllSurfaces()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDraw::RestoreAllSurfaces: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::TestCooperativeLevel()
 {
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
-	/*if(!this) return DDERR_INVALIDOBJECT;
-	if(fullscreen) return DDERR_EXCLUSIVEMODEALREADYSET;
-	return DDERR_NOEXCLUSIVEMODE;*/
 }
 HRESULT WINAPI glDirectDraw7::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER2 lpdddi, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpdddi) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpdddi,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpdddi) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	devid.guidDeviceIdentifier = device_template;
 	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER2));
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::StartModeTest(LPSIZE lpModesToTest, DWORD dwNumEntries, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,25,lpModesToTest,8,dwNumEntries,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDraw::StartModeTest: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7::EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTimeout)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,9,dwFlags,14,pSecondsUntilTimeout);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDraw::EvaluateMode: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 
@@ -1448,498 +1571,635 @@ void glDirectDraw7::GetSizes(LONG *sizes) // allocate 6 dwords
 
 void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
 {
+	TRACE_ENTER(2,14,this,14,surface);
 	for(int i = 0; i < surfacecount; i++)
 		if(surfaces[i] == surface) surfaces[i] = NULL;
 	if(surface == primary) primary = NULL;
+	TRACE_EXIT(0,0);
 }
 
 void glDirectDraw7::DeleteClipper(glDirectDrawClipper *clipper)
 {
+	TRACE_ENTER(2,14,this,clipper);
 	for(int i = 0; i < clippercount; i++)
 		if(clippers[i] == clipper) clippers[i] = NULL;
+	TRACE_EXIT(0,0);
 }
 
 // DDRAW1 wrapper
 glDirectDraw1::glDirectDraw1(glDirectDraw7 *gl_DD7)
 {
+	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
 	refcount = 1;
+	TRACE_EXIT(-1,0);
 }
 glDirectDraw1::~glDirectDraw1()
 {
+	TRACE_ENTER(1,14,this);
 	glDD7->glDD1 = NULL;
 	glDD7->Release();
+	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw1::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
 		return DD_OK;
 	}
-	return glDD7->QueryInterface(riid,ppvObj);
+	HRESULT ret = glDD7->QueryInterface(riid,ppvObj);
+	TRACE_VAR("*ppvObj",14,*ppvObj);
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 ULONG WINAPI glDirectDraw1::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirectDraw1::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDraw1::Compact()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Compact();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Compact());
 }
 HRESULT WINAPI glDirectDraw1::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter);
+	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw1::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
+		TRACE_VAR("*lplpDDSurface",14,lplpDDSurface);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
+	TRACE_EXIT(23,err);
 	return err;
 }
 HRESULT WINAPI glDirectDraw1::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw1::DuplicateSurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSurfaceDesc,14,lpContext,14,lpEnumModesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback));
 }
 HRESULT WINAPI glDirectDraw1::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw1::EnumSurfaces: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::FlipToGDISurface()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->FlipToGDISurface();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->FlipToGDISurface());
 }
 HRESULT WINAPI glDirectDraw1::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps);
+	TRACE_ENTER(3,14,this,14,lpDDDriverCaps,14,lpDDHELCaps);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps));
 }
 HRESULT WINAPI glDirectDraw1::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc);
+	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc));
 }
 HRESULT WINAPI glDirectDraw1::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetFourCCCodes(lpNumCodes,lpCodes);
+	TRACE_ENTER(3,14,this,14,lpNumCodes,14,lpCodes);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetFourCCCodes(lpNumCodes,lpCodes));
 }
 HRESULT WINAPI glDirectDraw1::GetGDISurface(LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lplpGDIDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw1::GetGDISurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw1::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetMonitorFrequency(lpdwFrequency);
+	TRACE_ENTER(2,14,this,14,lpdwFrequency);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetMonitorFrequency(lpdwFrequency));
 }
 HRESULT WINAPI glDirectDraw1::GetScanLine(LPDWORD lpdwScanLine)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetScanLine(lpdwScanLine);
+	TRACE_ENTER(2,14,this,14,lpdwScanLine);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetScanLine(lpdwScanLine));
 }
 HRESULT WINAPI glDirectDraw1::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetVerticalBlankStatus(lpbIsInVB);
+	TRACE_ENTER(2,14,this,14,lpbIsInVB);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetVerticalBlankStatus(lpbIsInVB));
 }
 HRESULT WINAPI glDirectDraw1::Initialize(GUID FAR *lpGUID)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Initialize(lpGUID);
+	TRACE_ENTER(2,14,this,24,lpGUID);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Initialize(lpGUID));
 }
 HRESULT WINAPI glDirectDraw1::RestoreDisplayMode()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->RestoreDisplayMode();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->RestoreDisplayMode());
 }
 HRESULT WINAPI glDirectDraw1::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetCooperativeLevel(hWnd,dwFlags);
+	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetCooperativeLevel(hWnd,dwFlags));
 }
 HRESULT WINAPI glDirectDraw1::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,0,0);
+	TRACE_ENTER(4,14,this,8,dwWidth,8,dwHeight,8,dwBPP);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,0,0));
 }
 HRESULT WINAPI glDirectDraw1::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->WaitForVerticalBlank(dwFlags,hEvent);
+	TRACE_ENTER(3,14,this,9,dwFlags,14,hEvent);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->WaitForVerticalBlank(dwFlags,hEvent));
 }
 // DDRAW2 wrapper
 glDirectDraw2::glDirectDraw2(glDirectDraw7 *gl_DD7)
 {
+	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
 	refcount = 1;
+	TRACE_EXIT(-1,0);
 }
 glDirectDraw2::~glDirectDraw2()
 {
+	TRACE_ENTER(1,14,this);
 	glDD7->glDD2 = NULL;
 	glDD7->Release();
+	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw2::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObject",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	return glDD7->QueryInterface(riid,ppvObj);
+	TRACE_RET(23,glDD7->QueryInterface(riid,ppvObj));
 }
 ULONG WINAPI glDirectDraw2::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirectDraw2::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDraw2::Compact()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Compact();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Compact());
 }
 HRESULT WINAPI glDirectDraw2::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter);
+	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw2::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lplpDDSurface) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lplpDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
+	TRACE_EXIT(23,err);
 	return err;
 }
 HRESULT WINAPI glDirectDraw2::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw2::DuplicateSurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSurfaceDesc,14,lpContext,14,lpEnumModesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback));
 }
 HRESULT WINAPI glDirectDraw2::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw2::EnumSurfaces: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::FlipToGDISurface()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->FlipToGDISurface();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->FlipToGDISurface());
 }
 HRESULT WINAPI glDirectDraw2::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps);
+	TRACE_ENTER(3,14,this,14,lpDDDriverCaps,14,lpDDHELCaps);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps));
 }
 HRESULT WINAPI glDirectDraw2::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc);
+	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetDisplayMode((LPDDSURFACEDESC2)lpDDSurfaceDesc));
 }
 HRESULT WINAPI glDirectDraw2::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetFourCCCodes(lpNumCodes,lpCodes);
+	TRACE_ENTER(3,14,this,14,lpNumCodes,14,lpCodes);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetFourCCCodes(lpNumCodes,lpCodes));
 }
 HRESULT WINAPI glDirectDraw2::GetGDISurface(LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lplpGDIDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw2::GetGDISurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw2::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetMonitorFrequency(lpdwFrequency);
+	TRACE_ENTER(2,14,this,14,lpdwFrequency);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetMonitorFrequency(lpdwFrequency));
 }
 HRESULT WINAPI glDirectDraw2::GetScanLine(LPDWORD lpdwScanLine)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetScanLine(lpdwScanLine);
+	TRACE_ENTER(2,14,this,14,lpdwScanLine);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetScanLine(lpdwScanLine));
 }
 HRESULT WINAPI glDirectDraw2::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetVerticalBlankStatus(lpbIsInVB);
+	TRACE_ENTER(2,14,this,14,lpbIsInVB);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetVerticalBlankStatus(lpbIsInVB));
 }
 HRESULT WINAPI glDirectDraw2::Initialize(GUID FAR *lpGUID)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Initialize(lpGUID);
+	TRACE_ENTER(2,14,this,24,lpGUID);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Initialize(lpGUID));
 }
 HRESULT WINAPI glDirectDraw2::RestoreDisplayMode()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->RestoreDisplayMode();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->RestoreDisplayMode());
 }
 HRESULT WINAPI glDirectDraw2::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetCooperativeLevel(hWnd,dwFlags);
+	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetCooperativeLevel(hWnd,dwFlags));
 }
 HRESULT WINAPI glDirectDraw2::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,dwRefreshRate,dwFlags);
+	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,dwRefreshRate,dwFlags));
 }
 HRESULT WINAPI glDirectDraw2::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->WaitForVerticalBlank(dwFlags,hEvent);
+	TRACE_ENTER(3,14,this,9,dwFlags,14,hEvent);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->WaitForVerticalBlank(dwFlags,hEvent));
 }
 HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	MEMORYSTATUS memstatus;
-	memstatus.dwLength = sizeof(MEMORYSTATUS);
-	GlobalMemoryStatus(&memstatus);
-	if(lpdwTotal) *lpdwTotal = memstatus.dwTotalVirtual;
-	if(lpdwFree) *lpdwFree = memstatus.dwAvailVirtual;
-	return DD_OK;
+	TRACE_ENTER(4,14,this,14,lpDDSCaps,14,lpdwTotal,14,lpdwFree);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(GLEXT_NVX_gpu_memory_info)
+	{
+		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
+		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
+		TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
+		TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
+	}
+	else
+	{
+		MEMORYSTATUS memstat;
+		GlobalMemoryStatus(&memstat);
+		if(lpdwTotal) *lpdwTotal = memstat.dwTotalVirtual;
+		if(lpdwFree) *lpdwFree = memstat.dwAvailVirtual;
+		TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
+		TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
+	}
 }
 // DDRAW4 wrapper
 glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
 {
+	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
 	refcount = 1;
+	TRACE_EXIT(-1,0);
 }
 glDirectDraw4::~glDirectDraw4()
 {
+	TRACE_ENTER(1,14,this);
 	glDD7->glDD4 = NULL;
 	glDD7->Release();
+	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw4::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	return glDD7->QueryInterface(riid,ppvObj);
+	TRACE_RET(23,glDD7->QueryInterface(riid,ppvObj));
 }
 ULONG WINAPI glDirectDraw4::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirectDraw4::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_RET(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDraw4::Compact()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Compact();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Compact());
 }
 HRESULT WINAPI glDirectDraw4::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter);
+	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw4::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->CreatePalette(dwFlags,lpDDColorArray,lplpDDPalette,pUnkOuter));
 }
 HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LPDIRECTDRAWSURFACE4 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lplpDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
+		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	return err;}
+	TRACE_EXIT(23,err);
+	return err;
+}
 HRESULT WINAPI glDirectDraw4::DuplicateSurface(LPDIRECTDRAWSURFACE4 lpDDSurface, LPDIRECTDRAWSURFACE4 FAR *lplpDupDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw4::DuplicateSurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return ::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback);
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSurfaceDesc,14,lpContext,14,lpEnumModesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,::EnumDisplayModes(dwFlags,lpDDSurfaceDesc,lpContext,lpEnumModesCallback));
 }
 HRESULT WINAPI glDirectDraw4::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpEnumSurfacesCallback)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw4::EnumSurfaces: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::FlipToGDISurface()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->FlipToGDISurface();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->FlipToGDISurface());
 }
 HRESULT WINAPI glDirectDraw4::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps);
+	TRACE_ENTER(3,14,this,14,lpDDDriverCaps,14,lpDDHELCaps);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetCaps(lpDDDriverCaps,lpDDHELCaps));
 }
 HRESULT WINAPI glDirectDraw4::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetDisplayMode(lpDDSurfaceDesc2);
+	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc2);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetDisplayMode(lpDDSurfaceDesc2));
 }
 HRESULT WINAPI glDirectDraw4::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetFourCCCodes(lpNumCodes,lpCodes);
+	TRACE_ENTER(3,14,this,14,lpNumCodes,14,lpCodes);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetFourCCCodes(lpNumCodes,lpCodes));
 }
 HRESULT WINAPI glDirectDraw4::GetGDISurface(LPDIRECTDRAWSURFACE4 FAR *lplpGDIDDSurface)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lplpGDIDDSurface);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirectDraw4::GetGDISurface: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::GetMonitorFrequency(LPDWORD lpdwFrequency)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetMonitorFrequency(lpdwFrequency);
+	TRACE_ENTER(2,14,this,14,lpdwFrequency);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetMonitorFrequency(lpdwFrequency));
 }
 HRESULT WINAPI glDirectDraw4::GetScanLine(LPDWORD lpdwScanLine)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetScanLine(lpdwScanLine);
+	TRACE_ENTER(2,14,this,14,lpdwScanLine);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetScanLine(lpdwScanLine));
 }
 HRESULT WINAPI glDirectDraw4::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->GetVerticalBlankStatus(lpbIsInVB);
+	TRACE_ENTER(2,14,this,14,lpbIsInVB);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetVerticalBlankStatus(lpbIsInVB));
 }
 HRESULT WINAPI glDirectDraw4::Initialize(GUID FAR *lpGUID)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->Initialize(lpGUID);
+	TRACE_ENTER(2,14,this,24,lpGUID);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->Initialize(lpGUID));
 }
 HRESULT WINAPI glDirectDraw4::RestoreDisplayMode()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->RestoreDisplayMode();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->RestoreDisplayMode());
 }
 HRESULT WINAPI glDirectDraw4::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetCooperativeLevel(hWnd,dwFlags);
+	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetCooperativeLevel(hWnd,dwFlags));
 }
 HRESULT WINAPI glDirectDraw4::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,dwRefreshRate,dwFlags);
+	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->SetDisplayMode(dwWidth,dwHeight,dwBPP,dwRefreshRate,dwFlags));
 }
 HRESULT WINAPI glDirectDraw4::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->WaitForVerticalBlank(dwFlags,hEvent);
+	TRACE_ENTER(3,14,this,9,dwFlags,14,hEvent);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->WaitForVerticalBlank(dwFlags,hEvent));
 }
 HRESULT WINAPI glDirectDraw4::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	FIXME("IDirectDraw4::GetAvailableVidMem: stub\n");
-	ERR(DDERR_GENERIC);
+	TRACE_ENTER(4,14,this,14,lpDDSCaps,14,lpdwTotal,14,lpdwFree);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->GetAvailableVidMem(lpDDSCaps,lpdwTotal,lpdwFree));
 }
 HRESULT WINAPI glDirectDraw4::GetSurfaceFromDC(HDC hdc, LPDIRECTDRAWSURFACE4 *lpDDS)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,13,hdc,14,lpDDS);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDraw4::GetSurfaceFromDC: stub\n");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw4::RestoreAllSurfaces()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->RestoreAllSurfaces();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->RestoreAllSurfaces());
 }
 HRESULT WINAPI glDirectDraw4::TestCooperativeLevel()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	return glDD7->TestCooperativeLevel();
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glDD7->TestCooperativeLevel());
 }
 HRESULT WINAPI glDirectDraw4::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER lpdddi, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpdddi) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpdddi,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpdddi) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	devid.guidDeviceIdentifier = device_template;
 	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER));
+	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
