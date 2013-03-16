@@ -34,7 +34,7 @@ public:
 	HRESULT WINAPI SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
 
 	// Internal function
-	//LPPALETTEENTRY GetPalette(DWORD *flags);
+	LPPALETTEENTRY GetPalette(DWORD *flags);
 private:
 	PALETTEENTRY palette[256];
 	DWORD flags;
