@@ -240,6 +240,9 @@ static void trace_decode_hresult(HRESULT hr)
 		case E_NOINTERFACE:
 			strcpy(str,"E_NOINTERFACE");
 			break;
+		case CLASS_E_NOAGGREGATION:
+			strcpy(str,"CLASS_E_NOAGGREGATION");
+			break;
 		default:
 			sprintf(str,"(HRESULT)0x%08X",hr);
 			break;

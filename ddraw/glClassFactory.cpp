@@ -24,24 +24,29 @@ LONG locks;
 
 ULONG WINAPI glClassFactory::AddRef()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glClassFactory::Release()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = this;
@@ -50,20 +55,25 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 	else
 	{
 		*ppvObj = NULL;
-		return E_NOINTERFACE;
+		TRACE_RET(23,E_NOINTERFACE);
 	}
+	TRACE_VAR("*ppvObj",14,*ppvObj);
+	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }
 HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,14,pUnkOuter,24,&riid,14,ppvObject);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	glDirectDraw7 *glDD7;
-	if(pUnkOuter != NULL) return CLASS_E_NOAGGREGATION;
+	if(pUnkOuter != NULL) TRACE_RET(23,CLASS_E_NOAGGREGATION);
 	if(riid == IID_IDirectDraw)
 	{
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw,ppvObject);
 		glDD7->Release();
+		TRACE_VAR("*ppvObject",14,*ppvObject);
+		TRACE_EXIT(23,S_OK);
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw2)
@@ -71,6 +81,8 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw2,ppvObject);
 		glDD7->Release();
+		TRACE_VAR("*ppvObject",14,*ppvObject);
+		TRACE_EXIT(23,S_OK);
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw4)
@@ -78,25 +90,35 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw4,ppvObject);
 		glDD7->Release();
+		TRACE_VAR("*ppvObject",14,*ppvObject);
+		TRACE_EXIT(23,S_OK);
 		return S_OK;
 	}
 	if(riid == IID_IDirectDraw7)
 	{
 		*ppvObject = new glDirectDraw7();
+		TRACE_VAR("*ppvObject",14,*ppvObject);
+		TRACE_EXIT(23,S_OK);
 		return S_OK;
 	}
 	if(riid == IID_IDirectDrawClipper)
 	{
 		*ppvObject = new glDirectDrawClipper();
+		TRACE_VAR("*ppvObject",14,*ppvObject);
+		TRACE_EXIT(23,S_OK);
+		return S_OK;
 	}
 	FIXME("glClassFactory::CreateInterface: stub");
+	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
 HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,22,fLock);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(fLock) InterlockedIncrement(&locks);
 	else InterlockedDecrement(&locks);
+	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }
 
