@@ -26,85 +26,109 @@
 
 glDirect3DVertexBuffer7::glDirect3DVertexBuffer7(glDirect3D7 *glD3D7, D3DVERTEXBUFFERDESC desc, DWORD flags)
 {
+	TRACE_ENTER(4,14,this,14,glD3D7,14,&desc,9,flags);
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	refcount = 1;
 	vbdesc = desc;
 	this->flags = flags;
+	TRACE_EXIT(-1,0);
 }
 
 glDirect3DVertexBuffer7::~glDirect3DVertexBuffer7()
 {
+	TRACE_ENTER(1,14,this);
 	glD3D7->Release();
+	TRACE_EXIT(-1,0);
 }
 
 ULONG WINAPI glDirect3DVertexBuffer7::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirect3DVertexBuffer7::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DVertexBuffer7::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!ppvObj) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
+	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
 
 HRESULT WINAPI glDirect3DVertexBuffer7::GetVertexBufferDesc(LPD3DVERTEXBUFFERDESC lpVBDesc)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpVBDesc) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpVBDesc);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpVBDesc) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	*lpVBDesc = vbdesc;
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 HRESULT WINAPI glDirect3DVertexBuffer7::Lock(DWORD dwFlags, LPVOID* lplpData, LPDWORD lpdwSize)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpData,14,lpdwSize);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DVertexBuffer7::Lock: stub");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
 
 HRESULT WINAPI glDirect3DVertexBuffer7::Optimize(LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpD3DDevice,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DVertexBuffer7::Optimize: stub");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3DVertexBuffer7::ProcessVertices(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount, 
 	LPDIRECT3DVERTEXBUFFER7 lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(8,14,this,9,dwVertexOp,8,dwDestIndex,8,dwCount,14,lpSrcBuffer,8,dwSrcIndex,14,lpD3DDevice,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DVertexBuffer7::ProcessVertices: stub");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3DVertexBuffer7::ProcessVerticesStrided(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(8,14,this,9,dwVertexOp,8,dwDestIndex,8,dwCount,14,lpVertexArray,8,dwSrcIndex,14,lpD3DDevice,9,dwFlags);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DVertexBuffer7::ProcessVerticesStrided: stub");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
 HRESULT WINAPI glDirect3DVertexBuffer7::Unlock()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DVertexBuffer7::Unlock: stub");
+	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
