@@ -28,6 +28,7 @@
 
 glDirect3DLight::glDirect3DLight()
 {
+	TRACE_ENTER(1,14,this);
 	refcount=1;
 	viewport = NULL;
 	device = NULL;
@@ -35,66 +36,85 @@ glDirect3DLight::glDirect3DLight()
 	light.dltType = D3DLIGHT_DIRECTIONAL;
 	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = 1.0f;
 	light.dvDirection = D3DVECTOR(0,0,1.0);
+	TRACE_EXIT(-1,0);
 }
 glDirect3DLight::glDirect3DLight(D3DLIGHT7 *light_in)
 {
+	TRACE_ENTER(2,14,this,14,light_in);
 	refcount=1;
 	memcpy(&light,light_in,sizeof(D3DLIGHT7));
+	TRACE_EXIT(-1,0);
 }
 
 glDirect3DLight::~glDirect3DLight()
 {
+	TRACE_ENTER(1,14,this);
+	TRACE_EXIT(-1,0);
 }
 
 ULONG WINAPI glDirect3DLight::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 ULONG WINAPI glDirect3DLight::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DLight::Initialize(LPDIRECT3D lpDirect3D)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpDirect3D);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 
 HRESULT WINAPI glDirect3DLight::QueryInterface(REFIID riid, void** ppvObj)
-{
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!ppvObj) return DDERR_INVALIDPARAMS;
+{TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
+	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
 
 void glDirect3DLight::GetLight7(LPD3DLIGHT7 lpLight7)
 {
+	TRACE_ENTER(2,14,this,14,lpLight7);
 	memcpy(lpLight7,&light,sizeof(D3DLIGHT7));
+	TRACE_EXIT(0,0);
 }
 void glDirect3DLight::SetLight7(LPD3DLIGHT7 lpLight7)
 {
+	TRACE_ENTER(2,14,this,14,lpLight7);
 	memcpy(&light,lpLight7,sizeof(D3DLIGHT7));
+	TRACE_EXIT(0,0);
 }
 
 HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpLight) return DDERR_INVALIDPARAMS;
-	if(lpLight->dwSize < sizeof(D3DLIGHT)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpLight);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	lpLight->dltType = light.dltType;
 	lpLight->dcvColor = light.dcvDiffuse;
 	lpLight->dvPosition = light.dvPosition;
@@ -106,13 +126,15 @@ HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 	lpLight->dvAttenuation2 = light.dvAttenuation2;
 	lpLight->dvTheta = light.dvTheta;
 	lpLight->dvPhi = light.dvPhi;
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 {
-	if(!this) return DDERR_INVALIDPARAMS;
-	if(!lpLight) return DDERR_INVALIDPARAMS;
-	if(lpLight->dwSize < sizeof(D3DLIGHT)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpLight);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	light.dltType = lpLight->dltType;
 	light.dcvDiffuse = lpLight->dcvColor;
 	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = light.dcvAmbient.a = 0;
@@ -137,18 +159,27 @@ HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 		}
 		else device->LightEnable(index,FALSE);
 	}
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 void glDirect3DLight::SetDevice(glDirect3DDevice7 *device, int index)
 {
+	TRACE_ENTER(3,14,this,14,device,11,index);
 	this->device = device;
 	this->index = index;
+	TRACE_EXIT(0,0);
 }
 
 void glDirect3DLight::Sync()
 {
-	if(!this) return;
+	TRACE_ENTER(1,14,this);
+	if(!this)
+	{
+		TRACE_EXIT(0,0);
+		return;
+	}
 	device->SetLight(index,&light);
 	device->LightEnable(index,TRUE);
+	TRACE_EXIT(0,0);
 }
