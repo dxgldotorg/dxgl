@@ -23,6 +23,7 @@
 
 glDirect3DMaterial3::glDirect3DMaterial3()
 {
+	TRACE_ENTER(1,14,this);
 	device = NULL;
 	current = FALSE;
 	refcount = 1;	
@@ -36,27 +37,35 @@ glDirect3DMaterial3::glDirect3DMaterial3()
 	handle = 0;
 	glD3DM2 = NULL;
 	glD3DM1 = NULL;
+	TRACE_EXIT(-1,0);
 }
 
 glDirect3DMaterial3::~glDirect3DMaterial3()
 {
+	TRACE_ENTER(1,14,this);
 	if(device) device->Release();
+	TRACE_EXIT(-1,0);
 }
 
 HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
-		return DD_OK;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
+		return D3D_OK;
 	}
 	if(riid == IID_IDirect3DMaterial3)
 	{
 		this->AddRef();
 		*ppvObj = this;
-		return DD_OK;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
+		return D3D_OK;
 	}
 	if(riid == IID_IDirect3DMaterial2)
 	{
@@ -64,6 +73,8 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glD3DM2;
 			glD3DM2->AddRef();
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
 		}
 		else
@@ -71,6 +82,8 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirect3DMaterial2(this);
 			glD3DM2 = (glDirect3DMaterial2*)*ppvObj;
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
 		}
 	}
@@ -80,6 +93,8 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glD3DM1;
 			glD3DM1->AddRef();
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
 		}
 		else
@@ -87,80 +102,104 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 			this->AddRef();
 			*ppvObj = new glDirect3DMaterial1(this);
 			glD3DM1 = (glDirect3DMaterial1*)*ppvObj;
+			TRACE_VAR("*ppvObj",14,*ppvObj);
+			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
 		}
 	}
+	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
 
 ULONG WINAPI glDirect3DMaterial3::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 
 ULONG WINAPI glDirect3DMaterial3::Release()
 {
-	if(!this) return 0;
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DMaterial3::GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	if(!lpDirect3DDevice) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDirect3DDevice,14,lpHandle);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DDevice) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice3 *dev3 = (glDirect3DDevice3*)lpDirect3DDevice;
 	if(handle)
 	{
-		if(device != dev3->GetGLD3DDev7()) return DDERR_INVALIDOBJECT;
+		if(device != dev3->GetGLD3DDev7()) TRACE_RET(23,DDERR_INVALIDOBJECT);
 		*lpHandle = handle;
+		TRACE_VAR("*lpHandle",9,*lpHandle);
+		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
 	device = dev3->GetGLD3DDev7();
 	handle = device->AddMaterial(this);
-	if(handle == -1) return DDERR_OUTOFMEMORY;
+	if(handle == -1) TRACE_RET(23,DDERR_OUTOFMEMORY);
 	*lpHandle = handle;
+	TRACE_VAR("*lpHandle",9,*lpHandle);
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 HRESULT WINAPI glDirect3DMaterial3::GetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	if(lpMat->dwSize < sizeof(D3DMATERIAL)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(lpMat->dwSize < sizeof(D3DMATERIAL)) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	memcpy(lpMat,&material,sizeof(D3DMATERIAL));
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 HRESULT WINAPI glDirect3DMaterial3::SetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	if(lpMat->dwSize != sizeof(D3DMATERIAL)) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(lpMat->dwSize != sizeof(D3DMATERIAL)) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	memcpy(&material,lpMat,sizeof(D3DMATERIAL));
 	if(device && current) Sync();
+	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 void glDirect3DMaterial3::unbind()
 {
+	TRACE_ENTER(1,14,this);
 	device = NULL;
 	current = false;
 	handle = 0;
+	TRACE_EXIT(0,0);
 }
 
 void glDirect3DMaterial3::SetCurrent(bool current)
 {
-	if(this->current == current) return;
+	TRACE_ENTER(2,14,this,21,current);
+	if(this->current == current)
+	{
+		TRACE_EXIT(0,0);
+		return;
+	}
 	this->current = current;
 	if(current) Sync();
+	TRACE_EXIT(0,0);
 }
 
 void glDirect3DMaterial3::Sync()
 {
+	TRACE_ENTER(1,14,this);
 	D3DMATERIAL7 mat7;
 	mat7.diffuse = material.diffuse;
 	mat7.ambient = material.ambient;
@@ -168,151 +207,188 @@ void glDirect3DMaterial3::Sync()
 	mat7.emissive = material.emissive;
 	mat7.power = material.power;
 	device->SetMaterial(&mat7);
+	TRACE_EXIT(0,0);
 }
 
 glDirect3DMaterial2::glDirect3DMaterial2(glDirect3DMaterial3 *glD3DM3)
 {
+	TRACE_ENTER(2,14,this,14,glD3DM3);
 	refcount = 1;
 	this->glD3DM3 = glD3DM3;
+	TRACE_EXIT(-1,0);
 }
 
 glDirect3DMaterial2::~glDirect3DMaterial2()
 {
+	TRACE_ENTER(1,14,this);
 	glD3DM3->glD3DM2 = NULL;
 	glD3DM3->Release();
+	TRACE_EXIT(-1,0);
 }
 
 ULONG WINAPI glDirect3DMaterial2::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 
 ULONG WINAPI glDirect3DMaterial2::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DMaterial2::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	return glD3DM3->QueryInterface(riid,ppvObj);
+	TRACE_RET(23,glD3DM3->QueryInterface(riid,ppvObj));
 }
 
 HRESULT WINAPI glDirect3DMaterial2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	if(!lpDirect3DDevice) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDirect3DDevice,14,lpHandle);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DDevice) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice2 *glD3DDev2 = (glDirect3DDevice2*)lpDirect3DDevice;
 	glDirect3DDevice3 *glD3DDev3;
 	glD3DDev2->QueryInterface(IID_IDirect3DDevice3,(void**)&glD3DDev3);
 	HRESULT ret = glD3DM3->GetHandle(glD3DDev3,lpHandle);
 	glD3DDev3->Release();
+	TRACE_EXIT(23,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DMaterial2::GetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	return glD3DM3->GetMaterial(lpMat);
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glD3DM3->GetMaterial(lpMat));
 }
 HRESULT WINAPI glDirect3DMaterial2::SetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return  DDERR_INVALIDOBJECT;
-	return glD3DM3->SetMaterial(lpMat);
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glD3DM3->SetMaterial(lpMat));
 }
 
 glDirect3DMaterial1::glDirect3DMaterial1(glDirect3DMaterial3 *glD3DM3)
 {
+	TRACE_ENTER(2,14,this,14,glD3DM3);
 	refcount = 1;
 	this->glD3DM3 = glD3DM3;
+	TRACE_EXIT(-1,0);
 }
 
 glDirect3DMaterial1::~glDirect3DMaterial1()
 {
+	TRACE_ENTER(1,14,this);
 	glD3DM3->glD3DM1 = NULL;
 	glD3DM3->Release();
+	TRACE_EXIT(-1,0);
 }
 
 ULONG WINAPI glDirect3DMaterial1::AddRef()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	refcount++;
+	TRACE_EXIT(8,refcount);
 	return refcount;
 }
 
 ULONG WINAPI glDirect3DMaterial1::Release()
 {
-	if(!this) return 0;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DMaterial1::QueryInterface(REFIID riid, void** ppvObj)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
 		*ppvObj = this;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	return glD3DM3->QueryInterface(riid,ppvObj);
+	TRACE_RET(23,glD3DM3->QueryInterface(riid,ppvObj));
 }
 
 HRESULT WINAPI glDirect3DMaterial1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DMATERIALHANDLE lpHandle)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	if(!lpDirect3DDevice) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(3,14,this,14,lpDirect3DDevice,14,lpHandle);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DDevice) TRACE_RET(23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice1 *glD3DDev1 = (glDirect3DDevice1*)lpDirect3DDevice;
 	glDirect3DDevice3 *glD3DDev3;
 	glD3DDev1->QueryInterface(IID_IDirect3DDevice3,(void**)&glD3DDev3);
 	HRESULT ret = glD3DM3->GetHandle(glD3DDev3,lpHandle);
 	glD3DDev3->Release();
+	TRACE_EXIT(23,ret);
 	return ret;
 }
 
 HRESULT WINAPI glDirect3DMaterial1::GetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
-	return glD3DM3->GetMaterial(lpMat);
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glD3DM3->GetMaterial(lpMat));
 }
 
 HRESULT WINAPI glDirect3DMaterial1::Initialize(LPDIRECT3D lpDirect3D)
 {
-	if(!this) return DDERR_INVALIDOBJECT;
+	TRACE_ENTER(2,14,this,14,lpDirect3D);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 
 HRESULT WINAPI glDirect3DMaterial1::Reserve()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }
 
 HRESULT WINAPI glDirect3DMaterial1::SetMaterial(LPD3DMATERIAL lpMat)
 {
-	if(!this) return  DDERR_INVALIDOBJECT;
-	return glD3DM3->SetMaterial(lpMat);
+	TRACE_ENTER(2,14,this,14,lpMat);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_RET(23,glD3DM3->SetMaterial(lpMat));
 }
 
 HRESULT WINAPI glDirect3DMaterial1::Unreserve()
 {
-	if(!this) return DDERR_INVALIDPARAMS;
+	TRACE_ENTER(1,14,this);
+	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }
