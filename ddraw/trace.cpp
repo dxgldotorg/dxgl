@@ -46,6 +46,7 @@
 24 - GUID pointer
 25 - SIZE pointer
 26 - RECT pointer
+27 - D3DRENDERSTATETYPE
 */
 
 #ifdef _TRACE
@@ -60,195 +61,554 @@ static void trace_decode_hresult(HRESULT hr)
 	char str[64];
 	switch(hr)
 	{
-		case DD_OK:
-			strcpy(str,"DD_OK");
-			break;
-		case DD_FALSE:
-			strcpy(str,"DD_FALSE");
-			break;
-		case DDERR_ALREADYINITIALIZED:
-			strcpy(str,"DDERR_ALREADYINITIALIZED");
-			break;
-		case DDERR_CANNOTATTACHSURFACE:
-			strcpy(str,"DDERR_CANNOTATTACHSURFACE");
-			break;
-		case DDERR_CANNOTDETACHSURFACE:
-			strcpy(str,"DDERR_CANNOTDETACHSURFACE");
-			break;
-		case DDERR_CURRENTLYNOTAVAIL:
-			strcpy(str,"DDERR_CURRENTLYNOTAVAIL");
-			break;
-		case DDERR_EXCEPTION:
-			strcpy(str,"DDERR_EXCEPTION");
-			break;
-		case DDERR_GENERIC:
-			strcpy(str,"DDERR_GENERIC");
-			break;
-		case DDERR_INCOMPATIBLEPRIMARY:
-			strcpy(str,"DDERR_INCOMPATIBLEPRIMARY");
-			break;
-		case DDERR_INVALIDCAPS:
-			strcpy(str,"DDERR_INVALIDCAPS");
-			break;
-		case DDERR_INVALIDCLIPLIST:
-			strcpy(str,"DDERR_INVALIDCLIPLIST");
-			break;
-		case DDERR_INVALIDMODE:
-			strcpy(str,"DDERR_INVALIDMODE");
-			break;
-		case DDERR_INVALIDPARAMS:
-			strcpy(str,"DDERR_INVALIDPARAMS");
-			break;
-		case DDERR_INVALIDPIXELFORMAT:
-			strcpy(str,"DDERR_INVALIDPIXELFORMAT");
-			break;
-		case DDERR_INVALIDRECT:
-			strcpy(str,"DDERR_INVALIDRECT");
-			break;
-		case DDERR_NOTFOUND:
-			strcpy(str,"DDERR_NOTFOUND");
-			break;
-		case DDERR_OUTOFMEMORY:
-			strcpy(str,"DDERR_OUTOFMEMORY");
-			break;
-		case DDERR_OUTOFVIDEOMEMORY:
-			strcpy(str,"DDERR_OUTOFVIDEOMEMORY");
-			break;
-		case DDERR_SURFACEALREADYATTACHED:
-			strcpy(str,"DDERR_SURFACEALREADYATTACHED");
-			break;
-		case DDERR_SURFACEBUSY:
-			strcpy(str,"DDERR_SURFACEBUSY");
-			break;
-		case DDERR_CANTLOCKSURFACE:
-			strcpy(str,"DDERR_CANTLOCKSURFACE");
-			break;
-		case DDERR_SURFACELOST:
-			strcpy(str,"DDERR_SURFACELOST");
-			break;
-		case DDERR_SURFACENOTATTACHED:
-			strcpy(str,"DDERR_SURFACENOTATTACHED");
-			break;
-		case DDERR_UNSUPPORTED:
-			strcpy(str,"DDERR_UNSUPPORTED");
-			break;
-		case DDERR_UNSUPPORTEDFORMAT:
-			strcpy(str,"DDERR_UNSUPPORTEDFORMAT");
-			break;
-		case DDERR_UNSUPPORTEDMASK:
-			strcpy(str,"DDERR_UNSUPPORTEDMASK");
-			break;
-		case DDERR_WASSTILLDRAWING:
-			strcpy(str,"DDERR_WASSTILLDRAWING");
-			break;
-		case DDERR_INVALIDDIRECTDRAWGUID:
-			strcpy(str,"DDERR_INVALIDDIRECTDRAWGUID");
-			break;
-		case DDERR_DIRECTDRAWALREADYCREATED:
-			strcpy(str,"DDERR_DIRECTDRAWALREADYCREATED");
-			break;
-		case DDERR_NODIRECTDRAWHW:
-			strcpy(str,"DDERR_NODIRECTDRAWHW");
-			break;
-		case DDERR_PRIMARYSURFACEALREADYEXISTS:
-			strcpy(str,"DDERR_PRIMARYSURFACEALREADYEXISTS");
-			break;
-		case DDERR_CLIPPERISUSINGHWND:
-			strcpy(str,"DDERR_CLIPPERISUSINGHWND");
-			break;
-		case DDERR_NOCLIPPERATTACHED:
-			strcpy(str,"DDERR_NOCLIPPERATTACHED");
-			break;
-		case DDERR_NOHWND:
-			strcpy(str,"DDERR_NOHWND");
-			break;
-		case DDERR_HWNDSUBCLASSED:
-			strcpy(str,"DDERR_HWNDSUBCLASSED");
-			break;
-		case DDERR_HWNDALREADYSET:
-			strcpy(str,"DDERR_HWNDALREADYSET");
-			break;
-		case DDERR_NOPALETTEATTACHED:
-			strcpy(str,"DDERR_NOPALETTEATTACHED");
-			break;
-		case DDERR_NOPALETTEHW:
-			strcpy(str,"DDERR_NOPALETTEHW");
-			break;
-		case DDERR_BLTFASTCANTCLIP:
-			strcpy(str,"DDERR_BLTFASTCANTCLIP");
-			break;
-		case DDERR_OVERLAYNOTVISIBLE:
-			strcpy(str,"DDERR_OVERLAYNOTVISIBLE");
-			break;
-		case DDERR_NOOVERLAYDEST:
-			strcpy(str,"DDERR_NOOVERLAYDEST");
-			break;
-		case DDERR_EXCLUSIVEMODEALREADYSET:
-			strcpy(str,"DDERR_EXCLUSIVEMODEALREADYSET");
-			break;
-		case DDERR_NOTFLIPPABLE:
-			strcpy(str,"DDERR_NOTFLIPPABLE");
-			break;
-		case DDERR_CANTDUPLICATE:
-			strcpy(str,"DDERR_CANTDUPLICATE");
-			break;
-		case DDERR_NOTLOCKED:
-			strcpy(str,"DDERR_NOTLOCKED");
-			break;
-		case DDERR_CANTCREATEDC:
-			strcpy(str,"DDERR_CANTCREATEDC");
-			break;
-		case DDERR_NODC:
-			strcpy(str,"DDERR_NODC");
-			break;
-		case DDERR_WRONGMODE:
-			strcpy(str,"DDERR_WRONGMODE");
-			break;
-		case DDERR_IMPLICITLYCREATED:
-			strcpy(str,"DDERR_IMPLICITLYCREATED");
-			break;
-		case DDERR_NOTPALETTIZED:
-			strcpy(str,"DDERR_NOTPALETTIZED");
-			break;
-		case DDERR_UNSUPPORTEDMODE:
-			strcpy(str,"DDERR_UNSUPPORTEDMODE");
-			break;
-		case DDERR_INVALIDSURFACETYPE:
-			strcpy(str,"DDERR_INVALIDSURFACETYPE");
-			break;
-		case DDERR_NOTONMIPMAPSUBLEVEL:
-			strcpy(str,"DDERR_NOTONMIPMAPSUBLEVEL");
-			break;
-		case DDERR_DCALREADYCREATED:
-			strcpy(str,"DDERR_DCALREADYCREATED");
-			break;
-		case DDERR_CANTPAGELOCK:
-			strcpy(str,"DDERR_CANTPAGELOCK");
-			break;
-		case DDERR_CANTPAGEUNLOCK:
-			strcpy(str,"DDERR_CANTPAGEUNLOCK");
-			break;
-		case DDERR_NOTPAGELOCKED:
-			strcpy(str,"DDERR_NOTPAGELOCKED");
-			break;
-		case DDERR_MOREDATA:
-			strcpy(str,"DDERR_MOREDATA");
-			break;
-		case DDERR_NOTINITIALIZED:
-			strcpy(str,"DDERR_NOTINITIALIZED");
-			break;
-		case E_NOINTERFACE:
-			strcpy(str,"E_NOINTERFACE");
-			break;
-		case CLASS_E_NOAGGREGATION:
-			strcpy(str,"CLASS_E_NOAGGREGATION");
-			break;
-		default:
-			sprintf(str,"(HRESULT)0x%08X",hr);
-			break;
+	case DD_OK:
+		strcpy(str,"DD_OK");
+		break;
+	case DD_FALSE:
+		strcpy(str,"DD_FALSE");
+		break;
+	case DDERR_ALREADYINITIALIZED:
+		strcpy(str,"DDERR_ALREADYINITIALIZED");
+		break;
+	case DDERR_CANNOTATTACHSURFACE:
+		strcpy(str,"DDERR_CANNOTATTACHSURFACE");
+		break;
+	case DDERR_CANNOTDETACHSURFACE:
+		strcpy(str,"DDERR_CANNOTDETACHSURFACE");
+		break;
+	case DDERR_CURRENTLYNOTAVAIL:
+		strcpy(str,"DDERR_CURRENTLYNOTAVAIL");
+		break;
+	case DDERR_EXCEPTION:
+		strcpy(str,"DDERR_EXCEPTION");
+		break;
+	case DDERR_GENERIC:
+		strcpy(str,"DDERR_GENERIC");
+		break;
+	case DDERR_INCOMPATIBLEPRIMARY:
+		strcpy(str,"DDERR_INCOMPATIBLEPRIMARY");
+		break;
+	case DDERR_INVALIDCAPS:
+		strcpy(str,"DDERR_INVALIDCAPS");
+		break;
+	case DDERR_INVALIDCLIPLIST:
+		strcpy(str,"DDERR_INVALIDCLIPLIST");
+		break;
+	case DDERR_INVALIDMODE:
+		strcpy(str,"DDERR_INVALIDMODE");
+		break;
+	case DDERR_INVALIDPARAMS:
+		strcpy(str,"DDERR_INVALIDPARAMS");
+		break;
+	case DDERR_INVALIDPIXELFORMAT:
+		strcpy(str,"DDERR_INVALIDPIXELFORMAT");
+		break;
+	case DDERR_INVALIDRECT:
+		strcpy(str,"DDERR_INVALIDRECT");
+		break;
+	case DDERR_NOTFOUND:
+		strcpy(str,"DDERR_NOTFOUND");
+		break;
+	case DDERR_OUTOFMEMORY:
+		strcpy(str,"DDERR_OUTOFMEMORY");
+		break;
+	case DDERR_OUTOFVIDEOMEMORY:
+		strcpy(str,"DDERR_OUTOFVIDEOMEMORY");
+		break;
+	case DDERR_SURFACEALREADYATTACHED:
+		strcpy(str,"DDERR_SURFACEALREADYATTACHED");
+		break;
+	case DDERR_SURFACEBUSY:
+		strcpy(str,"DDERR_SURFACEBUSY");
+		break;
+	case DDERR_CANTLOCKSURFACE:
+		strcpy(str,"DDERR_CANTLOCKSURFACE");
+		break;
+	case DDERR_SURFACELOST:
+		strcpy(str,"DDERR_SURFACELOST");
+		break;
+	case DDERR_SURFACENOTATTACHED:
+		strcpy(str,"DDERR_SURFACENOTATTACHED");
+		break;
+	case DDERR_UNSUPPORTED:
+		strcpy(str,"DDERR_UNSUPPORTED");
+		break;
+	case DDERR_UNSUPPORTEDFORMAT:
+		strcpy(str,"DDERR_UNSUPPORTEDFORMAT");
+		break;
+	case DDERR_UNSUPPORTEDMASK:
+		strcpy(str,"DDERR_UNSUPPORTEDMASK");
+		break;
+	case DDERR_WASSTILLDRAWING:
+		strcpy(str,"DDERR_WASSTILLDRAWING");
+		break;
+	case DDERR_INVALIDDIRECTDRAWGUID:
+		strcpy(str,"DDERR_INVALIDDIRECTDRAWGUID");
+		break;
+	case DDERR_DIRECTDRAWALREADYCREATED:
+		strcpy(str,"DDERR_DIRECTDRAWALREADYCREATED");
+		break;
+	case DDERR_NODIRECTDRAWHW:
+		strcpy(str,"DDERR_NODIRECTDRAWHW");
+		break;
+	case DDERR_PRIMARYSURFACEALREADYEXISTS:
+		strcpy(str,"DDERR_PRIMARYSURFACEALREADYEXISTS");
+		break;
+	case DDERR_CLIPPERISUSINGHWND:
+		strcpy(str,"DDERR_CLIPPERISUSINGHWND");
+		break;
+	case DDERR_NOCLIPPERATTACHED:
+		strcpy(str,"DDERR_NOCLIPPERATTACHED");
+		break;
+	case DDERR_NOHWND:
+		strcpy(str,"DDERR_NOHWND");
+		break;
+	case DDERR_HWNDSUBCLASSED:
+		strcpy(str,"DDERR_HWNDSUBCLASSED");
+		break;
+	case DDERR_HWNDALREADYSET:
+		strcpy(str,"DDERR_HWNDALREADYSET");
+		break;
+	case DDERR_NOPALETTEATTACHED:
+		strcpy(str,"DDERR_NOPALETTEATTACHED");
+		break;
+	case DDERR_NOPALETTEHW:
+		strcpy(str,"DDERR_NOPALETTEHW");
+		break;
+	case DDERR_BLTFASTCANTCLIP:
+		strcpy(str,"DDERR_BLTFASTCANTCLIP");
+		break;
+	case DDERR_OVERLAYNOTVISIBLE:
+		strcpy(str,"DDERR_OVERLAYNOTVISIBLE");
+		break;
+	case DDERR_NOOVERLAYDEST:
+		strcpy(str,"DDERR_NOOVERLAYDEST");
+		break;
+	case DDERR_EXCLUSIVEMODEALREADYSET:
+		strcpy(str,"DDERR_EXCLUSIVEMODEALREADYSET");
+		break;
+	case DDERR_NOTFLIPPABLE:
+		strcpy(str,"DDERR_NOTFLIPPABLE");
+		break;
+	case DDERR_CANTDUPLICATE:
+		strcpy(str,"DDERR_CANTDUPLICATE");
+		break;
+	case DDERR_NOTLOCKED:
+		strcpy(str,"DDERR_NOTLOCKED");
+		break;
+	case DDERR_CANTCREATEDC:
+		strcpy(str,"DDERR_CANTCREATEDC");
+		break;
+	case DDERR_NODC:
+		strcpy(str,"DDERR_NODC");
+		break;
+	case DDERR_WRONGMODE:
+		strcpy(str,"DDERR_WRONGMODE");
+		break;
+	case DDERR_IMPLICITLYCREATED:
+		strcpy(str,"DDERR_IMPLICITLYCREATED");
+		break;
+	case DDERR_NOTPALETTIZED:
+		strcpy(str,"DDERR_NOTPALETTIZED");
+		break;
+	case DDERR_UNSUPPORTEDMODE:
+		strcpy(str,"DDERR_UNSUPPORTEDMODE");
+		break;
+	case DDERR_INVALIDSURFACETYPE:
+		strcpy(str,"DDERR_INVALIDSURFACETYPE");
+		break;
+	case DDERR_NOTONMIPMAPSUBLEVEL:
+		strcpy(str,"DDERR_NOTONMIPMAPSUBLEVEL");
+		break;
+	case DDERR_DCALREADYCREATED:
+		strcpy(str,"DDERR_DCALREADYCREATED");
+		break;
+	case DDERR_CANTPAGELOCK:
+		strcpy(str,"DDERR_CANTPAGELOCK");
+		break;
+	case DDERR_CANTPAGEUNLOCK:
+		strcpy(str,"DDERR_CANTPAGEUNLOCK");
+		break;
+	case DDERR_NOTPAGELOCKED:
+		strcpy(str,"DDERR_NOTPAGELOCKED");
+		break;
+	case DDERR_MOREDATA:
+		strcpy(str,"DDERR_MOREDATA");
+		break;
+	case DDERR_NOTINITIALIZED:
+		strcpy(str,"DDERR_NOTINITIALIZED");
+		break;
+	case E_NOINTERFACE:
+		strcpy(str,"E_NOINTERFACE");
+		break;
+	case CLASS_E_NOAGGREGATION:
+		strcpy(str,"CLASS_E_NOAGGREGATION");
+		break;
+	default:
+		sprintf(str,"(HRESULT)0x%08X",hr);
+		break;
 	}
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 }
+
+static void trace_decode_d3drenderstate(DWORD rs)
+{
+	DWORD byteswritten;
+	char str[64];
+	switch(rs)
+	{
+	case D3DRENDERSTATE_TEXTUREHANDLE:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREHANDLE");
+		break;
+	case D3DRENDERSTATE_ANTIALIAS:
+		strcpy(str,"D3DRENDERSTATE_ANTIALIAS");
+		break;
+	case D3DRENDERSTATE_TEXTUREADDRESS:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREADDRESS");
+		break;
+	case D3DRENDERSTATE_TEXTUREPERSPECTIVE:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREPERSPECTIVE");
+		break;
+	case D3DRENDERSTATE_WRAPU:
+		strcpy(str,"D3DRENDERSTATE_WRAPU");
+		break;
+	case D3DRENDERSTATE_WRAPV:
+		strcpy(str,"D3DRENDERSTATE_WRAPV");
+		break;
+	case D3DRENDERSTATE_ZENABLE:
+		strcpy(str,"D3DRENDERSTATE_ZENABLE");
+		break;
+	case D3DRENDERSTATE_FILLMODE:
+		strcpy(str,"D3DRENDERSTATE_FILLMODE");
+		break;
+	case D3DRENDERSTATE_SHADEMODE:
+		strcpy(str,"D3DRENDERSTATE_SHADEMODE");
+		break;
+	case D3DRENDERSTATE_LINEPATTERN:
+		strcpy(str,"D3DRENDERSTATE_LINEPATTERN");
+		break;
+	case D3DRENDERSTATE_MONOENABLE:
+		strcpy(str,"D3DRENDERSTATE_MONOENABLE");
+		break;
+	case D3DRENDERSTATE_ROP2:
+		strcpy(str,"D3DRENDERSTATE_ROP2");
+		break;
+	case D3DRENDERSTATE_PLANEMASK:
+		strcpy(str,"D3DRENDERSTATE_PLANEMASK");
+		break;
+	case D3DRENDERSTATE_ZWRITEENABLE:
+		strcpy(str,"D3DRENDERSTATE_ZWRITEENABLE");
+		break;
+	case D3DRENDERSTATE_ALPHATESTENABLE:
+		strcpy(str,"D3DRENDERSTATE_ALPHATESTENABLE");
+		break;
+	case D3DRENDERSTATE_LASTPIXEL:
+		strcpy(str,"D3DRENDERSTATE_LASTPIXEL");
+		break;
+	case D3DRENDERSTATE_TEXTUREMAG:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREMAG");
+		break;
+	case D3DRENDERSTATE_TEXTUREMIN:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREMIN");
+		break;
+	case D3DRENDERSTATE_SRCBLEND:
+		strcpy(str,"D3DRENDERSTATE_SRCBLEND");
+		break;
+	case D3DRENDERSTATE_DESTBLEND:
+		strcpy(str,"D3DRENDERSTATE_DESTBLEND");
+		break;
+	case D3DRENDERSTATE_TEXTUREMAPBLEND:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREMAPBLEND");
+		break;
+	case D3DRENDERSTATE_CULLMODE:
+		strcpy(str,"D3DRENDERSTATE_CULLMODE");
+		break;
+	case D3DRENDERSTATE_ZFUNC:
+		strcpy(str,"D3DRENDERSTATE_ZFUNC");
+		break;
+	case D3DRENDERSTATE_ALPHAREF:
+		strcpy(str,"D3DRENDERSTATE_ALPHAREF");
+		break;
+	case D3DRENDERSTATE_ALPHAFUNC:
+		strcpy(str,"D3DRENDERSTATE_ALPHAFUNC");
+		break;
+	case D3DRENDERSTATE_DITHERENABLE:
+		strcpy(str,"D3DRENDERSTATE_DITHERENABLE");
+		break;
+	case D3DRENDERSTATE_ALPHABLENDENABLE:
+		strcpy(str,"D3DRENDERSTATE_ALPHABLENDENABLE");
+		break;
+	case D3DRENDERSTATE_FOGENABLE:
+		strcpy(str,"D3DRENDERSTATE_FOGENABLE");
+		break;
+	case D3DRENDERSTATE_SPECULARENABLE:
+		strcpy(str,"D3DRENDERSTATE_SPECULARENABLE");
+		break;
+	case D3DRENDERSTATE_ZVISIBLE:
+		strcpy(str,"D3DRENDERSTATE_ZVISIBLE");
+		break;
+	case D3DRENDERSTATE_SUBPIXEL:
+		strcpy(str,"D3DRENDERSTATE_SUBPIXEL");
+		break;
+	case D3DRENDERSTATE_SUBPIXELX:
+		strcpy(str,"D3DRENDERSTATE_SUBPIXELX");
+		break;
+	case D3DRENDERSTATE_STIPPLEDALPHA:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEDALPHA");
+		break;
+	case D3DRENDERSTATE_FOGCOLOR:
+		strcpy(str,"D3DRENDERSTATE_FOGCOLOR");
+		break;
+	case D3DRENDERSTATE_FOGTABLEMODE:
+		strcpy(str,"D3DRENDERSTATE_FOGTABLEMODE");
+		break;
+	case D3DRENDERSTATE_FOGSTART:
+		strcpy(str,"D3DRENDERSTATE_FOGSTART");
+		break;
+	case D3DRENDERSTATE_FOGEND:
+		strcpy(str,"D3DRENDERSTATE_FOGEND");
+		break;
+	case D3DRENDERSTATE_FOGDENSITY:
+		strcpy(str,"D3DRENDERSTATE_FOGDENSITY");
+		break;
+	case D3DRENDERSTATE_STIPPLEENABLE:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEENABLE");
+		break;
+	case D3DRENDERSTATE_EDGEANTIALIAS:
+		strcpy(str,"D3DRENDERSTATE_EDGEANTIALIAS");
+		break;
+	case D3DRENDERSTATE_COLORKEYENABLE:
+		strcpy(str,"D3DRENDERSTATE_COLORKEYENABLE");
+		break;
+	case 42: // DX5 D3DRENDERSTATE_ALPHABLENDENABLE
+		strcpy(str,"D3DRENDERSTATE_ALPHABLENDENABLE(DX5)");
+		break;
+	case D3DRENDERSTATE_BORDERCOLOR:
+		strcpy(str,"D3DRENDERSTATE_BORDERCOLOR");
+		break;
+	case D3DRENDERSTATE_TEXTUREADDRESSU:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREADDRESSU");
+		break;
+	case D3DRENDERSTATE_TEXTUREADDRESSV:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREADDRESSV");
+		break;
+	case D3DRENDERSTATE_MIPMAPLODBIAS:
+		strcpy(str,"D3DRENDERSTATE_MIPMAPLODBIAS");
+		break;
+	case D3DRENDERSTATE_ZBIAS:
+		strcpy(str,"D3DRENDERSTATE_ZBIAS");
+		break;
+	case D3DRENDERSTATE_RANGEFOGENABLE:
+		strcpy(str,"D3DRENDERSTATE_RANGEFOGENABLE");
+		break;
+	case D3DRENDERSTATE_ANISOTROPY:
+		strcpy(str,"D3DRENDERSTATE_ANISOTROPY");
+		break;
+	case D3DRENDERSTATE_FLUSHBATCH:
+		strcpy(str,"D3DRENDERSTATE_FLUSHBATCH");
+		break;
+	case D3DRENDERSTATE_TRANSLUCENTSORTINDEPENDENT:
+		strcpy(str,"D3DRENDERSTATE_TRANSLUCENTSORTINDEPENDENT");
+		break;
+	case D3DRENDERSTATE_STENCILENABLE:
+		strcpy(str,"D3DRENDERSTATE_STENCILENABLE");
+		break;
+	case D3DRENDERSTATE_STENCILFAIL:
+		strcpy(str,"D3DRENDERSTATE_STENCILFAIL");
+		break;
+	case D3DRENDERSTATE_STENCILZFAIL:
+		strcpy(str,"D3DRENDERSTATE_STENCILZFAIL");
+		break;
+	case D3DRENDERSTATE_STENCILPASS:
+		strcpy(str,"D3DRENDERSTATE_STENCILPASS");
+		break;
+	case D3DRENDERSTATE_STENCILFUNC:
+		strcpy(str,"D3DRENDERSTATE_STENCILFUNC");
+		break;
+	case D3DRENDERSTATE_STENCILREF:
+		strcpy(str,"D3DRENDERSTATE_STENCILREF");
+		break;
+	case D3DRENDERSTATE_STENCILMASK:
+		strcpy(str,"D3DRENDERSTATE_STENCILMASK");
+		break;
+	case D3DRENDERSTATE_STENCILWRITEMASK:
+		strcpy(str,"D3DRENDERSTATE_STENCILWRITEMASK");
+		break;
+	case D3DRENDERSTATE_TEXTUREFACTOR:
+		strcpy(str,"D3DRENDERSTATE_TEXTUREFACTOR");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN00:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN00");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN01:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN01");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN02:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN02");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN03:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN03");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN04:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN04");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN05:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN05");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN06:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN06");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN07:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN07");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN08:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN08");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN09:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN09");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN10:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN10");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN11:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN11");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN12:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN12");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN13:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN13");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN14:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN14");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN15:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN15");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN16:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN16");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN17:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN17");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN18:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN18");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN19:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN19");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN20:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN20");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN21:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN21");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN22:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN22");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN23:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN23");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN24:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN24");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN25:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN25");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN26:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN26");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN27:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN27");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN28:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN28");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN29:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN29");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN30:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN30");
+		break;
+	case D3DRENDERSTATE_STIPPLEPATTERN31:
+		strcpy(str,"D3DRENDERSTATE_STIPPLEPATTERN31");
+		break;
+	case D3DRENDERSTATE_WRAP0:
+		strcpy(str,"D3DRENDERSTATE_WRAP0");
+		break;
+	case D3DRENDERSTATE_WRAP1:
+		strcpy(str,"D3DRENDERSTATE_WRAP1");
+		break;
+	case D3DRENDERSTATE_WRAP2:
+		strcpy(str,"D3DRENDERSTATE_WRAP2");
+		break;
+	case D3DRENDERSTATE_WRAP3:
+		strcpy(str,"D3DRENDERSTATE_WRAP3");
+		break;
+	case D3DRENDERSTATE_WRAP4:
+		strcpy(str,"D3DRENDERSTATE_WRAP4");
+		break;
+	case D3DRENDERSTATE_WRAP5:
+		strcpy(str,"D3DRENDERSTATE_WRAP5");
+		break;
+	case D3DRENDERSTATE_WRAP6:
+		strcpy(str,"D3DRENDERSTATE_WRAP6");
+		break;
+	case D3DRENDERSTATE_WRAP7:
+		strcpy(str,"D3DRENDERSTATE_WRAP7");
+		break;
+	case D3DRENDERSTATE_CLIPPING:
+		strcpy(str,"D3DRENDERSTATE_CLIPPING");
+		break;
+	case D3DRENDERSTATE_LIGHTING:
+		strcpy(str,"D3DRENDERSTATE_LIGHTING");
+		break;
+	case D3DRENDERSTATE_EXTENTS:
+		strcpy(str,"D3DRENDERSTATE_EXTENTS");
+		break;
+	case D3DRENDERSTATE_AMBIENT:
+		strcpy(str,"D3DRENDERSTATE_AMBIENT");
+		break;
+	case D3DRENDERSTATE_FOGVERTEXMODE:
+		strcpy(str,"D3DRENDERSTATE_FOGVERTEXMODE");
+		break;
+	case D3DRENDERSTATE_COLORVERTEX:
+		strcpy(str,"D3DRENDERSTATE_COLORVERTEX");
+		break;
+	case D3DRENDERSTATE_LOCALVIEWER:
+		strcpy(str,"D3DRENDERSTATE_LOCALVIEWER");
+		break;
+	case D3DRENDERSTATE_NORMALIZENORMALS:
+		strcpy(str,"D3DRENDERSTATE_NORMALIZENORMALS");
+		break;
+	case D3DRENDERSTATE_COLORKEYBLENDENABLE:
+		strcpy(str,"D3DRENDERSTATE_COLORKEYBLENDENABLE");
+		break;
+	case D3DRENDERSTATE_DIFFUSEMATERIALSOURCE:
+		strcpy(str,"D3DRENDERSTATE_DIFFUSEMATERIALSOURCE");
+		break;
+	case D3DRENDERSTATE_SPECULARMATERIALSOURCE:
+		strcpy(str,"D3DRENDERSTATE_SPECULARMATERIALSOURCE");
+		break;
+	case D3DRENDERSTATE_AMBIENTMATERIALSOURCE:
+		strcpy(str,"D3DRENDERSTATE_AMBIENTMATERIALSOURCE");
+		break;
+	case D3DRENDERSTATE_EMISSIVEMATERIALSOURCE:
+		strcpy(str,"D3DRENDERSTATE_EMISSIVEMATERIALSOURCE");
+		break;
+	case D3DRENDERSTATE_VERTEXBLEND:
+		strcpy(str,"D3DRENDERSTATE_VERTEXBLEND");
+		break;
+	case D3DRENDERSTATE_CLIPPLANEENABLE:
+		strcpy(str,"D3DRENDERSTATE_CLIPPLANEENABLE");
+		break;
+	default:
+		sprintf(str,"(D3DRENDERSTATETYPE)%u",rs);
+		break;
+	}
+	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+}
+
 static void trace_decode_guid(GUID *guid)
 {
 	DWORD byteswritten;
@@ -486,6 +846,9 @@ static void trace_decode_arg(int type, void *arg)
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
 		else trace_decode_rect((RECT*)arg);
 		break;
+	case 27: // D3DRENDERSTATETYPE
+		trace_decode_d3drenderstate((DWORD)arg);
+		break;
 	default:
 		WriteFile(outfile,"Unknown type",12,&byteswritten,NULL);
 		break;
@@ -499,7 +862,7 @@ void trace_enter(const char *function, int paramcount, ...)
 	va_list args;
 	va_start(args,paramcount);
 	DWORD byteswritten;
-	for(int i = 0; i < trace_depth; i++)
+	for(unsigned int i = 0; i < trace_depth; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile,"(",1,&byteswritten,NULL);
@@ -520,7 +883,7 @@ void trace_exit(const char *function, int argtype, void *arg)
 	EnterCriticalSection(&trace_cs);
 	trace_depth--;
 	DWORD byteswritten;
-	for(int i = 0; i < trace_depth; i++)
+	for(unsigned int i = 0; i < trace_depth; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile," returned ",10,&byteswritten,NULL);
@@ -534,7 +897,7 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
 	DWORD byteswritten;
-	for(int i = 0; i < trace_depth-1; i++)
+	for(unsigned int i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile,": ",2,&byteswritten,NULL);
