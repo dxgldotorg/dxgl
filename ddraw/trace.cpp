@@ -47,6 +47,7 @@
 25 - SIZE pointer
 26 - RECT pointer
 27 - D3DRENDERSTATETYPE
+28 - D3DTEXTURESTAGESTATETYPE
 */
 
 #ifdef _TRACE
@@ -609,6 +610,91 @@ static void trace_decode_d3drenderstate(DWORD rs)
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 }
 
+static void trace_decode_d3dtexturestagestate(DWORD rs)
+{
+	DWORD byteswritten;
+	char str[64];
+	switch(rs)
+	{
+	case D3DTSS_COLOROP:
+		strcpy(str,"D3DTSS_COLOROP");
+		break;
+	case D3DTSS_COLORARG1:
+		strcpy(str,"D3DTSS_COLORARG1");
+		break;
+	case D3DTSS_COLORARG2:
+		strcpy(str,"D3DTSS_COLORARG2");
+		break;
+	case D3DTSS_ALPHAOP:
+		strcpy(str,"D3DTSS_ALPHAOP");
+		break;
+	case D3DTSS_ALPHAARG1:
+		strcpy(str,"D3DTSS_ALPHAARG1");
+		break;
+	case D3DTSS_ALPHAARG2:
+		strcpy(str,"D3DTSS_ALPHAARG2");
+		break;
+	case D3DTSS_BUMPENVMAT00:
+		strcpy(str,"D3DTSS_BUMPENVMAT00");
+		break;
+	case D3DTSS_BUMPENVMAT01:
+		strcpy(str,"D3DTSS_BUMPENVMAT01");
+		break;
+	case D3DTSS_BUMPENVMAT10:
+		strcpy(str,"D3DTSS_BUMPENVMAT10");
+		break;
+	case D3DTSS_BUMPENVMAT11:
+		strcpy(str,"D3DTSS_BUMPENVMAT11");
+		break;
+	case D3DTSS_TEXCOORDINDEX:
+		strcpy(str,"D3DTSS_TEXCOORDINDEX");
+		break;
+	case D3DTSS_ADDRESS:
+		strcpy(str,"D3DTSS_ADDRESS");
+		break;
+	case D3DTSS_ADDRESSU:
+		strcpy(str,"D3DTSS_ADDRESSU");
+		break;
+	case D3DTSS_ADDRESSV:
+		strcpy(str,"D3DTSS_ADDRESSV");
+		break;
+	case D3DTSS_BORDERCOLOR:
+		strcpy(str,"D3DTSS_BORDERCOLOR");
+		break;
+	case D3DTSS_MAGFILTER:
+		strcpy(str,"D3DTSS_MAGFILTER");
+		break;
+	case D3DTSS_MINFILTER:
+		strcpy(str,"D3DTSS_MINFILTER");
+		break;
+	case D3DTSS_MIPFILTER:
+		strcpy(str,"D3DTSS_MIPFILTER");
+		break;
+	case D3DTSS_MIPMAPLODBIAS:
+		strcpy(str,"D3DTSS_MIPMAPLODBIAS");
+		break;
+	case D3DTSS_MAXMIPLEVEL:
+		strcpy(str,"D3DTSS_MAXMIPLEVEL");
+		break;
+	case D3DTSS_MAXANISOTROPY:
+		strcpy(str,"D3DTSS_MAXANISOTROPY");
+		break;
+	case D3DTSS_BUMPENVLSCALE:
+		strcpy(str,"D3DTSS_BUMPENVLSCALE");
+		break;
+	case D3DTSS_BUMPENVLOFFSET:
+		strcpy(str,"D3DTSS_BUMPENVLOFFSET");
+		break;
+	case D3DTSS_TEXTURETRANSFORMFLAGS:
+		strcpy(str,"D3DTSS_TEXTURETRANSFORMFLAGS");
+		break;
+	default:
+		sprintf(str,"(D3DTEXTURESTAGESTATETYPE)%u",rs);
+		break;
+	}
+	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+}
+
 static void trace_decode_guid(GUID *guid)
 {
 	DWORD byteswritten;
@@ -848,6 +934,9 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	case 27: // D3DRENDERSTATETYPE
 		trace_decode_d3drenderstate((DWORD)arg);
+		break;
+	case 28: // D3DTEXTURESTAGESTATETYPE
+		trace_decode_d3dtexturestagestate((DWORD)arg);
 		break;
 	default:
 		WriteFile(outfile,"Unknown type",12,&byteswritten,NULL);
