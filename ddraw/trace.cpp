@@ -48,6 +48,7 @@
 26 - RECT pointer
 27 - D3DRENDERSTATETYPE
 28 - D3DTEXTURESTAGESTATETYPE
+29 - D3DTRANSFORMSTATETYPE
 */
 
 #ifdef _TRACE
@@ -610,11 +611,11 @@ static void trace_decode_d3drenderstate(DWORD rs)
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 }
 
-static void trace_decode_d3dtexturestagestate(DWORD rs)
+static void trace_decode_d3dtexturestagestate(DWORD ts)
 {
 	DWORD byteswritten;
 	char str[64];
-	switch(rs)
+	switch(ts)
 	{
 	case D3DTSS_COLOROP:
 		strcpy(str,"D3DTSS_COLOROP");
@@ -689,7 +690,62 @@ static void trace_decode_d3dtexturestagestate(DWORD rs)
 		strcpy(str,"D3DTSS_TEXTURETRANSFORMFLAGS");
 		break;
 	default:
-		sprintf(str,"(D3DTEXTURESTAGESTATETYPE)%u",rs);
+		sprintf(str,"(D3DTEXTURESTAGESTATETYPE)%u",ts);
+		break;
+	}
+	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+}
+
+static void trace_decode_d3dtransformstate(DWORD ts)
+{
+	DWORD byteswritten;
+	char str[64];
+	switch(ts)
+	{
+	case D3DTRANSFORMSTATE_WORLD:
+		strcpy(str,"D3DTRANSFORMSTATE_WORLD");
+		break;
+	case D3DTRANSFORMSTATE_VIEW:
+		strcpy(str,"D3DTRANSFORMSTATE_VIEW");
+		break;
+	case D3DTRANSFORMSTATE_PROJECTION:
+		strcpy(str,"D3DTRANSFORMSTATE_PROJECTION");
+		break;
+	case D3DTRANSFORMSTATE_WORLD1:
+		strcpy(str,"D3DTRANSFORMSTATE_WORLD1");
+		break;
+	case D3DTRANSFORMSTATE_WORLD2:
+		strcpy(str,"D3DTRANSFORMSTATE_WORLD2");
+		break;
+	case D3DTRANSFORMSTATE_WORLD3:
+		strcpy(str,"D3DTRANSFORMSTATE_WORLD3");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE0:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE0");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE1:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE1");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE2:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE2");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE3:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE3");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE4:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE4");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE5:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE5");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE6:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE6");
+		break;
+	case D3DTRANSFORMSTATE_TEXTURE7:
+		strcpy(str,"D3DTRANSFORMSTATE_TEXTURE7");
+		break;
+	default:
+		sprintf(str,"(D3DTRANSFORMSTATETYPE)%u",ts);
 		break;
 	}
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
@@ -937,6 +993,9 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	case 28: // D3DTEXTURESTAGESTATETYPE
 		trace_decode_d3dtexturestagestate((DWORD)arg);
+		break;
+	case 29: // D3DTRANSFORMSTATETYPE
+		trace_decode_d3dtransformstate((DWORD)arg);
 		break;
 	default:
 		WriteFile(outfile,"Unknown type",12,&byteswritten,NULL);
