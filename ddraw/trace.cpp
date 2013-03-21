@@ -44,11 +44,12 @@
 22 - int BOOL
 23 - HRESULT
 24 - GUID pointer
-25 - SIZE pointer
+25 - SIZE or POINT pointer
 26 - RECT pointer
 27 - D3DRENDERSTATETYPE
 28 - D3DTEXTURESTAGESTATETYPE
 29 - D3DTRANSFORMSTATETYPE
+30 - D3DLIGHTSTATETYPE
 */
 
 #ifdef _TRACE
@@ -751,6 +752,43 @@ static void trace_decode_d3dtransformstate(DWORD ts)
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 }
 
+static void trace_decode_d3dlightstate(DWORD ls)
+{
+	DWORD byteswritten;
+	char str[64];
+	switch(ls)
+	{
+	case D3DLIGHTSTATE_MATERIAL:
+		strcpy(str,"D3DLIGHTSTATE_MATERIAL");
+		break;
+	case D3DLIGHTSTATE_AMBIENT:
+		strcpy(str,"D3DLIGHTSTATE_AMBIENT");
+		break;
+	case D3DLIGHTSTATE_COLORMODEL:
+		strcpy(str,"D3DLIGHTSTATE_COLORMODEL");
+		break;
+	case D3DLIGHTSTATE_FOGMODE:
+		strcpy(str,"D3DLIGHTSTATE_FOGMODE");
+		break;
+	case D3DLIGHTSTATE_FOGSTART:
+		strcpy(str,"D3DLIGHTSTATE_FOGSTART");
+		break;
+	case D3DLIGHTSTATE_FOGEND:
+		strcpy(str,"D3DLIGHTSTATE_FOGEND");
+		break;
+	case D3DLIGHTSTATE_FOGDENSITY:
+		strcpy(str,"D3DLIGHTSTATE_FOGDENSITY");
+		break;
+	case D3DLIGHTSTATE_COLORVERTEX:
+		strcpy(str,"D3DLIGHTSTATE_COLORVERTEX");
+		break;
+	default:
+		sprintf(str,"(D3DTRANSFORMSTATETYPE)%u",ls);
+		break;
+	}
+	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
+}
+
 static void trace_decode_guid(GUID *guid)
 {
 	DWORD byteswritten;
@@ -980,7 +1018,7 @@ static void trace_decode_arg(int type, void *arg)
 		else if(arg == (void*)DDCREATE_EMULATIONONLY) WriteFile(outfile,"DDCREATE_EMULATIONONLY",22,&byteswritten,NULL);
 		else trace_decode_guid((GUID*)arg);
 		break;
-	case 25: // SIZE pointer
+	case 25: // SIZE or POINT pointer
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
 		else trace_decode_size((SIZE*)arg);
 		break;
@@ -996,6 +1034,9 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	case 29: // D3DTRANSFORMSTATETYPE
 		trace_decode_d3dtransformstate((DWORD)arg);
+		break;
+	case 30: // D3DLIGHTSTATETYPE
+		trace_decode_d3dlightstate((DWORD)arg);
 		break;
 	default:
 		WriteFile(outfile,"Unknown type",12,&byteswritten,NULL);
