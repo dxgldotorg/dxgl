@@ -940,7 +940,6 @@ HRESULT WINAPI glDirectDrawSurface7::GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDP
 	{
 		palette->AddRef();
 		*lplpDDPalette = palette;
-		TRACE_EXIT(23,DD_OK);
 		err = DD_OK;
 	}
 	else
@@ -1007,7 +1006,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		break;
 	case 1:
 		FIXME("glDirectDrawSurface7::Lock: surface type 1 not supported yet");
-		TRACE_EXIT(23,DDERR_GENERIC);
+		TRACE_EXIT(23,DDERR_UNSUPPORTED);
 		ERR(DDERR_UNSUPPORTED);
 		break;
 	case 2:

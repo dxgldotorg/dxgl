@@ -1070,7 +1070,7 @@ void trace_exit(const char *function, int argtype, void *arg)
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
-	trace_depth--;
+	if(trace_depth) trace_depth--;
 	DWORD byteswritten;
 	for(unsigned int i = 0; i < trace_depth; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
@@ -1093,6 +1093,78 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 	WriteFile(outfile,var,strlen(var),&byteswritten,NULL);
 	WriteFile(outfile," set to ",8,&byteswritten,NULL);
 	trace_decode_arg(argtype,arg);
+	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	LeaveCriticalSection(&trace_cs);
+}
+
+void trace_sysinfo()
+{
+	if(trace_fail) return;
+	if(!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	DWORD byteswritten;
+	OSVERSIONINFOA osver;
+	DWORD buildver;
+	char osstring[256];
+	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+	GetVersionExA(&osver);
+	if(osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) buildver = LOWORD(osver.dwBuildNumber);
+	else buildver = osver.dwBuildNumber;
+	if((osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) || (osver.dwPlatformId == VER_PLATFORM_WIN32s))
+		sprintf(osstring,"Windows %u.%u.%u",osver.dwMajorVersion,osver.dwMinorVersion,buildver);
+	else sprintf(osstring,"Windows NT %u.%u.%u",osver.dwMajorVersion,osver.dwMinorVersion,buildver);
+	if(osver.szCSDVersion[0])
+	{
+		strcat(osstring,", ");
+		strcat(osstring,osver.szCSDVersion);
+	}
+	if(((osver.dwMajorVersion == 5) && (osver.dwMinorVersion >= 1)) || (osver.dwMajorVersion >= 6))
+	{
+		strcat(osstring,", ");
+		HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+		BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
+		if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
+		BOOL is64 = FALSE;
+		if(iswow64) iswow64(GetCurrentProcess(),&is64);
+		if(hKernel32) FreeLibrary(hKernel32);
+		if(is64) strcat(osstring,"64-bit");
+		else strcat(osstring,"32-bit");
+	}
+	strcat(osstring,"\r\n");
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"Windows version:  ",18,&byteswritten,NULL);
+	WriteFile(outfile,osstring,strlen(osstring),&byteswritten,NULL);
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"GL_VENDOR:  ",12,&byteswritten,NULL);
+	const GLubyte *glstring;
+	glstring = glGetString(GL_VENDOR);
+	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
+	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"GL_RENDERER:  ",14,&byteswritten,NULL);
+	glstring = glGetString(GL_RENDERER);
+	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
+	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"GL_VERSION:  ",13,&byteswritten,NULL);
+	glstring = glGetString(GL_VERSION);
+	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
+	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"GL_SHADING_LANGUAGE_VERSION:  ",30,&byteswritten,NULL);
+	glstring = glGetString(GL_SHADING_LANGUAGE_VERSION);
+	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
+	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	for(unsigned int i = 0; i < trace_depth-1; i++)
+		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	WriteFile(outfile,"GL_EXTENSIONS:  ",16,&byteswritten,NULL);
+	glstring = glGetString(GL_EXTENSIONS);
+	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
 	LeaveCriticalSection(&trace_cs);
 }

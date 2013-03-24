@@ -816,6 +816,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
 	glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+	TRACE_SYSINFO();
 	return TRUE;
 }
 
