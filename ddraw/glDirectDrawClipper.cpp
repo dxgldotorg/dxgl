@@ -44,8 +44,8 @@ glDirectDrawClipper::~glDirectDrawClipper()
 HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,obp);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!obp) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!obp) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -68,7 +68,7 @@ HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
 ULONG WINAPI glDirectDrawClipper::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -76,7 +76,7 @@ ULONG WINAPI glDirectDrawClipper::AddRef()
 ULONG WINAPI glDirectDrawClipper::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -87,7 +87,7 @@ ULONG WINAPI glDirectDrawClipper::Release()
 HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
 	TRACE_ENTER(4,14,this,26,lpRect,14,lpClipList,14,lpdwSize);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDrawClipper::GetClipList: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
@@ -95,8 +95,8 @@ HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipL
 HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
 {
 	TRACE_ENTER(2,14,this,14,lphWnd);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!hWnd) TRACE_RET(23,DDERR_NOHWND);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!hWnd) TRACE_RET(HRESULT,23,DDERR_NOHWND);
 	*lphWnd = hWnd;
 	TRACE_VAR("*lphWnd",13,*lphWnd);
 	TRACE_EXIT(23,DD_OK);
@@ -105,8 +105,8 @@ HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
 HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,this,14,lpDD,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(initialized) TRACE_RET(23,DDERR_ALREADYINITIALIZED);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	glDD7 = (glDirectDraw7*)lpDD;
 	if(glDD7) hasparent = true;
 	else hasparent = false;
@@ -119,7 +119,7 @@ HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
 HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
 {
 	TRACE_ENTER(2,14,this,14,lpbChanged);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDrawClipper::IsClipListChanged: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
@@ -127,7 +127,7 @@ HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
 HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,this,14,lpClipList,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDrawClipper::SetClipList: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
@@ -135,7 +135,7 @@ HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFl
 HRESULT WINAPI glDirectDrawClipper::SetHWnd(DWORD dwFlags, HWND hWnd)
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,13,hWnd);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	this->hWnd = hWnd;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

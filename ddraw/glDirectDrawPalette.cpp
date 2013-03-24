@@ -120,8 +120,8 @@ glDirectDrawPalette::~glDirectDrawPalette()
 HRESULT WINAPI glDirectDrawPalette::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -158,7 +158,7 @@ ULONG WINAPI glDirectDrawPalette::Release()
 HRESULT WINAPI glDirectDrawPalette::GetCaps(LPDWORD lpdwCaps)
 {
 	TRACE_ENTER(2,14,this,14,lpdwCaps);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	*lpdwCaps = flags;
 	TRACE_VAR("*lpdwCaps",9,*lpdwCaps);
 	TRACE_EXIT(23,DD_OK);
@@ -168,7 +168,7 @@ HRESULT WINAPI glDirectDrawPalette::GetCaps(LPDWORD lpdwCaps)
 HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,8,dwBase,8,dwNumEntries,14,lpEntries);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	DWORD allentries = 256;
 	DWORD entrysize;
 	if(flags & DDPCAPS_1BIT) allentries=2;
@@ -177,7 +177,7 @@ HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWOR
 	if(flags & DDPCAPS_8BIT) allentries=256;
 	if(flags & DDPCAPS_8BITENTRIES) entrysize = 1;
 	else entrysize = sizeof(PALETTEENTRY);
-	if((dwBase + dwNumEntries) > allentries) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if((dwBase + dwNumEntries) > allentries) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(lpEntries,((char *)palette)+(dwBase*entrysize),dwNumEntries*entrysize);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -185,14 +185,14 @@ HRESULT WINAPI glDirectDrawPalette::GetEntries(DWORD dwFlags, DWORD dwBase, DWOR
 HRESULT WINAPI glDirectDrawPalette::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable)
 {
 	TRACE_ENTER(4,14,this,14,lpDD,9,dwFlags,14,lpDDColorTable);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirectDrawPalette::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,8,dwStartingEntry,8,dwCount,14,lpEntries);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	DWORD allentries = 256;
 	DWORD entrysize;
 	if(flags & DDPCAPS_1BIT) allentries=2;
@@ -201,7 +201,7 @@ HRESULT WINAPI glDirectDrawPalette::SetEntries(DWORD dwFlags, DWORD dwStartingEn
 	if(flags & DDPCAPS_8BIT) allentries=256;
 	if(flags & DDPCAPS_8BITENTRIES) entrysize = 1;
 	else entrysize = sizeof(PALETTEENTRY);
-	if((dwStartingEntry + dwCount) > allentries) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if((dwStartingEntry + dwCount) > allentries) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(((char *)palette)+(dwStartingEntry*entrysize),lpEntries,dwCount*entrysize);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -215,6 +215,6 @@ LPPALETTEENTRY glDirectDrawPalette::GetPalette(DWORD *flags)
 		*flags = this->flags;
 		TRACE_VAR("*flags",9,*flags);
 	}
-	TRACE_RET(14,palette);
+	TRACE_RET(LPPALETTEENTRY,14,palette);
 	return palette;
 }

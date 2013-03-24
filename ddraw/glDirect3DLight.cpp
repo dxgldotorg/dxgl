@@ -55,7 +55,7 @@ glDirect3DLight::~glDirect3DLight()
 ULONG WINAPI glDirect3DLight::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -63,7 +63,7 @@ ULONG WINAPI glDirect3DLight::AddRef()
 ULONG WINAPI glDirect3DLight::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -75,15 +75,15 @@ ULONG WINAPI glDirect3DLight::Release()
 HRESULT WINAPI glDirect3DLight::Initialize(LPDIRECT3D lpDirect3D)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3D);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 
 HRESULT WINAPI glDirect3DLight::QueryInterface(REFIID riid, void** ppvObj)
 {TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -112,9 +112,9 @@ void glDirect3DLight::SetLight7(LPD3DLIGHT7 lpLight7)
 HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 {
 	TRACE_ENTER(2,14,this,14,lpLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
-	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	lpLight->dltType = light.dltType;
 	lpLight->dcvColor = light.dcvDiffuse;
 	lpLight->dvPosition = light.dvPosition;
@@ -132,9 +132,9 @@ HRESULT WINAPI glDirect3DLight::GetLight(LPD3DLIGHT lpLight)
 HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 {
 	TRACE_ENTER(2,14,this,14,lpLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
-	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpLight->dwSize < sizeof(D3DLIGHT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	light.dltType = lpLight->dltType;
 	light.dcvDiffuse = lpLight->dcvColor;
 	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = light.dcvAmbient.a = 0;

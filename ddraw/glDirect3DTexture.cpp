@@ -42,7 +42,7 @@ glDirect3DTexture2::~glDirect3DTexture2()
 HRESULT WINAPI glDirect3DTexture2::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -51,13 +51,13 @@ HRESULT WINAPI glDirect3DTexture2::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(23,glDDS7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDDS7->QueryInterface(riid,ppvObj));
 }
 
 ULONG WINAPI glDirect3DTexture2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -66,7 +66,7 @@ ULONG WINAPI glDirect3DTexture2::AddRef()
 ULONG WINAPI glDirect3DTexture2::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -78,8 +78,8 @@ ULONG WINAPI glDirect3DTexture2::Release()
 HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2, LPD3DTEXTUREHANDLE lpHandle)
 {
 	TRACE_ENTER(3,14,this,14,lpDirect3DDevice2,14,lpHandle);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpDirect3DDevice2) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DDevice2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7;
 	lpDirect3DDevice2->QueryInterface(IID_IDirect3DDevice7,(void**)&glD3DDev7);
 	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
@@ -90,14 +90,14 @@ HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2
 HRESULT WINAPI glDirect3DTexture2::Load(LPDIRECT3DTEXTURE2 lpD3DTexture2)
 {
 	TRACE_ENTER(2,14,this,14,lpD3DTexture2);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpD3DTexture2) TRACE_RET(23,DDERR_INVALIDPARAMS);
-	TRACE_RET(23,glDDS7->Load(((glDirect3DTexture2*)lpD3DTexture2)->GetDDS7()));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpD3DTexture2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	TRACE_RET(HRESULT,23,glDDS7->Load(((glDirect3DTexture2*)lpD3DTexture2)->GetDDS7()));
 }
 HRESULT WINAPI glDirect3DTexture2::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
 	TRACE_ENTER(3,14,this,8,dwStart,8,dwCount);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DTexture2::PaletteChanged: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
@@ -120,7 +120,7 @@ glDirect3DTexture1::~glDirect3DTexture1()
 HRESULT WINAPI glDirect3DTexture1::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -129,12 +129,12 @@ HRESULT WINAPI glDirect3DTexture1::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(23,glDDS7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDDS7->QueryInterface(riid,ppvObj));
 }
 ULONG WINAPI glDirect3DTexture1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -142,7 +142,7 @@ ULONG WINAPI glDirect3DTexture1::AddRef()
 ULONG WINAPI glDirect3DTexture1::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -154,8 +154,8 @@ ULONG WINAPI glDirect3DTexture1::Release()
 HRESULT WINAPI glDirect3DTexture1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DTEXTUREHANDLE lpHandle)
 {
 	TRACE_ENTER(3,14,this,14,lpDirect3DDevice,14,lpHandle);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpDirect3DDevice) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7;
 	lpDirect3DDevice->QueryInterface(IID_IDirect3DDevice7,(void**)&glD3DDev7);
 	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
@@ -166,21 +166,21 @@ HRESULT WINAPI glDirect3DTexture1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, 
 HRESULT WINAPI glDirect3DTexture1::Initialize(LPDIRECT3DDEVICE lpD3DDevice, LPDIRECTDRAWSURFACE lpDDSurface)
 {
 	TRACE_ENTER(3,14,this,14,lpD3DDevice,14,lpDDSurface);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirect3DTexture1::Load(LPDIRECT3DTEXTURE lpD3DTexture)
 {
 	TRACE_ENTER(2,14,this,14,lpD3DTexture);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpD3DTexture) TRACE_RET(23,DDERR_INVALIDPARAMS);
-	TRACE_RET(23,glDDS7->Load(((glDirect3DTexture1*)lpD3DTexture)->GetDDS7()));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpD3DTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	TRACE_RET(HRESULT,23,glDDS7->Load(((glDirect3DTexture1*)lpD3DTexture)->GetDDS7()));
 }
 HRESULT WINAPI glDirect3DTexture1::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
 	TRACE_ENTER(3,14,this,8,dwStart,8,dwCount);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DTexture1::PaletteChanged: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
@@ -188,7 +188,7 @@ HRESULT WINAPI glDirect3DTexture1::PaletteChanged(DWORD dwStart, DWORD dwCount)
 HRESULT WINAPI glDirect3DTexture1::Unload()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }

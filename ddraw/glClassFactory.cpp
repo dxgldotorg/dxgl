@@ -25,7 +25,7 @@ LONG locks;
 ULONG WINAPI glClassFactory::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -33,7 +33,7 @@ ULONG WINAPI glClassFactory::AddRef()
 ULONG WINAPI glClassFactory::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -45,8 +45,8 @@ ULONG WINAPI glClassFactory::Release()
 HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = this;
@@ -55,7 +55,7 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 	else
 	{
 		*ppvObj = NULL;
-		TRACE_RET(23,E_NOINTERFACE);
+		TRACE_RET(HRESULT,23,E_NOINTERFACE);
 	}
 	TRACE_VAR("*ppvObj",14,*ppvObj);
 	TRACE_EXIT(23,S_OK);
@@ -64,9 +64,9 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
 	TRACE_ENTER(4,14,this,14,pUnkOuter,24,&riid,14,ppvObject);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	glDirectDraw7 *glDD7;
-	if(pUnkOuter != NULL) TRACE_RET(23,CLASS_E_NOAGGREGATION);
+	if(pUnkOuter != NULL) TRACE_RET(HRESULT,23,CLASS_E_NOAGGREGATION);
 	if(riid == IID_IDirectDraw)
 	{
 		glDD7 = new glDirectDraw7;
@@ -115,7 +115,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
 	TRACE_ENTER(2,14,this,22,fLock);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(fLock) InterlockedIncrement(&locks);
 	else InterlockedDecrement(&locks);
 	TRACE_EXIT(23,S_OK);

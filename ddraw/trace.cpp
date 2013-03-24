@@ -1080,6 +1080,11 @@ void trace_exit(const char *function, int argtype, void *arg)
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
 	LeaveCriticalSection(&trace_cs);
 }
+void *trace_ret(const char *function, int argtype, void *arg)
+{
+	trace_exit(function,argtype,arg);
+	return arg;
+}
 void trace_var(const char *function, const char *var, int argtype, void *arg)
 {
 	if(trace_fail) return;

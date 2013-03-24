@@ -27,18 +27,15 @@
 #define TRACE_SYSINFO() trace_sysinfo() // Must be in thread used by OpenGL.
 void trace_enter(const char *function, int paramcount, ...);
 void trace_exit(const char *function, int argtype, void *arg);
+void *trace_ret(const char *function, int argtype, void *arg);
 void trace_var(const char *function, const char *var, int argtype, void *arg);
 void trace_sysinfo();
-#define TRACE_RET(argtype, arg) \
-{\
-	trace_exit(__FUNCTION__,argtype,(void*)arg);\
-	return arg;\
-}
+#define TRACE_RET(type, argtype, arg) return (type)trace_ret(__FUNCTION__,argtype,(void*)arg);
 #else
 #define TRACE_ENTER(a,...)
 #define TRACE_EXIT(a,b)
 #define TRACE_VAR(a,b,c)
-#define TRACE_RET(argtype, arg) return arg;
+#define TRACE_RET(type, argtype, arg) return arg;
 #define TRACE_SYSINFO()
 #endif
 

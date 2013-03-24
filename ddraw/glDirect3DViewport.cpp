@@ -67,7 +67,7 @@ glDirect3DViewport3::~glDirect3DViewport3()
 HRESULT WINAPI glDirect3DViewport3::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -131,7 +131,7 @@ HRESULT WINAPI glDirect3DViewport3::QueryInterface(REFIID riid, void** ppvObj)
 ULONG WINAPI glDirect3DViewport3::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -140,7 +140,7 @@ ULONG WINAPI glDirect3DViewport3::AddRef()
 ULONG WINAPI glDirect3DViewport3::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -152,8 +152,8 @@ ULONG WINAPI glDirect3DViewport3::Release()
 HRESULT WINAPI glDirect3DViewport3::AddLight(LPDIRECT3DLIGHT lpDirect3DLight)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(((glDirect3DLight*)lpDirect3DLight)->viewport) TRACE_EXIT(23,D3DERR_LIGHTHASVIEWPORT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(((glDirect3DLight*)lpDirect3DLight)->viewport) TRACE_RET(HRESULT,23,D3DERR_LIGHTHASVIEWPORT);
 	for(int i = 0; i < 8; i++)
 	{
 		if(!lights[i])
@@ -175,26 +175,26 @@ HRESULT WINAPI glDirect3DViewport3::AddLight(LPDIRECT3DLIGHT lpDirect3DLight)
 HRESULT WINAPI glDirect3DViewport3::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,8,dwCount,14,lpRects,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!device) TRACE_RET(23,D3DERR_VIEWPORTHASNODEVICE);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
 	D3DCOLORVALUE bgcolor = {0.0,0.0,0.0,0.0};
 	if(device->materials[background]) bgcolor = device->materials[background]->material.diffuse;
-	TRACE_RET(23,device->Clear(dwCount,lpRects,dwFlags,d3dcvtod3dcolor(bgcolor),0.0,0));
+	TRACE_RET(HRESULT,23,device->Clear(dwCount,lpRects,dwFlags,d3dcvtod3dcolor(bgcolor),0.0,0));
 }
 
 HRESULT WINAPI glDirect3DViewport3::Clear2(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
 	TRACE_ENTER(7,14,this,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!device) TRACE_EXIT(23,D3DERR_VIEWPORTHASNODEVICE);
-	TRACE_RET(23,device->Clear(dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
+	TRACE_RET(HRESULT,23,device->Clear(dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
 
 HRESULT WINAPI glDirect3DViewport3::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpDirect3DLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpDirect3DLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	for(int i = 0; i < 8; i++)
 	{
 		if(lights[i] == lpDirect3DLight)
@@ -213,8 +213,8 @@ HRESULT WINAPI glDirect3DViewport3::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
 HRESULT WINAPI glDirect3DViewport3::GetBackground(LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lphMat,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lphMat) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lphMat) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpValid)
 	{
 		if(background) *lpValid = TRUE;
@@ -230,8 +230,8 @@ HRESULT WINAPI glDirect3DViewport3::GetBackground(LPD3DMATERIALHANDLE lphMat, LP
 HRESULT WINAPI glDirect3DViewport3::GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lplpDDSurface,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lplpDDSurface) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lplpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpValid)
 	{
 		if(backZ) *lpValid = TRUE;
@@ -247,8 +247,8 @@ HRESULT WINAPI glDirect3DViewport3::GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplp
 HRESULT WINAPI glDirect3DViewport3::GetBackgroundDepth2(LPDIRECTDRAWSURFACE4* lplpDDS, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lplpDDS,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lplpDDS) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lplpDDS) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpValid)
 	{
 		if(backZ) *lpValid = TRUE;
@@ -264,8 +264,8 @@ HRESULT WINAPI glDirect3DViewport3::GetBackgroundDepth2(LPDIRECTDRAWSURFACE4* lp
 HRESULT WINAPI glDirect3DViewport3::GetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpData) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(lpData,&viewport,sizeof(D3DVIEWPORT2));
 	lpData->dvScaleX = scaleX;
 	lpData->dvScaleY = scaleY;
@@ -277,8 +277,8 @@ HRESULT WINAPI glDirect3DViewport3::GetViewport(LPD3DVIEWPORT lpData)
 HRESULT WINAPI glDirect3DViewport3::GetViewport2(LPD3DVIEWPORT2 lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lpData) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(lpData,&viewport,sizeof(D3DVIEWPORT2));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -286,22 +286,22 @@ HRESULT WINAPI glDirect3DViewport3::GetViewport2(LPD3DVIEWPORT2 lpData)
 HRESULT WINAPI glDirect3DViewport3::Initialize(LPDIRECT3D lpDirect3D)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3D);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 HRESULT WINAPI glDirect3DViewport3::LightElements(DWORD dwElementCount, LPD3DLIGHTDATA lpData)
 {
 	TRACE_ENTER(3,14,this,8,dwElementCount,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }
 HRESULT WINAPI glDirect3DViewport3::NextLight(LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,14,lpDirect3DLight,14,lplpDirect3DLight,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!lplpDirect3DLight) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lplpDirect3DLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	FIXME("glDirect3DViewport3::NextLight: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
@@ -309,9 +309,9 @@ HRESULT WINAPI glDirect3DViewport3::NextLight(LPDIRECT3DLIGHT lpDirect3DLight, L
 HRESULT WINAPI glDirect3DViewport3::SetBackground(D3DMATERIALHANDLE hMat)
 {
 	TRACE_ENTER(2,14,this,9,hMat);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!device) TRACE_RET(23,D3DERR_VIEWPORTHASNODEVICE);
-	if(hMat > device->materialcount) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
+	if(hMat > device->materialcount) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	background = hMat;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -319,9 +319,9 @@ HRESULT WINAPI glDirect3DViewport3::SetBackground(D3DMATERIALHANDLE hMat)
 HRESULT WINAPI glDirect3DViewport3::SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurface);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!backZ && !lpDDSurface) TRACE_RET(23,D3D_OK);
-	if(((glDirectDrawSurface1*)lpDDSurface)->GetDDS7() == backZ) TRACE_RET(23,D3D_OK);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!backZ && !lpDDSurface) TRACE_RET(HRESULT,23,D3D_OK);
+	if(((glDirectDrawSurface1*)lpDDSurface)->GetDDS7() == backZ) TRACE_RET(HRESULT,23,D3D_OK);
 	if(backZ)backZ->Release();
 	if(lpDDSurface) lpDDSurface->QueryInterface(IID_IDirectDrawSurface7,(void**)&backZ);
 	else backZ = NULL;
@@ -331,9 +331,9 @@ HRESULT WINAPI glDirect3DViewport3::SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDS
 HRESULT WINAPI glDirect3DViewport3::SetBackgroundDepth2(LPDIRECTDRAWSURFACE4 lpDDS)
 {
 	TRACE_ENTER(2,14,this,14,lpDDS);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!backZ && !lpDDS) TRACE_RET(23,D3D_OK);
-	if(((glDirectDrawSurface4*)lpDDS)->GetDDS7() == backZ) TRACE_RET(23,D3D_OK);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!backZ && !lpDDS) TRACE_RET(HRESULT,23,D3D_OK);
+	if(((glDirectDrawSurface4*)lpDDS)->GetDDS7() == backZ) TRACE_RET(HRESULT,23,D3D_OK);
 	if(backZ)backZ->Release();
 	if(lpDDS) lpDDS->QueryInterface(IID_IDirectDrawSurface7,(void**)&backZ);
 	else backZ = NULL;
@@ -344,9 +344,9 @@ HRESULT WINAPI glDirect3DViewport3::SetBackgroundDepth2(LPDIRECTDRAWSURFACE4 lpD
 HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!device) TRACE_RET(23,D3DERR_VIEWPORTHASNODEVICE);
-	if(!lpData) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
+	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	D3DVIEWPORT2 vp;
 	memcpy(&vp,lpData,sizeof(D3DVIEWPORT));
 	vp.dvClipHeight = viewport.dvClipHeight;
@@ -366,9 +366,9 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport(LPD3DVIEWPORT lpData)
 HRESULT WINAPI glDirect3DViewport3::SetViewport2(LPD3DVIEWPORT2 lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	if(!device) TRACE_RET(23,D3DERR_VIEWPORTHASNODEVICE);
-	if(!lpData) TRACE_RET(23,DDERR_INVALIDPARAMS);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
+	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	viewport = *lpData;
 	if(current && device) Sync();
 	TRACE_EXIT(23,D3D_OK);
@@ -377,7 +377,7 @@ HRESULT WINAPI glDirect3DViewport3::SetViewport2(LPD3DVIEWPORT2 lpData)
 HRESULT WINAPI glDirect3DViewport3::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
 {
 	TRACE_ENTER(5,14,this,8,dwVertexCount,14,lpData,9,dwFlags,14,lpOffscreen);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DViewport3::TransformVertices: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
@@ -453,7 +453,7 @@ glDirect3DViewport2::~glDirect3DViewport2()
 ULONG WINAPI glDirect3DViewport2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -462,7 +462,7 @@ ULONG WINAPI glDirect3DViewport2::AddRef()
 ULONG WINAPI glDirect3DViewport2::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -474,7 +474,7 @@ ULONG WINAPI glDirect3DViewport2::Release()
 HRESULT WINAPI glDirect3DViewport2::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
 		this->AddRef();
@@ -483,98 +483,98 @@ HRESULT WINAPI glDirect3DViewport2::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	TRACE_RET(23,glD3DV3->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glD3DV3->QueryInterface(riid,ppvObj));
 }
 
 HRESULT WINAPI glDirect3DViewport2::AddLight(LPDIRECT3DLIGHT lpLight)
 {
 	TRACE_ENTER(2,14,this,14,lpLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->AddLight(lpLight));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->AddLight(lpLight));
 }
 HRESULT WINAPI glDirect3DViewport2::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,9,dwCount,14,lpRects,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->Clear(dwCount,lpRects,dwFlags));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->Clear(dwCount,lpRects,dwFlags));
 }
 HRESULT WINAPI glDirect3DViewport2::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->DeleteLight(lpDirect3DLight));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->DeleteLight(lpDirect3DLight));
 }
 HRESULT WINAPI glDirect3DViewport2::GetBackground(LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lphMat,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetBackground(lphMat,lpValid));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetBackground(lphMat,lpValid));
 }
 HRESULT WINAPI glDirect3DViewport2::GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lplpDDSurface,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetBackgroundDepth(lplpDDSurface,lpValid));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetBackgroundDepth(lplpDDSurface,lpValid));
 }
 HRESULT WINAPI glDirect3DViewport2::GetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetViewport(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetViewport(lpData));
 }
 HRESULT WINAPI glDirect3DViewport2::GetViewport2(LPD3DVIEWPORT2 lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetViewport2(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetViewport2(lpData));
 }
 HRESULT WINAPI glDirect3DViewport2::Initialize(LPDIRECT3D lpDirect3D)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3D);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->Initialize(lpDirect3D));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->Initialize(lpDirect3D));
 }
 HRESULT WINAPI glDirect3DViewport2::LightElements(DWORD dwElementCount, LPD3DLIGHTDATA lpData)
 {
 	TRACE_ENTER(3,14,this,8,dwElementCount,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->LightElements(dwElementCount,lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->LightElements(dwElementCount,lpData));
 }
 HRESULT WINAPI glDirect3DViewport2::NextLight(LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,14,lpDirect3DLight,14,lplpDirect3DLight,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->NextLight(lpDirect3DLight,lplpDirect3DLight,dwFlags));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->NextLight(lpDirect3DLight,lplpDirect3DLight,dwFlags));
 }
 HRESULT WINAPI glDirect3DViewport2::SetBackground(D3DMATERIALHANDLE hMat)
 {
 	TRACE_ENTER(2,14,this,9,hMat);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetBackground(hMat));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetBackground(hMat));
 }
 HRESULT WINAPI glDirect3DViewport2::SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurface);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetBackgroundDepth(lpDDSurface));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetBackgroundDepth(lpDDSurface));
 }
 HRESULT WINAPI glDirect3DViewport2::SetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetViewport(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetViewport(lpData));
 }
 HRESULT WINAPI glDirect3DViewport2::SetViewport2(LPD3DVIEWPORT2 lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetViewport2(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetViewport2(lpData));
 }
 HRESULT WINAPI glDirect3DViewport2::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
 {
 	TRACE_ENTER(5,14,this,8,dwVertexCount,14,lpData,9,dwFlags,14,lpOffscreen);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen));
 }
 
 
@@ -597,7 +597,7 @@ glDirect3DViewport1::~glDirect3DViewport1()
 ULONG WINAPI glDirect3DViewport1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	refcount++;
 	TRACE_EXIT(8,refcount);
 	return refcount;
@@ -606,7 +606,7 @@ ULONG WINAPI glDirect3DViewport1::AddRef()
 ULONG WINAPI glDirect3DViewport1::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(8,0);
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
@@ -627,84 +627,84 @@ HRESULT WINAPI glDirect3DViewport1::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	TRACE_RET(23,glD3DV3->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glD3DV3->QueryInterface(riid,ppvObj));
 }
 
 HRESULT WINAPI glDirect3DViewport1::AddLight(LPDIRECT3DLIGHT lpLight)
 {
 	TRACE_ENTER(2,14,this,14,lpLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->AddLight(lpLight));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->AddLight(lpLight));
 }
 HRESULT WINAPI glDirect3DViewport1::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,8,dwCount,14,lpRects,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->Clear(dwCount,lpRects,dwFlags));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->Clear(dwCount,lpRects,dwFlags));
 }
 HRESULT WINAPI glDirect3DViewport1::DeleteLight(LPDIRECT3DLIGHT lpDirect3DLight)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DLight);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->DeleteLight(lpDirect3DLight));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->DeleteLight(lpDirect3DLight));
 }
 HRESULT WINAPI glDirect3DViewport1::GetBackground(LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lphMat,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetBackground(lphMat,lpValid));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetBackground(lphMat,lpValid));
 }
 HRESULT WINAPI glDirect3DViewport1::GetBackgroundDepth(LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid)
 {
 	TRACE_ENTER(3,14,this,14,lplpDDSurface,14,lpValid);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetBackgroundDepth(lplpDDSurface,lpValid));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetBackgroundDepth(lplpDDSurface,lpValid));
 }
 HRESULT WINAPI glDirect3DViewport1::GetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->GetViewport(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->GetViewport(lpData));
 }
 HRESULT WINAPI glDirect3DViewport1::Initialize(LPDIRECT3D lpDirect3D)
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3D);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->Initialize(lpDirect3D));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->Initialize(lpDirect3D));
 }
 HRESULT WINAPI glDirect3DViewport1::LightElements(DWORD dwElementCount, LPD3DLIGHTDATA lpData)
 {
 	TRACE_ENTER(3,14,this,8,dwElementCount,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	return glD3DV3->LightElements(dwElementCount,lpData);
 }
 HRESULT WINAPI glDirect3DViewport1::NextLight(LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags)
 {
 	TRACE_ENTER(4,14,this,14,lpDirect3DLight,14,lplpDirect3DLight,9,dwFlags);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->NextLight(lpDirect3DLight,lplpDirect3DLight,dwFlags));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->NextLight(lpDirect3DLight,lplpDirect3DLight,dwFlags));
 }
 HRESULT WINAPI glDirect3DViewport1::SetBackground(D3DMATERIALHANDLE hMat)
 {
 	TRACE_ENTER(2,14,this,9,hMat);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetBackground(hMat));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetBackground(hMat));
 }
 HRESULT WINAPI glDirect3DViewport1::SetBackgroundDepth(LPDIRECTDRAWSURFACE lpDDSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurface);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetBackgroundDepth(lpDDSurface));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetBackgroundDepth(lpDDSurface));
 }
 HRESULT WINAPI glDirect3DViewport1::SetViewport(LPD3DVIEWPORT lpData)
 {
 	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->SetViewport(lpData));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->SetViewport(lpData));
 }
 HRESULT WINAPI glDirect3DViewport1::TransformVertices(DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen)
 {
 	TRACE_ENTER(5,14,this,8,dwVertexCount,14,lpData,9,dwFlags,14,lpOffscreen);
-	if(!this) TRACE_RET(23,DDERR_INVALIDOBJECT);
-	TRACE_RET(23,glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen));
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,glD3DV3->TransformVertices(dwVertexCount,lpData,dwFlags,lpOffscreen));
 }
