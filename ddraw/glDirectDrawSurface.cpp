@@ -566,7 +566,7 @@ ULONG WINAPI glDirectDrawSurface7::Release()
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
-	TRACE_EXIT(23,ret);
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
@@ -2059,7 +2059,7 @@ ULONG WINAPI glDirectDrawSurface3::Release()
 	refcount--;
 	ret = refcount;
 	if(refcount == 0) delete this;
-	TRACE_EXIT(23,ret);
+	TRACE_EXIT(8,ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
