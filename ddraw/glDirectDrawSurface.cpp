@@ -228,7 +228,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		{
 			ddsd.dwFlags |= DDSD_PIXELFORMAT;
 			ddsd.ddpfPixelFormat.dwFlags = DDPF_ZBUFFER;
-			ddsd.ddpfPixelFormat.dwZBufferBitDepth = ddsd.dwRefreshRate;
+			if(!ddsd.ddpfPixelFormat.dwZBufferBitDepth)
+				ddsd.ddpfPixelFormat.dwZBufferBitDepth = ddsd.dwRefreshRate;
 			switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
 			{
 			case 8:

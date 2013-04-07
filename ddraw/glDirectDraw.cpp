@@ -1492,8 +1492,8 @@ HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD 
 	{
 		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
 		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
-		if(lpdwTotal) TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
-		if(lpdwFree) TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		if(lpdwTotal) {TRACE_VAR("*lpdwTotal",8,*lpdwTotal);}
+		if(lpdwFree) {TRACE_VAR("*lpdwFree",8,*lpdwFree);}
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -1503,8 +1503,8 @@ HRESULT WINAPI glDirectDraw7::GetAvailableVidMem(LPDDSCAPS2 lpDDSCaps2, LPDWORD 
 		GlobalMemoryStatus(&memstat);
 		if(lpdwTotal) *lpdwTotal = memstat.dwTotalVirtual;
 		if(lpdwFree) *lpdwFree = memstat.dwAvailVirtual;
-		if(lpdwTotal) TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
-		if(lpdwFree) TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		if(lpdwTotal) {TRACE_VAR("*lpdwTotal",8,*lpdwTotal);}
+		if(lpdwFree) {TRACE_VAR("*lpdwFree",8,*lpdwFree);}
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -1966,8 +1966,8 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 	{
 		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
 		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
-		if(lpdwTotal) TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
-		if(lpdwFree) TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		if(lpdwTotal) {TRACE_VAR("*lpdwTotal",8,*lpdwTotal);}
+		if(lpdwFree) {TRACE_VAR("*lpdwFree",8,*lpdwFree);}
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -1977,8 +1977,8 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 		GlobalMemoryStatus(&memstat);
 		if(lpdwTotal) *lpdwTotal = memstat.dwTotalVirtual;
 		if(lpdwFree) *lpdwFree = memstat.dwAvailVirtual;
-		if(lpdwTotal) TRACE_VAR("*lpdwTotal",8,*lpdwTotal);
-		if(lpdwFree) TRACE_VAR("*lpdwFree",8,*lpdwFree);
+		if(lpdwTotal) {TRACE_VAR("*lpdwTotal",8,*lpdwTotal);}
+		if(lpdwFree) {TRACE_VAR("*lpdwFree",8,*lpdwFree);}
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
