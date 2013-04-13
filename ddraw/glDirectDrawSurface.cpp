@@ -2054,7 +2054,7 @@ ULONG WINAPI glDirectDrawSurface3::AddRef()
 ULONG WINAPI glDirectDrawSurface3::Release()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) return 0;
+	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
 	ret = refcount;
