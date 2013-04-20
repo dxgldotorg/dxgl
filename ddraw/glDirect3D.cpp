@@ -193,12 +193,10 @@ D3DDevice devices[3] =
 		"DXGL D3D T&L HAL",
 	}
 };
-glDirect3D7::glDirect3D7(glDirectDraw7 *glDD7)
+glDirect3D7::glDirect3D7()
 {
-	TRACE_ENTER(2,14,this,14,glDD7);
+	TRACE_ENTER(1,14,this);
 	refcount=1;
-	this->glDD7 = glDD7;
-	glDD7->AddRef();
 	glD3D3 = NULL;
 	glD3D2 = NULL;
 	glD3D1 = NULL;
@@ -210,7 +208,7 @@ glDirect3D7::~glDirect3D7()
 	TRACE_ENTER(1,14,this);
 	if(glD3D3) glD3D3->Release();
 	if(glD3D2) glD3D2->Release();
-	glDD7->Release();
+	if(glD3D1) glD3D1->Release();
 	TRACE_EXIT(-1,0);
 }
 

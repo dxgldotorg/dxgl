@@ -29,7 +29,7 @@ class glDirect3D1;
 class glDirect3D7 : public IDirect3D7
 {
 public:
-	glDirect3D7(glDirectDraw7 *glDD7);
+	glDirect3D7();
 	virtual ~glDirect3D7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -44,7 +44,6 @@ public:
 	HRESULT WINAPI EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
 	HRESULT WINAPI EvictManagedTextures();
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
-	glDirectDraw7 *glDD7;
 	glDirect3D3 *glD3D3;
 	glDirect3D2 *glD3D2;
 	glDirect3D1 *glD3D1;

@@ -697,7 +697,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
+		glDirect3D7 *tmp = new glDirect3D7;
 		tmp->QueryInterface(IID_IDirect3D,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -706,7 +706,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D2)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
+		glDirect3D7 *tmp = new glDirect3D7;
 		tmp->QueryInterface(IID_IDirect3D2,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -715,7 +715,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D3)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
+		glDirect3D7 *tmp = new glDirect3D7;
 		tmp->QueryInterface(IID_IDirect3D3,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -724,7 +724,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D7)
 	{
-		*ppvObj = new glDirect3D7(this);
+		*ppvObj = new glDirect3D7;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
