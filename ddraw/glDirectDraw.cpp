@@ -21,11 +21,11 @@
 #include "glDirect3D.h"
 #include "glDirectDraw.h"
 #include "texture.h"
+#include "glutil.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glRenderer.h"
-#include "glutil.h"
 #include "../common/version.h"
 
 DDDEVICEIDENTIFIER2 devid = {

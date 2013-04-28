@@ -17,10 +17,11 @@
 
 #include "common.h"
 #include "ddraw.h"
+#include "texture.h"
+#include "glutil.h"
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
-#include "texture.h"
 #include "glRenderer.h"
 #include <intrin.h>
 #include <tlhelp32.h>

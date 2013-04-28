@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "texture.h"
+#include "glutil.h"
 #include "glRenderer.h"
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"

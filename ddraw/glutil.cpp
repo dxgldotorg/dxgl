@@ -18,14 +18,13 @@
 #include "common.h"
 #include "texture.h"
 #include "glutil.h"
+#include "glDirectDrawSurface.h"
 
 bool depthwrite = true;
 bool depthtest = false;
 GLuint depthcomp = 0;
 GLuint alphacomp = 0;
-TEXTURE *fbcolor = NULL;
-TEXTURE *fbz = NULL;
-GLuint fbo = 0;
+FBO *currentfbo = NULL;
 GLint scissorx = 0;
 GLint scissory = 0;
 GLsizei scissorwidth = 0;
@@ -43,7 +42,6 @@ GLfloat materialspecular[4] = {0,0,0,0};
 GLfloat materialemission[4] = {0,0,0,0};
 GLfloat materialshininess = 0;
 bool scissorenabled = false;
-bool stencil = false;
 GLint texwrap[16];
 GLclampf clearr = 0.0;
 GLclampf clearg = 0.0;
@@ -60,88 +58,127 @@ bool cullenabled = false;
 D3DFILLMODE polymode = D3DFILL_SOLID;
 D3DSHADEMODE shademode = D3DSHADE_GOURAUD;
 
-void InitFBO()
+void InitFBO(FBO *fbo)
 {
-	if(GLEXT_ARB_framebuffer_object)
+	if(!fbo->fbo)
 	{
-		glGenFramebuffers(1,&fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER,0);
-}
-	else if(GLEXT_EXT_framebuffer_object)
-	{
-		glGenFramebuffersEXT(1,&fbo);
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+		ZeroMemory(fbo,sizeof(FBO));
+		if(GLEXT_ARB_framebuffer_object) glGenFramebuffers(1,&fbo->fbo);
+		else if(GLEXT_EXT_framebuffer_object) glGenFramebuffersEXT(1,&fbo->fbo);
 	}
 }
 
-void DeleteFBO()
+void DeleteFBO(FBO *fbo)
 {
-	if(GLEXT_ARB_framebuffer_object)
+	if(fbo->fbo)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER,0);
-		glDeleteFramebuffers(1,&fbo);
-	}
-	else if(GLEXT_EXT_framebuffer_object)
-	{
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-		glDeleteFramebuffersEXT(1,&fbo);
-	}
-}
-
-GLenum SetFBO(TEXTURE *color, TEXTURE *z, bool stencil)
-{
-	GLenum error;
-	if((fbcolor == color) && (fbz == z)) return 0;
-	fbcolor = color;
-	fbz = z;
-	if(GLEXT_ARB_framebuffer_object)
-	{
-		if(!color)
+		if(GLEXT_ARB_framebuffer_object)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
-			return 0;
+			if(currentfbo == fbo) glBindFramebuffer(GL_FRAMEBUFFER,0);
+			glDeleteFramebuffers(1,&fbo->fbo);
+			ZeroMemory(fbo,sizeof(FBO));
 		}
-		else glBindFramebuffer(GL_FRAMEBUFFER,fbo);
+		else if(GLEXT_EXT_framebuffer_object)
+		{
+			if(currentfbo == fbo) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+			glDeleteFramebuffersEXT(1,&fbo->fbo);
+			ZeroMemory(fbo,sizeof(FBO));
+		}
+	}
+}
+
+void SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+{
+	if(!color) return;
+	if(!fbo->fbo) return;
+	if(GLEXT_ARB_framebuffer_object)
+	{
+		if(currentfbo != fbo) glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
+		currentfbo = fbo;
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
+		fbo->fbcolor = color;
 		if(stencil)
 		{
-			if(!::stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(!fbo->stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
 			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
-			if(::stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(fbo->stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
 			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
-		error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		fbo->stencil = stencil;
+		fbo->fbz = z;
+		fbo->status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	}
 	else if(GLEXT_EXT_framebuffer_object)
 	{
-		if(!color)
-		{
-			glBindFramebufferEXT(GL_FRAMEBUFFER,0);
-			return 0;
-		}
-		else glBindFramebufferEXT(GL_FRAMEBUFFER,fbo);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
+		if(currentfbo != fbo) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
+		currentfbo = fbo;
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,color->id,0);
+		fbo->fbcolor = color;
 		if(stencil)
 		{
-			if(!::stencil) glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(z)
+			{
+				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+			}
+			else
+			{
+				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+			}
 		}
 		else
 		{
-			if(::stencil) glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
 		}
-		error = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER);
+		fbo->stencil = stencil;
+		fbo->fbz = z;
+		fbo->status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	}
-	::stencil = stencil;
-	return error;
+}
+
+void SetFBO(glDirectDrawSurface7 *surface)
+{
+	if(!surface) SetFBO((FBO*)NULL);
+	if(surface->zbuffer) SetFBO(&surface->fbo,surface->texture,surface->zbuffer->texture,surface->zbuffer->hasstencil);
+	else SetFBO(&surface->fbo,surface->texture,NULL,false);
+}
+
+void SetFBO(FBO *fbo)
+{
+	if(fbo == currentfbo) return;
+	if(!fbo)
+	{
+		if(GLEXT_ARB_framebuffer_object) glBindFramebuffer(GL_FRAMEBUFFER,0);
+		else if(GLEXT_EXT_framebuffer_object) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+	}
+	else
+	{
+		if(GLEXT_ARB_framebuffer_object) glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
+		else if(GLEXT_EXT_framebuffer_object) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
+	}
+	currentfbo = fbo;
+}
+
+void SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+{
+	if(!fbo)
+	{
+		SetFBO((FBO*)NULL);
+		return;
+	}
+	if(!fbo->fbo) InitFBO(fbo);
+	if(!color) return;
+	if((color != fbo->fbcolor) || (z != fbo->fbz) || (stencil != fbo->stencil))
+		SetFBOTexture(fbo,color,z,stencil);
+	if(fbo != currentfbo) SetFBO(fbo);
 }
 
 void SetWrap(int level, DWORD coord, DWORD address)

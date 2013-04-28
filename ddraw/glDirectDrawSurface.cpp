@@ -20,6 +20,7 @@
 #include "scalers.h"
 #include "ddraw.h"
 #include "texture.h"
+#include "glutil.h"
 #include "glRenderer.h"
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"
@@ -33,7 +34,6 @@
 using namespace std;
 #include "shadergen.h"
 #include "shaders.h"
-#include "glutil.h"
 
 
 // DDRAW7 routines
@@ -50,6 +50,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	ZeroMemory(colorkey,4*sizeof(CKEY));
 	bitmapinfo = (BITMAPINFO *)malloc(sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	ZeroMemory(bitmapinfo,sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
+	ZeroMemory(&fbo,sizeof(FBO));
 	palette = NULL;
 	paltex = NULL;
 	texture = NULL;
@@ -363,6 +364,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 		renderer->DeleteTexture(texture);
 		delete texture;
 	}
+	if(fbo.fbo) renderer->DeleteFBO(&fbo);
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) palette->Release();
 	if(backbuffer) backbuffer->Release();

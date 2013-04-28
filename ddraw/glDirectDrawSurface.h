@@ -26,6 +26,7 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
+class glDirectDraw7;
 class glDirectDrawClipper;
 class glDirectDrawPalette;
 class glDirectDrawSurface1;
@@ -133,6 +134,7 @@ public:
 	HGLRC hRC;
 	glDirectDrawSurface7 *zbuffer;
 	D3DMATERIALHANDLE handle;
+	FBO fbo;
 private:
 	ULONG refcount;
 	int locked;

@@ -74,6 +74,7 @@ extern BltVertex bltvertices[4];
 #define OP_CLEAR					10
 #define OP_FLUSH					11
 #define OP_DRAWPRIMITIVES			12
+#define OP_DELETEFBO				13
 
 
 extern int swapinterval;
@@ -106,6 +107,7 @@ public:
 	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 		DWORD indexcount, DWORD flags);
+	void DeleteFBO(FBO *fbo);
 	HGLRC hRC;
 	GLCAPS gl_caps;
 private:
@@ -127,6 +129,7 @@ private:
 	glDirectDraw7 *ddInterface;
 	void _Flush();
 	void _SetWnd(int width, int height, int fullscreen, int bpp, HWND newwnd);
+	void _DeleteFBO(FBO *fbo);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
@@ -135,6 +138,7 @@ private:
 	HWND hWnd;
 	glRenderWindow *RenderWnd;
 	DIB dib;
+	FBO fbo;
 	GLuint PBO;
 	CRITICAL_SECTION cs;
 	HANDLE busy;

@@ -19,6 +19,7 @@
 #include "ddraw.h"
 #include "glDirect3D.h"
 #include "texture.h"
+#include "glutil.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
@@ -33,7 +34,6 @@
 #include <cmath>
 using namespace std;
 #include "shadergen.h"
-#include "glutil.h"
 #include "matrix.h"
 
 typedef struct _D3DDeviceDesc1 {
@@ -393,8 +393,16 @@ glDirect3DDevice7::~glDirect3DDevice7()
 			viewports[i]->Release();
 		}
 	}
+	for(int i = 0; i < texturecount; i++)
+	{
+		if(textures[i])
+		{
+			textures[i]->Release();
+		}
+	}
 	free(viewports);
 	free(materials);
+	free(textures);
 	if(matrices) free(matrices);
 	glD3D7->Release();
 	glDDS7->Release();

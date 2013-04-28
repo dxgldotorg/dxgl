@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "texture.h"
+#include "glutil.h"
 #include "glRenderer.h"
 
 // Use EXACTLY one line per entry.  Don't change layout of the list.

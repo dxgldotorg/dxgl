@@ -18,6 +18,7 @@
 #include "common.h"
 #include "texture.h"
 #include "fog.h"
+#include "glutil.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
@@ -25,7 +26,6 @@
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
-#include "glutil.h"
 #include "ddraw.h"
 #include "scalers.h"
 #include <string>
@@ -584,7 +584,23 @@ HRESULT glRenderer::DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVER
 	opcode = OP_DRAWPRIMITIVES;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
+	LeaveCriticalSection(&cs);
 	return (HRESULT)outputs[0];
+}
+
+/**
+  * Deletes a framebuffer object.
+  * @param fbo
+  *  FBO Structure containing framebuffer to delete.
+  */
+void glRenderer::DeleteFBO(FBO *fbo)
+{
+	EnterCriticalSection(&cs);
+	inputs[0] = fbo;
+	opcode = OP_DELETEFBO;
+	SetEvent(start);
+	WaitForSingleObject(busy,INFINITE);
+	LeaveCriticalSection(&cs);
 }
 
 /**
@@ -614,7 +630,7 @@ DWORD glRenderer::_Entry()
 					ZeroMemory(&dib,sizeof(DIB));
 				}
 				DeleteShaders();
-				DeleteFBO();
+				::DeleteFBO(&fbo);
 				if(PBO)
 				{
 					glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
@@ -681,6 +697,9 @@ DWORD glRenderer::_Entry()
 		case OP_DRAWPRIMITIVES:
 			_DrawPrimitives((glDirect3DDevice7*)inputs[0],(GLenum)inputs[1],(GLVERTEX*)inputs[2],(int*)inputs[3],(DWORD)inputs[4],
 				(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
+			break;
+		case OP_DELETEFBO:
+			_DeleteFBO((FBO*)inputs[0]);
 			break;
 		}
 	}
@@ -774,7 +793,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	else gl_caps.ShaderVer = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&gl_caps.TextureMax);
 	CompileShaders();
-	InitFBO();
+	fbo.fbo = 0;
+	InitFBO(&fbo);
 	ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	ClearDepth(1.0);
 	ClearStencil(0);
@@ -827,8 +847,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	BlendEnable(false);
-	int error;
-	error = SetFBO(dest->texture,0,false);
+	SetFBO(dest);
 	SetViewport(0,0,dest->fakex,dest->fakey);
 	RECT destrect;
 	DDSURFACEDESC2 ddsd;
@@ -959,7 +978,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	SetCull(D3DCULL_NONE);
 	SetPolyMode(D3DFILL_SOLID);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	SetFBO(0,0,false);
+	SetFBO((FBO*)NULL);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
@@ -998,7 +1017,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 		backx = x;
 		backy = y;
 	}
-	SetFBO(backbuffer,0,false);
+	SetFBO(&fbo,backbuffer,0,false);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)x;
 	view[3] = (GLfloat)y;
@@ -1019,7 +1038,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 	SetCull(D3DCULL_NONE);
 	SetPolyMode(D3DFILL_SOLID);
 	glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	SetFBO(0,0,false);
+	SetFBO((FBO*)NULL);
 }
 
 void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync)
@@ -1081,7 +1100,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		view[2] = 0;
 		view[3] = (GLfloat)dest->fakey;
 	}
-	SetFBO(0,0,false);
+	SetFBO((FBO*)NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(ddInterface->GetBPP() == 8)
 	{
@@ -1200,8 +1219,7 @@ void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT l
 	outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
-	if(target->zbuffer) SetFBO(target->texture,target->GetZBuffer()->texture,target->GetZBuffer()->hasstencil);
-	else SetFBO(target->texture,0,false);
+	SetFBO(target);
 	int clearbits = 0;
 	if(dwFlags & D3DCLEAR_TARGET)
 	{
@@ -1568,8 +1586,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	if(prog.uniforms[139]!= -1) glUniform1f(prog.uniforms[139],device->viewport.dwX);
 	if(prog.uniforms[140]!= -1) glUniform1f(prog.uniforms[140],device->viewport.dwY);
 	if(prog.uniforms[141]!= -1) glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
-	if(device->glDDS7->zbuffer) SetFBO(device->glDDS7->texture,device->glDDS7->zbuffer->texture,device->glDDS7->zbuffer->hasstencil);
-	else SetFBO(device->glDDS7->texture,0,false);
+	SetFBO(device->glDDS7);
 	SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
 	SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) BlendEnable(true);
@@ -1590,4 +1607,10 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	outputs[0] = (void*)D3D_OK;
 	SetEvent(busy);
 	return;
+}
+
+void glRenderer::_DeleteFBO(FBO *fbo)
+{
+	::DeleteFBO(fbo);
+	SetEvent(busy);
 }

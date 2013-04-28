@@ -19,15 +19,25 @@
 #ifndef _GLUTIL_H
 #define _GLUTIL_H
 
-extern TEXTURE *fbcolor;
-extern TEXTURE *fbz;
-extern GLuint fbo;
-extern bool stencil;
+typedef struct
+{
+	GLuint fbo;
+	TEXTURE *fbcolor;
+	TEXTURE *fbz;
+	bool stencil;
+	GLenum status;
+} FBO;
 
-void InitFBO();
-void DeleteFBO();
+extern FBO *currentfbo;
+class glDirectDrawSurface7;
+
+void InitFBO(FBO *fbo);
+void DeleteFBO(FBO *fbo);
+void SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
 void SetWrap(int level, DWORD coord, DWORD address);
-GLenum SetFBO(TEXTURE *color, TEXTURE *z, bool stencil);
+void SetFBO(glDirectDrawSurface7 *surface);
+void SetFBO(FBO *fbo);
+void SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
 void SetDepthComp(GLenum comp);
 void DepthWrite(bool enabled);
 void DepthTest(bool enabled);
