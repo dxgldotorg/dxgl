@@ -45,6 +45,6 @@ void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
 GLuint GetProgram();
 void ZeroShaderArray();
 void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
-extern GenShader genshaders[256];
+extern GenShader *genshaders;
 extern int current_genshader;
 #endif

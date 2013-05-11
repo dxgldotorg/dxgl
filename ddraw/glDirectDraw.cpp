@@ -831,7 +831,7 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 		surfacecountmax += 1024;
 	}
 	HRESULT error;
-	surfaces[surfacecount-1] = new glDirectDrawSurface7(this,lpDDSurfaceDesc2,lplpDDSurface,&error,false,NULL);
+	surfaces[surfacecount-1] = new glDirectDrawSurface7(this,lpDDSurfaceDesc2,&error,false,NULL);
 	if(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		primary = surfaces[surfacecount-1];

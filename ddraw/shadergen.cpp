@@ -25,10 +25,11 @@ using namespace std;
 #include "shadergen.h"
 #include "shaders.h"
 
-GenShader genshaders[256];
+GenShader *genshaders = NULL;
 static __int64 current_shader = 0;
 static __int64 current_texid[8];
 static int shadercount = 0;
+static int maxshaders = 0;
 static int genindex = 0;
 static bool initialized = false;
 static bool isbuiltin = true;
@@ -103,6 +104,9 @@ Bit 60: Texture has color key
   */
 void ZeroShaderArray()
 {
+	if(genshaders) free(genshaders);
+	maxshaders = 256;
+	genshaders = (GenShader*)malloc(256*sizeof(GenShader));
 	ZeroMemory(genshaders,256*sizeof(GenShader));
 	current_shader = 0;
 	isbuiltin = true;
@@ -113,6 +117,7 @@ void ZeroShaderArray()
   */
 void ClearShaders()
 {
+	if(!genshaders) return;
 	for(int i = 0; i < shadercount; i++)
 	{
 		genshaders[i].id = 0;
@@ -122,7 +127,7 @@ void ClearShaders()
 		if(genshaders[i].shader.vs) glDeleteShader(genshaders[i].shader.vs);
 		if(genshaders[i].shader.fsrc) delete genshaders[i].shader.fsrc;
 		if(genshaders[i].shader.vsrc) delete genshaders[i].shader.vsrc;
-		ZeroMemory(&genshaders[i].shader,sizeof(_GENSHADER));
+		if(genshaders) free(genshaders);
 	}
 	current_genshader = -1;
 	shadercount = 0;

@@ -39,7 +39,7 @@ class glDirect3DDevice7;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
-	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein);
+	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein);
 	virtual ~glDirectDrawSurface7();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);

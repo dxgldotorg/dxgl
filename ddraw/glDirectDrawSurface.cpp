@@ -37,9 +37,9 @@ using namespace std;
 
 
 // DDRAW7 routines
-glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 *lplpDDSurface7, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
+glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
 {
-	TRACE_ENTER(7,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,lplpDDSurface7,14,error,21,copysurface,14,palettein);
+	TRACE_ENTER(6,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,21,copysurface,14,palettein);
 	hasstencil = false;
 	dirty = 2;
 	handle = 0;
@@ -335,14 +335,12 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsdBack.dwBackBufferCount--;
 				ddsdBack.ddsCaps.dwCaps |= DDSCAPS_BACKBUFFER;
 				ddsdBack.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
-				glDirectDrawSurface7 *tmp;
-				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,(LPDIRECTDRAWSURFACE7 *)&tmp,error,false,palette);
+				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,false,palette);
 			}
 			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT){}
 			else *error = DDERR_INVALIDPARAMS;
 		}
 	}
-	TRACE_VAR("*lplpDDSurface7",14,*lplpDDSurface7);
 	TRACE_VAR("*error",23,*error);
 	TRACE_EXIT(-1,0);
 }
