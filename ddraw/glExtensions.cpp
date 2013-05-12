@@ -84,6 +84,18 @@ GLboolean (APIENTRY *glUnmapBuffer)(GLenum target) = NULL;
 BOOL (APIENTRY *wglSwapIntervalEXT)(int interval) = NULL;
 int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
 
+void (APIENTRY *glTextureParameterfEXT)(GLuint texture, GLenum target, GLenum pname, GLfloat param) = NULL;
+void (APIENTRY *glTextureParameterfvEXT)(GLuint texture, GLenum target, GLenum pname, const GLfloat *params) = NULL;
+void (APIENTRY *glTextureParameteriEXT)(GLuint texture, GLenum target, GLenum pname, GLint param) = NULL;
+void (APIENTRY *glTextureParameterivEXT)(GLuint texture, GLenum target, GLenum pname, const GLint *params) = NULL;
+void (APIENTRY *glTextureImage2DEXT)(GLuint texture, GLenum target, GLint level, GLenum internalformat,
+										   GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
+void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
+											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
+void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m) = NULL;
+void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m) = NULL;
+
+
 int GLEXT_ARB_framebuffer_object = 0;
 int GLEXT_EXT_framebuffer_object = 0;
 int GLEXT_NV_packed_depth_stencil = 0;
@@ -93,6 +105,7 @@ int GLEXT_ARB_depth_texture = 0;
 int GLEXT_NVX_gpu_memory_info = 0;
 int GLEXT_ATI_meminfo = 0;
 int GLEXT_ARB_ES2_compatibility = 0;
+int GLEXT_EXT_direct_state_access = 0;
 int glver_major, glver_minor = 0;
 bool atimem = false;
 
@@ -161,14 +174,25 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
 	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;
+	else GLEXT_ARB_framebuffer_object = 0;
 	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object")) GLEXT_EXT_framebuffer_object = 1;
+	else GLEXT_EXT_framebuffer_object = 0;
 	if(strstr((char*)glextensions,"GL_NV_packed_depth_stencil")) GLEXT_NV_packed_depth_stencil = 1;
+	else GLEXT_NV_packed_depth_stencil = 0;
 	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) GLEXT_EXT_packed_depth_stencil = 1;
+	else GLEXT_EXT_packed_depth_stencil = 0;
 	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float")) GLEXT_ARB_depth_buffer_float = 1;
+	else GLEXT_ARB_depth_buffer_float = 0;
 	if(strstr((char*)glextensions,"GL_ARB_depth_texture")) GLEXT_ARB_depth_texture = 1;
+	else GLEXT_ARB_depth_texture = 0;
 	if(strstr((char*)glextensions,"GL_NVX_gpu_memory_info")) GLEXT_NVX_gpu_memory_info = 1;
+	else GLEXT_NVX_gpu_memory_info = 0;
 	if(strstr((char*)glextensions,"GL_ATI_meminfo")) GLEXT_ATI_meminfo = 1;
+	else GLEXT_ATI_meminfo = 0;
 	if(strstr((char*)glextensions,"GL_ARB_ES2_compatibility")) GLEXT_ARB_ES2_compatibility = 1;
+	else GLEXT_ARB_ES2_compatibility = 0;
+	if(strstr((char*)glextensions,"GL_EXT_direct_state_access")) GLEXT_EXT_direct_state_access = 1;
+	else GLEXT_EXT_direct_state_access = 0;
 	bool broken_fbo = true;
 	if(GLEXT_ARB_framebuffer_object)
 	{
@@ -193,6 +217,17 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatusEXT");
 		glDeleteFramebuffersEXT = (PFNGLDELETEFRAMEBUFFERSEXTPROC)wglGetProcAddress("glDeleteFramebuffersEXT");
 		broken_fbo = false;
+	}
+	if(GLEXT_EXT_direct_state_access)
+	{
+		glTextureParameterfEXT = (PFNGLTEXTUREPARAMETERFEXTPROC)wglGetProcAddress("glTextureParameterfEXT");
+		glTextureParameterfvEXT = (PFNGLTEXTUREPARAMETERFVEXTPROC)wglGetProcAddress("glTextureParameterfvEXT");
+		glTextureParameteriEXT = (PFNGLTEXTUREPARAMETERIEXTPROC)wglGetProcAddress("glTextureParameteriEXT");
+		glTextureParameterivEXT = (PFNGLTEXTUREPARAMETERIVEXTPROC)wglGetProcAddress("glTextureParameterivEXT");
+		glTextureImage2DEXT = (PFNGLTEXTUREIMAGE2DEXTPROC)wglGetProcAddress("glTextureImage2DEXT");
+		glTextureSubImage2DEXT = (PFNGLTEXTURESUBIMAGE2DEXTPROC)wglGetProcAddress("glTextureSubImage2DEXT");
+		glMatrixLoadfEXT = (PFNGLMATRIXLOADFEXTPROC)wglGetProcAddress("glMatrixLoadfEXT");
+		glMatrixMultfEXT = (PFNGLMATRIXMULTFEXTPROC)wglGetProcAddress("glMatrixMultfEXT");
 	}
 	if(broken_fbo)
 	{

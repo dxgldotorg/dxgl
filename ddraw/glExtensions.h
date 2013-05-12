@@ -35,6 +35,7 @@ extern int GLEXT_ARB_depth_texture;
 extern int GLEXT_NVX_gpu_memory_info;
 extern int GLEXT_ATI_meminfo;
 extern int GLEXT_ARB_ES2_compatibility;
+extern int GLEXT_EXT_direct_state_access;
 extern int glver_major;
 extern int glver_minor;
 #define GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX 0x9047
@@ -111,6 +112,17 @@ GLAPI GLboolean (APIENTRY *glUnmapBuffer)(GLenum target);
 
 GLAPI BOOL (APIENTRY *wglSwapIntervalEXT)(int interval);
 GLAPI int (APIENTRY *wglGetSwapIntervalEXT)();
+
+GLAPI void (APIENTRY *glTextureParameterfEXT)(GLuint texture, GLenum target, GLenum pname, GLfloat param);
+GLAPI void (APIENTRY *glTextureParameterfvEXT)(GLuint texture, GLenum target, GLenum pname, const GLfloat *params);
+GLAPI void (APIENTRY *glTextureParameteriEXT)(GLuint texture, GLenum target, GLenum pname, GLint param);
+GLAPI void (APIENTRY *glTextureParameterivEXT)(GLuint texture, GLenum target, GLenum pname, const GLint *params);
+GLAPI void (APIENTRY *glTextureImage2DEXT)(GLuint texture, GLenum target, GLint level, GLenum internalformat,
+										   GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+GLAPI void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
+											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+GLAPI void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
+GLAPI void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
 
 void InitGLExt();
 
