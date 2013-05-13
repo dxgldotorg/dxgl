@@ -1211,7 +1211,11 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP))) RenderScreen(texture,this);
+		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+		{
+			swapinterval = 0;
+			RenderScreen(texture,this);
+		}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
