@@ -1962,7 +1962,7 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 {
 	TRACE_ENTER(4,14,this,14,lpDDSCaps,14,lpdwTotal,14,lpdwFree);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(GLEXT_NVX_gpu_memory_info)
+	/*if(GLEXT_NVX_gpu_memory_info)
 	{
 		if(lpdwTotal) glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX,(GLint*)lpdwTotal);
 		if(lpdwFree) glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,(GLint*)lpdwFree);
@@ -1971,7 +1971,7 @@ HRESULT WINAPI glDirectDraw2::GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lp
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	else
+	else*/
 	{
 		MEMORYSTATUS memstat;
 		GlobalMemoryStatus(&memstat);

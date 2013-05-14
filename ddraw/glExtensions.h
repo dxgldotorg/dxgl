@@ -36,6 +36,7 @@ extern int GLEXT_NVX_gpu_memory_info;
 extern int GLEXT_ATI_meminfo;
 extern int GLEXT_ARB_ES2_compatibility;
 extern int GLEXT_EXT_direct_state_access;
+extern int GLEXT_ARB_sampler_objects;
 extern int glver_major;
 extern int glver_minor;
 #define GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX 0x9047
@@ -123,6 +124,14 @@ GLAPI void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLi
 											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 GLAPI void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
 GLAPI void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
+
+GLAPI void (APIENTRY *glBindSampler)(GLuint unit, GLuint sampler);
+GLAPI void (APIENTRY *glDeleteSamplers)(GLsizei n, const GLuint *samplers);
+GLAPI void (APIENTRY *glGenSamplers)(GLsizei n, GLuint *samplers);
+GLAPI void (APIENTRY *glSamplerParameterf)(GLuint sampler, GLenum pname, GLfloat param);
+GLAPI void (APIENTRY *glSamplerParameteri)(GLuint sampler, GLenum pname, GLint param);
+GLAPI void (APIENTRY *glSamplerParameterfv)(GLuint sampler, GLenum pname, const GLfloat *params);
+GLAPI void (APIENTRY *glSamplerParameteriv)(GLuint sampler, GLenum pname, const GLint *params);
 
 void InitGLExt();
 
