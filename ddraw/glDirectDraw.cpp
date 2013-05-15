@@ -916,6 +916,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
 		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT;
+	GetAvailableVidMem(NULL,&ddCaps.dwVidMemTotal,&ddCaps.dwVidMemFree);
 	if(lpDDDriverCaps)
 	{
 		if(lpDDDriverCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDDriverCaps->dwSize = sizeof(DDCAPS_DX7);
