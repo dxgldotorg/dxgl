@@ -95,13 +95,6 @@ void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint lev
 void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m) = NULL;
 void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m) = NULL;
 
-void (APIENTRY *glBindSampler)(GLuint unit, GLuint sampler) = NULL;
-void (APIENTRY *glDeleteSamplers)(GLsizei n, const GLuint *samplers) = NULL;
-void (APIENTRY *glGenSamplers)(GLsizei n, GLuint *samplers) = NULL;
-void (APIENTRY *glSamplerParameterf)(GLuint sampler, GLenum pname, GLfloat param) = NULL;
-void (APIENTRY *glSamplerParameteri)(GLuint sampler, GLenum pname, GLint param) = NULL;
-void (APIENTRY *glSamplerParameterfv)(GLuint sampler, GLenum pname, const GLfloat *params) = NULL;
-void (APIENTRY *glSamplerParameteriv)(GLuint sampler, GLenum pname, const GLint *params) = NULL;
 
 int GLEXT_ARB_framebuffer_object = 0;
 int GLEXT_EXT_framebuffer_object = 0;
@@ -113,7 +106,6 @@ int GLEXT_NVX_gpu_memory_info = 0;
 int GLEXT_ATI_meminfo = 0;
 int GLEXT_ARB_ES2_compatibility = 0;
 int GLEXT_EXT_direct_state_access = 0;
-int GLEXT_ARB_sampler_objects = 0;
 int glver_major, glver_minor = 0;
 bool atimem = false;
 
@@ -181,7 +173,7 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		ExitProcess(-1);
 	}
 	const GLubyte *glextensions = glGetString(GL_EXTENSIONS);
-	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object") || (glver_major >= 3)) GLEXT_ARB_framebuffer_object = 1;
+	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object")) GLEXT_ARB_framebuffer_object = 1;
 	else GLEXT_ARB_framebuffer_object = 0;
 	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object")) GLEXT_EXT_framebuffer_object = 1;
 	else GLEXT_EXT_framebuffer_object = 0;
@@ -189,23 +181,18 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	else GLEXT_NV_packed_depth_stencil = 0;
 	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) GLEXT_EXT_packed_depth_stencil = 1;
 	else GLEXT_EXT_packed_depth_stencil = 0;
-	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float") || (glver_major >= 3)) GLEXT_ARB_depth_buffer_float = 1;
+	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float")) GLEXT_ARB_depth_buffer_float = 1;
 	else GLEXT_ARB_depth_buffer_float = 0;
-	if(strstr((char*)glextensions,"GL_ARB_depth_texture") || (glver_major >= 2)
-		|| ((glver_major >= 1) && (glver_minor >= 4))) GLEXT_ARB_depth_texture = 1;
+	if(strstr((char*)glextensions,"GL_ARB_depth_texture")) GLEXT_ARB_depth_texture = 1;
 	else GLEXT_ARB_depth_texture = 0;
 	if(strstr((char*)glextensions,"GL_NVX_gpu_memory_info")) GLEXT_NVX_gpu_memory_info = 1;
 	else GLEXT_NVX_gpu_memory_info = 0;
 	if(strstr((char*)glextensions,"GL_ATI_meminfo")) GLEXT_ATI_meminfo = 1;
 	else GLEXT_ATI_meminfo = 0;
-	if(strstr((char*)glextensions,"GL_ARB_ES2_compatibility") || (glver_major >= 5)
-		|| ((glver_major >= 4) && (glver_minor >= 1))) GLEXT_ARB_ES2_compatibility = 1;
+	if(strstr((char*)glextensions,"GL_ARB_ES2_compatibility")) GLEXT_ARB_ES2_compatibility = 1;
 	else GLEXT_ARB_ES2_compatibility = 0;
 	if(strstr((char*)glextensions,"GL_EXT_direct_state_access")) GLEXT_EXT_direct_state_access = 1;
 	else GLEXT_EXT_direct_state_access = 0;
-	if(strstr((char*)glextensions,"GL_ARB_sampler_objects") || (glver_major >= 4)
-		|| ((glver_major >= 3) && (glver_minor >= 3))) GLEXT_ARB_sampler_objects = 1;
-	else GLEXT_ARB_sampler_objects = 0;
 	bool broken_fbo = true;
 	if(GLEXT_ARB_framebuffer_object)
 	{
@@ -241,10 +228,6 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		glTextureSubImage2DEXT = (PFNGLTEXTURESUBIMAGE2DEXTPROC)wglGetProcAddress("glTextureSubImage2DEXT");
 		glMatrixLoadfEXT = (PFNGLMATRIXLOADFEXTPROC)wglGetProcAddress("glMatrixLoadfEXT");
 		glMatrixMultfEXT = (PFNGLMATRIXMULTFEXTPROC)wglGetProcAddress("glMatrixMultfEXT");
-	}
-	if(GLEXT_ARB_sampler_objects)
-	{
-
 	}
 	if(broken_fbo)
 	{
