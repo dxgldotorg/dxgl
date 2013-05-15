@@ -69,8 +69,8 @@ void CreateTextureClassic(TEXTURE *texture, int width, int height)
 	case 0: // 8-bit palette
 		if(glver_major >= 3)
 		{
-			texture->internalformat = GL_LUMINANCE8;
-			texture->format = GL_LUMINANCE;
+			texture->internalformat = GL_R8;
+			texture->format = GL_RED;
 		}
 		else
 		{

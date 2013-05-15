@@ -58,7 +58,7 @@ uniform ivec3 ckey;\n\
 void main (void)\n\
 {\n\
  vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec3 comp = ivec3(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ ivec3 comp = ivec3(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
  if (comp == ckey)\n\
   discard;\n\
  gl_FragColor = value;\n\
@@ -71,7 +71,7 @@ uniform ivec4 ckey;\n\
 void main (void)\n\
 {\n\
  vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
  if (comp == ckey)\n\
   gl_FragColor[0] = 1.0;\n\
  else gl_FragColor[0] = 0.0;\n\
@@ -85,10 +85,10 @@ uniform ivec4 ckey;\n\
 void main (void)\n\
 {\n\
  vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.0);\n\
+ ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
  if (comp == ckey)\n\
   discard;\n\
- ivec4 comp2 = ivec4(texture2D(tex1,vec2(gl_TexCoord[1]))*255.0);\n\
+ ivec4 comp2 = ivec4(texture2D(tex1,vec2(gl_TexCoord[1]))*255.5);\n\
  if(comp2[0] == 0)\n\
   discard;\n\
  gl_FragColor = value;\n\

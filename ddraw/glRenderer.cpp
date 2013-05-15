@@ -930,7 +930,8 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
-			glUniform3i(shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
+			if(glver_major >= 3) glUniform3i(shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,0,0);
+			else glUniform3i(shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
 				src->colorkey[0].key.dwColorSpaceHighValue);
 			break;
 		case 15:
