@@ -23,6 +23,9 @@
 
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
+#ifdef _DEBUG
+bool hotkeyregistered = false;
+#endif
 
 void WaitForObjectAndMessages(HANDLE object)
 {
@@ -100,6 +103,10 @@ DWORD glRenderWindow::_Entry()
 			"DXGLRenderWindow","Renderer",WS_POPUP,0,0,width,height,0,0,NULL,this);
 		SetWindowPos(hWnd,HWND_TOP,0,0,width,height,SWP_SHOWWINDOW|SWP_NOACTIVATE);
 	}
+	#ifdef _DEBUG
+	if(RegisterHotKey(hWnd,1,MOD_CONTROL,VK_CANCEL)) hotkeyregistered = true;
+	else Beep(120,1000);
+	#endif
 	SetEvent(ReadyEvent);
 	while((GetMessage(&Msg, NULL, 0, 0) > 0) && !dead)
 	{
@@ -111,10 +118,21 @@ DWORD glRenderWindow::_Entry()
 
 glRenderWindow::~glRenderWindow()
 {
+	#ifdef _DEBUG
+	if(hotkeyregistered) UnregisterHotKey(hWnd,1);
+	#endif
 	SendMessage(hWnd,WM_CLOSE,0,0);
 	WaitForSingleObject(hThread,INFINITE);
 	CloseHandle(hThread);
 }
+
+#ifdef _TRACE
+DWORD WINAPI BeepThread(void *unused)
+{
+	Beep(3600,150);
+	return 0;
+}
+#endif
 
 LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -179,6 +197,18 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		PostQuitMessage(0);
 		dead = true;
 		return 0;
+	#ifdef _DEBUG
+	case WM_HOTKEY:
+		#ifdef _TRACE
+		trace_end = true;
+		CreateThread(NULL,0,BeepThread,NULL,0,NULL);
+		UnregisterHotKey(hWnd,1);
+		hotkeyregistered = false;
+		#else
+		Beep(3600,150);
+		DebugBreak();
+		#endif
+	#endif
 	default:
 		return DefWindowProc(hwnd,msg,wParam,lParam);
 	}

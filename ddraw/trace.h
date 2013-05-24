@@ -21,6 +21,7 @@
 
 
 #ifdef _TRACE
+extern bool trace_end;
 #define TRACE_ENTER(paramcount,...) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
 #define TRACE_EXIT(argtype,arg) trace_exit(__FUNCTION__,argtype,(void*)arg)
 #define TRACE_VAR(var,argtype,arg) trace_var(__FUNCTION__,var,argtype,(void*)arg)

@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "trace.h"
 
 /* Data types:
 -1 - C++ constructor/destructor
@@ -56,6 +57,7 @@
 static CRITICAL_SECTION trace_cs;
 static bool trace_ready = false;
 static bool trace_fail = false;
+bool trace_end = false;
 static HANDLE outfile = INVALID_HANDLE_VALUE;
 unsigned int trace_depth = 0;
 static void trace_decode_hresult(HRESULT hr)
@@ -1043,11 +1045,25 @@ static void trace_decode_arg(int type, void *arg)
 		break;
 	}
 }
+static void end_trace()
+{
+	DWORD byteswritten;
+	WriteFile(outfile,"Trace cancelled by CTRL+Break\r\n",31,&byteswritten,NULL);
+	CloseHandle(outfile);
+	outfile = INVALID_HANDLE_VALUE;
+	trace_fail = true;	
+}
 void trace_enter(const char *function, int paramcount, ...)
 {
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
+	if(trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
 	va_list args;
 	va_start(args,paramcount);
 	DWORD byteswritten;
@@ -1070,6 +1086,12 @@ void trace_exit(const char *function, int argtype, void *arg)
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
+	if(trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
 	if(trace_depth) trace_depth--;
 	DWORD byteswritten;
 	for(unsigned int i = 0; i < trace_depth; i++)
@@ -1090,6 +1112,12 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
+	if(trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
 	DWORD byteswritten;
 	for(unsigned int i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
@@ -1107,6 +1135,12 @@ void trace_sysinfo()
 	if(trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
+	if(trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
 	DWORD byteswritten;
 	OSVERSIONINFOA osver;
 	DWORD buildver;
