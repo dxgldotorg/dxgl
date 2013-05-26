@@ -105,7 +105,7 @@ public:
 	void SetTexture(TEXTURE *newtexture){texture = newtexture;};
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface);
+	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface, int vsync);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
@@ -136,6 +136,7 @@ public:
 	D3DMATERIALHANDLE handle;
 	FBO fbo;
 private:
+	int swapinterval;
 	ULONG refcount;
 	int locked;
 	HDC hdc;

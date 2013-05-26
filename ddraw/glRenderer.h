@@ -77,7 +77,6 @@ extern BltVertex bltvertices[4];
 #define OP_DELETEFBO				13
 
 
-extern int swapinterval;
 extern inline void SetSwap(int swap);
 
 class glDirectDraw7;
@@ -99,7 +98,7 @@ public:
 	HRESULT Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 	void MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
-	void DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src);
+	void DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync);
 	void DeleteTexture(TEXTURE *texture);
 	void InitD3D(int zbuffer);
 	void Flush();
@@ -119,7 +118,7 @@ private:
 	void _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 	void _MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
-	void _DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync);
+	void _DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync);
 	void _DeleteTexture(TEXTURE *texture);
 	void _DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype);
 	void _InitD3D(int zbuffer);

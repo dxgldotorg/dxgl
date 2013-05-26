@@ -84,6 +84,7 @@ public:
 	void DeleteClipper(glDirectDrawClipper *clipper);
 	glDirectDrawSurface7 *primary;
 	bool primarylost;
+	bool lastsync;
 	glDirectDraw1 *glDD1;
 	glDirectDraw2 *glDD2;
 	glDirectDraw4 *glDD4;

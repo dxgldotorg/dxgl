@@ -1088,6 +1088,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	glDD4 = NULL;
 	renderer = NULL;
 	primary = NULL;
+	lastsync = false;
 	fullscreen = false;
 	fpupreserve = false;
 	fpusetup = false;
@@ -1479,9 +1480,8 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwFlags & DDWAITVB_BLOCKBEGINEVENT)
 		TRACE_RET(HRESULT,23,DDERR_UNSUPPORTED);
-	swapinterval=1;
-	primary->RenderScreen(primary->texture,primary);
-	swapinterval=0;
+	if(!lastsync) lastsync = true;
+	else primary->RenderScreen(primary->texture,primary,1);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

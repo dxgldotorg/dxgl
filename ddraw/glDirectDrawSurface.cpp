@@ -687,7 +687,15 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 	TRACE_ENTER(3,14,this,14,lpDDSurfaceTargetOverride,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = Flip2(lpDDSurfaceTargetOverride,dwFlags);
-	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) RenderScreen(texture,this);
+	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	{
+		if(ddInterface->lastsync)
+		{
+			swapinterval++;
+			ddInterface->lastsync = false;
+		}
+		RenderScreen(texture,this,swapinterval);
+	}
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -1213,8 +1221,12 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 		{
-			swapinterval = 0;
-			RenderScreen(texture,this);
+			if(ddInterface->lastsync)
+			{
+				RenderScreen(texture,this,1);
+				ddInterface->lastsync = false;
+			}
+			else RenderScreen(texture,this,0);
 		}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1244,10 +1256,10 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDrawSurface7::RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface)
+void glDirectDrawSurface7::RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface, int vsync)
 {
 	TRACE_ENTER(3,14,this,14,texture,14,surface);
-	renderer->DrawScreen(texture,paltex,this,surface);
+	renderer->DrawScreen(texture,paltex,this,surface,vsync);
 	TRACE_EXIT(0,0);
 }
 // ddraw 2+ api

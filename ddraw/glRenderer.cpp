@@ -64,7 +64,6 @@ inline int _6to8bit(int number)
 }
 
 int oldswap = 0;
-int swapinterval = 0;
 
 /**
   * Sets the Windows OpenGL swap interval
@@ -439,14 +438,17 @@ HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
   *  Destination surface to be updated
   * @param src
   *  Source surface to be updated
+  * @param vsync
+  *  Vertical sync count
   */
-void glRenderer::DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src)
+void glRenderer::DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
 {
 	EnterCriticalSection(&cs);
 	inputs[0] = texture;
 	inputs[1] = paltex;
 	inputs[2] = dest;
 	inputs[3] = src;
+	inputs[4] = (void*)vsync;
 	opcode = OP_DRAWSCREEN;
 	SetEvent(start);
 	WaitForSingleObject(busy,INFINITE);
@@ -681,7 +683,7 @@ DWORD glRenderer::_Entry()
 				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
 			break;
 		case OP_DRAWSCREEN:
-			_DrawScreen((TEXTURE*)inputs[0],(TEXTURE*)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],true);
+			_DrawScreen((TEXTURE*)inputs[0],(TEXTURE*)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],(GLint)inputs[4],true);
 			break;
 		case OP_INITD3D:
 			_InitD3D((int)inputs[0]);
@@ -983,7 +985,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest,false);
+		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest,0,false);
 	outputs[0] = DD_OK;
 	SetEvent(busy);
 }
@@ -1042,7 +1044,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 	SetFBO((FBO*)NULL);
 }
 
-void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, bool setsync)
+void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
 {
 	int progtype;
 	RECT r,r2;
@@ -1056,7 +1058,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 	}
 	DepthTest(false);
 	RECT *viewrect = &r2;
-	SetSwap(swapinterval);
+	SetSwap(vsync);
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
