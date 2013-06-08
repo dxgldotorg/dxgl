@@ -340,6 +340,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	COLORREF OldTextColor,OldBackColor;
 	HANDLE token = NULL;
 	TOKEN_ELEVATION elevation;
+	HWND hGLWnd;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -361,7 +362,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// create temporary gl context to get AA and AF settings.
 		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&mode);
 		pfd.cColorBits = (BYTE)mode.dmBitsPerPel;
-		dc = GetDC(hWnd);
+		hGLWnd = CreateWindow(_T("STATIC"),NULL,WS_CHILD,0,0,16,16,hWnd,NULL,NULL,NULL);
+		dc = GetDC(hGLWnd);
 		pf = ChoosePixelFormat(dc,&pfd);
 		SetPixelFormat(dc,pf,&pfd);
 		rc = wglCreateContext(dc);
@@ -386,7 +388,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		wglMakeCurrent(dc,NULL);
 		wglDeleteContext(rc);
-		ReleaseDC(hWnd,dc);
+		ReleaseDC(hGLWnd,dc);
+		DestroyWindow(hGLWnd);
 		// Load global settings.
 		// scaler
 		_tcscpy(buffer,_T("Change desktop resolution"));
