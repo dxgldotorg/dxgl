@@ -92,6 +92,7 @@ void (APIENTRY *glTextureImage2DEXT)(GLuint texture, GLenum target, GLint level,
 										   GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
 void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
 											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
+void (APIENTRY *glGetTextureImageEXT)(GLuint texture, GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels) = NULL;
 void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m) = NULL;
 void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m) = NULL;
 
@@ -239,6 +240,7 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		glTextureParameterivEXT = (PFNGLTEXTUREPARAMETERIVEXTPROC)wglGetProcAddress("glTextureParameterivEXT");
 		glTextureImage2DEXT = (PFNGLTEXTUREIMAGE2DEXTPROC)wglGetProcAddress("glTextureImage2DEXT");
 		glTextureSubImage2DEXT = (PFNGLTEXTURESUBIMAGE2DEXTPROC)wglGetProcAddress("glTextureSubImage2DEXT");
+		glGetTextureImageEXT = (PFNGLGETTEXTUREIMAGEEXTPROC)wglGetProcAddress("glGetTextureImageEXT");
 		glMatrixLoadfEXT = (PFNGLMATRIXLOADFEXTPROC)wglGetProcAddress("glMatrixLoadfEXT");
 		glMatrixMultfEXT = (PFNGLMATRIXMULTFEXTPROC)wglGetProcAddress("glMatrixMultfEXT");
 	}

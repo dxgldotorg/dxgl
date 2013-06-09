@@ -122,6 +122,7 @@ GLAPI void (APIENTRY *glTextureImage2DEXT)(GLuint texture, GLenum target, GLint 
 										   GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 GLAPI void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
 											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+GLAPI void (APIENTRY *glGetTextureImageEXT)(GLuint texture, GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels);
 GLAPI void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
 GLAPI void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
 

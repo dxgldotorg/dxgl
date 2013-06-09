@@ -196,18 +196,27 @@ void DeleteTexture(TEXTURE *texture)
 
 void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height)
 {
-	SetActiveTexture(0);
-	SetTexture(0,texture);
 	texture->width = width;
 	texture->height = height;
-	glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
+	if(GLEXT_EXT_direct_state_access) glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
+		width,height,0,texture->format,texture->type,data);
+	else
+	{
+		SetActiveTexture(0);
+		SetTexture(0,texture);
+		glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
+	}
 }
 
 void DownloadTextureClassic(TEXTURE *texture, int level, void *data)
 {
-	SetActiveTexture(0);
-	SetTexture(0,texture);
-	glGetTexImage(GL_TEXTURE_2D,level,texture->format,texture->type,data);
+	if(GLEXT_EXT_direct_state_access) glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
+	else
+	{
+		SetActiveTexture(0);
+		SetTexture(0,texture);
+		glGetTexImage(GL_TEXTURE_2D,level,texture->format,texture->type,data);
+	}
 }
 
 void (*_CreateTexture)(TEXTURE *texture, int width, int height) = CreateTextureClassic;
