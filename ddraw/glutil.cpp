@@ -277,9 +277,17 @@ void MatrixMode(GLenum mode)
 
 void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
 {
-	MatrixMode(mode);
-	glLoadMatrixf(mat1);
-	if(mode == GL_MODELVIEW) glMultMatrixf(mat2);
+	if(GLEXT_EXT_direct_state_access)
+	{
+		glMatrixLoadfEXT(mode,mat1);
+		if(mode == GL_MODELVIEW) glMatrixMultfEXT(mode,mat2);
+	}
+	else
+	{
+		MatrixMode(mode);
+		glLoadMatrixf(mat1);
+		if(mode == GL_MODELVIEW) glMultMatrixf(mat2);
+	}
 	if(dirty) *dirty = false;
 }
 
