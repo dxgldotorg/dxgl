@@ -127,8 +127,9 @@ void ClearShaders()
 		if(genshaders[i].shader.vs) glDeleteShader(genshaders[i].shader.vs);
 		if(genshaders[i].shader.fsrc) delete genshaders[i].shader.fsrc;
 		if(genshaders[i].shader.vsrc) delete genshaders[i].shader.vsrc;
-		if(genshaders) free(genshaders);
 	}
+	if(genshaders) free(genshaders);
+	genshaders = NULL;
 	current_genshader = -1;
 	shadercount = 0;
 	genindex = 0;
