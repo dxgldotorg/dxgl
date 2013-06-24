@@ -1133,7 +1133,11 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 			SetTexture(0,texture);
 			glUniform1i(shaders[progtype].tex0,0);
 		}
-		if(GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST);
+		if(GLEXT_ARB_sampler_objects)
+		{
+			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST);
+			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST);
+		}
 	}
 	else
 	{
@@ -1142,6 +1146,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		SetTexture(0,texture);
 		glUniform1i(shaders[progtype].tex0,0);
 	}
+	if(dxglcfg.scalingfilter && GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR);
 	SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
 	glUniform4f(shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(ddInterface->GetFullscreen())
