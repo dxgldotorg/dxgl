@@ -1409,19 +1409,30 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min)
 		min = GL_LINEAR_MIPMAP_LINEAR;
 		break;
 	}
-	if(GLEXT_EXT_direct_state_access)
+	if(GLEXT_ARB_sampler_objects)
 	{
-		glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
-		glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+		glSamplerParameteri(samplers[level].id,GL_TEXTURE_MAG_FILTER,mag);
+		glSamplerParameteri(samplers[level].id,GL_TEXTURE_MIN_FILTER,min);
 	}
 	else
 	{
-		::SetTexture(level,texture);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+		if(GLEXT_EXT_direct_state_access)
+		{
+			glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
+			glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+		}
+		else
+		{
+			::SetTexture(level,texture);
+			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
+			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+		}
 	}
-	magfilter = mag;
-	minfilter = min;
+	if(this)
+	{
+		magfilter = mag;
+		minfilter = min;
+	}
 	TRACE_EXIT(0,0);
 }
 

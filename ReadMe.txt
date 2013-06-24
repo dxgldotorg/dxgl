@@ -1,4 +1,4 @@
-DXGL 0.5.0
+DXGL 0.5.1
 http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
@@ -35,7 +35,7 @@ What works:
 * 8-bit color emulated with GLSL shader
 
 What partially works:
-* 3D graphics are only partially supported, and only advertised in Debug builds.
+* 3D graphics are only partially supported.
 
 What doesn't work:
 * Many functions are stubbed out and return an error

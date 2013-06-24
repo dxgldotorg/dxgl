@@ -37,6 +37,19 @@ typedef struct
 	DDPIXELFORMAT pixelformat;
 } TEXTURE;
 
+typedef struct
+{
+	GLuint id;
+	GLint wraps;
+	GLint wrapt;
+	GLint minfilter;
+	GLint magfilter;
+} SAMPLER;
+
+extern SAMPLER samplers[8];
+
+void InitSamplers();
+void DeleteSamplers();
 void InitTexture(DXGLCFG *cfg);
 void SetActiveTexture(int level);
 void SetTexture(unsigned int level, TEXTURE *texture);

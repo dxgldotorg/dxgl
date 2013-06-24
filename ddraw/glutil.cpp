@@ -214,9 +214,31 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	{
 		texwrap[level*2+coord] = wrapmode;
 		//int currtexture = texlevel;
-		SetActiveTexture(level);
-		if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
-		else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
+		if(GLEXT_ARB_sampler_objects)
+		{
+			if(coord)
+			{
+				if(samplers[level].wrapt != wrapmode)
+				{
+					glSamplerParameteri(samplers[level].id,GL_TEXTURE_WRAP_T,wrapmode);
+					samplers[level].wrapt = wrapmode;
+				}
+			}
+			else
+			{
+				if(samplers[level].wraps != wrapmode)
+				{
+					glSamplerParameteri(samplers[level].id,GL_TEXTURE_WRAP_S,wrapmode);
+					samplers[level].wraps = wrapmode;
+				}
+			}
+		}
+		else
+		{
+			SetActiveTexture(level);
+			if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
+			else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
+		}
 		//SetActiveTexture(currtexture);
 	}
 }

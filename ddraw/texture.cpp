@@ -51,6 +51,37 @@ const int numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 GLint texlevel = 0;
 GLuint textures[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+SAMPLER samplers[8];
+
+void InitSamplers()
+{
+	if(GLEXT_ARB_sampler_objects)
+	{
+		memset(samplers,0,8*sizeof(SAMPLER));
+		for(int i = 0; i < 8; i++)
+		{
+			glGenSamplers(1,&samplers[i].id);
+			glBindSampler(i,samplers[i].id);
+			glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+			glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+			glSamplerParameteri(samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+			glSamplerParameteri(samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		}
+	}
+}
+void DeleteSamplers()
+{
+	if(GLEXT_ARB_sampler_objects)
+	{
+		for(int i = 0; i < 8; i++)
+		{
+			glBindSampler(i,0);
+			glDeleteSamplers(1,&samplers[i].id);
+			samplers[i].id = 0;
+		}
+	}
+}
+
 void CreateTextureClassic(TEXTURE *texture, int width, int height)
 {
 	int texformat = -1;
@@ -258,7 +289,7 @@ void SetTexture(unsigned int level, TEXTURE *texture)
 
 
 
-/*
+/*  old code
 			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
 			{
 				switch(ddsd.ddpfPixelFormat.dwRGBBitCount)

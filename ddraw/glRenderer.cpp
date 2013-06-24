@@ -631,6 +631,7 @@ DWORD glRenderer::_Entry()
 					if(dib.hdc)	DeleteDC(dib.hdc);
 					ZeroMemory(&dib,sizeof(DIB));
 				}
+				DeleteSamplers();
 				DeleteShaders();
 				::DeleteFBO(&fbo);
 				if(PBO)
@@ -838,6 +839,7 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
 	glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+	InitSamplers();
 	TRACE_SYSINFO();
 	return TRUE;
 }
@@ -962,7 +964,15 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		progtype = PROG_TEXTURE;
 		glUniform1i(shaders[progtype].tex0,0);
 	}
-	if(src) SetTexture(0,src->GetTexture());
+	if(src)
+	{
+		SetTexture(0,src->GetTexture());
+		if(GLEXT_ARB_sampler_objects)
+		{
+			if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) src->SetFilter(0,GL_NEAREST,GL_NEAREST);
+			else src->SetFilter(0,GL_LINEAR,GL_LINEAR);
+		}
+	}
 	else SetTexture(0,NULL);
 	glUniform4f(shaders[progtype].view,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
@@ -1028,6 +1038,7 @@ void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	SetTexture(0,*texture);
 	*texture = backbuffer;
+	if(GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR);
 	glUniform4f(shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
 	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
@@ -1122,6 +1133,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 			SetTexture(0,texture);
 			glUniform1i(shaders[progtype].tex0,0);
 		}
+		if(GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST);
 	}
 	else
 	{
