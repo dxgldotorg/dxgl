@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "util.h"
 #include "ddraw.h"
 #include "texture.h"
 #include "glutil.h"
@@ -38,40 +39,6 @@ DWORD timer;
 int vsyncstatus;
 glRenderer *renderer = NULL;
 glDirectDraw7 *dxglinterface = NULL;
-
-/**
-  * Tests if a pointer is valid for reading from.  Compile in Visual C++ with /EHa
-  * enabled Structed Exception Handling in C++ code, to prevent crashes on invalid
-  * pointers.
-  * @param ptr
-  *  Pointer to test for validity.
-  * @return
-  *  Returns false if the pointer is valid, or true if an error occurs.
-  */
-bool IsBadReadPointer(void *ptr)
-{
-	TRACE_ENTER(1,14,ptr);
-	char a;
-	try
-	{
-		a = *(char*)ptr;
-		if(a == *(char*)ptr)
-		{
-			TRACE_EXIT(21,0);
-			return false;
-		}
-		else 
-		{
-			TRACE_EXIT(21,1);
-			return true;
-		}
-	}
-	catch(...)
-	{
-		TRACE_EXIT(21,1);
-		return true;
-	}
-}
 
 void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
 {
@@ -191,6 +158,7 @@ BOOL IsCallerOpenGL(void *returnaddress)
 HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(3,24,lpGUID,14,lplpDD,14,pUnkOuter);
+	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret;
 	if(gllock || IsCallerOpenGL(_ReturnAddress()))
 	{
@@ -292,6 +260,7 @@ HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *l
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
+	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dxglinterface)
 	{
 		TRACE_EXIT(23,DDERR_DIRECTDRAWALREADYCREATED);

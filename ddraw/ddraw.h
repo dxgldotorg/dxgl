@@ -58,6 +58,7 @@ DDRAW_API BOOL IsDXGLDDraw();
 
 extern DXGLCFG dxglcfg;
 extern bool gllock;
+extern const GUID device_template;
 extern DWORD timer;
 extern int vsyncstatus;
 class glRenderer;

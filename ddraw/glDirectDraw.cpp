@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "util.h"
 #include "shaders.h"
 #include "ddraw.h"
 #include "glDirect3D.h"
@@ -569,6 +570,24 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 	TRACE_ENTER(3,14,this,24,lpGUID,14,pUnkOuter);
 	dxglinterface = this;
 	initialized = false;
+	if(((ULONG_PTR)lpGUID > 2) && IsBadReadPointer(lpGUID))
+	{
+		error = DDERR_INVALIDPARAMS ;
+		TRACE_EXIT(-1,0);
+		return;
+	}
+	GUID guid;
+	if((ULONG_PTR)lpGUID > 2)
+	{
+		guid = *lpGUID;
+		guid.Data1 &= 0xFFFFFF00;
+		if(guid != device_template)
+		{
+			error = DDERR_INVALIDDIRECTDRAWGUID;
+			TRACE_EXIT(-1,0);
+			return;
+		}
+	}
 	if(pUnkOuter)
 	{
 		error = DDERR_INVALIDPARAMS ;
@@ -585,28 +604,31 @@ glDirectDraw7::~glDirectDraw7()
 {
 	TRACE_ENTER(1,14,this);
 	dxglinterface = NULL;
-	if(glD3D7) glD3D7->Release();
-	RestoreDisplayMode();
-	if(clippers)
+	if(initialized)
 	{
-		for(int i = 0; i < clippercount; i++)
+		if(glD3D7) glD3D7->Release();
+		RestoreDisplayMode();
+		if(clippers)
 		{
-			if(clippers[i]) clippers[i]->Release();
-			clippers[i] = NULL;
+			for(int i = 0; i < clippercount; i++)
+			{
+				if(clippers[i]) clippers[i]->Release();
+				clippers[i] = NULL;
+			}
+			free(clippers);
 		}
-		free(clippers);
-	}
-	if(surfaces)
-	{
-		for(int i = 0; i < surfacecount; i++)
+		if(surfaces)
 		{
-			if(surfaces[i]) delete surfaces[i];
-			surfaces[i] = NULL;
+			for(int i = 0; i < surfacecount; i++)
+			{
+				if(surfaces[i]) delete surfaces[i];
+				surfaces[i] = NULL;
+			}
+			free(surfaces);
 		}
-		free(surfaces);
+		if(renderer) delete renderer;
+		renderer = NULL;
 	}
-	if(renderer) delete renderer;
-	renderer = NULL;
 	TRACE_EXIT(-1,0);
 }
 
@@ -802,7 +824,19 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
+
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
+{
+	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc2,14,lplpDDSurface,14,pUnkOuter);
+	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurfaceDesc2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	TRACE_RET(HRESULT,23,CreateSurface2(lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter));
+}
+
+
+HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc2,14,lplpDDSurface,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
@@ -1658,8 +1692,10 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 {
 	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
-	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
+	HRESULT err = glDD7->CreateSurface2((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
@@ -1844,8 +1880,10 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
-	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
+	HRESULT err = glDD7->CreateSurface2((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
@@ -2053,8 +2091,10 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 	TRACE_ENTER(4,14,this,14,lpDDSurfaceDesc,14,lplpDDSurface,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
-	HRESULT err = glDD7->CreateSurface((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
+	HRESULT err = glDD7->CreateSurface2((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);

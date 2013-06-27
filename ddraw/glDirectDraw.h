@@ -70,6 +70,7 @@ public:
     HRESULT WINAPI EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTimeout);
 
     // internal functions
+	HRESULT CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter);
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
