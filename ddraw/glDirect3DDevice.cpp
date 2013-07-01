@@ -20,6 +20,7 @@
 #include "glDirect3D.h"
 #include "texture.h"
 #include "glutil.h"
+#include "timer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"

@@ -19,6 +19,7 @@
 #include "util.h"
 #include "shaders.h"
 #include "ddraw.h"
+#include "timer.h"
 #include "glDirect3D.h"
 #include "glDirectDraw.h"
 #include "texture.h"
@@ -1238,8 +1239,9 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		internaly = screeny = primaryy = devmode.dmPelsHeight;
 	}
 	bpp = devmode.dmBitsPerPel;
+	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
-	InitGL(x,y,bpp,fullscreen,hWnd,this);
+	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1350,7 +1352,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			if(dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1380,8 +1382,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		internaly = screeny = currmode.dmPelsHeight;
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
+		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 		primarylost = true;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -1406,8 +1410,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		}
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
+		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 		primarylost = true;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -1420,7 +1426,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primarybpp = dwBPP;
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+		InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 		break;
@@ -1455,8 +1463,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			internaly = screeny = newmode2.dmPelsHeight;
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1481,8 +1491,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			}
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1496,7 +1508,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
-			InitGL(screenx,screeny,screenbpp,true,hWnd,this);
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;

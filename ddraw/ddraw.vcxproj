@@ -297,6 +297,7 @@
     <ClInclude Include="shadergen.h" />
     <ClInclude Include="shaders.h" />
     <ClInclude Include="texture.h" />
+    <ClInclude Include="timer.h" />
     <ClInclude Include="trace.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
@@ -361,6 +362,7 @@
     <ClCompile Include="shadergen.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="texture.cpp" />
+    <ClCompile Include="timer.cpp" />
     <ClCompile Include="trace.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>

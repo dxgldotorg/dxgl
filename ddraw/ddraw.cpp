@@ -23,6 +23,7 @@
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
+#include "timer.h"
 #include "glRenderer.h"
 #include <intrin.h>
 #include <tlhelp32.h>
@@ -40,11 +41,11 @@ int vsyncstatus;
 glRenderer *renderer = NULL;
 glDirectDraw7 *dxglinterface = NULL;
 
-void InitGL(int width, int height, int bpp, bool fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
+void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
-	if(!renderer) renderer = new glRenderer(width,height,bpp,fullscreen,hWnd,glDD7);
-	else renderer->SetWnd(width,height,bpp,fullscreen,hWnd);
+	if(!renderer) renderer = new glRenderer(width,height,bpp,fullscreen,frequency,hWnd,glDD7);
+	else renderer->SetWnd(width,height,bpp,fullscreen,frequency,hWnd);
 	TRACE_EXIT(0,0);
 }
 

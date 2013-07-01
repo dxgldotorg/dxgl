@@ -19,6 +19,7 @@
 #include "texture.h"
 #include "fog.h"
 #include "glutil.h"
+#include "timer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
@@ -192,7 +193,7 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
   * @param glDD7
   *  Pointer to the glDirectDraw7 object that is managing the glRenderer object
   */
-glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwnd, glDirectDraw7 *glDD7)
+glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
 	hDC = NULL;
 	hRC = NULL;
@@ -218,9 +219,10 @@ glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, HWND hwn
 	inputs[1] = (void*)height;
 	inputs[2] = (void*)bpp;
 	inputs[3] = (void*)fullscreen;
-	inputs[4] = (void*)hWnd;
-	inputs[5] = glDD7;
-	inputs[6] = this;
+	inputs[4] = (void*)frequency;
+	inputs[5] = (void*)hWnd;
+	inputs[6] = glDD7;
+	inputs[7] = this;
 	hThread = CreateThread(NULL,0,ThreadEntry,inputs,0,NULL);
 	WaitForSingleObject(busy,INFINITE);
 }
@@ -249,7 +251,7 @@ glRenderer::~glRenderer()
 DWORD WINAPI glRenderer::ThreadEntry(void *entry)
 {
 	void **inputsin = (void**)entry;
-	glRenderer *This = (glRenderer*)inputsin[6];
+	glRenderer *This = (glRenderer*)inputsin[7];
 	return This->_Entry();
 }
 
@@ -526,7 +528,7 @@ void glRenderer::Flush()
   * @param newwnd
   *  HWND of the new window
   */
-void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, HWND newwnd)
+void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
 {
 	EnterCriticalSection(&cs);
 	if(fullscreen && newwnd)
@@ -539,7 +541,8 @@ void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, HWND new
 	inputs[1] = (void*)height;
 	inputs[2] = (void*)bpp;
 	inputs[3] = (void*)fullscreen;
-	inputs[4] = (void*)newwnd;
+	inputs[4] = (void*)frequency;
+	inputs[5] = (void*)newwnd;
 	opcode = OP_SETWND;
 	SetEvent(start);
 	WaitForObjectAndMessages(busy);
@@ -614,7 +617,7 @@ DWORD glRenderer::_Entry()
 {
 	float tmpfloats[16];
 	EnterCriticalSection(&cs);
-	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4],(glDirectDraw7*)inputs[5]);
+	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(unsigned int)inputs[4],(HWND)inputs[5],(glDirectDraw7*)inputs[6]);
 	LeaveCriticalSection(&cs);
 	SetEvent(busy);
 	while(1)
@@ -660,7 +663,7 @@ DWORD glRenderer::_Entry()
 			return 0;
 			break;
 		case OP_SETWND:
-			_SetWnd((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(HWND)inputs[4]);
+			_SetWnd((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(unsigned int)inputs[4],(HWND)inputs[5]);
 			break;
 		case OP_CREATE:
 			_MakeTexture((TEXTURE*)inputs[0],(DWORD)inputs[1],(DWORD)inputs[2]);
@@ -725,7 +728,7 @@ DWORD glRenderer::_Entry()
   * @return
   *  TRUE if OpenGL has been initialized, FALSE otherwise.
   */
-BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hWnd, glDirectDraw7 *glDD7)
+BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	ddInterface = glDD7;
 	if(hRC)
@@ -777,6 +780,9 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, HWND hW
 	gllock = false;
 	InitGLExt();
 	SetSwap(1);
+	SwapBuffers(hDC);
+	glFinish();
+	timer.Calibrate(height, frequency);
 	SetSwap(0);
 	SetViewport(0,0,width,height);
 	glViewport(0,0,width,height);
@@ -1278,7 +1284,7 @@ void glRenderer::_Flush()
 	SetEvent(busy);
 }
 
-void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, HWND newwnd)
+void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
 {
 	if(newwnd != hWnd)
 	{
@@ -1308,6 +1314,8 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, HWND ne
 			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
 		gllock = false;
 		SetSwap(1);
+		SwapBuffers(hDC);
+		timer.Calibrate(height, frequency);
 		SetSwap(0);
 		SetViewport(0,0,width,height);
 	}
