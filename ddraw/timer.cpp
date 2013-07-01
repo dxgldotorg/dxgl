@@ -64,8 +64,11 @@ unsigned int DXGLTimer::GetScanLine()
 	if (timertype == 1)	QueryPerformanceCounter(&timerpos);
 	else timerpos.QuadPart = timeGetTime();
 	timerpos.QuadPart -= timer_base.QuadPart;
-	sync_pos = fmod((double) timerpos.QuadPart, monitor_period);
+	double milliseconds;
+	if (timertype == 1) milliseconds = ((double) timerpos.QuadPart / (double)timer_frequency) * 1000.0;
+	else milliseconds = (double) timerpos.QuadPart;
+	sync_pos = fmod(milliseconds, monitor_period);
 	sync_pos /= monitor_period;
-	sync_pos *= 1000.0;
+	sync_pos *= (double)lines;
 	return sync_pos;
 }

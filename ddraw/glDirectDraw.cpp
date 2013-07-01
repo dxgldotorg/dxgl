@@ -1101,7 +1101,7 @@ HRESULT WINAPI glDirectDraw7::GetScanLine(LPDWORD lpdwScanLine)
 	if(!primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	*lpdwScanLine = renderer->GetScanLine();
-	if(*lpdwScanLine > primary->fakey) TRACE_RET(HRESULT,23,DDERR_VERTICALBLANKINPROGRESS);
+	if(*lpdwScanLine >= primary->fakey) TRACE_RET(HRESULT,23,DDERR_VERTICALBLANKINPROGRESS);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1113,7 +1113,7 @@ HRESULT WINAPI glDirectDraw7::GetVerticalBlankStatus(LPBOOL lpbIsInVB)
 	if(!renderer) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
-	if(renderer->GetScanLine() > primary->fakey) *lpbIsInVB = TRUE;
+	if(renderer->GetScanLine() >= primary->fakey) *lpbIsInVB = TRUE;
 	else *lpbIsInVB = FALSE;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
