@@ -107,6 +107,7 @@ public:
 	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 		DWORD indexcount, DWORD flags);
 	void DeleteFBO(FBO *fbo);
+	unsigned int GetScanLine();
 	HGLRC hRC;
 	GLCAPS gl_caps;
 private:

@@ -608,6 +608,11 @@ void glRenderer::DeleteFBO(FBO *fbo)
 	LeaveCriticalSection(&cs);
 }
 
+unsigned int glRenderer::GetScanLine()
+{
+	return timer.GetScanLine();
+}
+
 /**
   * Main loop for glRenderer class
   * @return
