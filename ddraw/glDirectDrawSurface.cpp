@@ -41,6 +41,7 @@ using namespace std;
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, bool copysurface, glDirectDrawPalette *palettein)
 {
 	TRACE_ENTER(6,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,21,copysurface,14,palettein);
+	overlay = false;
 	hasstencil = false;
 	dirty = 2;
 	handle = 0;
@@ -704,6 +705,9 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 {
 	TRACE_ENTER(3,14,this,14,lpDDSurfaceTargetOverride,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(dwFlags & 0xF8FFFFC0) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(locked) TRACE_RET(HRESULT,23,DDERR_SURFACEBUSY);
+	if(!overlay && ((dwFlags & DDFLIP_ODD) || (dwFlags & DDFLIP_EVEN))) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DWORD i;
 	glDirectDrawSurface7 *tmp;
 	if(dwFlags & DDFLIP_NOVSYNC) swapinterval=0;

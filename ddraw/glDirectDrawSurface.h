@@ -149,6 +149,7 @@ private:
 	int pagelocked;
 	GLint magfilter,minfilter;
 	glDirect3DDevice7 *device;
+	bool overlay;
 };
 
 // Legacy DDRAW Interfaces
