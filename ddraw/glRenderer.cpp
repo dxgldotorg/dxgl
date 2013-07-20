@@ -34,9 +34,6 @@ using namespace std;
 #include "shadergen.h"
 #include "matrix.h"
 
-TEXTURE *backbuffer = NULL;
-int backx = 0;
-int backy = 0;
 BltVertex bltvertices[4];
 const GLushort bltindices[4] = {0,1,2,3};
 
@@ -195,6 +192,8 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
   */
 glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
+	backbuffer = NULL;
+	stenciltex = NULL;
 	hDC = NULL;
 	hRC = NULL;
 	PBO = 0;

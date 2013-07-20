@@ -43,5 +43,11 @@ private:
 	bool hasparent;
 	bool initialized;
 	HWND hWnd;
+	RECT *cliplist;
+	BltVertex *vertices;
+	WORD *indices;
+	int clipsize;
+	int maxsize;
+	bool hascliplist;
 };
 #endif //_GLDIRECTDRAWCLIPPER_H

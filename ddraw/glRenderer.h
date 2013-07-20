@@ -51,14 +51,6 @@ typedef struct
 	int stride;
 } GLVERTEX;
 
-typedef struct
-{
-	GLfloat x,y;
-	GLubyte r,g,b,a;
-	GLfloat s,t;
-	GLfloat padding[3];
-} BltVertex;
-
 extern BltVertex bltvertices[4];
 
 #define OP_NULL						0
@@ -145,6 +137,12 @@ private:
 	HANDLE start;
 	unsigned int frequency;
 	DXGLTimer timer;
+	TEXTURE *backbuffer;
+	int backx;
+	int backy;
+	TEXTURE *stenciltex;
+	int stencilx;
+	int stencily;
 };
 
 #endif //_GLRENDERER_H

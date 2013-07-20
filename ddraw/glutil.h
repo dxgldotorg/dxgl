@@ -28,6 +28,14 @@ typedef struct
 	GLenum status;
 } FBO;
 
+typedef struct
+{
+	GLfloat x, y;
+	GLubyte r, g, b, a;
+	GLfloat s, t;
+	GLfloat padding[3];
+} BltVertex;
+
 extern FBO *currentfbo;
 class glDirectDrawSurface7;
 

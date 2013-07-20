@@ -18,6 +18,8 @@
 #include "common.h"
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
+#include "texture.h"
+#include "glutil.h"
 #include "glDirectDrawClipper.h"
 
 LONG locks;

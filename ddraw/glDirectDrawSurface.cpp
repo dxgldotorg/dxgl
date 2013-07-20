@@ -368,6 +368,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) palette->Release();
 	if(backbuffer) backbuffer->Release();
+	if(clipper) clipper->Release();
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer->Release();
