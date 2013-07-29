@@ -33,7 +33,8 @@ typedef struct
 	GLfloat x, y;
 	GLubyte r, g, b, a;
 	GLfloat s, t;
-	GLfloat padding[3];
+	GLfloat dests, destt;
+	GLfloat padding;
 } BltVertex;
 
 extern FBO *currentfbo;

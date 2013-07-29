@@ -193,7 +193,6 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
 glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
 	backbuffer = NULL;
-	stenciltex = NULL;
 	hDC = NULL;
 	hRC = NULL;
 	PBO = 0;

@@ -125,6 +125,7 @@ public:
 	CKEY colorkey[4];
 	TEXTURE *texture;
 	TEXTURE *paltex;
+	TEXTURE *stencil;
 	bool hasstencil;
 	char *buffer;
 	char *bigbuffer;
@@ -135,6 +136,7 @@ public:
 	glDirectDrawSurface7 *zbuffer;
 	D3DMATERIALHANDLE handle;
 	FBO fbo;
+	FBO stencilfbo;
 private:
 	int swapinterval;
 	ULONG refcount;

@@ -140,9 +140,6 @@ private:
 	TEXTURE *backbuffer;
 	int backx;
 	int backy;
-	TEXTURE *stenciltex;
-	int stencilx;
-	int stencily;
 };
 
 #endif //_GLRENDERER_H

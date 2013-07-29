@@ -53,7 +53,9 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bitmapinfo = (BITMAPINFO *)malloc(sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	ZeroMemory(bitmapinfo,sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	ZeroMemory(&fbo,sizeof(FBO));
+	ZeroMemory(&stencilfbo,sizeof(FBO));
 	palette = NULL;
+	stencil = NULL;
 	paltex = NULL;
 	texture = NULL;
 	clipper = NULL;
@@ -364,7 +366,13 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 		renderer->DeleteTexture(texture);
 		delete texture;
 	}
+	if(stencil)
+	{
+		renderer->DeleteTexture(stencil);
+		delete stencil;
+	}
 	if(fbo.fbo) renderer->DeleteFBO(&fbo);
+	if(stencilfbo.fbo) renderer->DeleteFBO(&stencilfbo);
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) palette->Release();
 	if(backbuffer) backbuffer->Release();

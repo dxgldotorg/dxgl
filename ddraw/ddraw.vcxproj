@@ -295,6 +295,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="scalers.h" />
     <ClInclude Include="shadergen.h" />
+    <ClInclude Include="shadergen2d.h" />
     <ClInclude Include="shaders.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="timer.h" />
@@ -360,6 +361,7 @@
     </ClCompile>
     <ClCompile Include="scalers.cpp" />
     <ClCompile Include="shadergen.cpp" />
+    <ClCompile Include="shadergen2d.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="timer.cpp" />
