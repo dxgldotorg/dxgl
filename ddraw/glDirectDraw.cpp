@@ -18,6 +18,7 @@
 #include "common.h"
 #include "util.h"
 #include "shaders.h"
+#include "shadergen2d.h"
 #include "ddraw.h"
 #include "timer.h"
 #include "glDirect3D.h"
@@ -951,6 +952,11 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
 		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT;
+	memcpy(ddCaps.dwRops,supported_rops,8*sizeof(DWORD));
+	memcpy(ddCaps.dwNLVBRops,supported_rops,8*sizeof(DWORD));
+	memcpy(ddCaps.dwSSBRops,supported_rops,8*sizeof(DWORD));
+	memcpy(ddCaps.dwSVBRops,supported_rops,8*sizeof(DWORD));
+	memcpy(ddCaps.dwVSBRops,supported_rops,8*sizeof(DWORD));
 	GetAvailableVidMem(NULL,&ddCaps.dwVidMemTotal,&ddCaps.dwVidMemFree);
 	if(lpDDDriverCaps)
 	{
