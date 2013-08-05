@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "common.h"
 #include "shadergen2d.h"
+#include "../common/version.h"
 
 /* Bits in 2D shader ID:
 Bit 0:	Use destination alpha (DDBLT_ALPHADEST)
@@ -122,9 +123,8 @@ const DWORD supported_rops[8] = {
 	0x00000000
 };
 
-#define REVISION 1
 static const char header[] =
-	"//REV" STR(REVISION) "\n\
+	"//REV" STR(SHADER2DVERSION) "\n\
 #version 110\n";
 static const char vertexshader[] = "//2D Vertex Shader\n";
 static const char fragshader[] = "//2D Fragment Shader\n";

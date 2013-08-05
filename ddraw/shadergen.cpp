@@ -25,6 +25,7 @@
 using namespace std;
 #include "shadergen.h"
 #include "shaders.h"
+#include "../common/version.h"
 
 GenShader *genshaders = NULL;
 static __int64 current_shader = 0;
@@ -225,9 +226,8 @@ GLuint GetProgram()
 }
 
 
-#define REVISION 1
 static const char header[] =
-	"//REV" STR(REVISION) "\n\
+	"//REV" STR(SHADER3DVERSION) "\n\
 #version 110\n";
 static const char vertexshader[] = "//Vertex Shader\n";
 static const char fragshader[] = "//Fragment Shader\n";
