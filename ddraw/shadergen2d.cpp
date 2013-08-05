@@ -35,7 +35,7 @@ Bit 13: Use destination color key (DDBLT_KEYDEST)
 Bit 14: ROP index bit 2
 Bit 15: Use source color key (DDBLT_KEYSRC)
 Bit 16: ROP index bit 3
-Bit 17: Use ROP (DDBLT_ROP)
+Bit 17: Use ROP (DDBLT_ROP, forces integer processing)
 Bit 18: ROP index bit 4
 Bit 19: Z-buffer blit (DDBLT_ZBUFFER)
 Bit 20: Use dest. Z constant (DDBLT_ZBUFFERDESTCONSTOVERRIDE)
@@ -120,4 +120,298 @@ const DWORD supported_rops[8] = {
 	0x00000000,
 	0x00001000,
 	0x00000000
+};
+
+#define REVISION 1
+static const char header[] =
+	"//REV" STR(REVISION) "\n\
+#version 110\n";
+static const char vertexshader[] = "//2D Vertex Shader\n";
+static const char fragshader[] = "//2D Fragment Shader\n";
+static const char idheader[] = "//ID: 0x";
+static const char linefeed[] = "\n";
+static const char mainstart[] = "void main()\n{\n";
+static const char mainend[] = "} ";
+// Attributes
+static const char attr_srcxy[] = "attribute vec2 srcxy;\n";
+static const char attr_destxy[] = "attribute vec2 destxy;\n";
+static const char attr_patternxy[] = "attribute vec2 patternxy;\n";
+
+// Uniforms
+static const char var_srctex[] = "uniform sampler2d srctex;";
+static const char var_desttex[] = "uniform sampler2d desttex;";
+static const char var_patterntex[] = "uniform sampler2d patterntex;";
+
+// Variables
+static const char var_src[] = "ivec4 src;\n";
+static const char var_dest[] = "ivec4 dest;\n";
+static const char var_pattern[] = "ivec4 pattern;\n";
+
+// Operations
+static const char op_src[] = "src = ivec4(texture2D(src,gl_TexCoord[0].st)*255.5);\n";
+static const char op_dest[] = "dest = ivec4(texture2D(dest,gl_TexCoord[1].st)*255.5);\n";
+static const char op_pattern[] = "pattern = ivec4(texture2D(pattern,gl_TexCoord[2].st)*255.5);\n";
+static const char op_destout[] = "gl_FragColor = vec4(dest)/255.5;\n";
+
+
+// Functions
+
+// ROP Operations
+static const char *op_ROP[256] = {
+"dest = ivec4(0);",//00 BLACKNESS
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//0F
+"",//10
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//1F
+"",//20
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//2F
+"",//30
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//3F
+"",//40
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//4F
+"",//50
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//5F
+"",//60
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//6F
+"",//70
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//7F
+"",//80
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//8F
+"",//90
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//9F
+"",//A0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//AF
+"",//B0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//BF
+"",//C0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"dest = src;\n",//CC SRCCOPY
+"",
+"",
+"",//CF
+"",//D0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//DF
+"",//E0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",//EF
+"",//F0
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"dest = ivec4(255);\n",//FF WHITENESS
 };
