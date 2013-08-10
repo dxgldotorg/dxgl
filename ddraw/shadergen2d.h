@@ -15,6 +15,25 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+typedef struct
+{
+	GLint vs;
+	GLint fs;
+	string *vsrc;
+	string *fsrc;
+	GLint prog;
+	GLint attribs[8];
+	GLint uniforms[16];
+} _GENSHADER2D;
+
+struct GenShader2D
+{
+	_GENSHADER2D shader;
+	DWORD id;
+};
+
 extern const DWORD valid_rop_codes[256];
 extern const DWORD rop_texture_usage[256];
 extern const DWORD supported_rops[8];
+extern GenShader2D *genshaders2D;
+extern int current_genshader2D;

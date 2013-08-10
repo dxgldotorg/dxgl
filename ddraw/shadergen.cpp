@@ -145,22 +145,25 @@ void ClearShaders()
   *  Pointer to the texture stage state array, containing 8 64-bit state values
   * @param texcoords
   *  Pointer to number of texture coordinates in each texture stage
-  * @param builtin
-  *  If true, the id parameter is an index to a built-in shader for 2D blitting
+  * @param type
+  *  Type of shader:
+  *  0 for builtin
+  *  1 for generated 2D
+  *  2 for generated 3D
   */
-void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin)
+void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
 {
 	int shaderindex = -1;
-	if(builtin)
+	switch(type)
 	{
+	case 0:
 		if(isbuiltin && (shaders[id].prog == current_shader)) return;
 		glUseProgram(shaders[id].prog);
 		current_shader = shaders[id].prog;
 		isbuiltin=true;
 		current_genshader = -1;
-	}
-	else
-	{
+		break;
+	case 2:
 		if(!isbuiltin && (id == current_shader))
 		{
 			if(!memcmp(current_texid,texstate,8*sizeof(__int64))) return;

@@ -898,7 +898,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
-		SetShader(PROG_FILL,NULL,NULL,true);
+		SetShader(PROG_FILL,NULL,NULL,0);
 		progtype = PROG_FILL;
 		switch(ddInterface->GetBPP())
 		{
@@ -938,7 +938,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
-		SetShader(PROG_CKEY,NULL,NULL,true);
+		SetShader(PROG_CKEY,NULL,NULL,0);
 		progtype = PROG_CKEY;
 		switch(ddInterface->GetBPP())
 		{
@@ -969,7 +969,7 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		SetShader(PROG_TEXTURE,NULL,NULL,true);
+		SetShader(PROG_TEXTURE,NULL,NULL,0);
 		progtype = PROG_TEXTURE;
 		glUniform1i(shaders[progtype].tex0,0);
 	}
@@ -1127,7 +1127,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(ddInterface->GetBPP() == 8)
 	{
-		SetShader(PROG_PAL256,NULL,NULL,true);
+		SetShader(PROG_PAL256,NULL,NULL,0);
 		progtype = PROG_PAL256;
 		::_UploadTexture(paltex,0,dest->palette->GetPalette(NULL),256,1);
 		glUniform1i(shaders[progtype].tex0,0);
@@ -1137,7 +1137,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		if(dxglcfg.scalingfilter)
 		{
 			_DrawBackbuffer(&texture,dest->fakex,dest->fakey,progtype);
-			SetShader(PROG_TEXTURE,NULL,NULL,true);
+			SetShader(PROG_TEXTURE,NULL,NULL,0);
 			progtype = PROG_TEXTURE;
 			SetTexture(0,texture);
 			glUniform1i(shaders[progtype].tex0,0);
@@ -1150,7 +1150,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 	}
 	else
 	{
-		SetShader(PROG_TEXTURE,NULL,NULL,true);
+		SetShader(PROG_TEXTURE,NULL,NULL,0);
 		progtype = PROG_TEXTURE;
 		SetTexture(0,texture);
 		glUniform1i(shaders[progtype].tex0,0);
@@ -1446,7 +1446,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		return;
 	}
 	__int64 shader = device->SelectShader(vertices);
-	SetShader(shader,device->texstages,texformats,0);
+	SetShader(shader,device->texstages,texformats,2);
 	device->SetDepthComp();
 	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) DepthTest(true);
 	else DepthTest(false);

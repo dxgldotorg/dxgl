@@ -18,6 +18,8 @@
 #include "common.h"
 #include "util.h"
 #include "shaders.h"
+#include <string>
+using namespace std;
 #include "shadergen2d.h"
 #include "ddraw.h"
 #include "timer.h"

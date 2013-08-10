@@ -41,7 +41,7 @@ struct GenShader
 #define D3DTOP_DXGL_MODULATEMASK 0x102;
 
 void ClearShaders();
-void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, bool builtin);
+void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
 GLuint GetProgram();
 void ZeroShaderArray();
 void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);

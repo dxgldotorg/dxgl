@@ -15,8 +15,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "common.h"
+#include <string>
+using namespace std;
 #include "shadergen2d.h"
 #include "../common/version.h"
+
+GenShader2D *genshaders2D = NULL;
+GLuint current_prog2D;
+int current_genshader2D;
+
 
 /* Bits in 2D shader ID:
 Bit 0:	Use destination alpha (DDBLT_ALPHADEST)
@@ -159,6 +166,7 @@ static const char var_patterntex[] = "uniform sampler2d patterntex;";
 static const char var_src[] = "ivec4 src;\n";
 static const char var_dest[] = "ivec4 dest;\n";
 static const char var_pattern[] = "ivec4 pattern;\n";
+static const char var_pixel[] = "vec4 pixel;\n";
 
 // Operations
 static const char op_src[] = "src = ivec4(texture2D(src,gl_TexCoord[0].st)*255.5);\n";
@@ -687,3 +695,8 @@ static const char *op_ROP_float[256] = {
 "",
 "gl_FragColor = vec4(1.0);\n",//FF WHITENESS
 };
+
+void CreateShader2D(int index, DWORD id)
+{
+	string tmp;
+}
