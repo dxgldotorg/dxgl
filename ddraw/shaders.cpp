@@ -48,7 +48,8 @@ uniform sampler2D tex0; \n\
 void main() \n\
 { \n\
 	vec4 myindex = texture2D(tex0, gl_TexCoord[0].xy); \n\
-	vec4 texel = texture2D(pal, myindex.xy); \n\
+	vec2 index = vec2((myindex.x*((255.0/256.0)+(0.5/256.0))),0.5);\n\
+	vec4 texel = texture2D(pal, index); \n\
 	gl_FragColor = texel; \n\
 } ";
 
