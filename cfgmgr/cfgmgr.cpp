@@ -132,7 +132,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	cfg->msaa = ReadDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
-	cfg->aspect = ReadDWORD(hKey,cfg->aspect,cfgmask->aspect,_T("AdjustAspectRatio"));
+	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
 	cfg->highres = ReadBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
@@ -212,7 +212,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
-	WriteDWORD(hKey,cfg->aspect,cfgmask->aspect,_T("AdjustAspectRatio"));
+	WriteDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
 	WriteBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
 	WritePath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));

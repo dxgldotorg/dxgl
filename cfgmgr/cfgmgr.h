@@ -28,7 +28,7 @@ typedef struct
 	DWORD texfilter;
 	DWORD anisotropic;
 	DWORD msaa;
-	DWORD aspect;
+	DWORD aspect3d;
 	bool highres;
 	DWORD vsync;
 	TCHAR shaderfile[MAX_PATH+1];

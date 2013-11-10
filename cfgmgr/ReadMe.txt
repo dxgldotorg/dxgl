@@ -65,7 +65,7 @@ For GPUs that support CSAA in OpenGL, it is stored in the format
 Coverage sample count + 4096 × Color sample count
 Example:  16 coverage, 8 color = 0x8010
 
-Member aspect
+Member aspect3d
 REG_DWORD HKCU\DXGL\<app>\AdjustAspectRatio
 If the scaler is 1 or 4, adjust 3D projection to correct aspect ratio.  Does
 not affect 2D blits or similar operations.

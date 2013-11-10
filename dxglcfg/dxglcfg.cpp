@@ -538,12 +538,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		// aspect
 		_tcscpy(buffer,_T("Stretch to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Expand viewable area"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_SETCURSEL,cfg->aspect,0);
+		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -780,7 +780,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
@@ -805,16 +805,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hWnd,IDC_ANISO,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_ASPECT,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 				}
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
@@ -824,7 +824,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
 				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
 				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
-				SetCombo(hWnd,IDC_ASPECT,cfg->aspect,cfgmask->aspect,tristate);
+				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
 				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
 				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
 				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
@@ -868,8 +868,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;
-		case IDC_ASPECT:
-			cfg->aspect = GetCombo(hWnd,IDC_ASPECT,cfgmask->aspect);
+		case IDC_ASPECT3D:
+			cfg->aspect3d = GetCombo(hWnd,IDC_ASPECT3D,cfgmask->aspect3d);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;
