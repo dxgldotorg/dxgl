@@ -105,8 +105,6 @@ attribute vec2 st;\n\
 void main()\n\
 {\n\
 	vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
-	vec4 rgba = vec4(rgb[0],rgb[1],rgb[2],1);\n\
-	vec4 strq = vec4(st[0],st[1],0,1);\n\
 	mat4 proj = mat4(\n\
     vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
     vec4(0, 2.0 / (view[2] - view[3]), 0, 0),\n\
@@ -114,8 +112,8 @@ void main()\n\
     vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
  -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
 	gl_Position    = proj * xyzw;\n\
-	gl_FrontColor  = rgba;\n\
-	gl_TexCoord[0] = strq;\n\
+	gl_FrontColor  = vec4(rgb,1.0);\n\
+	gl_TexCoord[0] = vec4(st,0.0,1.0);\n\
 } ";
 
 

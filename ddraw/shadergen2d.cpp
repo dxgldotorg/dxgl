@@ -43,7 +43,7 @@ Bit 13: Use destination color key (DDBLT_KEYDEST)
 Bit 14: ROP index bit 2
 Bit 15: Use source color key (DDBLT_KEYSRC)
 Bit 16: ROP index bit 3
-Bit 17: Use ROP (DDBLT_ROP, forces integer processing)
+Bit 17: Use ROP (DDBLT_ROP, may force integer processing)
 Bit 18: ROP index bit 4
 Bit 19: Z-buffer blit (DDBLT_ZBUFFER)
 Bit 20: Use dest. Z constant (DDBLT_ZBUFFERDESTCONSTOVERRIDE)
@@ -699,4 +699,7 @@ static const char *op_ROP_float[256] = {
 void CreateShader2D(int index, DWORD id)
 {
 	string tmp;
+	genshaders2D[index].shader.vsrc = new string;
+	genshaders2D[index].shader.fsrc = new string;
+
 }
