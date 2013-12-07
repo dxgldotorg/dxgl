@@ -42,7 +42,7 @@ typedef struct
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);
 void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global);
-void GetCurrentConfig(DXGLCFG *cfg);
+void GetCurrentConfig(DXGLCFG *cfg, bool initial);
 void GetGlobalConfig(DXGLCFG *cfg);
 void SetGlobalConfig(const DXGLCFG *cfg);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);

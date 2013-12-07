@@ -194,7 +194,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		TRACE_EXIT(23,DDERR_DIRECTDRAWALREADYCREATED);
 		return DDERR_DIRECTDRAWALREADYCREATED;
 	}
-	GetCurrentConfig(&dxglcfg);
+	GetCurrentConfig(&dxglcfg,false);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
@@ -267,7 +267,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 		TRACE_EXIT(23,DDERR_DIRECTDRAWALREADYCREATED);
 		return DDERR_DIRECTDRAWALREADYCREATED;
 	}
-	GetCurrentConfig(&dxglcfg);
+	GetCurrentConfig(&dxglcfg,false);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
 	if(iid != IID_IDirectDraw7)
@@ -527,7 +527,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		TRACE_EXIT(23,CLASS_E_CLASSNOTAVAILABLE);
 		return CLASS_E_CLASSNOTAVAILABLE;
 	}
-	GetCurrentConfig(&dxglcfg);
+	GetCurrentConfig(&dxglcfg,false);
 	glClassFactory *factory = new glClassFactory;
 	if(factory == NULL)
 	{
