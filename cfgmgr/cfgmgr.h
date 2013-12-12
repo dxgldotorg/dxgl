@@ -37,8 +37,9 @@ typedef struct
 	bool ExtraModes;
 	DWORD TextureFormat;
 	DWORD TexUpload;
-	bool Windows8Detected;
+	DWORD DPIScale;
 	float aspect;
+	bool Windows8Detected;
 } DXGLCFG;
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);

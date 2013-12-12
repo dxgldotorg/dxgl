@@ -121,6 +121,16 @@ Valid settings:
 0 - Automatic
 1 - OpenGL Standard
 
+Member DPIScale
+REG_DWORD HKCU\DXGL\<app>\DPIScale
+Enable DPI scaling fix
+The program may be restarted if the Windows AppCompat method is enabled or
+disabled.
+Valid settings:
+0 - Disabled
+1 - Enabled
+2 - Use Windows AppCompat
+
 Member aspect
 REG_DWORD HKCU\DXGL\<app>\ScreenAspect
 Screen aspect ratio to simulate, if the scaler is 1 or 4.

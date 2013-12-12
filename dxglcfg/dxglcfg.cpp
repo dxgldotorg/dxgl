@@ -584,6 +584,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Automatic"));
 		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
+		// DPI
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer, _T("Enabled"));
+		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
+		_tcscpy(buffer, _T("Windows AppCompat"));
+		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;

@@ -106,7 +106,7 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPCTSTR value)
 
 float ReadFloat(HKEY hKey, float original, float &mask, LPCTSTR value)
 {
-	DWORD dwOut;
+	float dwOut;
 	DWORD sizeout = 4;
 	DWORD regdword = REG_DWORD;
 	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
