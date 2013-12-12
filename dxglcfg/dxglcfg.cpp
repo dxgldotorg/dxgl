@@ -284,6 +284,10 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 	else mask[0] = 0xff;
 }
 
+void SetAspectCombo(int item, float value)
+{
+}
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -420,6 +424,18 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Shader (primary only)"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,3,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
+		// aspect
+		_tcscpy(buffer,_T("Default"));
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer,_T("4:3"));
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer,_T("16:10"));
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer,_T("16:9"));
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		_tcscpy(buffer,_T("5:4"));
+		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		
 		// highres
 		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
@@ -536,7 +552,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_MSAA),FALSE);
 			cfg->msaa = 0;
 		}
-		// aspect
+		// aspect3d
 		_tcscpy(buffer,_T("Stretch to display"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Expand viewable area"));

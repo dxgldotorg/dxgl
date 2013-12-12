@@ -104,6 +104,24 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPCTSTR value)
 	}
 }
 
+float ReadFloat(HKEY hKey, float original, float &mask, LPCTSTR value)
+{
+	DWORD dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
+	if(error == ERROR_SUCCESS)
+	{
+		mask = 1.0f;
+		return dwOut;
+	}
+	else
+	{
+		mask = 0.0f;
+		return original;
+	}
+}
+
 void ReadPath(HKEY hKey, TCHAR *path, TCHAR *mask, LPCTSTR value)
 {
 	DWORD sizeout = MAX_PATH*sizeof(TCHAR);
