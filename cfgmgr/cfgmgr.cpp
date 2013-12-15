@@ -332,8 +332,37 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 	ReadSettings(hKey,cfg,NULL,false,true,NULL);
 	RegCloseKey(hKey);
 	hKey = NULL;
+	HMODULE hSHCore = NULL;
+	HMODULE hUser32 = NULL;
 	if (initial)
 	{
+		if (cfg->DPIScale == 1)
+		{
+			bool DPIAwarePM = false;
+			hSHCore = LoadLibrary(_T("SHCore.dll"));
+			if (hSHCore)
+			{
+				HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value)
+					= (HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
+				if (_SetProcessDpiAwareness)
+				{
+					DPIAwarePM = true;
+					_SetProcessDpiAwareness(2);
+				}
+			}
+			if (!DPIAwarePM)
+			{
+				hUser32 = LoadLibrary(_T("User32.dll"));
+				if (hUser32)
+				{
+					BOOL(WINAPI *_SetProcessDPIAware)()
+						= (BOOL(WINAPI*)())GetProcAddress(hUser32, "SetProcessDPIAware");
+					if (_SetProcessDPIAware) _SetProcessDPIAware();
+				}
+			}
+			if (hSHCore) FreeLibrary(hSHCore);
+			if (hUser32) FreeLibrary(hUser32);
+		}
 		HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
 		BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
 		if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
