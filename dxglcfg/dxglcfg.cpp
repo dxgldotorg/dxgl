@@ -927,6 +927,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
 			*dirty = true;
 			break;
+		case IDC_DPISCALE:
+			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,cfgmask->DPIScale);
+			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
+			*dirty = true;
+			break;
 		case IDC_SHADER:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{

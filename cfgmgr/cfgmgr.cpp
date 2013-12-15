@@ -160,6 +160,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
+	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	if(!global && dll)
 	{
 		LPTSTR paths;
@@ -240,6 +241,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
+	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 }
 
 tstring newregname;
@@ -433,6 +435,7 @@ void GetGlobalConfig(DXGLCFG *cfg)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
+	cfg->DPIScale = 1;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,NULL,true,false,NULL);
 	if(!cfg->Windows8Detected)
@@ -453,6 +456,7 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 	tstring regkey = regkeybase;
 	regkey.append(name);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
+	cfg->DPIScale = 1;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,cfg,mask,false,false,NULL);
 	RegCloseKey(hKey);
