@@ -18,6 +18,7 @@
 #include "stdafx.h"
 #include "crc32.h"
 #include "cfgmgr.h"
+#include "../ddraw/resource.h"
 #include <tchar.h>
 using namespace std;
 #ifdef _UNICODE
@@ -31,6 +32,11 @@ TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
 
 DXGLCFG defaultmask;
+
+bool AddCompatFlag(LPTSTR flag)
+{
+
+}
 
 void GetDirFromPath(LPTSTR path)
 {

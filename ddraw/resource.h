@@ -3,3 +3,4 @@
 #endif
 
 #define IDI_ICON1                               100
+#define IDD_COMPAT                              101
