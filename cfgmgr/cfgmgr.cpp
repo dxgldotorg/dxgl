@@ -32,10 +32,199 @@ TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
 
 DXGLCFG defaultmask;
+UINT_PTR timerid;
+
+INT_PTR CALLBACK CompatDialogCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		timerid = SetTimer(hWnd, NULL, 5000, NULL);
+		return TRUE;
+	case WM_TIMER:
+		if (wParam == timerid) EndDialog(hWnd, 0);
+		break;
+	default:
+		return FALSE;
+	}
+}
+
+void ShowRestartDialog()
+{
+	BOOL(*_GetModuleHandleEx)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule) = FALSE;
+	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+	HMODULE hddraw;
+	if (hKernel32) _GetModuleHandleEx = (BOOL(*)(DWORD,LPCTSTR,HMODULE*))GetProcAddress(hKernel32, "GetModuleHandleEx");
+	if (_GetModuleHandleEx) _GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)ShowRestartDialog, &hddraw);
+	else hddraw = GetModuleHandle(_T("ddraw.dll"));  //For old versions of Windows, may fail but they shouldn't have AppCompat anyways.
+	if (hKernel32) FreeLibrary(hKernel32);
+	DialogBox(hddraw, MAKEINTRESOURCE(IDD_COMPAT), NULL, CompatDialogCallback);
+	LPTSTR cmdline = GetCommandLine();
+	LPTSTR cmdline2 = (LPTSTR)malloc((_tcslen(cmdline) + 1)*sizeof(TCHAR));
+	_tcscpy(cmdline2, cmdline);
+	STARTUPINFO startupinfo;
+	PROCESS_INFORMATION procinfo;
+	ZeroMemory(&startupinfo, sizeof(STARTUPINFO));
+	startupinfo.cb = sizeof(STARTUPINFO);
+	CreateProcess(NULL, cmdline2, NULL, NULL, FALSE, 0, NULL, NULL, &startupinfo, &procinfo);
+	CloseHandle(procinfo.hProcess);
+	CloseHandle(procinfo.hThread);
+	free(cmdline2);
+	ExitProcess(0);
+}
 
 bool AddCompatFlag(LPTSTR flag)
 {
+	HKEY hKey;
+	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
+	if (hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE, PBOOL))GetProcAddress(hKernel32, "IsWow64Process");
+	BOOL is64 = FALSE;
+	if (iswow64) iswow64(GetCurrentProcess(), &is64);
+	if (hKernel32) FreeLibrary(hKernel32);
+	LRESULT error;
+	TCHAR filename[MAX_PATH + 1];
+	TCHAR buffer[1024];
+	TCHAR *bufferpos;
 
+	return false;
+}
+
+bool DelCompatFlag(LPTSTR flag)
+{
+	HKEY hKey;
+	HKEY hKeyWrite;
+	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
+	if (hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE, PBOOL))GetProcAddress(hKernel32, "IsWow64Process");
+	BOOL is64 = FALSE;
+	if (iswow64) iswow64(GetCurrentProcess(), &is64);
+	if (hKernel32) FreeLibrary(hKernel32);
+	LRESULT error;
+	TCHAR filename[MAX_PATH + 1];
+	TCHAR buffer[1024];
+	TCHAR *bufferpos;
+	tstring writekey;
+	bool accessdenied = false;
+	// Check system first.
+	if (is64) writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	else writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ, &hKey);
+	if (error == ERROR_SUCCESS)
+	{
+		GetModuleFileName(NULL, filename, MAX_PATH);
+		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
+		DWORD sizeout = 1024 * sizeof(TCHAR);
+		if (RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout) == ERROR_SUCCESS)
+		{
+			bufferpos = _tcsstr(buffer, flag);
+			if (bufferpos)
+			{
+				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR));
+				error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				if (error == ERROR_SUCCESS)
+				{
+					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
+					RegCloseKey(hKeyWrite);
+				}
+				if (error == ERROR_ACCESS_DENIED)
+				{
+					if (MessageBox(NULL, _T("DXGL has detected an incompatible AppCompat flag for the program you are currently running and requires administrative rights to remove it.\nWould you like to continue?"),
+						_T("AppCompat error"), MB_YESNO | MB_ICONWARNING) == IDYES)
+					{
+						tstring command;
+						if (is64) command.assign(_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
+						else command.assign(_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
+						command.append(filename);
+						command.append(_T("\" /t REG_SZ /d \""));
+						command.append(buffer);
+						command.append(_T("\""));
+						SHELLEXECUTEINFO info;
+						ZeroMemory(&info, sizeof(SHELLEXECUTEINFO));
+						info.cbSize = sizeof(SHELLEXECUTEINFO);
+						info.lpVerb = _T("runas");
+						info.lpFile = _T("reg.exe");
+						info.lpParameters = command.c_str();
+						info.nShow = SW_SHOWNORMAL;
+						info.fMask = SEE_MASK_NOCLOSEPROCESS;
+						ShellExecuteEx(&info);
+						WaitForSingleObject(info.hProcess, INFINITE);
+						GetExitCodeProcess(info.hProcess, (LPDWORD)&error);
+					}
+					if (!error)
+					{
+						ShowRestartDialog();
+					}
+					else MessageBox(NULL, _T("Registry value could not be updated.  Your program may crash as a result."), _T("Error"), MB_OK | MB_ICONWARNING);
+					return false;
+				}
+				else if (error == ERROR_SUCCESS)
+				{
+					ShowRestartDialog();
+				}
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	// Next check user.
+	writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey.c_str(), 0, KEY_READ, &hKey);
+	if (error == ERROR_SUCCESS)
+	{
+		GetModuleFileName(NULL, filename, MAX_PATH);
+		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
+		DWORD sizeout = 1024 * sizeof(TCHAR);
+		if (RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout) == ERROR_SUCCESS)
+		{
+			bufferpos = _tcsstr(buffer, flag);
+			if (bufferpos)
+			{
+				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR));
+				error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				if (error == ERROR_SUCCESS)
+				{
+					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
+					RegCloseKey(hKeyWrite);
+				}
+				if (error == ERROR_ACCESS_DENIED)
+				{
+					if (MessageBox(NULL, _T("DXGL has detected an incompatible AppCompat flag for the program you are currently running and requires administrative rights to remove it.\nWould you like to continue?"),
+						_T("AppCompat error"), MB_YESNO | MB_ICONWARNING) == IDYES)
+					{
+						tstring command;
+						command.assign(_T("ADD \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
+						command.append(filename);
+						command.append(_T("\" /t REG_SZ /d \""));
+						command.append(buffer);
+						command.append(_T("\""));
+						SHELLEXECUTEINFO info;
+						ZeroMemory(&info, sizeof(SHELLEXECUTEINFO));
+						info.cbSize = sizeof(SHELLEXECUTEINFO);
+						info.lpVerb = _T("runas");
+						info.lpFile = _T("reg.exe");
+						info.lpParameters = command.c_str();
+						info.nShow = SW_SHOWNORMAL;
+						info.fMask = SEE_MASK_NOCLOSEPROCESS;
+						ShellExecuteEx(&info);
+						WaitForSingleObject(info.hProcess, INFINITE);
+						GetExitCodeProcess(info.hProcess, (LPDWORD)&error);
+					}
+					if (!error)
+					{
+						ShowRestartDialog();
+					}
+					else MessageBox(NULL, _T("Registry value could not be updated.  Your program may crash as a result."), _T("Error"), MB_OK | MB_ICONWARNING);
+					return false;
+				}
+				else if (error == ERROR_SUCCESS)
+				{
+					ShowRestartDialog();
+				}
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	return true;
 }
 
 void GetDirFromPath(LPTSTR path)
@@ -342,6 +531,8 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 	HMODULE hUser32 = NULL;
 	if (initial)
 	{
+		if (cfg->DPIScale == 2)	AddCompatFlag(_T("HIGHDPIAWARE"));
+		else DelCompatFlag(_T("HIGHDPIAWARE"));
 		if (cfg->DPIScale == 1)
 		{
 			bool DPIAwarePM = false;
@@ -369,101 +560,7 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 			if (hSHCore) FreeLibrary(hSHCore);
 			if (hUser32) FreeLibrary(hUser32);
 		}
-		HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
-		BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
-		if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
-		BOOL is64 = FALSE;
-		if(iswow64) iswow64(GetCurrentProcess(),&is64);
-		if(hKernel32) FreeLibrary(hKernel32);
-		LRESULT error;
-		if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ|KEY_WOW64_64KEY,&hKey);
-		else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ,&hKey);
-		if(error == ERROR_SUCCESS)
-		{
-			GetModuleFileName(NULL,filename,MAX_PATH);
-			TCHAR buffer[1024];
-			ZeroMemory(buffer,1024*sizeof(TCHAR));
-			DWORD sizeout = 1024*sizeof(TCHAR);
-			if(RegQueryValueEx(hKey,filename,NULL,NULL,(LPBYTE)buffer,&sizeout) == ERROR_SUCCESS)
-			{
-				if(_tcsstr(buffer,_T("DWM8And16BitMitigation")))
-				{
-					MessageBox(NULL,_T("DXGL has detected an incompatible AppCompat flag for the program you are currently running.  To continue, the registry value must be deleted.\nIf you see a UAC prompt, you must click Yes."),
-						_T("AppCompat error"),MB_OK|MB_ICONHAND);
-					error = RegDeleteValue(hKey,filename);
-					if(error == ERROR_ACCESS_DENIED)
-					{
-						tstring command;
-						if(is64) command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
-						else command.assign(_T("DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
-						command.append(filename);
-						command.append(_T("\""));
-						SHELLEXECUTEINFO info;
-						ZeroMemory(&info,sizeof(SHELLEXECUTEINFO));
-						info.cbSize = sizeof(SHELLEXECUTEINFO);
-						info.lpVerb = _T("runas");
-						info.lpFile = _T("reg.exe");
-						info.lpParameters = command.c_str();
-						info.nShow = SW_SHOWNORMAL;
-						info.fMask = SEE_MASK_NOCLOSEPROCESS;
-						ShellExecuteEx(&info);
-						WaitForSingleObject(info.hProcess,INFINITE);
-						GetExitCodeProcess(info.hProcess,(LPDWORD)&error);
-					}
-					if(!error)
-					{
-						MessageBox(NULL,_T("Registry value successfully deleted.  Please restart the program."),_T("Success"),MB_OK|MB_ICONINFORMATION);
-						exit(0);
-					}
-					else MessageBox(NULL,_T("Registry value could not be deleted.  Your program may crash as a result."),_T("Error"),MB_OK|MB_ICONWARNING);
-				}
-			}
-		RegCloseKey(hKey);
-		}
-		if(is64) error = RegOpenKeyEx(HKEY_CURRENT_USER,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ|KEY_WOW64_64KEY,&hKey);
-		else error = RegOpenKeyEx(HKEY_CURRENT_USER,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),0,KEY_READ,&hKey);
-		if(error == ERROR_SUCCESS)
-		{
-			GetModuleFileName(NULL,filename,MAX_PATH);
-			TCHAR buffer[1024];
-			ZeroMemory(buffer,1024*sizeof(TCHAR));
-			DWORD sizeout = 1024*sizeof(TCHAR);
-			if(RegQueryValueEx(hKey,filename,NULL,NULL,(LPBYTE)buffer,&sizeout) == ERROR_SUCCESS)
-			{
-				if(_tcsstr(buffer,_T("DWM8And16BitMitigation")))
-				{
-					MessageBox(NULL,_T("DXGL has detected an incompatible AppCompat flag for the program you are currently running.  To continue, the registry value must be deleted.\nIf you see a UAC prompt, you must click Yes."),
-						_T("AppCompat error"),MB_OK|MB_ICONHAND);
-					error = RegDeleteValue(hKey,filename);
-					if(error == ERROR_ACCESS_DENIED)
-					{
-						tstring command;
-						if(is64) command.assign(_T("DELETE \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
-						else command.assign(_T("DELETE \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
-						command.append(filename);
-						command.append(_T("\""));
-						SHELLEXECUTEINFO info;
-						ZeroMemory(&info,sizeof(SHELLEXECUTEINFO));
-						info.cbSize = sizeof(SHELLEXECUTEINFO);
-						info.lpVerb = _T("runas");
-						info.lpFile = _T("reg.exe");
-						info.lpParameters = command.c_str();
-						info.nShow = SW_SHOWNORMAL;
-						info.fMask = SEE_MASK_NOCLOSEPROCESS;
-						ShellExecuteEx(&info);
-						WaitForSingleObject(info.hProcess,INFINITE);
-						GetExitCodeProcess(info.hProcess,(LPDWORD)&error);
-					}
-					if(!error)
-					{
-						MessageBox(NULL,_T("Registry value successfully deleted.  Please restart the program."),_T("Success"),MB_OK|MB_ICONINFORMATION);
-						exit(0);
-					}
-					else MessageBox(NULL,_T("Registry value could not be deleted.  Your program may crash as a result."),_T("Error"),MB_OK|MB_ICONWARNING);
-				}
-			}
-		RegCloseKey(hKey);
-		}
+		DelCompatFlag(_T("DWM8and16BitMitigation"));
 	}
 }
 void GetGlobalConfig(DXGLCFG *cfg)
