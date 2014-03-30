@@ -42,7 +42,7 @@ INT_PTR CALLBACK CompatDialogCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 		timerid = SetTimer(hWnd, NULL, 5000, NULL);
 		return TRUE;
 	case WM_TIMER:
-		if (wParam == timerid) EndDialog(hWnd, 0);
+		EndDialog(hWnd, 0);
 		break;
 	default:
 		return FALSE;
@@ -82,11 +82,55 @@ bool AddCompatFlag(LPTSTR flag)
 	BOOL is64 = FALSE;
 	if (iswow64) iswow64(GetCurrentProcess(), &is64);
 	if (hKernel32) FreeLibrary(hKernel32);
-	LRESULT error;
+	LRESULT error,error2;
 	TCHAR filename[MAX_PATH + 1];
 	TCHAR buffer[1024];
 	TCHAR *bufferpos;
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, _T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),
+		0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		GetModuleFileName(NULL, filename, MAX_PATH);
+		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
+		DWORD sizeout = 1024 * sizeof(TCHAR);
+		error2 = RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout);
+		if (error2 == ERROR_SUCCESS)
+		{
+			if (_tcsstr(buffer,flag))
+			{ 
+				RegCloseKey(hKey);
+				return true;
+			}
+			else
+			{
+				_tcscat(buffer, _T(" "));
+				_tcscat(buffer, flag);
+				error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(buffer) + 1)*sizeof(TCHAR));
+				if (error2 == ERROR_SUCCESS) ShowRestartDialog();
+				else
+				{
+					RegCloseKey(hKey);
+					return false;
+				}
+			}
+		}
+		else if (error2 == ERROR_FILE_NOT_FOUND)
+		{
+			error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)flag, (_tcslen(flag) + 1)*sizeof(TCHAR));
+			if (error2 == ERROR_SUCCESS) ShowRestartDialog();
+			else
+			{
+				RegCloseKey(hKey);
+				return false;
+			}
+		}
+		else
+		{
+			RegCloseKey(hKey);
+			return false;
+		}
 
+	}
 	return false;
 }
 
@@ -105,11 +149,10 @@ bool DelCompatFlag(LPTSTR flag)
 	TCHAR buffer[1024];
 	TCHAR *bufferpos;
 	tstring writekey;
-	bool accessdenied = false;
 	// Check system first.
-	if (is64) writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
-	else writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
-	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ, &hKey);
+	writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	if (is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
+	else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ, &hKey);
 	if (error == ERROR_SUCCESS)
 	{
 		GetModuleFileName(NULL, filename, MAX_PATH);
@@ -120,8 +163,9 @@ bool DelCompatFlag(LPTSTR flag)
 			bufferpos = _tcsstr(buffer, flag);
 			if (bufferpos)
 			{
-				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR));
-				error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag))+1)*sizeof(TCHAR));
+				if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE | KEY_WOW64_64KEY, &hKeyWrite);
+				else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
 					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
@@ -151,17 +195,11 @@ bool DelCompatFlag(LPTSTR flag)
 						WaitForSingleObject(info.hProcess, INFINITE);
 						GetExitCodeProcess(info.hProcess, (LPDWORD)&error);
 					}
-					if (!error)
-					{
-						ShowRestartDialog();
-					}
+					if (!error) ShowRestartDialog();
 					else MessageBox(NULL, _T("Registry value could not be updated.  Your program may crash as a result."), _T("Error"), MB_OK | MB_ICONWARNING);
 					return false;
 				}
-				else if (error == ERROR_SUCCESS)
-				{
-					ShowRestartDialog();
-				}
+				else if (error == ERROR_SUCCESS) ShowRestartDialog();
 			}
 		}
 		RegCloseKey(hKey);
@@ -179,8 +217,8 @@ bool DelCompatFlag(LPTSTR flag)
 			bufferpos = _tcsstr(buffer, flag);
 			if (bufferpos)
 			{
-				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR));
-				error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag))+1)*sizeof(TCHAR));
+				error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
 					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
@@ -560,7 +598,7 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 			if (hSHCore) FreeLibrary(hSHCore);
 			if (hUser32) FreeLibrary(hUser32);
 		}
-		DelCompatFlag(_T("DWM8and16BitMitigation"));
+		DelCompatFlag(_T("DWM8And16BitMitigation"));
 	}
 }
 void GetGlobalConfig(DXGLCFG *cfg)
