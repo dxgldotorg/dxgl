@@ -1409,23 +1409,40 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 		break;
-	case 2: // Scale to screen
+	case 2: // Scale to screen, aspect corrected
 		primaryx = dwWidth;
 		screenx = currmode.dmPelsWidth;
 		primaryy = dwHeight;
 		screeny = currmode.dmPelsHeight;
-		aspect = (float)dwWidth / (float)dwHeight;
-		xmul = (float)screenx / (float)dwWidth;
-		ymul = (float)screeny / (float)dwHeight;
-		if((float)dwWidth*(float)ymul > (float)screenx)
+		if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
 		{
-			internalx = (DWORD)((float)dwWidth * (float)xmul);
-			internaly = (DWORD)((float)dwHeight * (float)xmul);
+			aspect = (float)dwWidth / (float)dwHeight;
+			xmul = (float)screenx / (float)dwWidth;
+			ymul = (float)screeny / (float)dwHeight;
+			if ((float)dwWidth*(float)ymul > (float)screenx)
+			{
+				internalx = (DWORD)((float)dwWidth * (float)xmul);
+				internaly = (DWORD)((float)dwHeight * (float)xmul);
+			}
+			else
+			{
+				internalx = (DWORD)((float)dwWidth * (float)ymul);
+				internaly = (DWORD)((float)dwHeight * (float)ymul);
+			}
 		}
 		else
 		{
-			internalx = (DWORD)((float)dwWidth * (float)ymul);
-			internaly = (DWORD)((float)dwHeight * (float)ymul);
+			aspect = dxglcfg.aspect;
+			if (screenx*aspect > screeny)
+			{
+				internalx = (DWORD)((float)screeny / (float)aspect);
+				internaly = screeny;
+			}
+			else
+			{
+				internalx = screenx;
+				internaly = (DWORD)((float)screenx * (float)aspect);
+			}
 		}
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
