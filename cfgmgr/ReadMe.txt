@@ -133,7 +133,7 @@ Valid settings:
 
 Member aspect
 REG_DWORD HKCU\DXGL\<app>\ScreenAspect
-Screen aspect ratio to simulate, if the scaler is 1 or 4.
+Screen aspect ratio to simulate, if the scaler is 1 or 5.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, use automatic ratio based on square pixels.
 Positive values indicate a specific screen aspect ratio.
