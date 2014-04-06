@@ -1433,15 +1433,15 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		else
 		{
 			aspect = dxglcfg.aspect;
-			if (screenx*aspect > screeny)
+			if (screenx/aspect > screeny)
 			{
-				internalx = (DWORD)((float)screeny / (float)aspect);
+				internalx = (DWORD)((float)screeny * (float)aspect);
 				internaly = screeny;
 			}
 			else
 			{
 				internalx = screenx;
-				internaly = (DWORD)((float)screenx * (float)aspect);
+				internaly = (DWORD)((float)screenx / (float)aspect);
 			}
 		}
 		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
@@ -1531,15 +1531,15 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else
 			{
 				aspect = dxglcfg.aspect;
-				if (screenx*aspect > screeny)
+				if (screenx / aspect > screeny)
 				{
-					internalx = (DWORD)((float)screeny / (float)aspect);
+					internalx = (DWORD)((float)screeny * (float)aspect);
 					internaly = screeny;
 				}
 				else
 				{
 					internalx = screenx;
-					internaly = (DWORD)((float)screenx * (float)aspect);
+					internaly = (DWORD)((float)screenx / (float)aspect);
 				}
 			}
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;

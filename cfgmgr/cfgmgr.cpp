@@ -430,6 +430,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
+	cfg->aspect = ReadFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
 	if(!global && dll)
 	{
 		LPTSTR paths;
@@ -487,6 +488,11 @@ void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPCTSTR name)
 	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcslen(path)+1)*sizeof(TCHAR));
 	else RegDeleteValue(hKey,name);
 }
+void WriteFloat(HKEY hKey, float value, float mask, LPCTSTR name)
+{
+	if (abs(mask) > 0.5f) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
+	else RegDeleteValue(hKey, name);
+}
 
 void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global)
 {
@@ -494,6 +500,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	if(mask) cfgmask = mask;
 	else cfgmask = &defaultmask;
 	memset(&defaultmask,1,sizeof(DXGLCFG));
+	defaultmask.aspect = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
@@ -511,6 +518,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
+	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
 }
 
 tstring newregname;

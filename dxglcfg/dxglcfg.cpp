@@ -217,6 +217,69 @@ void SaveChanges(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd,IDC_APPLY),FALSE);
 }
 
+void FloatToAspect(float f, LPTSTR aspect)
+{
+	float integer;
+	float dummy;
+	TCHAR denominator[5];
+	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
+	{
+		_tcscpy(aspect, _T("1000:1"));
+		return;
+	}
+	if (f < 0.001f)   // Exclude ridiculously tall aspects, zero, and negative
+	{
+		_tcscpy(aspect, _T("Default"));
+		return;
+	}
+	// Handle common aspects
+	if (abs(f - 1.25f) < 0.0001f)
+	{
+		_tcscpy(aspect, _T("5:4"));
+		return;
+	}
+	if (abs(f - 1.3333333f) < 0.0001f)
+	{
+		_tcscpy(aspect, _T("4:3"));
+		return;
+	}
+	if (abs(f - 1.6f) < 0.0001f)
+	{
+		_tcscpy(aspect, _T("16:10"));
+		return;
+	}
+	if (abs(f - 1.7777777) < 0.0001f)
+	{
+		_tcscpy(aspect, _T("16:9"));
+		return;
+	}
+	if (abs(f - 1.9333333) < 0.0001f)
+	{
+		_tcscpy(aspect, _T("256:135"));
+		return;
+	}
+	float fract = modf(f, &integer);
+	if (fract < 0.0001f)  //Handle integer aspects
+	{
+		_itot(integer, aspect, 10);
+		_tcscat(aspect, _T(":1"));
+	}
+	// Finally try from 2 to 1000
+	for (int i = 2; i < 1000; i++)
+	{
+		if (abs(modf(fract*i, &dummy)) < 0.0001f)
+		{
+			_itot((f*i) + .5f, aspect, 10);
+			_itot(i, denominator, 10);
+			_tcscat(aspect, _T(":"));
+			_tcscat(aspect, denominator);
+			return;
+		}
+	}
+	// Cannot find a reasonable fractional aspect, so display as decimal.
+	_stprintf(aspect, _T("%.6f"), f);
+}
+
 void SetCheck(HWND hWnd, int DlgItem, bool value, bool mask, bool tristate)
 {
 	if(tristate && !mask)
@@ -235,6 +298,22 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, bool tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 	else
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
+}
+
+void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, bool tristate)
+{
+	TCHAR buffer[32];
+	if (tristate && !mask)
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+	{
+		FloatToAspect(value, buffer);
+		SetDlgItemText(hWnd, DlgItem, buffer);
+		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
+	}
+
 }
 
 void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, bool tristate)
@@ -277,15 +356,42 @@ DWORD GetCombo(HWND hWnd, int DlgItem, DWORD &mask)
 	}
 }
 
+float GetAspectCombo(HWND hWnd, int DlgItem, float &mask)
+{
+	TCHAR buffer[32];
+	TCHAR *ptr;
+	float numerator, denominator;
+	GetDlgItemText(hWnd, DlgItem, buffer, 31);
+	if (!_tcscmp(buffer, strdefault))
+	{
+		mask = 0.0f;
+		return 0;
+	}
+	else
+	{
+		mask = 1.0f;
+		if (!_tcscmp(buffer, _T("Default"))) return 0.0f;
+		else
+		{
+			// Check for colon
+			ptr = _tcsstr(buffer, _T(":"));
+			if (ptr)
+			{
+				*ptr = 0;
+				numerator = _ttof(buffer);
+				denominator = _ttof(ptr + 1);
+				return numerator / denominator;
+			}
+			else return _ttof(buffer);
+		}
+	}
+}
+
 void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 {
 	GetDlgItemText(hWnd,DlgItem,str,MAX_PATH+1);
 	if(str[0] == 0) mask[0] = 0;
 	else mask[0] = 0xff;
-}
-
-void SetAspectCombo(int item, float value)
-{
 }
 
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -435,6 +541,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hWnd, IDC_ASPECT, CB_SETCURSEL, cfg->aspect, 0);
 		
 		// highres
 		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
@@ -816,6 +923,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
 				}
 				else if(!current_app && tristate)
 				{
@@ -845,7 +953,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+						SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_DELETESTRING,
+						SendDlgItemMessage(hWnd, IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 				}
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
@@ -864,6 +974,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
 		case IDC_VIDMODE:
 			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,cfgmask->scaler);
@@ -945,6 +1056,21 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			{
 				GetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile);
 				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
+				*dirty = true;
+			}
+			break;
+		case IDC_ASPECT:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, cfgmask->aspect);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
+				*dirty = true;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, cfgmask->aspect);
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
 				*dirty = true;
 			}
 			break;
