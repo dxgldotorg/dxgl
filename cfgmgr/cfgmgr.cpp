@@ -604,10 +604,14 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 		regkey.append(_T("-"));
 		regkey.append(crcstr);
 	}
-	GetGlobalConfig(cfg);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,cfg,NULL,false,true,NULL);
-	RegCloseKey(hKey);
+	GetGlobalConfig(cfg, initial);
+	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey.c_str(), 0, KEY_READ, &hKey);
+	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	if (hKey)
+	{
+		ReadSettings(hKey, cfg, NULL, false, true, NULL);
+		RegCloseKey(hKey);
+	}
 	hKey = NULL;
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
@@ -645,23 +649,27 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 	}
 	DelCompatFlag(_T("DWM8And16BitMitigation"), initial);
 }
-void GetGlobalConfig(DXGLCFG *cfg)
+void GetGlobalConfig(DXGLCFG *cfg, bool initial)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,cfg,NULL,true,false,NULL);
-	if(!cfg->Windows8Detected)
+	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, KEY_READ, &hKey);
+	else RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (hKey)
 	{
-		OSVERSIONINFO osver;
-		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		GetVersionEx(&osver);
-		if(osver.dwMajorVersion > 6) cfg->Windows8Detected = true;
-		if((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = true;
-		if(cfg->Windows8Detected) cfg->AllColorDepths = true;
+		ReadSettings(hKey, cfg, NULL, true, false, NULL);
+		if (!cfg->Windows8Detected)
+		{
+			OSVERSIONINFO osver;
+			osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+			GetVersionEx(&osver);
+			if (osver.dwMajorVersion > 6) cfg->Windows8Detected = true;
+			if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = true;
+			if (cfg->Windows8Detected) cfg->AllColorDepths = true;
+		}
+		RegCloseKey(hKey);
 	}
-	RegCloseKey(hKey);
 }
 
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)

@@ -460,7 +460,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));
 		apps[0].name = new tstring(_T("Global"));
 		apps[0].regkey = new tstring(_T("Global"));
-		GetGlobalConfig(&apps[0].cfg);
+		GetGlobalConfig(&apps[0].cfg, false);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
 		dirty = &apps[0].dirty;
