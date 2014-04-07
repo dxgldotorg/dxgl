@@ -261,7 +261,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	float fract = modf(f, &integer);
 	if (fract < 0.0001f)  //Handle integer aspects
 	{
-		_itot(integer, aspect, 10);
+		_itot((int)integer, aspect, 10);
 		_tcscat(aspect, _T(":1"));
 	}
 	// Finally try from 2 to 1000
@@ -309,9 +309,9 @@ void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, bool trista
 	else
 	{
 		FloatToAspect(value, buffer);
-		SetDlgItemText(hWnd, DlgItem, buffer);
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,
 			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
+		SetDlgItemText(hWnd, DlgItem, buffer);
 	}
 
 }
@@ -541,7 +541,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_ASPECT, CB_SETCURSEL, cfg->aspect, 0);
+		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 		
 		// highres
 		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
