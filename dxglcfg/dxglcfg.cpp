@@ -263,6 +263,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	{
 		_itot((int)integer, aspect, 10);
 		_tcscat(aspect, _T(":1"));
+		return;
 	}
 	// Finally try from 2 to 1000
 	for (int i = 2; i < 1000; i++)
