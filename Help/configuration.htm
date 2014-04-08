@@ -17,6 +17,8 @@
       <area shape="rect" coords="452,90,588,103" alt="Add Extra Display Modes" href="#extramodes" />
       <area shape="rect" coords="452,111,586,124" alt="Support All Color Depths" href="#alldepths" />
       <area shape="rect" coords="296,136,448,170" alt="Scaling method" href="#scaler" />
+      <area shape="rect" coords="296,233,448,253" alt="Screen aspect ratio" href="#aspect" />
+      <area shape="rect" coords="452,233,601,253" alt="DPI scaling mode" href="#dpiscale" />
     </map>
     <h1>Configuration</h1>
       Configuration for DXGL can be accessed by opening the &quot;DXGL Config&quot; program in the DXGL program group.  Configuration is as follows:
@@ -74,5 +76,15 @@
     (not implemented) Uses a custom GLSL pixel shader to display the image.
     <h3>Shader (primary only)</h3>
     (not implemented) Uses a custom GLSL pixel shader to display the primary buffer.
+    <h2><a name="aspect" />Screen aspect ratio</h2>
+    Overrides the aspect ratio for "Aspect corrected stretch" and "Scale if mode not found".  Enter as x:y or as a floating point ratio, for example 4:3 or 1.333333, or select a preset from the dropdown list.  Default uses a square pixel ratio.
+    <h2><a name="dpiscale" />DPI scaling mode</h2>
+    Fixes errors caused by Windows High DPI scaling in Windows Vista and greater.
+    <h3>Disabled</h3>
+    Disables the DPI scaling fix, unless specified by the program.
+    <h3>Enabled</h3>
+    Default setting.  Enables the DPI scaling fix during program initialization.
+    <h3>Windows AppCompat</h3>
+    Sets a compatibility flag to tell Windows to fix High DPI scaling.  Use if Enabled does not work.
   </body>
 </html>
