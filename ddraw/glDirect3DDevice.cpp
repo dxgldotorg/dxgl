@@ -784,7 +784,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 			break;
 		}
 	}
-	int stride = NextMultipleOf8(ptr*4);
+	int stride = ptr*4;
 	for(i = 0; i < 17; i++)
 		vertdata[i].stride = stride;
 	TRACE_EXIT(23,D3D_OK);
