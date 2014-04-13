@@ -833,9 +833,10 @@ HRESULT WINAPI glDirectDrawSurface7::GetBltStatus(DWORD dwFlags)
 {
 	TRACE_ENTER(2,14,this,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::GetBltStatus: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	HRESULT islost = this->IsLost();
+	if (islost == DDERR_SURFACELOST) return DDERR_SURFACELOST;
+	// Async rendering not yet implemented
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::GetCaps(LPDDSCAPS2 lpDDSCaps)
 {
