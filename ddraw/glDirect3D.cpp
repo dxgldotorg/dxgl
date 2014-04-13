@@ -29,7 +29,7 @@
 #include "glDirect3DMaterial.h"
 #include "glDirect3DLight.h"
 
-const D3DDEVICEDESC7 d3ddesc = 
+const D3DDEVICEDESC7 d3ddesc_default = 
 {
 	D3DDEVCAPS_CANBLTSYSTONONLOCAL | D3DDEVCAPS_CANRENDERAFTERFLIP | D3DDEVCAPS_DRAWPRIMTLVERTEX | 
 		D3DDEVCAPS_FLOATTLVERTEX | D3DDEVCAPS_TEXTURENONLOCALVIDMEM | D3DDEVCAPS_TEXTURESYSTEMMEMORY |
@@ -127,14 +127,14 @@ const D3DDEVICEDESC7 d3ddesc =
 	0,0,0,0 //dwReserved1 through dwReserved4
 };
 
-const D3DDEVICEDESC d3ddesc3 =
+const D3DDEVICEDESC d3ddesc3_default =
 {
 	sizeof(D3DDEVICEDESC), // dwSize
 	D3DDD_BCLIPPING|D3DDD_COLORMODEL|D3DDD_DEVCAPS|D3DDD_DEVICERENDERBITDEPTH|
 	D3DDD_DEVICEZBUFFERBITDEPTH|D3DDD_LIGHTINGCAPS|D3DDD_LINECAPS|D3DDD_MAXBUFFERSIZE|
 	D3DDD_MAXVERTEXCOUNT|D3DDD_TRANSFORMCAPS|D3DDD_TRICAPS, // dwFlags
 	D3DCOLOR_RGB, // dcmColorModel
-	d3ddesc.dwDevCaps,
+	d3ddesc_default.dwDevCaps,
 	{ //dtcTransformCaps
 		sizeof(D3DTRANSFORMCAPS), //dwSize
 		0 // dwCaps
@@ -146,33 +146,33 @@ const D3DDEVICEDESC d3ddesc3 =
 		D3DLIGHTINGMODEL_RGB, // dwLightingModel
 		8  //dwNumLights
 	},
-	d3ddesc.dpcLineCaps,
-	d3ddesc.dpcTriCaps,
-	d3ddesc.dwDeviceRenderBitDepth,
-	d3ddesc.dwDeviceZBufferBitDepth,
+	d3ddesc_default.dpcLineCaps,
+	d3ddesc_default.dpcTriCaps,
+	d3ddesc_default.dwDeviceRenderBitDepth,
+	d3ddesc_default.dwDeviceZBufferBitDepth,
 	0, // dwMaxBufferSize
 	65536, // dwMaxVertexCount
-	d3ddesc.dwMinTextureWidth,
-	d3ddesc.dwMinTextureHeight,
-	d3ddesc.dwMaxTextureWidth,
-	d3ddesc.dwMaxTextureHeight,
+	d3ddesc_default.dwMinTextureWidth,
+	d3ddesc_default.dwMinTextureHeight,
+	d3ddesc_default.dwMaxTextureWidth,
+	d3ddesc_default.dwMaxTextureHeight,
 	0, // dwMinStippleWidth
 	32, // dwMaxStippleWidth
 	0, // dwMinStippleHeight
 	32, // dwMaxStippleHeight
-	d3ddesc.dwMaxTextureRepeat,
-	d3ddesc.dwMaxTextureAspectRatio,
-	d3ddesc.dwMaxAnisotropy,
-	d3ddesc.dvGuardBandLeft,
-	d3ddesc.dvGuardBandTop,
-	d3ddesc.dvGuardBandRight,
-	d3ddesc.dvGuardBandBottom,
-	d3ddesc.dvExtentsAdjust,
-	d3ddesc.dwStencilCaps,
-	d3ddesc.dwFVFCaps,
-	d3ddesc.dwTextureOpCaps,
-	d3ddesc.wMaxTextureBlendStages,
-	d3ddesc.wMaxSimultaneousTextures
+	d3ddesc_default.dwMaxTextureRepeat,
+	d3ddesc_default.dwMaxTextureAspectRatio,
+	d3ddesc_default.dwMaxAnisotropy,
+	d3ddesc_default.dvGuardBandLeft,
+	d3ddesc_default.dvGuardBandTop,
+	d3ddesc_default.dvGuardBandRight,
+	d3ddesc_default.dvGuardBandBottom,
+	d3ddesc_default.dvExtentsAdjust,
+	d3ddesc_default.dwStencilCaps,
+	d3ddesc_default.dwFVFCaps,
+	d3ddesc_default.dwTextureOpCaps,
+	d3ddesc_default.wMaxTextureBlendStages,
+	d3ddesc_default.wMaxSimultaneousTextures
 };
 
 struct D3DDevice
@@ -198,6 +198,8 @@ const D3DDevice devices[3] =
 glDirect3D7::glDirect3D7()
 {
 	TRACE_ENTER(1,14,this);
+	d3ddesc = d3ddesc_default;
+	d3ddesc3 = d3ddesc3_default;
 	refcount=1;
 	glD3D3 = NULL;
 	glD3D2 = NULL;

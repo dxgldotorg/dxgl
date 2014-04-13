@@ -89,6 +89,7 @@ public:
 	glDirectDraw1 *glDD1;
 	glDirectDraw2 *glDD2;
 	glDirectDraw4 *glDD4;
+	DDDEVICEIDENTIFIER2 devid;
 private:
 	HRESULT error;
 	ULONG refcount;

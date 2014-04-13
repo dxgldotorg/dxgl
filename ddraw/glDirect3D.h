@@ -19,8 +19,8 @@
 #ifndef __GLDIRECT3D_H
 #define __GLDIRECT3D_H
 
-extern const D3DDEVICEDESC7 d3ddesc;
-extern const D3DDEVICEDESC d3ddesc3;
+extern const D3DDEVICEDESC7 d3ddesc_default;
+extern const D3DDEVICEDESC d3ddesc3_default;
 class glDirectDraw7;
 
 class glDirect3D3;
@@ -49,6 +49,8 @@ public:
 	glDirect3D1 *glD3D1;
 private:
 	ULONG refcount;
+	D3DDEVICEDESC7 d3ddesc;
+	D3DDEVICEDESC d3ddesc3;
 };
 
 class glDirect3D3 : public IDirect3D3

@@ -33,7 +33,7 @@ using namespace std;
 #include "glRenderer.h"
 #include "../common/version.h"
 
-DDDEVICEIDENTIFIER2 devid = {
+const DDDEVICEIDENTIFIER2 devid_default = {
 	"ddraw.dll",
 	"DXGL DDraw Wrapper",
 	0,
@@ -1132,6 +1132,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	TRACE_ENTER(2,14,this,24,lpGUID);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
+	devid = devid_default;
 	primarylost = true;
 	glD3D7 = NULL;
 	glDD1 = NULL;
@@ -2309,8 +2310,8 @@ HRESULT WINAPI glDirectDraw4::GetDeviceIdentifier(LPDDDEVICEIDENTIFIER lpdddi, D
 	TRACE_ENTER(3,14,this,14,lpdddi,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpdddi) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	devid.guidDeviceIdentifier = device_template;
-	memcpy(lpdddi,&devid,sizeof(DDDEVICEIDENTIFIER));
+	glDD7->devid.guidDeviceIdentifier = device_template;
+	memcpy(lpdddi,&glDD7->devid,sizeof(DDDEVICEIDENTIFIER));
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
