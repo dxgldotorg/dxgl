@@ -1624,9 +1624,11 @@ HRESULT WINAPI glDirectDraw7::RestoreAllSurfaces()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("IDirectDraw::RestoreAllSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	for (int i = 0; i < surfacecount; i++)
+	{
+		if (surfaces[i]) surfaces[i]->Restore();
+	}
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::TestCooperativeLevel()
 {
