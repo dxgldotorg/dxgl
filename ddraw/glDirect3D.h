@@ -19,8 +19,8 @@
 #ifndef __GLDIRECT3D_H
 #define __GLDIRECT3D_H
 
-extern D3DDEVICEDESC7 d3ddesc;
-extern D3DDEVICEDESC d3ddesc3;
+extern const D3DDEVICEDESC7 d3ddesc;
+extern const D3DDEVICEDESC d3ddesc3;
 class glDirectDraw7;
 
 class glDirect3D3;

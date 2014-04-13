@@ -29,7 +29,7 @@
 #include "glDirect3DMaterial.h"
 #include "glDirect3DLight.h"
 
-D3DDEVICEDESC7 d3ddesc = 
+const D3DDEVICEDESC7 d3ddesc = 
 {
 	D3DDEVCAPS_CANBLTSYSTONONLOCAL | D3DDEVCAPS_CANRENDERAFTERFLIP | D3DDEVCAPS_DRAWPRIMTLVERTEX | 
 		D3DDEVCAPS_FLOATTLVERTEX | D3DDEVCAPS_TEXTURENONLOCALVIDMEM | D3DDEVCAPS_TEXTURESYSTEMMEMORY |
@@ -127,7 +127,7 @@ D3DDEVICEDESC7 d3ddesc =
 	0,0,0,0 //dwReserved1 through dwReserved4
 };
 
-D3DDEVICEDESC d3ddesc3 =
+const D3DDEVICEDESC d3ddesc3 =
 {
 	sizeof(D3DDEVICEDESC), // dwSize
 	D3DDD_BCLIPPING|D3DDD_COLORMODEL|D3DDD_DEVCAPS|D3DDD_DEVICERENDERBITDEPTH|
@@ -180,7 +180,7 @@ struct D3DDevice
 	char *name;
 	char *devname;
 };
-D3DDevice devices[3] =
+const D3DDevice devices[3] =
 {
 	{
 		"Simulated RGB Rasterizer",

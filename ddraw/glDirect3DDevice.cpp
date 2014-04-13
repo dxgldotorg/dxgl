@@ -74,7 +74,7 @@ typedef struct _D3DDeviceDesc2 {
         DWORD           dwMinStippleHeight,dwMaxStippleHeight;
 } D3DDEVICEDESC2,*LPD3DDEVICEDESC2;
 
-extern D3DDEVICEDESC7 d3ddesc;
+extern const D3DDEVICEDESC7 d3ddesc;
 
 const DWORD renderstate_default[153] = {0, // 0
 	NULL, //texturehandle
@@ -276,6 +276,8 @@ void AddStats(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwCount, D3DSTATS *stat
 glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
 {
 	TRACE_ENTER(4,14,this,24,&rclsid,14,glD3D7,14,glDDS7);
+	memcpy(&d3ddesc, &::d3ddesc, sizeof(D3DDEVICEDESC));
+	memcpy(&d3ddesc3, &::d3ddesc3, sizeof(D3DDEVICEDESC));
 	int zbuffer = 0;
 	glD3DDev3 = NULL;
 	glD3DDev2 = NULL;
