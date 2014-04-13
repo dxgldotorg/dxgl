@@ -22,8 +22,6 @@
 #include "glutil.h"
 #include "glDirectDrawClipper.h"
 
-LONG locks;
-
 ULONG WINAPI glClassFactory::AddRef()
 {
 	TRACE_ENTER(1,14,this);
@@ -118,8 +116,8 @@ HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
 	TRACE_ENTER(2,14,this,22,fLock);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(fLock) InterlockedIncrement(&locks);
-	else InterlockedDecrement(&locks);
+	if(fLock) InterlockedIncrement(&lockcount);
+	else InterlockedDecrement(&lockcount);
 	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }
