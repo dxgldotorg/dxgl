@@ -17,7 +17,6 @@
 
 #include "common.h"
 #include "texture.h"
-#include "fog.h"
 #include "glutil.h"
 #include "timer.h"
 #include "glDirectDraw.h"
@@ -192,6 +191,10 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
   */
 glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
+	fogcolor = 0;
+	fogstart = 0.0f;
+	fogend = 1.0f;
+	fogdensity = 1.0f;
 	backbuffer = NULL;
 	hDC = NULL;
 	hRC = NULL;
@@ -821,10 +824,10 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	glEnable(GL_CULL_FACE);
 	SwapBuffers(hDC);
 	SetActiveTexture(0);
-	SetFogColor(0);
-	SetFogStart(0);
-	SetFogEnd(1);
-	SetFogDensity(1);
+	_SetFogColor(0);
+	_SetFogStart(0);
+	_SetFogEnd(1);
+	_SetFogDensity(1);
 	SetPolyMode(D3DFILL_SOLID);
 	SetShadeMode(D3DSHADE_GOURAUD);
 	if(hWnd)
@@ -1625,10 +1628,10 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	else BlendEnable(false);
 	SetBlend(device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
 	SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
-	SetFogColor(device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
-	SetFogStart(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
-	SetFogEnd(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
-	SetFogDensity(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
+	_SetFogColor(device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
+	_SetFogStart(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
+	_SetFogEnd(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
+	_SetFogDensity(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
 	SetPolyMode((D3DFILLMODE)device->renderstate[D3DRENDERSTATE_FILLMODE]);
 	SetShadeMode((D3DSHADEMODE)device->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
@@ -1645,4 +1648,37 @@ void glRenderer::_DeleteFBO(FBO *fbo)
 {
 	::DeleteFBO(fbo);
 	SetEvent(busy);
+}
+
+void glRenderer::_SetFogColor(DWORD color)
+{
+	if (color == fogcolor) return;
+	fogcolor = color;
+	GLfloat colors[4];
+	colors[0] = (GLfloat)((color >> 16) & 255) / 255.0f;
+	colors[1] = (GLfloat)((color >> 8) & 255) / 255.0f;
+	colors[2] = (GLfloat)(color & 255) / 255.0f;
+	colors[3] = (GLfloat)((color >> 24) & 255) / 255.0f;
+	glFogfv(GL_FOG_COLOR, colors);
+}
+
+void glRenderer::_SetFogStart(GLfloat start)
+{
+	if (start == fogstart) return;
+	fogstart = start;
+	glFogf(GL_FOG_START, start);
+}
+
+void glRenderer::_SetFogEnd(GLfloat end)
+{
+	if (end == fogend) return;
+	fogend = end;
+	glFogf(GL_FOG_END, end);
+}
+
+void glRenderer::_SetFogDensity(GLfloat density)
+{
+	if (density == fogdensity) return;
+	fogdensity = density;
+	glFogf(GL_FOG_DENSITY, density);
 }

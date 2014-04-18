@@ -122,6 +122,10 @@ private:
 	void _Flush();
 	void _SetWnd(int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd);
 	void _DeleteFBO(FBO *fbo);
+	void _SetFogColor(DWORD color);
+	void _SetFogStart(GLfloat start);
+	void _SetFogEnd(GLfloat end);
+	void _SetFogDensity(GLfloat density);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
@@ -140,6 +144,10 @@ private:
 	TEXTURE *backbuffer;
 	int backx;
 	int backy;
+	DWORD fogcolor;
+	GLfloat fogstart;
+	GLfloat fogend;
+	GLfloat fogdensity;
 };
 
 #endif //_GLRENDERER_H

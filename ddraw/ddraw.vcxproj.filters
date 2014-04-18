@@ -119,9 +119,6 @@
     <ClInclude Include="texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="glDirect3DExecuteBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -212,9 +209,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="fog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glDirect3DExecuteBuffer.cpp">
