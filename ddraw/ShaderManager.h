@@ -36,7 +36,7 @@ typedef struct
 	GLint view;
 } SHADER;
 
-extern SHADER shaders[];
+extern const SHADER shader_template[];
 
 #define PROG_FILL 0
 #define PROG_TEXTURE 1
@@ -45,7 +45,19 @@ extern SHADER shaders[];
 #define PROG_CKEYMASK 4
 #define PROG_2CKEY 5
 
-void CompileShaders();
-void DeleteShaders();
+struct TEXTURESTAGE;
+class ShaderGen3D;
+
+class ShaderManager
+{
+public:
+	ShaderManager(glExtensions *glext);
+	~ShaderManager();
+	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
+	SHADER *shaders;
+	ShaderGen3D *gen3d;
+private:
+	glExtensions *ext;
+};
 
 #endif //__SHADERS_H

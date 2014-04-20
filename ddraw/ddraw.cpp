@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,8 @@
 #include "common.h"
 #include "util.h"
 #include "ddraw.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
@@ -38,14 +38,13 @@ const GUID device_template =
 
 DWORD timer;
 int vsyncstatus;
-glRenderer *renderer = NULL;
 glDirectDraw7 *dxglinterface = NULL;
 
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
-	if(!renderer) renderer = new glRenderer(width,height,bpp,fullscreen,frequency,hWnd,glDD7);
-	else renderer->SetWnd(width,height,bpp,fullscreen,frequency,hWnd);
+	if(!glDD7->renderer) glDD7->renderer = new glRenderer(width,height,bpp,fullscreen,frequency,hWnd,glDD7);
+	else glDD7->renderer->SetWnd(width,height,bpp,fullscreen,frequency,hWnd);
 	TRACE_EXIT(0,0);
 }
 

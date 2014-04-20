@@ -17,7 +17,6 @@
 
 #include "common.h"
 #include "util.h"
-#include "shaders.h"
 #include <string>
 using namespace std;
 #include "shadergen2d.h"
@@ -25,8 +24,8 @@ using namespace std;
 #include "timer.h"
 #include "glDirect3D.h"
 #include "glDirectDraw.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
@@ -566,6 +565,7 @@ glDirectDraw7::glDirectDraw7()
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	refcount = 1;
+	renderer = NULL;
 	TRACE_EXIT(-1,0);
 }
 
@@ -599,6 +599,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 		return;
 	}
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
+	renderer = NULL;
 	error = glDirectDraw7::Initialize(lpGUID);
 	refcount = 1;
 	TRACE_EXIT(-1,0);
@@ -723,7 +724,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D)
 	{
-		glDirect3D7 *tmp = new glDirect3D7;
+		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -732,7 +733,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D2)
 	{
-		glDirect3D7 *tmp = new glDirect3D7;
+		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D2,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -741,7 +742,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D3)
 	{
-		glDirect3D7 *tmp = new glDirect3D7;
+		glDirect3D7 *tmp = new glDirect3D7(this);
 		tmp->QueryInterface(IID_IDirect3D3,ppvObj);
 		tmp->Release();
 		TRACE_VAR("*ppvObj",14,*ppvObj);
@@ -750,7 +751,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3D7)
 	{
-		*ppvObj = new glDirect3D7;
+		*ppvObj = new glDirect3D7(this);
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;

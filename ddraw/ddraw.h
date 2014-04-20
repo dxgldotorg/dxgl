@@ -62,7 +62,6 @@ extern const GUID device_template;
 extern DWORD timer;
 extern int vsyncstatus;
 class glRenderer;
-extern glRenderer *renderer;
 class glDirectDraw7;
 extern glDirectDraw7 *dxglinterface;
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);

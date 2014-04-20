@@ -31,7 +31,7 @@
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
 #include "glExtensions.h"
-#include "shaders.h"
+#include "ShaderManager.h"
 
 extern const GUID device_template;
 

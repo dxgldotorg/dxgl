@@ -29,22 +29,40 @@ typedef struct
 	GLint uniforms[256];
 } _GENSHADER;
 
-struct GenShader
+typedef struct
 {
 	_GENSHADER shader;
 	__int64 id;
 	__int64 texids[8];
 	int texcoords[8];
-};
+} GenShader;
 
 #define D3DTOP_DXGL_DECALMASK 0x101;
 #define D3DTOP_DXGL_MODULATEMASK 0x102;
 
-void ClearShaders();
-void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
-GLuint GetProgram();
-void ZeroShaderArray();
-void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
-extern GenShader *genshaders;
-extern int current_genshader;
+class ShaderGen3D
+{
+public:
+	ShaderGen3D(glExtensions *glext, ShaderManager *shaderman);
+	~ShaderGen3D();
+	void ClearShaders();
+	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
+	GLuint GetProgram();
+	void ZeroShaderArray();
+	void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
+	GenShader *genshaders;
+	int current_genshader;
+private:
+	__int64 current_shader;
+	__int64 current_texid[8];
+	int shadercount;
+	int maxshaders;
+	int genindex;
+	bool initialized;
+	bool isbuiltin;
+	GLuint current_prog;
+	glExtensions *ext;
+	ShaderManager *shaders;
+};
+
 #endif

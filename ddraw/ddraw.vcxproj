@@ -283,7 +283,7 @@
     <ClInclude Include="glExtensions.h" />
     <ClInclude Include="glRenderer.h" />
     <ClInclude Include="glRenderWindow.h" />
-    <ClInclude Include="glutil.h" />
+    <ClInclude Include="glUtil.h" />
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />
     <ClInclude Include="include\d3dtypes.h" />
@@ -293,10 +293,10 @@
     <ClInclude Include="matrix.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="scalers.h" />
-    <ClInclude Include="shadergen.h" />
+    <ClInclude Include="ShaderGen3D.h" />
     <ClInclude Include="shadergen2d.h" />
-    <ClInclude Include="shaders.h" />
-    <ClInclude Include="texture.h" />
+    <ClInclude Include="ShaderManager.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="trace.h" />
     <ClInclude Include="util.h" />
@@ -347,7 +347,7 @@
     <ClCompile Include="glExtensions.cpp" />
     <ClCompile Include="glRenderer.cpp" />
     <ClCompile Include="glRenderWindow.cpp" />
-    <ClCompile Include="glutil.cpp" />
+    <ClCompile Include="glUtil.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">Create</PrecompiledHeader>
@@ -358,10 +358,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="scalers.cpp" />
-    <ClCompile Include="shadergen.cpp" />
+    <ClCompile Include="ShaderGen3D.cpp" />
     <ClCompile Include="shadergen2d.cpp" />
-    <ClCompile Include="shaders.cpp" />
-    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="trace.cpp" />
     <ClCompile Include="util.cpp" />

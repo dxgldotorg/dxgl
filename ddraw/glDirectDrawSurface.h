@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -95,8 +95,8 @@ public:
 	HRESULT WINAPI GetPriority(LPDWORD lpdwPriority);
 	HRESULT WINAPI SetLOD(DWORD dwMaxLOD);
 	HRESULT WINAPI GetLOD(LPDWORD lpdwMaxLOD);
-	void SetFilter(int level, GLint mag, GLint min);
 	// internal functions
+	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, TextureManager *texman);
 	TEXTURE *GetTexture(){
 		return texture;
 	}

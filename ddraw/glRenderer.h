@@ -98,6 +98,7 @@ public:
 	unsigned int GetScanLine();
 	HGLRC hRC;
 	GLCAPS gl_caps;
+	glExtensions *ext;
 private:
 	// In-thread APIs
 	DWORD _Entry();
@@ -123,6 +124,7 @@ private:
 	void _SetFogEnd(GLfloat end);
 	void _SetFogDensity(GLfloat density);
 	inline void _SetSwap(int swap);
+	void SetBlend(DWORD src, DWORD dest);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
@@ -147,6 +149,9 @@ private:
 	GLfloat fogdensity;
 	BltVertex bltvertices[4];
 	int oldswap;
+	TextureManager *texman;
+	glUtil *util;
+	ShaderManager *shaders;
 };
 
 #endif //_GLRENDERER_H

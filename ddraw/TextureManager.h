@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -46,19 +46,33 @@ typedef struct
 	GLint magfilter;
 } SAMPLER;
 
-extern SAMPLER samplers[8];
-
-void InitSamplers();
-void DeleteSamplers();
-void InitTexture(DXGLCFG *cfg);
-void SetActiveTexture(int level);
-void SetTexture(unsigned int level, TEXTURE *texture);
-
-extern void (*_CreateTexture)(TEXTURE *texture, int width, int height);
-extern void (*_DeleteTexture)(TEXTURE *texture);
-extern void (*_UploadTexture)(TEXTURE *texture, int level, const void *data, int width, int height);
-extern void (*_DownloadTexture)(TEXTURE *texture, int level, void *data);
 extern const DDPIXELFORMAT texformats[];
 extern const int numtexformats;
+
+class TextureManager
+{
+public:
+	TextureManager(glExtensions *glext);
+	void InitSamplers();
+	void DeleteSamplers();
+	void SetActiveTexture(int level);
+	void SetTexture(unsigned int level, TEXTURE *texture);
+
+	void _CreateTexture(TEXTURE *texture, int width, int height);
+	void _DeleteTexture(TEXTURE *texture);
+	void _UploadTexture(TEXTURE *texture, int level, const void *data, int width, int height);
+	void _DownloadTexture(TEXTURE *texture, int level, void *data);
+
+	SAMPLER samplers[8];
+
+private:
+	void CreateTextureClassic(TEXTURE *texture, int width, int height);
+	void DeleteTexture(TEXTURE *texture);
+	void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height);
+	void DownloadTextureClassic(TEXTURE *texture, int level, void *data);
+	glExtensions *ext;
+	GLint texlevel;
+	GLuint textures[16];
+};
 
 #endif //_TEXTURE_H

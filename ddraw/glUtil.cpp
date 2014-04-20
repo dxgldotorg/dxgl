@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2013 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,158 +16,161 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "glDirectDrawSurface.h"
 
-bool depthwrite = true;
-bool depthtest = false;
-GLuint depthcomp = 0;
-GLuint alphacomp = 0;
-FBO *currentfbo = NULL;
-GLint scissorx = 0;
-GLint scissory = 0;
-GLsizei scissorwidth = 0;
-GLsizei scissorheight = 0;
-GLint viewportx = 0;
-GLint viewporty = 0;
-GLsizei viewportwidth = 0;
-GLsizei viewportheight = 0;
-GLclampd depthnear = 0.0;
-GLclampd depthfar = 1.0;
-GLenum matrixmode = GL_MODELVIEW;
-GLfloat materialambient[4] = {0,0,0,0};
-GLfloat materialdiffuse[4] = {0,0,0,0};
-GLfloat materialspecular[4] = {0,0,0,0};
-GLfloat materialemission[4] = {0,0,0,0};
-GLfloat materialshininess = 0;
-bool scissorenabled = false;
-GLint texwrap[16];
-GLclampf clearr = 0.0;
-GLclampf clearg = 0.0;
-GLclampf clearb = 0.0;
-GLclampf cleara = 0.0;
-GLclampd cleardepth = 1.0;
-GLint clearstencil = 0;
-GLenum blendsrc = GL_ONE;
-GLenum blenddest = GL_ZERO;
-bool blendenabled = false;
-bool arrays[42];
-D3DCULL cullmode = D3DCULL_NONE;
-bool cullenabled = false;
-D3DFILLMODE polymode = D3DFILL_SOLID;
-D3DSHADEMODE shademode = D3DSHADE_GOURAUD;
-
-void InitFBO(FBO *fbo)
+glUtil::glUtil(glExtensions *glext)
+{
+	ext = glext;
+	depthwrite = true;
+	depthtest = false;
+	depthcomp = 0;
+	alphacomp = 0;
+	currentfbo = NULL;
+	scissorx = 0;
+	scissory = 0;
+	scissorwidth = 0;
+	scissorheight = 0;
+	viewportx = 0;
+	viewporty = 0;
+	viewportwidth = 0;
+	viewportheight = 0;
+	depthnear = 0.0;
+	depthfar = 1.0;
+	matrixmode = GL_MODELVIEW;
+	ZeroMemory(materialambient, 4 * sizeof(GLfloat));
+	ZeroMemory(materialdiffuse, 4 * sizeof(GLfloat));
+	ZeroMemory(materialspecular, 4 * sizeof(GLfloat));
+	ZeroMemory(materialemission, 4 * sizeof(GLfloat));
+	materialshininess = 0;
+	scissorenabled = false;
+	texwrap[16];
+	clearr = 0.0;
+	clearg = 0.0;
+	clearb = 0.0;
+	cleara = 0.0;
+	cleardepth = 1.0;
+	clearstencil = 0;
+	blendsrc = GL_ONE;
+	blenddest = GL_ZERO;
+	blendenabled = false;
+	arrays[42];
+	cullmode = D3DCULL_NONE;
+	cullenabled = false;
+	polymode = D3DFILL_SOLID;
+	shademode = D3DSHADE_GOURAUD;
+}
+void glUtil::InitFBO(FBO *fbo)
 {
 	if(!fbo->fbo)
 	{
 		ZeroMemory(fbo,sizeof(FBO));
-		if(GLEXT_ARB_framebuffer_object) glGenFramebuffers(1,&fbo->fbo);
-		else if(GLEXT_EXT_framebuffer_object) glGenFramebuffersEXT(1,&fbo->fbo);
+		if(ext->GLEXT_ARB_framebuffer_object) ext->glGenFramebuffers(1,&fbo->fbo);
+		else if(ext->GLEXT_EXT_framebuffer_object) ext->glGenFramebuffersEXT(1,&fbo->fbo);
 	}
 }
 
-void DeleteFBO(FBO *fbo)
+void glUtil::DeleteFBO(FBO *fbo)
 {
 	if(fbo->fbo)
 	{
-		if(GLEXT_ARB_framebuffer_object)
+		if(ext->GLEXT_ARB_framebuffer_object)
 		{
-			if(currentfbo == fbo) glBindFramebuffer(GL_FRAMEBUFFER,0);
-			glDeleteFramebuffers(1,&fbo->fbo);
+			if(currentfbo == fbo) ext->glBindFramebuffer(GL_FRAMEBUFFER,0);
+			ext->glDeleteFramebuffers(1,&fbo->fbo);
 			ZeroMemory(fbo,sizeof(FBO));
 		}
-		else if(GLEXT_EXT_framebuffer_object)
+		else if(ext->GLEXT_EXT_framebuffer_object)
 		{
-			if(currentfbo == fbo) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-			glDeleteFramebuffersEXT(1,&fbo->fbo);
+			if(currentfbo == fbo) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+			ext->glDeleteFramebuffersEXT(1,&fbo->fbo);
 			ZeroMemory(fbo,sizeof(FBO));
 		}
 	}
 }
 
-void SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+void glUtil::SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
 {
 	if(!color) return;
 	if(!fbo->fbo) return;
-	if(GLEXT_ARB_framebuffer_object)
+	if(ext->GLEXT_ARB_framebuffer_object)
 	{
-		if(currentfbo != fbo) glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
+		if(currentfbo != fbo) ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
 		currentfbo = fbo;
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
+		ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
-			if(!fbo->stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(!fbo->stencil) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(z)ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
-			if(fbo->stencil) glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(fbo->stencil) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(z) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		fbo->stencil = stencil;
 		fbo->fbz = z;
-		fbo->status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		fbo->status = ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	}
-	else if(GLEXT_EXT_framebuffer_object)
+	else if(ext->GLEXT_EXT_framebuffer_object)
 	{
-		if(currentfbo != fbo) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
+		if(currentfbo != fbo) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
 		currentfbo = fbo;
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,color->id,0);
+		ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,color->id,0);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
 			if(z)
 			{
-				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
-				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
 			}
 			else
 			{
-				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
-				glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
 			}
 		}
 		else
 		{
-			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
-			if(z)glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
-			else glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+			ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+			if(z)ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+			else ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
 		}
 		fbo->stencil = stencil;
 		fbo->fbz = z;
-		fbo->status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		fbo->status = ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	}
 }
 
-void SetFBO(glDirectDrawSurface7 *surface)
+void glUtil::SetFBO(glDirectDrawSurface7 *surface)
 {
 	if(!surface) SetFBO((FBO*)NULL);
 	if(surface->zbuffer) SetFBO(&surface->fbo,surface->texture,surface->zbuffer->texture,surface->zbuffer->hasstencil);
 	else SetFBO(&surface->fbo,surface->texture,NULL,false);
 }
 
-void SetFBO(FBO *fbo)
+void glUtil::SetFBO(FBO *fbo)
 {
 	if(fbo == currentfbo) return;
 	if(!fbo)
 	{
-		if(GLEXT_ARB_framebuffer_object) glBindFramebuffer(GL_FRAMEBUFFER,0);
-		else if(GLEXT_EXT_framebuffer_object) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+		if(ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER,0);
+		else if(ext->GLEXT_EXT_framebuffer_object) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
 	}
 	else
 	{
-		if(GLEXT_ARB_framebuffer_object) glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
-		else if(GLEXT_EXT_framebuffer_object) glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
+		if(ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
+		else if(ext->GLEXT_EXT_framebuffer_object) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
 	}
 	currentfbo = fbo;
 }
 
-void SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+void glUtil::SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
 {
 	if(!fbo)
 	{
@@ -181,7 +184,7 @@ void SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
 	if(fbo != currentfbo) SetFBO(fbo);
 }
 
-void SetWrap(int level, DWORD coord, DWORD address)
+void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texman)
 {
 	if(level == -1)
 	{
@@ -214,28 +217,28 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	{
 		texwrap[level*2+coord] = wrapmode;
 		//int currtexture = texlevel;
-		if(GLEXT_ARB_sampler_objects)
+		if(ext->GLEXT_ARB_sampler_objects)
 		{
 			if(coord)
 			{
-				if(samplers[level].wrapt != wrapmode)
+				if(texman->samplers[level].wrapt != wrapmode)
 				{
-					glSamplerParameteri(samplers[level].id,GL_TEXTURE_WRAP_T,wrapmode);
-					samplers[level].wrapt = wrapmode;
+					ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_WRAP_T,wrapmode);
+					texman->samplers[level].wrapt = wrapmode;
 				}
 			}
 			else
 			{
-				if(samplers[level].wraps != wrapmode)
+				if(texman->samplers[level].wraps != wrapmode)
 				{
-					glSamplerParameteri(samplers[level].id,GL_TEXTURE_WRAP_S,wrapmode);
-					samplers[level].wraps = wrapmode;
+					ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_WRAP_S,wrapmode);
+					texman->samplers[level].wraps = wrapmode;
 				}
 			}
 		}
 		else
 		{
-			SetActiveTexture(level);
+			texman->SetActiveTexture(level);
 			if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 			else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
 		}
@@ -243,7 +246,7 @@ void SetWrap(int level, DWORD coord, DWORD address)
 	}
 }
 
-void DepthWrite(bool enabled)
+void glUtil::DepthWrite(bool enabled)
 {
 	if(enabled != depthwrite)
 	{
@@ -252,7 +255,7 @@ void DepthWrite(bool enabled)
 		else glDepthMask(GL_FALSE);
 	}
 }
-void DepthTest(bool enabled)
+void glUtil::DepthTest(bool enabled)
 {
 	if(enabled != depthtest)
 	{
@@ -261,7 +264,7 @@ void DepthTest(bool enabled)
 		else glDisable(GL_DEPTH_TEST);
 	}
 }
-void SetDepthComp(GLenum comp)
+void glUtil::SetDepthComp(GLenum comp)
 {
 	if(comp != depthcomp)
 	{
@@ -270,7 +273,7 @@ void SetDepthComp(GLenum comp)
 	}
 }
 
-void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
+void glUtil::SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	if(enabled != scissorenabled)
 	{
@@ -288,7 +291,7 @@ void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
 	}
 }
 
-void MatrixMode(GLenum mode)
+void glUtil::MatrixMode(GLenum mode)
 {
 	if(mode != matrixmode)
 	{
@@ -297,12 +300,12 @@ void MatrixMode(GLenum mode)
 	}
 }
 
-void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
+void glUtil::SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
 {
-	if(GLEXT_EXT_direct_state_access)
+	if(ext->GLEXT_EXT_direct_state_access)
 	{
-		glMatrixLoadfEXT(mode,mat1);
-		if(mode == GL_MODELVIEW) glMatrixMultfEXT(mode,mat2);
+		ext->glMatrixLoadfEXT(mode,mat1);
+		if(mode == GL_MODELVIEW) ext->glMatrixMultfEXT(mode,mat2);
 	}
 	else
 	{
@@ -313,7 +316,7 @@ void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
 	if(dirty) *dirty = false;
 }
 
-void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
+void glUtil::SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
 {
 	if(memcmp(ambient,materialambient,4*sizeof(GLfloat)))
 	{
@@ -342,7 +345,7 @@ void SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLflo
 	}
 }
 
-void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+void glUtil::SetViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	if((x != viewportx) || (y != viewporty) || (width != viewportwidth) || (height != viewportheight))
 	{
@@ -354,7 +357,7 @@ void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	}
 }
 
-void SetDepthRange(GLclampd rangenear, GLclampd rangefar)
+void glUtil::SetDepthRange(GLclampd rangenear, GLclampd rangefar)
 {
 	if((rangenear != depthnear) || (rangefar != depthfar))
 	{
@@ -364,7 +367,7 @@ void SetDepthRange(GLclampd rangenear, GLclampd rangefar)
 	}
 }
 
-void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
+void glUtil::ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
 	if((clearr != r) || (clearg != g) || (clearb != b) || (cleara != a))
 	{
@@ -376,7 +379,7 @@ void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 	}
 }
 
-void ClearDepth(GLclampd depth)
+void glUtil::ClearDepth(GLclampd depth)
 {
 	if(cleardepth != depth)
 	{
@@ -385,7 +388,7 @@ void ClearDepth(GLclampd depth)
 	}
 }
 
-void ClearStencil(GLint stencil)
+void glUtil::ClearStencil(GLint stencil)
 {
 	if(clearstencil != stencil)
 	{
@@ -394,7 +397,7 @@ void ClearStencil(GLint stencil)
 	}
 }
 
-void EnableArray(int index, bool enabled)
+void glUtil::EnableArray(int index, bool enabled)
 {
 	if(index == -1)
 	{
@@ -406,12 +409,12 @@ void EnableArray(int index, bool enabled)
 	if(arrays[index] != enabled)
 	{
 		arrays[index] = enabled;
-		if(enabled) glEnableVertexAttribArray(index);
-		else glDisableVertexAttribArray(index);
+		if(enabled) ext->glEnableVertexAttribArray(index);
+		else ext->glDisableVertexAttribArray(index);
 	}
 }
 
-void BlendFunc(GLenum src, GLenum dest)
+void glUtil::BlendFunc(GLenum src, GLenum dest)
 {
 	if((blendsrc != src) || (blenddest != dest))
 	{
@@ -421,7 +424,7 @@ void BlendFunc(GLenum src, GLenum dest)
 	}
 }
 
-void BlendEnable(bool enabled)
+void glUtil::BlendEnable(bool enabled)
 {
 	if(enabled != blendenabled)
 	{
@@ -431,7 +434,7 @@ void BlendEnable(bool enabled)
 	}
 }
 
-void EnableCull(bool enabled)
+void glUtil::EnableCull(bool enabled)
 {
 	if(cullenabled != enabled)
 	{
@@ -440,7 +443,7 @@ void EnableCull(bool enabled)
 		else glDisable(GL_CULL_FACE);
 	}
 }
-void SetCull(D3DCULL mode)
+void glUtil::SetCull(D3DCULL mode)
 {
 	if(cullmode != mode)
 	{
@@ -461,7 +464,7 @@ void SetCull(D3DCULL mode)
 		}
 	}
 }
-void SetPolyMode(D3DFILLMODE mode)
+void glUtil::SetPolyMode(D3DFILLMODE mode)
 {
 	if(polymode != mode)
 	{
@@ -482,7 +485,7 @@ void SetPolyMode(D3DFILLMODE mode)
 	}
 }
 
-void SetShadeMode(D3DSHADEMODE mode)
+void glUtil::SetShadeMode(D3DSHADEMODE mode)
 {
 	if(shademode != mode)
 	{

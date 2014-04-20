@@ -18,8 +18,8 @@
 #include "common.h"
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "glDirectDrawClipper.h"
 
 ULONG WINAPI glClassFactory::AddRef()

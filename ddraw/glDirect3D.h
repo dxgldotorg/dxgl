@@ -29,7 +29,7 @@ class glDirect3D1;
 class glDirect3D7 : public IDirect3D7
 {
 public:
-	glDirect3D7();
+	glDirect3D7(glDirectDraw7 *gl_DD7);
 	virtual ~glDirect3D7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -47,6 +47,7 @@ public:
 	glDirect3D3 *glD3D3;
 	glDirect3D2 *glD3D2;
 	glDirect3D1 *glD3D1;
+	glDirectDraw7 *glDD7;
 private:
 	ULONG refcount;
 	D3DDEVICEDESC7 d3ddesc;

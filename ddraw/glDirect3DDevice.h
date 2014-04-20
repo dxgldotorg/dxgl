@@ -133,7 +133,7 @@ public:
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	HRESULT err() {return error;}
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
-	void SetDepthComp();
+	void SetDepthComp(glUtil *util);
 	D3DMATERIALHANDLE AddMaterial(glDirect3DMaterial3* material);
 	D3DTEXTUREHANDLE AddTexture(glDirectDrawSurface7* texture);
 	HRESULT AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
@@ -232,6 +232,7 @@ private:
 	D3DMATRIXHANDLE mhProjection;
 	D3DDEVICEDESC7 d3ddesc;
 	D3DDEVICEDESC d3ddesc3;
+	glRenderer *renderer;
 };
 
 #endif //__GLDIRECT3DDEVICE_H

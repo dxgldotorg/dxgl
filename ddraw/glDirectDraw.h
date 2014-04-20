@@ -74,7 +74,6 @@ public:
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
-	GLuint PalProg(){return shaders[PROG_PAL256].prog;}
 	DWORD GetBPP(){return primarybpp;}
 	DWORD GetBPPMultipleOf8(){if(primarybpp == 15) return 16; else return primarybpp;}
 	DWORD screenx,screeny,screenrefresh,screenbpp;
@@ -90,6 +89,7 @@ public:
 	glDirectDraw2 *glDD2;
 	glDirectDraw4 *glDD4;
 	DDDEVICEIDENTIFIER2 devid;
+	glRenderer *renderer;
 private:
 	HRESULT error;
 	ULONG refcount;

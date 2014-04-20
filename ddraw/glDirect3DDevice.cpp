@@ -18,8 +18,8 @@
 #include "common.h"
 #include "ddraw.h"
 #include "glDirect3D.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
@@ -34,7 +34,7 @@
 #include <string>
 #include <cmath>
 using namespace std;
-#include "shadergen.h"
+#include "ShaderGen3D.h"
 #include "matrix.h"
 
 typedef struct _D3DDeviceDesc1 {
@@ -340,6 +340,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
 	glDDS7->AddRef();
+	renderer = this->glD3D7->glDD7->renderer;
 	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
 	if(glDDS7->GetZBuffer()) zbuffer = 1;
 	ZeroMemory(&material,sizeof(D3DMATERIAL7));
@@ -1724,35 +1725,35 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 	return D3D_OK;
 }
 
-void glDirect3DDevice7::SetDepthComp()
+void glDirect3DDevice7::SetDepthComp(glUtil *util)
 {
-	TRACE_ENTER(1,14,this);
+	TRACE_ENTER(1,14,this,14,util);
 	switch(renderstate[D3DRENDERSTATE_ZFUNC])
 	{
 	case D3DCMP_NEVER:
-		::SetDepthComp(GL_NEVER);
+		util->SetDepthComp(GL_NEVER);
 		break;
 	case D3DCMP_LESS:
-		::SetDepthComp(GL_LESS);
+		util->SetDepthComp(GL_LESS);
 		break;
 	case D3DCMP_EQUAL:
-		::SetDepthComp(GL_EQUAL);
+		util->SetDepthComp(GL_EQUAL);
 		break;
 	case D3DCMP_LESSEQUAL:
-		::SetDepthComp(GL_LEQUAL);
+		util->SetDepthComp(GL_LEQUAL);
 		break;
 	case D3DCMP_GREATER:
-		::SetDepthComp(GL_GREATER);
+		util->SetDepthComp(GL_GREATER);
 		break;
 	case D3DCMP_NOTEQUAL:
-		::SetDepthComp(GL_NOTEQUAL);
+		util->SetDepthComp(GL_NOTEQUAL);
 		break;
 	case D3DCMP_GREATEREQUAL:
-		::SetDepthComp(GL_GEQUAL);
+		util->SetDepthComp(GL_GEQUAL);
 		break;
 	case D3DCMP_ALWAYS:
 	default:
-		::SetDepthComp(GL_ALWAYS);
+		util->SetDepthComp(GL_ALWAYS);
 		break;
 	}
 	TRACE_EXIT(0,0);

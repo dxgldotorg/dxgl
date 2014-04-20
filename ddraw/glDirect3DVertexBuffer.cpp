@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,8 @@
 #include "common.h"
 #include "include/d3d.h"
 #include "include/d3dtypes.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirect3D.h"

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,15 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include <string>
 using namespace std;
-#include "shaders.h"
-#include "shadergen.h"
+#include "ShaderManager.h"
+#include "ShaderGen3D.h"
 
 const char frag_Color[] = "\
 #version 110\n\
@@ -120,7 +120,7 @@ void main()\n\
 
 // Use EXACTLY one line per entry.  Don't change layout of the list.
 const int SHADER_START = __LINE__;
-SHADER shaders[] = 
+const SHADER shader_template[] = 
 {
 	{0,0,	vert_ortho,			frag_Color,			0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1},
@@ -132,64 +132,73 @@ SHADER shaders[] =
 const int SHADER_END = __LINE__ - 4;
 const int NumberOfShaders = SHADER_END - SHADER_START;
 
-void CompileShaders()
+ShaderManager::ShaderManager(glExtensions *glext)
 {
-	ZeroShaderArray();
+	ext = glext;
+	shaders = (SHADER*)malloc(sizeof(SHADER)*NumberOfShaders);
+	memcpy(shaders, shader_template, sizeof(SHADER)*NumberOfShaders);
 	const GLchar *src;
 	GLint srclen;
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
-		shaders[i].prog = glCreateProgram();
+		shaders[i].prog = ext->glCreateProgram();
 		if(shaders[i].vsrc)
 		{
-			shaders[i].vs = glCreateShader(GL_VERTEX_SHADER);
+			shaders[i].vs = ext->glCreateShader(GL_VERTEX_SHADER);
 			src = shaders[i].vsrc;
 			srclen = strlen(shaders[i].vsrc);
-			glShaderSource(shaders[i].vs,1,&src,&srclen);
-			glCompileShader(shaders[i].vs);
-			glAttachShader(shaders[i].prog,shaders[i].vs);
+			ext->glShaderSource(shaders[i].vs,1,&src,&srclen);
+			ext->glCompileShader(shaders[i].vs);
+			ext->glAttachShader(shaders[i].prog,shaders[i].vs);
 		}
 		if(shaders[i].fsrc)
 		{
-			shaders[i].fs = glCreateShader(GL_FRAGMENT_SHADER);
+			shaders[i].fs = ext->glCreateShader(GL_FRAGMENT_SHADER);
 			src = shaders[i].fsrc;
 			srclen = strlen(shaders[i].fsrc);
-			glShaderSource(shaders[i].fs,1,&src,&srclen);
-			glCompileShader(shaders[i].fs);
-			glAttachShader(shaders[i].prog,shaders[i].fs);
+			ext->glShaderSource(shaders[i].fs,1,&src,&srclen);
+			ext->glCompileShader(shaders[i].fs);
+			ext->glAttachShader(shaders[i].prog,shaders[i].fs);
 		}
-		glLinkProgram(shaders[i].prog);
-		shaders[i].pos = glGetAttribLocation(shaders[i].prog,"xy");
-		shaders[i].rgb = glGetAttribLocation(shaders[i].prog,"rgb");
-		shaders[i].texcoord = glGetAttribLocation(shaders[i].prog,"st");
-		shaders[i].tex0 = glGetUniformLocation(shaders[i].prog,"tex0");
-		shaders[i].tex1 = glGetUniformLocation(shaders[i].prog,"tex1");
-		shaders[i].ckey = glGetUniformLocation(shaders[i].prog,"ckey");
-		shaders[i].pal = glGetUniformLocation(shaders[i].prog,"pal");
-		shaders[i].view = glGetUniformLocation(shaders[i].prog,"view");
+		ext->glLinkProgram(shaders[i].prog);
+		shaders[i].pos = ext->glGetAttribLocation(shaders[i].prog,"xy");
+		shaders[i].rgb = ext->glGetAttribLocation(shaders[i].prog,"rgb");
+		shaders[i].texcoord = ext->glGetAttribLocation(shaders[i].prog,"st");
+		shaders[i].tex0 = ext->glGetUniformLocation(shaders[i].prog,"tex0");
+		shaders[i].tex1 = ext->glGetUniformLocation(shaders[i].prog,"tex1");
+		shaders[i].ckey = ext->glGetUniformLocation(shaders[i].prog,"ckey");
+		shaders[i].pal = ext->glGetUniformLocation(shaders[i].prog,"pal");
+		shaders[i].view = ext->glGetUniformLocation(shaders[i].prog,"view");
 	}
+	gen3d = new ShaderGen3D(ext, this);
 }
 
-void DeleteShaders()
+ShaderManager::~ShaderManager()
 {
-	glUseProgram(0);
+	ext->glUseProgram(0);
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
 		if(shaders[i].prog)
 		{
-			glDeleteProgram(shaders[i].prog);
+			ext->glDeleteProgram(shaders[i].prog);
 			shaders[i].prog = 0;
 		}
 		if(shaders[i].vs)
 		{
-			glDeleteShader(shaders[i].vs);
+			ext->glDeleteShader(shaders[i].vs);
 			shaders[i].vs = 0;
 		}
 		if(shaders[i].fs)
 		{
-			glDeleteShader(shaders[i].fs);
+			ext->glDeleteShader(shaders[i].fs);
 			shaders[i].fs = 0;
 		}
 	}
-	ClearShaders();
+	free(shaders);
+	delete gen3d;
+}
+
+void ShaderManager::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
+{
+	gen3d->SetShader(id, texstate, texcoords, type);
 }

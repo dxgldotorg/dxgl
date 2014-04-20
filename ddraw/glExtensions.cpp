@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,108 +18,10 @@
 #include "common.h"
 #include "glExtensions.h"
 
-GLuint (APIENTRY *glCreateShader) (GLenum type) = NULL;
-void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length) = NULL;
-void (APIENTRY *glCompileShader) (GLuint shader) = NULL;
-void (APIENTRY *glDeleteShader) (GLuint shader) = NULL;
-GLuint (APIENTRY *glCreateProgram) () = NULL;
-void (APIENTRY *glDeleteProgram) (GLuint program) = NULL;
-void (APIENTRY *glGetProgramiv) (GLuint program, GLenum pname, GLint* params) = NULL;
-void (APIENTRY *glAttachShader) (GLuint program, GLuint shader) = NULL;
-void (APIENTRY *glDetachShader) (GLuint program, GLuint shader) = NULL;
-void (APIENTRY *glLinkProgram) (GLuint program) = NULL;
-void (APIENTRY *glUseProgram) (GLuint program) = NULL;
-void (APIENTRY *glGetShaderiv) (GLuint shader, GLenum pname, GLint* params) = NULL;
-void (APIENTRY *glGetShaderInfoLog) (GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) = NULL;
-void (APIENTRY *glGetProgramInfoLog) (GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infolog) = NULL;
 
-GLint (APIENTRY *glGetAttribLocation) (GLuint program, const GLchar* name) = NULL;
-void (APIENTRY *glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) = NULL;
-void (APIENTRY *glEnableVertexAttribArray) (GLuint index) = NULL;
-void (APIENTRY *glDisableVertexAttribArray) (GLuint index) = NULL;
-
-void (APIENTRY *glGenFramebuffers) (GLsizei n, GLuint* ids) = NULL;
-void (APIENTRY *glBindFramebuffer) (GLenum target, GLuint framebuffer) = NULL;
-void (APIENTRY *glGenRenderbuffers) (GLsizei n, GLuint* renderbuffers) = NULL;
-void (APIENTRY *glBindRenderbuffer) (GLenum target, GLuint renderbuffer) = NULL;
-void (APIENTRY *glFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) = NULL;
-GLenum (APIENTRY *glCheckFramebufferStatus) (GLenum target) = NULL;
-void (APIENTRY *glDeleteFramebuffers) (GLsizei n, const GLuint *framebuffers) = NULL;
-
-void (APIENTRY *glGenFramebuffersEXT) (GLsizei n, GLuint* ids) = NULL;
-void (APIENTRY *glBindFramebufferEXT) (GLenum target, GLuint framebuffer) = NULL;
-void (APIENTRY *glGenRenderbuffersEXT) (GLsizei n, GLuint* renderbuffers) = NULL;
-void (APIENTRY *glBindRenderbufferEXT) (GLenum target, GLuint renderbuffer) = NULL;
-void (APIENTRY *glFramebufferTexture2DEXT) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) = NULL;
-GLenum (APIENTRY *glCheckFramebufferStatusEXT) (GLenum target) = NULL;
-void (APIENTRY *glDeleteFramebuffersEXT) (GLsizei n, const GLuint *framebuffers) = NULL;
-
-GLint (APIENTRY *glGetUniformLocation) (GLuint program, const GLchar* name) = NULL;
-void (APIENTRY *glUniform1i) (GLint location, GLint v0) = NULL;
-void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1) = NULL;
-void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2) = NULL;
-void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3) = NULL;
-void (APIENTRY *glUniform4iv) (GLint location, GLsizei count, const GLint* value) = NULL;
-void (APIENTRY *glUniform1f) (GLint location, GLfloat v0) = NULL;
-void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1) = NULL;
-void (APIENTRY *glUniform3f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2) = NULL;
-void (APIENTRY *glUniform4f) (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) = NULL;
-void (APIENTRY *glUniform3fv) (GLint location, GLsizei count, const GLfloat* value) = NULL;
-void (APIENTRY *glUniform4fv) (GLint location, GLsizei count, const GLfloat* value) = NULL;
-void (APIENTRY *glUniformMatrix3fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) = NULL;
-void (APIENTRY *glUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) = NULL;
-
-void (APIENTRY *glDrawRangeElements) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
-
-void (APIENTRY *glActiveTexture)(GLenum texture) = NULL;
-void (APIENTRY *glClientActiveTexture) (GLenum texture) = NULL;
-
-void (APIENTRY *glGenBuffers)(GLsizei n, GLuint* buffers) = NULL;
-void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint* buffers) = NULL;
-void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer) = NULL;
-void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) = NULL;
-void* (APIENTRY *glMapBuffer)(GLenum target, GLenum access) = NULL;
-GLboolean (APIENTRY *glUnmapBuffer)(GLenum target) = NULL;
-
-BOOL (APIENTRY *wglSwapIntervalEXT)(int interval) = NULL;
-int (APIENTRY *wglGetSwapIntervalEXT)() = NULL;
-
-void (APIENTRY *glTextureParameterfEXT)(GLuint texture, GLenum target, GLenum pname, GLfloat param) = NULL;
-void (APIENTRY *glTextureParameterfvEXT)(GLuint texture, GLenum target, GLenum pname, const GLfloat *params) = NULL;
-void (APIENTRY *glTextureParameteriEXT)(GLuint texture, GLenum target, GLenum pname, GLint param) = NULL;
-void (APIENTRY *glTextureParameterivEXT)(GLuint texture, GLenum target, GLenum pname, const GLint *params) = NULL;
-void (APIENTRY *glTextureImage2DEXT)(GLuint texture, GLenum target, GLint level, GLenum internalformat,
-										   GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
-void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
-											  GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) = NULL;
-void (APIENTRY *glGetTextureImageEXT)(GLuint texture, GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels) = NULL;
-void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m) = NULL;
-void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m) = NULL;
-
-void (APIENTRY *glBindSampler)(GLuint unit, GLuint sampler) = NULL;
-void (APIENTRY *glDeleteSamplers)(GLsizei n, const GLuint *samplers) = NULL;
-void (APIENTRY *glGenSamplers)(GLsizei n, GLuint *samplers) = NULL;
-void (APIENTRY *glSamplerParameterf)(GLuint sampler, GLenum pname, GLfloat param) = NULL;
-void (APIENTRY *glSamplerParameteri)(GLuint sampler, GLenum pname, GLint param) = NULL;
-void (APIENTRY *glSamplerParameterfv)(GLuint sampler, GLenum pname, const GLfloat *params) = NULL;
-void (APIENTRY *glSamplerParameteriv)(GLuint sampler, GLenum pname, const GLint *params) = NULL;
-
-int GLEXT_ARB_framebuffer_object = 0;
-int GLEXT_EXT_framebuffer_object = 0;
-int GLEXT_NV_packed_depth_stencil = 0;
-int GLEXT_EXT_packed_depth_stencil = 0;
-int GLEXT_ARB_depth_buffer_float = 0;
-int GLEXT_ARB_depth_texture = 0;
-int GLEXT_NVX_gpu_memory_info = 0;
-int GLEXT_ATI_meminfo = 0;
-int GLEXT_ARB_ES2_compatibility = 0;
-int GLEXT_EXT_direct_state_access = 0;
-int GLEXT_ARB_sampler_objects = 0;
-int glver_major, glver_minor = 0;
-bool atimem = false;
-
-void InitGLExt()
+glExtensions::glExtensions()
 {
+	atimem = false;
 	const GLubyte *glversion = glGetString(GL_VERSION);
 	glver_minor = 0;
 	if(!sscanf((char*)glversion,"%d.%d",&glver_major,&glver_minor)) glver_major = 0;

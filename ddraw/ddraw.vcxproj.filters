@@ -53,9 +53,6 @@
     <ClInclude Include="glDirectDrawPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -86,12 +83,6 @@
     <ClInclude Include="glDirect3DLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="glutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shadergen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="glRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -116,9 +107,6 @@
     <ClInclude Include="glDirect3DTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="glDirect3DExecuteBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -132,6 +120,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shadergen2d.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGen3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -152,9 +152,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glDirectDrawPalette.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="shaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glExtensions.cpp">
@@ -181,12 +178,6 @@
     <ClCompile Include="glDirect3DLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="shadergen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -208,9 +199,6 @@
     <ClCompile Include="glDirect3DTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glDirect3DExecuteBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -224,6 +212,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shadergen2d.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGen3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

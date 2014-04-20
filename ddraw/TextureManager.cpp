@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
 
@@ -49,41 +49,60 @@ const DDPIXELFORMAT texformats[] =
 const int END_TEXFORMATS = __LINE__ - 4;
 const int numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 
-GLint texlevel = 0;
-GLuint textures[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
-SAMPLER samplers[8];
-
-void InitSamplers()
+TextureManager::TextureManager(glExtensions *glext)
 {
-	if(GLEXT_ARB_sampler_objects)
+	ext = glext;
+	texlevel = 0;
+	ZeroMemory(textures, 16 * sizeof(GLuint));
+}
+
+void TextureManager::_CreateTexture(TEXTURE *texture, int width, int height)
+{
+	CreateTextureClassic(texture, width, height);
+}
+void TextureManager::_DeleteTexture(TEXTURE *texture)
+{
+	DeleteTexture(texture);
+}
+void TextureManager::_UploadTexture(TEXTURE *texture, int level, const void *data, int width, int height)
+{
+	UploadTextureClassic(texture, level, data, width, height);
+}
+void TextureManager::_DownloadTexture(TEXTURE *texture, int level, void *data)
+{
+	DownloadTextureClassic(texture, level, data);
+}
+
+void TextureManager::InitSamplers()
+{
+	if(ext->GLEXT_ARB_sampler_objects)
 	{
 		memset(samplers,0,8*sizeof(SAMPLER));
 		for(int i = 0; i < 8; i++)
 		{
-			glGenSamplers(1,&samplers[i].id);
-			glBindSampler(i,samplers[i].id);
-			glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-			glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-			glSamplerParameteri(samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			glSamplerParameteri(samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+			ext->glGenSamplers(1,&samplers[i].id);
+			ext->glBindSampler(i,samplers[i].id);
+			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		}
 	}
 }
-void DeleteSamplers()
+void TextureManager::DeleteSamplers()
 {
-	if(GLEXT_ARB_sampler_objects)
+	if(ext->GLEXT_ARB_sampler_objects)
 	{
 		for(int i = 0; i < 8; i++)
 		{
-			glBindSampler(i,0);
-			glDeleteSamplers(1,&samplers[i].id);
+			ext->glBindSampler(i,0);
+			ext->glDeleteSamplers(1,&samplers[i].id);
 			samplers[i].id = 0;
 		}
 	}
 }
 
-void CreateTextureClassic(TEXTURE *texture, int width, int height)
+void TextureManager::CreateTextureClassic(TEXTURE *texture, int width, int height)
 {
 	int texformat = -1;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
@@ -99,7 +118,7 @@ void CreateTextureClassic(TEXTURE *texture, int width, int height)
 	{
 	case -1:
 	case 0: // 8-bit palette
-		if(glver_major >= 3)
+		if(ext->glver_major >= 3)
 		{
 			texture->internalformat = GL_R8;
 			texture->format = GL_RED;
@@ -217,7 +236,7 @@ void CreateTextureClassic(TEXTURE *texture, int width, int height)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,texture->wrapt);
 }
 
-void DeleteTexture(TEXTURE *texture)
+void TextureManager::DeleteTexture(TEXTURE *texture)
 {
 	glDeleteTextures(1,&texture->id);
 	texture->bordercolor = texture->format = texture->internalformat =
@@ -226,11 +245,11 @@ void DeleteTexture(TEXTURE *texture)
 		texture->pbo = texture->id = 0;
 }
 
-void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height)
+void TextureManager::UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height)
 {
 	texture->width = width;
 	texture->height = height;
-	if(GLEXT_EXT_direct_state_access) glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
+	if(ext->GLEXT_EXT_direct_state_access) ext->glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
 		width,height,0,texture->format,texture->type,data);
 	else
 	{
@@ -240,9 +259,9 @@ void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int wid
 	}
 }
 
-void DownloadTextureClassic(TEXTURE *texture, int level, void *data)
+void TextureManager::DownloadTextureClassic(TEXTURE *texture, int level, void *data)
 {
-	if(GLEXT_EXT_direct_state_access) glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
+	if(ext->GLEXT_EXT_direct_state_access) ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
 	{
 		SetActiveTexture(0);
@@ -251,31 +270,17 @@ void DownloadTextureClassic(TEXTURE *texture, int level, void *data)
 	}
 }
 
-void (*_CreateTexture)(TEXTURE *texture, int width, int height) = CreateTextureClassic;
-void (*_DeleteTexture)(TEXTURE *texture) = DeleteTexture;
-void (*_UploadTexture)(TEXTURE *texture, int level, const void *data, int width, int height) = UploadTextureClassic;
-void (*_DownloadTexture)(TEXTURE *texture, int level, void *data) = DownloadTextureClassic;
-
-void InitTexture(DXGLCFG *cfg)
-{
-	ZeroMemory(textures,16*sizeof(GLuint));
-	_CreateTexture = CreateTextureClassic;
-	_DeleteTexture = DeleteTexture;
-	_UploadTexture = UploadTextureClassic;
-	_DownloadTexture = DownloadTextureClassic;
-}
-
-void SetActiveTexture(int level)
+void TextureManager::SetActiveTexture(int level)
 {
 	if(level != texlevel)
 	{
 		texlevel = level;
-		glActiveTexture(GL_TEXTURE0+level);
+		ext->glActiveTexture(GL_TEXTURE0+level);
 	}
 }
 
 
-void SetTexture(unsigned int level, TEXTURE *texture)
+void TextureManager::SetTexture(unsigned int level, TEXTURE *texture)
 {
 	if(level >= 16) return;
 	GLuint texname;

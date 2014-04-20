@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
-#include "texture.h"
-#include "glutil.h"
+#include "TextureManager.h"
+#include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirect3D.h"
@@ -195,15 +195,16 @@ const D3DDevice devices[3] =
 		"DXGL D3D T&L HAL",
 	}
 };
-glDirect3D7::glDirect3D7()
+glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
 {
-	TRACE_ENTER(1,14,this);
+	TRACE_ENTER(1,14,this,14,gl_DD7);
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
 	refcount=1;
 	glD3D3 = NULL;
 	glD3D2 = NULL;
 	glD3D1 = NULL;
+	glDD7 = gl_DD7;
 	TRACE_EXIT(-1,0);
 }
 
@@ -440,16 +441,19 @@ HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIX
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	ddpf.dwZBitMask = 0xffffffff;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
-	if(GLEXT_EXT_packed_depth_stencil || GLEXT_NV_packed_depth_stencil)
+	if (glDD7->renderer)
 	{
-		ddpf.dwZBufferBitDepth = 32;
-		ddpf.dwStencilBitDepth = 8;
-		ddpf.dwZBitMask = 0xffffff00;
-		ddpf.dwStencilBitMask = 0xff;
-		if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
-		ddpf.dwZBitMask = 0x00ffffff;
-		ddpf.dwStencilBitMask = 0xff000000;
-		if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
+		if (glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
+		{
+			ddpf.dwZBufferBitDepth = 32;
+			ddpf.dwStencilBitDepth = 8;
+			ddpf.dwZBitMask = 0xffffff00;
+			ddpf.dwStencilBitMask = 0xff;
+			if (lpEnumCallback(&ddpf, lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT, 23, D3D_OK);
+			ddpf.dwZBitMask = 0x00ffffff;
+			ddpf.dwStencilBitMask = 0xff000000;
+			if (lpEnumCallback(&ddpf, lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT, 23, D3D_OK);
+		}
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
