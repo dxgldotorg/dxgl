@@ -69,8 +69,6 @@ extern BltVertex bltvertices[4];
 #define OP_DELETEFBO				13
 
 
-extern inline void SetSwap(int swap);
-
 class glDirectDraw7;
 class glDirect3DDevice7;
 class glDirectDrawSurface7;
@@ -126,6 +124,7 @@ private:
 	void _SetFogStart(GLfloat start);
 	void _SetFogEnd(GLfloat end);
 	void _SetFogDensity(GLfloat density);
+	inline void _SetSwap(int swap);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
@@ -148,6 +147,8 @@ private:
 	GLfloat fogstart;
 	GLfloat fogend;
 	GLfloat fogdensity;
+	BltVertex bltvertices[4];
+	int oldswap;
 };
 
 #endif //_GLRENDERER_H

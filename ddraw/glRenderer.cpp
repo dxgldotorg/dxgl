@@ -33,7 +33,6 @@ using namespace std;
 #include "shadergen.h"
 #include "matrix.h"
 
-BltVertex bltvertices[4];
 const GLushort bltindices[4] = {0,1,2,3};
 
 /**
@@ -60,14 +59,12 @@ inline int _6to8bit(int number)
 	return (number<<2)+(number>>4);
 }
 
-int oldswap = 0;
-
 /**
   * Sets the Windows OpenGL swap interval
   * @param swap
   *  Number of vertical retraces to wait per frame, 0 disable vsync
   */
-inline void SetSwap(int swap)
+inline void glRenderer::_SetSwap(int swap)
 {
 	if(swap != oldswap)
 	{
@@ -191,6 +188,7 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
   */
 glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
+	oldswap = 0;
 	fogcolor = 0;
 	fogstart = 0.0f;
 	fogend = 1.0f;
@@ -785,11 +783,11 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	}
 	gllock = false;
 	InitGLExt();
-	SetSwap(1);
+	_SetSwap(1);
 	SwapBuffers(hDC);
 	glFinish();
 	timer.Calibrate(height, frequency);
-	SetSwap(0);
+	_SetSwap(0);
 	SetViewport(0,0,width,height);
 	glViewport(0,0,width,height);
 	SetDepthRange(0.0,1.0);
@@ -1081,7 +1079,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 	}
 	DepthTest(false);
 	RECT *viewrect = &r2;
-	SetSwap(vsync);
+	_SetSwap(vsync);
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
@@ -1319,10 +1317,10 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigne
 		if(!wglMakeCurrent(hDC,hRC))
 			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
 		gllock = false;
-		SetSwap(1);
+		_SetSwap(1);
 		SwapBuffers(hDC);
 		timer.Calibrate(height, frequency);
-		SetSwap(0);
+		_SetSwap(0);
 		SetViewport(0,0,width,height);
 	}
 
