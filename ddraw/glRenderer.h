@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -50,8 +50,6 @@ typedef struct
 	void *data;
 	int stride;
 } GLVERTEX;
-
-extern BltVertex bltvertices[4];
 
 #define OP_NULL						0
 #define OP_SETWND					1
