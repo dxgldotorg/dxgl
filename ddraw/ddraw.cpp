@@ -29,16 +29,13 @@
 #include <tlhelp32.h>
 
 DXGLCFG dxglcfg;
-bool gllock = false;
+DWORD gllock = 0;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
 
 const GUID device_template = 
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
 
-DWORD timer;
-int vsyncstatus;
-glDirectDraw7 *dxglinterface = NULL;
 
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
@@ -159,6 +156,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 {
 	TRACE_ENTER(3,24,lpGUID,14,lplpDD,14,pUnkOuter);
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	EnterCriticalSection(&dll_cs);
 	HRESULT ret;
 	if(gllock || IsCallerOpenGL(_ReturnAddress()))
 	{
@@ -170,6 +168,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 			sysddraw = LoadLibraryA(buffer);
 			if(!sysddraw)
 			{
+				LeaveCriticalSection(&dll_cs);
 				TRACE_EXIT(23,DDERR_GENERIC);
 				ERR(DDERR_GENERIC);
 			}
@@ -179,19 +178,16 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 			sysddrawcreate = (HRESULT(WINAPI *)(GUID FAR*,LPDIRECTDRAW FAR*, IUnknown FAR*))GetProcAddress(sysddraw,"DirectDrawCreate");
 			if(!sysddrawcreate)
 			{
-				TRACE_EXIT(23,DDERR_GENERIC);
+				LeaveCriticalSection(&dll_cs);
+				TRACE_EXIT(23, DDERR_GENERIC);
 				ERR(DDERR_GENERIC);
 			}
 		}
 		ret = sysddrawcreate(lpGUID,lplpDD,pUnkOuter);
 		TRACE_VAR("*lplpDD",14,*lplpDD);
-		TRACE_EXIT(23,ret);
+		LeaveCriticalSection(&dll_cs);
+		TRACE_EXIT(23, ret);
 		return ret;
-	}
-	if(dxglinterface)
-	{
-		TRACE_EXIT(23,DDERR_DIRECTDRAWALREADYCREATED);
-		return DDERR_DIRECTDRAWALREADYCREATED;
 	}
 	GetCurrentConfig(&dxglcfg,false);
 	glDirectDraw7 *myddraw7;
@@ -202,14 +198,16 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	if(error != DD_OK)
 	{
 		delete myddraw7;
-		TRACE_EXIT(23,error);
+		LeaveCriticalSection(&dll_cs);
+		TRACE_EXIT(23, error);
 		return error;
 	}
 	myddraw7->QueryInterface(IID_IDirectDraw,(VOID**)&myddraw);
 	myddraw7->Release();
 	*lplpDD = (LPDIRECTDRAW)myddraw;
 	TRACE_VAR("*lplpDD",14,*lplpDD);
-	TRACE_EXIT(23,error);
+	LeaveCriticalSection(&dll_cs);
+	TRACE_EXIT(23, error);
 	return error;
 }
 
@@ -261,11 +259,6 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 {
 	TRACE_ENTER(4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(dxglinterface)
-	{
-		TRACE_EXIT(23,DDERR_DIRECTDRAWALREADYCREATED);
-		return DDERR_DIRECTDRAWALREADYCREATED;
-	}
 	GetCurrentConfig(&dxglcfg,false);
 	glDirectDraw7 *myddraw;
 	HRESULT error;

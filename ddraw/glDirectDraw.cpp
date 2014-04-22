@@ -572,7 +572,6 @@ glDirectDraw7::glDirectDraw7()
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 {
 	TRACE_ENTER(3,14,this,24,lpGUID,14,pUnkOuter);
-	dxglinterface = this;
 	initialized = false;
 	if(((ULONG_PTR)lpGUID > 2) && IsBadReadPointer(lpGUID))
 	{
@@ -608,7 +607,6 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 glDirectDraw7::~glDirectDraw7()
 {
 	TRACE_ENTER(1,14,this);
-	dxglinterface = NULL;
 	if(initialized)
 	{
 		if(glD3D7) glD3D7->Release();

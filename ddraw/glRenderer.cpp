@@ -738,6 +738,7 @@ DWORD glRenderer::_Entry()
   */
 BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
+	EnterCriticalSection(&dll_cs);
 	ddInterface = glDD7;
 	if(hRC)
 	{
@@ -753,17 +754,21 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	pfd.iPixelType = PFD_TYPE_RGBA;
 	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
-	gllock = true;
+	InterlockedIncrement(&gllock);
 	hDC = GetDC(RenderWnd->GetHWnd());
 	if(!hDC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create hDC\n");
+		InterlockedDecrement(&gllock);
+		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
 	pf = ChoosePixelFormat(hDC,&pfd);
 	if(!pf)
 	{
 		DEBUG("glRenderer::InitGL: Can not get pixelformat\n");
+		InterlockedDecrement(&gllock);
+		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
 	if(!SetPixelFormat(hDC,pf,&pfd))
@@ -772,7 +777,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	if(!hRC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create GL context\n");
-		gllock = false;
+		InterlockedDecrement(&gllock);
+		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
 	if(!wglMakeCurrent(hDC,hRC))
@@ -782,10 +788,12 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 		hRC = NULL;
 		ReleaseDC(RenderWnd->GetHWnd(),hDC);
 		hDC = NULL;
-		gllock = false;
+		InterlockedDecrement(&gllock);
+		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
-	gllock = false;
+	InterlockedDecrement(&gllock);
+	LeaveCriticalSection(&dll_cs);
 	ext = new glExtensions();
 	util = new glUtil(ext);
 	_SetSwap(1);
@@ -1298,13 +1306,14 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigne
 {
 	if(newwnd != hWnd)
 	{
-		wglMakeCurrent(NULL,NULL);
+		EnterCriticalSection(&dll_cs);
+		wglMakeCurrent(NULL, NULL);
 		ReleaseDC(hWnd,hDC);
 		delete RenderWnd;
 		RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,ddInterface);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
-		gllock = true;
+		InterlockedIncrement(&gllock);
 		ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
 		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 		pfd.nVersion = 1;
@@ -1322,7 +1331,8 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigne
 			DEBUG("glRenderer::SetWnd: Can not set pixelformat\n");
 		if(!wglMakeCurrent(hDC,hRC))
 			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
-		gllock = false;
+		InterlockedDecrement(&gllock);
+		LeaveCriticalSection(&dll_cs);
 		_SetSwap(1);
 		SwapBuffers(hDC);
 		timer.Calibrate(height, frequency);

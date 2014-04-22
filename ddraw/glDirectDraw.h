@@ -107,6 +107,7 @@ private:
 	DEVMODE oldmode;
 	bool initialized;
 	glDirect3D7 *glD3D7;
+	DWORD timer;
 };
 
 class glDirectDraw1 : public IDirectDraw

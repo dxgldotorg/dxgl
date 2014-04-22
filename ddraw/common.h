@@ -104,6 +104,8 @@ static inline void dwordto4int(DWORD in, GLint *out)
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
+extern CRITICAL_SECTION dll_cs;
+
 #include "trace.h"
 
 #include "../cfgmgr/cfgmgr.h"
