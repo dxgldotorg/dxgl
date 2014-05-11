@@ -287,6 +287,7 @@
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />
     <ClInclude Include="include\d3dtypes.h" />
+    <ClInclude Include="include\ddraw.h" />
     <ClInclude Include="include\GL\glext.h" />
     <ClInclude Include="include\GL\wglext.h" />
     <ClInclude Include="include\winedef.h" />

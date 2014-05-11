@@ -17,5 +17,5 @@
 
 #define INITGUID
 #include <windows.h>
-#include <ddraw.h>
+#include "include/ddraw.h"
 #include "include/d3d.h"

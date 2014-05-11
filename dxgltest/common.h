@@ -58,7 +58,7 @@ typedef string tstring;
 #endif
 #include "Resource.h"
 // DirectX/DXGL headers
-#include <ddraw.h>
+#include "../ddraw/include/ddraw.h"
 extern const unsigned char DefaultPalette[1024];
 
 #ifdef _UNICODE

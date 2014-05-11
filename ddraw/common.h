@@ -24,7 +24,7 @@
 #include <tchar.h>
 #include <MMSystem.h>
 #include "include/winedef.h"
-#include <ddraw.h>
+#include "include/ddraw.h"
 #define D3D_OVERLOADS
 #include "include/d3d.h"
 #include "GL/gl.h"

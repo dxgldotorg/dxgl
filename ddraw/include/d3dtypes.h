@@ -27,7 +27,7 @@
 
 #include <windows.h>
 #include <float.h>
-#include <ddraw.h>
+#include "ddraw.h"
 
 #define D3DVALP(val, prec)      ((float)(val))
 #define D3DVAL(val)             ((float)(val))
