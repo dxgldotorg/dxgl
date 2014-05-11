@@ -59,5 +59,12 @@
 # endif
 #endif	/* DECL_WINELIB_TYPE_AW */
 
+#ifndef __MSABI_LONG
+# if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
+#  define __MSABI_LONG(x)         x ## l
+# else
+#  define __MSABI_LONG(x)         x
+# endif
+#endif
 
 #endif //_WINEDEF_H
