@@ -17,12 +17,9 @@
 
 #include "common.h"
 #include "TextureManager.h"
-#include "glUtil.h"
-#include "timer.h"
-#include "glRenderer.h"
 
 // Use EXACTLY one line per entry.  Don't change layout of the list.
-const int START_TEXFORMATS = __LINE__;
+static const int START_TEXFORMATS = __LINE__;
 const DDPIXELFORMAT texformats[] = 
 { // Size					Flags							FOURCC	bits	R/Ymask		G/U/Zmask	B/V/STmask	A/Zmask
 	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED8,			0,		8,		0,			0,			0,			0},
@@ -46,67 +43,76 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}
 };
-const int END_TEXFORMATS = __LINE__ - 4;
-const int numtexformats = END_TEXFORMATS - START_TEXFORMATS;
+static const int END_TEXFORMATS = __LINE__ - 4;
+int numtexformats;
 
-TextureManager::TextureManager(glExtensions *glext)
+TextureManager *TextureManager_Create(glExtensions *glext)
 {
-	ext = glext;
-	texlevel = 0;
-	ZeroMemory(textures, 16 * sizeof(GLuint));
-}
-
-void TextureManager::_CreateTexture(TEXTURE *texture, int width, int height)
-{
-	CreateTextureClassic(texture, width, height);
-}
-void TextureManager::_DeleteTexture(TEXTURE *texture)
-{
-	DeleteTexture(texture);
-}
-void TextureManager::_UploadTexture(TEXTURE *texture, int level, const void *data, int width, int height)
-{
-	UploadTextureClassic(texture, level, data, width, height);
-}
-void TextureManager::_DownloadTexture(TEXTURE *texture, int level, void *data)
-{
-	DownloadTextureClassic(texture, level, data);
+	TextureManager *newtex;
+	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
+	newtex = (TextureManager*)malloc(sizeof(TextureManager));
+	if (!newtex) return 0;
+	ZeroMemory(newtex, sizeof(TextureManager));
+	newtex->ext = glext;
+	newtex->texlevel = 0;
+	ZeroMemory(newtex->textures, 16 * sizeof(GLuint));
+	return newtex;
 }
 
-void TextureManager::InitSamplers()
+void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height)
 {
-	if(ext->GLEXT_ARB_sampler_objects)
+	TextureManager_CreateTextureClassic(This, texture, width, height);
+}
+void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture)
+{
+	TextureManager_DeleteTexture(This, texture);
+}
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height)
+{
+	TextureManager_UploadTextureClassic(This, texture, level, data, width, height);
+}
+void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data)
+{
+	TextureManager_DownloadTextureClassic(This, texture, level, data);
+}
+
+void TextureManager_InitSamplers(TextureManager *This)
+{
+	int i;
+	if(This->ext->GLEXT_ARB_sampler_objects)
 	{
-		memset(samplers,0,8*sizeof(SAMPLER));
-		for(int i = 0; i < 8; i++)
+		memset(This->samplers,0,8*sizeof(SAMPLER));
+		for(i = 0; i < 8; i++)
 		{
-			ext->glGenSamplers(1,&samplers[i].id);
-			ext->glBindSampler(i,samplers[i].id);
-			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			ext->glSamplerParameteri(samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+			This->ext->glGenSamplers(1,&This->samplers[i].id);
+			This->ext->glBindSampler(i,This->samplers[i].id);
+			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		}
 	}
 }
-void TextureManager::DeleteSamplers()
+void TextureManager_DeleteSamplers(TextureManager *This)
 {
-	if(ext->GLEXT_ARB_sampler_objects)
+	int i;
+	if(This->ext->GLEXT_ARB_sampler_objects)
 	{
-		for(int i = 0; i < 8; i++)
+		for(i = 0; i < 8; i++)
 		{
-			ext->glBindSampler(i,0);
-			ext->glDeleteSamplers(1,&samplers[i].id);
-			samplers[i].id = 0;
+			This->ext->glBindSampler(i,0);
+			This->ext->glDeleteSamplers(1,&This->samplers[i].id);
+			This->samplers[i].id = 0;
 		}
 	}
 }
 
-void TextureManager::CreateTextureClassic(TEXTURE *texture, int width, int height)
+void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height)
 {
 	int texformat = -1;
+	int i;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
-	for(int i = 0; i < numtexformats; i++)
+	for(i = 0; i < numtexformats; i++)
 	{
 		if(!memcmp(&texformats[i],&texture->pixelformat,sizeof(DDPIXELFORMAT)))
 		{
@@ -118,7 +124,7 @@ void TextureManager::CreateTextureClassic(TEXTURE *texture, int width, int heigh
 	{
 	case -1:
 	case 0: // 8-bit palette
-		if(ext->glver_major >= 3)
+		if(This->ext->glver_major >= 3)
 		{
 			texture->internalformat = GL_R8;
 			texture->format = GL_RED;
@@ -228,7 +234,7 @@ void TextureManager::CreateTextureClassic(TEXTURE *texture, int width, int heigh
 	texture->width = width;
 	texture->height = height;
 	glGenTextures(1,&texture->id);
-	SetTexture(0,texture);
+	TextureManager_SetTexture(This,0,texture);
 	glTexImage2D(GL_TEXTURE_2D,0,texture->internalformat,texture->width,texture->height,0,texture->format,texture->type,NULL);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,texture->minfilter);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,texture->magfilter);
@@ -236,7 +242,7 @@ void TextureManager::CreateTextureClassic(TEXTURE *texture, int width, int heigh
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,texture->wrapt);
 }
 
-void TextureManager::DeleteTexture(TEXTURE *texture)
+void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 {
 	glDeleteTextures(1,&texture->id);
 	texture->bordercolor = texture->format = texture->internalformat =
@@ -245,50 +251,50 @@ void TextureManager::DeleteTexture(TEXTURE *texture)
 		texture->pbo = texture->id = 0;
 }
 
-void TextureManager::UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height)
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height)
 {
 	texture->width = width;
 	texture->height = height;
-	if(ext->GLEXT_EXT_direct_state_access) ext->glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
+	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
 		width,height,0,texture->format,texture->type,data);
 	else
 	{
-		SetActiveTexture(0);
-		SetTexture(0,texture);
+		TextureManager_SetActiveTexture(This, 0);
+		TextureManager_SetTexture(This, 0,texture);
 		glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
 	}
 }
 
-void TextureManager::DownloadTextureClassic(TEXTURE *texture, int level, void *data)
+void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data)
 {
-	if(ext->GLEXT_EXT_direct_state_access) ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
+	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
 	{
-		SetActiveTexture(0);
-		SetTexture(0,texture);
+		TextureManager_SetActiveTexture(This, 0);
+		TextureManager_SetTexture(This, 0,texture);
 		glGetTexImage(GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	}
 }
 
-void TextureManager::SetActiveTexture(int level)
+void TextureManager_SetActiveTexture(TextureManager *This, int level)
 {
-	if(level != texlevel)
+	if(level != This->texlevel)
 	{
-		texlevel = level;
-		ext->glActiveTexture(GL_TEXTURE0+level);
+		This->texlevel = level;
+		This->ext->glActiveTexture(GL_TEXTURE0+level);
 	}
 }
 
 
-void TextureManager::SetTexture(unsigned int level, TEXTURE *texture)
+void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE *texture)
 {
-	if(level >= 16) return;
 	GLuint texname;
+	if (level >= 16) return;
 	if(!texture) texname = 0;
 	else texname=texture->id;
-	if(texname != textures[level])
+	if(texname != This->textures[level])
 	{
-		SetActiveTexture(level);
+		TextureManager_SetActiveTexture(This, level);
 		glBindTexture(GL_TEXTURE_2D,texname);
 	}
 }

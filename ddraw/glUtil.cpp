@@ -238,7 +238,7 @@ void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texm
 		}
 		else
 		{
-			texman->SetActiveTexture(level);
+			TextureManager_SetActiveTexture(texman,level);
 			if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 			else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
 		}

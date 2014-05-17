@@ -19,6 +19,10 @@
 #ifndef _TEXTURE_H
 #define _TEXTURE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	GLuint id;
@@ -47,32 +51,32 @@ typedef struct
 } SAMPLER;
 
 extern const DDPIXELFORMAT texformats[];
-extern const int numtexformats;
+extern int numtexformats;
 
-class TextureManager
+typedef struct TextureManager
 {
-public:
-	TextureManager(glExtensions *glext);
-	void InitSamplers();
-	void DeleteSamplers();
-	void SetActiveTexture(int level);
-	void SetTexture(unsigned int level, TEXTURE *texture);
-
-	void _CreateTexture(TEXTURE *texture, int width, int height);
-	void _DeleteTexture(TEXTURE *texture);
-	void _UploadTexture(TEXTURE *texture, int level, const void *data, int width, int height);
-	void _DownloadTexture(TEXTURE *texture, int level, void *data);
-
 	SAMPLER samplers[8];
-
-private:
-	void CreateTextureClassic(TEXTURE *texture, int width, int height);
-	void DeleteTexture(TEXTURE *texture);
-	void UploadTextureClassic(TEXTURE *texture, int level, const void *data, int width, int height);
-	void DownloadTextureClassic(TEXTURE *texture, int level, void *data);
 	glExtensions *ext;
 	GLint texlevel;
 	GLuint textures[16];
-};
+} TextureManager;
+
+TextureManager *TextureManager_Create(glExtensions *glext);
+void TextureManager_InitSamplers(TextureManager *This);
+void TextureManager_DeleteSamplers(TextureManager *This);
+void TextureManager_SetActiveTexture(TextureManager *This, int level);
+void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE *texture);
+void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height);
+void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture);
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height);
+void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data);
+void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height);
+void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture);
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height);
+void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_TEXTURE_H

@@ -376,7 +376,14 @@
     <ClCompile Include="ShaderGen3D.cpp" />
     <ClCompile Include="shadergen2d.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
-    <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="TextureManager.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug No MSVCRT|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="trace.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>

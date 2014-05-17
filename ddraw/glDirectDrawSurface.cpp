@@ -1436,7 +1436,7 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min, glExtensio
 		}
 		else
 		{
-			texman->SetTexture(level,texture);
+			TextureManager_SetTexture(texman,level,texture);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
 		}
