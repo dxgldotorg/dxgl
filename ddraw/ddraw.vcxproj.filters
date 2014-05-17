@@ -157,9 +157,6 @@
     <ClCompile Include="glDirectDrawPalette.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glExtensions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -205,9 +202,6 @@
     <ClCompile Include="glDirect3DExecuteBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="trace.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -227,6 +221,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShaderGen3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glExtensions.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trace.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -200,7 +200,7 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	#ifdef _DEBUG
 	case WM_HOTKEY:
 		#ifdef _TRACE
-		trace_end = true;
+		trace_end = TRUE;
 		CreateThread(NULL,0,BeepThread,NULL,0,NULL);
 		UnregisterHotKey(hWnd,1);
 		hotkeyregistered = false;

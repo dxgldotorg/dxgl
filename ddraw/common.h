@@ -31,10 +31,17 @@
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
 #include "glExtensions.h"
+#ifdef __cplusplus
 #include "ShaderManager.h"
+#endif
 
 extern const GUID device_template;
 
+#ifdef _MSC_VER
+#define INLINE __inline
+#else
+#define INLINE __inline__
+#endif
 
 #ifdef _DEBUG
 #define DEBUGBREAK DebugBreak();
@@ -79,10 +86,10 @@ extern const GUID device_template;
 #define ERR(error) return error;
 #endif
 
-static inline int NextMultipleOf8(int number){return ((number+7) & (~7));}
-static inline int NextMultipleOf4(int number){return ((number+3) & (~3));}
-static inline int NextMultipleOf2(int number){return ((number+1) & (~1));}
-static inline void dwordto4float(DWORD in, GLfloat *out)
+static INLINE int NextMultipleOf8(int number){return ((number+7) & (~7));}
+static INLINE int NextMultipleOf4(int number){return ((number+3) & (~3));}
+static INLINE int NextMultipleOf2(int number){return ((number+1) & (~1));}
+static INLINE void dwordto4float(DWORD in, GLfloat *out)
 {
 	out[0] = (GLfloat)((in>>16) & 0xff) / 255.0f;
 	out[1] = (GLfloat)((in>>8) & 0xff) / 255.0f;
@@ -90,7 +97,7 @@ static inline void dwordto4float(DWORD in, GLfloat *out)
 	out[3] = (GLfloat)((in>>24) & 0xff) / 255.0f;
 }
 
-static inline void dwordto4int(DWORD in, GLint *out)
+static INLINE void dwordto4int(DWORD in, GLint *out)
 {
 	out[0] = (GLint)((in>>16) & 0xff);
 	out[1] = (GLint)((in>>8) & 0xff);
@@ -107,6 +114,7 @@ static inline void dwordto4int(DWORD in, GLint *out)
 extern CRITICAL_SECTION dll_cs;
 
 #include "trace.h"
-
+#ifdef __cplusplus
 #include "../cfgmgr/cfgmgr.h"
+#endif
 #endif //_COMMON_H

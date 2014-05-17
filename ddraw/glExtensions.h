@@ -30,9 +30,12 @@
 #define GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX 0x9049
 #define GL_RGB565 0x8D62
 
-class glExtensions
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct
 {
-public:
 	GLuint(APIENTRY *glCreateShader) (GLenum type);
 	void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
 	void (APIENTRY *glCompileShader) (GLuint shader);
@@ -132,13 +135,13 @@ public:
 	int GLEXT_ARB_sampler_objects;
 	int glver_major;
 	int glver_minor;
+	BOOL atimem;
+} glExtensions;
 
-	glExtensions();
+void glExtensions_Init(glExtensions *ext);
 
-private:
-	bool atimem;
-
-};
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLEXTENSIONS_H

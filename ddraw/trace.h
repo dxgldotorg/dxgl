@@ -19,9 +19,13 @@
 #ifndef _TRACE_H
 #define _TRACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #ifdef _TRACE
-extern bool trace_end;
+extern BOOL trace_end;
 #define TRACE_ENTER(paramcount,...) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
 #define TRACE_EXIT(argtype,arg) trace_exit(__FUNCTION__,argtype,(void*)arg)
 #define TRACE_VAR(var,argtype,arg) trace_var(__FUNCTION__,var,argtype,(void*)arg)
@@ -38,6 +42,10 @@ void trace_sysinfo();
 #define TRACE_VAR(a,b,c)
 #define TRACE_RET(type, argtype, arg) return arg;
 #define TRACE_SYSINFO()
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif //_TRACE_H

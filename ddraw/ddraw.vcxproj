@@ -345,7 +345,9 @@
     <ClCompile Include="glDirectDrawClipper.cpp" />
     <ClCompile Include="glDirectDrawPalette.cpp" />
     <ClCompile Include="glDirectDrawSurface.cpp" />
-    <ClCompile Include="glExtensions.cpp" />
+    <ClCompile Include="glExtensions.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="glRenderer.cpp" />
     <ClCompile Include="glRenderWindow.cpp" />
     <ClCompile Include="glUtil.cpp" />
@@ -364,7 +366,9 @@
     <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="timer.cpp" />
-    <ClCompile Include="trace.cpp" />
+    <ClCompile Include="trace.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>

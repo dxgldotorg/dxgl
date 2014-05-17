@@ -656,7 +656,7 @@ DWORD glRenderer::_Entry()
 				}
 				delete shaders;
 				delete texman;
-				delete ext;
+				free(ext);
 				delete util;
 				ext = NULL;
 				wglMakeCurrent(NULL,NULL);
@@ -794,7 +794,8 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	}
 	InterlockedDecrement(&gllock);
 	LeaveCriticalSection(&dll_cs);
-	ext = new glExtensions();
+	ext = (glExtensions *)malloc(sizeof(glExtensions));
+	glExtensions_Init(ext);
 	util = new glUtil(ext);
 	_SetSwap(1);
 	SwapBuffers(hDC);

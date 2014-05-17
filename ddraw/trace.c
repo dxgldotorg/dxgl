@@ -55,9 +55,9 @@
 
 #ifdef _TRACE
 static CRITICAL_SECTION trace_cs;
-static bool trace_ready = false;
-static bool trace_fail = false;
-bool trace_end = false;
+static BOOL trace_ready = FALSE;
+static BOOL trace_fail = FALSE;
+BOOL trace_end = FALSE;
 static HANDLE outfile = INVALID_HANDLE_VALUE;
 unsigned int trace_depth = 0;
 static void trace_decode_hresult(HRESULT hr)
@@ -795,30 +795,30 @@ static void trace_decode_guid(GUID *guid)
 {
 	DWORD byteswritten;
 	char str[64];
-	if(*guid == CLSID_DirectDraw) strcpy(str,"CLSID_DirectDraw");
-	else if(*guid == CLSID_DirectDraw7) strcpy(str,"CLSID_DirectDraw7");
-	else if(*guid == CLSID_DirectDrawClipper) strcpy(str,"CLSID_DirectDrawClipper");
-	else if(*guid == IID_IDirectDraw) strcpy(str,"IID_IDirectDraw");
-	else if(*guid == IID_IDirectDraw2) strcpy(str,"IID_IDirectDraw2");
-	else if(*guid == IID_IDirectDraw4) strcpy(str,"IID_IDirectDraw4");
-	else if(*guid == IID_IDirectDraw7) strcpy(str,"IID_IDirectDraw7");
-	else if(*guid == IID_IDirectDrawSurface) strcpy(str,"IID_IDirectDrawSurface");
-	else if(*guid == IID_IDirectDrawSurface2) strcpy(str,"IID_IDirectDrawSurface2");
-	else if(*guid == IID_IDirectDrawSurface3) strcpy(str,"IID_IDirectDrawSurface3");
-	else if(*guid == IID_IDirectDrawSurface4) strcpy(str,"IID_IDirectDrawSurface4");
-	else if(*guid == IID_IDirectDrawSurface7) strcpy(str,"IID_IDirectDrawSurface7");
-	else if(*guid == IID_IDirectDrawPalette) strcpy(str,"IID_IDirectDrawPalette");
-	else if(*guid == IID_IDirectDrawClipper) strcpy(str,"IID_IDirectDrawClipper");
-	else if(*guid == IID_IDirectDrawColorControl) strcpy(str,"IID_IDirectDrawColorControl");
-	else if(*guid == IID_IDirectDrawGammaControl) strcpy(str,"IID_IDirectDrawGammaControl");
-	else if(*guid == IID_IDirect3D) strcpy(str,"IID_IDirect3D");
-	else if(*guid == IID_IDirect3D2) strcpy(str,"IID_IDirect3D2");
-	else if(*guid == IID_IDirect3D3) strcpy(str,"IID_IDirect3D3");
-	else if(*guid == IID_IDirect3D7) strcpy(str,"IID_IDirect3D7");
+	if(!memcmp(guid,&CLSID_DirectDraw,sizeof(GUID))) strcpy(str,"CLSID_DirectDraw");
+	else if(!memcmp(guid,&CLSID_DirectDraw7,sizeof(GUID))) strcpy(str,"CLSID_DirectDraw7");
+	else if(!memcmp(guid,&CLSID_DirectDrawClipper,sizeof(GUID))) strcpy(str,"CLSID_DirectDrawClipper");
+	else if(!memcmp(guid,&IID_IDirectDraw,sizeof(GUID))) strcpy(str,"IID_IDirectDraw");
+	else if(!memcmp(guid,&IID_IDirectDraw2,sizeof(GUID))) strcpy(str,"IID_IDirectDraw2");
+	else if(!memcmp(guid,&IID_IDirectDraw4,sizeof(GUID))) strcpy(str,"IID_IDirectDraw4");
+	else if(!memcmp(guid,&IID_IDirectDraw7,sizeof(GUID))) strcpy(str,"IID_IDirectDraw7");
+	else if(!memcmp(guid,&IID_IDirectDrawSurface,sizeof(GUID))) strcpy(str,"IID_IDirectDrawSurface");
+	else if(!memcmp(guid,&IID_IDirectDrawSurface2,sizeof(GUID))) strcpy(str,"IID_IDirectDrawSurface2");
+	else if(!memcmp(guid,&IID_IDirectDrawSurface3,sizeof(GUID))) strcpy(str,"IID_IDirectDrawSurface3");
+	else if(!memcmp(guid,&IID_IDirectDrawSurface4,sizeof(GUID))) strcpy(str,"IID_IDirectDrawSurface4");
+	else if(!memcmp(guid,&IID_IDirectDrawSurface7,sizeof(GUID))) strcpy(str,"IID_IDirectDrawSurface7");
+	else if(!memcmp(guid,&IID_IDirectDrawPalette,sizeof(GUID))) strcpy(str,"IID_IDirectDrawPalette");
+	else if(!memcmp(guid,&IID_IDirectDrawClipper,sizeof(GUID))) strcpy(str,"IID_IDirectDrawClipper");
+	else if(!memcmp(guid,&IID_IDirectDrawColorControl,sizeof(GUID))) strcpy(str,"IID_IDirectDrawColorControl");
+	else if(!memcmp(guid,&IID_IDirectDrawGammaControl,sizeof(GUID))) strcpy(str,"IID_IDirectDrawGammaControl");
+	else if(!memcmp(guid,&IID_IDirect3D,sizeof(GUID))) strcpy(str,"IID_IDirect3D");
+	else if(!memcmp(guid,&IID_IDirect3D2,sizeof(GUID))) strcpy(str,"IID_IDirect3D2");
+	else if(!memcmp(guid,&IID_IDirect3D3,sizeof(GUID))) strcpy(str,"IID_IDirect3D3");
+	else if(!memcmp(guid,&IID_IDirect3D7,sizeof(GUID))) strcpy(str,"IID_IDirect3D7");
 	else
 	{
 		OLECHAR guidstr[41] = {0}; 
-		StringFromGUID2(*guid,guidstr,40);
+		StringFromGUID2(guid,guidstr,40);
 		WideCharToMultiByte(CP_UTF8,0,guidstr,-1,str,64,NULL,NULL);
 	}
 	WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
@@ -840,18 +840,19 @@ static void trace_decode_rect(RECT *rect)
 static void init_trace()
 {
 	TCHAR path[MAX_PATH+1];
+	TCHAR *path_truncate;
 	InitializeCriticalSection(&trace_cs);
 	GetModuleFileName(NULL,path,MAX_PATH);
-	TCHAR *path_truncate = _tcsrchr(path,_T('\\'));
+	path_truncate = _tcsrchr(path,_T('\\'));
 	if(path_truncate) *(path_truncate+1) = 0;
 	_tcscat(path,_T("dxgl.log"));
 	outfile = CreateFile(path,GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
 	if(outfile == INVALID_HANDLE_VALUE)
 	{
-		trace_fail = true;
+		trace_fail = TRUE;
 		return;
 	}
-	trace_ready = true;
+	trace_ready = TRUE;
 }
 static void trace_decode_arg(int type, void *arg)
 {
@@ -991,7 +992,7 @@ static void trace_decode_arg(int type, void *arg)
 		{
 			str[0] = str[2] = '\'';
 			str[1] = (unsigned char)arg;
-			str[3] = NULL;
+			str[3] = 0;
 			WriteFile(outfile,str,3,&byteswritten,NULL);
 		}
 		break;
@@ -1004,7 +1005,7 @@ static void trace_decode_arg(int type, void *arg)
 		WriteFile(outfile,str,strlen(str),&byteswritten,NULL);
 		break;
 	case 21: // c++ bool
-		if((bool)arg) WriteFile(outfile,"true",4,&byteswritten,NULL);
+		if((unsigned char)arg) WriteFile(outfile,"true",4,&byteswritten,NULL);
 		else WriteFile(outfile,"false",5,&byteswritten,NULL);
 		break;
 	case 22: // c++ bool
@@ -1051,11 +1052,15 @@ static void end_trace()
 	WriteFile(outfile,"Trace cancelled by CTRL+Break\r\n",31,&byteswritten,NULL);
 	CloseHandle(outfile);
 	outfile = INVALID_HANDLE_VALUE;
-	trace_fail = true;	
+	trace_fail = TRUE;	
 }
 void trace_enter(const char *function, int paramcount, ...)
 {
-	if(trace_fail) return;
+	va_list args;
+	DWORD byteswritten;
+	unsigned int i;
+	int argtype;
+	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
 	if(trace_end)
@@ -1064,17 +1069,15 @@ void trace_enter(const char *function, int paramcount, ...)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	va_list args;
 	va_start(args,paramcount);
-	DWORD byteswritten;
-	for(unsigned int i = 0; i < trace_depth; i++)
+	for(i = 0; i < trace_depth; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile,"(",1,&byteswritten,NULL);
-	for(int i = 0; i < paramcount; i++)
+	for(i = 0; i < (unsigned)paramcount; i++)
 	{
 		if(i != 0) WriteFile(outfile,", ",2,&byteswritten,NULL);
-		int argtype = va_arg(args,int);
+		argtype = va_arg(args,int);
 		trace_decode_arg(argtype,va_arg(args,void*));
 	}
 	WriteFile(outfile,");\r\n",4,&byteswritten,NULL);
@@ -1083,7 +1086,9 @@ void trace_enter(const char *function, int paramcount, ...)
 }
 void trace_exit(const char *function, int argtype, void *arg)
 {
-	if(trace_fail) return;
+	DWORD byteswritten;
+	unsigned int i;
+	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
 	if(trace_end)
@@ -1093,8 +1098,7 @@ void trace_exit(const char *function, int argtype, void *arg)
 		return;
 	}
 	if(trace_depth) trace_depth--;
-	DWORD byteswritten;
-	for(unsigned int i = 0; i < trace_depth; i++)
+	for(i = 0; i < trace_depth; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile," returned ",10,&byteswritten,NULL);
@@ -1109,7 +1113,9 @@ void *trace_ret(const char *function, int argtype, void *arg)
 }
 void trace_var(const char *function, const char *var, int argtype, void *arg)
 {
-	if(trace_fail) return;
+	DWORD byteswritten;
+	unsigned int i;
+	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
 	if(trace_end)
@@ -1118,8 +1124,7 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	DWORD byteswritten;
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile,": ",2,&byteswritten,NULL);
@@ -1132,7 +1137,16 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 
 void trace_sysinfo()
 {
-	if(trace_fail) return;
+	DWORD byteswritten;
+	OSVERSIONINFOA osver;
+	DWORD buildver;
+	char osstring[256];
+	HMODULE hKernel32;
+	BOOL(WINAPI *iswow64)(HANDLE, PBOOL);
+	BOOL is64;
+	unsigned int i;
+	const GLubyte *glstring;
+	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
 	if(trace_end)
@@ -1141,10 +1155,6 @@ void trace_sysinfo()
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	DWORD byteswritten;
-	OSVERSIONINFOA osver;
-	DWORD buildver;
-	char osstring[256];
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
 	GetVersionExA(&osver);
 	if(osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) buildver = LOWORD(osver.dwBuildNumber);
@@ -1160,46 +1170,45 @@ void trace_sysinfo()
 	if(((osver.dwMajorVersion == 5) && (osver.dwMinorVersion >= 1)) || (osver.dwMajorVersion >= 6))
 	{
 		strcat(osstring,", ");
-		HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
-		BOOL (WINAPI *iswow64)(HANDLE,PBOOL) = NULL;
+		hKernel32 = LoadLibrary(_T("kernel32.dll"));
+		iswow64 = NULL;
 		if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
-		BOOL is64 = FALSE;
+		is64 = FALSE;
 		if(iswow64) iswow64(GetCurrentProcess(),&is64);
 		if(hKernel32) FreeLibrary(hKernel32);
 		if(is64) strcat(osstring,"64-bit");
 		else strcat(osstring,"32-bit");
 	}
 	strcat(osstring,"\r\n");
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"Windows version:  ",18,&byteswritten,NULL);
 	WriteFile(outfile,osstring,strlen(osstring),&byteswritten,NULL);
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"GL_VENDOR:  ",12,&byteswritten,NULL);
-	const GLubyte *glstring;
 	glstring = glGetString(GL_VENDOR);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"GL_RENDERER:  ",14,&byteswritten,NULL);
 	glstring = glGetString(GL_RENDERER);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"GL_VERSION:  ",13,&byteswritten,NULL);
 	glstring = glGetString(GL_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"GL_SHADING_LANGUAGE_VERSION:  ",30,&byteswritten,NULL);
 	glstring = glGetString(GL_SHADING_LANGUAGE_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(unsigned int i = 0; i < trace_depth-1; i++)
+	for(i = 0; i < trace_depth-1; i++)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,"GL_EXTENSIONS:  ",16,&byteswritten,NULL);
 	glstring = glGetString(GL_EXTENSIONS);
