@@ -16,19 +16,25 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _CRT_SECURE_NO_DEPRECATE
-#include <cstdio>
-#include <iostream>
+#include <stdio.h>
 #include <windows.h>
 #include "../common/releasever.h"
 
-using namespace std;
 
 int GetSVNRev(char *path)
 {
 	char pathbase[FILENAME_MAX+1];
 	char pathin[FILENAME_MAX+1];
 	char pathout[FILENAME_MAX+1];
-	strncpy(pathbase,path,FILENAME_MAX);
+	HKEY hKey;
+	BOOL foundsvn = FALSE;
+	char svnpath[(MAX_PATH + 1) * 4];
+	DWORD buffersize = MAX_PATH + 1;
+	STARTUPINFOA startinfo;
+	PROCESS_INFORMATION process;
+	FILE *revfile;
+	char revstring[32];
+	strncpy(pathbase, path, FILENAME_MAX);
 	strncpy(pathin,path,FILENAME_MAX);
 	pathin[FILENAME_MAX] = 0;
 	strncpy(pathout,path,FILENAME_MAX);
@@ -38,45 +44,38 @@ int GetSVNRev(char *path)
 	pathin[FILENAME_MAX] = 0;
 	strncat(pathout,"\\rev",FILENAME_MAX-strlen(pathin));
 	pathout[FILENAME_MAX] = 0;
-	HKEY hKey;
-	char svnpath[(MAX_PATH+1)*4];
-	bool foundsvn = false;
-	DWORD buffersize = MAX_PATH+1;
 	if(RegOpenKeyExA(HKEY_LOCAL_MACHINE,"Software\\TortoiseSVN",0,KEY_READ,&hKey) == ERROR_SUCCESS)
 	{
 		if(RegQueryValueExA(hKey,"Directory",NULL,NULL,(LPBYTE)svnpath,&buffersize) == ERROR_SUCCESS)
 		{
-			foundsvn = true;
+			foundsvn = TRUE;
 			strcat(svnpath,"bin\\subwcrev.exe ");
 			strcat(svnpath,pathbase);
 			strcat(svnpath," ");
 			strcat(svnpath,pathin);
 			strcat(svnpath," ");
 			strcat(svnpath,pathout);
-			STARTUPINFOA startinfo;
 			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
 			startinfo.cb = sizeof(STARTUPINFO);
-			PROCESS_INFORMATION process;
-			cout << svnpath << endl;
+			puts(svnpath);
 			if(CreateProcessA(NULL,svnpath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
 			{
 				WaitForSingleObject(process.hProcess,INFINITE);
 				CloseHandle(process.hProcess);
 				CloseHandle(process.hThread);
-				FILE *revfile = fopen(pathout,"r");
+				revfile = fopen(pathout,"r");
 				if(!revfile)
 				{
-					cout << "WARNING:  Failed to create revision file" << endl;
+					puts("WARNING:  Failed to create revision file");
 					RegCloseKey(hKey);
 					return 0;
 				}
-				char revstring[32];
 				fgets(revstring,32,revfile);
 				fclose(revfile);
 				RegCloseKey(hKey);
 				return atoi(revstring);
 			}
-			else foundsvn = false;
+			else foundsvn = FALSE;
 		}
 		RegCloseKey(hKey);
 	}
@@ -86,7 +85,7 @@ int GetSVNRev(char *path)
 			MB_YESNO|MB_ICONWARNING);
 		if(result == IDYES)
 		{
-			cout << "ERROR:  Please try again after installing TortoiseSVN." << endl;
+			puts("ERROR:  Please try again after installing TortoiseSVN.");
 			ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
 			exit(-1);
 		}
@@ -103,6 +102,8 @@ int ProcessHeaders(char *path)
 	char verbuffer[20];
 	char numstring[16];
 	char *findptr;
+	FILE *filein;
+	FILE *fileout;
 	int revision = GetSVNRev(path);
 	strncpy(pathin,path,FILENAME_MAX);
 	pathin[FILENAME_MAX] = 0;
@@ -112,16 +113,18 @@ int ProcessHeaders(char *path)
 	pathin[FILENAME_MAX] = 0;
 	strncat(pathout,"\\version.h",FILENAME_MAX-strlen(pathin));
 	pathout[FILENAME_MAX] = 0;
-	FILE *filein = fopen(pathin,"r");
+	filein = fopen(pathin,"r");
 	if(!filein)
 	{
-		cout << "ERROR:  Cannot read file " << pathin << endl;
+		fputs("ERROR:  Cannot read file ", stdout);
+		puts(pathin);
 		return errno;
 	}
-	FILE *fileout = fopen(pathout,"w");
+	fileout = fopen(pathout,"w");
 	if(!fileout)
 	{
-		cout << "ERROR:  Cannot create file " << pathin << endl;
+		fputs("ERROR:  Cannot create file ", stdout);
+		puts(pathin);
 		return errno;
 	}
 	while(fgets(buffer,1024,filein))
@@ -171,13 +174,15 @@ int ProcessHeaders(char *path)
 	filein = fopen(pathin,"r");
 	if(!filein)
 	{
-		cout << "ERROR:  Cannot read file " << pathin << endl;
+		fputs("ERROR:  Cannot read file ", stdout);
+		puts(pathin);
 		return errno;
 	}
 	fileout = fopen(pathout,"w");
 	if(!fileout)
 	{
-		cout << "ERROR:  Cannot create file " << pathin << endl;
+		fputs("ERROR:  Cannot create file ", stdout);
+		puts(pathin);
 		return errno;
 	}
 	while(fgets(buffer,1024,filein))
@@ -212,23 +217,23 @@ int ProcessHeaders(char *path)
 int MakeHelp(char *path)
 {
 	HKEY hKey;
-	bool foundhhc = false;
+	BOOL foundhhc = FALSE;
 	char hhcpath[(MAX_PATH+1)*2];
 	DWORD buffersize = MAX_PATH+1;
-	if(RegOpenKeyExA(HKEY_CURRENT_USER,"Software\\Microsoft\\HTML Help Workshop",0,KEY_READ,&hKey) == ERROR_SUCCESS)
+	PROCESS_INFORMATION process;
+	STARTUPINFOA startinfo;
+	if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\HTML Help Workshop", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
 		if(RegQueryValueExA(hKey,"InstallDir",NULL,NULL,(LPBYTE)hhcpath,&buffersize) == ERROR_SUCCESS)
 		{
 			strcat(hhcpath,"\\hhc.exe");
-			PROCESS_INFORMATION process;
-			STARTUPINFOA startinfo;
 			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
 			startinfo.cb = sizeof(STARTUPINFOA);
 			strcat(hhcpath," ");
 			strcat(hhcpath,path);
 			if(CreateProcessA(NULL,hhcpath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
 			{
-				foundhhc = true;
+				foundhhc = TRUE;
 				WaitForSingleObject(process.hProcess,INFINITE);
 				CloseHandle(process.hProcess);
 				CloseHandle(process.hThread);
@@ -242,7 +247,7 @@ int MakeHelp(char *path)
 			MB_YESNO|MB_ICONERROR);
 		if(result == IDYES) ShellExecuteA(NULL,"open", "http://www.microsoft.com/en-us/download/details.aspx?id=21138"
 			,NULL,NULL,SW_SHOWNORMAL);
-		cout << "ERROR:  HTML Help Compiler not found." << endl;
+		puts("ERROR:  HTML Help Compiler not found.");
 		return -1;
 	}
 	return 0;
@@ -251,23 +256,23 @@ int MakeHelp(char *path)
 int MakeInstaller(char *path)
 {
 	HKEY hKey;
-	bool foundnsis = false;
+	BOOL foundnsis = FALSE;
 	char nsispath[(MAX_PATH+1)*2];
 	DWORD buffersize = MAX_PATH+1;
-	if(RegOpenKeyExA(HKEY_LOCAL_MACHINE,"Software\\NSIS",0,KEY_READ,&hKey) == ERROR_SUCCESS)
+	PROCESS_INFORMATION process;
+	STARTUPINFOA startinfo;
+	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\NSIS", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
 		if(RegQueryValueExA(hKey,"",NULL,NULL,(LPBYTE)nsispath,&buffersize) == ERROR_SUCCESS)
 		{
 			strcat(nsispath,"\\makensis.exe");
-			PROCESS_INFORMATION process;
-			STARTUPINFOA startinfo;
 			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
 			startinfo.cb = sizeof(STARTUPINFOA);
 			strcat(nsispath," ");
 			strcat(nsispath,path);
 			if(CreateProcessA(NULL,nsispath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
 			{
-				foundnsis = true;
+				foundnsis = TRUE;
 				WaitForSingleObject(process.hProcess,INFINITE);
 				CloseHandle(process.hProcess);
 				CloseHandle(process.hThread);
@@ -280,7 +285,7 @@ int MakeInstaller(char *path)
 		int result = MessageBoxA(NULL,"Could not find NSIS, would you like to download it?","NSIS not found",
 			MB_YESNO|MB_ICONERROR);
 		if(result == IDYES) ShellExecuteA(NULL,"open","http://nsis.sourceforge.net/Main_Page",NULL,NULL,SW_SHOWNORMAL);
-		cout << "ERROR:  NSIS not found." << endl;
+		puts("ERROR:  NSIS not found.");
 		return -1;
 	}
 	return 0;
@@ -290,9 +295,10 @@ int MakeInstaller(char *path)
 int main(int argc, char *argv[])
 {
 
-    cout << "DXGL Build Tool, version " << DXGLSTRVER << endl;
+	fputs("DXGL Build Tool, version ", stdout);
+	puts(DXGLSTRVER);
 #ifdef _DEBUG
-	cout << "Debug version." << endl;
+	puts("Debug version.");
 #endif
 	if(argc > 1)
 	{
@@ -300,7 +306,7 @@ int main(int argc, char *argv[])
 		{
 			if(argc < 3)
 			{
-				cout << "ERROR:  No working directory specified." << endl;
+				puts("ERROR:  No working directory specified.");
 				return 1;
 			}
 			return ProcessHeaders(argv[2]);
@@ -309,7 +315,7 @@ int main(int argc, char *argv[])
 		{
 			if(argc < 3)
 			{
-				cout << "ERROR:  No working directory specified." << endl;
+				puts("ERROR:  No working directory specified.");
 				return 1;
 			}
 			return MakeHelp(argv[2]);
@@ -318,7 +324,7 @@ int main(int argc, char *argv[])
 		{
 			if(argc < 3)
 			{
-				cout << "ERROR:  No working directory specified." << endl;
+				puts("ERROR:  No working directory specified.");
 				return 1;
 			}
 			return MakeInstaller(argv[2]);

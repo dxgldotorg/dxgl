@@ -165,7 +165,7 @@
     <ResourceCompile Include="buildtool.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="buildtool.cpp" />
+    <ClCompile Include="buildtool.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
