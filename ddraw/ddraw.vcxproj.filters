@@ -154,9 +154,6 @@
     <ClCompile Include="glDirectDrawClipper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glDirectDrawPalette.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -227,6 +224,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="trace.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glDirectDrawPalette.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

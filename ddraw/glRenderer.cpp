@@ -1145,7 +1145,7 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 	{
 		shaders->SetShader(PROG_PAL256,NULL,NULL,0);
 		progtype = PROG_PAL256;
-		texman->_UploadTexture(paltex,0,dest->palette->GetPalette(NULL),256,1);
+		texman->_UploadTexture(paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1);
 		ext->glUniform1i(shaders->shaders[progtype].tex0,0);
 		ext->glUniform1i(shaders->shaders[progtype].pal,1);
 		texman->SetTexture(0,texture);

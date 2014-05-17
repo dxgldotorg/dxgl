@@ -18,27 +18,50 @@
 #ifndef _GLDIRECTDRAWPALETTE_H
 #define _GLDIRECTDRAWPALETTE_H
 
-class glDirectDrawPalette : public IDirectDrawPalette
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct glDirectDrawPaletteVtbl;
+
+typedef struct glDirectDrawPalette
 {
-public:
-	glDirectDrawPalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
-	virtual ~glDirectDrawPalette();
-	// DirectDraw (all versions) API
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
+	struct glDirectDrawPaletteVtbl *lpVtbl;
 
-	HRESULT WINAPI GetCaps(LPDWORD lpdwCaps);
-	HRESULT WINAPI GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries);
-	HRESULT WINAPI Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
-	HRESULT WINAPI SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
-
-	// Internal function
-	LPPALETTEENTRY GetPalette(DWORD *flags);
-private:
+	ULONG refcount;
 	PALETTEENTRY palette[256];
 	DWORD flags;
-	ULONG refcount;
-};
+} glDirectDrawPalette;
+
+typedef struct glDirectDrawPaletteVtbl
+{
+	// DirectDraw (all versions) API
+	HRESULT(WINAPI *QueryInterface)(glDirectDrawPalette *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirectDrawPalette *This);
+	ULONG(WINAPI *Release)(glDirectDrawPalette *This);
+
+	HRESULT(WINAPI *GetCaps)(glDirectDrawPalette *This, LPDWORD lpdwCaps);
+	HRESULT(WINAPI *GetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries);
+	HRESULT(WINAPI *Initialize)(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
+	HRESULT(WINAPI *SetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
+} glDirectDrawPaletteVtbl;
+
+HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
+LPPALETTEENTRY glDirectDrawPalette_GetPalette(glDirectDrawPalette *This, DWORD *flags);
+
+HRESULT WINAPI glDirectDrawPalette_QueryInterface(glDirectDrawPalette *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirectDrawPalette_AddRef(glDirectDrawPalette *This);
+ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This);
+HRESULT WINAPI glDirectDrawPalette_GetCaps(glDirectDrawPalette *This, LPDWORD lpdwCaps);
+HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries);
+HRESULT WINAPI glDirectDrawPalette_Initialize(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
+HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
+LPPALETTEENTRY glDirectDrawPalette_GetPalette(glDirectDrawPalette *This, DWORD *flags);
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLDIRECTDRAWPALETTE_H

@@ -28,7 +28,7 @@ typedef struct
 
 class glDirectDraw7;
 class glDirectDrawClipper;
-class glDirectDrawPalette;
+struct glDirectDrawPalette;
 class glDirectDrawSurface1;
 class glDirectDrawSurface2;
 class glDirectDrawSurface3;

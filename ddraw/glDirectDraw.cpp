@@ -822,10 +822,10 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	glDirectDrawPalette *pal = new glDirectDrawPalette(dwFlags,lpDDColorArray,lplpDDPalette);
+	HRESULT ret = glDirectDrawPalette_Create(dwFlags, lpDDColorArray, lplpDDPalette);
 	TRACE_VAR("*lplpDDPalette",14,*lplpDDPalette);
-	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 
 HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter)

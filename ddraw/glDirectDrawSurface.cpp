@@ -125,11 +125,11 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 		if(ddInterface->GetBPP() == 8)
 		{
-			if(!palettein) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
+			if (!palettein) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,(LPDIRECTDRAWPALETTE*)&palette);
 			else
 			{
 				palette = palettein;
-				palette->AddRef();
+				glDirectDrawPalette_AddRef(palette);
 			}
 			paltex = new TEXTURE;
 			ZeroMemory(paltex,sizeof(TEXTURE));
@@ -372,7 +372,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(fbo.fbo) ddInterface->renderer->DeleteFBO(&fbo);
 	if(stencilfbo.fbo) ddInterface->renderer->DeleteFBO(&stencilfbo);
 	if(bitmapinfo) free(bitmapinfo);
-	if(palette) palette->Release();
+	if(palette) glDirectDrawPalette_Release(palette);
 	if(backbuffer) backbuffer->Release();
 	if(clipper) clipper->Release();
 	if(buffer) free(buffer);
@@ -919,7 +919,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 	{
 		if(palette) pal = palette;
 		else pal = ddInterface->primary->palette;
-		memcpy(colors,pal->GetPalette(NULL),1024);
+		memcpy(colors, glDirectDrawPalette_GetPalette(pal,NULL), 1024);
 		for(int i = 0; i < 256; i++)
 			colors[i] = ((colors[i]&0x0000FF)<<16) | (colors[i]&0x00FF00) | ((colors[i]&0xFF0000)>>16);
 		memcpy(bitmapinfo->bmiColors,colors,1024);
@@ -960,8 +960,8 @@ HRESULT WINAPI glDirectDrawSurface7::GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDP
 	HRESULT err;
 	if(palette)
 	{
-		palette->AddRef();
-		*lplpDDPalette = palette;
+		glDirectDrawPalette_AddRef(palette);
+		*lplpDDPalette = (LPDIRECTDRAWPALETTE)palette;
 		err = DD_OK;
 	}
 	else
@@ -1210,13 +1210,13 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(palette)
 	{
-		palette->Release();
-		if(!lpDDPalette) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
+		glDirectDrawPalette_Release(palette);
+		if(!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,(LPDIRECTDRAWPALETTE*)&palette);
 	}
 	if(lpDDPalette)
 	{
 		palette = (glDirectDrawPalette *)lpDDPalette;
-		palette->AddRef();
+		glDirectDrawPalette_AddRef(palette);
 	}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
