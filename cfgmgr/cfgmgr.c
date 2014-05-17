@@ -20,13 +20,7 @@
 #include "cfgmgr.h"
 #include "../ddraw/resource.h"
 #include <tchar.h>
-using namespace std;
-#ifdef _UNICODE
-typedef wstring tstring;
-#else
-typedef string tstring;
-#endif
-
+#include <math.h>
 
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
@@ -38,7 +32,7 @@ INT_PTR CALLBACK CompatDialogCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
-		SetTimer(hWnd, NULL, 3000, NULL);
+		SetTimer(hWnd, 0, 3000, NULL);
 		return TRUE;
 	case WM_TIMER:
 		EndDialog(hWnd, 0);
@@ -51,6 +45,10 @@ INT_PTR CALLBACK CompatDialogCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 
 void ShowRestartDialog()
 {
+	LPTSTR cmdline;
+	LPTSTR cmdline2;
+	STARTUPINFO startupinfo;
+	PROCESS_INFORMATION procinfo;
 	BOOL(WINAPI *_GetModuleHandleEx)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule) = FALSE;
 	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
 	HMODULE hddraw;
@@ -66,11 +64,9 @@ void ShowRestartDialog()
 	else hddraw = GetModuleHandle(_T("ddraw.dll"));  //For old versions of Windows, may fail but they shouldn't have AppCompat anyways.
 	if (hKernel32) FreeLibrary(hKernel32);
 	DialogBox(hddraw, MAKEINTRESOURCE(IDD_COMPAT), NULL, CompatDialogCallback);
-	LPTSTR cmdline = GetCommandLine();
-	LPTSTR cmdline2 = (LPTSTR)malloc((_tcslen(cmdline) + 1)*sizeof(TCHAR));
+	cmdline = GetCommandLine();
+	cmdline2 = (LPTSTR)malloc((_tcslen(cmdline) + 1)*sizeof(TCHAR));
 	_tcscpy(cmdline2, cmdline);
-	STARTUPINFO startupinfo;
-	PROCESS_INFORMATION procinfo;
 	ZeroMemory(&startupinfo, sizeof(STARTUPINFO));
 	startupinfo.cb = sizeof(STARTUPINFO);
 	CreateProcess(NULL, cmdline2, NULL, NULL, FALSE, 0, NULL, NULL, &startupinfo, &procinfo);
@@ -80,32 +76,33 @@ void ShowRestartDialog()
 	ExitProcess(0);
 }
 
-bool AddCompatFlag(LPTSTR flag)
+BOOL AddCompatFlag(LPTSTR flag)
 {
+	BOOL is64 = FALSE;
 	HKEY hKey;
+	LRESULT error, error2;
+	TCHAR filename[MAX_PATH + 1];
+	TCHAR buffer[1024];
+	DWORD sizeout;
 	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
 	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
 	if (hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE, PBOOL))GetProcAddress(hKernel32, "IsWow64Process");
-	BOOL is64 = FALSE;
 	if (iswow64) iswow64(GetCurrentProcess(), &is64);
 	if (hKernel32) FreeLibrary(hKernel32);
-	LRESULT error,error2;
-	TCHAR filename[MAX_PATH + 1];
-	TCHAR buffer[1024];
 	error = RegCreateKeyEx(HKEY_CURRENT_USER, _T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),
 		0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	if (error == ERROR_SUCCESS)
 	{
 		GetModuleFileName(NULL, filename, MAX_PATH);
 		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
-		DWORD sizeout = 1024 * sizeof(TCHAR);
+		sizeout = 1024 * sizeof(TCHAR);
 		error2 = RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout);
 		if (error2 == ERROR_SUCCESS)
 		{
 			if (_tcsstr(buffer,flag))
 			{ 
 				RegCloseKey(hKey);
-				return true;
+				return TRUE;
 			}
 			else
 			{
@@ -116,7 +113,7 @@ bool AddCompatFlag(LPTSTR flag)
 				else
 				{
 					RegCloseKey(hKey);
-					return false;
+					return FALSE;
 				}
 			}
 		}
@@ -127,51 +124,53 @@ bool AddCompatFlag(LPTSTR flag)
 			else
 			{
 				RegCloseKey(hKey);
-				return false;
+				return FALSE;
 			}
 		}
 		else
 		{
 			RegCloseKey(hKey);
-			return false;
+			return FALSE;
 		}
 
 	}
-	return false;
+	return FALSE;
 }
 
-bool DelCompatFlag(LPTSTR flag, bool initial)
+BOOL DelCompatFlag(LPTSTR flag, BOOL initial)
 {
+	BOOL is64 = FALSE;
 	HKEY hKey;
 	HKEY hKeyWrite = NULL;
-	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
-	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
-	if (hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE, PBOOL))GetProcAddress(hKernel32, "IsWow64Process");
-	BOOL is64 = FALSE;
-	if (iswow64) iswow64(GetCurrentProcess(), &is64);
-	if (hKernel32) FreeLibrary(hKernel32);
 	LRESULT error;
 	TCHAR filename[MAX_PATH + 1];
 	TCHAR buffer[1024];
 	TCHAR *bufferpos;
-	tstring writekey;
+	TCHAR writekey[67];
+	DWORD sizeout;
+	SHELLEXECUTEINFO info;
+	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
+	HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
+	if (hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE, PBOOL))GetProcAddress(hKernel32, "IsWow64Process");
+	if (iswow64) iswow64(GetCurrentProcess(), &is64);
+	if (hKernel32) FreeLibrary(hKernel32);
 	// Check system first.
-	writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
-	if (is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
-	else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_READ, &hKey);
+	_tcscpy(writekey,_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	if (is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey, 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
+	else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey, 0, KEY_READ, &hKey);
 	if (error == ERROR_SUCCESS)
 	{
 		GetModuleFileName(NULL, filename, MAX_PATH);
 		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
-		DWORD sizeout = 1024 * sizeof(TCHAR);
+		sizeout = 1024 * sizeof(TCHAR);
 		if (RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout) == ERROR_SUCCESS)
 		{
 			bufferpos = _tcsstr(buffer, flag);
 			if (bufferpos)
 			{
 				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag))+1)*sizeof(TCHAR));
-				if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE | KEY_WOW64_64KEY, &hKeyWrite);
-				else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				if(is64) error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey, 0, KEY_WRITE | KEY_WOW64_64KEY, &hKeyWrite);
+				else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey, 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
 					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
@@ -185,19 +184,18 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 						if (MessageBox(NULL, _T("DXGL has detected an incompatible AppCompat flag for the program you are currently running and requires administrative rights to remove it.\nWould you like to continue?"),
 							_T("AppCompat error"), MB_YESNO | MB_ICONWARNING) == IDYES)
 						{
-							tstring command;
-							if (is64) command.assign(_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
-							else command.assign(_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
-							command.append(filename);
-							command.append(_T("\" /t REG_SZ /d \""));
-							command.append(buffer);
-							command.append(_T("\""));
-							SHELLEXECUTEINFO info;
+							TCHAR command[(MAX_PATH*2)+32];
+							if (is64) _tcscpy(command,_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /reg:64 /f /v \""));
+							else _tcscpy(command,_T("ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
+							_tcscat(command,filename);
+							_tcscat(command,_T("\" /t REG_SZ /d \""));
+							_tcscat(command,buffer);
+							_tcscat(command,_T("\""));
 							ZeroMemory(&info, sizeof(SHELLEXECUTEINFO));
 							info.cbSize = sizeof(SHELLEXECUTEINFO);
 							info.lpVerb = _T("runas");
 							info.lpFile = _T("reg.exe");
-							info.lpParameters = command.c_str();
+							info.lpParameters = command;
 							info.nShow = SW_SHOWNORMAL;
 							info.fMask = SEE_MASK_NOCLOSEPROCESS;
 							ShellExecuteEx(&info);
@@ -211,13 +209,13 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 							if(hKeyWrite) RegCloseKey(hKeyWrite);
 							RegCloseKey(hKey);
 						}
-						return false;
+						return FALSE;
 					}
 					else
 					{
 						if (hKeyWrite) RegCloseKey(hKeyWrite);
 						RegCloseKey(hKey);
-						return false;
+						return FALSE;
 					}
 				}
 				else if (error == ERROR_SUCCESS) ShowRestartDialog();
@@ -226,20 +224,20 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 		RegCloseKey(hKey);
 	}
 	// Next check user.
-	writekey.assign(_T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey.c_str(), 0, KEY_READ, &hKey);
+	_tcscpy(writekey, _T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"));
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey, 0, KEY_READ, &hKey);
 	if (error == ERROR_SUCCESS)
 	{
 		GetModuleFileName(NULL, filename, MAX_PATH);
 		ZeroMemory(buffer, 1024 * sizeof(TCHAR));
-		DWORD sizeout = 1024 * sizeof(TCHAR);
+		sizeout = 1024 * sizeof(TCHAR);
 		if (RegQueryValueEx(hKey, filename, NULL, NULL, (LPBYTE)buffer, &sizeout) == ERROR_SUCCESS)
 		{
 			bufferpos = _tcsstr(buffer, flag);
 			if (bufferpos)
 			{
 				memmove(bufferpos, bufferpos + _tcslen(flag), (_tcslen(bufferpos + _tcslen(flag))+1)*sizeof(TCHAR));
-				error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey.c_str(), 0, KEY_WRITE, &hKeyWrite);
+				error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey, 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
 					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
@@ -258,18 +256,17 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 						if (MessageBox(NULL, _T("DXGL has detected an incompatible AppCompat flag for the program you are currently running and requires administrative rights to remove it.\nWould you like to continue?"),
 							_T("AppCompat error"), MB_YESNO | MB_ICONWARNING) == IDYES)
 						{
-							tstring command;
-							command.assign(_T("ADD \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
-							command.append(filename);
-							command.append(_T("\" /t REG_SZ /d \""));
-							command.append(buffer);
-							command.append(_T("\""));
-							SHELLEXECUTEINFO info;
+							TCHAR command[(MAX_PATH * 2) + 32];
+							_tcscpy(command,_T("ADD \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\" /f /v \""));
+							_tcscat(command,filename);
+							_tcscat(command,_T("\" /t REG_SZ /d \""));
+							_tcscat(command,buffer);
+							_tcscat(command,_T("\""));
 							ZeroMemory(&info, sizeof(SHELLEXECUTEINFO));
 							info.cbSize = sizeof(SHELLEXECUTEINFO);
 							info.lpVerb = _T("runas");
 							info.lpFile = _T("reg.exe");
-							info.lpParameters = command.c_str();
+							info.lpParameters = command;
 							info.nShow = SW_SHOWNORMAL;
 							info.fMask = SEE_MASK_NOCLOSEPROCESS;
 							ShellExecuteEx(&info);
@@ -282,12 +279,12 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 						}
 						else MessageBox(NULL, _T("Registry value could not be updated.  Your program may crash as a result."), _T("Error"), MB_OK | MB_ICONWARNING);
 						if (hKeyWrite) RegCloseKey(hKeyWrite);
-						return false;
+						return FALSE;
 					}
 					else
 					{
 						if (hKeyWrite) RegCloseKey(hKeyWrite);
-						return false;
+						return FALSE;
 					}
 				}
 				else if (error == ERROR_SUCCESS)
@@ -298,13 +295,14 @@ bool DelCompatFlag(LPTSTR flag, bool initial)
 		}
 		RegCloseKey(hKey);
 	}
-	return true;
+	return TRUE;
 }
 
 void GetDirFromPath(LPTSTR path)
 {
+	int i;
 	int len = _tcslen(path);
-	for(int i = len; i > 0; i--)
+	for(i = len; i > 0; i--)
 	{
 		if((path[i] == '\\') || (path[i] == '/'))
 		{
@@ -336,7 +334,7 @@ void AddStringToMultiSz(LPTSTR multisz, LPCTSTR string)
 }
 
 
-bool ReadBool(HKEY hKey, bool original, bool &mask, LPCTSTR value)
+BOOL ReadBool(HKEY hKey, BOOL original, BOOL *mask, LPCTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -344,18 +342,18 @@ bool ReadBool(HKEY hKey, bool original, bool &mask, LPCTSTR value)
 	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
 	if(error == ERROR_SUCCESS)
 	{
-		mask = true;
-		if(dwOut) return true;
-		else return false;
+		*mask = TRUE;
+		if(dwOut) return TRUE;
+		else return FALSE;
 	}
 	else
 	{
-		mask = false;
+		*mask = FALSE;
 		return original;
 	}
 }
 
-DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPCTSTR value)
+DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 {
 	DWORD dwOut;
 	DWORD sizeout = 4;
@@ -363,17 +361,17 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD &mask, LPCTSTR value)
 	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
 	if(error == ERROR_SUCCESS)
 	{
-		mask = 1;
+		*mask = 1;
 		return dwOut;
 	}
 	else
 	{
-		mask = 0;
+		*mask = 0;
 		return original;
 	}
 }
 
-float ReadFloat(HKEY hKey, float original, float &mask, LPCTSTR value)
+float ReadFloat(HKEY hKey, float original, float *mask, LPCTSTR value)
 {
 	float dwOut;
 	DWORD sizeout = 4;
@@ -381,12 +379,12 @@ float ReadFloat(HKEY hKey, float original, float &mask, LPCTSTR value)
 	LSTATUS error = RegQueryValueEx(hKey,value,NULL,&regdword,(LPBYTE)&dwOut,&sizeout);
 	if(error == ERROR_SUCCESS)
 	{
-		mask = 1.0f;
+		*mask = 1.0f;
 		return dwOut;
 	}
 	else
 	{
-		mask = 0.0f;
+		*mask = 0.0f;
 		return original;
 	}
 }
@@ -404,33 +402,33 @@ void ReadPath(HKEY hKey, TCHAR *path, TCHAR *mask, LPCTSTR value)
 	}
 }
 
-void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir)
+void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir)
 {
 	DXGLCFG *cfgmask;
-	if(mask) cfgmask = mask;
-	else cfgmask = &defaultmask;
 	TCHAR path[MAX_PATH+1];
 	LONG error;
 	DWORD regmultisz = REG_MULTI_SZ;
 	DWORD sizeout=4;
-	cfg->scaler = ReadDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
-	cfg->colormode = ReadBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
-	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
-	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
-	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
-	cfg->msaa = ReadDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
-	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
-	cfg->highres = ReadBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
+	if (mask) cfgmask = mask;
+	else cfgmask = &defaultmask;
+	cfg->scaler = ReadDWORD(hKey, cfg->scaler, &cfgmask->scaler, _T("ScalingMode"));
+	cfg->colormode = ReadBool(hKey,cfg->colormode,&cfgmask->colormode,_T("ChangeColorDepth"));
+	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,&cfgmask->scalingfilter,_T("ScalingFilter"));
+	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,&cfgmask->texfilter,_T("TextureFilter"));
+	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
+	cfg->msaa = ReadDWORD(hKey,cfg->msaa,&cfgmask->msaa,_T("Antialiasing"));
+	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,&cfgmask->aspect3d,_T("AdjustAspectRatio"));
+	cfg->highres = ReadBool(hKey,cfg->highres,&cfgmask->highres,_T("AdjustPrimaryResolution"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
-	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
-	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
-	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
-	cfg->vsync = ReadDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
-	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
-	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
-	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
-	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
-	cfg->aspect = ReadFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
+	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,&cfgmask->SortModes,_T("SortModes"));
+	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,&cfgmask->AllColorDepths,_T("AllColorDepths"));
+	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,&cfgmask->ExtraModes,_T("ExtraModes"));
+	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
+	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
+	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
+	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
+	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
+	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
 	if(!global && dll)
 	{
 		LPTSTR paths;
@@ -466,7 +464,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll,
 	}
 }
 
-void WriteBool(HKEY hKey, bool value, bool mask, LPCTSTR name)
+void WriteBool(HKEY hKey, BOOL value, BOOL mask, LPCTSTR name)
 {
 	const DWORD one = 1;
 	const DWORD zero = 0;
@@ -490,11 +488,11 @@ void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPCTSTR name)
 }
 void WriteFloat(HKEY hKey, float value, float mask, LPCTSTR name)
 {
-	if (abs(mask) > 0.5f) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
+	if (fabsf(mask) > 0.5f) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
 	else RegDeleteValue(hKey, name);
 }
 
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global)
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL global)
 {
 	const DXGLCFG *cfgmask;
 	if(mask) cfgmask = mask;
@@ -521,7 +519,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool glob
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
 }
 
-tstring newregname;
+TCHAR newregname[MAX_PATH+9];
 
 LPTSTR MakeNewConfig(LPTSTR path)
 {
@@ -529,65 +527,71 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	DXGLCFG tmp;
 	TCHAR crcstr[10];
 	unsigned long crc;
-	FILE *file = _tfopen(path,_T("rb"));
+	TCHAR regkey[MAX_PATH + 24];
+	int i;
+	TCHAR filename[MAX_PATH + 1];
+	FILE *file = _tfopen(path, _T("rb"));
 	if(file != NULL) Crc32_ComputeFile(file,&crc);
 	else crc = 0;
 	_itot(crc,crcstr,16);
 	if(file) fclose(file);
-	tstring regkey = regkeybase;
-	int i;
-	TCHAR filename[MAX_PATH+1];
+	_tcscpy(regkey,regkeybase);
 	_tcsncpy(filename,path,MAX_PATH);
 	filename[MAX_PATH] = 0;
 	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
-	regkey.append(&filename[i]);
-	regkey.append(_T("-"));
-	regkey.append(crcstr);
-	newregname = &filename[i];
-	newregname.append(_T("-"));
-	newregname.append(crcstr);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,&tmp,NULL,false,true,path);
+	_tcscat(regkey,&filename[i]);
+	_tcscat(regkey,_T("-"));
+	_tcscat(regkey,crcstr);
+	_tcscpy(newregname,&filename[i]);
+	_tcscat(newregname,_T("-"));
+	_tcscat(newregname,crcstr);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,&tmp,NULL,FALSE,TRUE,path);
 	RegCloseKey(hKey);
-	return (LPTSTR)newregname.c_str();
+	return newregname;
 }
 
-bool IsInstalledDXGLTest(LPCTSTR path)
+BOOL IsInstalledDXGLTest(LPCTSTR path)
 {
 	LRESULT err;
 	TCHAR dir[MAX_PATH+1];
 	TCHAR cmp[MAX_PATH+1];
-	_tcsncpy(dir,path,MAX_PATH);
-	GetDirFromPath(dir);
 	HKEY hKey;
-	DWORD sizeout = MAX_PATH*sizeof(TCHAR);
+	DWORD sizeout;
+	_tcsncpy(dir, path, MAX_PATH);
+	GetDirFromPath(dir);
+	sizeout = MAX_PATH*sizeof(TCHAR);
 	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKey) != ERROR_SUCCESS)
-		return false;
+		return FALSE;
 	err = RegQueryValueEx(hKey,_T("InstallDir"),NULL,NULL,(LPBYTE)cmp,&sizeout);
 	if(err != ERROR_SUCCESS)
 	{
 		RegCloseKey(hKey);
-		return false;
+		return FALSE;
 	}
 	RegCloseKey(hKey);
-	if(!_tcsnicmp(dir,cmp,MAX_PATH)) return true;
-	else return false;
+	if(!_tcsnicmp(dir,cmp,MAX_PATH)) return TRUE;
+	else return FALSE;
 }
 
-void GetCurrentConfig(DXGLCFG *cfg, bool initial)
+void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 {
 	HKEY hKey;
 	unsigned long crc;
-	tstring regkey;
+	TCHAR regkey[MAX_PATH+24];
 	FILE *file;
 	TCHAR filename[MAX_PATH+1];
 	TCHAR crcstr[10];
-	GetModuleFileName(NULL,filename,MAX_PATH);
+	int i;
+	BOOL DPIAwarePM = FALSE;
+	HMODULE hSHCore = NULL;
+	HMODULE hUser32 = NULL;
+	GetModuleFileName(NULL, filename, MAX_PATH);
 	if(IsInstalledDXGLTest(filename))
 	{
-		regkey = regkeybase;
-		regkey.append(_T("DXGLTestApp"));
+		_tcscpy(regkey,regkeybase);
+		_tcscat(regkey,_T("DXGLTestApp"));
 	}
 	else
 	{
@@ -596,32 +600,28 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 		else crc = 0;
 		_itot(crc,crcstr,16);
 		if(file) fclose(file);
-		regkey = regkeybase;
-		int i;
+		_tcscpy(regkey, regkeybase);
 		for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 		i++;
-		regkey.append(&filename[i]);
-		regkey.append(_T("-"));
-		regkey.append(crcstr);
+		_tcscat(regkey,&filename[i]);
+		_tcscat(regkey,_T("-"));
+		_tcscat(regkey,crcstr);
 	}
 	GetGlobalConfig(cfg, initial);
-	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey.c_str(), 0, KEY_READ, &hKey);
-	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
+	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	if (hKey)
 	{
-		ReadSettings(hKey, cfg, NULL, false, true, NULL);
+		ReadSettings(hKey, cfg, NULL, FALSE, TRUE, NULL);
 		RegCloseKey(hKey);
 	}
 	hKey = NULL;
-	HMODULE hSHCore = NULL;
-	HMODULE hUser32 = NULL;
 	if (cfg->DPIScale == 2)	AddCompatFlag(_T("HIGHDPIAWARE"));
 	else DelCompatFlag(_T("HIGHDPIAWARE"),initial);
 	if (initial)
 	{
 		if (cfg->DPIScale == 1)
 		{
-			bool DPIAwarePM = false;
 			hSHCore = LoadLibrary(_T("SHCore.dll"));
 			if (hSHCore)
 			{
@@ -629,7 +629,7 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 					= (HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
 				if (_SetProcessDpiAwareness)
 				{
-					DPIAwarePM = true;
+					DPIAwarePM = TRUE;
 					_SetProcessDpiAwareness(2);
 				}
 			}
@@ -649,7 +649,7 @@ void GetCurrentConfig(DXGLCFG *cfg, bool initial)
 	}
 	DelCompatFlag(_T("DWM8And16BitMitigation"), initial);
 }
-void GetGlobalConfig(DXGLCFG *cfg, bool initial)
+void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
@@ -658,15 +658,15 @@ void GetGlobalConfig(DXGLCFG *cfg, bool initial)
 	else RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	if (hKey)
 	{
-		ReadSettings(hKey, cfg, NULL, true, false, NULL);
+		ReadSettings(hKey, cfg, NULL, TRUE, FALSE, NULL);
 		if (!cfg->Windows8Detected)
 		{
 			OSVERSIONINFO osver;
 			osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			GetVersionEx(&osver);
-			if (osver.dwMajorVersion > 6) cfg->Windows8Detected = true;
-			if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = true;
-			if (cfg->Windows8Detected) cfg->AllColorDepths = true;
+			if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
+			if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
+			if (cfg->Windows8Detected) cfg->AllColorDepths = TRUE;
 		}
 		RegCloseKey(hKey);
 	}
@@ -675,28 +675,30 @@ void GetGlobalConfig(DXGLCFG *cfg, bool initial)
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 {
 	HKEY hKey;
-	tstring regkey = regkeybase;
-	regkey.append(name);
+	TCHAR regkey[MAX_PATH + 24];
+	_tcscpy(regkey,regkeybase);
+	_tcscat(regkey,name);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	ReadSettings(hKey,cfg,mask,false,false,NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	ReadSettings(hKey,cfg,mask,FALSE,FALSE,NULL);
 	RegCloseKey(hKey);
 }
 void SetGlobalConfig(const DXGLCFG *cfg)
 {
 	HKEY hKey;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	WriteSettings(hKey,cfg,NULL,true);
+	WriteSettings(hKey,cfg,NULL,TRUE);
 	RegCloseKey(hKey);
 }
 
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 {
 	HKEY hKey;
-	tstring regkey = regkeybase;
-	regkey.append(name);
-	RegCreateKeyEx(HKEY_CURRENT_USER,regkey.c_str(),0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	WriteSettings(hKey,cfg,mask,false);
+	TCHAR regkey[MAX_PATH + 24];
+	_tcscpy(regkey, regkeybase);
+	_tcscat(regkey, name);
+	RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	WriteSettings(hKey,cfg,mask,FALSE);
 	RegCloseKey(hKey);
 }

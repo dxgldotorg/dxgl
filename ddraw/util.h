@@ -19,7 +19,14 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-bool IsBadReadPointer(void *ptr);
+BOOL IsBadReadPointer(void *ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

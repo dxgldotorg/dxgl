@@ -21,10 +21,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdlib.h>
-#include <cstdio>
+#include <stdio.h>
 #include <Windows.h>
 #include <ShellAPI.h>
-#include <string>
 #ifndef LSTATUS
 typedef LONG LSTATUS;
 #endif

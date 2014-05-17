@@ -19,36 +19,44 @@
 #ifndef _CFGMGR_H
 #define _CFGMGR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
 	DWORD scaler;
-	bool colormode;
+	BOOL colormode;
 	DWORD scalingfilter;
 	DWORD texfilter;
 	DWORD anisotropic;
 	DWORD msaa;
 	DWORD aspect3d;
-	bool highres;
+	BOOL highres;
 	DWORD vsync;
 	TCHAR shaderfile[MAX_PATH+1];
 	DWORD SortModes;
-	bool AllColorDepths;
-	bool ExtraModes;
+	BOOL AllColorDepths;
+	BOOL ExtraModes;
 	DWORD TextureFormat;
 	DWORD TexUpload;
 	DWORD DPIScale;
 	float aspect;
-	bool Windows8Detected;
+	BOOL Windows8Detected;
 } DXGLCFG;
 
-void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, bool global, bool dll, LPTSTR dir);
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, bool global);
-void GetCurrentConfig(DXGLCFG *cfg, bool initial);
-void GetGlobalConfig(DXGLCFG *cfg, bool initial);
+void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir);
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL global);
+void GetCurrentConfig(DXGLCFG *cfg, BOOL initial);
+void GetGlobalConfig(DXGLCFG *cfg, BOOL initial);
 void SetGlobalConfig(const DXGLCFG *cfg);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
 void GetDirFromPath(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_CFGMGR_H

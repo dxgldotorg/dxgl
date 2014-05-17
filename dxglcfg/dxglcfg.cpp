@@ -281,7 +281,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	_stprintf(aspect, _T("%.6f"), f);
 }
 
-void SetCheck(HWND hWnd, int DlgItem, bool value, bool mask, bool tristate)
+void SetCheck(HWND hWnd, int DlgItem, BOOL value, BOOL mask, bool tristate)
 {
 	if(tristate && !mask)
 		SendDlgItemMessage(hWnd,DlgItem,BM_SETCHECK,BST_INDETERMINATE,0);
@@ -324,20 +324,20 @@ void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, bool tristate)
 	else SetWindowText(GetDlgItem(hWnd,DlgItem),value);
 }
 
-bool GetCheck(HWND hWnd, int DlgItem, bool &mask)
+bool GetCheck(HWND hWnd, int DlgItem, BOOL &mask)
 {
 	int check = SendDlgItemMessage(hWnd,DlgItem,BM_GETCHECK,0,0);
 	switch(check)
 	{
 	case BST_CHECKED:
-		mask = true;
+		mask = TRUE;
 		return true;
 	case BST_UNCHECKED:
-		mask = true;
+		mask = TRUE;
 		return false;
 	case BST_INDETERMINATE:
 	default:
-		mask = false;
+		mask = FALSE;
 		return false;
 	}
 }
