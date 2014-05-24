@@ -21,20 +21,14 @@
 #include <windows.h>
 #include <HtmlHelp.h>
 #include <CommCtrl.h>
+#include <string.h>
 #include <tchar.h>
 #include <stdio.h>
+#include <math.h>
 #include <io.h>
 #include "resource.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
-#include <string>
-
-using namespace std;
-#ifdef _UNICODE
-typedef wstring tstring;
-#else
-typedef string tstring;
-#endif
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -52,20 +46,20 @@ typedef string tstring;
 
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
-bool *dirty;
+BOOL *dirty;
 HINSTANCE hinstance;
-bool msaa = false;
+BOOL msaa = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
 
 typedef struct
 {
-	tstring *regkey;
-	tstring *name;
+	LPTSTR regkey;
+	LPTSTR name;
 	HICON icon;
-	bool icon_shared;
-	bool dirty;
+	BOOL icon_shared;
+	BOOL dirty;
 	DXGLCFG cfg;
 	DXGLCFG mask;
 } app_setting;
@@ -76,16 +70,18 @@ app_setting *apps;
 int appcount;
 int maxapps;
 DWORD current_app;
-bool tristate;
+BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 
-DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
+DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
 {
-	bool installed = false;
-	bool dxgl_installdir = false;
-	bool old_dxgl = false;
-	tstring command;
-	if(copyfile)
+	BOOL installed = FALSE;
+	BOOL dxgl_installdir = FALSE;
+	BOOL old_dxgl = FALSE;
+	TCHAR command[MAX_PATH+32];
+	SHELLEXECUTEINFO shex;
+	DWORD exitcode;
+	if (copyfile)
 	{
 		DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
 		TCHAR installpath[MAX_PATH+1];
@@ -95,9 +91,9 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
 		if(error == ERROR_SUCCESS)
 		{
-			dxgl_installdir = true;
+			dxgl_installdir = TRUE;
 			error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
-			if(error == ERROR_SUCCESS) installed = true;
+			if(error == ERROR_SUCCESS) installed = TRUE;
 		}
 		if(hKeyInstall) RegCloseKey(hKeyInstall);
 		if(!installed)
@@ -121,7 +117,7 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 				HMODULE hmod = LoadLibrary(destpath);
 				if(hmod)
 				{
-					if(GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = true;
+					if(GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = TRUE;
 					FreeLibrary(hmod);
 				}
 				if(old_dxgl)
@@ -132,19 +128,17 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 			}
 			if((error == ERROR_ACCESS_DENIED) && !admin)
 			{
-				command.assign(_T(" install "));
-				command.append(path);
-				SHELLEXECUTEINFO shex;
+				_tcscpy(command,_T(" install "));
+				_tcscat(command,path);
 				ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
 				shex.cbSize = sizeof(SHELLEXECUTEINFO);
 				shex.lpVerb = _T("runas");
 				shex.fMask = SEE_MASK_NOCLOSEPROCESS;
 				_tcscat(installpath,_T("\\dxglcfg.exe"));
 				shex.lpFile = installpath;
-				shex.lpParameters = command.c_str();
+				shex.lpParameters = command;
 				ShellExecuteEx(&shex);
 				WaitForSingleObject(shex.hProcess,INFINITE);
-				DWORD exitcode;
 				GetExitCodeProcess(shex.hProcess,&exitcode);
 				return exitcode;
 			}
@@ -154,29 +148,32 @@ DWORD AddApp(LPCTSTR path, bool copyfile, bool admin)
 	return 0;
 }
 
-DWORD DelApp(LPCTSTR path, bool admin)
+DWORD DelApp(LPCTSTR path, BOOL admin)
 {
-	bool installed = false;
-	tstring command;
-	bool old_dxgl = true;
+	BOOL installed = FALSE;
+	TCHAR command[MAX_PATH + 32];
+	BOOL old_dxgl = TRUE;
 	DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
 	TCHAR installpath[MAX_PATH+1];
 	HKEY hKeyInstall;
-	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
+	HMODULE hmod;
+	SHELLEXECUTEINFO shex;
+	DWORD exitcode;
+	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if(error == ERROR_SUCCESS)
 	{
 		error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
-		if(error == ERROR_SUCCESS) installed = true;
+		if(error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if(hKeyInstall) RegCloseKey(hKeyInstall);
 	if(!installed)
 	{
 		GetModuleFileName(NULL,installpath,MAX_PATH+1);
 	}
-	HMODULE hmod = LoadLibrary(path);
+	hmod = LoadLibrary(path);
 	if(hmod)
 	{
-		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = false;
+		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = FALSE;
 		FreeLibrary(hmod);
 	}
 	if(!old_dxgl) return 0;
@@ -186,19 +183,17 @@ DWORD DelApp(LPCTSTR path, bool admin)
 		if(error == ERROR_FILE_NOT_FOUND) return 0;
 		if((error == ERROR_ACCESS_DENIED) && !admin)
 		{
-			command.assign(_T(" remove "));
-			command.append(path);
-			SHELLEXECUTEINFO shex;
+			_tcscpy(command,_T(" remove "));
+			_tcscat(command,path);
 			ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
 			shex.cbSize = sizeof(SHELLEXECUTEINFO);
 			shex.lpVerb = _T("runas");
 			shex.fMask = SEE_MASK_NOCLOSEPROCESS;
 			_tcscat(installpath,_T("\\dxglcfg.exe"));
 			shex.lpFile = installpath;
-			shex.lpParameters = command.c_str();
+			shex.lpParameters = command;
 			ShellExecuteEx(&shex);
 			WaitForSingleObject(shex.hProcess,INFINITE);
-			DWORD exitcode;
 			GetExitCodeProcess(shex.hProcess,&exitcode);
 			return exitcode;
 		}
@@ -209,10 +204,11 @@ DWORD DelApp(LPCTSTR path, bool admin)
 
 void SaveChanges(HWND hWnd)
 {
+	int i;
 	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg);
-	for(int i = 1; i < appcount; i++)
+	for(i = 1; i < appcount; i++)
 	{
-		if(apps[i].dirty) SetConfig(&apps[i].cfg,&apps[i].mask,apps[i].regkey->c_str());
+		if(apps[i].dirty) SetConfig(&apps[i].cfg,&apps[i].mask,apps[i].regkey);
 	}
 	EnableWindow(GetDlgItem(hWnd,IDC_APPLY),FALSE);
 }
@@ -221,7 +217,9 @@ void FloatToAspect(float f, LPTSTR aspect)
 {
 	float integer;
 	float dummy;
+	float fract;
 	TCHAR denominator[5];
+	int i;
 	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
 	{
 		_tcscpy(aspect, _T("1000:1"));
@@ -233,32 +231,32 @@ void FloatToAspect(float f, LPTSTR aspect)
 		return;
 	}
 	// Handle common aspects
-	if (abs(f - 1.25f) < 0.0001f)
+	if (fabsf(f - 1.25f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("5:4"));
 		return;
 	}
-	if (abs(f - 1.3333333f) < 0.0001f)
+	if (fabsf(f - 1.3333333f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("4:3"));
 		return;
 	}
-	if (abs(f - 1.6f) < 0.0001f)
+	if (fabsf(f - 1.6f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("16:10"));
 		return;
 	}
-	if (abs(f - 1.7777777) < 0.0001f)
+	if (fabsf(f - 1.7777777) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("16:9"));
 		return;
 	}
-	if (abs(f - 1.9333333) < 0.0001f)
+	if (fabsf(f - 1.9333333) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("256:135"));
 		return;
 	}
-	float fract = modf(f, &integer);
+	fract = modff(f, &integer);
 	if (fract < 0.0001f)  //Handle integer aspects
 	{
 		_itot((int)integer, aspect, 10);
@@ -266,9 +264,9 @@ void FloatToAspect(float f, LPTSTR aspect)
 		return;
 	}
 	// Finally try from 2 to 1000
-	for (int i = 2; i < 1000; i++)
+	for (i = 2; i < 1000; i++)
 	{
-		if (abs(modf(fract*i, &dummy)) < 0.0001f)
+		if (fabsf(modff(fract*i, &dummy)) < 0.0001f)
 		{
 			_itot((f*i) + .5f, aspect, 10);
 			_itot(i, denominator, 10);
@@ -278,10 +276,15 @@ void FloatToAspect(float f, LPTSTR aspect)
 		}
 	}
 	// Cannot find a reasonable fractional aspect, so display as decimal.
-	_stprintf(aspect, _T("%.6f"), f);
+#ifdef _UNICODE
+	swprintf(aspect, 31, L"%.6f", f);
+#else
+	sprintf(aspect,"%.6f", f);
+#endif
+
 }
 
-void SetCheck(HWND hWnd, int DlgItem, BOOL value, BOOL mask, bool tristate)
+void SetCheck(HWND hWnd, int DlgItem, BOOL value, BOOL mask, BOOL tristate)
 {
 	if(tristate && !mask)
 		SendDlgItemMessage(hWnd,DlgItem,BM_SETCHECK,BST_INDETERMINATE,0);
@@ -292,7 +295,7 @@ void SetCheck(HWND hWnd, int DlgItem, BOOL value, BOOL mask, bool tristate)
 	}
 }
 
-void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, bool tristate)
+void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
 {
 	if(tristate && !mask)
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,
@@ -301,7 +304,7 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, bool tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
 }
 
-void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, bool tristate)
+void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, BOOL tristate)
 {
 	TCHAR buffer[32];
 	if (tristate && !mask)
@@ -317,47 +320,47 @@ void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, bool trista
 
 }
 
-void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, bool tristate)
+void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, BOOL tristate)
 {
 	if(tristate && (mask[0] == 0))
 		SetWindowText(GetDlgItem(hWnd,DlgItem),_T(""));
 	else SetWindowText(GetDlgItem(hWnd,DlgItem),value);
 }
 
-bool GetCheck(HWND hWnd, int DlgItem, BOOL &mask)
+BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 {
 	int check = SendDlgItemMessage(hWnd,DlgItem,BM_GETCHECK,0,0);
 	switch(check)
 	{
 	case BST_CHECKED:
-		mask = TRUE;
-		return true;
+		*mask = TRUE;
+		return TRUE;
 	case BST_UNCHECKED:
-		mask = TRUE;
-		return false;
+		*mask = TRUE;
+		return FALSE;
 	case BST_INDETERMINATE:
 	default:
-		mask = FALSE;
-		return false;
+		*mask = FALSE;
+		return FALSE;
 	}
 }
 
-DWORD GetCombo(HWND hWnd, int DlgItem, DWORD &mask)
+DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 {
 	int value = SendDlgItemMessage(hWnd,DlgItem,CB_GETCURSEL,0,0);
 	if(value == SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault))
 	{
-		mask = 0;
+		*mask = 0;
 		return 0;
 	}
 	else
 	{
-		mask = 1;
+		*mask = 1;
 		return value;
 	}
 }
 
-float GetAspectCombo(HWND hWnd, int DlgItem, float &mask)
+float GetAspectCombo(HWND hWnd, int DlgItem, float *mask)
 {
 	TCHAR buffer[32];
 	TCHAR *ptr;
@@ -365,12 +368,12 @@ float GetAspectCombo(HWND hWnd, int DlgItem, float &mask)
 	GetDlgItemText(hWnd, DlgItem, buffer, 31);
 	if (!_tcscmp(buffer, strdefault))
 	{
-		mask = 0.0f;
+		*mask = 0.0f;
 		return 0;
 	}
 	else
 	{
-		mask = 1.0f;
+		*mask = 1.0f;
 		if (!_tcscmp(buffer, _T("Default"))) return 0.0f;
 		else
 		{
@@ -436,8 +439,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	DWORD buffersize;
 	LONG error;
 	TCHAR buffer[64];
-	tstring subkey;
-	tstring path;
+	TCHAR subkey[MAX_PATH];
+	LPTSTR path;
 	SHFILEINFO fileinfo;
 	DWORD verinfosize;
 	LPTSTR outbuffer;
@@ -446,31 +449,39 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	WORD translation[2];
 	DWORD cursel;
 	DRAWITEMSTRUCT* drawitem = (DRAWITEMSTRUCT*)lParam;
-	bool hasname;
+	BOOL hasname;
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
 	HANDLE token = NULL;
 	TOKEN_ELEVATION elevation;
 	HWND hGLWnd;
-	switch(Msg)
+	OPENFILENAME filename;
+	TCHAR selectedfile[MAX_PATH + 1];
+	LPTSTR regpath;
+	LPTSTR regkey;
+	BOOL failed;
+	switch (Msg)
 	{
 	case WM_INITDIALOG:
-		tristate = false;
+		tristate = FALSE;
 		maxapps = 128;
 		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));
-		apps[0].name = new tstring(_T("Global"));
-		apps[0].regkey = new tstring(_T("Global"));
-		GetGlobalConfig(&apps[0].cfg, false);
+		apps[0].name = (TCHAR*)malloc(7 * sizeof(TCHAR));
+		_tcscpy(apps[0].name,_T("Global"));
+		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
+		_tcscpy(apps[0].regkey,_T("Global"));
+		GetGlobalConfig(&apps[0].cfg, FALSE);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
 		dirty = &apps[0].dirty;
 		memset(&apps[0].mask,0xff,sizeof(DXGLCFG));
-		apps[0].dirty = false;
+		apps[0].dirty = FALSE;
 		apps[0].icon = LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_STAR));
-		apps[0].icon_shared = true;
+		apps[0].icon_shared = TRUE;
 		SetClassLong(hWnd,GCL_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
 		SetClassLong(hWnd,GCL_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
 		// create temporary gl context to get AA and AF settings.
+		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&mode);
 		pfd.cColorBits = (BYTE)mode.dmBitsPerPel;
 		hGLWnd = CreateWindow(_T("STATIC"),NULL,WS_CHILD,0,0,16,16,hWnd,NULL,NULL,NULL);
@@ -493,7 +504,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(maxcoverage) for(i = 0; i < maxcoverage; i++)
 				{
 					msaamodes[i] = coveragemodes[2*i]+(4096*coveragemodes[(2*i)+1]);
-					msaa = true;
+					msaa = TRUE;
 				}
 			}
 		}
@@ -683,7 +694,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
 		// shader path
-		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,false);
+		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
 		// texture format
 		_tcscpy(buffer,_T("Automatic"));
 		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -722,9 +733,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				maxapps += 128;
 				apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
 			}
-			if(!_tcscmp(keyname,_T("DXGLTestApp"))) subkey = _T("dxgltest.exe-0");
-			else subkey = keyname;
-			if(subkey.rfind(_T("-")) != string::npos) subkey.resize(subkey.rfind(_T("-")));
+			if(!_tcscmp(keyname,_T("DXGLTestApp"))) _tcscpy(subkey,_T("dxgltest.exe-0"));
+			else _tcscpy(subkey,keyname);
+			if (_tcsrchr(subkey, _T('-'))) *(_tcsrchr(subkey, _T('-'))) = 0;
 			error = RegOpenKeyEx(hKeyBase,keyname,0,KEY_READ,&hKey);
 			buffersize = regbuffersize;
 			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
@@ -737,64 +748,79 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			regbuffer[0] = regbuffer[1] = 0;
 			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
 			regbufferpos = 0;
-			apps[appcount-1].regkey = new tstring(keyname);
+			apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(keyname) + 1)*sizeof(TCHAR));
+			_tcscpy(apps[appcount - 1].regkey, keyname);
 			GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,keyname);
-			apps[appcount-1].dirty = false;
+			apps[appcount-1].dirty = FALSE;
 			while(1)
 			{
 				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
 				{
 					// Default icon
 					apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
-					apps[appcount-1].icon_shared = true;
-					apps[appcount-1].name = new tstring(subkey);
+					apps[appcount-1].icon_shared = TRUE;
+					apps[appcount-1].name = (TCHAR*)malloc((_tcslen(subkey)+1)*sizeof(TCHAR));
+					_tcscpy(apps[appcount-1].name,subkey);
 					break;
 				}
-				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+subkey;
-				if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+				path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
+					_tcslen(subkey) + 2))*sizeof(TCHAR));
+				_tcscpy(path, (LPTSTR)regbuffer + regbufferpos);
+				_tcscat(path, _T("\\"));
+				_tcscat(path, subkey);
+				if(GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
 				{
 					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+					free(path);
 					continue;
 				}
 				// Get exe attributes
-				error = SHGetFileInfo(path.c_str(),0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
+				error = SHGetFileInfo(path,0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
 				apps[appcount-1].icon = fileinfo.hIcon;
-				apps[appcount-1].icon_shared = false;
-				verinfosize = GetFileVersionInfoSize(path.c_str(),NULL);
+				apps[appcount-1].icon_shared = FALSE;
+				verinfosize = GetFileVersionInfoSize(path,NULL);
 				verinfo = malloc(verinfosize);
-				hasname = false;
-				if(GetFileVersionInfo(path.c_str(),0,verinfosize,verinfo))
+				hasname = FALSE;
+				if(GetFileVersionInfo(path,0,verinfosize,verinfo))
 				{
 					if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
 					{
 						memcpy(translation,outbuffer,4);
-						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
+						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\"),translation[0],translation[1]);
 						if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 						{
-							hasname = true;
-							apps[appcount-1].name = new tstring(outbuffer);
+							hasname = TRUE;
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+							_tcscpy(apps[appcount - 1].name, outbuffer);
 						}
 						else
 						{
 							_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
 							if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 							{
-								hasname = true;
-								apps[appcount-1].name = new tstring(outbuffer);
+								hasname = TRUE;
+								apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+								_tcscpy(apps[appcount - 1].name, outbuffer);
 							}
 							else
 							{
 								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
 								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 								{
-									hasname = true;
-									apps[appcount-1].name = new tstring(outbuffer);
+									hasname = TRUE;
+									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+									_tcscpy(apps[appcount - 1].name, outbuffer);
 								}
 							}
 						}
 					}
 				}
-				if(!hasname) apps[appcount-1].name = new tstring(subkey);
+				free(path);
+				if (!hasname)
+				{
+					apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(subkey) + 1)*sizeof(TCHAR));
+					_tcscpy(apps[appcount - 1].name, subkey);
+				}
 				free(verinfo);
 				break;
 			}
@@ -804,7 +830,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		free(keyname);
 		for(i = 0; i < appcount; i++)
 		{
-			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name->c_str());
+			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name);
 		}
 		current_app = 0;
 		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,0);
@@ -827,7 +853,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd, IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
-		return true;
+		return TRUE;
 	case WM_MEASUREITEM:
 		switch(wParam)
 		{
@@ -855,8 +881,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
 				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
 			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
-			DrawText(drawitem->hDC,apps[drawitem->itemID].name->c_str(),
-				apps[drawitem->itemID].name->length(),&drawitem->rcItem,
+			DrawText(drawitem->hDC,apps[drawitem->itemID].name,
+				_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
 			SetTextColor(drawitem->hDC,OldTextColor);
 			SetBkColor(drawitem->hDC,OldBackColor);
@@ -868,13 +894,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		break;
 	case WM_HELP:
 		HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
-		return true;
+		return TRUE;
 		break;
 	case WM_SYSCOMMAND:
 		if(LOWORD(wParam) == SC_CONTEXTHELP)
 		{
 			HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
-			return true;
+			return TRUE;
 		}
 		break;
 	case WM_COMMAND:
@@ -883,13 +909,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDOK:
 			SaveChanges(hWnd);
 			EndDialog(hWnd,IDOK);
-			return true;
+			return TRUE;
 		case IDCANCEL:
 			EndDialog(hWnd,IDCANCEL);
-			return true;
+			return TRUE;
 		case IDC_APPLY:
 			SaveChanges(hWnd);
-			return true;
+			return TRUE;
 		case IDC_APPS:
 			if(HIWORD(wParam) == LBN_SELCHANGE)
 			{
@@ -901,14 +927,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				dirty = &apps[current_app].dirty;
 				if(current_app)
 				{
-					if(!_tcscmp(apps[current_app].regkey->c_str(),_T("DXGLTestApp"))) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),false);
-					else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),true);
+					if(!_tcscmp(apps[current_app].regkey,_T("DXGLTestApp"))) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),FALSE);
+					else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),TRUE);
 				}
-				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),false);
+				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),FALSE);
 				// Set 3-state status
 				if(current_app && !tristate)
 				{
-					tristate = true;
+					tristate = TRUE;
 					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
@@ -928,7 +954,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				else if(!current_app && tristate)
 				{
-					tristate = false;
+					tristate = FALSE;
 					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_DELETESTRING,
@@ -978,106 +1004,104 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
 		case IDC_VIDMODE:
-			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,cfgmask->scaler);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,&cfgmask->scaler);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_SORTMODES:
-			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,cfgmask->SortModes);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,&cfgmask->SortModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_SCALE:
-			cfg->scalingfilter = GetCombo(hWnd,IDC_SCALE,cfgmask->scalingfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->scalingfilter = GetCombo(hWnd,IDC_SCALE,&cfgmask->scalingfilter);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_VSYNC:
-			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,cfgmask->vsync);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,&cfgmask->vsync);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_MSAA:
-			cfg->msaa = GetCombo(hWnd,IDC_MSAA,cfgmask->msaa);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->msaa = GetCombo(hWnd,IDC_MSAA,&cfgmask->msaa);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_ANISO:
-			cfg->anisotropic = GetCombo(hWnd,IDC_ANISO,cfgmask->anisotropic);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->anisotropic = GetCombo(hWnd,IDC_ANISO,&cfgmask->anisotropic);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_TEXFILTER:
-			cfg->texfilter = GetCombo(hWnd,IDC_TEXFILTER,cfgmask->texfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->texfilter = GetCombo(hWnd,IDC_TEXFILTER,&cfgmask->texfilter);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_ASPECT3D:
-			cfg->aspect3d = GetCombo(hWnd,IDC_ASPECT3D,cfgmask->aspect3d);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->aspect3d = GetCombo(hWnd,IDC_ASPECT3D,&cfgmask->aspect3d);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_COLOR:
-			cfg->colormode = GetCheck(hWnd,IDC_COLOR,cfgmask->colormode);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->colormode = GetCheck(hWnd,IDC_COLOR,&cfgmask->colormode);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_HIGHRES:
-			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,cfgmask->highres);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->highres);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_UNCOMMONCOLOR:
-			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,cfgmask->AllColorDepths);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,&cfgmask->AllColorDepths);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_EXTRAMODES:
-			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,cfgmask->ExtraModes);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,&cfgmask->ExtraModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_TEXTUREFORMAT:
-			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,cfgmask->TextureFormat);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,&cfgmask->TextureFormat);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_TEXUPLOAD:
-			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,cfgmask->TexUpload);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-			*dirty = true;
+			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,&cfgmask->TexUpload);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_DPISCALE:
-			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,cfgmask->DPIScale);
-			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
-			*dirty = true;
+			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,&cfgmask->DPIScale);
+			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
+			*dirty = TRUE;
 			break;
 		case IDC_SHADER:
 			if(HIWORD(wParam) == EN_CHANGE)
 			{
 				GetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile);
-				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),true);
-				*dirty = true;
+				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+				*dirty = TRUE;
 			}
 			break;
 		case IDC_ASPECT:
 			if (HIWORD(wParam) == CBN_KILLFOCUS)
 			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, cfgmask->aspect);
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
-				*dirty = true;
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
+				*dirty = TRUE;
 			}
 			else if (HIWORD(wParam) == CBN_SELCHANGE)
 			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, cfgmask->aspect);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), true);
-				*dirty = true;
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
+				*dirty = TRUE;
 			}
 			break;
 		case IDC_ADD:
-			OPENFILENAME filename;
-			TCHAR selectedfile[MAX_PATH+1];
 			selectedfile[0] = 0;
 			ZeroMemory(&filename,OPENFILENAME_SIZE_VERSION_400);
 			filename.lStructSize = OPENFILENAME_SIZE_VERSION_400;
@@ -1090,51 +1114,61 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			filename.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
 			if(GetOpenFileName(&filename))
 			{
-				DWORD err = AddApp(filename.lpstrFile,true,false);
+				DWORD err = AddApp(filename.lpstrFile,TRUE,FALSE);
 				if(!err)
 				{
-					tstring newkey = MakeNewConfig(filename.lpstrFile);
-					tstring newkey2 = _T("Software\\DXGL\\") + newkey;
+					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
+					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 15)*sizeof(TCHAR));
+					_tcscpy(newkey2, _T("Software\\DXGL\\"));
+					_tcscat(newkey2,newkey);
 					appcount++;
 					if(appcount > maxapps)
 					{
 						maxapps += 128;
 						apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
 					}
-					RegOpenKeyEx(HKEY_CURRENT_USER,newkey2.c_str(),0,KEY_READ,&hKey);
+					RegOpenKeyEx(HKEY_CURRENT_USER,newkey2,0,KEY_READ,&hKey);
 					RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
 					regbuffer = (LPTSTR)malloc(buffersize);
 					regbuffer[0] = regbuffer[1] = 0;
 					error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
 					regbufferpos = 0;
-					apps[appcount-1].regkey = new tstring(newkey);
-					GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,newkey.c_str());
-					apps[appcount-1].dirty = false;
+					apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
+					_tcscpy(apps[appcount - 1].regkey, newkey);
+					GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,newkey);
+					apps[appcount-1].dirty = FALSE;
+					free(newkey2);
 					while(1)
 					{
 						if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
 						{
 							// Default icon
 							apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
-							apps[appcount-1].icon_shared = true;
-							apps[appcount-1].name = new tstring(newkey);
+							apps[appcount-1].icon_shared = TRUE;
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
+							_tcscpy(apps[appcount - 1].name, newkey);
 							break;
 						}
-						if(newkey.rfind(_T("-")) != string::npos) newkey.resize(newkey.rfind(_T("-")));
-						path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\"))+newkey;
-						if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+						if (_tcsrchr(newkey, _T('-'))) *(_tcsrchr(newkey, _T('-'))) = 0;
+						path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
+							_tcslen(newkey) + 2))*sizeof(TCHAR));
+						_tcscpy(path, (LPTSTR)regbuffer + regbufferpos);
+						_tcscat(path, _T("\\"));
+						_tcscat(path, newkey);
+						if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
 						{
 							regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+							free(path);
 							continue;
 						}
 						// Get exe attributes
-						error = SHGetFileInfo(path.c_str(),0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
+						error = SHGetFileInfo(path,0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
 						apps[appcount-1].icon = fileinfo.hIcon;
-						apps[appcount-1].icon_shared = false;
-						verinfosize = GetFileVersionInfoSize(path.c_str(),NULL);
+						apps[appcount-1].icon_shared = FALSE;
+						verinfosize = GetFileVersionInfoSize(path,NULL);
 						verinfo = malloc(verinfosize);
-						hasname = false;
-						if(GetFileVersionInfo(path.c_str(),0,verinfosize,verinfo))
+						hasname = FALSE;
+						if(GetFileVersionInfo(path,0,verinfosize,verinfo))
 						{
 							if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
 							{
@@ -1142,34 +1176,42 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
 								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 								{
-									hasname = true;
-									apps[appcount-1].name = new tstring(outbuffer);
+									hasname = TRUE;
+									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+									_tcscpy(apps[appcount - 1].name, outbuffer);
 								}
 								else
 								{
 									_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
 									if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 									{
-										hasname = true;
-										apps[appcount-1].name = new tstring(outbuffer);
+										hasname = TRUE;
+										apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+										_tcscpy(apps[appcount - 1].name, outbuffer);
 									}
 									else
 									{
 										_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
 										if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 										{
-											hasname = true;
-											apps[appcount-1].name = new tstring(outbuffer);
+											hasname = TRUE;
+											apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+											_tcscpy(apps[appcount - 1].name, outbuffer);
 										}
 									}
 								}
 							}
 						}
-						if(!hasname) apps[appcount-1].name = new tstring(newkey);
+						if (!hasname)
+						{
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
+							_tcscpy(apps[appcount - 1].name, newkey);
+						}
 						free(verinfo);
+						free(path);
 						break;
 					}
-					SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[appcount-1].name->c_str());
+					SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[appcount-1].name);
 					RegCloseKey(hKey);
 					free(regbuffer);
 				}
@@ -1178,38 +1220,45 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_REMOVE:
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
-				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return false;
-			tstring regpath = _T("Software\\DXGL\\");
-			tstring regkey = *apps[current_app].regkey;
-			regpath.append(*apps[current_app].regkey);
-			RegOpenKeyEx(HKEY_CURRENT_USER,regpath.c_str(),0,KEY_READ,&hKey);
+				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return FALSE;
+			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 15)*sizeof(TCHAR));
+			_tcscpy(regpath, _T("Software\\DXGL\\"));
+			_tcscat(regpath, apps[current_app].regkey);
+			regkey = (LPTSTR)malloc(_tcslen(apps[current_app].regkey));
+			_tcscpy(regkey, apps[current_app].regkey);
+			RegOpenKeyEx(HKEY_CURRENT_USER,regpath,0,KEY_READ,&hKey);
 			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
 			regbuffer = (LPTSTR)malloc(buffersize);
 			regbuffer[0] = regbuffer[1] = 0;
 			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
 			regbufferpos = 0;
-			bool failed = false;
+			failed = FALSE;
 			while(1)
 			{
 				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS) break;
-				if(regkey.rfind(_T("-")) != string::npos) regkey.resize(regkey.rfind(_T("-")));
-				path = tstring(((LPTSTR)regbuffer+regbufferpos))+tstring(_T("\\ddraw.dll"));
-				if(GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+				if (_tcsrchr(regkey, _T('-'))) *(_tcsrchr(regkey, _T('-'))) = 0;
+				path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
+					12))*sizeof(TCHAR));
+				_tcscpy(path, regbuffer + regbufferpos);
+				_tcscat(path, _T("\\ddraw.dll"));
+				if(GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
 				{
 					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+					free(path);
 					continue;
 				}
-				if(DelApp(path.c_str(),false)) failed = true;
+				if(DelApp(path,FALSE)) failed = TRUE;
 				regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
+				free(path);
 			}
 			RegCloseKey(hKey);
 			if(!failed)
 			{
-				RegDeleteKey(HKEY_CURRENT_USER,regpath.c_str());
+				RegDeleteKey(HKEY_CURRENT_USER,regpath);
 				if(!apps[current_app].icon_shared) DeleteObject(apps[current_app].icon);
-				if(apps[current_app].name) delete apps[current_app].name;
-				if(apps[current_app].regkey) delete apps[current_app].regkey;
-				for(int i = current_app; i < appcount; i++)
+				if(apps[current_app].name) free(apps[current_app].name);
+				if(apps[current_app].regkey) free(apps[current_app].regkey);
+				for(i = current_app; i < appcount; i++)
 				{
 					apps[i] = apps[i+1];
 				}
@@ -1220,34 +1269,35 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		break;
 	}
-	return false;
+	return FALSE;
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
+	INITCOMMONCONTROLSEX icc;
+	HMODULE comctl32;
+	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	CoInitialize(NULL);
-	INITCOMMONCONTROLSEX icc;
 	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
 	{
-		return AddApp(lpCmdLine+8,true,true);
+		return AddApp(lpCmdLine+8,TRUE,TRUE);
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("remove "),7))
 	{
-		return DelApp(lpCmdLine+7,true);
+		return DelApp(lpCmdLine+7,TRUE);
 	}
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
-	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
-	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls) =
-		(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
+	comctl32 = LoadLibrary(_T("comctl32.dll"));
+	iccex = (BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
 	hinstance = hInstance;
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
-	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,reinterpret_cast<DLGPROC>(DXGLCfgCallback));
+	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
 	return 0;
 }

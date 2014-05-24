@@ -185,7 +185,7 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dxglcfg.cpp" />
+    <ClCompile Include="dxglcfg.c" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="xp.manifest" />
