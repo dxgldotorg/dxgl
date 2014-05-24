@@ -18,6 +18,9 @@
 #define _WIN32_WINNT 0x0600
 #define _WIN32_IE 0x0300
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 #include <windows.h>
 #include <HtmlHelp.h>
 #include <CommCtrl.h>
@@ -786,7 +789,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
 					{
 						memcpy(translation,outbuffer,4);
-						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\"),translation[0],translation[1]);
+						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
 						if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
 						{
 							hasname = TRUE;
@@ -1299,5 +1302,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
 	return 0;
 }
