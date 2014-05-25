@@ -607,6 +607,8 @@ HRESULT WINAPI glDirectDrawSurface7::AddOverlayDirtyRect(LPRECT lpRect)
 }
 HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
+	HRESULT error;
+	RECT tmprect;
 	TRACE_ENTER(6,14,this,26,lpDestRect,14,lpDDSrcSurface,26,lpSrcRect,9,dwFlags,14,lpDDBltFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -626,7 +628,18 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		src->dirty &= ~1;
 	}
-	TRACE_RET(HRESULT,23,ddInterface->renderer->Blt(lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx));
+	if (this == src)
+	{
+		tmprect.left = tmprect.top = 0;
+		tmprect.right = lpSrcRect->right - lpSrcRect->left;
+		tmprect.bottom = lpSrcRect->bottom - lpSrcRect->top;
+		error = ddInterface->SetupTempSurface(tmprect.right, tmprect.bottom);
+		if (error) TRACE_RET(HRESULT, 23, error);
+		error = ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
+		if (error) TRACE_RET(HRESULT, 23, error);
+		TRACE_RET(HRESULT,23,this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx));
+	}
+	else TRACE_RET(HRESULT,23,ddInterface->renderer->Blt(lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx));
 }
 HRESULT WINAPI glDirectDrawSurface7::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {

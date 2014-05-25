@@ -19,6 +19,8 @@
 #ifndef _GLDIRECTDRAW_H
 #define _GLDIRECTDRAW_H
 
+#define DXGLBLT_NOPALSHADER 0x80000000
+
 class glDirectDrawSurface7;
 class glDirectDrawClipper;
 class glDirect3D7;
@@ -70,7 +72,7 @@ public:
     HRESULT WINAPI EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTimeout);
 
     // internal functions
-	HRESULT CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter);
+	HRESULT CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface);
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
@@ -82,6 +84,8 @@ public:
 	bool GetFullscreen(){return fullscreen;};
 	void DeleteSurface(glDirectDrawSurface7 *surface);
 	void DeleteClipper(glDirectDrawClipper *clipper);
+	HRESULT SetupTempSurface(DWORD width, DWORD height);
+	void DeleteTempSurface();
 	glDirectDrawSurface7 *primary;
 	bool primarylost;
 	bool lastsync;
@@ -90,6 +94,7 @@ public:
 	glDirectDraw4 *glDD4;
 	DDDEVICEIDENTIFIER2 devid;
 	glRenderer *renderer;
+	glDirectDrawSurface7 *tmpsurface;
 private:
 	HRESULT error;
 	ULONG refcount;
