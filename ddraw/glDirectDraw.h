@@ -22,7 +22,7 @@
 #define DXGLBLT_NOPALSHADER 0x80000000
 
 class glDirectDrawSurface7;
-class glDirectDrawClipper;
+struct glDirectDrawClipper;
 class glDirect3D7;
 class glRenderer;
 

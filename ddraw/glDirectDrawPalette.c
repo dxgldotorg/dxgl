@@ -204,9 +204,9 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 {
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
-	newpal = (glDirectDrawPalette*)malloc(sizeof(glDirectDrawPalette));
 	if (!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if (!newpal) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+	newpal = (glDirectDrawPalette*)malloc(sizeof(glDirectDrawPalette));
+	if (!newpal) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	ZeroMemory(newpal, sizeof(glDirectDrawPalette));
 	newpal->refcount = 1;
 	newpal->flags = dwFlags;

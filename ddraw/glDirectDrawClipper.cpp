@@ -21,124 +21,153 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 
-glDirectDrawClipper::glDirectDrawClipper()
+glDirectDrawClipperVtbl glDirectDrawClipper_iface =
 {
-	TRACE_ENTER(1,14,this);
-	initialized = false;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
+	glDirectDrawClipper_QueryInterface,
+	glDirectDrawClipper_AddRef,
+	glDirectDrawClipper_Release,
+	glDirectDrawClipper_GetClipList,
+	glDirectDrawClipper_GetHWnd,
+	glDirectDrawClipper_Initialize,
+	glDirectDrawClipper_IsClipListChanged,
+	glDirectDrawClipper_SetClipList,
+	glDirectDrawClipper_SetHWnd
+};
+
+HRESULT glDirectDrawClipper_CreateNoInit(LPDIRECTDRAWCLIPPER *lplpDDClipper)
+{
+	glDirectDrawClipper *newclipper;
+	TRACE_ENTER(1, 14, lplpDDClipper);
+	if (!lplpDDClipper) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	newclipper = (glDirectDrawClipper*)malloc(sizeof(glDirectDrawClipper));
+	if (!newclipper) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	ZeroMemory(newclipper, sizeof(glDirectDrawClipper));
+	newclipper->refcount = 1;
+	newclipper->initialized = false;
+	newclipper->lpVtbl = &glDirectDrawClipper_iface;
+	if (lplpDDClipper) *lplpDDClipper = (LPDIRECTDRAWCLIPPER)newclipper;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;	
 }
 
-glDirectDrawClipper::glDirectDrawClipper(DWORD dwFlags, glDirectDraw7 *parent)
+HRESULT glDirectDrawClipper_Create(DWORD dwFlags, glDirectDraw7 *parent, LPDIRECTDRAWCLIPPER *lplpDDClipper)
 {
-	TRACE_ENTER(3,14,this,9,dwFlags,14,parent);
-	initialized = false;
-	refcount = 1;
-	Initialize((LPDIRECTDRAW)parent,dwFlags);
-	TRACE_EXIT(-1,0);
+	glDirectDrawClipper *newclipper;
+	TRACE_ENTER(3, 9, dwFlags, 14, parent, 14, lplpDDClipper);
+	if (!lplpDDClipper) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	newclipper = (glDirectDrawClipper*)malloc(sizeof(glDirectDrawClipper));
+	if (!newclipper) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	ZeroMemory(newclipper, sizeof(glDirectDrawClipper));
+	newclipper->refcount = 1;
+	newclipper->initialized = false;
+	newclipper->lpVtbl = &glDirectDrawClipper_iface;
+	glDirectDrawClipper_Initialize(newclipper, (LPDIRECTDRAW)parent, dwFlags);
+	if (lplpDDClipper) *lplpDDClipper = (LPDIRECTDRAWCLIPPER)newclipper;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
-glDirectDrawClipper::~glDirectDrawClipper()
+
+HRESULT WINAPI glDirectDrawClipper_QueryInterface(glDirectDrawClipper *This, REFIID riid, LPVOID* obp)
 {
-	TRACE_ENTER(1,14,this);
-	if (cliplist) free(cliplist);
-	if (vertices) free(vertices);
-	if (indices) free(indices);
-	if(glDD7) glDD7->DeleteClipper(this);
-	TRACE_EXIT(-1,0);
-}
-HRESULT WINAPI glDirectDrawClipper::QueryInterface(REFIID riid, LPVOID* obp)
-{
-	TRACE_ENTER(3,14,this,24,&riid,14,obp);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,24,&riid,14,obp);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!obp) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
-		this->AddRef();
-		*obp = this;
+		glDirectDrawClipper_AddRef(This);
+		*obp = This;
 		TRACE_VAR("*obp",14,*obp);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawClipper)
 	{
-		*obp = this;
-		this->AddRef();
-		TRACE_VAR("*obp",14,*obp);
+		*obp = This;
+		glDirectDrawClipper_AddRef(This);
+		TRACE_VAR("*obp", 14, *obp);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
-ULONG WINAPI glDirectDrawClipper::AddRef()
+ULONG WINAPI glDirectDrawClipper_AddRef(glDirectDrawClipper *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	This->refcount++;
+	TRACE_EXIT(8,This->refcount);
+	return This->refcount;
 }
-ULONG WINAPI glDirectDrawClipper::Release()
+ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
+	This->refcount--;
+	ret = This->refcount;
+	if (This->refcount == 0)
+	{
+		if (This->cliplist) free(This->cliplist);
+		if (This->vertices) free(This->vertices);
+		if (This->indices) free(This->indices);
+		if (This->glDD7) This->glDD7->DeleteClipper(This);
+		free(This);
+	};
 	TRACE_EXIT(8,ret);
 	return ret;
 }
-HRESULT WINAPI glDirectDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
+HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
-	TRACE_ENTER(4,14,this,26,lpRect,14,lpClipList,14,lpdwSize);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,26,lpRect,14,lpClipList,14,lpdwSize);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDrawClipper::GetClipList: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
-HRESULT WINAPI glDirectDrawClipper::GetHWnd(HWND FAR *lphWnd)
+HRESULT WINAPI glDirectDrawClipper_GetHWnd(glDirectDrawClipper *This, HWND FAR *lphWnd)
 {
-	TRACE_ENTER(2,14,this,14,lphWnd);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!hWnd) TRACE_RET(HRESULT,23,DDERR_NOHWND);
-	*lphWnd = hWnd;
+	TRACE_ENTER(2,14,This,14,lphWnd);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!This->hWnd) TRACE_RET(HRESULT,23,DDERR_NOHWND);
+	*lphWnd = This->hWnd;
 	TRACE_VAR("*lphWnd",13,*lphWnd);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
-HRESULT WINAPI glDirectDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags)
+HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIRECTDRAW lpDD, DWORD dwFlags)
 {
-	TRACE_ENTER(3,14,this,14,lpDD,9,dwFlags);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
-	glDD7 = (glDirectDraw7*)lpDD;
-	if(glDD7) hasparent = true;
-	else hasparent = false;
-	hWnd = NULL;
-	cliplist = NULL;
-	vertices = NULL;
-	indices = NULL;
-	hascliplist = false;
-	maxsize = clipsize = 0;
-	refcount = 1;
-	initialized = true;
+	TRACE_ENTER(3,14,This,14,lpDD,9,dwFlags);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(This->initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
+	This->glDD7 = (glDirectDraw7*)lpDD;
+	if(This->glDD7) This->hasparent = true;
+	else This->hasparent = false;
+	This->hWnd = NULL;
+	This->cliplist = NULL;
+	This->vertices = NULL;
+	This->indices = NULL;
+	This->hascliplist = false;
+	This->maxsize = This->clipsize = 0;
+	This->refcount = 1;
+	This->initialized = true;
+	This->dirty = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
-HRESULT WINAPI glDirectDrawClipper::IsClipListChanged(BOOL FAR *lpbChanged)
+HRESULT WINAPI glDirectDrawClipper_IsClipListChanged(glDirectDrawClipper *This, BOOL FAR *lpbChanged)
 {
-	TRACE_ENTER(2,14,this,14,lpbChanged);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpbChanged);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("IDirectDrawClipper::IsClipListChanged: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
-HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFlags)
+HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags)
 {
-	TRACE_ENTER(3,14,this,14,lpClipList,9,dwFlags);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(hWnd) TRACE_RET(HRESULT,23,DDERR_CLIPPERISUSINGHWND);
+	TRACE_ENTER(3,14,This,14,lpClipList,9,dwFlags);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(This->hWnd) TRACE_RET(HRESULT,23,DDERR_CLIPPERISUSINGHWND);
 	bool memfail;
 	if(lpClipList)
 	{
@@ -146,80 +175,81 @@ HRESULT WINAPI glDirectDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFl
 		if(lpClipList->rdh.iType != RDH_RECTANGLES) TRACE_RET(HRESULT,23,DDERR_INVALIDCLIPLIST);
 		if(lpClipList->rdh.nRgnSize != lpClipList->rdh.nCount * sizeof(RECT))
 			TRACE_RET(HRESULT,23,DDERR_INVALIDCLIPLIST);
-		if(!cliplist)
+		if(!This->cliplist)
 		{
 			memfail = false;
-			maxsize = lpClipList->rdh.nCount;
-			cliplist = (RECT*)malloc(maxsize*sizeof(RECT));
-			if(!cliplist) memfail = true;
-			if(!memfail) vertices = (BltVertex*)malloc(maxsize*4*sizeof(BltVertex));
-			if(!vertices) memfail = true;
-			if(!memfail) indices = (WORD*)malloc(maxsize*6*sizeof(WORD));
-			if(!indices) memfail = true;
+			This->maxsize = lpClipList->rdh.nCount;
+			This->cliplist = (RECT*)malloc(This->maxsize*sizeof(RECT));
+			if(!This->cliplist) memfail = true;
+			if(!memfail) This->vertices = (BltVertex*)malloc(This->maxsize*4*sizeof(BltVertex));
+			if(!This->vertices) memfail = true;
+			if(!memfail) This->indices = (WORD*)malloc(This->maxsize*6*sizeof(WORD));
+			if(!This->indices) memfail = true;
 			if(memfail)
 			{
-				if(vertices)
+				if(This->vertices)
 				{
-					free(vertices);
-					vertices = NULL;
+					free(This->vertices);
+					This->vertices = NULL;
 				}
-				if(cliplist)
+				if(This->cliplist)
 				{
-					free(cliplist);
-					cliplist = NULL;
+					free(This->cliplist);
+					This->cliplist = NULL;
 				}
-				maxsize = 0;
+				This->maxsize = 0;
 				TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 			}
 		}
-		if(lpClipList->rdh.nCount > maxsize)
+		if(lpClipList->rdh.nCount > This->maxsize)
 		{
 			memfail = false;
 			RECT *newcliplist = NULL;
 			BltVertex *newvertices = NULL;
 			WORD *newindices = NULL;
-			newcliplist = (RECT*)realloc(cliplist,lpClipList->rdh.nCount*sizeof(RECT));
+			newcliplist = (RECT*)realloc(This->cliplist,lpClipList->rdh.nCount*sizeof(RECT));
 			if(!newcliplist) memfail = true;
-			else cliplist = newcliplist;
-			if(!memfail) newvertices = (BltVertex*)realloc(vertices,lpClipList->rdh.nCount*4*sizeof(BltVertex));
+			else This->cliplist = newcliplist;
+			if(!memfail) newvertices = (BltVertex*)realloc(This->vertices,lpClipList->rdh.nCount*4*sizeof(BltVertex));
 			if(!newvertices) memfail = true;
-			else vertices = newvertices;
-			if(!memfail) newindices = (WORD*)realloc(indices,lpClipList->rdh.nCount*6*sizeof(WORD));
+			else This->vertices = newvertices;
+			if(!memfail) newindices = (WORD*)realloc(This->indices,lpClipList->rdh.nCount*6*sizeof(WORD));
 			if(!newindices) memfail = true;
-			else indices = newindices;
+			else This->indices = newindices;
 			if(memfail) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-			maxsize = lpClipList->rdh.nCount;
+			This->maxsize = lpClipList->rdh.nCount;
 		}
-		clipsize = lpClipList->rdh.nCount;
-		memcpy(cliplist,lpClipList->Buffer,lpClipList->rdh.nCount*sizeof(RECT));
+		This->clipsize = lpClipList->rdh.nCount;
+		memcpy(This->cliplist,lpClipList->Buffer,lpClipList->rdh.nCount*sizeof(RECT));
 		for(int i = 0; i < lpClipList->rdh.nCount; i++)
 		{
-			vertices[(i*4)+1].y = vertices[(i*4)+3].y = cliplist[i].left;
-			vertices[i*4].x = vertices[(i*4)+2].x = cliplist[i].right;
-			vertices[i*4].y = vertices[(i*4)+1].y = cliplist[i].top;
-			vertices[(i*4)+2].y = vertices[(i*4)+3].y = cliplist[i].bottom;
+			This->vertices[(i*4)+1].y = This->vertices[(i*4)+3].y = This->cliplist[i].left;
+			This->vertices[i*4].x = This->vertices[(i*4)+2].x = This->cliplist[i].right;
+			This->vertices[i*4].y = This->vertices[(i*4)+1].y = This->cliplist[i].top;
+			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = This->cliplist[i].bottom;
 			// 0 1 2 2 1 3
-			indices[i*6] = i*4;
-			indices[(i*6)+1] = indices[(i*6)+4] = (i*4)+1;
-			indices[(i*6)+2] = indices[(i*6)+3] = (i*4)+2;
-			indices[(i*6)+5] = (i*4)+3;
+			This->indices[i*6] = i*4;
+			This->indices[(i*6)+1] = This->indices[(i*6)+4] = (i*4)+1;
+			This->indices[(i*6)+2] = This->indices[(i*6)+3] = (i*4)+2;
+			This->indices[(i*6)+5] = (i*4)+3;
 		}
 		for(int i = 0; i < (4*lpClipList->rdh.nCount); i++)
 		{
-			vertices[i].r = 255;
-			vertices[i].g = vertices[i].b = vertices[i].a = 0;
-			vertices[i].s = vertices[i].t = 0.0f;
+			This->vertices[i].r = 255;
+			This->vertices[i].g = This->vertices[i].b = This->vertices[i].a = 0;
+			This->vertices[i].s = This->vertices[i].t = 0.0f;
 		}
 	}
-	else clipsize = 0;
+	else This->clipsize = 0;
+	This->dirty = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
-HRESULT WINAPI glDirectDrawClipper::SetHWnd(DWORD dwFlags, HWND hWnd)
+HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFlags, HWND hWnd)
 {
-	TRACE_ENTER(3,14,this,9,dwFlags,13,hWnd);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	this->hWnd = hWnd;
+	TRACE_ENTER(3,14,This,9,dwFlags,13,hWnd);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	This->hWnd = hWnd;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

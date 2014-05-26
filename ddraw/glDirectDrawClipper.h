@@ -21,23 +21,11 @@
 
 class glDirectDraw7;
 
-class glDirectDrawClipper : public IDirectDrawClipper
+struct glDirectDrawClipperVtbl;
+
+typedef struct glDirectDrawClipper
 {
-public:
-	glDirectDrawClipper();
-	glDirectDrawClipper(DWORD dwFlags, glDirectDraw7 *parent);
-	~glDirectDrawClipper();
-	// ddraw api
-	HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* obp);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize);
-	HRESULT WINAPI GetHWnd(HWND FAR *lphWnd);
-	HRESULT WINAPI Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags);
-	HRESULT WINAPI IsClipListChanged(BOOL FAR *lpbChanged);
-	HRESULT WINAPI SetClipList(LPRGNDATA lpClipList, DWORD dwFlags);
-	HRESULT WINAPI SetHWnd(DWORD dwFlags, HWND hWnd);
-private:
+	struct glDirectDrawClipperVtbl *lpVtbl;
 	ULONG refcount;
 	glDirectDraw7 *glDD7;
 	bool hasparent;
@@ -49,5 +37,32 @@ private:
 	int clipsize;
 	int maxsize;
 	bool hascliplist;
-};
+} glDirectDrawClipper;
+
+typedef struct glDirectDrawClipperVtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirectDrawClipper *This, REFIID riid, LPVOID* obp);
+	ULONG(WINAPI *AddRef)(glDirectDrawClipper *This);
+	ULONG(WINAPI *Release)(glDirectDrawClipper *This);
+	// ddraw api
+	HRESULT(WINAPI *GetClipList)(glDirectDrawClipper *This, LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize);
+	HRESULT(WINAPI *GetHWnd)(glDirectDrawClipper *This, HWND FAR *lphWnd);
+	HRESULT(WINAPI *Initialize)(glDirectDrawClipper *This, LPDIRECTDRAW lpDD, DWORD dwFlags);
+	HRESULT(WINAPI *IsClipListChanged)(glDirectDrawClipper *This, BOOL FAR *lpbChanged);
+	HRESULT(WINAPI *SetClipList)(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags);
+	HRESULT(WINAPI *SetHWnd)(glDirectDrawClipper *This, DWORD dwFlags, HWND hWnd);
+} glDirectDrawClipperVtbl;
+
+HRESULT glDirectDrawClipper_CreateNoInit(LPDIRECTDRAWCLIPPER *lplpDDClipper);
+HRESULT glDirectDrawClipper_Create(DWORD dwFlags, glDirectDraw7 *parent, LPDIRECTDRAWCLIPPER *lplpDDClipper);
+// ddraw api
+HRESULT WINAPI glDirectDrawClipper_QueryInterface(glDirectDrawClipper *This, REFIID riid, LPVOID* obp);
+ULONG WINAPI glDirectDrawClipper_AddRef(glDirectDrawClipper *This);
+ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This);
+HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize);
+HRESULT WINAPI glDirectDrawClipper_GetHWnd(glDirectDrawClipper *This, HWND FAR *lphWnd);
+HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIRECTDRAW lpDD, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawClipper_IsClipListChanged(glDirectDrawClipper *This, BOOL FAR *lpbChanged);
+HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFlags, HWND hWnd);
 #endif //_GLDIRECTDRAWCLIPPER_H

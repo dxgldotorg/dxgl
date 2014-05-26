@@ -374,7 +374,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(bitmapinfo) free(bitmapinfo);
 	if(palette) glDirectDrawPalette_Release(palette);
 	if(backbuffer) backbuffer->Release();
-	if(clipper) clipper->Release();
+	if(clipper) glDirectDrawClipper_Release(clipper);
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer->Release();
@@ -1170,9 +1170,9 @@ HRESULT WINAPI glDirectDrawSurface7::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 {
 	TRACE_ENTER(2,14,this,14,lpDDClipper);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(clipper) clipper->Release();
+	if(clipper) glDirectDrawClipper_Release(clipper);
 	clipper = (glDirectDrawClipper *)lpDDClipper;
-	if(clipper)clipper->AddRef();
+	if(clipper) glDirectDrawClipper_AddRef(clipper);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

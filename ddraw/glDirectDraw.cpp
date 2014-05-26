@@ -615,7 +615,7 @@ glDirectDraw7::~glDirectDraw7()
 		{
 			for(int i = 0; i < clippercount; i++)
 			{
-				if(clippers[i]) clippers[i]->Release();
+				if(clippers[i]) glDirectDrawClipper_Release(clippers[i]);
 				clippers[i] = NULL;
 			}
 			free(clippers);
@@ -810,11 +810,7 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 		ZeroMemory(&clippers[clippercountmax],1024*sizeof(glDirectDrawClipper *));
 		clippercountmax += 1024;
 	}
-	clippers[clippercount-1] = new glDirectDrawClipper(dwFlags,this);
-	*lplpDDClipper = clippers[clippercount-1];
-	TRACE_VAR("*lplpDDClipper",14,*lplpDDClipper);
-	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	TRACE_RET(HRESULT, 23, glDirectDrawClipper_Create(dwFlags, this, lplpDDClipper));
 }
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {

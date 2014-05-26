@@ -227,15 +227,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(3,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
-	*lplpDDClipper = new glDirectDrawClipper(dwFlags,NULL);
-	if(!lplpDDClipper)
-	{
-		TRACE_EXIT(23,DDERR_OUTOFMEMORY);
-		return DDERR_OUTOFMEMORY;
-	}
-	TRACE_VAR("*lplpDDClipper",14,*lplpDDClipper);
-	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	TRACE_RET(HRESULT, 23, glDirectDrawClipper_Create(dwFlags, NULL, lplpDDClipper));
 }
 
 /**

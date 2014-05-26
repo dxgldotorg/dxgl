@@ -27,7 +27,7 @@ typedef struct
 } CKEY;
 
 class glDirectDraw7;
-class glDirectDrawClipper;
+struct glDirectDrawClipper;
 struct glDirectDrawPalette;
 class glDirectDrawSurface1;
 class glDirectDrawSurface2;

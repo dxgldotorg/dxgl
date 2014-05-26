@@ -103,10 +103,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	}
 	if(riid == IID_IDirectDrawClipper)
 	{
-		*ppvObject = new glDirectDrawClipper();
-		TRACE_VAR("*ppvObject",14,*ppvObject);
-		TRACE_EXIT(23,S_OK);
-		return S_OK;
+		TRACE_RET(HRESULT, 23, glDirectDrawClipper_CreateNoInit((LPDIRECTDRAWCLIPPER*)ppvObject));
 	}
 	FIXME("glClassFactory::CreateInterface: stub");
 	TRACE_EXIT(23,E_NOINTERFACE);
