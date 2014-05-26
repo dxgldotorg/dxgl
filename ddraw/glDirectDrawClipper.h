@@ -37,6 +37,7 @@ typedef struct glDirectDrawClipper
 	int clipsize;
 	int maxsize;
 	bool hascliplist;
+	bool dirty;
 } glDirectDrawClipper;
 
 typedef struct glDirectDrawClipperVtbl
