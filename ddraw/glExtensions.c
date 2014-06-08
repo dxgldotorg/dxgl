@@ -113,6 +113,8 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	if(strstr((char*)glextensions,"GL_ARB_sampler_objects") || (ext->glver_major >= 4)
 		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) ext->GLEXT_ARB_sampler_objects = 1;
 	else ext->GLEXT_ARB_sampler_objects = 0;
+	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4")) ext->GLEXT_EXT_gpu_shader4 = 1;
+	else ext->GLEXT_EXT_gpu_shader4 = 0;
 	broken_fbo = TRUE;
 	if(ext->GLEXT_ARB_framebuffer_object)
 	{

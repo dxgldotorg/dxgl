@@ -40,13 +40,15 @@ typedef struct
 #define D3DTOP_DXGL_DECALMASK 0x101;
 #define D3DTOP_DXGL_MODULATEMASK 0x102;
 
+struct ShaderGen2D;
+
 class ShaderGen3D
 {
 public:
 	ShaderGen3D(glExtensions *glext, ShaderManager *shaderman);
 	~ShaderGen3D();
 	void ClearShaders();
-	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
+	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d);
 	GLuint GetProgram();
 	void ZeroShaderArray();
 	void CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
@@ -55,11 +57,10 @@ public:
 private:
 	__int64 current_shader;
 	__int64 current_texid[8];
+	int current_shadertype;
 	int shadercount;
 	int maxshaders;
 	int genindex;
-	bool initialized;
-	bool isbuiltin;
 	GLuint current_prog;
 	glExtensions *ext;
 	ShaderManager *shaders;

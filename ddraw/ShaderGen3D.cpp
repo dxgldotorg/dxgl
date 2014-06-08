@@ -23,7 +23,9 @@
 #include "glDirect3DDevice.h"
 #include <string>
 using namespace std;
+#include "string.h"
 #include "ShaderGen3D.h"
+#include "ShaderGen2D.h"
 #include "ShaderManager.h"
 #include "../common/version.h"
 
@@ -31,19 +33,14 @@ ShaderGen3D::ShaderGen3D(glExtensions *glext, ShaderManager *shaderman)
 {
 	ext = glext;
 	shaders = shaderman;
-	genshaders = NULL;
-	current_shader = 0;
-	current_texid[8];
+	ZeroMemory(current_texid,8*sizeof(__int64));
 	shadercount = 0;
-	maxshaders = 0;
 	genindex = 0;
-	initialized = false;
-	isbuiltin = true;
 	maxshaders = 256;
 	genshaders = (GenShader*)malloc(256 * sizeof(GenShader));
 	ZeroMemory(genshaders, 256 * sizeof(GenShader));
 	current_shader = 0;
-	isbuiltin = true;
+	current_shadertype = 0;
 }
 
 ShaderGen3D::~ShaderGen3D()
@@ -152,25 +149,61 @@ void ShaderGen3D::ClearShaders()
   *  1 for generated 2D
   *  2 for generated 3D
   */
-void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
+void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
 {
 	int shaderindex = -1;
 	switch(type)
 	{
-	case 0:
-		if(isbuiltin && (shaders->shaders[id].prog == current_shader)) return;
+	case 0:  // Static built-in shader
+		if((current_shadertype == 0) && (shaders->shaders[id].prog == current_shader)) return;
 		ext->glUseProgram(shaders->shaders[id].prog);
 		current_shader = shaders->shaders[id].prog;
-		isbuiltin=true;
+		current_shadertype = 0;
 		current_genshader = -1;
 		break;
-	case 2:
-		if(!isbuiltin && (id == current_shader))
+	case 1:  // 2D generated shader
+		if ((current_shadertype == 1) && (id == current_shader)) return;
+		current_shader = id;
+		current_shadertype = 1;
+		for (int i = 0; i < shadercount; i++)
+		{
+			if (shaders->gen2d->genshaders2D[i].id == id)
+			{
+				shaderindex = i;
+				break;
+			}
+		}
+		if (shaderindex == -1)
+		{
+			gen2d->shadercount++;
+			if (gen2d->shadercount > 256) gen2d->shadercount = 256;
+			if (gen2d->genshaders2D[gen2d->genindex].shader.prog)
+			{
+				ext->glUseProgram(0);
+				ext->glDeleteProgram(gen2d->genshaders2D[gen2d->genindex].shader.prog);
+				ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.vs);
+				ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.fs);
+				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.vsrc);
+				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.fsrc);
+				ZeroMemory(&gen2d->genshaders2D[gen2d->genindex], sizeof(GenShader2D));
+			}
+			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id);
+			shaderindex = gen2d->genindex;
+			gen2d->genindex++;
+			if (gen2d->genindex >= 256) gen2d->genindex = 0;
+		}
+		gen2d->genshaders2D[shaderindex].id = id;
+		ext->glUseProgram(gen2d->genshaders2D[shaderindex].shader.prog);
+		current_prog = gen2d->genshaders2D[shaderindex].shader.prog;
+		current_genshader = shaderindex;
+		break;
+	case 2:  // 3D generated shader
+		if((current_shadertype == 2) && (id == current_shader))
 		{
 			if(!memcmp(current_texid,texstate,8*sizeof(__int64))) return;
 		}
 		current_shader = id;
-		isbuiltin=false;
+		current_shadertype = 2;
 		for(int i = 0; i < shadercount; i++)
 		{
 			if(genshaders[i].id == id)
@@ -225,7 +258,7 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
   */
 GLuint ShaderGen3D::GetProgram()
 {
-	if(isbuiltin) return current_shader & 0xFFFFFFFF;
+	if (current_shadertype == 0) return current_shader & 0xFFFFFFFF;
 	else return current_prog;
 }
 

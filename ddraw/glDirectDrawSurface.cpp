@@ -1170,9 +1170,17 @@ HRESULT WINAPI glDirectDrawSurface7::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 {
 	TRACE_ENTER(2,14,this,14,lpDDClipper);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(clipper) glDirectDrawClipper_Release(clipper);
+	if (clipper)
+	{
+		clipper->dirty = true;
+		glDirectDrawClipper_Release(clipper);
+	}
 	clipper = (glDirectDrawClipper *)lpDDClipper;
-	if(clipper) glDirectDrawClipper_AddRef(clipper);
+	if (clipper)
+	{
+		glDirectDrawClipper_AddRef(clipper);
+		clipper->dirty = true;
+	}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

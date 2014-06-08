@@ -32,6 +32,8 @@
 #include "include/GL/wglext.h"
 #include "glExtensions.h"
 #ifdef __cplusplus
+#include "string.h"
+#include "ShaderGen2D.h"
 #include "ShaderManager.h"
 #endif
 

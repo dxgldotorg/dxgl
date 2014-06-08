@@ -133,6 +133,7 @@ typedef struct
 	int GLEXT_ARB_ES2_compatibility;
 	int GLEXT_EXT_direct_state_access;
 	int GLEXT_ARB_sampler_objects;
+	int GLEXT_EXT_gpu_shader4;
 	int glver_major;
 	int glver_minor;
 	BOOL atimem;

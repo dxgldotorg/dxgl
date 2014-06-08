@@ -295,8 +295,9 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="scalers.h" />
     <ClInclude Include="ShaderGen3D.h" />
-    <ClInclude Include="shadergen2d.h" />
+    <ClInclude Include="ShaderGen2D.h" />
     <ClInclude Include="ShaderManager.h" />
+    <ClInclude Include="string.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="trace.h" />
@@ -374,8 +375,16 @@
     </ClCompile>
     <ClCompile Include="scalers.cpp" />
     <ClCompile Include="ShaderGen3D.cpp" />
-    <ClCompile Include="shadergen2d.cpp" />
+    <ClCompile Include="ShaderGen2D.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="string.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug No MSVCRT|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="TextureManager.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>

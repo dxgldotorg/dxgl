@@ -15,14 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "common.h"
-#include <string>
-using namespace std;
-#include "shadergen2d.h"
+#include "string.h"
+#include "glExtensions.h"
+#include "ShaderGen2d.h"
 #include "../common/version.h"
-
-GenShader2D *genshaders2D = NULL;
-GLuint current_prog2D;
-int current_genshader2D;
 
 
 /* Bits in 2D shader ID:
@@ -54,11 +50,11 @@ Bit 24: ROP index bit 5
 Bit 25:	Depth fill (DDBLT_DEPTHFILL)
 Bit 26: ROP index bit 6
 Bit 27: ROP index bit 7
-Bit 28: reserved
-Bit 29: reserved
-Bit 30: reserved
-Bit 31: reserved
-AND the dwFlags by 0x02FAADFF before packing ROP index bits
+Bit 28: reserved for DXGL usage
+Bit 29: reserved for DXGL usage
+Bit 30: reserved for DXGL usage
+Bit 31: reserved for DXGL usage
+AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 */
 
 const DWORD valid_rop_codes[256] = {
@@ -156,6 +152,11 @@ static const char mainend[] = "} ";
 static const char attr_srcxy[] = "attribute vec2 srcxy;\n";
 static const char attr_destxy[] = "attribute vec2 destxy;\n";
 static const char attr_patternxy[] = "attribute vec2 patternxy;\n";
+static const char attr_rgb[] = "attribute vec3 rgb;\n";
+static const char attr_rgba[] = "attribute vec4 rgba;\n";
+static const char attr_srcst[] = "attribute vec2 srcst;\n";
+static const char attr_destst[] = "attribute vec2 destst;\n";
+static const char attr_patternst[] = "attribute vec2 patternst;\n";
 
 // Uniforms
 static const char var_srctex[] = "uniform sampler2d srctex;";
@@ -696,10 +697,69 @@ static const char *op_ROP_float[256] = {
 "gl_FragColor = vec4(1.0);\n",//FF WHITENESS
 };
 
-void CreateShader2D(int index, DWORD id)
+void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman)
 {
-	string tmp;
-	genshaders2D[index].shader.vsrc = new string;
-	genshaders2D[index].shader.fsrc = new string;
+	gen->ext = ext;
+	gen->shaders = shaderman;
+	gen->current_genshader2D = 0;
+	gen->shadercount = 0;
+	gen->genindex = 0;
+	gen->maxshaders = 256;
+	gen->genshaders2D = (GenShader2D *)malloc(256 * sizeof(GenShader2D));
+	ZeroMemory(gen->genshaders2D, 256 * sizeof(GenShader2D));
+	gen->current_genshader2D = 0;
+}
 
+void ShaderGen2D_Delete(ShaderGen2D *gen)
+{
+	if (!gen->genshaders2D) return;
+	for (int i = 0; i < gen->shadercount; i++)
+	{
+		gen->genshaders2D[i].id = 0;
+		if (gen->genshaders2D[i].shader.prog) gen->ext->glDeleteProgram(gen->genshaders2D[i].shader.prog);
+		if (gen->genshaders2D[i].shader.fs) gen->ext->glDeleteShader(gen->genshaders2D[i].shader.fs);
+		if (gen->genshaders2D[i].shader.vs) gen->ext->glDeleteShader(gen->genshaders2D[i].shader.vs);
+		if (gen->genshaders2D[i].shader.fsrc.ptr) String_Free(&gen->genshaders2D[i].shader.fsrc);
+		if (gen->genshaders2D[i].shader.vsrc.ptr) String_Free(&gen->genshaders2D[i].shader.vsrc);
+	}
+	if (gen->genshaders2D) free(gen->genshaders2D);
+	gen->genshaders2D = NULL;
+	gen->current_genshader2D = 0;
+	gen->shadercount = 0;
+	gen->genindex = 0;
+}
+
+void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
+{
+	STRING tmp;
+	tmp.ptr = NULL;
+	BOOL intproc = FALSE;
+	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
+	gen->genshaders2D[index].shader.fsrc.ptr = NULL;
+	char idstring[22];
+	_snprintf(idstring, 21, "%0.8I32X\n", id);
+	idstring[21] = 0;
+	// Create vertex shader
+	// Header
+	STRING *vsrc = &gen->genshaders2D->shader.vsrc;
+	String_Append(vsrc, revheader);
+	if ((id >> 17) & 1)
+	{
+		if (gen->ext->glver_major >= 3)
+		{
+			String_Append(vsrc, version_130);
+			intproc = true;
+		}
+		else if (gen->ext->GLEXT_EXT_gpu_shader4)
+		{
+			String_Append(vsrc, version_110);
+			String_Append(vsrc, ext_shader4);
+			intproc = true;
+		}
+		else String_Append(vsrc, version_110);
+	}
+	else String_Append(vsrc, version_110);
+	String_Append(vsrc, idheader);
+	String_Append(vsrc, idstring);
+	// Attributes
 }

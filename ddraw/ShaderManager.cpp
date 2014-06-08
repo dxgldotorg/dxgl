@@ -23,8 +23,10 @@
 #include "glDirect3DDevice.h"
 #include <string>
 using namespace std;
+#include "string.h"
 #include "ShaderManager.h"
 #include "ShaderGen3D.h"
+#include "ShaderGen2D.h"
 
 const char frag_Color[] = "\
 #version 110\n\
@@ -171,6 +173,9 @@ ShaderManager::ShaderManager(glExtensions *glext)
 		shaders[i].view = ext->glGetUniformLocation(shaders[i].prog,"view");
 	}
 	gen3d = new ShaderGen3D(ext, this);
+	gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
+	ShaderGen2D_Init(gen2d, ext, this);
+	ZeroMemory(gen2d, sizeof(ShaderGen2D));
 }
 
 ShaderManager::~ShaderManager()
@@ -195,10 +200,12 @@ ShaderManager::~ShaderManager()
 		}
 	}
 	free(shaders);
+	ShaderGen2D_Delete(gen2d);
+	free(gen2d);
 	delete gen3d;
 }
 
 void ShaderManager::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
 {
-	gen3d->SetShader(id, texstate, texcoords, type);
+	gen3d->SetShader(id, texstate, texcoords, type, gen2d);
 }

@@ -15,12 +15,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#pragma once
+#ifndef _SHADERGEN2D_H
+#define _SHADERGEN2D_H
+
+class ShaderManager;
+
 typedef struct
 {
 	GLint vs;
 	GLint fs;
-	string *vsrc;
-	string *fsrc;
+	STRING vsrc;
+	STRING fsrc;
 	GLint prog;
 	GLint attribs[8];
 	GLint uniforms[16];
@@ -32,8 +38,24 @@ struct GenShader2D
 	DWORD id;
 };
 
+typedef struct ShaderGen2D
+{
+	int current_genshader2D;
+	GenShader2D *genshaders2D;
+	int shadercount;
+	int maxshaders;
+	int genindex;
+	glExtensions *ext;
+	ShaderManager *shaders;
+} ShaderGen2D;
+
 extern const DWORD valid_rop_codes[256];
 extern const DWORD rop_texture_usage[256];
 extern const DWORD supported_rops[8];
-extern GenShader2D *genshaders2D;
-extern int current_genshader2D;
+extern const DWORD supported_rops_gl2[8];
+
+void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman);
+void ShaderGen2D_Delete(ShaderGen2D *gen);
+void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id);
+
+#endif //_SHADERGEN2D_H

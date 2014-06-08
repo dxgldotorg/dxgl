@@ -56,6 +56,7 @@ public:
 	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
 	SHADER *shaders;
 	ShaderGen3D *gen3d;
+	ShaderGen2D *gen2d;
 private:
 	glExtensions *ext;
 };

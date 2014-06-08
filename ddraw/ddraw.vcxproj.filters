@@ -119,9 +119,6 @@
     <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shadergen2d.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TextureManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -136,6 +133,12 @@
     </ClInclude>
     <ClInclude Include="include\ddraw.h">
       <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGen2D.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -199,9 +202,6 @@
     <ClCompile Include="timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shadergen2d.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -227,6 +227,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dxguid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGen2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
