@@ -18,7 +18,7 @@
 #include "common.h"
 #include "ddraw.h"
 ATOM WindowClass = NULL;
-CRITICAL_SECTION dll_cs;
+CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -27,7 +27,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		InitializeCriticalSection(&dll_cs);
+		if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 		GetCurrentConfig(&dxglcfg, true);
 		break;
 	case DLL_THREAD_ATTACH:
