@@ -149,9 +149,7 @@ static const char linefeed[] = "\n";
 static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
 // Attributes
-static const char attr_srcxy[] = "attribute vec2 srcxy;\n";
-static const char attr_destxy[] = "attribute vec2 destxy;\n";
-static const char attr_patternxy[] = "attribute vec2 patternxy;\n";
+static const char attr_xy[] = "attribute vec2 xy;\n";
 static const char attr_rgb[] = "attribute vec3 rgb;\n";
 static const char attr_rgba[] = "attribute vec4 rgba;\n";
 static const char attr_srcst[] = "attribute vec2 srcst;\n";
@@ -159,21 +157,36 @@ static const char attr_destst[] = "attribute vec2 destst;\n";
 static const char attr_patternst[] = "attribute vec2 patternst;\n";
 
 // Uniforms
-static const char var_srctex[] = "uniform sampler2d srctex;";
-static const char var_desttex[] = "uniform sampler2d desttex;";
-static const char var_patterntex[] = "uniform sampler2d patterntex;";
+static const char unif_view[] = "uniform vec4 view;\n";
+static const char unif_srctex[] = "uniform sampler2d srctex;\n";
+static const char unif_desttex[] = "uniform sampler2d desttex;\n";
+static const char unif_patterntex[] = "uniform sampler2d patterntex;\n";
+static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
+static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
+
 
 // Variables
-static const char var_src[] = "ivec4 src;\n";
 static const char var_dest[] = "ivec4 dest;\n";
 static const char var_pattern[] = "ivec4 pattern;\n";
-static const char var_pixel[] = "vec4 pixel;\n";
+static const char var_pixel[] = "ivec4 pixel;\n";
 
 // Operations
-static const char op_src[] = "src = ivec4(texture2D(src,gl_TexCoord[0].st)*255.5);\n";
+static const char op_src[] = "pixel = ivec4(texture2D(src,gl_TexCoord[0].st)*255.5);\n";
+static const char op_color[] = "pixel = ivec4(gl_FragColor*255.5);\n";
 static const char op_dest[] = "dest = ivec4(texture2D(dest,gl_TexCoord[1].st)*255.5);\n";
 static const char op_pattern[] = "pattern = ivec4(texture2D(pattern,gl_TexCoord[2].st)*255.5);\n";
-static const char op_destout[] = "gl_FragColor = vec4(dest)/255.5;\n";
+static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.5;\n";
+static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
+mat4 proj = mat4(\n\
+vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
+vec4(0, 2.0 / (view[2] - view[3]), 0, 0),\n\
+vec4(0, 0, -2.0, 0),\n\
+vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
+-(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
+gl_Position    = proj * xyzw;\n";
+static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
+static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(st,0.0,1.0);\n";
+static const char op_ckeysrc[] = "if(pixel == ckey) discard;\n";
 
 
 // Functions
@@ -743,7 +756,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	// Header
 	STRING *vsrc = &gen->genshaders2D->shader.vsrc;
 	String_Append(vsrc, revheader);
-	if ((id >> 17) & 1)
+	if (id & DDBLT_ROP)
 	{
 		if (gen->ext->glver_major >= 3)
 		{
@@ -761,5 +774,130 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	else String_Append(vsrc, version_110);
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
+	
 	// Attributes
+	String_Append(vsrc, attr_xy);
+	if (id & DDBLT_COLORFILL) String_Append(vsrc, attr_rgb);
+	else String_Append(vsrc, attr_srcst);
+
+	// Uniforms
+	String_Append(vsrc, unif_view);
+
+	// Main
+	String_Append(vsrc, mainstart);
+	String_Append(vsrc, op_vertex);
+	if (id & DDBLT_COLORFILL) String_Append(vsrc, op_vertcolorrgb);
+	else String_Append(vsrc, op_texcoord0);
+	String_Append(vsrc, mainend);
+#ifdef _DEBUG
+	OutputDebugStringA("2D blitter vertex shader:\n");
+	OutputDebugStringA(vsrc->ptr);
+	OutputDebugStringA("\nCompiling 2D blitter vertex shader:\n");
+#endif
+	gen->genshaders2D[index].shader.vs = gen->ext->glCreateShader(GL_VERTEX_SHADER);
+	GLint srclen = strlen(vsrc->ptr);
+	gen->ext->glShaderSource(gen->genshaders2D[index].shader.vs, 1, &vsrc->ptr, &srclen);
+	gen->ext->glCompileShader(gen->genshaders2D[index].shader.vs);
+	GLint result;
+	char *infolog = NULL;
+	gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_COMPILE_STATUS, &result);
+#ifdef _DEBUG
+	GLint loglen;
+	if (!result)
+	{
+		gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_INFO_LOG_LENGTH, &loglen);
+		infolog = (char*)malloc(loglen);
+		gen->ext->glGetShaderInfoLog(gen->genshaders2D[index].shader.vs, loglen, &result, infolog);
+		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
+#endif
+
+	// Create fragment shader
+	STRING *fsrc = &gen->genshaders2D->shader.fsrc;
+	String_Append(fsrc, revheader);
+	if (id & DDBLT_ROP)
+	{
+		if (gen->ext->glver_major >= 3)
+		{
+			String_Append(fsrc, version_130);
+			intproc = true;
+		}
+		else if (gen->ext->GLEXT_EXT_gpu_shader4)
+		{
+			String_Append(fsrc, version_110);
+			String_Append(fsrc, ext_shader4);
+			intproc = true;
+		}
+		else String_Append(fsrc, version_110);
+	}
+	else String_Append(fsrc, version_110);
+	String_Append(fsrc, idheader);
+	String_Append(fsrc, idstring);
+
+	// Uniforms
+	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
+	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
+	
+	// Variables
+	String_Append(fsrc, var_pixel);
+
+	// Main
+	String_Append(fsrc, mainstart);
+	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
+	else String_Append(fsrc, op_src);
+	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
+
+	String_Append(fsrc, op_destout);
+	String_Append(fsrc, mainend);
+#ifdef _DEBUG
+	OutputDebugStringA("2D blitter fragment shader:\n");
+	OutputDebugStringA(fsrc->ptr);
+	OutputDebugStringA("\nCompiling 2D blitter fragment shader:\n");
+#endif
+	gen->genshaders2D[index].shader.fs = gen->ext->glCreateShader(GL_FRAGMENT_SHADER);
+	srclen = strlen(fsrc->ptr);
+	gen->ext->glShaderSource(gen->genshaders2D[index].shader.fs, 1, &fsrc->ptr, &srclen);
+	gen->ext->glCompileShader(gen->genshaders2D[index].shader.fs);
+	gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.fs, GL_COMPILE_STATUS, &result);
+#ifdef _DEBUG
+	if (!result)
+	{
+		gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.fs, GL_INFO_LOG_LENGTH, &loglen);
+		infolog = (char*)malloc(loglen);
+		gen->ext->glGetShaderInfoLog(gen->genshaders2D[index].shader.fs, loglen, &result, infolog);
+		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
+#endif
+	gen->genshaders2D[index].shader.prog = gen->ext->glCreateProgram();
+	gen->ext->glAttachShader(gen->genshaders2D[index].shader.prog, gen->genshaders2D[index].shader.vs);
+	gen->ext->glAttachShader(gen->genshaders2D[index].shader.prog, gen->genshaders2D[index].shader.fs);
+	gen->ext->glLinkProgram(gen->genshaders2D[index].shader.prog);
+	gen->ext->glGetProgramiv(gen->genshaders2D[index].shader.prog, GL_LINK_STATUS, &result);
+#ifdef _DEBUG
+	if (!result)
+	{
+		gen->ext->glGetProgramiv(gen->genshaders2D[index].shader.prog, GL_INFO_LOG_LENGTH, &loglen);
+		infolog = (char*)malloc(loglen);
+		gen->ext->glGetProgramInfoLog(gen->genshaders2D[index].shader.prog, loglen, &result, infolog);
+		OutputDebugStringA("Program link failed. Error messages:\n");
+		OutputDebugStringA(infolog);
+		free(infolog);
+	}
+#endif
+	gen->genshaders2D[index].shader.attribs[0] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "xy");
+	gen->genshaders2D[index].shader.attribs[1] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "rgb");
+	gen->genshaders2D[index].shader.attribs[2] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "rgba");
+	gen->genshaders2D[index].shader.attribs[3] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "srcst");
+	gen->genshaders2D[index].shader.attribs[4] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "destst");
+	gen->genshaders2D[index].shader.attribs[5] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "patternst");
+	gen->genshaders2D[index].shader.uniforms[0] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "view");
+	gen->genshaders2D[index].shader.uniforms[1] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srctex");
+	gen->genshaders2D[index].shader.uniforms[2] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "desttex");
+	gen->genshaders2D[index].shader.uniforms[3] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patterntex");
+	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
+	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
 }
