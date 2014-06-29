@@ -40,7 +40,6 @@ struct GenShader2D
 
 typedef struct ShaderGen2D
 {
-	int current_genshader2D;
 	GenShader2D *genshaders2D;
 	int shadercount;
 	int maxshaders;
@@ -53,6 +52,8 @@ extern const DWORD valid_rop_codes[256];
 extern const DWORD rop_texture_usage[256];
 extern const DWORD supported_rops[8];
 extern const DWORD supported_rops_gl2[8];
+
+DWORD PackROPBits(DWORD rop, DWORD flags);
 
 void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman);
 void ShaderGen2D_Delete(ShaderGen2D *gen);

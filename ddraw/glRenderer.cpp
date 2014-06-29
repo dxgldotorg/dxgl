@@ -872,9 +872,13 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	int progtype;
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
+	DWORD shaderid;
+	if (lpDDBltFx) shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
+	else shaderid = dwFlags & 0xF2FAADFF;
+	shaders->SetShader(shaderid, NULL, NULL, 1);
+	GenShader2D *shader = &shaders->gen2d->genshaders2D[shaders->gen3d->current_genshader];
 	util->BlendEnable(false);
 	util->SetFBO(dest);
 	util->SetViewport(0,0,dest->fakex,dest->fakey);
@@ -914,8 +918,6 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
-		shaders->SetShader(PROG_FILL,NULL,NULL,0);
-		progtype = PROG_FILL;
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
@@ -954,40 +956,36 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
-		shaders->SetShader(PROG_CKEY,NULL,NULL,0);
-		progtype = PROG_CKEY;
 		switch(ddInterface->GetBPP())
 		{
 		case 8:
-			if(ext->glver_major >= 3) ext->glUniform3i(shaders->shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,0,0);
-			else ext->glUniform3i(shaders->shaders[progtype].ckey,src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
+			if(ext->glver_major >= 3) ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
+			else ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
 				src->colorkey[0].key.dwColorSpaceHighValue);
 			break;
 		case 15:
-			ext->glUniform3i(shaders->shaders[progtype].ckey,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
+			ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 16:
-			ext->glUniform3i(shaders->shaders[progtype].ckey,_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
+			ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
 				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 24:
 		case 32:
 		default:
-			ext->glUniform3i(shaders->shaders[progtype].ckey,(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
+			ext->glUniform3i(shader->shader.uniforms[4],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
 			break;
 		}
-		ext->glUniform1i(shaders->shaders[progtype].tex0,0);
+		ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
-		progtype = PROG_TEXTURE;
-		ext->glUniform1i(shaders->shaders[progtype].tex0,0);
+		ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
 	if(src)
 	{
@@ -999,19 +997,19 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		}
 	}
 	else TextureManager_SetTexture(texman,0,NULL);
-	ext->glUniform4f(shaders->shaders[progtype].view,0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
+	ext->glUniform4f(shader->shader.uniforms[0],0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
-	util->EnableArray(shaders->shaders[progtype].pos,true);
-	ext->glVertexAttribPointer(shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	if(shaders->shaders[progtype].rgb != -1)
+	util->EnableArray(shader->shader.attribs[0],true);
+	ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	if(shader->shader.attribs[1] != -1)
 	{
-		util->EnableArray(shaders->shaders[progtype].rgb,true);
-		ext->glVertexAttribPointer(shaders->shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+		util->EnableArray(shader->shader.attribs[1],true);
+		ext->glVertexAttribPointer(shader->shader.attribs[0],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
 	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		util->EnableArray(shaders->shaders[progtype].texcoord,true);
-		ext->glVertexAttribPointer(shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+		util->EnableArray(shader->shader.attribs[3],true);
+		ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
 	}
 	util->SetCull(D3DCULL_NONE);
 	util->SetPolyMode(D3DFILL_SOLID);

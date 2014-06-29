@@ -174,8 +174,8 @@ ShaderManager::ShaderManager(glExtensions *glext)
 	}
 	gen3d = new ShaderGen3D(ext, this);
 	gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
-	ShaderGen2D_Init(gen2d, ext, this);
 	ZeroMemory(gen2d, sizeof(ShaderGen2D));
+	ShaderGen2D_Init(gen2d, ext, this);
 }
 
 ShaderManager::~ShaderManager()

@@ -165,7 +165,7 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
 		if ((current_shadertype == 1) && (id == current_shader)) return;
 		current_shader = id;
 		current_shadertype = 1;
-		for (int i = 0; i < shadercount; i++)
+		for (int i = 0; i < gen2d->shadercount; i++)
 		{
 			if (shaders->gen2d->genshaders2D[i].id == id)
 			{

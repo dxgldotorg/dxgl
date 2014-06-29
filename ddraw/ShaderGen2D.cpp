@@ -158,9 +158,9 @@ static const char attr_patternst[] = "attribute vec2 patternst;\n";
 
 // Uniforms
 static const char unif_view[] = "uniform vec4 view;\n";
-static const char unif_srctex[] = "uniform sampler2d srctex;\n";
-static const char unif_desttex[] = "uniform sampler2d desttex;\n";
-static const char unif_patterntex[] = "uniform sampler2d patterntex;\n";
+static const char unif_srctex[] = "uniform sampler2D srctex;\n";
+static const char unif_desttex[] = "uniform sampler2D desttex;\n";
+static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
 
@@ -171,11 +171,11 @@ static const char var_pattern[] = "ivec4 pattern;\n";
 static const char var_pixel[] = "ivec4 pixel;\n";
 
 // Operations
-static const char op_src[] = "pixel = ivec4(texture2D(src,gl_TexCoord[0].st)*255.5);\n";
-static const char op_color[] = "pixel = ivec4(gl_FragColor*255.5);\n";
-static const char op_dest[] = "dest = ivec4(texture2D(dest,gl_TexCoord[1].st)*255.5);\n";
-static const char op_pattern[] = "pattern = ivec4(texture2D(pattern,gl_TexCoord[2].st)*255.5);\n";
-static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.5;\n";
+static const char op_src[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*255.0);\n";
+static const char op_color[] = "pixel = ivec4(gl_FragColor*255.0);\n";
+static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*255.0);\n";
+static const char op_pattern[] = "pattern = ivec4(texture2D(patterntex,gl_TexCoord[2].st)*255.0);\n";
+static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.0;\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
 vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
@@ -185,8 +185,8 @@ vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
 -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
 gl_Position    = proj * xyzw;\n";
 static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
-static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(st,0.0,1.0);\n";
-static const char op_ckeysrc[] = "if(pixel == ckey) discard;\n";
+static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
+static const char op_ckeysrc[] = "if(pixel.rgb == ckeysrc) discard;\n";
 
 
 // Functions
@@ -710,17 +710,29 @@ static const char *op_ROP_float[256] = {
 "gl_FragColor = vec4(1.0);\n",//FF WHITENESS
 };
 
+DWORD PackROPBits(DWORD rop, DWORD flags)
+{
+	DWORD out = rop & 0xF2FAADFF;
+	if (rop & 0x10000) out |= 1 << 9;
+	if (rop & 0x20000) out |= 1 << 12;
+	if (rop & 0x40000) out |= 1 << 14;
+	if (rop & 0x80000) out |= 1 << 16;
+	if (rop & 0x100000) out |= 1 << 18;
+	if (rop & 0x200000) out |= 1 << 24;
+	if (rop & 0x400000) out |= 1 << 26;
+	if (rop & 0x800000) out |= 1 << 27;
+	return out;
+}
+
 void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman)
 {
 	gen->ext = ext;
 	gen->shaders = shaderman;
-	gen->current_genshader2D = 0;
 	gen->shadercount = 0;
 	gen->genindex = 0;
 	gen->maxshaders = 256;
 	gen->genshaders2D = (GenShader2D *)malloc(256 * sizeof(GenShader2D));
 	ZeroMemory(gen->genshaders2D, 256 * sizeof(GenShader2D));
-	gen->current_genshader2D = 0;
 }
 
 void ShaderGen2D_Delete(ShaderGen2D *gen)
@@ -737,7 +749,6 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 	}
 	if (gen->genshaders2D) free(gen->genshaders2D);
 	gen->genshaders2D = NULL;
-	gen->current_genshader2D = 0;
 	gen->shadercount = 0;
 	gen->genindex = 0;
 }
@@ -754,7 +765,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	idstring[21] = 0;
 	// Create vertex shader
 	// Header
-	STRING *vsrc = &gen->genshaders2D->shader.vsrc;
+	STRING *vsrc = &gen->genshaders2D[index].shader.vsrc;
 	String_Append(vsrc, revheader);
 	if (id & DDBLT_ROP)
 	{
@@ -815,7 +826,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 #endif
 
 	// Create fragment shader
-	STRING *fsrc = &gen->genshaders2D->shader.fsrc;
+	STRING *fsrc = &gen->genshaders2D[index].shader.fsrc;
 	String_Append(fsrc, revheader);
 	if (id & DDBLT_ROP)
 	{
