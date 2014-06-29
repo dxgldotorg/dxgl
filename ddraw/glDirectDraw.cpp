@@ -876,7 +876,7 @@ HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIREC
 	}
 	else
 	{
-		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(23, HRESULT, DDERR_INVALIDPARAMS);
+		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		*lplpDDSurface = new glDirectDrawSurface7(this, lpDDSurfaceDesc2, &error, false, NULL);
 	}
 	TRACE_VAR("*lplpDDSurface",14,*lplpDDSurface);
