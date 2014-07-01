@@ -38,6 +38,7 @@ memcpy_386 PROC dest: ptr byte, src: ptr byte, count: dword
 	pop ecx
 	pop edi
 	pop esi
+	ret
 memcpy_386 ENDP
 
 end

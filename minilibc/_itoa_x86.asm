@@ -81,6 +81,7 @@ return:
 	pop edx
 	pop edi
 	pop esi
+	ret
 _itoa ENDP
 
 end
