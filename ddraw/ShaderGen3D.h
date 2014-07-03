@@ -22,8 +22,8 @@ typedef struct
 {
 	GLint vs;
 	GLint fs;
-	string *vsrc;
-	string *fsrc;
+	STRING vsrc;
+	STRING fsrc;
 	GLint prog;
 	GLint attribs[42];
 	GLint uniforms[256];

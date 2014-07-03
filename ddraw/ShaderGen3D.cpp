@@ -125,8 +125,8 @@ void ShaderGen3D::ClearShaders()
 		if(genshaders[i].shader.prog) ext->glDeleteProgram(genshaders[i].shader.prog);
 		if(genshaders[i].shader.fs) ext->glDeleteShader(genshaders[i].shader.fs);
 		if(genshaders[i].shader.vs) ext->glDeleteShader(genshaders[i].shader.vs);
-		if(genshaders[i].shader.fsrc) delete genshaders[i].shader.fsrc;
-		if(genshaders[i].shader.vsrc) delete genshaders[i].shader.vsrc;
+		if(genshaders[i].shader.fsrc.ptr) String_Free(&genshaders[i].shader.fsrc);
+		if(genshaders[i].shader.vsrc.ptr) String_Free(&genshaders[i].shader.vsrc);
 	}
 	if(genshaders) free(genshaders);
 	genshaders = NULL;
@@ -231,8 +231,8 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
 				ext->glDeleteProgram(genshaders[genindex].shader.prog);
 				ext->glDeleteShader(genshaders[genindex].shader.vs);
 				ext->glDeleteShader(genshaders[genindex].shader.fs);
-				delete genshaders[genindex].shader.vsrc;
-				delete genshaders[genindex].shader.fsrc;
+				String_Free(&genshaders[genindex].shader.vsrc);
+				String_Free(&genshaders[genindex].shader.fsrc);
 				ZeroMemory(&genshaders[genindex],sizeof(GenShader));
 			}
 			CreateShader(genindex,id,texstate,texcoords);
@@ -457,31 +457,31 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	char idstring[22];
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
-	genshaders[index].shader.vsrc = new string;
-	genshaders[index].shader.fsrc = new string;
+	genshaders[index].shader.vsrc.ptr = NULL;
+	genshaders[index].shader.fsrc.ptr = NULL;
 	// Create vertex shader
 	//Header
-	string *vsrc = genshaders[index].shader.vsrc;
-	vsrc->append(header);
-	vsrc->append(vertexshader);
-	vsrc->append(idheader);
-	vsrc->append(idstring);
+	STRING *vsrc = &genshaders[index].shader.vsrc;
+	String_Append(vsrc, header);
+	String_Append(vsrc, vertexshader);
+	String_Append(vsrc, idheader);
+	String_Append(vsrc, idstring);
 	// Attributes
-	vsrc->append(attr_xyz);
-	if((id>>50)&1) vsrc->append(attr_rhw);
+	String_Append(vsrc, attr_xyz);
+	if((id>>50)&1) String_Append(vsrc, attr_rhw);
 	tmp = attr_rgba;
 	if((id>>35)&1)
 	{
 		tmp.replace(19,1,"0");
-		vsrc->append(tmp);
+		String_Append(vsrc, tmp.c_str());
 	}
 	if((id>>36)&1)
 	{
 		tmp.replace(19,1,"1");
-		vsrc->append(tmp);
+		String_Append(vsrc, tmp.c_str());
 	}
-	if((id>>37)&1) vsrc->append(attr_nxyz);
-	else vsrc->append(const_nxyz);
+	if((id>>37)&1) String_Append(vsrc, attr_nxyz);
+	else String_Append(vsrc, const_nxyz);
 	count = (id>>46)&7;
 	if(count)
 	{
@@ -489,7 +489,7 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		for(i = 0; i < count; i++)
 		{
 			tmp.replace(21,1,_itoa(i,idstring,10));
-			vsrc->append(tmp);
+			String_Append(vsrc, tmp.c_str());
 		}
 	}
 	for(i = 0; i < 8; i++)
@@ -515,31 +515,31 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			tmp.replace(19,1,_itoa(i,idstring,10));
 			break;
 		}
-		vsrc->append(tmp);
+		String_Append(vsrc, tmp.c_str());
 	}
 
 	// Uniforms
-	vsrc->append(unif_ambient);
-	if((id>>50)&1) vsrc->append(unif_viewport);
+	String_Append(vsrc, unif_ambient);
+	if((id>>50)&1) String_Append(vsrc, unif_viewport);
 	if((id>>59)&1) numlights = (id>>18)&7;
 	else numlights = 0;
 	if((id>>50)&1) numlights = 0;
 	if(numlights) // Lighting
 	{
-		vsrc->append(lightstruct);
-		vsrc->append(unif_world);
+		String_Append(vsrc, lightstruct);
+		String_Append(vsrc, unif_world);
 		tmp = unif_light;
 		for(i = 0; i < numlights; i++)
 		{
 			tmp.replace(19,1,_itoa(i,idstring,10));
-			vsrc->append(tmp);
+			String_Append(vsrc, tmp.c_str());
 		}
 	}
 	
 	// Variables
-	vsrc->append(var_common);
-	if(!((id>>50)&1)) vsrc->append(var_xyzw);
-	if(vertexfog && !pixelfog) vsrc->append(var_fogfactorvertex);
+	String_Append(vsrc, var_common);
+	if(!((id>>50)&1)) String_Append(vsrc, var_xyzw);
+	if(vertexfog && !pixelfog) String_Append(vsrc, var_fogfactorvertex);
 
 	// Functions
 	if(numlights)
@@ -555,20 +555,20 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		}
 	}
 	bool hasspecular = (id >> 11) & 1;
-	if(hasspot) vsrc->append(func_spotlight);
-	if(haspoint) vsrc->append(func_pointlight);
-	if(hasdir) vsrc->append(func_dirlight);
+	if(hasspot) String_Append(vsrc, func_spotlight);
+	if(haspoint) String_Append(vsrc, func_pointlight);
+	if(hasdir) String_Append(vsrc, func_dirlight);
 	//Main
-	vsrc->append(mainstart);
-	if((id>>50)&1) vsrc->append(op_tlvertex);
-	else vsrc->append(op_transform);
-	if((id>>49)&1) vsrc->append(op_normalize);
-	else vsrc->append(op_normalpassthru);
+	String_Append(vsrc, mainstart);
+	if((id>>50)&1) String_Append(vsrc, op_tlvertex);
+	else String_Append(vsrc, op_transform);
+	if((id>>49)&1) String_Append(vsrc, op_normalize);
+	else String_Append(vsrc, op_normalpassthru);
 	const string colorargs[] = {"gl_FrontMaterial.diffuse","gl_FrontMaterial.ambient","gl_FrontMaterial.specular",
 		"gl_FrontMaterial.emission","rgba0.bgra","rgba1.bgra"};
 	if(numlights)
 	{
-		vsrc->append(op_resetcolor);
+		String_Append(vsrc, op_resetcolor);
 		for(i = 0; i < numlights; i++)
 		{
 			if(id>>(38+i)&1)
@@ -577,20 +577,20 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 				{
 					tmp = op_spotlight;
 					tmp.replace(15,1,_itoa(i,idstring,10));
-					vsrc->append(tmp);
+					String_Append(vsrc, tmp.c_str());
 				}
 				else
 				{
 					tmp = op_pointlight;
 					tmp.replace(16,1,_itoa(i,idstring,10));
-					vsrc->append(tmp);
+					String_Append(vsrc, tmp.c_str());
 				}
 			}
 			else
 			{
 				tmp = op_dirlight;
 				tmp.replace(14,1,_itoa(i,idstring,10));
-				vsrc->append(tmp);
+				String_Append(vsrc, tmp.c_str());
 			}
 		}
 		if((id>>60)&1)
@@ -600,35 +600,35 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			bool hascolor2 = false;
 			if((id>>36)&1) hascolor2 = true;
 			int matcolor;
-			vsrc->append("gl_FrontColor = (");
+			String_Append(vsrc, "gl_FrontColor = (");
 			matcolor = ((id>>23)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
-			else vsrc->append(colorargs[0]);
-			vsrc->append(" * diffuse) + (");
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
+			else String_Append(vsrc, colorargs[0].c_str());
+			String_Append(vsrc, " * diffuse) + (");
 			matcolor = ((id>>27)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
-			else vsrc->append(colorargs[1]);
-			vsrc->append(" * ambient)\n+ (");
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
+			else String_Append(vsrc, colorargs[1].c_str());
+			String_Append(vsrc, " * ambient)\n+ (");
 			matcolor = ((id>>25)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
-			else vsrc->append(colorargs[2]);
-			vsrc->append(" * specular) + ");
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
+			else String_Append(vsrc, colorargs[2].c_str());
+			String_Append(vsrc, " * specular) + ");
 			matcolor = ((id>>29)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) vsrc->append(colorargs[4]);
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) vsrc->append(colorargs[5]);
-			else vsrc->append(colorargs[3]);
-			vsrc->append(";\n");
+			if ((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
+			else if ((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
+			else String_Append(vsrc, colorargs[3].c_str());
+			String_Append(vsrc, ";\n");
 		}
-		else vsrc->append(op_colorout);
+		else String_Append(vsrc, op_colorout);
 	}
 	else
 	{
-		if((id>>35)&1) vsrc->append(op_colorvert);
-		else vsrc->append(op_colorwhite);
-		if((id>>36)&1) vsrc->append(op_color2vert);
+		if((id>>35)&1) String_Append(vsrc, op_colorvert);
+		else String_Append(vsrc, op_colorwhite);
+		if((id>>36)&1) String_Append(vsrc, op_color2vert);
 	}
 	int texindex;
 	for(i = 0; i < 8; i++)
@@ -641,63 +641,63 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		{
 			tmp = op_texpassthru1;
 			tmp.replace(12,1,_itoa(i,idstring,10));
-			vsrc->append(tmp);
+			String_Append(vsrc, tmp.c_str());
 			texindex = (texstate[i].shaderid>>54)&3;
 			switch(texcoords[texindex])
 			{
 			case -1: // No texcoords
-				vsrc->append(op_texpassthru2null);
+				String_Append(vsrc, op_texpassthru2null);
 				break;
 			case 0: // st
 				tmp = op_texpassthru2st;
 				tmp.replace(7,1,_itoa(texindex,idstring,10));
-				vsrc->append(tmp);
+				String_Append(vsrc, tmp.c_str());
 			default:
 				break;
 			case 1: // str
 				tmp = op_texpassthru2str;
 				tmp.replace(8,1,_itoa(texindex,idstring,10));
-				vsrc->append(tmp);
+				String_Append(vsrc, tmp.c_str());
 				break;
 			case 2: // strq
 				tmp = op_texpassthru2strq;
 				tmp.replace(4,1,_itoa(texindex,idstring,10));
-				vsrc->append(tmp);
+				String_Append(vsrc, tmp.c_str());
 				break;
 			case 3: // s
 				tmp = op_texpassthru2s;
 				tmp.replace(6,1,_itoa(texindex,idstring,10));
-				vsrc->append(tmp);
+				String_Append(vsrc, tmp.c_str());
 				break;
 			}
 		}
 	}
 	if(vertexfog && !pixelfog)
 	{
-		if((id>>10)&1) vsrc->append(op_fogcoordrange);
-		else vsrc->append(op_fogcoordstandard);
+		if((id>>10)&1) String_Append(vsrc, op_fogcoordrange);
+		else String_Append(vsrc, op_fogcoordstandard);
 		switch(vertexfog)
 		{
 		case D3DFOG_LINEAR:
-			vsrc->append(op_foglinear);
+			String_Append(vsrc, op_foglinear);
 			break;
 		case D3DFOG_EXP:
-			vsrc->append(op_fogexp);
+			String_Append(vsrc, op_fogexp);
 			break;
 		case D3DFOG_EXP2:
-			vsrc->append(op_fogexp2);
+			String_Append(vsrc, op_fogexp2);
 			break;
 		}
-		vsrc->append(op_fogclamp);
+		String_Append(vsrc, op_fogclamp);
 	}
-	vsrc->append(mainend);
+	String_Append(vsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("Vertex shader:\n");
-	OutputDebugStringA(vsrc->c_str());
+	OutputDebugStringA(vsrc->ptr);
 	OutputDebugStringA("\nCompiling vertex shader:\n");
 #endif
 	genshaders[index].shader.vs = ext->glCreateShader(GL_VERTEX_SHADER);
-	const char *src = vsrc->c_str();
+	const char *src = vsrc->ptr;
 	GLint srclen = strlen(src);
 	ext->glShaderSource(genshaders[index].shader.vs,1,&src,&srclen);
 	ext->glCompileShader(genshaders[index].shader.vs);
@@ -717,20 +717,20 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	}
 #endif
 	// Create fragment shader
-	string *fsrc = genshaders[index].shader.fsrc;
-	fsrc->append(header);
-	fsrc->append(fragshader);
+	STRING *fsrc = &genshaders[index].shader.fsrc;
+	String_Append(fsrc, header);
+	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
-	fsrc->append(idheader);
-	fsrc->append(idstring);
+	String_Append(fsrc, idheader);
+	String_Append(fsrc, idstring);
 	// Uniforms
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
 		tmp = unif_tex;
 		tmp.replace(21,1,_itoa(i,idstring,10));
-		fsrc->append(tmp);
+		String_Append(fsrc, tmp.c_str());
 	}
 	if((id>>13)&1)
 	{
@@ -740,19 +740,19 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			{
 				tmp = unif_key;
 				tmp.replace(17,1,_itoa(i,idstring,10));
-				fsrc->append(tmp);
+				String_Append(fsrc, tmp.c_str());
 			}
 		}
 	}
-	if((id>>2)&1) fsrc->append(unif_alpharef);
+	if((id>>2)&1) String_Append(fsrc, unif_alpharef);
 	// Variables
-	fsrc->append(var_color);
-	if(vertexfog && !pixelfog) fsrc->append(var_fogfactorvertex);
-	if(pixelfog) fsrc->append(var_fogfactorpixel);
+	String_Append(fsrc, var_color);
+	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
+	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	// Functions
 	// Main
-	fsrc->append(mainstart);
-	fsrc->append(op_colorfragin);
+	String_Append(fsrc, mainstart);
+	String_Append(fsrc, op_colorfragin);
 	string arg1,arg2;
 	string texarg;
 	int args[4];
@@ -778,7 +778,7 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 				arg1.replace(26,1,_itoa(i,idstring,10));
 				arg1.replace(40,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				arg1.replace(57,1,_itoa(i,idstring,10));
-				fsrc->append(arg1);
+				String_Append(fsrc, arg1.c_str());
 			}
 		}
 		// Color stage
@@ -847,56 +847,121 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		default:
 			break;
 		case D3DTOP_SELECTARG1:
-			fsrc->append("color.rgb = " + arg1 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+				String_Append(fsrc, arg1.c_str());
+				String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
-			fsrc->append("color.rgb = " + arg2 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE:
-			fsrc->append("color.rgb = " + arg1 + " * " + arg2 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
-			fsrc->append("color.rgb = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
+			String_Append(fsrc, "color.rgb = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
-			fsrc->append("color.rgb = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
+			String_Append(fsrc, "color.rgb = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
-			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
-			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " - .5;\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
-			fsrc->append("color.rgb = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			String_Append(fsrc, "color.rgb = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
-			fsrc->append("color.rgb = " + arg1 + " - " + arg2 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " - ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
-			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_BLENDDIFFUSEALPHA:
-			fsrc->append("color.rgb = " + arg1 + " * gl_Color.a + " + arg2 + " * (1.0-gl_Color.a);\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * gl_Color.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
 			texarg = blendargs[2];
 			texarg.replace(17,1,_itoa(i,idstring,10));
 			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-			fsrc->append("color.rgb = " + arg1 + " * " + texarg + ".a + " + arg2 + " * (1.0-"
-				+ texarg + ".a);\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDFACTORALPHA:
-			fsrc->append("color.rgb = " + arg1 + " * texfactor.a + " + arg2 + " * (1.0-texfactor.a);\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * texfactor.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-texfactor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			texarg = blendargs[2];
 			texarg.replace(17,1,_itoa(i,idstring,10));
 			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-			fsrc->append("color.rgb = " + arg1 + " + " + arg2 + " * (1.0-" + texarg + ".a);\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDCURRENTALPHA:
-			fsrc->append("color.rgb = " + arg1 + " * color.a + " + arg2 + " * (1.0-color.a);\n");
+			String_Append(fsrc, "color.rgb = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * color.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-color.a);\n");
 			break;
 		}
 		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)alphadisabled = true;
@@ -965,56 +1030,121 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		default:
 			break;
 		case D3DTOP_SELECTARG1:
-			fsrc->append("color.a = " + arg1 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
-			fsrc->append("color.a = " + arg2 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE:
-			fsrc->append("color.a = " + arg1 + " * " + arg2 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
-			fsrc->append("color.a = (" + arg1 + " * " + arg2 + ") * 2.0;\n");
+			String_Append(fsrc, "color.a = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
-			fsrc->append("color.a = (" + arg1 + " * " + arg2 + ") * 4.0;\n");
+			String_Append(fsrc, "color.a = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
-			fsrc->append("color.a = " + arg1 + " + " + arg2 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
-			fsrc->append("color.a = " + arg1 + " + " + arg2 + " - .5;\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
-			fsrc->append("color.a = (" + arg1 + " + " + arg2 + " - .5) * 2.0;\n");
+			String_Append(fsrc, "color.a = (");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
-			fsrc->append("color.a = " + arg1 + " - " + arg2 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " - ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
-			fsrc->append("color.a = " + arg1 + " + " + arg2 + " - " + arg1 + " * " + arg2 + ";\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " - ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_BLENDDIFFUSEALPHA:
-			fsrc->append("color.a = " + arg1 + " * gl_Color.a + " + arg2 + " * (1.0-gl_Color.a);\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * gl_Color.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
 			texarg = blendargs[2];
 			texarg.replace(17,1,_itoa(i,idstring,10));
 			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-			fsrc->append("color.a = " + arg1 + " * " + texarg + ".a + " + arg2 + " * (1.0-"
-				+ texarg + ".a);\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * ");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDFACTORALPHA:
-			fsrc->append("color.a = " + arg1 + " * texfactor.a + " + arg2 + " * (1.0-texfactor.a);\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * texfactor.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-texfactor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			texarg = blendargs[2];
 			texarg.replace(17,1,_itoa(i,idstring,10));
 			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-			fsrc->append("color.a = " + arg1 + " + " + arg2 + " * (1.0-" + texarg + ".a);\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-");
+			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDCURRENTALPHA:
-			fsrc->append("color.a = " + arg1 + " * color.a + " + arg2 + " * (1.0-color.a);\n");
+			String_Append(fsrc, "color.a = ");
+			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, " * color.a + ");
+			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, " * (1.0-color.a);\n");
 			break;
 		}
 	}
@@ -1023,60 +1153,60 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		switch((id>>3)&7)
 		{
 		case 0:
-			fsrc->append("discard;\n");
+			String_Append(fsrc, "discard;\n");
 			break;
 		case 1:
-			fsrc->append("if(int(color.a * 255.5) >= alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) >= alpharef) discard;");
 			break;
 		case 2:
-			fsrc->append("if(int(color.a * 255.5) != alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) != alpharef) discard;");
 			break;
 		case 3:
-			fsrc->append("if(int(color.a * 255.5) > alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) > alpharef) discard;");
 			break;
 		case 4:
-			fsrc->append("if(int(color.a * 255.5) <= alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) <= alpharef) discard;");
 			break;
 		case 5:
-			fsrc->append("if(int(color.a * 255.5) == alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) == alpharef) discard;");
 			break;
 		case 6:
-			fsrc->append("if(int(color.a * 255.5) < alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) < alpharef) discard;");
 			break;
 		case 7:
 		default:
 			break;
 		}
 	}
-	if(vertexfog && !pixelfog) fsrc->append(op_fogblend);
+	if(vertexfog && !pixelfog) String_Append(fsrc, op_fogblend);
 	if(pixelfog)
 	{
-		fsrc->append(op_fogcoordstandardpixel);
+		String_Append(fsrc, op_fogcoordstandardpixel);
 		switch(pixelfog)
 		{
 		case D3DFOG_LINEAR:
-			fsrc->append(op_foglinearpixel);
+			String_Append(fsrc, op_foglinearpixel);
 			break;
 		case D3DFOG_EXP:
-			fsrc->append(op_fogexppixel);
+			String_Append(fsrc, op_fogexppixel);
 			break;
 		case D3DFOG_EXP2:
-			fsrc->append(op_fogexp2pixel);
+			String_Append(fsrc, op_fogexp2pixel);
 			break;
 		}
-		fsrc->append(op_fogclamp);
-		fsrc->append(op_fogblend);
+		String_Append(fsrc, op_fogclamp);
+		String_Append(fsrc, op_fogblend);
 	}
-	if(((id>>61)&1) && !vertexfog && !pixelfog) fsrc->append(op_fogassign);
-	fsrc->append(op_colorfragout);
-	fsrc->append(mainend);
+	if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
+	String_Append(fsrc, op_colorfragout);
+	String_Append(fsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("Fragment shader:\n");
-	OutputDebugStringA(fsrc->c_str());
+	OutputDebugStringA(fsrc->ptr);
 	OutputDebugStringA("\nCompiling fragment shader:\n");
 #endif
 	genshaders[index].shader.fs = ext->glCreateShader(GL_FRAGMENT_SHADER);
-	src = fsrc->c_str();
+	src = fsrc->ptr;
 	srclen = strlen(src);
 	ext->glShaderSource(genshaders[index].shader.fs,1,&src,&srclen);
 	ext->glCompileShader(genshaders[index].shader.fs);

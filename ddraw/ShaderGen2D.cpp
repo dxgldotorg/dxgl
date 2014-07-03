@@ -50,7 +50,7 @@ Bit 24: ROP index bit 5
 Bit 25:	Depth fill (DDBLT_DEPTHFILL)
 Bit 26: ROP index bit 6
 Bit 27: ROP index bit 7
-Bit 28: reserved for DXGL usage
+Bit 28: (DXGL) Use Clipper
 Bit 29: reserved for DXGL usage
 Bit 30: reserved for DXGL usage
 Bit 31: reserved for DXGL usage

@@ -28,8 +28,6 @@
 #include "glDirect3DLight.h"
 #include "ddraw.h"
 #include "scalers.h"
-#include <string>
-using namespace std;
 #include "ShaderGen3D.h"
 #include "matrix.h"
 
