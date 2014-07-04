@@ -172,7 +172,7 @@ static const char var_pixel[] = "ivec4 pixel;\n";
 
 // Operations
 static const char op_src[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*255.0);\n";
-static const char op_color[] = "pixel = ivec4(gl_FragColor*255.0);\n";
+static const char op_color[] = "pixel = ivec4(gl_Color*255.0);\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*255.0);\n";
 static const char op_pattern[] = "pattern = ivec4(texture2D(patterntex,gl_TexCoord[2].st)*255.0);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.0;\n";

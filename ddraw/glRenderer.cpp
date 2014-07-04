@@ -926,7 +926,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	LONG sizes[6];
 	This->ddInterface->GetSizes(sizes);
 	DWORD shaderid;
-	if (lpDDBltFx) shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
+	if ((lpDDBltFx) && (dwFlags & DDBLT_ROP)) shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
 	else shaderid = dwFlags & 0xF2FAADFF;
 	This->shaders->SetShader(shaderid, NULL, NULL, 1);
 	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
@@ -1056,7 +1056,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if(shader->shader.attribs[1] != -1)
 	{
 		This->util->EnableArray(shader->shader.attribs[1],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[0],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[1],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
 	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
