@@ -40,8 +40,12 @@ const GUID device_template =
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
-	if(!glDD7->renderer) glDD7->renderer = new glRenderer(width,height,bpp,fullscreen,frequency,hWnd,glDD7);
-	else glDD7->renderer->SetWnd(width,height,bpp,fullscreen,frequency,hWnd);
+	if (!glDD7->renderer)
+	{
+		glDD7->renderer = (glRenderer*)malloc(sizeof(glRenderer));
+		glRenderer_Init(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd,glDD7);
+	}
+	else glRenderer_SetWnd(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd);
 	TRACE_EXIT(0,0);
 }
 

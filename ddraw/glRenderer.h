@@ -66,65 +66,28 @@ typedef struct
 #define OP_DRAWPRIMITIVES			12
 #define OP_DELETEFBO				13
 
-
+#ifdef __cplusplus
 class glDirectDraw7;
 class glDirect3DDevice7;
 class glDirectDrawSurface7;
 class glRenderWindow;
+extern "C" {
+#else
+typedef int glDirectDraw7;
+typedef int glDirect3DDevice7;
+typedef int glDirectDrawSurface7;
+typedef int glRenderWindow;
+#endif
 
-/** @brief glRenderer class
-  * OpenGL renderer class for DXGL.
+/** @brief glRenderer struct
+  * OpenGL renderer structure for DXGL.
   */
-class glRenderer
+typedef struct glRenderer
 {
-public:
-	glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7);
-	~glRenderer();
-	static DWORD WINAPI ThreadEntry(void *entry);
-	void UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
-	void DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
-	HRESULT Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
-		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
-	void MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
-	void DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync);
-	void DeleteTexture(TEXTURE *texture);
-	void InitD3D(int zbuffer);
-	void Flush();
-	void SetWnd(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd);
-	HRESULT Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	HRESULT DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
-		DWORD indexcount, DWORD flags);
-	void DeleteFBO(FBO *fbo);
-	unsigned int GetScanLine();
 	HGLRC hRC;
 	GLCAPS gl_caps;
 	glExtensions *ext;
-private:
-	// In-thread APIs
-	DWORD _Entry();
-	BOOL _InitGL(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
-	void _UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
-	void _DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
-	void _Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
-		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
-	void _MakeTexture(TEXTURE *texture, DWORD width, DWORD height);
-	void _DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync);
-	void _DeleteTexture(TEXTURE *texture);
-	void _DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype);
-	void _InitD3D(int zbuffer);
-	void _Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-	void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
-		DWORD indexcount, DWORD flags);
 	glDirectDraw7 *ddInterface;
-	void _Flush();
-	void _SetWnd(int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd);
-	void _DeleteFBO(FBO *fbo);
-	void _SetFogColor(DWORD color);
-	void _SetFogStart(GLfloat start);
-	void _SetFogEnd(GLfloat end);
-	void _SetFogDensity(GLfloat density);
-	inline void _SetSwap(int swap);
-	void SetBlend(DWORD src, DWORD dest);
 	int opcode;
 	void* inputs[32];
 	void* outputs[32];
@@ -152,6 +115,53 @@ private:
 	TextureManager *texman;
 	glUtil *util;
 	ShaderManager *shaders;
-};
+} glRenderer;
+
+void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7);
+void glRenderer_Delete(glRenderer *This);
+static DWORD WINAPI glRenderer_ThreadEntry(void *entry);
+void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
+	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height);
+void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync);
+void glRenderer_DeleteTexture(glRenderer *This, TEXTURE *texture);
+void glRenderer_InitD3D(glRenderer *This, int zbuffer);
+void glRenderer_Flush(glRenderer *This);
+void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd);
+HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+	DWORD indexcount, DWORD flags);
+void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
+unsigned int glRenderer_GetScanLine(glRenderer *This);
+// In-thread APIs
+DWORD glRenderer__Entry(glRenderer *This);
+BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
+void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
+void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
+	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+void glRenderer__MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height);
+void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync);
+void glRenderer__DeleteTexture(glRenderer *This, TEXTURE *texture);
+void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int y, int progtype);
+void glRenderer__InitD3D(glRenderer *This, int zbuffer);
+void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
+	DWORD indexcount, DWORD flags);
+void glRenderer__Flush(glRenderer *This);
+void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd);
+void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
+void glRenderer__SetFogColor(glRenderer *This, DWORD color);
+void glRenderer__SetFogStart(glRenderer *This, GLfloat start);
+void glRenderer__SetFogEnd(glRenderer *This, GLfloat end);
+void glRenderer__SetFogDensity(glRenderer *This, GLfloat density);
+inline void glRenderer__SetSwap(glRenderer *This, int swap);
+void glRenderer_SetBlend(glRenderer *This, DWORD src, DWORD dest);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLRENDERER_H

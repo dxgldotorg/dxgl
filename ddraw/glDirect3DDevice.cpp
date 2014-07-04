@@ -366,7 +366,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 		d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	scalex = scaley = 0;
 	mhWorld = mhView = mhProjection = 0;
-	renderer->InitD3D(zbuffer);
+	glRenderer_InitD3D(renderer,zbuffer);
 	error = D3D_OK;
 	TRACE_EXIT(-1,0);
 }
@@ -574,7 +574,7 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 	TRACE_ENTER(7,14,this,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,renderer->Clear(glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
+	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
@@ -802,7 +802,7 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&stats);
 	else AddStats(d3dptPrimitiveType,dwVertexCount,&stats);
 	if(err != D3D_OK) TRACE_RET(HRESULT,23,err);
-	TRACE_RET(HRESULT,23,renderer->DrawPrimitives(this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
+	TRACE_RET(HRESULT,23,glRenderer_DrawPrimitives(renderer,this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
 		dwVertexCount,lpwIndices,dwIndexCount,dwFlags));
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
@@ -854,7 +854,7 @@ HRESULT WINAPI glDirect3DDevice7::EndScene()
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!inscene) TRACE_RET(HRESULT,23,D3DERR_SCENE_NOT_IN_SCENE);
 	inscene = false;
-	renderer->Flush();
+	glRenderer_Flush(renderer);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

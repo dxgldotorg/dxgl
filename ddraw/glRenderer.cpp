@@ -31,6 +31,8 @@
 #include "ShaderGen3D.h"
 #include "matrix.h"
 
+extern "C" {
+
 const GLushort bltindices[4] = {0,1,2,3};
 
 /**
@@ -59,21 +61,25 @@ inline int _6to8bit(int number)
 
 /**
   * Sets the Windows OpenGL swap interval
+  * @param This
+  *  Pointer to glRenderer object
   * @param swap
   *  Number of vertical retraces to wait per frame, 0 disable vsync
   */
-inline void glRenderer::_SetSwap(int swap)
+inline void glRenderer__SetSwap(glRenderer *This, int swap)
 {
-	if(swap != oldswap)
+	if(swap != This->oldswap)
 	{
-		ext->wglSwapIntervalEXT(swap);
-		oldswap = ext->wglGetSwapIntervalEXT();
-		oldswap = swap;
+		This->ext->wglSwapIntervalEXT(swap);
+		This->oldswap = This->ext->wglGetSwapIntervalEXT();
+		This->oldswap = swap;
 	}
 }
 
 /**
   * Internal function for uploading surface content to an OpenGL texture
+  * @param This
+  *  Pointer to glRenderer object
   * @param buffer
   *  Contains the contents of the surface
   * @param bigbuffer
@@ -92,13 +98,13 @@ inline void glRenderer::_SetSwap(int swap)
   * @param bpp
   *  Number of bits per surface pixel
   */
-void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
 	if(bpp == 15) bpp = 16;
 	if((x == bigx && y == bigy) || !bigbuffer)
 	{
-		TextureManager__UploadTexture(texman, texture, 0, buffer, x, y);
+		TextureManager__UploadTexture(This->texman, texture, 0, buffer, x, y);
 	}
 	else
 	{
@@ -118,12 +124,14 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture,
 			break;
 		break;
 		}
-		TextureManager__UploadTexture(texman,texture,0,bigbuffer,bigx,bigy);
+		TextureManager__UploadTexture(This->texman,texture,0,bigbuffer,bigx,bigy);
 	}
 }
 
 /**
   * Internal function for downloading surface content from an OpenGL texture
+  * @param This
+  *  Pointer to glRenderer object
   * @param buffer
   *  Buffer to receive the surface contents
   * @param bigbuffer
@@ -142,16 +150,16 @@ void glRenderer::_UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture,
   * @param bpp
   *  Number of bits per surface pixel
   */
-void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
 	if((bigx == x && bigy == y) || !bigbuffer)
 	{
-		TextureManager__DownloadTexture(texman,texture,0,buffer);
+		TextureManager__DownloadTexture(This->texman,texture,0,buffer);
 	}
 	else
 	{
-		TextureManager__DownloadTexture(texman,texture,0,bigbuffer);
+		TextureManager__DownloadTexture(This->texman,texture,0,bigbuffer);
 		switch(bpp)
 		{
 		case 8:
@@ -173,7 +181,9 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
 }
 
 /**
-  * Constructor for the glRenderer object
+  * Initializes a glRenderer object
+  * @param This
+  *  Pointer to glRenderer object to initialize
   * @param width,height,bpp
   *  Width, height, and BPP of the rendering window
   * @param fullscreen
@@ -184,60 +194,62 @@ void glRenderer::_DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *textur
   * @param glDD7
   *  Pointer to the glDirectDraw7 object that is managing the glRenderer object
   */
-glRenderer::glRenderer(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
+void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
 {
-	oldswap = 0;
-	fogcolor = 0;
-	fogstart = 0.0f;
-	fogend = 1.0f;
-	fogdensity = 1.0f;
-	backbuffer = NULL;
-	hDC = NULL;
-	hRC = NULL;
-	PBO = 0;
-	dib.enabled = false;
-	hWnd = hwnd;
-	InitializeCriticalSection(&cs);
-	busy = CreateEvent(NULL,FALSE,FALSE,NULL);
-	start = CreateEvent(NULL,FALSE,FALSE,NULL);
+	This->oldswap = 0;
+	This->fogcolor = 0;
+	This->fogstart = 0.0f;
+	This->fogend = 1.0f;
+	This->fogdensity = 1.0f;
+	This->backbuffer = NULL;
+	This->hDC = NULL;
+	This->hRC = NULL;
+	This->PBO = 0;
+	This->dib.enabled = false;
+	This->hWnd = hwnd;
+	InitializeCriticalSection(&This->cs);
+	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
+	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
 	if(fullscreen)
 	{
-		SetWindowLongPtrA(hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-		SetWindowLongPtrA(hWnd,GWL_STYLE,WS_OVERLAPPED);
-		ShowWindow(hWnd,SW_MAXIMIZE);
+		SetWindowLongPtrA(This->hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
+		SetWindowLongPtrA(This->hWnd,GWL_STYLE,WS_OVERLAPPED);
+		ShowWindow(This->hWnd,SW_MAXIMIZE);
 	}
 	if(width)
 	{
 		// TODO:  Adjust window rect
 	}
-	SetWindowPos(hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	RenderWnd = new glRenderWindow(width,height,fullscreen,hWnd,glDD7);
-	inputs[0] = (void*)width;
-	inputs[1] = (void*)height;
-	inputs[2] = (void*)bpp;
-	inputs[3] = (void*)fullscreen;
-	inputs[4] = (void*)frequency;
-	inputs[5] = (void*)hWnd;
-	inputs[6] = glDD7;
-	inputs[7] = this;
-	hThread = CreateThread(NULL,0,ThreadEntry,inputs,0,NULL);
-	WaitForSingleObject(busy,INFINITE);
+	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7);
+	This->inputs[0] = (void*)width;
+	This->inputs[1] = (void*)height;
+	This->inputs[2] = (void*)bpp;
+	This->inputs[3] = (void*)fullscreen;
+	This->inputs[4] = (void*)frequency;
+	This->inputs[5] = (void*)This->hWnd;
+	This->inputs[6] = glDD7;
+	This->inputs[7] = This;
+	This->hThread = CreateThread(NULL, 0, glRenderer_ThreadEntry, This->inputs, 0, NULL);
+	WaitForSingleObject(This->busy,INFINITE);
 }
 
 /**
-  * Destructor for the glRenderer object
+  * Deletes a glRenderer object
+  * @param This
+  *  Pointer to glRenderer object
   */
-glRenderer::~glRenderer()
+void glRenderer_Delete(glRenderer *This)
 {
-	EnterCriticalSection(&cs);
-	opcode = OP_DELETE;
-	SetEvent(start);
-	WaitForObjectAndMessages(busy);
-	CloseHandle(start);
-	CloseHandle(busy);
-	LeaveCriticalSection(&cs);
-	DeleteCriticalSection(&cs);
-	CloseHandle(hThread);
+	EnterCriticalSection(&This->cs);
+	This->opcode = OP_DELETE;
+	SetEvent(This->start);
+	WaitForObjectAndMessages(This->busy);
+	CloseHandle(This->start);
+	CloseHandle(This->busy);
+	LeaveCriticalSection(&This->cs);
+	DeleteCriticalSection(&This->cs);
+	CloseHandle(This->hThread);
 }
 
 /**
@@ -245,15 +257,17 @@ glRenderer::~glRenderer()
   * @param entry
   *  Pointer to the inputs passed by the CreateThread function
   */
-DWORD WINAPI glRenderer::ThreadEntry(void *entry)
+DWORD WINAPI glRenderer_ThreadEntry(void *entry)
 {
 	void **inputsin = (void**)entry;
 	glRenderer *This = (glRenderer*)inputsin[7];
-	return This->_Entry();
+	return glRenderer__Entry(This);
 }
 
 /**
   * Creates an OpenGL texture.  
+  * @param This
+  *  Pointer to glRenderer object
   * @param min,mag
   *  Minification and magnification filters for the OpenGL texture
   * @param wraps,wrapt
@@ -269,20 +283,22 @@ DWORD WINAPI glRenderer::ThreadEntry(void *entry)
   * @return
   *  Number representing the texture created by OpenGL.
   */
-void glRenderer::MakeTexture(TEXTURE *texture, DWORD width, DWORD height)
+void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = texture;
-	inputs[1] = (void*)width;
-	inputs[2] = (void*)height;
-	opcode = OP_CREATE;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->inputs[1] = (void*)width;
+	This->inputs[2] = (void*)height;
+	This->opcode = OP_CREATE;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Uploads the content of a surface to an OpenGL texture.
+  * @param This
+  *  Pointer to glRenderer object
   * @param buffer
   *  Contains the contents of the surface
   * @param bigbuffer
@@ -301,28 +317,30 @@ void glRenderer::MakeTexture(TEXTURE *texture, DWORD width, DWORD height)
   * @param bpp
   *  Number of bits per surface pixel
   */
-void glRenderer::UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = buffer;
-	inputs[1] = bigbuffer;
-	inputs[2] = texture;
-	inputs[3] = (void*)x;
-	inputs[4] = (void*)y;
-	inputs[5] = (void*)bigx;
-	inputs[6] = (void*)bigy;
-	inputs[7] = (void*)pitch;
-	inputs[8] = (void*)bigpitch;
-	inputs[9] = (void*)bpp;
-	opcode = OP_UPLOAD;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = buffer;
+	This->inputs[1] = bigbuffer;
+	This->inputs[2] = texture;
+	This->inputs[3] = (void*)x;
+	This->inputs[4] = (void*)y;
+	This->inputs[5] = (void*)bigx;
+	This->inputs[6] = (void*)bigy;
+	This->inputs[7] = (void*)pitch;
+	This->inputs[8] = (void*)bigpitch;
+	This->inputs[9] = (void*)bpp;
+	This->opcode = OP_UPLOAD;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Downloads the contents of an OpenGL texture to a surface buffer.
+  * @param This
+  *  Pointer to glRenderer object
   * @param buffer
   *  Buffer to receive the surface contents
   * @param bigbuffer
@@ -341,43 +359,47 @@ void glRenderer::UploadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, 
   * @param bpp
   *  Number of bits per surface pixel
   */
-void glRenderer::DownloadTexture(char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = buffer;
-	inputs[1] = bigbuffer;
-	inputs[2] = texture;
-	inputs[3] = (void*)x;
-	inputs[4] = (void*)y;
-	inputs[5] = (void*)bigx;
-	inputs[6] = (void*)bigy;
-	inputs[7] = (void*)pitch;
-	inputs[8] = (void*)bigpitch;
-	inputs[9] = (void*)bpp;
-	opcode = OP_DOWNLOAD;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = buffer;
+	This->inputs[1] = bigbuffer;
+	This->inputs[2] = texture;
+	This->inputs[3] = (void*)x;
+	This->inputs[4] = (void*)y;
+	This->inputs[5] = (void*)bigx;
+	This->inputs[6] = (void*)bigy;
+	This->inputs[7] = (void*)pitch;
+	This->inputs[8] = (void*)bigpitch;
+	This->inputs[9] = (void*)bpp;
+	This->opcode = OP_DOWNLOAD;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Deletes an OpenGL texture.
+  * @param This
+  *  Pointer to glRenderer object
   * @param texture
   *  OpenGL texture to be deleted
   */
-void glRenderer::DeleteTexture(TEXTURE * texture)
+void glRenderer_DeleteTexture(glRenderer *This, TEXTURE * texture)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = texture;
-	opcode = OP_DELETETEX;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->opcode = OP_DELETETEX;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Copies the contents of one surface to another.
+  * @param This
+  *  Pointer to glRenderer object
   * @param lpDestRect
   *  Pointer to the coordinates to blit to.  If NULL, blits to the entire surface.
   * @param src
@@ -399,36 +421,38 @@ void glRenderer::DeleteTexture(TEXTURE * texture)
   * @return
   *  DD_OK if the call succeeds, or DDERR_WASSTILLDRAWING if busy.
   */
-HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
+HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	EnterCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
 	RECT r,r2;
 	if(((dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 	{
-		GetClientRect(hWnd,&r);
-		GetClientRect(RenderWnd->GetHWnd(),&r2);
+		GetClientRect(This->hWnd,&r);
+		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
-	inputs[0] = lpDestRect;
-	inputs[1] = src;
-	inputs[2] = dest;
-	inputs[3] = lpSrcRect;
-	inputs[4] = (void*)dwFlags;
-	inputs[5] = lpDDBltFx;
-	opcode = OP_BLT;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
-	return (HRESULT)outputs[0];
+	This->inputs[0] = lpDestRect;
+	This->inputs[1] = src;
+	This->inputs[2] = dest;
+	This->inputs[3] = lpSrcRect;
+	This->inputs[4] = (void*)dwFlags;
+	This->inputs[5] = lpDDBltFx;
+	This->opcode = OP_BLT;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
+	return (HRESULT)This->outputs[0];
 }
 
 /**
   * Updates the display with the current primary texture.
+  * @param This
+  *  Pointer to glRenderer object
   * @param texture
   *  Texture to use as the primary
   * @param paltex
@@ -440,36 +464,40 @@ HRESULT glRenderer::Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
   * @param vsync
   *  Vertical sync count
   */
-void glRenderer::DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
+void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = texture;
-	inputs[1] = paltex;
-	inputs[2] = dest;
-	inputs[3] = src;
-	inputs[4] = (void*)vsync;
-	opcode = OP_DRAWSCREEN;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->inputs[1] = paltex;
+	This->inputs[2] = dest;
+	This->inputs[3] = src;
+	This->inputs[4] = (void*)vsync;
+	This->opcode = OP_DRAWSCREEN;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Ensures the renderer is set up for handling Direct3D commands.
+  * @param This
+  *  Pointer to glRenderer object
   * @param zbuffer
   *  Nonzero if a Z buffer is present.
   */
-void glRenderer::InitD3D(int zbuffer)
+void glRenderer_InitD3D(glRenderer *This, int zbuffer)
 {
-	EnterCriticalSection(&cs);
-	opcode = OP_INITD3D;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->opcode = OP_INITD3D;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Clears the viewport.
+  * @param This
+  *  Pointer to glRenderer object
   * @param target
   *  Surface to be cleared
   * @param dwCount
@@ -487,37 +515,41 @@ void glRenderer::InitD3D(int zbuffer)
   * @return
   *  Returns D3D_OK
   */
-HRESULT glRenderer::Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = target;
-	inputs[1] = (void*)dwCount;
-	inputs[2] = lpRects;
-	inputs[3] = (void*)dwFlags;
-	inputs[4] = (void*)dwColor;
-	memcpy(&inputs[5],&dvZ,4);
-	inputs[6] = (void*)dwStencil;
-	opcode = OP_CLEAR;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
-	return (HRESULT)outputs[0];
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = target;
+	This->inputs[1] = (void*)dwCount;
+	This->inputs[2] = lpRects;
+	This->inputs[3] = (void*)dwFlags;
+	This->inputs[4] = (void*)dwColor;
+	memcpy(&This->inputs[5],&dvZ,4);
+	This->inputs[6] = (void*)dwStencil;
+	This->opcode = OP_CLEAR;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
+	return (HRESULT)This->outputs[0];
 }
 
 /**
   * Instructs the OpenGL driver to send all queued commands to the GPU.
+  * @param This
+  *  Pointer to glRenderer object
   */
-void glRenderer::Flush()
+void glRenderer_Flush(glRenderer *This)
 {
-	EnterCriticalSection(&cs);
-	opcode = OP_FLUSH;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->opcode = OP_FLUSH;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
 /**
   * Changes the window used for rendering.
+  * @param This
+  *  Pointer to glRenderer object
   * @param width,height
   *  Width and height of the new window.
   * @param fullscreen
@@ -525,28 +557,30 @@ void glRenderer::Flush()
   * @param newwnd
   *  HWND of the new window
   */
-void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
+void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
 {
-	EnterCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
 	if(fullscreen && newwnd)
 	{
 		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
 		SetWindowLongPtrA(newwnd,GWL_STYLE,WS_OVERLAPPED);
 		ShowWindow(newwnd,SW_MAXIMIZE);
 	}
-	inputs[0] = (void*)width;
-	inputs[1] = (void*)height;
-	inputs[2] = (void*)bpp;
-	inputs[3] = (void*)fullscreen;
-	inputs[4] = (void*)frequency;
-	inputs[5] = (void*)newwnd;
-	opcode = OP_SETWND;
-	SetEvent(start);
-	WaitForObjectAndMessages(busy);
-	LeaveCriticalSection(&cs);
+	This->inputs[0] = (void*)width;
+	This->inputs[1] = (void*)height;
+	This->inputs[2] = (void*)bpp;
+	This->inputs[3] = (void*)fullscreen;
+	This->inputs[4] = (void*)frequency;
+	This->inputs[5] = (void*)newwnd;
+	This->opcode = OP_SETWND;
+	SetEvent(This->start);
+	WaitForObjectAndMessages(This->busy);
+	LeaveCriticalSection(&This->cs);
 }
 /**
   * Draws one or more primitives to the currently selected render target.
+  * @param This
+  *  Pointer to glRenderer object
   * @param device
   *  glDirect3DDevice7 interface to use for drawing
   * @param mode
@@ -571,147 +605,163 @@ void glRenderer::SetWnd(int width, int height, int bpp, int fullscreen, unsigned
   *  D3D_OK if the call succeeds, or D3DERR_INVALIDVERTEXTYPE if the vertex format
   *  has no position coordinates.
   */
-HRESULT glRenderer::DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = device;
-	inputs[1] = (void*)mode;
-	inputs[2] = vertices;
-	inputs[3] = texformats;
-	inputs[4] = (void*)count;
-	inputs[5] = indices;
-	inputs[6] = (void*)indexcount;
-	inputs[7] = (void*)flags;
-	opcode = OP_DRAWPRIMITIVES;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
-	return (HRESULT)outputs[0];
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = device;
+	This->inputs[1] = (void*)mode;
+	This->inputs[2] = vertices;
+	This->inputs[3] = texformats;
+	This->inputs[4] = (void*)count;
+	This->inputs[5] = indices;
+	This->inputs[6] = (void*)indexcount;
+	This->inputs[7] = (void*)flags;
+	This->opcode = OP_DRAWPRIMITIVES;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
+	return (HRESULT)This->outputs[0];
 }
 
 /**
   * Deletes a framebuffer object.
+  * @param This
+  *  Pointer to glRenderer object
   * @param fbo
   *  FBO Structure containing framebuffer to delete.
   */
-void glRenderer::DeleteFBO(FBO *fbo)
+void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 {
-	EnterCriticalSection(&cs);
-	inputs[0] = fbo;
-	opcode = OP_DELETEFBO;
-	SetEvent(start);
-	WaitForSingleObject(busy,INFINITE);
-	LeaveCriticalSection(&cs);
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = fbo;
+	This->opcode = OP_DELETEFBO;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
 }
 
-unsigned int glRenderer::GetScanLine()
+/**
+  * Gets an estimate of the scanline currently being drawn.
+  * @param This
+  *  Pointer to glRenderer object
+  */
+unsigned int glRenderer_GetScanLine(glRenderer *This)
 {
-	return timer.GetScanLine();
+	return This->timer.GetScanLine();
 }
 
 /**
   * Main loop for glRenderer class
+  * @param This
+  *  Pointer to glRenderer object
   * @return
   *  Returns 0 to signal successful thread termination
   */
-DWORD glRenderer::_Entry()
+DWORD glRenderer__Entry(glRenderer *This)
 {
 	float tmpfloats[16];
-	EnterCriticalSection(&cs);
-	_InitGL((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(unsigned int)inputs[4],(HWND)inputs[5],(glDirectDraw7*)inputs[6]);
-	LeaveCriticalSection(&cs);
-	SetEvent(busy);
+	EnterCriticalSection(&This->cs);
+	glRenderer__InitGL(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2],
+		(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],
+		(glDirectDraw7*)This->inputs[6]);
+	LeaveCriticalSection(&This->cs);
+	SetEvent(This->busy);
 	while(1)
 	{
-		WaitForSingleObject(start,INFINITE);
-		switch(opcode)
+		WaitForSingleObject(This->start,INFINITE);
+		switch(This->opcode)
 		{
 		case OP_DELETE:
-			if(hRC)
+			if(This->hRC)
 			{
-				if(dib.enabled)
+				if(This->dib.enabled)
 				{
-					if(dib.hbitmap)	DeleteObject(dib.hbitmap);
-					if(dib.hdc)	DeleteDC(dib.hdc);
-					ZeroMemory(&dib,sizeof(DIB));
+					if(This->dib.hbitmap) DeleteObject(This->dib.hbitmap);
+					if(This->dib.hdc) DeleteDC(This->dib.hdc);
+					ZeroMemory(&This->dib,sizeof(DIB));
 				}
-				TextureManager_DeleteSamplers(texman);
-				util->DeleteFBO(&fbo);
-				if(PBO)
+				TextureManager_DeleteSamplers(This->texman);
+				This->util->DeleteFBO(&This->fbo);
+				if(This->PBO)
 				{
-					ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-					ext->glDeleteBuffers(1,&PBO);
-					PBO = 0;
+					This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+					This->ext->glDeleteBuffers(1,&This->PBO);
+					This->PBO = 0;
 				}
-				if(backbuffer)
+				if(This->backbuffer)
 				{
-					TextureManager__DeleteTexture(texman,backbuffer);
-					delete backbuffer;
-					backbuffer = NULL;
-					backx = 0;
-					backy = 0;
+					TextureManager__DeleteTexture(This->texman,This->backbuffer);
+					free(This->backbuffer);
+					This->backbuffer = NULL;
+					This->backx = 0;
+					This->backy = 0;
 				}
-				delete shaders;
-				free(texman);
-				free(ext);
-				delete util;
-				ext = NULL;
+				delete This->shaders;
+				free(This->texman);
+				free(This->ext);
+				delete This->util;
+				This->ext = NULL;
 				wglMakeCurrent(NULL,NULL);
-				wglDeleteContext(hRC);
-				hRC = NULL;
+				wglDeleteContext(This->hRC);
+				This->hRC = NULL;
 			};
-			if(hDC) ReleaseDC(RenderWnd->GetHWnd(),hDC);
-			hDC = NULL;
-			delete RenderWnd;
-			RenderWnd = NULL;
-			SetEvent(busy);
+			if(This->hDC) ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+			This->hDC = NULL;
+			delete This->RenderWnd;
+			This->RenderWnd = NULL;
+			SetEvent(This->busy);
 			return 0;
 			break;
 		case OP_SETWND:
-			_SetWnd((int)inputs[0],(int)inputs[1],(int)inputs[2],(int)inputs[3],(unsigned int)inputs[4],(HWND)inputs[5]);
+			glRenderer__SetWnd(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2],
+				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5]);
 			break;
 		case OP_CREATE:
-			_MakeTexture((TEXTURE*)inputs[0],(DWORD)inputs[1],(DWORD)inputs[2]);
-			SetEvent(busy);
+			glRenderer__MakeTexture(This,(TEXTURE*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
+			SetEvent(This->busy);
 			break;
 		case OP_UPLOAD:
-			_UploadTexture((char*)inputs[0],(char*)inputs[1],(TEXTURE*)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9]);
-			SetEvent(busy);
+			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
+				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
+				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9]);
+			SetEvent(This->busy);
 			break;
 		case OP_DOWNLOAD:
-			_DownloadTexture((char*)inputs[0],(char*)inputs[1],(TEXTURE*)inputs[2],(int)inputs[3],
-				(int)inputs[4],(int)inputs[5],(int)inputs[6],(int)inputs[7],(int)inputs[8],(int)inputs[9]);
-			SetEvent(busy);
+			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
+				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
+				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9]);
+			SetEvent(This->busy);
 			break;
 		case OP_DELETETEX:
-			_DeleteTexture((TEXTURE*)inputs[0]);
+			glRenderer__DeleteTexture(This,(TEXTURE*)This->inputs[0]);
 			break;
 		case OP_BLT:
-			_Blt((LPRECT)inputs[0],(glDirectDrawSurface7*)inputs[1],(glDirectDrawSurface7*)inputs[2],
-				(LPRECT)inputs[3],(DWORD)inputs[4],(LPDDBLTFX)inputs[5]);
+			glRenderer__Blt(This,(LPRECT)This->inputs[0],(glDirectDrawSurface7*)This->inputs[1],
+				(glDirectDrawSurface7*)This->inputs[2],(LPRECT)This->inputs[3],(DWORD)This->inputs[4],(LPDDBLTFX)This->inputs[5]);
 			break;
 		case OP_DRAWSCREEN:
-			_DrawScreen((TEXTURE*)inputs[0],(TEXTURE*)inputs[1],(glDirectDrawSurface7*)inputs[2],(glDirectDrawSurface7*)inputs[3],(GLint)inputs[4],true);
+			glRenderer__DrawScreen(This,(TEXTURE*)This->inputs[0],(TEXTURE*)This->inputs[1],
+				(glDirectDrawSurface7*)This->inputs[2],(glDirectDrawSurface7*)This->inputs[3],(GLint)This->inputs[4],true);
 			break;
 		case OP_INITD3D:
-			_InitD3D((int)inputs[0]);
+			glRenderer__InitD3D(This,(int)This->inputs[0]);
 			break;
 		case OP_CLEAR:
-			memcpy(&tmpfloats[0],&inputs[5],4);
-			_Clear((glDirectDrawSurface7*)inputs[0],(DWORD)inputs[1],(LPD3DRECT)inputs[2],(DWORD)inputs[3],(DWORD)inputs[4],
-				tmpfloats[0],(DWORD)inputs[6]);
+			memcpy(&tmpfloats[0],&This->inputs[5],4);
+			glRenderer__Clear(This,(glDirectDrawSurface7*)This->inputs[0],(DWORD)This->inputs[1],
+				(LPD3DRECT)This->inputs[2],(DWORD)This->inputs[3],(DWORD)This->inputs[4],tmpfloats[0],(DWORD)This->inputs[6]);
 			break;
 		case OP_FLUSH:
-			_Flush();
+			glRenderer__Flush(This);
 			break;
 		case OP_DRAWPRIMITIVES:
-			_DrawPrimitives((glDirect3DDevice7*)inputs[0],(GLenum)inputs[1],(GLVERTEX*)inputs[2],(int*)inputs[3],(DWORD)inputs[4],
-				(LPWORD)inputs[5],(DWORD)inputs[6],(DWORD)inputs[7]);
+			glRenderer__DrawPrimitives(This,(glDirect3DDevice7*)This->inputs[0],(GLenum)This->inputs[1],
+				(GLVERTEX*)This->inputs[2],(int*)This->inputs[3],(DWORD)This->inputs[4],(LPWORD)This->inputs[5],
+				(DWORD)This->inputs[6],(DWORD)This->inputs[7]);
 			break;
 		case OP_DELETEFBO:
-			_DeleteFBO((FBO*)inputs[0]);
+			glRenderer__DeleteFBO(This,(FBO*)This->inputs[0]);
 			break;
 		}
 	}
@@ -720,6 +770,8 @@ DWORD glRenderer::_Entry()
 
 /**
   * Creates a render window and initializes OpenGL.
+  * @param This
+  *  Pointer to glRenderer object
   * @param width,height
   *  Width and height of the render window.
   * @param bpp
@@ -734,14 +786,14 @@ DWORD glRenderer::_Entry()
   * @return
   *  TRUE if OpenGL has been initialized, FALSE otherwise.
   */
-BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
+BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	EnterCriticalSection(&dll_cs);
-	ddInterface = glDD7;
-	if(hRC)
+	This->ddInterface = glDD7;
+	if(This->hRC)
 	{
 		wglMakeCurrent(NULL,NULL);
-		wglDeleteContext(hRC);
+		wglDeleteContext(This->hRC);
 	};
 	PIXELFORMATDESCRIPTOR pfd;
 	GLuint pf;
@@ -753,15 +805,15 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
 	InterlockedIncrement(&gllock);
-	hDC = GetDC(RenderWnd->GetHWnd());
-	if(!hDC)
+	This->hDC = GetDC(This->RenderWnd->GetHWnd());
+	if(!This->hDC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create hDC\n");
 		InterlockedDecrement(&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
-	pf = ChoosePixelFormat(hDC,&pfd);
+	pf = ChoosePixelFormat(This->hDC,&pfd);
 	if(!pf)
 	{
 		DEBUG("glRenderer::InitGL: Can not get pixelformat\n");
@@ -769,122 +821,123 @@ BOOL glRenderer::_InitGL(int width, int height, int bpp, int fullscreen, unsigne
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
-	if(!SetPixelFormat(hDC,pf,&pfd))
+	if(!SetPixelFormat(This->hDC,pf,&pfd))
 		DEBUG("glRenderer::InitGL: Can not set pixelformat\n");
-	hRC = wglCreateContext(hDC);
-	if(!hRC)
+	This->hRC = wglCreateContext(This->hDC);
+	if(!This->hRC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create GL context\n");
 		InterlockedDecrement(&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
-	if(!wglMakeCurrent(hDC,hRC))
+	if(!wglMakeCurrent(This->hDC,This->hRC))
 	{
 		DEBUG("glRenderer::InitGL: Can not activate GL context\n");
-		wglDeleteContext(hRC);
-		hRC = NULL;
-		ReleaseDC(RenderWnd->GetHWnd(),hDC);
-		hDC = NULL;
+		wglDeleteContext(This->hRC);
+		This->hRC = NULL;
+		ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+		This->hDC = NULL;
 		InterlockedDecrement(&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
 	InterlockedDecrement(&gllock);
 	LeaveCriticalSection(&dll_cs);
-	ext = (glExtensions *)malloc(sizeof(glExtensions));
-	glExtensions_Init(ext);
-	util = new glUtil(ext);
-	_SetSwap(1);
-	SwapBuffers(hDC);
+	This->ext = (glExtensions *)malloc(sizeof(glExtensions));
+	glExtensions_Init(This->ext);
+	This->util = new glUtil(This->ext);
+	glRenderer__SetSwap(This,1);
+	SwapBuffers(This->hDC);
 	glFinish();
-	timer.Calibrate(height, frequency);
-	_SetSwap(0);
-	util->SetViewport(0,0,width,height);
+	This->timer.Calibrate(height, frequency);
+	glRenderer__SetSwap(This,0);
+	This->util->SetViewport(0,0,width,height);
 	glViewport(0,0,width,height);
-	util->SetDepthRange(0.0,1.0);
-	util->DepthWrite(true);
-	util->DepthTest(false);
-	util->MatrixMode(GL_MODELVIEW);
+	This->util->SetDepthRange(0.0,1.0);
+	This->util->DepthWrite(true);
+	This->util->DepthTest(false);
+	This->util->MatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
-	util->SetDepthComp(GL_LESS);
+	This->util->SetDepthComp(GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
-	gl_caps.Version = (GLfloat)atof((char*)glver);
-	if(gl_caps.Version >= 2)
+	This->gl_caps.Version = (GLfloat)atof((char*)glver);
+	if(This->gl_caps.Version >= 2)
 	{
 		glver = glGetString(GL_SHADING_LANGUAGE_VERSION);
-		gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
+		This->gl_caps.ShaderVer = (GLfloat)atof((char*)glver);
 	}
-	else gl_caps.ShaderVer = 0;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&gl_caps.TextureMax);
-	shaders = new ShaderManager(ext);
-	fbo.fbo = 0;
-	util->InitFBO(&fbo);
-	util->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	util->ClearDepth(1.0);
-	util->ClearStencil(0);
-	util->EnableArray(-1,false);
-	util->BlendFunc(GL_ONE,GL_ZERO);
-	util->BlendEnable(false);
+	else This->gl_caps.ShaderVer = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&This->gl_caps.TextureMax);
+	This->shaders = new ShaderManager(This->ext);
+	This->fbo.fbo = 0;
+	This->util->InitFBO(&This->fbo);
+	This->util->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	This->util->ClearDepth(1.0);
+	This->util->ClearStencil(0);
+	This->util->EnableArray(-1,false);
+	This->util->BlendFunc(GL_ONE,GL_ZERO);
+	This->util->BlendEnable(false);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
-	util->SetScissor(false,0,0,0,0);
+	This->util->SetScissor(false,0,0,0,0);
 	glDisable(GL_SCISSOR_TEST);
-	util->SetCull(D3DCULL_CCW);
+	This->util->SetCull(D3DCULL_CCW);
 	glEnable(GL_CULL_FACE);
-	SwapBuffers(hDC);
-	texman = TextureManager_Create(ext);
-	TextureManager_SetActiveTexture(texman,0);
-	_SetFogColor(0);
-	_SetFogStart(0);
-	_SetFogEnd(1);
-	_SetFogDensity(1);
-	util->SetPolyMode(D3DFILL_SOLID);
-	util->SetShadeMode(D3DSHADE_GOURAUD);
+	SwapBuffers(This->hDC);
+	This->texman = TextureManager_Create(This->ext);
+	TextureManager_SetActiveTexture(This->texman,0);
+	glRenderer__SetFogColor(This,0);
+	glRenderer__SetFogStart(This,0);
+	glRenderer__SetFogEnd(This,1);
+	glRenderer__SetFogDensity(This,1);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->util->SetShadeMode(D3DSHADE_GOURAUD);
 	if(hWnd)
 	{
-		dib.enabled = true;
-		dib.width = width;
-		dib.height = height;
-		dib.pitch = (((width<<3)+31)&~31) >>3;
-		dib.pixels = NULL;
-		dib.hdc = CreateCompatibleDC(NULL);
-		ZeroMemory(&dib.info,sizeof(BITMAPINFO));
-		dib.info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		dib.info.bmiHeader.biBitCount = 32;
-		dib.info.bmiHeader.biWidth = width;
-		dib.info.bmiHeader.biHeight = height;
-		dib.info.bmiHeader.biCompression = BI_RGB;
-		dib.info.bmiHeader.biPlanes = 1;
-		dib.hbitmap = CreateDIBSection(dib.hdc,&dib.info,DIB_RGB_COLORS,(void**)&dib.pixels,NULL,0);
+		This->dib.enabled = true;
+		This->dib.width = width;
+		This->dib.height = height;
+		This->dib.pitch = (((width<<3)+31)&~31) >>3;
+		This->dib.pixels = NULL;
+		This->dib.hdc = CreateCompatibleDC(NULL);
+		ZeroMemory(&This->dib.info,sizeof(BITMAPINFO));
+		This->dib.info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		This->dib.info.bmiHeader.biBitCount = 32;
+		This->dib.info.bmiHeader.biWidth = width;
+		This->dib.info.bmiHeader.biHeight = height;
+		This->dib.info.bmiHeader.biCompression = BI_RGB;
+		This->dib.info.bmiHeader.biPlanes = 1;
+		This->dib.hbitmap = CreateDIBSection(This->dib.hdc,&This->dib.info,
+			DIB_RGB_COLORS,(void**)&This->dib.pixels,NULL,0);
 	}
-	ext->glGenBuffers(1,&PBO);
-	ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
-	ext->glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
-	ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-	TextureManager_InitSamplers(texman);
+	This->ext->glGenBuffers(1,&This->PBO);
+	This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,This->PBO);
+	This->ext->glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
+	This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+	TextureManager_InitSamplers(This->texman);
 	TRACE_SYSINFO();
 	return TRUE;
 }
 
-void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
+void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
 	LONG sizes[6];
-	ddInterface->GetSizes(sizes);
+	This->ddInterface->GetSizes(sizes);
 	DWORD shaderid;
 	if (lpDDBltFx) shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
 	else shaderid = dwFlags & 0xF2FAADFF;
-	shaders->SetShader(shaderid, NULL, NULL, 1);
-	GenShader2D *shader = &shaders->gen2d->genshaders2D[shaders->gen3d->current_genshader];
-	util->BlendEnable(false);
-	util->SetFBO(dest);
-	util->SetViewport(0,0,dest->fakex,dest->fakey);
+	This->shaders->SetShader(shaderid, NULL, NULL, 1);
+	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
+	This->util->BlendEnable(false);
+	This->util->SetFBO(dest);
+	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
 	RECT destrect;
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	dest->GetSurfaceDesc(&ddsd);
-	util->DepthTest(false);
+	This->util->DepthTest(false);
 	if(!lpDestRect)
 	{
 		destrect.left = 0;
@@ -905,48 +958,48 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		srcrect.bottom = ddsdSrc.dwHeight;
 	}
 	else srcrect = *lpSrcRect;
-	bltvertices[1].x = bltvertices[3].x = (GLfloat)destrect.left * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
-	bltvertices[0].x = bltvertices[2].x = (GLfloat)destrect.right * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
-	bltvertices[0].y = bltvertices[1].y = (GLfloat)dest->fakey-((GLfloat)destrect.top * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
-	bltvertices[2].y = bltvertices[3].y = (GLfloat)dest->fakey-((GLfloat)destrect.bottom * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
-	bltvertices[1].s = bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
-	bltvertices[0].s = bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
-	bltvertices[0].t = bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
-	bltvertices[2].t = bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
+	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
+	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)dest->fakey-((GLfloat)destrect.top * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
+	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)dest->fakey-((GLfloat)destrect.bottom * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
+	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
+	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
+	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
+	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
-		switch(ddInterface->GetBPP())
+		switch(This->ddInterface->GetBPP())
 		{
 		case 8:
-			bltvertices[0].r = bltvertices[0].g = bltvertices[0].b =
-				bltvertices[1].r = bltvertices[1].g = bltvertices[1].b =
-				bltvertices[2].r = bltvertices[2].g = bltvertices[2].b =
-				bltvertices[3].r = bltvertices[3].g = bltvertices[3].b = (GLubyte)lpDDBltFx->dwFillColor;
+			This->bltvertices[0].r = This->bltvertices[0].g = This->bltvertices[0].b =
+				This->bltvertices[1].r = This->bltvertices[1].g = This->bltvertices[1].b =
+				This->bltvertices[2].r = This->bltvertices[2].g = This->bltvertices[2].b =
+				This->bltvertices[3].r = This->bltvertices[3].g = This->bltvertices[3].b = (GLubyte)lpDDBltFx->dwFillColor;
 			break;
 		case 15:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
+			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
 				_5to8bit((lpDDBltFx->dwFillColor>>10) & 31);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
+			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
 				_5to8bit((lpDDBltFx->dwFillColor>>5) & 31);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
+			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
 				_5to8bit(lpDDBltFx->dwFillColor & 31);
 			break;
 		case 16:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
+			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
 				_5to8bit((lpDDBltFx->dwFillColor>>11) & 31);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
+			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
 				_6to8bit((lpDDBltFx->dwFillColor>>5) & 63);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
+			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
 				_5to8bit(lpDDBltFx->dwFillColor & 31);
 			break;
 		case 24:
 		case 32:
-			bltvertices[0].r = bltvertices[1].r = bltvertices[2].r = bltvertices[3].r =
+			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
 				((lpDDBltFx->dwFillColor>>16) & 255);
-			bltvertices[0].g = bltvertices[1].g = bltvertices[2].g = bltvertices[3].g =
+			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
 				((lpDDBltFx->dwFillColor>>8) & 255);
-			bltvertices[0].b = bltvertices[1].b = bltvertices[2].b = bltvertices[3].b =
+			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
 				(lpDDBltFx->dwFillColor & 255);
 		default:
 			break;
@@ -954,159 +1007,161 @@ void glRenderer::_Blt(LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	}
 	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
 	{
-		switch(ddInterface->GetBPP())
+		switch(This->ddInterface->GetBPP())
 		{
 		case 8:
-			if(ext->glver_major >= 3) ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
-			else ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
+			if(This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
+			else This->ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
 				src->colorkey[0].key.dwColorSpaceHighValue);
 			break;
 		case 15:
-			ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
+			This->ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 16:
-			ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
+			This->ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
 				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 24:
 		case 32:
 		default:
-			ext->glUniform3i(shader->shader.uniforms[4],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
+			This->ext->glUniform3i(shader->shader.uniforms[4],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
 			break;
 		}
-		ext->glUniform1i(shader->shader.uniforms[1],0);
+		This->ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		ext->glUniform1i(shader->shader.uniforms[1],0);
+		This->ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
 	if(src)
 	{
-		TextureManager_SetTexture(texman,0,src->GetTexture());
-		if(ext->GLEXT_ARB_sampler_objects)
+		TextureManager_SetTexture(This->texman,0,src->GetTexture());
+		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			if((dxglcfg.scalingfilter == 0) || (ddInterface->GetBPP() == 8)) src->SetFilter(0,GL_NEAREST,GL_NEAREST,ext,texman);
-			else src->SetFilter(0,GL_LINEAR,GL_LINEAR,ext,texman);
+			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
+				src->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
+			else src->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
 		}
 	}
-	else TextureManager_SetTexture(texman,0,NULL);
-	ext->glUniform4f(shader->shader.uniforms[0],0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
+	else TextureManager_SetTexture(This->texman,0,NULL);
+	This->ext->glUniform4f(shader->shader.uniforms[0],0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
 	dest->dirty |= 2;
-	util->EnableArray(shader->shader.attribs[0],true);
-	ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
+	This->util->EnableArray(shader->shader.attribs[0],true);
+	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
 	if(shader->shader.attribs[1] != -1)
 	{
-		util->EnableArray(shader->shader.attribs[1],true);
-		ext->glVertexAttribPointer(shader->shader.attribs[0],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+		This->util->EnableArray(shader->shader.attribs[1],true);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[0],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
 	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		util->EnableArray(shader->shader.attribs[3],true);
-		ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
+		This->util->EnableArray(shader->shader.attribs[3],true);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
 	}
-	util->SetCull(D3DCULL_NONE);
-	util->SetPolyMode(D3DFILL_SOLID);
-	ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	util->SetFBO((FBO*)NULL);
+	This->util->SetCull(D3DCULL_NONE);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	This->util->SetFBO((FBO*)NULL);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))_DrawScreen(dest->texture,dest->paltex,dest,dest,0,false);
-	outputs[0] = DD_OK;
-	SetEvent(busy);
+		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+		glRenderer__DrawScreen(This,dest->texture,dest->paltex,dest,dest,0,false);
+	This->outputs[0] = DD_OK;
+	SetEvent(This->busy);
 }
 
-void glRenderer::_MakeTexture(TEXTURE *texture, DWORD width, DWORD height)
+void glRenderer__MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
 {
-	TextureManager__CreateTexture(texman,texture,width,height);
+	TextureManager__CreateTexture(This->texman,texture,width,height);
 }
 
-void glRenderer::_DrawBackbuffer(TEXTURE **texture, int x, int y, int progtype)
+void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int y, int progtype)
 {
 	GLfloat view[4];
-	TextureManager_SetActiveTexture(texman,0);
-	if(!backbuffer)
+	TextureManager_SetActiveTexture(This->texman,0);
+	if(!This->backbuffer)
 	{
-		backbuffer = new TEXTURE;
-		ZeroMemory(backbuffer,sizeof(TEXTURE));
-			backbuffer->minfilter = backbuffer->magfilter = GL_LINEAR;
-			backbuffer->wraps = backbuffer->wrapt = GL_CLAMP_TO_EDGE;
-			backbuffer->pixelformat.dwFlags = DDPF_RGB;
-			backbuffer->pixelformat.dwBBitMask = 0xFF;
-			backbuffer->pixelformat.dwGBitMask = 0xFF00;
-			backbuffer->pixelformat.dwRBitMask = 0xFF0000;
-			backbuffer->pixelformat.dwRGBBitCount = 32;
-		TextureManager__CreateTexture(texman,backbuffer,x,y);
-		backx = x;
-		backy = y;
+		This->backbuffer = (TEXTURE*)malloc(sizeof(TEXTURE));
+		ZeroMemory(This->backbuffer,sizeof(TEXTURE));
+			This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
+			This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
+			This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
+			This->backbuffer->pixelformat.dwBBitMask = 0xFF;
+			This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
+			This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
+			This->backbuffer->pixelformat.dwRGBBitCount = 32;
+		TextureManager__CreateTexture(This->texman,This->backbuffer,x,y);
+		This->backx = x;
+		This->backy = y;
 	}
-	if((backx != x) || (backy != y))
+	if((This->backx != x) || (This->backy != y))
 	{
-		TextureManager__UploadTexture(texman,backbuffer,0,NULL,x,y);
-		backx = x;
-		backy = y;
+		TextureManager__UploadTexture(This->texman,This->backbuffer,0,NULL,x,y);
+		This->backx = x;
+		This->backy = y;
 	}
-	util->SetFBO(&fbo,backbuffer,0,false);
+	This->util->SetFBO(&This->fbo,This->backbuffer,0,false);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)x;
 	view[3] = (GLfloat)y;
-	util->SetViewport(0,0,x,y);
+	This->util->SetViewport(0,0,x,y);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	TextureManager_SetTexture(texman,0,*texture);
-	*texture = backbuffer;
-	if(ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,ext,texman);
-	ext->glUniform4f(shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
-	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
-	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
-	bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
-	bltvertices[0].x = bltvertices[2].x = (float)x;
-	bltvertices[2].y = bltvertices[3].y = (float)y;
-	util->EnableArray(shaders->shaders[progtype].pos,true);
-	ext->glVertexAttribPointer(shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	util->EnableArray(shaders->shaders[progtype].texcoord,true);
-	ext->glVertexAttribPointer(shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
-	util->SetCull(D3DCULL_NONE);
-	util->SetPolyMode(D3DFILL_SOLID);
-	ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	util->SetFBO((FBO*)NULL);
+	TextureManager_SetTexture(This->texman,0,*texture);
+	*texture = This->backbuffer;
+	if(This->ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
+	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
+	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
+	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+	This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+	This->bltvertices[0].x = This->bltvertices[2].x = (float)x;
+	This->bltvertices[2].y = This->bltvertices[3].y = (float)y;
+	This->util->EnableArray(This->shaders->shaders[progtype].pos,true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
+	This->util->EnableArray(This->shaders->shaders[progtype].texcoord,true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
+	This->util->SetCull(D3DCULL_NONE);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	This->util->SetFBO((FBO*)NULL);
 }
 
-void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
+void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
 {
 	int progtype;
 	RECT r,r2;
-	util->BlendEnable(false);
+	This->util->BlendEnable(false);
 	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
-		GetClientRect(hWnd,&r);
-		GetClientRect(RenderWnd->GetHWnd(),&r2);
+		GetClientRect(This->hWnd,&r);
+		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
-	util->DepthTest(false);
+	This->util->DepthTest(false);
 	RECT *viewrect = &r2;
-	_SetSwap(vsync);
+	glRenderer__SetSwap(This,vsync);
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
 	if(src->dirty & 1)
 	{
-		_UploadTexture(src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
+		glRenderer__UploadTexture(This,src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
-			(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
+			(NextMultipleOf4((This->ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
 			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		src->dirty &= ~1;
 	}
 	if(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
-		if(ddInterface->GetFullscreen())
+		if(This->ddInterface->GetFullscreen())
 		{
-			ddInterface->GetSizes(sizes);
+			This->ddInterface->GetSizes(sizes);
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = sizes[4];
 			viewport[3] = sizes[5];
@@ -1120,8 +1175,8 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = viewrect->right;
 			viewport[3] = viewrect->bottom;
-			ClientToScreen(RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
-			ClientToScreen(RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
+			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
+			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
 			view[2] = (GLfloat)dest->fakey-(GLfloat)viewrect->top;
@@ -1135,179 +1190,181 @@ void glRenderer::_DrawScreen(TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurf
 		view[2] = 0;
 		view[3] = (GLfloat)dest->fakey;
 	}
-	util->SetFBO((FBO*)NULL);
+	This->util->SetFBO((FBO*)NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	if(ddInterface->GetBPP() == 8)
+	if(This->ddInterface->GetBPP() == 8)
 	{
-		shaders->SetShader(PROG_PAL256,NULL,NULL,0);
+		This->shaders->SetShader(PROG_PAL256,NULL,NULL,0);
 		progtype = PROG_PAL256;
-		TextureManager__UploadTexture(texman,paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1);
-		ext->glUniform1i(shaders->shaders[progtype].tex0,0);
-		ext->glUniform1i(shaders->shaders[progtype].pal,1);
-		TextureManager_SetTexture(texman,0,texture);
-		TextureManager_SetTexture(texman,1,paltex);
+		TextureManager__UploadTexture(This->texman,paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,1);
+		TextureManager_SetTexture(This->texman,0,texture);
+		TextureManager_SetTexture(This->texman,1,paltex);
 		if(dxglcfg.scalingfilter)
 		{
-			_DrawBackbuffer(&texture,dest->fakex,dest->fakey,progtype);
-			shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
+			glRenderer__DrawBackbuffer(This,&texture,dest->fakex,dest->fakey,progtype);
+			This->shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
 			progtype = PROG_TEXTURE;
-			TextureManager_SetTexture(texman,0,texture);
-			ext->glUniform1i(shaders->shaders[progtype].tex0,0);
+			TextureManager_SetTexture(This->texman,0,texture);
+			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
 		}
-		if(ext->GLEXT_ARB_sampler_objects)
+		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,ext,texman);
-			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST,ext,texman);
+			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
+			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
 		}
 	}
 	else
 	{
-		shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
+		This->shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
 		progtype = PROG_TEXTURE;
-		TextureManager_SetTexture(texman,0,texture);
-		ext->glUniform1i(shaders->shaders[progtype].tex0,0);
+		TextureManager_SetTexture(This->texman,0,texture);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
 	}
-	if(dxglcfg.scalingfilter && ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,ext,texman);
-	else if(ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,ext,texman);
-	util->SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
-	ext->glUniform4f(shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
-	if(ddInterface->GetFullscreen())
+	if(dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
+		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
+	else if(This->ext->GLEXT_ARB_sampler_objects)
+		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
+	This->util->SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
+	if(This->ddInterface->GetFullscreen())
 	{
-		bltvertices[0].x = bltvertices[2].x = (float)sizes[0];
-		bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
-		bltvertices[2].y = bltvertices[3].y = (float)sizes[1];
+		This->bltvertices[0].x = This->bltvertices[2].x = (float)sizes[0];
+		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+		This->bltvertices[2].y = This->bltvertices[3].y = (float)sizes[1];
 	}
 	else
 	{
-		bltvertices[0].x = bltvertices[2].x = (float)dest->fakex;
-		bltvertices[0].y = bltvertices[1].y = bltvertices[1].x = bltvertices[3].x = 0.;
-		bltvertices[2].y = bltvertices[3].y = (float)dest->fakey;
+		This->bltvertices[0].x = This->bltvertices[2].x = (float)dest->fakex;
+		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+		This->bltvertices[2].y = This->bltvertices[3].y = (float)dest->fakey;
 	}
-	bltvertices[0].s = bltvertices[0].t = bltvertices[1].t = bltvertices[2].s = 1.;
-	bltvertices[1].s = bltvertices[2].t = bltvertices[3].s = bltvertices[3].t = 0.;
-	util->EnableArray(shaders->shaders[progtype].pos,true);
-	ext->glVertexAttribPointer(shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].x);
-	util->EnableArray(shaders->shaders[progtype].texcoord,true);
-	ext->glVertexAttribPointer(shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&bltvertices[0].s);
-	if(shaders->shaders[progtype].rgb != -1)
+	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
+	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+	This->util->EnableArray(This->shaders->shaders[progtype].pos,true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
+	This->util->EnableArray(This->shaders->shaders[progtype].texcoord,true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
+	if(This->shaders->shaders[progtype].rgb != -1)
 	{
-		util->EnableArray(shaders->shaders[progtype].rgb,true);
-		ext->glVertexAttribPointer(shaders->shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&bltvertices[0].r);
+		This->util->EnableArray(This->shaders->shaders[progtype].rgb,true);
+		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
 	}
-	util->SetCull(D3DCULL_NONE);
-	util->SetPolyMode(D3DFILL_SOLID);
-	ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	This->util->SetCull(D3DCULL_NONE);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
-	if(hWnd) SwapBuffers(hDC);
+	if(This->hWnd) SwapBuffers(This->hDC);
 	else
 	{
 		glReadBuffer(GL_FRONT);
-		ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,PBO);
+		This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,This->PBO);
 		GLint packalign;
 		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
 		glPixelStorei(GL_PACK_ALIGNMENT,1);
-		ddInterface->GetSizes(sizes);
+		This->ddInterface->GetSizes(sizes);
 		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
-		GLubyte *pixels = (GLubyte*)ext->glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
+		GLubyte *pixels = (GLubyte*)This->ext->glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
 		for(int i = 0; i < sizes[5];i++)
 		{
-			memcpy(&dib.pixels[dib.pitch*i],
+			memcpy(&This->dib.pixels[This->dib.pitch*i],
 				&pixels[((sizes[5]-1)-i)*(sizes[4]*4)],sizes[4]*4);
 		}
-		ext->glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-		ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+		This->ext->glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
 		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
-		HDC hRenderDC = (HDC)::GetDC(RenderWnd->GetHWnd());
+		HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->GetHWnd());
 		HGDIOBJ hPrevObj = 0;
 		POINT dest = {0,0};
 		POINT srcpoint = {0,0};
-		SIZE wnd = {dib.width,dib.height};
+		SIZE wnd = {This->dib.width,This->dib.height};
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
-		hPrevObj = SelectObject(dib.hdc,dib.hbitmap);
-		ClientToScreen(RenderWnd->GetHWnd(),&dest);
-		UpdateLayeredWindow(RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
-			dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
-		SelectObject(dib.hdc,hPrevObj);
-		ReleaseDC(RenderWnd->GetHWnd(),hRenderDC);
+		hPrevObj = SelectObject(This->dib.hdc,This->dib.hbitmap);
+		ClientToScreen(This->RenderWnd->GetHWnd(),&dest);
+		UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
+			This->dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
+		SelectObject(This->dib.hdc,hPrevObj);
+		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
 	}
-	if(setsync) SetEvent(busy);
+	if(setsync) SetEvent(This->busy);
 
 }
 
-void glRenderer::_DeleteTexture(TEXTURE *texture)
+void glRenderer__DeleteTexture(glRenderer *This, TEXTURE *texture)
 {
-	TextureManager__DeleteTexture(texman,texture);
-	SetEvent(busy);
+	TextureManager__DeleteTexture(This->texman,texture);
+	SetEvent(This->busy);
 }
 
-void glRenderer::_InitD3D(int zbuffer)
+void glRenderer__InitD3D(glRenderer *This, int zbuffer)
 {
-	SetEvent(busy);
+	SetEvent(This->busy);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
-	if(zbuffer) util->DepthTest(true);
-	util->SetDepthComp(GL_LEQUAL);
+	if(zbuffer) This->util->DepthTest(true);
+	This->util->SetDepthComp(GL_LEQUAL);
 	GLfloat identity[16];
 	__gluMakeIdentityf(identity);
-	util->SetMatrix(GL_MODELVIEW,identity,identity,NULL);
-	util->SetMatrix(GL_PROJECTION,identity,NULL,NULL);
+	This->util->SetMatrix(GL_MODELVIEW,identity,identity,NULL);
+	This->util->SetMatrix(GL_PROJECTION,identity,NULL,NULL);
 	GLfloat one[4] = {1,1,1,1};
 	GLfloat zero[4] = {0,0,0,1};
-	util->SetMaterial(one,one,zero,zero,0);
+	This->util->SetMaterial(one,one,zero,zero,0);
 }
 
-void glRenderer::_Clear(glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	outputs[0] = (void*)D3D_OK;
+	This->outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
-	util->SetFBO(target);
+	This->util->SetFBO(target);
 	int clearbits = 0;
 	if(dwFlags & D3DCLEAR_TARGET)
 	{
 		clearbits |= GL_COLOR_BUFFER_BIT;
-		util->ClearColor(color[0],color[1],color[2],color[3]);
+		This->util->ClearColor(color[0],color[1],color[2],color[3]);
 	}
 	if(dwFlags & D3DCLEAR_ZBUFFER)
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
-		util->ClearDepth(dvZ);
+		This->util->ClearDepth(dvZ);
 	}
 	if(dwFlags & D3DCLEAR_STENCIL)
 	{
 		clearbits |= GL_STENCIL_BUFFER_BIT;
-		util->ClearStencil(dwStencil);
+		This->util->ClearStencil(dwStencil);
 	}
 	if(dwCount)
 	{
 		for(DWORD i = 0; i < dwCount; i++)
 		{
-			util->SetScissor(true,lpRects[i].x1,lpRects[i].y1,lpRects[i].x2,lpRects[i].y2);
+			This->util->SetScissor(true,lpRects[i].x1,lpRects[i].y1,lpRects[i].x2,lpRects[i].y2);
 			glClear(clearbits);
 		}
-		util->SetScissor(false,0,0,0,0);
+		This->util->SetScissor(false,0,0,0,0);
 	}
 	else glClear(clearbits);
 	if(target->zbuffer) target->zbuffer->dirty |= 2;
 	target->dirty |= 2;
-	SetEvent(busy);
+	SetEvent(This->busy);
 }
 
-void glRenderer::_Flush()
+void glRenderer__Flush(glRenderer *This)
 {
 	glFlush();
-	SetEvent(busy);
+	SetEvent(This->busy);
 }
 
-void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
+void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
 {
-	if(newwnd != hWnd)
+	if(newwnd != This->hWnd)
 	{
 		EnterCriticalSection(&dll_cs);
 		wglMakeCurrent(NULL, NULL);
-		ReleaseDC(hWnd,hDC);
-		delete RenderWnd;
-		RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,ddInterface);
+		ReleaseDC(This->hWnd,This->hDC);
+		delete This->RenderWnd;
+		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
 		InterlockedIncrement(&gllock);
@@ -1318,29 +1375,29 @@ void glRenderer::_SetWnd(int width, int height, int bpp, int fullscreen, unsigne
 		pfd.iPixelType = PFD_TYPE_RGBA;
 		pfd.cColorBits = bpp;
 		pfd.iLayerType = PFD_MAIN_PLANE;
-		hDC = GetDC(RenderWnd->GetHWnd());
-		if(!hDC)
+		This->hDC = GetDC(This->RenderWnd->GetHWnd());
+		if(!This->hDC)
 			DEBUG("glRenderer::SetWnd: Can not create hDC\n");
-		pf = ChoosePixelFormat(hDC,&pfd);
+		pf = ChoosePixelFormat(This->hDC,&pfd);
 		if(!pf)
 			DEBUG("glRenderer::SetWnd: Can not get pixelformat\n");
-		if(!SetPixelFormat(hDC,pf,&pfd))
+		if(!SetPixelFormat(This->hDC,pf,&pfd))
 			DEBUG("glRenderer::SetWnd: Can not set pixelformat\n");
-		if(!wglMakeCurrent(hDC,hRC))
+		if(!wglMakeCurrent(This->hDC,This->hRC))
 			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
 		InterlockedDecrement(&gllock);
 		LeaveCriticalSection(&dll_cs);
-		_SetSwap(1);
-		SwapBuffers(hDC);
-		timer.Calibrate(height, frequency);
-		_SetSwap(0);
-		util->SetViewport(0,0,width,height);
+		glRenderer__SetSwap(This,1);
+		SwapBuffers(This->hDC);
+		This->timer.Calibrate(height, frequency);
+		glRenderer__SetSwap(This,0);
+		This->util->SetViewport(0,0,width,height);
 	}
 
-	SetEvent(busy);
+	SetEvent(This->busy);
 }
 
-void glRenderer::SetBlend(DWORD src, DWORD dest)
+void glRenderer_SetBlend(glRenderer *This, DWORD src, DWORD dest)
 {
 	GLenum glsrc, gldest;
 	bool bothalpha = false;
@@ -1439,10 +1496,10 @@ void glRenderer::SetBlend(DWORD src, DWORD dest)
 		gldest = GL_SRC_ALPHA;
 		break;
 	}
-	util->BlendFunc(glsrc,gldest);
+	This->util->BlendFunc(glsrc,gldest);
 }
 
-void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
 	bool transformed;
@@ -1455,26 +1512,26 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	else transformed = false;
 	if(!vertices[0].data)
 	{
-		outputs[0] = (void*)DDERR_INVALIDPARAMS;
-		SetEvent(busy);
+		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		SetEvent(This->busy);
 		return;
 	}
 	__int64 shader = device->SelectShader(vertices);
-	shaders->SetShader(shader,device->texstages,texformats,2);
-	device->SetDepthComp(util);
-	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) util->DepthTest(true);
-	else util->DepthTest(false);
-	if(device->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) util->DepthWrite(true);
-	else util->DepthWrite(false);
-	_GENSHADER prog = shaders->gen3d->genshaders[shaders->gen3d->current_genshader].shader;
-	util->EnableArray(prog.attribs[0],true);
-	ext->glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
+	This->shaders->SetShader(shader,device->texstages,texformats,2);
+	device->SetDepthComp(This->util);
+	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
+	else This->util->DepthTest(false);
+	if(device->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) This->util->DepthWrite(true);
+	else This->util->DepthWrite(false);
+	_GENSHADER prog = This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
+	This->util->EnableArray(prog.attribs[0],true);
+	This->ext->glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
 	if(transformed)
 	{
 		if(prog.attribs[1] != -1)
 		{
-			util->EnableArray(prog.attribs[1],true);
-			ext->glVertexAttribPointer(prog.attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+			This->util->EnableArray(prog.attribs[1],true);
+			This->ext->glVertexAttribPointer(prog.attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
 		}
 	}
 	for(i = 0; i < 5; i++)
@@ -1483,8 +1540,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			if(prog.attribs[i+2] != -1)
 			{
-				util->EnableArray(prog.attribs[i+2],true);
-				ext->glVertexAttribPointer(prog.attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
+				This->util->EnableArray(prog.attribs[i+2],true);
+				This->ext->glVertexAttribPointer(prog.attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
 			}
 		}
 	}
@@ -1492,8 +1549,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	{
 		if(prog.attribs[7] != -1)
 		{
-			util->EnableArray(prog.attribs[7],true);
-			ext->glVertexAttribPointer(prog.attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
+			This->util->EnableArray(prog.attribs[7],true);
+			This->ext->glVertexAttribPointer(prog.attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
 		}
 	}
 	for(i = 0; i < 2; i++)
@@ -1502,8 +1559,8 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			if(prog.attribs[8+i] != -1)
 			{
-				util->EnableArray(prog.attribs[8+i],true);
-				ext->glVertexAttribPointer(prog.attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
+				This->util->EnableArray(prog.attribs[8+i],true);
+				This->ext->glVertexAttribPointer(prog.attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
 			}
 		}
 	}
@@ -1517,39 +1574,39 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 			case 0: // st
 				if(prog.attribs[i+18] != -1)
 				{
-					util->EnableArray(prog.attribs[i+18],true);
-					ext->glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog.attribs[i+18],true);
+					This->ext->glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 1: // str
 				if(prog.attribs[i+26] != -1)
 				{
-					util->EnableArray(prog.attribs[i+26],true);
-					ext->glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog.attribs[i+26],true);
+					This->ext->glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 2: // strq
 				if(prog.attribs[i+34] != -1)
 				{
-					util->EnableArray(prog.attribs[i+34],true);
-					ext->glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog.attribs[i+34],true);
+					This->ext->glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 3: // s
 				if(prog.attribs[i+10] != -1)
 				{
-					util->EnableArray(prog.attribs[i+10],true);
-					ext->glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog.attribs[i+10],true);
+					This->ext->glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			}
 
 		}
 	}
-	if(device->modelview_dirty) util->SetMatrix(GL_MODELVIEW,device->matView,device->matWorld,&device->modelview_dirty);
-	if(device->projection_dirty) util->SetMatrix(GL_PROJECTION,device->matProjection,NULL,&device->projection_dirty);
+	if(device->modelview_dirty) This->util->SetMatrix(GL_MODELVIEW,device->matView,device->matWorld,&device->modelview_dirty);
+	if(device->projection_dirty) This->util->SetMatrix(GL_PROJECTION,device->matProjection,NULL,&device->projection_dirty);
 
-	util->SetMaterial((GLfloat*)&device->material.ambient,(GLfloat*)&device->material.diffuse,(GLfloat*)&device->material.specular,
+	This->util->SetMaterial((GLfloat*)&device->material.ambient,(GLfloat*)&device->material.diffuse,(GLfloat*)&device->material.specular,
 		(GLfloat*)&device->material.emissive,device->material.power);
 
 	int lightindex = 0;
@@ -1558,33 +1615,33 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 	{
 		if(device->gllights[i] != -1)
 		{
-			if(prog.uniforms[0] != -1) ext->glUniformMatrix4fv(prog.uniforms[0],1,false,device->matWorld);
+			if(prog.uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog.uniforms[0],1,false,device->matWorld);
 			if(prog.uniforms[20+(i*12)] != -1)
-				ext->glUniform4fv(prog.uniforms[20+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
+				This->ext->glUniform4fv(prog.uniforms[20+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
 			if(prog.uniforms[21+(i*12)] != -1)
-				ext->glUniform4fv(prog.uniforms[21+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
+				This->ext->glUniform4fv(prog.uniforms[21+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
 			if(prog.uniforms[22+(i*12)] != -1)
-				ext->glUniform4fv(prog.uniforms[22+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
+				This->ext->glUniform4fv(prog.uniforms[22+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
 			if(prog.uniforms[24+(i*12)] != -1)
-				ext->glUniform3fv(prog.uniforms[24+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvDirection);
+				This->ext->glUniform3fv(prog.uniforms[24+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvDirection);
 			if(device->lights[device->gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
 			{
 				if(prog.uniforms[23+(i*12)] != -1)
-					ext->glUniform3fv(prog.uniforms[23+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvPosition);
+					This->ext->glUniform3fv(prog.uniforms[23+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvPosition);
 				if(prog.uniforms[25+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[25+(i*12)],device->lights[device->gllights[i]]->light.dvRange);
+					This->ext->glUniform1f(prog.uniforms[25+(i*12)],device->lights[device->gllights[i]]->light.dvRange);
 				if(prog.uniforms[26+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[26+(i*12)],device->lights[device->gllights[i]]->light.dvFalloff);
+					This->ext->glUniform1f(prog.uniforms[26+(i*12)],device->lights[device->gllights[i]]->light.dvFalloff);
 				if(prog.uniforms[27+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[27+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation0);
+					This->ext->glUniform1f(prog.uniforms[27+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation0);
 				if(prog.uniforms[28+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[28+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation1);
+					This->ext->glUniform1f(prog.uniforms[28+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation1);
 				if(prog.uniforms[29+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[29+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation2);
+					This->ext->glUniform1f(prog.uniforms[29+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation2);
 				if(prog.uniforms[30+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[30+(i*12)],device->lights[device->gllights[i]]->light.dvTheta);
+					This->ext->glUniform1f(prog.uniforms[30+(i*12)],device->lights[device->gllights[i]]->light.dvTheta);
 				if(prog.uniforms[31+(i*12)] != -1)
-					ext->glUniform1f(prog.uniforms[31+(i*12)],device->lights[device->gllights[i]]->light.dvPhi);
+					This->ext->glUniform1f(prog.uniforms[31+(i*12)],device->lights[device->gllights[i]]->light.dvPhi);
 			}
 		}
 		lightindex++;
@@ -1592,7 +1649,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 
 	DWORD ambient = device->renderstate[D3DRENDERSTATE_AMBIENT];
 	if(prog.uniforms[136] != -1)
-		ext->glUniform4f(prog.uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
+		This->ext->glUniform4f(prog.uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
 			RGBA_GETBLUE(ambient),RGBA_GETALPHA(ambient));
 	GLint keycolor[4];
 	for(i = 0; i < 8; i++)
@@ -1602,7 +1659,7 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 		{
 			if(device->texstages[i].texture->dirty & 1)
 			{
-				_UploadTexture(device->texstages[i].texture->buffer,device->texstages[i].texture->bigbuffer,
+				glRenderer__UploadTexture(This,device->texstages[i].texture->buffer,device->texstages[i].texture->bigbuffer,
 					device->texstages[i].texture->texture,device->texstages[i].texture->ddsd.dwWidth,
 					device->texstages[i].texture->ddsd.dwHeight,device->texstages[i].texture->fakex,
 					device->texstages[i].texture->fakey,device->texstages[i].texture->ddsd.lPitch,
@@ -1611,60 +1668,60 @@ void glRenderer::_DrawPrimitives(glDirect3DDevice7 *device, GLenum mode, GLVERTE
 				device->texstages[i].texture->dirty &= ~1;
 			}
 			if(device->texstages[i].texture)
-				device->texstages[i].texture->SetFilter(i,device->texstages[i].glmagfilter,device->texstages[i].glminfilter,ext,texman);
-			TextureManager_SetTexture(texman,i,device->texstages[i].texture->texture);
-			util->SetWrap(i,0,device->texstages[i].addressu,texman);
-			util->SetWrap(i,1,device->texstages[i].addressv,texman);
+				device->texstages[i].texture->SetFilter(i,device->texstages[i].glmagfilter,device->texstages[i].glminfilter,This->ext,This->texman);
+			TextureManager_SetTexture(This->texman,i,device->texstages[i].texture->texture);
+			This->util->SetWrap(i,0,device->texstages[i].addressu,This->texman);
+			This->util->SetWrap(i,1,device->texstages[i].addressv,This->texman);
 		}
-		TextureManager_SetTexture(texman,i,0);
-		ext->glUniform1i(prog.uniforms[128+i],i);
+		TextureManager_SetTexture(This->texman,i,0);
+		This->ext->glUniform1i(prog.uniforms[128+i],i);
 		if(device->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && device->texstages[i].texture && (prog.uniforms[142+i] != -1))
 		{
 			if(device->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
 			{
 				dwordto4int(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,keycolor);
-				ext->glUniform4iv(prog.uniforms[142+i],1,keycolor);
+				This->ext->glUniform4iv(prog.uniforms[142+i],1,keycolor);
 			}
 		}
 	}
-	if(prog.uniforms[137]!= -1) ext->glUniform1f(prog.uniforms[137],device->viewport.dwWidth);
-	if(prog.uniforms[138]!= -1) ext->glUniform1f(prog.uniforms[138],device->viewport.dwHeight);
-	if(prog.uniforms[139]!= -1) ext->glUniform1f(prog.uniforms[139],device->viewport.dwX);
-	if(prog.uniforms[140]!= -1) ext->glUniform1f(prog.uniforms[140],device->viewport.dwY);
-	if(prog.uniforms[141]!= -1) ext->glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
-	util->SetFBO(device->glDDS7);
-	util->SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
-	util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
-	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) util->BlendEnable(true);
-	else util->BlendEnable(false);
-	SetBlend(device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
-	util->SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
-	_SetFogColor(device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
-	_SetFogStart(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
-	_SetFogEnd(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
-	_SetFogDensity(*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
-	util->SetPolyMode((D3DFILLMODE)device->renderstate[D3DRENDERSTATE_FILLMODE]);
-	util->SetShadeMode((D3DSHADEMODE)device->renderstate[D3DRENDERSTATE_SHADEMODE]);
+	if(prog.uniforms[137]!= -1) This->ext->glUniform1f(prog.uniforms[137],device->viewport.dwWidth);
+	if(prog.uniforms[138]!= -1) This->ext->glUniform1f(prog.uniforms[138],device->viewport.dwHeight);
+	if(prog.uniforms[139]!= -1) This->ext->glUniform1f(prog.uniforms[139],device->viewport.dwX);
+	if(prog.uniforms[140]!= -1) This->ext->glUniform1f(prog.uniforms[140],device->viewport.dwY);
+	if(prog.uniforms[141]!= -1) This->ext->glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
+	This->util->SetFBO(device->glDDS7);
+	This->util->SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
+	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
+	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
+	else This->util->BlendEnable(false);
+	glRenderer_SetBlend(This,device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
+	This->util->SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
+	glRenderer__SetFogColor(This,device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
+	glRenderer__SetFogStart(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
+	glRenderer__SetFogEnd(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
+	glRenderer__SetFogDensity(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
+	This->util->SetPolyMode((D3DFILLMODE)device->renderstate[D3DRENDERSTATE_FILLMODE]);
+	This->util->SetShadeMode((D3DSHADEMODE)device->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
 	device->glDDS7->dirty |= 2;
 	if(flags & D3DDP_WAIT) glFlush();
-	outputs[0] = (void*)D3D_OK;
-	SetEvent(busy);
+	This->outputs[0] = (void*)D3D_OK;
+	SetEvent(This->busy);
 	return;
 }
 
-void glRenderer::_DeleteFBO(FBO *fbo)
+void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 {
-	util->DeleteFBO(fbo);
-	SetEvent(busy);
+	This->util->DeleteFBO(fbo);
+	SetEvent(This->busy);
 }
 
-void glRenderer::_SetFogColor(DWORD color)
+void glRenderer__SetFogColor(glRenderer *This, DWORD color)
 {
-	if (color == fogcolor) return;
-	fogcolor = color;
+	if (color == This->fogcolor) return;
+	This->fogcolor = color;
 	GLfloat colors[4];
 	colors[0] = (GLfloat)((color >> 16) & 255) / 255.0f;
 	colors[1] = (GLfloat)((color >> 8) & 255) / 255.0f;
@@ -1673,23 +1730,25 @@ void glRenderer::_SetFogColor(DWORD color)
 	glFogfv(GL_FOG_COLOR, colors);
 }
 
-void glRenderer::_SetFogStart(GLfloat start)
+void glRenderer__SetFogStart(glRenderer *This, GLfloat start)
 {
-	if (start == fogstart) return;
-	fogstart = start;
+	if (start == This->fogstart) return;
+	This->fogstart = start;
 	glFogf(GL_FOG_START, start);
 }
 
-void glRenderer::_SetFogEnd(GLfloat end)
+void glRenderer__SetFogEnd(glRenderer *This, GLfloat end)
 {
-	if (end == fogend) return;
-	fogend = end;
+	if (end == This->fogend) return;
+	This->fogend = end;
 	glFogf(GL_FOG_END, end);
 }
 
-void glRenderer::_SetFogDensity(GLfloat density)
+void glRenderer__SetFogDensity(glRenderer *This, GLfloat density)
 {
-	if (density == fogdensity) return;
-	fogdensity = density;
+	if (density == This->fogdensity) return;
+	This->fogdensity = density;
 	glFogf(GL_FOG_DENSITY, density);
+}
+
 }

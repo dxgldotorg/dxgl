@@ -24,7 +24,7 @@
 class glDirectDrawSurface7;
 struct glDirectDrawClipper;
 class glDirect3D7;
-class glRenderer;
+struct glRenderer;
 
 class glDirectDraw1;
 class glDirectDraw2;

@@ -59,7 +59,7 @@ DDRAW_API BOOL IsDXGLDDraw();
 extern DXGLCFG dxglcfg;
 extern DWORD gllock;
 extern const GUID device_template;
-class glRenderer;
+struct glRenderer;
 class glDirectDraw7;
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
 
