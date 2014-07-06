@@ -37,6 +37,12 @@ typedef struct
 	GLfloat padding;
 } BltVertex;
 
+typedef struct
+{
+	GLfloat patterns, patternt;
+	GLfloat stencils, stencilt;
+} BltTexcoord;
+
 class glDirectDrawSurface7;
 
 class glUtil

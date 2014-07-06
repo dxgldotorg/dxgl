@@ -155,12 +155,14 @@ static const char attr_rgba[] = "attribute vec4 rgba;\n";
 static const char attr_srcst[] = "attribute vec2 srcst;\n";
 static const char attr_destst[] = "attribute vec2 destst;\n";
 static const char attr_patternst[] = "attribute vec2 patternst;\n";
+static const char attr_stencilst[] = "attribute vec2 stencilst;\n";
 
 // Uniforms
 static const char unif_view[] = "uniform vec4 view;\n";
 static const char unif_srctex[] = "uniform sampler2D srctex;\n";
 static const char unif_desttex[] = "uniform sampler2D desttex;\n";
 static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
+static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
 
@@ -186,8 +188,9 @@ vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
 gl_Position    = proj * xyzw;\n";
 static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
 static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
+static const char op_texcoord3[] = "gl_TexCoord[3] = vec4(stencilst,0.0,1.0);\n";
 static const char op_ckeysrc[] = "if(pixel.rgb == ckeysrc) discard;\n";
-
+static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;";
 
 // Functions
 
@@ -790,6 +793,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, attr_xy);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, attr_rgb);
 	else String_Append(vsrc, attr_srcst);
+	if (id & 0x10000000) String_Append(vsrc, attr_stencilst);
 
 	// Uniforms
 	String_Append(vsrc, unif_view);
@@ -799,6 +803,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, op_vertex);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, op_vertcolorrgb);
 	else String_Append(vsrc, op_texcoord0);
+	if (id & 0x10000000) String_Append(vsrc, op_texcoord3);
 	String_Append(vsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("2D blitter vertex shader:\n");
@@ -849,6 +854,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 
 	// Uniforms
 	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
+	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
 	
 	// Variables
@@ -856,6 +862,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 
 	// Main
 	String_Append(fsrc, mainstart);
+	if (id & 0x10000000) String_Append(fsrc, op_clip);
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
 	else String_Append(fsrc, op_src);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
@@ -905,10 +912,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.attribs[3] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "srcst");
 	gen->genshaders2D[index].shader.attribs[4] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "destst");
 	gen->genshaders2D[index].shader.attribs[5] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "patternst");
+	gen->genshaders2D[index].shader.attribs[6] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "stencilst");
 	gen->genshaders2D[index].shader.uniforms[0] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "view");
 	gen->genshaders2D[index].shader.uniforms[1] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srctex");
 	gen->genshaders2D[index].shader.uniforms[2] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "desttex");
 	gen->genshaders2D[index].shader.uniforms[3] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patterntex");
-	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
-	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
+	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "stenciltex");
+	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
+	gen->genshaders2D[index].shader.uniforms[6] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
 }

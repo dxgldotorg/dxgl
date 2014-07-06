@@ -26,6 +26,7 @@
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
+#include "glDirectDrawClipper.h"
 #include "ddraw.h"
 #include "scalers.h"
 #include "ShaderGen3D.h"
@@ -629,7 +630,7 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
   * @param This
   *  Pointer to glRenderer object
   * @param fbo
-  *  FBO Structure containing framebuffer to delete.
+  *  FBO Structure containing framebuffer to delete
   */
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 {
@@ -640,6 +641,24 @@ void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 	WaitForSingleObject(This->busy,INFINITE);
 	LeaveCriticalSection(&This->cs);
 }
+
+/**
+  * Updates the clipper stencil for a surface.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param surface
+  *  Surface to update clipper stencil on
+  */
+void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = surface;
+	This->opcode = OP_UPDATECLIPPER;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy,INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
 
 /**
   * Gets an estimate of the scanline currently being drawn.
@@ -762,6 +781,9 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_DELETEFBO:
 			glRenderer__DeleteFBO(This,(FBO*)This->inputs[0]);
+			break;
+		case OP_UPDATECLIPPER:
+			glRenderer__UpdateClipper(This,(glDirectDrawSurface7*)This->inputs[0]);
 			break;
 		}
 	}
@@ -966,6 +988,13 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
 	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	if(dwFlags & 0x10000000)
+	{ 
+		This->blttexcoords[1].stencils = This->blttexcoords[3].stencils = This->bltvertices[1].x / (GLfloat)dest->fakex;
+		This->blttexcoords[0].stencils = This->blttexcoords[2].stencils = This->bltvertices[0].x / (GLfloat)dest->fakex;
+		This->blttexcoords[0].stencilt = This->blttexcoords[1].stencilt = This->bltvertices[0].y / (GLfloat)dest->fakey;
+		This->blttexcoords[2].stencilt = This->blttexcoords[3].stencilt = This->bltvertices[2].y / (GLfloat)dest->fakey;
+	}
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if(dwFlags & DDBLT_COLORFILL)
 	{
@@ -1010,24 +1039,24 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		switch(This->ddInterface->GetBPP())
 		{
 		case 8:
-			if(This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
-			else This->ext->glUniform3i(shader->shader.uniforms[4],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
+			if(This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[5],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
+			else This->ext->glUniform3i(shader->shader.uniforms[5],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
 				src->colorkey[0].key.dwColorSpaceHighValue);
 			break;
 		case 15:
-			This->ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
+			This->ext->glUniform3i(shader->shader.uniforms[5],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 16:
-			This->ext->glUniform3i(shader->shader.uniforms[4],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
+			This->ext->glUniform3i(shader->shader.uniforms[5],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
 				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
 				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
 			break;
 		case 24:
 		case 32:
 		default:
-			This->ext->glUniform3i(shader->shader.uniforms[4],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
+			This->ext->glUniform3i(shader->shader.uniforms[5],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
 				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
 			break;
@@ -1037,6 +1066,13 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	else if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		This->ext->glUniform1i(shader->shader.uniforms[1],0);
+	}
+	if (dwFlags & 0x10000000)  // Use clipper
+	{
+		TextureManager_SetTexture(This->texman, 3, dest->stencil);
+		This->ext->glUniform1i(shader->shader.uniforms[4],3);
+		This->util->EnableArray(shader->shader.attribs[6],true);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[6], 2, GL_FLOAT, false, sizeof(BltTexcoord), &This->blttexcoords[0].stencils);
 	}
 	if(src)
 	{
@@ -1397,7 +1433,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 	SetEvent(This->busy);
 }
 
-void glRenderer_SetBlend(glRenderer *This, DWORD src, DWORD dest)
+void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
 {
 	GLenum glsrc, gldest;
 	bool bothalpha = false;
@@ -1694,7 +1730,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
 	else This->util->BlendEnable(false);
-	glRenderer_SetBlend(This,device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
+	glRenderer__SetBlend(This,device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
 	This->util->SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
 	glRenderer__SetFogColor(This,device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
 	glRenderer__SetFogStart(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
@@ -1715,6 +1751,46 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 {
 	This->util->DeleteFBO(fbo);
+	SetEvent(This->busy);
+}
+
+void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
+{
+	GLfloat view[4];
+	if (!surface->stencil)
+	{
+		surface->stencil = (TEXTURE*)malloc(sizeof(TEXTURE));
+		ZeroMemory(surface->stencil, sizeof(TEXTURE));
+		surface->stencil->minfilter = surface->stencil->magfilter = GL_NEAREST;
+		surface->stencil->wraps = surface->stencil->wrapt = GL_CLAMP_TO_EDGE;
+		surface->stencil->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
+		surface->stencil->pixelformat.dwBBitMask = 0xF;
+		surface->stencil->pixelformat.dwGBitMask = 0xF0;
+		surface->stencil->pixelformat.dwRBitMask = 0xF00;
+		surface->stencil->pixelformat.dwZBitMask = 0xF000;
+		surface->stencil->pixelformat.dwRGBBitCount = 16;
+		TextureManager__CreateTexture(This->texman, surface->stencil, surface->ddsd.dwWidth, surface->ddsd.dwHeight);
+	}
+	if ((surface->ddsd.dwWidth != surface->stencil->width) ||
+		(surface->ddsd.dwHeight != surface->stencil->height))
+		TextureManager__UploadTexture(This->texman, surface->stencil, 0, NULL,
+			surface->ddsd.dwWidth, surface->ddsd.dwHeight);
+	This->util->SetFBO(&surface->stencilfbo, surface->stencil, 0, false);
+	view[0] = view[2] = 0;
+	view[1] = (GLfloat)surface->ddsd.dwWidth;
+	view[3] = (GLfloat)surface->ddsd.dwHeight;
+	This->util->SetViewport(0,0,surface->ddsd.dwWidth,surface->ddsd.dwHeight);
+	glClear(GL_COLOR_BUFFER_BIT);
+	This->shaders->SetShader(PROG_CLIPSTENCIL,NULL,NULL,0);
+	This->ext->glUniform4f(This->shaders->shaders[PROG_CLIPSTENCIL].view,view[0],view[1],view[2],view[3]);
+	This->util->EnableArray(This->shaders->shaders[PROG_CLIPSTENCIL].pos,true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[PROG_CLIPSTENCIL].pos,
+		2,GL_FLOAT,false,sizeof(BltVertex),&surface->clipper->vertices[0].x);
+	This->util->SetCull(D3DCULL_NONE);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
+		4 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
+	This->util->SetFBO((FBO*)NULL);
 	SetEvent(This->busy);
 }
 

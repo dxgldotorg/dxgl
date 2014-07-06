@@ -137,6 +137,7 @@ public:
 	D3DMATERIALHANDLE handle;
 	FBO fbo;
 	FBO stencilfbo;
+	glDirectDrawClipper *clipper;
 private:
 	int swapinterval;
 	ULONG refcount;
@@ -147,7 +148,6 @@ private:
 	glDirectDraw7 *ddInterface;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	glDirectDrawSurface7 *backbuffer;
-	glDirectDrawClipper *clipper;
 	int pagelocked;
 	GLint magfilter,minfilter;
 	glDirect3DDevice7 *device;

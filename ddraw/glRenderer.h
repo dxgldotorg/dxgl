@@ -65,6 +65,7 @@ typedef struct
 #define OP_FLUSH					11
 #define OP_DRAWPRIMITIVES			12
 #define OP_DELETEFBO				13
+#define OP_UPDATECLIPPER            14
 
 #ifdef __cplusplus
 class glDirectDraw7;
@@ -111,6 +112,7 @@ typedef struct glRenderer
 	GLfloat fogend;
 	GLfloat fogdensity;
 	BltVertex bltvertices[4];
+	BltTexcoord blttexcoords[4];
 	int oldswap;
 	TextureManager *texman;
 	glUtil *util;
@@ -134,6 +136,7 @@ HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD d
 HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
+void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
 unsigned int glRenderer_GetScanLine(glRenderer *This);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
@@ -153,12 +156,13 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd);
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
+void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
 void glRenderer__SetFogColor(glRenderer *This, DWORD color);
 void glRenderer__SetFogStart(glRenderer *This, GLfloat start);
 void glRenderer__SetFogEnd(glRenderer *This, GLfloat end);
 void glRenderer__SetFogDensity(glRenderer *This, GLfloat density);
 inline void glRenderer__SetSwap(glRenderer *This, int swap);
-void glRenderer_SetBlend(glRenderer *This, DWORD src, DWORD dest);
+void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest);
 
 #ifdef __cplusplus
 }

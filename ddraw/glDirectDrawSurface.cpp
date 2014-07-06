@@ -628,6 +628,33 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		src->dirty &= ~1;
 	}
+	if (clipper)
+	{
+		if (!clipper->hWnd)
+		{
+			if (!stencil)
+			{
+				stencil = (TEXTURE*)malloc(sizeof(TEXTURE));
+				ZeroMemory(stencil, sizeof(TEXTURE));
+				stencil->minfilter = stencil->magfilter = GL_NEAREST;
+				stencil->wraps = stencil->wrapt = GL_CLAMP_TO_EDGE;
+				stencil->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
+				stencil->pixelformat.dwFlags = DDPF_RGB|DDPF_ALPHAPIXELS;
+				stencil->pixelformat.dwBBitMask = 0xF;
+				stencil->pixelformat.dwGBitMask = 0xF0;
+				stencil->pixelformat.dwRBitMask = 0xF00;
+				stencil->pixelformat.dwRGBAlphaBitMask = 0xF000;
+				stencil->pixelformat.dwRGBBitCount = 16;
+				glRenderer_MakeTexture(ddInterface->renderer, stencil, ddsd.dwWidth, ddsd.dwHeight);
+			}
+			if (clipper->dirty)
+			{
+				glRenderer_UpdateClipper(ddInterface->renderer, this);
+				clipper->dirty = false;
+			}
+		}
+		dwFlags |= 0x10000000;
+	}
 	if (this == src)
 	{
 		tmprect.left = tmprect.top = 0;

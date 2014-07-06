@@ -98,6 +98,13 @@ void main (void)\n\
  gl_FragColor = value;\n\
 } ";
 
+const char frag_clipstencil[] = "\
+#version 110\n\
+void main (void)\n\
+{\n\
+ gl_FragColor = vec4(1.0,0.0,0.0,0.0);\n\
+} ";
+
 const char vert_ortho[] = "\
 #version 110\n\
 uniform vec4 view;\n\
@@ -129,7 +136,8 @@ const SHADER shader_template[] =
 	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_ColorKey,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_ColorKeyMask,	0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_2ColorKey,		0,-1,-1,-1}
+	{0,0,	vert_ortho,			frag_2ColorKey,		0,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_clipstencil,	0,-1,-1,-1}
 };
 const int SHADER_END = __LINE__ - 4;
 const int NumberOfShaders = SHADER_END - SHADER_START;
