@@ -24,8 +24,9 @@
 #define IDD_SYSINFO                             115
 #define IDI_DXGL                                116
 #define IDI_DXGLSM                              117
-#define IDB_DXGLINV                             118
-#define IDB_DXGLINV64                           119
+#define IDI_X16                                 118
+#define IDB_DXGLINV                             119
+#define IDB_DXGLINV64                           120
 #define IDD_TEXSHADER                           121
 #define IDD_VERTEXSHADER                        123
 #define IDC_DXDIAG                              1000

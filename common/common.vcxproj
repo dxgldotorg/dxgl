@@ -129,10 +129,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="dxgl.ico" />
+    <None Include="dxgl48.ico" />
     <None Include="dxglicon.svg" />
+    <None Include="dxglinv.bmp" />
+    <None Include="dxglinv64.bmp" />
     <None Include="dxglsm.ico" />
     <None Include="star.ico" />
     <None Include="version.nsh.in" />
+    <None Include="x16.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="releasever.h" />

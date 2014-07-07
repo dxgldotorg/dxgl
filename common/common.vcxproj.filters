@@ -30,6 +30,18 @@
     <None Include="version.nsh.in">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="dxgl48.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="dxglinv.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="dxglinv64.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="x16.ico">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="releasever.h">

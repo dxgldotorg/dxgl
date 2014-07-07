@@ -332,6 +332,10 @@ IDI_DXGLSM         ICON           "..\\common\\dxglsm.ico"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDI_X16            ICON           "..\\common\\x16.ico"
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDB_DXGLINV        BITMAP         "..\\common\\dxglinv.bmp"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
