@@ -1789,7 +1789,7 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	This->util->SetCull(D3DCULL_NONE);
 	This->util->SetPolyMode(D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
-		4 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
+		6 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
 	This->util->SetFBO((FBO*)NULL);
 	SetEvent(This->busy);
 }

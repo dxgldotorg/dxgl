@@ -223,7 +223,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		memcpy(This->cliplist,lpClipList->Buffer,lpClipList->rdh.nCount*sizeof(RECT));
 		for(int i = 0; i < lpClipList->rdh.nCount; i++)
 		{
-			This->vertices[(i*4)+1].y = This->vertices[(i*4)+3].y = This->cliplist[i].left;
+			This->vertices[(i*4)+1].x = This->vertices[(i*4)+3].x = This->cliplist[i].left;
 			This->vertices[i*4].x = This->vertices[(i*4)+2].x = This->cliplist[i].right;
 			This->vertices[i*4].y = This->vertices[(i*4)+1].y = This->cliplist[i].top;
 			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = This->cliplist[i].bottom;
