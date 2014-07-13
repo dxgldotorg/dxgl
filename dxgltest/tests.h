@@ -19,6 +19,19 @@
 #ifndef _TESTS_H
 #define _TESTS_H
 
+typedef struct
+{
+	MultiDirectDrawSurface *surface;
+	DDSURFACEDESC2 ddsd;
+	float width;
+	float height;
+	float x;
+	float y;
+	float xvelocity;
+	float yvelocity;
+	DWORD bltflags;
+	RECT rect;
+} DDSPRITE;
 
 void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	double fps, bool fullscreen, bool resizable);

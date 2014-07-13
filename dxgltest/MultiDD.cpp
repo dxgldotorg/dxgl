@@ -153,6 +153,24 @@ HRESULT MultiDirectDraw::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, MultiD
 	return error;
 }
 
+HRESULT MultiDirectDraw::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
+{
+	switch (version)
+	{
+	case 1:
+		return dd1->GetCaps(lpDDDriverCaps, lpDDHELCaps);
+	case 2:
+	case 3:
+		return dd2->GetCaps(lpDDDriverCaps, lpDDHELCaps);
+	case 4:
+		return dd4->GetCaps(lpDDDriverCaps, lpDDHELCaps);
+	case 7:
+		return dd7->GetCaps(lpDDDriverCaps, lpDDHELCaps);
+	default:
+		return DDERR_GENERIC;
+	}
+}
+
 HRESULT MultiDirectDraw::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
 	switch(version)

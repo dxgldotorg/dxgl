@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "MultiDD.h"
 #include "tests.h"
 #include "surfacegen.h"
-#include "MultiDD.h"
 #include "timer.h"
 #include "misc.h"
 
@@ -40,20 +40,6 @@ static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
 static int testtypes[] = {0,1,0,1,0,1,2};
-
-typedef struct
-{
-	MultiDirectDrawSurface *surface;
-	DDSURFACEDESC2 ddsd;
-	float width;
-	float height;
-	float x;
-	float y;
-	float xvelocity;
-	float yvelocity;
-	DWORD bltflags;
-	RECT rect;
-} DDSPRITE;
 
 static DDSPRITE sprites[16];
 
@@ -378,6 +364,8 @@ void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int bac
 		ddsd.dwWidth = width;
 		ddsd.dwHeight = height;
 		error = ddinterface->CreateSurface(&ddsd,&ddsrender,NULL);
+		ddsrender->GetSurfaceDesc(&ddsd);
+		::bpp = ddsd.ddpfPixelFormat.dwRGBBitCount;
 	}
 	else
 	{
@@ -448,166 +436,166 @@ void InitTest2D(int test)
 	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
 	error = ddsrender->GetSurfaceDesc(&ddsd);
-	switch(test)
+	switch (test)
 	{
 	case 0:
-		if(!fullscreen) backbuffers = 0;
+		if (!fullscreen) backbuffers = 0;
 		buffer = (unsigned char *)malloc(ddsd.lPitch*ddsd.dwHeight);
-		DrawPalette(ddsd,buffer);
-		error = ddsrender->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-		memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+		DrawPalette(ddsd, buffer);
+		error = ddsrender->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		memcpy(ddsd.lpSurface, buffer, ddsd.lPitch*ddsd.dwHeight);
 		error = ddsrender->Unlock(NULL);
 		ddsrender->GetPalette(&palette);
-		if(backbuffers > 0)
+		if (backbuffers > 0)
 		{
 			ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
-			error = ddsrender->GetAttachedSurface(&ddscaps,&temp1);
-			DrawGradients(ddsd,buffer,hWnd,palette,1,0);
-			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+			error = ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+			DrawGradients(ddsd, buffer, hWnd, palette, 1, 0);
+			error = temp1->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			memcpy(ddsd.lpSurface, buffer, ddsd.lPitch*ddsd.dwHeight);
 			error = temp1->Unlock(NULL);
 		}
-		if(backbuffers > 1)
+		if (backbuffers > 1)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
-			DrawGradients(ddsd,buffer,hWnd,palette,0,0x0000FF);
-			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+			DrawGradients(ddsd, buffer, hWnd, palette, 0, 0x0000FF);
+			error = temp1->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			memcpy(ddsd.lpSurface, buffer, ddsd.lPitch*ddsd.dwHeight);
 			error = temp1->Unlock(NULL);
 		}
-		if(backbuffers > 2)
+		if (backbuffers > 2)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
-			DrawGradients(ddsd,buffer,hWnd,palette,0,0x00FF00);
-			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+			DrawGradients(ddsd, buffer, hWnd, palette, 0, 0x00FF00);
+			error = temp1->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			memcpy(ddsd.lpSurface, buffer, ddsd.lPitch*ddsd.dwHeight);
 			error = temp1->Unlock(NULL);
 		}
-		if(backbuffers > 3)
+		if (backbuffers > 3)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
-			DrawGradients(ddsd,buffer,hWnd,palette,0,0xFF0000);
-			error = temp1->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-			memcpy(ddsd.lpSurface,buffer,ddsd.lPitch*ddsd.dwHeight);
+			DrawGradients(ddsd, buffer, hWnd, palette, 0, 0xFF0000);
+			error = temp1->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			memcpy(ddsd.lpSurface, buffer, ddsd.lPitch*ddsd.dwHeight);
 			error = temp1->Unlock(NULL);
 		}
-		if(temp1) temp1->Release();
+		if (temp1) temp1->Release();
 		free(buffer);
-		if(palette) palette->Release();
+		if (palette) palette->Release();
 		break;
 	case 2:
-		if(!fullscreen) backbuffers=0;
+		if (!fullscreen) backbuffers = 0;
 		error = ddsrender->GetDC(&hRenderDC);
-		DrawGDIPatterns(ddsd,hRenderDC,0);
+		DrawGDIPatterns(ddsd, hRenderDC, 0);
 		ddsrender->ReleaseDC(hRenderDC);
-		if(backbuffers > 0)
+		if (backbuffers > 0)
 		{
 			ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
-			error = ddsrender->GetAttachedSurface(&ddscaps,&temp1);
+			error = ddsrender->GetAttachedSurface(&ddscaps, &temp1);
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,1);
+			DrawGDIPatterns(ddsd, hRenderDC, 1);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 1)
+		if (backbuffers > 1)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,2);
+			DrawGDIPatterns(ddsd, hRenderDC, 2);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 2)
+		if (backbuffers > 2)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,3);
+			DrawGDIPatterns(ddsd, hRenderDC, 3);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 3)
+		if (backbuffers > 3)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,4);
+			DrawGDIPatterns(ddsd, hRenderDC, 4);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 4)
+		if (backbuffers > 4)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,5);
+			DrawGDIPatterns(ddsd, hRenderDC, 5);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 5)
+		if (backbuffers > 5)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,6);
+			DrawGDIPatterns(ddsd, hRenderDC, 6);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(backbuffers > 6)
+		if (backbuffers > 6)
 		{
 			ddscaps.dwCaps = DDSCAPS_FLIP;
-			error = temp1->GetAttachedSurface(&ddscaps,&temp2);
+			error = temp1->GetAttachedSurface(&ddscaps, &temp2);
 			temp1->Release();
 			temp1 = temp2;
 			temp1->GetDC(&hRenderDC);
-			DrawGDIPatterns(ddsd,hRenderDC,7);
+			DrawGDIPatterns(ddsd, hRenderDC, 7);
 			temp1->ReleaseDC(hRenderDC);
 		}
-		if(temp1) temp1->Release();
+		if (temp1) temp1->Release();
 		break;
 	case 4:
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-		ddinterface->CreateSurface(&ddsd,&sprites[0].surface,NULL);
+		ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
 		ddsrender->GetPalette(&palette);
-		error = sprites[0].surface->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-		DrawGradients(ddsd,(unsigned char *)ddsd.lpSurface,hWnd,palette,1,0);
+		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		DrawGradients(ddsd, (unsigned char *)ddsd.lpSurface, hWnd, palette, 1, 0);
 		error = sprites[0].surface->Unlock(NULL);
 		sprites[0].width = (float)ddsd.dwWidth;
 		sprites[0].height = (float)ddsd.dwHeight;
 		sprites[0].rect.left = sprites[0].rect.top = 0;
 		sprites[0].rect.right = ddsd.dwWidth;
 		sprites[0].rect.bottom = ddsd.dwHeight;
-		for(int i = 1; i < 16; i++)
+		for (int i = 1; i < 16; i++)
 		{
-			switch((i-1 & 3))
+			switch ((i - 1 & 3))
 			{
 			case 0:
 				sprites[i].width = sprites[i].height = 64.f;
-				sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight = 
+				sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight =
 					sprites[i].rect.right = sprites[i].rect.bottom = 64;
 				sprites[i].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-				ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-				if(ddver > 3) sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+				sprites[i].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+				if (ddver > 3) sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC2);
 				else sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC);
-				ddinterface->CreateSurface(&sprites[i].ddsd,&sprites[i].surface,NULL);
-				error = sprites[i].surface->Lock(NULL,&sprites[i].ddsd,DDLOCK_WAIT,NULL);
-				DrawPalette(sprites[i].ddsd,(unsigned char *)sprites[i].ddsd.lpSurface);
+				ddinterface->CreateSurface(&sprites[i].ddsd, &sprites[i].surface, NULL);
+				error = sprites[i].surface->Lock(NULL, &sprites[i].ddsd, DDLOCK_WAIT, NULL);
+				DrawPalette(sprites[i].ddsd, (unsigned char *)sprites[i].ddsd.lpSurface);
 				sprites[i].surface->Unlock(NULL);
 				break;
 			case 1:
@@ -621,20 +609,60 @@ void InitTest2D(int test)
 			}
 			DDCOLORKEY ckey;
 			ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = 0;
-			if(i < 5) sprites[i].bltflags = 0;
-			else if(i < 9)
+			if (i < 5) sprites[i].bltflags = 0;
+			else if (i < 9)
 			{
 				sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY;
-				if(sprites[i].surface) sprites[i].surface->SetColorKey(DDCKEY_SRCBLT,&ckey);
+				if (sprites[i].surface) sprites[i].surface->SetColorKey(DDCKEY_SRCBLT, &ckey);
 			}
-			else if(i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
+			else if (i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
 			else sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
 			sprites[i].x = randfloat((float)ddsd.dwWidth);
 			sprites[i].y = randfloat((float)ddsd.dwHeight);
 			sprites[i].xvelocity = randfloat(5);
 			sprites[i].yvelocity = randfloat(5);
 		}
-
+		break;
+	case 7:
+		if (!fullscreen) backbuffers = 0;
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsrender->GetPalette(&palette);
+		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (ddver > 3) sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC);
+		memcpy(&sprites[1], &sprites[0], sizeof(DDSPRITE));
+		memcpy(&sprites[2], &sprites[0], sizeof(DDSPRITE));
+		memcpy(&sprites[3], &sprites[0], sizeof(DDSPRITE));
+		memcpy(&sprites[4], &sprites[0], sizeof(DDSPRITE));
+		memcpy(&sprites[5], &sprites[0], sizeof(DDSPRITE));
+		sprites[0].width = sprites[0].height = 256.0f;
+		sprites[1].width = sprites[1].height = 256.0f;
+		sprites[2].width = sprites[2].height = 16.0f;
+		sprites[3].width = sprites[3].height = 16.0f;
+		sprites[4].width = sprites[4].height = 8.0f;
+		sprites[5].width = sprites[4].height = 6.0f;
+		sprites[0].ddsd.dwWidth = sprites[0].ddsd.dwHeight =
+			sprites[0].rect.right = sprites[0].rect.bottom = 256;
+		sprites[1].ddsd.dwWidth = sprites[1].ddsd.dwHeight =
+			sprites[1].rect.right = sprites[1].rect.bottom = 256;
+		sprites[2].ddsd.dwWidth = sprites[2].ddsd.dwHeight =
+			sprites[2].rect.right = sprites[2].rect.bottom = 16;
+		sprites[3].ddsd.dwWidth = sprites[3].ddsd.dwHeight =
+			sprites[3].rect.right = sprites[3].rect.bottom = 16;
+		sprites[4].ddsd.dwWidth = sprites[4].ddsd.dwHeight =
+			sprites[4].rect.right = sprites[4].rect.bottom = 8;
+		sprites[5].ddsd.dwWidth = sprites[5].ddsd.dwHeight =
+			sprites[5].rect.right = sprites[5].rect.bottom = 6;
+		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
+		ddinterface->CreateSurface(&sprites[1].ddsd, &sprites[1].surface, NULL);
+		ddinterface->CreateSurface(&sprites[2].ddsd, &sprites[2].surface, NULL);
+		ddinterface->CreateSurface(&sprites[3].ddsd, &sprites[3].surface, NULL);
+		ddinterface->CreateSurface(&sprites[4].ddsd, &sprites[4].surface, NULL);
+		ddinterface->CreateSurface(&sprites[5].ddsd, &sprites[5].surface, NULL);
+		DDCAPS ddcaps;
+		ddinterface->GetCaps(&ddcaps, NULL);
+		DrawROPPatterns(ddsrender, sprites, backbuffers, ddver, bpp, ddcaps.dwRops,hWnd,palette);
 	}
 }
 

@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "dxgltest.h"
+#include "MultiDD.h"
 #include "tests.h"
 
 HINSTANCE hinstance;
@@ -224,7 +225,8 @@ const TEST_ITEM Tests2D[] =
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random GDI patterns (does not clear screen between paints)")},
 	{1,		7,		0,		1,		true,		60.0,			false,		false,		_T("BltFast background and sprites")},
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random color fill Blt() paterns")},
-	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Mouse pointer event test")}
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Mouse pointer event test")},
+	{1,		7,		1,		1,		true,		1.0,			false,		false,		_T("Raster Operation Blt() test")}
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;

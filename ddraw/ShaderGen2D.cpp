@@ -116,14 +116,14 @@ const DWORD rop_texture_usage[256] = {
 };
 
 const DWORD supported_rops[8] = {
-	0x00000000,
+	0x00000001,
 	0x00000000,
 	0x00000000,
 	0x00000000,
 	0x00000000,
 	0x00000000,
 	0x00001000,
-	0x00000000
+	0x80000000
 };
 
 const DWORD supported_rops_gl2[8] = {
@@ -196,7 +196,7 @@ static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .
 
 // ROP Operations
 static const char *op_ROP[256] = {
-"dest = ivec4(0);",//00 BLACKNESS
+"pixel = ivec4(0);",//00 BLACKNESS
 "",
 "",
 "",
@@ -400,7 +400,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"dest = src;\n",//CC SRCCOPY
+"",//CC SRCCOPY  pixel=pixel
 "",
 "",
 "",//CF
@@ -451,11 +451,11 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"dest = ivec4(255);\n",//FF WHITENESS
+"pixel = ivec4(255);\n",//FF WHITENESS
 };
 
 static const char *op_ROP_float[256] = {
-"gl_FragColor = vec4(0.0);",//00 BLACKNESS
+"pixel = ivec4(0);",//00 BLACKNESS
 "",
 "",
 "",
@@ -659,7 +659,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"gl_FragColor = pixel;\n",//CC SRCCOPY
+"",//CC SRCCOPY  pixel=pixel
 "",
 "",
 "",//CF
@@ -710,12 +710,12 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"gl_FragColor = vec4(1.0);\n",//FF WHITENESS
+"pixel = ivec4(255);\n",//FF WHITENESS
 };
 
 DWORD PackROPBits(DWORD rop, DWORD flags)
 {
-	DWORD out = rop & 0xF2FAADFF;
+	DWORD out = flags & 0xF2FAADFF;
 	if (rop & 0x10000) out |= 1 << 9;
 	if (rop & 0x20000) out |= 1 << 12;
 	if (rop & 0x40000) out |= 1 << 14;
@@ -724,6 +724,20 @@ DWORD PackROPBits(DWORD rop, DWORD flags)
 	if (rop & 0x200000) out |= 1 << 24;
 	if (rop & 0x400000) out |= 1 << 26;
 	if (rop & 0x800000) out |= 1 << 27;
+	return out;
+}
+
+DWORD UnpackROPBits(DWORD flags)
+{
+	DWORD out = 0;
+	if (flags & (1 << 9)) out |= 1;
+	if (flags & (1 << 12)) out |= 2;
+	if (flags & (1 << 14)) out |= 4;
+	if (flags & (1 << 16)) out |= 8;
+	if (flags & (1 << 18)) out |= 16;
+	if (flags & (1 << 24)) out |= 32;
+	if (flags & (1 << 26)) out |= 64;
+	if (flags & (1 << 27)) out |= 128;
 	return out;
 }
 
@@ -759,6 +773,7 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 {
 	STRING tmp;
+	DWORD rop;
 	tmp.ptr = NULL;
 	BOOL intproc = FALSE;
 	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
@@ -775,20 +790,20 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 		if (gen->ext->glver_major >= 3)
 		{
 			String_Append(vsrc, version_130);
-			intproc = true;
+			intproc = TRUE;
 		}
 		else if (gen->ext->GLEXT_EXT_gpu_shader4)
 		{
 			String_Append(vsrc, version_110);
 			String_Append(vsrc, ext_shader4);
-			intproc = true;
+			intproc = TRUE;
 		}
 		else String_Append(vsrc, version_110);
 	}
 	else String_Append(vsrc, version_110);
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
-	
+
 	// Attributes
 	String_Append(vsrc, attr_xy);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, attr_rgb);
@@ -856,7 +871,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
 	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
-	
+
 	// Variables
 	String_Append(fsrc, var_pixel);
 
@@ -866,6 +881,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
 	else String_Append(fsrc, op_src);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
+	if (id & DDBLT_ROP)
+	{
+		rop = UnpackROPBits(id);
+		if (intproc) String_Append(fsrc, op_ROP[rop]);
+		else String_Append(fsrc, op_ROP_float[rop]);
+	}
 
 	String_Append(fsrc, op_destout);
 	String_Append(fsrc, mainend);

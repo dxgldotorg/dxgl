@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "MultiDD.h"
 #include "tests.h"
 #include "surfacegen.h"
-#include "MultiDD.h"
 #include "timer.h"
 #include "misc.h"
 #define D3D_OVERLOADS
