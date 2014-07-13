@@ -1013,6 +1013,7 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 		{
 			if (rop_texture_usage[i] & 4) bltfx.lpDDSPattern = (LPDIRECTDRAWSURFACE)sprites[5].surface->GetSurface();
 			else bltfx.lpDDSPattern = NULL;
+			bltfx.dwROP = rop_codes[i];
 			sprites[0].surface->Blt(&bltrect, sprites[2].surface, NULL, DDBLT_ROP | DDBLT_WAIT, &bltfx);
 		}
 		else
@@ -1115,4 +1116,5 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 		back->BltFast(0, 16, sprites[1].surface, NULL, DDBLTFAST_WAIT);
 		back->Release();
 	}
+	free(bmi);
 }

@@ -661,6 +661,7 @@ void InitTest2D(int test)
 		ddinterface->CreateSurface(&sprites[4].ddsd, &sprites[4].surface, NULL);
 		ddinterface->CreateSurface(&sprites[5].ddsd, &sprites[5].surface, NULL);
 		DDCAPS ddcaps;
+		ddcaps.dwSize = sizeof(DDCAPS);
 		ddinterface->GetCaps(&ddcaps, NULL);
 		DrawROPPatterns(ddsrender, sprites, backbuffers, ddver, bpp, ddcaps.dwRops,hWnd,palette);
 	}
