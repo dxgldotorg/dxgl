@@ -916,11 +916,20 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 	HICON ico_x16;
 	HDC hdc;
 	DDSURFACEDESC2 ddsd;
+	int bltx, blty;
+	RECT bltrect;
+	DDBLTFX bltfx;
+	ZeroMemory(&bltfx, sizeof(DDBLTFX));
+	bltfx.dwSize = sizeof(DDBLTFX);
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	if (ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
 	ico_dxglsm = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_DXGLSM), IMAGE_ICON, 16, 16, 0);
 	ico_x16 = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_X16), IMAGE_ICON, 16, 16, 0);
+	bltrect.left = bltrect.top = 0;
+	bltrect.bottom = bltrect.right = 16;
+	bltfx.dwFillColor = 0;
+	sprites[2].surface->Blt(&bltrect, NULL, NULL, DDBLT_COLORFILL, &bltfx);
 	sprites[2].surface->GetDC(&hdc);
 	DrawIconEx(hdc, 0, 0, ico_dxglsm, 16, 16, 0, NULL, DI_NORMAL);
 	sprites[2].surface->ReleaseDC(hdc);
@@ -982,11 +991,6 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 		break;
 	}
 	sprites[5].surface->Unlock(NULL);
-	int bltx, blty;
-	RECT bltrect;
-	DDBLTFX bltfx;
-	ZeroMemory(&bltfx, sizeof(DDBLTFX));
-	bltfx.dwSize = sizeof(DDBLTFX);
 	for (int y = 0; y < 32; y++)
 	{
 		for (int x = 0; x < 32; x++)
