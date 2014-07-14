@@ -117,7 +117,7 @@ const DWORD rop_texture_usage[256] = {
 
 const DWORD supported_rops[8] = {
 	0x00000001,
-	0x00000000,
+	0x00080000,
 	0x00000000,
 	0x00000000,
 	0x00000000,
@@ -128,7 +128,7 @@ const DWORD supported_rops[8] = {
 
 const DWORD supported_rops_gl2[8] = {
 	0x00000001,
-	0x00000000,
+	0x00080000,
 	0x00000000,
 	0x00000000,
 	0x00000000,
@@ -247,7 +247,7 @@ static const char *op_ROP[256] = {
 "",//30
 "",
 "",
-"",
+"pixel = pixel ^ ivec4(255);",//33 NOTSRCCOPY
 "",
 "",
 "",
@@ -506,7 +506,7 @@ static const char *op_ROP_float[256] = {
 "",//30
 "",
 "",
-"",
+"pixel = ivec4(255) - pixel;",
 "",
 "",
 "",

@@ -1115,7 +1115,7 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 		back->GetDC(&hdcblt);
 		SetBkColor(hdcblt, RGB(0, 0, 255));
 		SetTextColor(hdcblt, RGB(255, 255, 255));
-		TextOut(hdcblt, 0, 0, _T("Screen 0:  GDI Blt"), 18);
+		TextOut(hdcblt, 0, 0, _T("Screen 1:  GDI Blt"), 18);
 		back->ReleaseDC(hdcblt);
 		back->BltFast(0, 16, sprites[1].surface, NULL, DDBLTFAST_WAIT);
 		back->Release();
