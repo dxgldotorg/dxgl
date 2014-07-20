@@ -39,7 +39,6 @@ typedef struct
 
 typedef struct
 {
-	GLfloat patterns, patternt;
 	GLfloat stencils, stencilt;
 } BltTexcoord;
 

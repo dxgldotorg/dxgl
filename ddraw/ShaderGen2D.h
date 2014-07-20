@@ -28,7 +28,7 @@ typedef struct
 	STRING vsrc;
 	STRING fsrc;
 	GLint prog;
-	GLint attribs[8];
+	GLint attribs[6];
 	GLint uniforms[16];
 } _GENSHADER2D;
 

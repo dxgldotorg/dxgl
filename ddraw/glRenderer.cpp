@@ -945,22 +945,16 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
+	BOOL usedest = FALSE;
 	LONG sizes[6];
+	RECT srcrect;
+	RECT destrect;
 	This->ddInterface->GetSizes(sizes);
 	DWORD shaderid;
-	if ((lpDDBltFx) && (dwFlags & DDBLT_ROP)) shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
-	else shaderid = dwFlags & 0xF2FAADFF;
-	This->shaders->SetShader(shaderid, NULL, NULL, 1);
-	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
-	This->util->BlendEnable(false);
-	This->util->SetFBO(dest);
-	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
-	RECT destrect;
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	dest->GetSurfaceDesc(&ddsd);
-	This->util->DepthTest(false);
-	if(!lpDestRect)
+	if (!lpDestRect)
 	{
 		destrect.left = 0;
 		destrect.top = 0;
@@ -968,7 +962,27 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		destrect.bottom = ddsd.dwHeight;
 	}
 	else destrect = *lpDestRect;
-	RECT srcrect;
+	if ((lpDDBltFx) && (dwFlags & DDBLT_ROP))
+	{
+		shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
+		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
+	}
+	else shaderid = dwFlags & 0xF2FAADFF;
+	if (usedest)
+	{
+		This->shaders->SetShader(PROG_TEXTURE, NULL, NULL, 0);
+		glRenderer__DrawBackbufferRect(This, dest->texture, destrect, PROG_TEXTURE);
+		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
+		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backx;
+		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.;
+		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backy);
+	}
+	This->shaders->SetShader(shaderid, NULL, NULL, 1);
+	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
+	This->util->BlendEnable(false);
+	This->util->SetFBO(dest);
+	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
+	This->util->DepthTest(false);
 	DDSURFACEDESC2 ddsdSrc;
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
 	if(src) src->GetSurfaceDesc(&ddsdSrc);
@@ -1067,12 +1081,17 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		This->ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
+	if (usedest && (shader->shader.uniforms[2] != -1))
+	{
+		TextureManager_SetTexture(This->texman, 1, This->backbuffer);
+		This->ext->glUniform1i(shader->shader.uniforms[2], 1);
+	}
 	if (dwFlags & 0x10000000)  // Use clipper
 	{
 		TextureManager_SetTexture(This->texman, 3, dest->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],3);
-		This->util->EnableArray(shader->shader.attribs[6],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[6], 2, GL_FLOAT, false, sizeof(BltTexcoord), &This->blttexcoords[0].stencils);
+		This->util->EnableArray(shader->shader.attribs[5],true);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, false, sizeof(BltTexcoord), &This->blttexcoords[0].stencils);
 	}
 	if(src)
 	{
@@ -1098,6 +1117,11 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		This->util->EnableArray(shader->shader.attribs[3],true);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
+	}
+	if ((dwFlags & DDBLT_ROP) && usedest)
+	{
+		This->util->EnableArray(shader->shader.attribs[4], true);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[4],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].dests);
 	}
 	This->util->SetCull(D3DCULL_NONE);
 	This->util->SetPolyMode(D3DFILL_SOLID);
@@ -1164,6 +1188,63 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 	This->util->SetCull(D3DCULL_NONE);
 	This->util->SetPolyMode(D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	This->util->SetFBO((FBO*)NULL);
+}
+
+void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT srcrect, int progtype)
+{
+	GLfloat view[4];
+	int x = srcrect.right - srcrect.left;
+	int y = srcrect.bottom - srcrect.top;
+	TextureManager_SetActiveTexture(This->texman, 0);
+	if (!This->backbuffer)
+	{
+		This->backbuffer = (TEXTURE*)malloc(sizeof(TEXTURE));
+		ZeroMemory(This->backbuffer, sizeof(TEXTURE));
+		This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
+		This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
+		This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
+		This->backbuffer->pixelformat.dwBBitMask = 0xFF;
+		This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
+		This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
+		This->backbuffer->pixelformat.dwRGBBitCount = 32;
+		TextureManager__CreateTexture(This->texman, This->backbuffer, x, y);
+		This->backx = x;
+		This->backy = y;
+	}
+	if ((This->backx < x) || (This->backy < y))
+	{
+		if (This->backx > x) x = This->backx;
+		if (This->backx > y) y = This->backx;
+		TextureManager__UploadTexture(This->texman, This->backbuffer, 0, NULL, x, y);
+		This->backx = x;
+		This->backy = y;
+	}
+	This->util->SetFBO(&This->fbo, This->backbuffer, 0, false);
+	view[0] = view[2] = 0;
+	view[1] = (GLfloat)This->backx;
+	view[3] = (GLfloat)This->backy;
+	This->util->SetViewport(0, 0, This->backx, This->backy);
+	This->util->SetScissor(true, 0, 0, This->backx, This->backy);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	This->util->SetScissor(false, 0, 0, 0, 0);
+	TextureManager_SetTexture(This->texman, 0, texture);
+	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
+	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->width;
+	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->width;
+	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)texture->height;
+	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)texture->height;
+	This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+	This->bltvertices[0].x = This->bltvertices[2].x = (float)x;
+	This->bltvertices[0].y = This->bltvertices[1].y = 0.;
+	This->bltvertices[2].y = This->bltvertices[3].y = (float)y;
+	This->util->EnableArray(This->shaders->shaders[progtype].pos, true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos, 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].x);
+	This->util->EnableArray(This->shaders->shaders[progtype].texcoord, true);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord, 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].s);
+	This->util->SetCull(D3DCULL_NONE);
+	This->util->SetPolyMode(D3DFILL_SOLID);
+	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP, 0, 3, 4, GL_UNSIGNED_SHORT, bltindices);
 	This->util->SetFBO((FBO*)NULL);
 }
 

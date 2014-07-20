@@ -121,7 +121,7 @@ const DWORD supported_rops[8] = {
 	0x00000000,
 	0x00000000,
 	0x00000000,
-	0x00000000,
+	0x00000400,
 	0x00001000,
 	0x80000000
 };
@@ -132,7 +132,7 @@ const DWORD supported_rops_gl2[8] = {
 	0x00000000,
 	0x00000000,
 	0x00000000,
-	0x00000000,
+	0x00000400,
 	0x00001000,
 	0x80000000
 };
@@ -154,7 +154,6 @@ static const char attr_rgb[] = "attribute vec3 rgb;\n";
 static const char attr_rgba[] = "attribute vec4 rgba;\n";
 static const char attr_srcst[] = "attribute vec2 srcst;\n";
 static const char attr_destst[] = "attribute vec2 destst;\n";
-static const char attr_patternst[] = "attribute vec2 patternst;\n";
 static const char attr_stencilst[] = "attribute vec2 stencilst;\n";
 
 // Uniforms
@@ -188,6 +187,7 @@ vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
 gl_Position    = proj * xyzw;\n";
 static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
 static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
+static const char op_texcoord1[] = "gl_TexCoord[1] = vec4(destst,0.0,1.0);\n";
 static const char op_texcoord3[] = "gl_TexCoord[3] = vec4(stencilst,0.0,1.0);\n";
 static const char op_ckeysrc[] = "if(pixel.rgb == ckeysrc) discard;\n";
 static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;";
@@ -196,7 +196,7 @@ static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .
 
 // ROP Operations
 static const char *op_ROP[256] = {
-"pixel = ivec4(0);",//00 BLACKNESS
+"pixel = ivec4(0);\n",//00 BLACKNESS
 "",
 "",
 "",
@@ -247,7 +247,7 @@ static const char *op_ROP[256] = {
 "",//30
 "",
 "",
-"pixel = pixel ^ ivec4(255);",//33 NOTSRCCOPY
+"pixel = pixel ^ ivec4(255);\n",//33 NOTSRCCOPY
 "",
 "",
 "",
@@ -366,7 +366,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest;\n",
 "",
 "",
 "",
@@ -455,7 +455,7 @@ static const char *op_ROP[256] = {
 };
 
 static const char *op_ROP_float[256] = {
-"pixel = ivec4(0);",//00 BLACKNESS
+"pixel = ivec4(0);\n",//00 BLACKNESS
 "",
 "",
 "",
@@ -506,7 +506,7 @@ static const char *op_ROP_float[256] = {
 "",//30
 "",
 "",
-"pixel = ivec4(255) - pixel;",
+"pixel = ivec4(255) - pixel;\n",// 33 NOTSRCCOPY
 "",
 "",
 "",
@@ -625,7 +625,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest;\n",
 "",
 "",
 "",
@@ -787,6 +787,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, revheader);
 	if (id & DDBLT_ROP)
 	{
+		rop = UnpackROPBits(id);
 		if (gen->ext->glver_major >= 3)
 		{
 			String_Append(vsrc, version_130);
@@ -808,6 +809,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, attr_xy);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, attr_rgb);
 	else String_Append(vsrc, attr_srcst);
+	if (id & DDBLT_ROP)
+	{
+		if (rop_texture_usage[rop] & 2) String_Append(vsrc, attr_destst);
+	}
 	if (id & 0x10000000) String_Append(vsrc, attr_stencilst);
 
 	// Uniforms
@@ -818,6 +823,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, op_vertex);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, op_vertcolorrgb);
 	else String_Append(vsrc, op_texcoord0);
+	if (id & DDBLT_ROP)
+	{
+		if (rop_texture_usage[rop] & 2) String_Append(vsrc, op_texcoord1);
+	}
 	if (id & 0x10000000) String_Append(vsrc, op_texcoord3);
 	String_Append(vsrc, mainend);
 #ifdef _DEBUG
@@ -869,11 +878,19 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 
 	// Uniforms
 	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
+	if (id & DDBLT_ROP)
+	{
+		if (rop_texture_usage[rop] & 2) String_Append(fsrc, unif_desttex);
+	}
 	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
 
 	// Variables
 	String_Append(fsrc, var_pixel);
+	if (id & DDBLT_ROP)
+	{
+		if (rop_texture_usage[rop] & 2) String_Append(fsrc, var_dest);
+	}
 
 	// Main
 	String_Append(fsrc, mainstart);
@@ -883,7 +900,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
 	if (id & DDBLT_ROP)
 	{
-		rop = UnpackROPBits(id);
+		if (rop_texture_usage[rop] & 2) String_Append(fsrc, op_dest);
 		if (intproc) String_Append(fsrc, op_ROP[rop]);
 		else String_Append(fsrc, op_ROP_float[rop]);
 	}
@@ -932,8 +949,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.attribs[2] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "rgba");
 	gen->genshaders2D[index].shader.attribs[3] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "srcst");
 	gen->genshaders2D[index].shader.attribs[4] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "destst");
-	gen->genshaders2D[index].shader.attribs[5] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "patternst");
-	gen->genshaders2D[index].shader.attribs[6] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "stencilst");
+	gen->genshaders2D[index].shader.attribs[5] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "stencilst");
 	gen->genshaders2D[index].shader.uniforms[0] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "view");
 	gen->genshaders2D[index].shader.uniforms[1] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srctex");
 	gen->genshaders2D[index].shader.uniforms[2] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "desttex");
