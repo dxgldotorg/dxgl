@@ -946,6 +946,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
 	BOOL usedest = FALSE;
+	BOOL usepattern = FALSE;
 	LONG sizes[6];
 	RECT srcrect;
 	RECT destrect;
@@ -966,6 +967,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
 		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
+		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 	}
 	else shaderid = dwFlags & 0xF2FAADFF;
 	if (usedest)
@@ -1085,6 +1087,13 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		TextureManager_SetTexture(This->texman, 1, This->backbuffer);
 		This->ext->glUniform1i(shader->shader.uniforms[2], 1);
+	}
+	if (usepattern && (shader->shader.uniforms[3] != -1))
+	{
+		glDirectDrawSurface7 *pattern = (glDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
+		TextureManager_SetTexture(This->texman, 2, pattern->texture);
+		This->ext->glUniform1i(shader->shader.uniforms[3], 2);
+		This->ext->glUniform2i(shader->shader.uniforms[7], pattern->texture->width, pattern->texture->height);
 	}
 	if (dwFlags & 0x10000000)  // Use clipper
 	{

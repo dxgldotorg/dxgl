@@ -116,25 +116,25 @@ const DWORD rop_texture_usage[256] = {
 };
 
 const DWORD supported_rops[8] = {
-	0x00000001,
+	0x00008001,
 	0x00080000,
-	0x00000000,
+	0x00200000,
 	0x00000000,
 	0x00000000,
 	0x00000400,
 	0x00001000,
-	0x80000000
+	0x80010000
 };
 
 const DWORD supported_rops_gl2[8] = {
-	0x00000001,
+	0x00008001,
 	0x00080000,
-	0x00000000,
+	0x00200000,
 	0x00000000,
 	0x00000000,
 	0x00000400,
 	0x00001000,
-	0x80000000
+	0x80010000
 };
 
 static const char revheader[] =
@@ -164,18 +164,22 @@ static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
 static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
+static const char unif_patternsize[] = "uniform ivec2 patternsize;\n";
 
 
 // Variables
 static const char var_dest[] = "ivec4 dest;\n";
 static const char var_pattern[] = "ivec4 pattern;\n";
 static const char var_pixel[] = "ivec4 pixel;\n";
+static const char var_patternst[] = "vec2 patternst;\n";
 
 // Operations
 static const char op_src[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*255.0);\n";
 static const char op_color[] = "pixel = ivec4(gl_Color*255.0);\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*255.0);\n";
-static const char op_pattern[] = "pattern = ivec4(texture2D(patterntex,gl_TexCoord[2].st)*255.0);\n";
+static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
+mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
+pattern = ivec4(texture2D(patterntex,patternst)*255.0);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.0;\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
@@ -211,7 +215,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",//0F
+"pixel = pattern ^ ivec4(255);\n",//0F
 "",//10
 "",
 "",
@@ -281,7 +285,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest ^ ivec4(255);\n",//55 DSTINVERT
 "",
 "",
 "",
@@ -436,7 +440,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",//EF
-"",//F0
+"pixel = pattern;\n",//F0 PATCOPY
 "",
 "",
 "",
@@ -470,7 +474,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"",//0F
+"pixel = ivec4(255) - pattern;\n",//0F
 "",//10
 "",
 "",
@@ -540,7 +544,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"",
+"pixel = ivec4(255) - dest;\n",//55 DSTINVERT
 "",
 "",
 "",
@@ -695,7 +699,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",//EF
-"",//F0
+"pixel = pattern;\n",//F0 PATCOPY
 "",
 "",
 "",
@@ -881,6 +885,11 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 2) String_Append(fsrc, unif_desttex);
+		if (rop_texture_usage[rop] & 4)
+		{
+			String_Append(fsrc, unif_patterntex);
+			String_Append(fsrc, unif_patternsize);
+		}
 	}
 	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
@@ -890,6 +899,11 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 2) String_Append(fsrc, var_dest);
+		if (rop_texture_usage[rop] & 4)
+		{
+			String_Append(fsrc, var_pattern);
+			String_Append(fsrc, var_patternst);
+		}
 	}
 
 	// Main
@@ -901,6 +915,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 2) String_Append(fsrc, op_dest);
+		if (rop_texture_usage[rop] & 4) String_Append(fsrc, op_pattern);
 		if (intproc) String_Append(fsrc, op_ROP[rop]);
 		else String_Append(fsrc, op_ROP_float[rop]);
 	}
@@ -957,4 +972,5 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "stenciltex");
 	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
 	gen->genshaders2D[index].shader.uniforms[6] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
+	gen->genshaders2D[index].shader.uniforms[7] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
 }
