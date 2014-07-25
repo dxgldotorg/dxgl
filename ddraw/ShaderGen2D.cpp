@@ -116,14 +116,14 @@ const DWORD rop_texture_usage[256] = {
 };
 
 const DWORD supported_rops[8] = {
-	0x00008001,
+	0x00028001,
 	0x00080000,
-	0x00200000,
-	0x00000000,
-	0x00000000,
-	0x00000400,
-	0x00001000,
-	0x80010000
+	0x04200010,
+	0x00000040,
+	0x00000100,
+	0x08000400,
+	0x00001001,
+	0x88014000
 };
 
 const DWORD supported_rops_gl2[8] = {
@@ -217,7 +217,7 @@ static const char *op_ROP[256] = {
 "",
 "pixel = pattern ^ ivec4(255);\n",//0F
 "",//10
-"",
+"pixel = (dest | pixel) ^ ivec4(255);\n",//11 NOTSRCERASE
 "",
 "",
 "",
@@ -268,7 +268,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = pixel & (dest ^ ivec4(255));\n",//44 SRCERASE
 "",
 "",
 "",
@@ -290,7 +290,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest ^ pattern;\n",//5A PATINVERT
 "",
 "",
 "",
@@ -302,7 +302,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = pixel ^ dest;\n",//66 SRCINVERT
 "",
 "",
 "",
@@ -336,7 +336,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = pixel & dest;\n",//88 SRCAND
 "",
 "",
 "",
@@ -387,12 +387,12 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest | (pixel ^ ivec4(255));\n",//BB MERGEPAINT
 "",
 "",
 "",
 "",//BF
-"",//C0
+"pixel = pixel & pattern;\n",//C0 MERGECOPY
 "",
 "",
 "",
@@ -438,7 +438,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = pixel | dest;\n",//EE SRCPAINT
 "",//EF
 "pixel = pattern;\n",//F0 PATCOPY
 "",
@@ -451,7 +451,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"",
+"pixel = dest | pattern | (pixel ^ 255);\n",//FB PATPAINT
 "",
 "",
 "",

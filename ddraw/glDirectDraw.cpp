@@ -962,11 +962,41 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
 		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT;
-	memcpy(ddCaps.dwRops,supported_rops,8*sizeof(DWORD));
-	memcpy(ddCaps.dwNLVBRops,supported_rops,8*sizeof(DWORD));
-	memcpy(ddCaps.dwSSBRops,supported_rops,8*sizeof(DWORD));
-	memcpy(ddCaps.dwSVBRops,supported_rops,8*sizeof(DWORD));
-	memcpy(ddCaps.dwVSBRops,supported_rops,8*sizeof(DWORD));
+	BOOL fullrop = FALSE;
+	if (!renderer)
+	{
+		HWND hGLWnd = CreateWindow(_T("Test"), NULL, WS_POPUP, 0, 0, 16, 16, NULL, NULL, NULL, NULL);
+		glRenderer *tmprenderer = (glRenderer*)malloc(sizeof(glRenderer));
+		DEVMODE mode;
+		mode.dmSize = sizeof(DEVMODE);
+		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
+		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL);
+		if (tmprenderer->ext->glver_major >= 3) fullrop = TRUE;
+		if (tmprenderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
+		glRenderer_Delete(tmprenderer);
+		free(tmprenderer);
+	}
+	else
+	{
+		if (renderer->ext->glver_major >= 3) fullrop = TRUE;
+		if (renderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
+	}
+	if (fullrop)
+	{
+		memcpy(ddCaps.dwRops, supported_rops, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwNLVBRops, supported_rops, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwSSBRops, supported_rops, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwSVBRops, supported_rops, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwVSBRops, supported_rops, 8 * sizeof(DWORD));
+	}
+	else
+	{
+		memcpy(ddCaps.dwRops, supported_rops_gl2, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwNLVBRops, supported_rops_gl2, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwSSBRops, supported_rops_gl2, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwSVBRops, supported_rops_gl2, 8 * sizeof(DWORD));
+		memcpy(ddCaps.dwVSBRops, supported_rops_gl2, 8 * sizeof(DWORD));
+	}
 	GetAvailableVidMem(NULL,&ddCaps.dwVidMemTotal,&ddCaps.dwVidMemFree);
 	if(lpDDDriverCaps)
 	{
