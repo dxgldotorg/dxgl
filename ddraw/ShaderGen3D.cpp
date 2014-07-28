@@ -695,6 +695,9 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	OutputDebugStringA("Vertex shader:\n");
 	OutputDebugStringA(vsrc->ptr);
 	OutputDebugStringA("\nCompiling vertex shader:\n");
+	TRACE_STRING("Vertex shader:\n");
+	TRACE_STRING(vsrc->ptr);
+	TRACE_STRING("\nCompiling vertex shader:\n");
 #endif
 	genshaders[index].shader.vs = ext->glCreateShader(GL_VERTEX_SHADER);
 	const char *src = vsrc->ptr;
@@ -713,6 +716,8 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		ext->glGetShaderInfoLog(genshaders[index].shader.vs,loglen,&result,infolog);
 		OutputDebugStringA("Compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
+		TRACE_STRING("Compilation failed. Error messages:\n");
+		TRACE_STRING(infolog);
 		free(infolog);
 	}
 #endif
@@ -1204,6 +1209,9 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	OutputDebugStringA("Fragment shader:\n");
 	OutputDebugStringA(fsrc->ptr);
 	OutputDebugStringA("\nCompiling fragment shader:\n");
+	TRACE_STRING("Fragment shader:\n");
+	TRACE_STRING(fsrc->ptr);
+	TRACE_STRING("\nCompiling fragment shader:\n"); 
 #endif
 	genshaders[index].shader.fs = ext->glCreateShader(GL_FRAGMENT_SHADER);
 	src = fsrc->ptr;
@@ -1219,6 +1227,8 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		ext->glGetShaderInfoLog(genshaders[index].shader.fs,loglen,&result,infolog);
 		OutputDebugStringA("Compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
+		TRACE_STRING("Compilation failed. Error messages:\n");
+		TRACE_STRING(infolog);
 		free(infolog);
 	}
 	OutputDebugStringA("\nLinking program:\n");
@@ -1236,6 +1246,8 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		ext->glGetProgramInfoLog(genshaders[index].shader.prog,loglen,&result,infolog);
 		OutputDebugStringA("Program link failed. Error messages:\n");
 		OutputDebugStringA(infolog);
+		TRACE_STRING("Program link failed. Error messages:\n");
+		TRACE_STRING(infolog);
 		free(infolog);
 	}
 #endif

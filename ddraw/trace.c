@@ -1135,6 +1135,25 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 	LeaveCriticalSection(&trace_cs);
 }
 
+void trace_string(const char *str)
+{
+	DWORD byteswritten;
+	unsigned int i;
+	if (trace_fail) return;
+	if (!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	if (trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
+	for (i = 0; i < trace_depth - 1; i++)
+		WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	WriteFile(outfile, str, strlen(str), &byteswritten, NULL);
+	LeaveCriticalSection(&trace_cs);
+}
+
 void trace_sysinfo()
 {
 	DWORD byteswritten;
