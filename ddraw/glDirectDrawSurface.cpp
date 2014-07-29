@@ -667,8 +667,8 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 				glRenderer_UpdateClipper(ddInterface->renderer, this);
 				clipper->dirty = false;
 			}
+			dwFlags |= 0x10000000;
 		}
-		dwFlags |= 0x10000000;
 	}
 	if (this == src)
 	{
