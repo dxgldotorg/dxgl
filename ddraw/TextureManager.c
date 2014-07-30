@@ -46,6 +46,14 @@ const DDPIXELFORMAT texformats[] =
 static const int END_TEXFORMATS = __LINE__ - 4;
 int numtexformats;
 
+void ClearError()
+{
+	do
+	{
+		if (glGetError() == GL_NO_ERROR) break;
+	} while (1);
+}
+
 TextureManager *TextureManager_Create(glExtensions *glext)
 {
 	TextureManager *newtex;
@@ -67,9 +75,9 @@ void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture)
 {
 	TextureManager_DeleteTexture(This, texture);
 }
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height)
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror)
 {
-	TextureManager_UploadTextureClassic(This, texture, level, data, width, height);
+	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror);
 }
 void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data)
 {
@@ -111,6 +119,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 {
 	int texformat = -1;
 	int i;
+	GLenum error;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
 	for(i = 0; i < numtexformats; i++)
 	{
@@ -120,50 +129,57 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 			break;
 		}
 	}
+	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 	switch(texformat)
 	{
 	case -1:
 	case 0: // 8-bit palette
 		if(This->ext->glver_major >= 3)
 		{
-			texture->internalformat = GL_R8;
+			texture->internalformats[0] = GL_R8;
 			texture->format = GL_RED;
 		}
 		else
 		{
-			texture->internalformat = GL_RGBA8;
+			texture->internalformats[0] = GL_RGBA8;
 			texture->format = GL_LUMINANCE;
 		}
 		texture->type = GL_UNSIGNED_BYTE;
 		break;
 	case 1: // 8-bit RGB332
-		texture->internalformat = GL_R3_G3_B2;
+		texture->internalformats[0] = GL_R3_G3_B2;
+		texture->internalformats[1] = GL_RGB8;
+		texture->internalformats[2] = GL_RGBA8;
 		texture->format = GL_RGB;
 		texture->type = GL_UNSIGNED_BYTE_3_3_2;
 		break;
 	case 2: // 16-bit RGB555
-		texture->internalformat = GL_RGB5_A1;
+		texture->internalformats[0] = GL_RGB5_A1;
+		texture->internalformats[1] = GL_RGB8;
+		texture->internalformats[2] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		break;
 	case 3: // 16-bit RGB565
-		/*if(GLEXT_ARB_ES2_compatibility) texture->internalformat = GL_RGB565;
-		else */texture->internalformat = GL_RGBA8;
+		texture->internalformats[0] = GL_RGB565;
+		texture->internalformats[1] = GL_RGB8;
+		texture->internalformats[2] = GL_RGBA8;
 		texture->format = GL_RGB;
 		texture->type = GL_UNSIGNED_SHORT_5_6_5;
 		break;
 	case 4: // 24-bit RGB888
-		texture->internalformat = GL_RGB8;
+		texture->internalformats[0] = GL_RGB8;
+		texture->internalformats[1] = GL_RGBA8;
 		texture->format = GL_BGR;
 		texture->type = GL_UNSIGNED_BYTE;
 		break;
 	case 5: // 32-bit RGB888
-		texture->internalformat = GL_RGBA8;
+		texture->internalformats[0] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_INT_8_8_8_8_REV;
 		break;
 	case 6: // 32-bit BGR888
-		texture->internalformat = GL_RGBA8;
+		texture->internalformats[0] = GL_RGBA8;
 		texture->format = GL_RGBA;
 		texture->type = GL_UNSIGNED_INT_8_8_8_8_REV;
 		break;
@@ -171,62 +187,66 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 		FIXME("Unusual texture format RGBA8332 not supported");
 		break;
 	case 8: // 16-bit RGBA4444
-		texture->internalformat = GL_RGBA4;
+		texture->internalformats[0] = GL_RGBA4;
+		texture->internalformats[1] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_4_4_4_4_REV;
 		break;
 	case 9: // 16-bit RGBA1555
-		texture->internalformat = GL_RGB5_A1;
+		texture->internalformats[0] = GL_RGB5_A1;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		break;
 	case 10: // 32-bit RGBA8888
-		texture->internalformat = GL_RGBA8;
+		texture->internalformats[0] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_INT_8_8_8_8_REV;
 		break;
 	case 11: // 8-bit Luminance
-		texture->internalformat = GL_LUMINANCE8;
+		texture->internalformats[0] = GL_LUMINANCE8;
+		texture->internalformats[1] = GL_RGB8;
+		texture->internalformats[2] = GL_RGBA8;
 		texture->format = GL_LUMINANCE;
 		texture->type = GL_UNSIGNED_BYTE;
 		break;
 	case 12: // 8-bit Alpha
-		texture->internalformat = GL_ALPHA8;
+		texture->internalformats[0] = GL_ALPHA8;
 		texture->format = GL_ALPHA;
 		texture->type = GL_UNSIGNED_BYTE;
 		break;
 	case 13: // 16-bit Luminance Alpha
-		texture->internalformat = GL_LUMINANCE8_ALPHA8;
+		texture->internalformats[0] = GL_LUMINANCE8_ALPHA8;
+		texture->internalformats[1] = GL_RGBA8;
 		texture->format = GL_LUMINANCE_ALPHA;
 		texture->type = GL_UNSIGNED_BYTE;
 		break;
 	case 14: // 16-bit Z buffer
-		texture->internalformat = GL_DEPTH_COMPONENT16;
+		texture->internalformats[0] = GL_DEPTH_COMPONENT16;
 		texture->format = GL_DEPTH_COMPONENT;
 		texture->type = GL_UNSIGNED_SHORT;
 		break;
 	case 15: // 24-bit Z buffer
-		texture->internalformat = GL_DEPTH_COMPONENT24;
+		texture->internalformats[0] = GL_DEPTH_COMPONENT24;
 		texture->format = GL_DEPTH_COMPONENT;
 		texture->type = GL_UNSIGNED_INT;
 		break;
 	case 16: // 32/24 bit Z buffer
-		texture->internalformat = GL_DEPTH_COMPONENT24;
+		texture->internalformats[0] = GL_DEPTH_COMPONENT24;
 		texture->format = GL_DEPTH_COMPONENT;
 		texture->type = GL_UNSIGNED_INT;
 		break;
 	case 17: // 32-bit Z buffer
-		texture->internalformat = GL_DEPTH_COMPONENT32;
+		texture->internalformats[0] = GL_DEPTH_COMPONENT32;
 		texture->format = GL_DEPTH_COMPONENT;
 		texture->type = GL_UNSIGNED_INT;
 		break;
 	case 18: // 32-bit Z/Stencil buffer, depth LSB
-		texture->internalformat = GL_DEPTH24_STENCIL8;
+		texture->internalformats[0] = GL_DEPTH24_STENCIL8;
 		texture->format = GL_DEPTH_STENCIL;
 		texture->type = GL_UNSIGNED_INT_24_8;
 		break;
 	case 19: // 32-bit Z/Stencil buffer, depth MSB
-		texture->internalformat = GL_DEPTH24_STENCIL8;
+		texture->internalformats[0] = GL_DEPTH24_STENCIL8;
 		texture->format = GL_DEPTH_STENCIL;
 		texture->type = GL_UNSIGNED_INT_24_8;
 		break;
@@ -235,7 +255,23 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	texture->height = height;
 	glGenTextures(1,&texture->id);
 	TextureManager_SetTexture(This,0,texture);
-	glTexImage2D(GL_TEXTURE_2D,0,texture->internalformat,texture->width,texture->height,0,texture->format,texture->type,NULL);
+	do
+	{
+		ClearError();
+		glTexImage2D(GL_TEXTURE_2D, 0, texture->internalformats[0], texture->width, texture->height, 0, texture->format, texture->type, NULL);
+		error = glGetError();
+		if (error != GL_NO_ERROR)
+		{
+			if (texture->internalformats[1] == 0)
+			{
+				FIXME("Failed to create texture, cannot find internal format");
+				break;
+			}
+			memmove(&texture->internalformats[0], &texture->internalformats[1], 7 * sizeof(GLint));
+			texture->internalformats[7] = 0;
+		}
+		else break;
+	} while (1);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,texture->minfilter);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,texture->magfilter);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,texture->wraps);
@@ -245,23 +281,55 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 {
 	glDeleteTextures(1,&texture->id);
-	texture->bordercolor = texture->format = texture->internalformat =
-		texture->type = texture->width = texture->height = texture->magfilter =
-		texture->minfilter = texture->miplevel = texture->wraps = texture->wrapt =
+	texture->bordercolor = texture->format = texture->type = texture->width =
+		texture->height = texture->magfilter = texture->minfilter =
+		texture->miplevel = texture->wraps = texture->wrapt =
 		texture->pbo = texture->id = 0;
+	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 }
 
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height)
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror)
 {
+	GLenum error;
 	texture->width = width;
 	texture->height = height;
-	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id,GL_TEXTURE_2D,level,texture->internalformat,
-		width,height,0,texture->format,texture->type,data);
+	if (checkerror)
+	{
+		do
+		{
+			ClearError();
+			if (This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+				width, height, 0, texture->format, texture->type, data);
+			else
+			{
+				TextureManager_SetActiveTexture(This, 0);
+				TextureManager_SetTexture(This, 0, texture);
+				glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+			}
+			error = glGetError();
+			if (error != GL_NO_ERROR)
+			{
+				if (texture->internalformats[1] == 0)
+				{
+					FIXME("Failed to update texture, cannot find internal format");
+					break;
+				}
+				memmove(&texture->internalformats[0], &texture->internalformats[1], 7 * sizeof(GLint));
+				texture->internalformats[7] = 0;
+			}
+			else break;
+		} while (1);
+	}
 	else
 	{
-		TextureManager_SetActiveTexture(This, 0);
-		TextureManager_SetTexture(This, 0,texture);
-		glTexImage2D(GL_TEXTURE_2D,level,texture->internalformat,width,height,0,texture->format,texture->type,data);
+		if (This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+			width, height, 0, texture->format, texture->type, data);
+		else
+		{
+			TextureManager_SetActiveTexture(This, 0);
+			TextureManager_SetTexture(This, 0, texture);
+			glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+		}
 	}
 }
 
@@ -298,200 +366,3 @@ void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE
 		glBindTexture(GL_TEXTURE_2D,texname);
 	}
 }
-
-
-
-/*  old code
-			if(ddsd.ddpfPixelFormat.dwFlags & DDPF_RGB)
-			{
-				switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
-				{
-				case 8:
-					if(ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8)
-					{
-						texformat = GL_LUMINANCE;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
-						else texformat3 = GL_RGBA8;
-						if(!palettein) palette = new glDirectDrawPalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,NULL);
-						bitmapinfo->bmiHeader.biBitCount = 8;
-					}
-					else
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_BYTE_3_3_2;
-						if(dxglcfg.texformat) texformat3 = GL_R3_G3_B2;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.ddpfPixelFormat.dwRBitMask = 0;
-					ddsd.ddpfPixelFormat.dwGBitMask = 0;
-					ddsd.ddpfPixelFormat.dwBBitMask = 0;
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
-					break;
-				case 16:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0x7C00) && (ddsd.ddpfPixelFormat.dwGBitMask == 0x3E0)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0x1F))
-					{
-						texformat = GL_BGRA;
-						texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-						if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
-						else texformat3 = GL_RGBA8;
-					}
-					else // fixme:  support more formats
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-						if(dxglcfg.texformat) texformat3 = GL_RGB;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
-					break;
-				case 24:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
-					{
-						texformat = GL_BGR;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_RGB8;
-						else texformat3 = GL_RGBA8;
-					}
-					else // fixme:  support more formats
-					{
-						texformat = GL_RGB;
-						texformat2 = GL_UNSIGNED_BYTE;
-						if(dxglcfg.texformat) texformat3 = GL_RGB8;
-						else texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*3);
-					break;
-				case 32:
-				default:
-					if((ddsd.ddpfPixelFormat.dwRBitMask == 0xFF0000) && (ddsd.ddpfPixelFormat.dwGBitMask == 0xFF00)
-						&& (ddsd.ddpfPixelFormat.dwBBitMask == 0xFF))
-					{
-						texformat = GL_BGRA;
-						texformat2 = GL_UNSIGNED_INT_8_8_8_8_REV;
-						texformat3 = GL_RGBA8;
-					}
-					else // fixme: support more formats
-					{
-						texformat = GL_RGBA;
-						texformat2 = GL_UNSIGNED_BYTE;
-						texformat3 = GL_RGBA8;
-					}
-					ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*4);
-				}
-			}
-			else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)
-			{
-				switch(ddsd.ddpfPixelFormat.dwZBufferBitDepth)
-				{
-				case 16:
-				default:
-					texformat = GL_DEPTH_COMPONENT;
-					texformat2 = GL_UNSIGNED_BYTE;
-					texformat3 = GL_DEPTH_COMPONENT16;
-					break;
-				case 24:
-					texformat = GL_DEPTH_COMPONENT;
-					texformat2 = GL_UNSIGNED_BYTE;
-					texformat3 = GL_DEPTH_COMPONENT24;
-					break;
-				case 32:
-					if((ddsd.ddpfPixelFormat.dwRGBZBitMask == 0x00ffffff) &&
-						!(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER))
-					{
-						texformat = GL_DEPTH_COMPONENT;
-						texformat2 = GL_UNSIGNED_INT;
-						texformat3 = GL_DEPTH_COMPONENT24;
-						break;
-					}
-					else if(ddsd.ddpfPixelFormat.dwFlags & DDPF_STENCILBUFFER)
-					{
-						texformat = GL_DEPTH_STENCIL;
-						texformat2 = GL_UNSIGNED_INT_24_8;
-						texformat3 = GL_DEPTH24_STENCIL8;
-						hasstencil = true;
-						break;
-					}
-					else
-					{
-						texformat = GL_DEPTH_COMPONENT;
-						texformat2 = GL_UNSIGNED_INT;
-						texformat3 = GL_DEPTH_COMPONENT32;
-						break;
-					}
-				}
-			}
-		}
-
-*/
-
-/*
-		if(!(ddsd.dwFlags & DDSD_PIXELFORMAT))
-		{
-			ddsd.ddpfPixelFormat.dwRGBBitCount = ddInterface->GetBPP();
-			switch(ddInterface->GetBPP())
-			{
-			case 8:
-				texformat = GL_LUMINANCE;
-				texformat2 = GL_UNSIGNED_BYTE;
-				if(dxglcfg.texformat) texformat3 = GL_LUMINANCE8;
-				else texformat3 = GL_RGBA8;
-				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
-				ddsd.ddpfPixelFormat.dwRBitMask = 0;
-				ddsd.ddpfPixelFormat.dwGBitMask = 0;
-				ddsd.ddpfPixelFormat.dwBBitMask = 0;
-				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth);
-				break;
-			case 15:
-				texformat = GL_BGRA;
-				texformat2 = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-				if(dxglcfg.texformat) texformat3 = GL_RGB5_A1;
-				else texformat3 = GL_RGBA8;
-				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-				ddsd.ddpfPixelFormat.dwRBitMask = 0x7C00;
-				ddsd.ddpfPixelFormat.dwGBitMask = 0x3E0;
-				ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
-				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
-				ddsd.ddpfPixelFormat.dwRGBBitCount = 16;
-				break;
-			case 16:
-				texformat = GL_RGB;
-				texformat2 = GL_UNSIGNED_SHORT_5_6_5;
-				if(dxglcfg.texformat) texformat3 = GL_RGB;
-				else texformat3 = GL_RGBA8;
-				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-				ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
-				ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
-				ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
-				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*2);
-				break;
-			case 24:
-				texformat = GL_BGR;
-				texformat2 = GL_UNSIGNED_BYTE;
-				if(dxglcfg.texformat) texformat3 = GL_RGB8;
-				else texformat3 = GL_RGBA8;
-				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-				ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
-				ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
-				ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
-				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*3);
-				break;
-			case 32:
-				texformat = GL_BGRA;
-				texformat2 = GL_UNSIGNED_BYTE;
-				texformat3 = GL_RGBA8;
-				ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-				ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
-				ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
-				ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
-				ddsd.lPitch = NextMultipleOfWord(ddsd.dwWidth*4);
-				break;
-			default:
-				*error = DDERR_INVALIDPIXELFORMAT;
-				return;
-			}
-		}
-
-*/
