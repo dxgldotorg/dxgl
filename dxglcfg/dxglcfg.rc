@@ -49,7 +49,7 @@ FONT 8, "Ms Shell Dlg 2"
     COMBOBOX        IDC_SCALE, 195, 79, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "Vertical sync", IDC_STATIC, 299, 69, 41, 8, SS_LEFT
     COMBOBOX        IDC_VSYNC, 299, 79, 100, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    LTEXT           "Scaling shader", IDC_STATIC, 195, 94, 47, 8, SS_LEFT
+    LTEXT           "Post-processing shader", IDC_STATIC, 195, 94, 90, 8, SS_LEFT
     EDITTEXT        IDC_SHADER, 195, 104, 183, 14, ES_AUTOHSCROLL
     PUSHBUTTON      "...", IDC_BROWSESHADER, 379, 104, 20, 14
     LTEXT           "Screen aspect ratio", IDC_STATIC, 195, 120, 63, 8, SS_LEFT

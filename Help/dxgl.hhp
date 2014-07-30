@@ -2,10 +2,14 @@
 Compatibility=1.1 or later
 Compiled file=dxgl.chm
 Contents file=toc.hhc
+Default Window=DXGL Help
 Default topic=introduction.htm
 Display compile progress=No
 Language=0x409 English (United States)
 Title=DXGL Help
+
+[WINDOWS]
+DXGL Help=,"toc.hhc",,"introduction.htm",,,,,,0x22520,,0x3006,[0,0,922,684],0x318f0000,,,,,,0
 
 
 [FILES]

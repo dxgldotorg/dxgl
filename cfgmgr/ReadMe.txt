@@ -22,8 +22,6 @@ Filter to use for stretched 2D blits.
 Valid settings:
 0 - Nearest-neighbor stretching
 1 - Bilinear interpolation
-2 - Use pixel shader defined by shaderfile
-3 - Use pixel shader defined by shaderfile, only on primary surface.
 
 Member highres
 REG_DWORD HKCU\DXGL\<app>\AdjustPrimaryResolution
@@ -76,7 +74,7 @@ Valid settings:
 
 Member shaderfile
 REG_SZ HKCU\DXGL\<app>\ShaderFile
-Full path to file containing a custom pixel shader for 2D blits.
+Full path to file containing a post-process shader script.
 
 Member SortModes
 REG_DWORD HKCU\DXGL\<app>\SortModes

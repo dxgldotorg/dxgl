@@ -540,10 +540,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
-		_tcscpy(buffer,_T("Custom shader"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,2,(LPARAM)buffer);
-		_tcscpy(buffer,_T("Shader (primary only)"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,3,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
