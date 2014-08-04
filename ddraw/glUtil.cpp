@@ -147,41 +147,60 @@ void glUtil::SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
 	}
 }
 
-void glUtil::SetFBO(glDirectDrawSurface7 *surface)
+GLenum glUtil::SetFBO(glDirectDrawSurface7 *surface)
 {
-	if(!surface) SetFBO((FBO*)NULL);
-	if(surface->zbuffer) SetFBO(&surface->fbo,surface->texture,surface->zbuffer->texture,surface->zbuffer->hasstencil);
-	else SetFBO(&surface->fbo,surface->texture,NULL,false);
+	if(!surface) return SetFBO((FBO*)NULL);
+	if(surface->zbuffer) return SetFBO(&surface->fbo,surface->texture,surface->zbuffer->texture,surface->zbuffer->hasstencil);
+	else return SetFBO(&surface->fbo,surface->texture,NULL,false);
 }
 
-void glUtil::SetFBO(FBO *fbo)
+GLenum glUtil::SetFBO(FBO *fbo)
 {
-	if(fbo == currentfbo) return;
+	if (fbo == currentfbo)
+	{
+		if (fbo) return fbo->status;
+		else return GL_FRAMEBUFFER_COMPLETE;
+	}
 	if(!fbo)
 	{
-		if(ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER,0);
+		if (ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		else if(ext->GLEXT_EXT_framebuffer_object) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
 	}
 	else
 	{
-		if(ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
-		else if(ext->GLEXT_EXT_framebuffer_object) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
+		if (ext->GLEXT_ARB_framebuffer_object)
+		{
+			ext->glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
+			fbo->status = ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		}
+		else if (ext->GLEXT_EXT_framebuffer_object)
+		{
+			ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+			fbo->status = ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		}
 	}
 	currentfbo = fbo;
+	if (fbo) return fbo->status;
+	else
+	{
+		if (ext->GLEXT_ARB_framebuffer_object) return ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		else if (ext->GLEXT_EXT_framebuffer_object) return ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		else return 0;
+	}
 }
 
-void glUtil::SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+GLenum glUtil::SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
 {
 	if(!fbo)
 	{
-		SetFBO((FBO*)NULL);
-		return;
+		return SetFBO((FBO*)NULL);
 	}
 	if(!fbo->fbo) InitFBO(fbo);
-	if(!color) return;
+	if (!color) return GL_INVALID_ENUM;
 	if((color != fbo->fbcolor) || (z != fbo->fbz) || (stencil != fbo->stencil))
 		SetFBOTexture(fbo,color,z,stencil);
-	if(fbo != currentfbo) SetFBO(fbo);
+	if(fbo != currentfbo) return SetFBO(fbo);
+	else return fbo->status;
 }
 
 void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texman)

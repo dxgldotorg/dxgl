@@ -52,9 +52,9 @@ public:
 	void DeleteFBO(FBO *fbo);
 	void SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
 	void SetWrap(int level, DWORD coord, DWORD address, TextureManager *texman);
-	void SetFBO(glDirectDrawSurface7 *surface);
-	void SetFBO(FBO *fbo);
-	void SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
+	GLenum SetFBO(glDirectDrawSurface7 *surface);
+	GLenum SetFBO(FBO *fbo);
+	GLenum SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
 	void SetDepthComp(GLenum comp);
 	void DepthWrite(bool enabled);
 	void DepthTest(bool enabled);

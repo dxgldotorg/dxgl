@@ -982,7 +982,12 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	This->shaders->SetShader(shaderid, NULL, NULL, 1);
 	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
 	This->util->BlendEnable(false);
-	This->util->SetFBO(dest);
+	do
+	{
+		if (This->util->SetFBO(dest) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!dest->texture->internalformats[1]) break;
+		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty);
+	} while (1);
 	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
 	This->util->DepthTest(false);
 	DDSURFACEDESC2 ddsdSrc;
@@ -1444,7 +1449,12 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	This->outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
-	This->util->SetFBO(target);
+	do
+	{
+		if (This->util->SetFBO(target) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!target->texture->internalformats[1]) break;
+		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty);
+	} while (1);
 	int clearbits = 0;
 	if(dwFlags & D3DCLEAR_TARGET)
 	{
@@ -1815,8 +1825,14 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(prog.uniforms[139]!= -1) This->ext->glUniform1f(prog.uniforms[139],device->viewport.dwX);
 	if(prog.uniforms[140]!= -1) This->ext->glUniform1f(prog.uniforms[140],device->viewport.dwY);
 	if(prog.uniforms[141]!= -1) This->ext->glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
-	This->util->SetFBO(device->glDDS7);
-	This->util->SetViewport(device->viewport.dwX,device->viewport.dwY,device->viewport.dwWidth,device->viewport.dwHeight);
+	do
+	{
+		if (This->util->SetFBO(device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!device->glDDS7->texture->internalformats[1]) break;
+		TextureManager_FixTexture(This->texman, device->glDDS7->texture,
+			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty);
+	} while (1);
+	This->util->SetViewport(device->viewport.dwX, device->viewport.dwY, device->viewport.dwWidth, device->viewport.dwHeight);
 	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
 	else This->util->BlendEnable(false);

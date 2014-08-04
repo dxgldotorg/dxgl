@@ -366,3 +366,44 @@ void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE
 		glBindTexture(GL_TEXTURE_2D,texname);
 	}
 }
+
+BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty)
+{
+	// data should be null to create uninitialized texture or be pointer to top-level
+	// buffer to retain texture data
+	TEXTURE newtexture;
+	GLenum error;
+	memcpy(&newtexture, texture, sizeof(TEXTURE));
+	if (texture->miplevel > 0) return FALSE;
+	if (texture->internalformats[1] == 0) return FALSE;
+	glGenTextures(1, &newtexture.id);
+	TextureManager_SetActiveTexture(This, 0);
+	if (data)
+	{
+		TextureManager_SetTexture(This, 0, texture);
+		glGetTexImage(GL_TEXTURE_2D, 0, texture->format, texture->type, data);
+		if (dirty) *dirty |= 2;
+	}
+	TextureManager_SetTexture(This, 0, &newtexture);
+	do
+	{
+		memmove(&newtexture.internalformats[0], &newtexture.internalformats[1], 7 * sizeof(GLint));
+		newtexture.internalformats[7] = 0;
+		ClearError();
+		glTexImage2D(GL_TEXTURE_2D, 0, newtexture.internalformats[0], newtexture.width, newtexture.height,
+			0, newtexture.format, newtexture.type, NULL);
+		error = glGetError();
+		if (error != GL_NO_ERROR)
+		{
+			if (newtexture.internalformats[1] == 0)
+			{
+				FIXME("Failed to repair texture, cannot find internal format");
+				break;
+			}
+		}
+		else break;
+	} while (1);
+	TextureManager__DeleteTexture(This, texture);
+	memcpy(texture, &newtexture, sizeof(TEXTURE));
+	return TRUE;
+}
