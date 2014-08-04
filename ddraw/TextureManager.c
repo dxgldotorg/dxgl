@@ -155,8 +155,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 		break;
 	case 2: // 16-bit RGB555
 		texture->internalformats[0] = GL_RGB5_A1;
-		texture->internalformats[1] = GL_RGB8;
-		texture->internalformats[2] = GL_RGBA8;
+		texture->internalformats[1] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		break;
@@ -194,6 +193,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 		break;
 	case 9: // 16-bit RGBA1555
 		texture->internalformats[0] = GL_RGB5_A1;
+		texture->internalformats[1] = GL_RGBA8;
 		texture->format = GL_BGRA;
 		texture->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		break;
