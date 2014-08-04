@@ -987,6 +987,9 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		if (This->util->SetFBO(dest) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!dest->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty);
+		This->util->SetFBO((FBO*)NULL);
+		dest->fbo.fbcolor = NULL;
+		dest->fbo.fbz = NULL;
 	} while (1);
 	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
 	This->util->DepthTest(false);
@@ -1454,6 +1457,9 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 		if (This->util->SetFBO(target) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!target->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty);
+		This->util->SetFBO((FBO*)NULL);
+		target->fbo.fbcolor = NULL;
+		target->fbo.fbz = NULL;
 	} while (1);
 	int clearbits = 0;
 	if(dwFlags & D3DCLEAR_TARGET)
@@ -1831,6 +1837,9 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		if (!device->glDDS7->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, device->glDDS7->texture,
 			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty);
+		This->util->SetFBO((FBO*)NULL);
+		device->glDDS7->fbo.fbcolor = NULL;
+		device->glDDS7->fbo.fbz = NULL;
 	} while (1);
 	This->util->SetViewport(device->viewport.dwX, device->viewport.dwY, device->viewport.dwWidth, device->viewport.dwHeight);
 	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
