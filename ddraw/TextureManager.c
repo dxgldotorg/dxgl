@@ -391,7 +391,7 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 		newtexture.internalformats[7] = 0;
 		ClearError();
 		glTexImage2D(GL_TEXTURE_2D, 0, newtexture.internalformats[0], newtexture.width, newtexture.height,
-			0, newtexture.format, newtexture.type, NULL);
+			0, newtexture.format, newtexture.type, data);
 		error = glGetError();
 		if (error != GL_NO_ERROR)
 		{
