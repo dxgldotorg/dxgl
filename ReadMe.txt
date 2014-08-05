@@ -1,4 +1,4 @@
-DXGL 0.5.2
+DXGL 0.5.3
 http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
