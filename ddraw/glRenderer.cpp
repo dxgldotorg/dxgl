@@ -881,6 +881,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	This->util->DepthTest(false);
 	This->util->MatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DITHER);
 	This->util->SetDepthComp(GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
 	This->gl_caps.Version = (GLfloat)atof((char*)glver);
