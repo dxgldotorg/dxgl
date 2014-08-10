@@ -617,6 +617,7 @@ void InitTest2D(int test)
 			}
 			else if (i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
 			else sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
+			ddsrender->SetColorKey(DDCKEY_DESTBLT, &ckey);
 			sprites[i].x = randfloat((float)ddsd.dwWidth);
 			sprites[i].y = randfloat((float)ddsd.dwHeight);
 			sprites[i].xvelocity = randfloat(5);

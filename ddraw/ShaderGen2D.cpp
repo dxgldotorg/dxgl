@@ -194,6 +194,7 @@ static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
 static const char op_texcoord1[] = "gl_TexCoord[1] = vec4(destst,0.0,1.0);\n";
 static const char op_texcoord3[] = "gl_TexCoord[3] = vec4(stencilst,0.0,1.0);\n";
 static const char op_ckeysrc[] = "if(pixel.rgb == ckeysrc) discard;\n";
+static const char op_ckeydest[] = "if(dest.rgb != ckeydest) discard;\n";
 static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;";
 
 // Functions
@@ -780,6 +781,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	DWORD rop;
 	tmp.ptr = NULL;
 	BOOL intproc = FALSE;
+	BOOL usedest = FALSE;
 	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
 	gen->genshaders2D[index].shader.fsrc.ptr = NULL;
 	char idstring[22];
@@ -815,8 +817,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	else String_Append(vsrc, attr_srcst);
 	if (id & DDBLT_ROP)
 	{
-		if (rop_texture_usage[rop] & 2) String_Append(vsrc, attr_destst);
+		if (rop_texture_usage[rop] & 2) usedest = TRUE;
 	}
+	if (id & DDBLT_KEYDEST) usedest = TRUE;
+	if (usedest) String_Append(vsrc, attr_destst);
 	if (id & 0x10000000) String_Append(vsrc, attr_stencilst);
 
 	// Uniforms
@@ -827,10 +831,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(vsrc, op_vertex);
 	if (id & DDBLT_COLORFILL) String_Append(vsrc, op_vertcolorrgb);
 	else String_Append(vsrc, op_texcoord0);
-	if (id & DDBLT_ROP)
-	{
-		if (rop_texture_usage[rop] & 2) String_Append(vsrc, op_texcoord1);
-	}
+	if(usedest) String_Append(vsrc, op_texcoord1);
 	if (id & 0x10000000) String_Append(vsrc, op_texcoord3);
 	String_Append(vsrc, mainend);
 #ifdef _DEBUG
@@ -862,7 +863,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 		free(infolog);
 	}
 #endif
-
+	usedest = FALSE;
 	// Create fragment shader
 	STRING *fsrc = &gen->genshaders2D[index].shader.fsrc;
 	String_Append(fsrc, revheader);
@@ -887,39 +888,43 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 
 	// Uniforms
 	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
+	if (id & DDBLT_KEYDEST) usedest = TRUE;
 	if (id & DDBLT_ROP)
 	{
-		if (rop_texture_usage[rop] & 2) String_Append(fsrc, unif_desttex);
+		if (rop_texture_usage[rop] & 2) usedest = TRUE;
 		if (rop_texture_usage[rop] & 4)
 		{
 			String_Append(fsrc, unif_patterntex);
 			String_Append(fsrc, unif_patternsize);
 		}
 	}
+	if (usedest) String_Append(fsrc, unif_desttex);
 	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
+	if (id & DDBLT_KEYDEST) String_Append(fsrc, unif_ckeydest);
 
 	// Variables
 	String_Append(fsrc, var_pixel);
 	if (id & DDBLT_ROP)
 	{
-		if (rop_texture_usage[rop] & 2) String_Append(fsrc, var_dest);
 		if (rop_texture_usage[rop] & 4)
 		{
 			String_Append(fsrc, var_pattern);
 			String_Append(fsrc, var_patternst);
 		}
 	}
+	if (usedest) String_Append(fsrc, var_dest);
 
 	// Main
 	String_Append(fsrc, mainstart);
 	if (id & 0x10000000) String_Append(fsrc, op_clip);
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
 	else String_Append(fsrc, op_src);
+	if (usedest) String_Append(fsrc, op_dest);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
+	if (id & DDBLT_KEYDEST) String_Append(fsrc, op_ckeydest);
 	if (id & DDBLT_ROP)
 	{
-		if (rop_texture_usage[rop] & 2) String_Append(fsrc, op_dest);
 		if (rop_texture_usage[rop] & 4) String_Append(fsrc, op_pattern);
 		if (intproc) String_Append(fsrc, op_ROP[rop]);
 		else String_Append(fsrc, op_ROP_float[rop]);
@@ -984,5 +989,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "stenciltex");
 	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
 	gen->genshaders2D[index].shader.uniforms[6] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
-	gen->genshaders2D[index].shader.uniforms[7] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
+	gen->genshaders2D[index].shader.uniforms[7] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrchigh");
+	gen->genshaders2D[index].shader.uniforms[8] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydesthigh");
+	gen->genshaders2D[index].shader.uniforms[9] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
 }

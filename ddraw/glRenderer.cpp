@@ -971,6 +971,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 	}
 	else shaderid = dwFlags & 0xF2FAADFF;
+	if (dwFlags & DDBLT_KEYDEST) usedest = TRUE;
 	if (usedest)
 	{
 		This->shaders->SetShader(PROG_TEXTURE, NULL, NULL, 0);
@@ -1088,7 +1089,35 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		}
 		This->ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
-	else if(!(dwFlags & DDBLT_COLORFILL))
+	if ((dwFlags & DDBLT_KEYDEST) && (This && dest->colorkey[1].enabled))
+	{
+		switch (This->ddInterface->GetBPP())
+		{
+		case 8:
+			if (This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[6], dest->colorkey[1].key.dwColorSpaceHighValue, 0, 0);
+			else This->ext->glUniform3i(shader->shader.uniforms[6], dest->colorkey[1].key.dwColorSpaceHighValue, dest->colorkey[1].key.dwColorSpaceHighValue,
+				dest->colorkey[1].key.dwColorSpaceHighValue);
+			break;
+		case 15:
+			This->ext->glUniform3i(shader->shader.uniforms[6], _5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 10 & 31),
+				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 5 & 31),
+				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue & 31));
+			break;
+		case 16:
+			This->ext->glUniform3i(shader->shader.uniforms[6], _5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 11 & 31),
+				_6to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 5 & 63),
+				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue & 31));
+			break;
+		case 24:
+		case 32:
+		default:
+			This->ext->glUniform3i(shader->shader.uniforms[5], (dest->colorkey[1].key.dwColorSpaceHighValue >> 16 & 255),
+				(dest->colorkey[1].key.dwColorSpaceHighValue >> 8 & 255),
+				(dest->colorkey[1].key.dwColorSpaceHighValue & 255));
+			break;
+		}
+	}
+	else if (!(dwFlags & DDBLT_COLORFILL))
 	{
 		This->ext->glUniform1i(shader->shader.uniforms[1],0);
 	}
@@ -1102,7 +1131,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		glDirectDrawSurface7 *pattern = (glDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
 		TextureManager_SetTexture(This->texman, 2, pattern->texture);
 		This->ext->glUniform1i(shader->shader.uniforms[3], 2);
-		This->ext->glUniform2i(shader->shader.uniforms[7], pattern->texture->width, pattern->texture->height);
+		This->ext->glUniform2i(shader->shader.uniforms[9], pattern->texture->width, pattern->texture->height);
 	}
 	if (dwFlags & 0x10000000)  // Use clipper
 	{
@@ -1136,7 +1165,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		This->util->EnableArray(shader->shader.attribs[3],true);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
 	}
-	if ((dwFlags & DDBLT_ROP) && usedest)
+	if (usedest)
 	{
 		This->util->EnableArray(shader->shader.attribs[4], true);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[4],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].dests);
