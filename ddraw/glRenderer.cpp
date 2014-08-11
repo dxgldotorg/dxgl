@@ -1144,10 +1144,10 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
 	if(dwFlags & 0x10000000)
 	{ 
-		This->blttexcoords[1].stencils = This->blttexcoords[3].stencils = This->bltvertices[1].x / (GLfloat)dest->fakex;
-		This->blttexcoords[0].stencils = This->blttexcoords[2].stencils = This->bltvertices[0].x / (GLfloat)dest->fakex;
-		This->blttexcoords[0].stencilt = This->blttexcoords[1].stencilt = This->bltvertices[0].y / (GLfloat)dest->fakey;
-		This->blttexcoords[2].stencilt = This->blttexcoords[3].stencilt = This->bltvertices[2].y / (GLfloat)dest->fakey;
+		This->bltvertices[1].stencils = This->bltvertices[3].stencils = This->bltvertices[1].x / (GLfloat)dest->fakex;
+		This->bltvertices[0].stencils = This->bltvertices[2].stencils = This->bltvertices[0].x / (GLfloat)dest->fakex;
+		This->bltvertices[0].stencilt = This->bltvertices[1].stencilt = This->bltvertices[0].y / (GLfloat)dest->fakey;
+		This->bltvertices[2].stencilt = This->bltvertices[3].stencilt = This->bltvertices[2].y / (GLfloat)dest->fakey;
 	}
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
 	if (dwFlags & DDBLT_COLORFILL) SetColorFillUniform(lpDDBltFx->dwFillColor, dest->texture->colorsizes,
@@ -1176,7 +1176,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		TextureManager_SetTexture(This->texman, 3, dest->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],3);
 		This->util->EnableArray(shader->shader.attribs[5],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, false, sizeof(BltTexcoord), &This->blttexcoords[0].stencils);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].stencils);
 	}
 	if(src)
 	{
@@ -1197,11 +1197,6 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	dest->dirty |= 2;
 	This->util->EnableArray(shader->shader.attribs[0],true);
 	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
-	if(shader->shader.attribs[1] != -1)
-	{
-		This->util->EnableArray(shader->shader.attribs[1],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[1],3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
-	}
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
 		This->util->EnableArray(shader->shader.attribs[3],true);
@@ -1452,11 +1447,6 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
 	This->util->EnableArray(This->shaders->shaders[progtype].texcoord,true);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
-	if(This->shaders->shaders[progtype].rgb != -1)
-	{
-		This->util->EnableArray(This->shaders->shaders[progtype].rgb,true);
-		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].rgb,3,GL_UNSIGNED_BYTE,true,sizeof(BltVertex),&This->bltvertices[0].r);
-	}
 	This->util->SetCull(D3DCULL_NONE);
 	This->util->SetPolyMode(D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);

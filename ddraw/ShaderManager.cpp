@@ -28,13 +28,6 @@ using namespace std;
 #include "ShaderGen3D.h"
 #include "ShaderGen2D.h"
 
-const char frag_Color[] = "\
-#version 110\n\
-void main() \n\
-{ \n\
-    gl_FragColor = gl_Color; \n\
-} ";
-
 const char frag_Texture[] = "\
 #version 110\n\
 uniform sampler2D tex0;\n\
@@ -109,7 +102,6 @@ const char vert_ortho[] = "\
 #version 110\n\
 uniform vec4 view;\n\
 attribute vec2 xy;\n\
-attribute vec3 rgb;\n\
 attribute vec2 st;\n\
 void main()\n\
 {\n\
@@ -121,7 +113,6 @@ void main()\n\
     vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
  -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
 	gl_Position    = proj * xyzw;\n\
-	gl_FrontColor  = vec4(rgb,1.0);\n\
 	gl_TexCoord[0] = vec4(st,0.0,1.0);\n\
 } ";
 
@@ -131,7 +122,6 @@ void main()\n\
 const int SHADER_START = __LINE__;
 const SHADER shader_template[] = 
 {
-	{0,0,	vert_ortho,			frag_Color,			0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_ColorKey,		0,-1,-1,-1},
@@ -172,7 +162,6 @@ ShaderManager::ShaderManager(glExtensions *glext)
 		}
 		ext->glLinkProgram(shaders[i].prog);
 		shaders[i].pos = ext->glGetAttribLocation(shaders[i].prog,"xy");
-		shaders[i].rgb = ext->glGetAttribLocation(shaders[i].prog,"rgb");
 		shaders[i].texcoord = ext->glGetAttribLocation(shaders[i].prog,"st");
 		shaders[i].tex0 = ext->glGetUniformLocation(shaders[i].prog,"tex0");
 		shaders[i].tex1 = ext->glGetUniformLocation(shaders[i].prog,"tex1");

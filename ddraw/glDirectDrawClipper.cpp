@@ -235,8 +235,6 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		}
 		for(int i = 0; i < (4*lpClipList->rdh.nCount); i++)
 		{
-			This->vertices[i].r = 255;
-			This->vertices[i].g = This->vertices[i].b = This->vertices[i].a = 0;
 			This->vertices[i].s = This->vertices[i].t = 0.0f;
 		}
 	}

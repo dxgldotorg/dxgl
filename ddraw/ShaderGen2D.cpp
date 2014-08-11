@@ -479,7 +479,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"pixel = ivec4(255) - pattern;\n",//0F
+"pixel = colorsizedest - pattern;\n",//0F
 "",//10
 "",
 "",
@@ -515,7 +515,7 @@ static const char *op_ROP_float[256] = {
 "",//30
 "",
 "",
-"pixel = ivec4(255) - pixel;\n",// 33 NOTSRCCOPY
+"pixel = colorsizedest - pixel;\n",// 33 NOTSRCCOPY
 "",
 "",
 "",
@@ -549,7 +549,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"pixel = ivec4(255) - dest;\n",//55 DSTINVERT
+"pixel = colorsizedest - dest;\n",//55 DSTINVERT
 "",
 "",
 "",
@@ -719,7 +719,7 @@ static const char *op_ROP_float[256] = {
 "",
 "",
 "",
-"pixel = ivec4(255);\n",//FF WHITENESS
+"pixel = colorsizedest;\n",//FF WHITENESS
 };
 
 DWORD PackROPBits(DWORD rop, DWORD flags)

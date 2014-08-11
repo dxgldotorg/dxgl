@@ -27,7 +27,6 @@ typedef struct
 	const char *fsrc;
 	GLint prog;
 	GLint pos;
-	GLint rgb;
 	GLint texcoord;
 	GLint tex0;
 	GLint tex1;
@@ -38,13 +37,12 @@ typedef struct
 
 extern const SHADER shader_template[];
 
-#define PROG_FILL 0
-#define PROG_TEXTURE 1
-#define PROG_PAL256 2
-#define PROG_CKEY 3
-#define PROG_CKEYMASK 4
-#define PROG_2CKEY 5
-#define PROG_CLIPSTENCIL 6
+#define PROG_TEXTURE 0
+#define PROG_PAL256 1
+#define PROG_CKEY 2
+#define PROG_CKEYMASK 3
+#define PROG_2CKEY 4
+#define PROG_CLIPSTENCIL 5
 
 struct TEXTURESTAGE;
 class ShaderGen3D;

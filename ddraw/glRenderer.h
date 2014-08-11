@@ -112,7 +112,6 @@ typedef struct glRenderer
 	GLfloat fogend;
 	GLfloat fogdensity;
 	BltVertex bltvertices[4];
-	BltTexcoord blttexcoords[4];
 	int oldswap;
 	TextureManager *texman;
 	glUtil *util;

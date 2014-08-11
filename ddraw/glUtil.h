@@ -31,16 +31,10 @@ typedef struct
 typedef struct
 {
 	GLfloat x, y;
-	GLubyte r, g, b, a;
 	GLfloat s, t;
 	GLfloat dests, destt;
-	GLfloat padding;
-} BltVertex;
-
-typedef struct
-{
 	GLfloat stencils, stencilt;
-} BltTexcoord;
+} BltVertex;
 
 class glDirectDrawSurface7;
 
