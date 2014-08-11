@@ -943,6 +943,134 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	return TRUE;
 }
 
+void SetColorFillUniform(DWORD color, DWORD *colorsizes, int colororder, DWORD *colorbits, GLint uniform, glExtensions *ext)
+{
+	DWORD r, g, b, a;
+	switch (colororder)
+	{
+	case 0:
+		r = color & colorsizes[0];
+		color >>= colorbits[0];
+		g = color & colorsizes[1];
+		color >>= colorbits[1];
+		b = color & colorsizes[2];
+		color >>= colorbits[2];
+		a = color & colorsizes[3];
+		ext->glUniform4i(uniform, r, g, b, a);
+		break;
+	case 1:
+		b = color & colorsizes[2];
+		color >>= colorbits[2];
+		g = color & colorsizes[1];
+		color >>= colorbits[1];
+		r = color & colorsizes[0];
+		color >>= colorbits[0];
+		a = color & colorsizes[3];
+		ext->glUniform4i(uniform, r, g, b, a);
+		break;
+	case 2:
+		a = color & colorsizes[3];
+		color >>= colorbits[3];
+		r = color & colorsizes[0];
+		color >>= colorbits[0];
+		g = color & colorsizes[1];
+		color >>= colorbits[1];
+		b = color & colorsizes[2];
+		ext->glUniform4i(uniform, r, g, b, a);
+		break;
+	case 3:
+		a = color & colorsizes[3];
+		color >>= colorbits[3];
+		b = color & colorsizes[2];
+		color >>= colorbits[2];
+		g = color & colorsizes[1];
+		color >>= colorbits[1];
+		r = color & colorsizes[0];
+		ext->glUniform4i(uniform, r, g, b, a);
+		break;
+	case 4:
+		r = color & colorsizes[0];
+		ext->glUniform4i(uniform, r, r, r, r);
+		break;
+	case 5:
+		r = color & colorsizes[0];
+		ext->glUniform4i(uniform, r, r, r, r);
+		break;
+	case 6:
+		a = color & colorsizes[3];
+		ext->glUniform4i(uniform, a, a, a, a);
+		break;
+	case 7:
+		r = color & colorsizes[0];
+		color >>= colorbits[0];
+		a = color & colorsizes[3];
+		ext->glUniform4i(uniform, r, r, r, a);
+		break;
+	}
+}
+
+void SetColorKeyUniform(DWORD key, DWORD *colorsizes, int colororder, GLint uniform, DWORD *colorbits, glExtensions *ext)
+{
+	DWORD r, g, b, a;
+	switch (colororder)
+	{
+	case 0:
+		r = key & colorsizes[0];
+		key >>= colorbits[0];
+		g = key & colorsizes[1];
+		key >>= colorbits[1];
+		b = key & colorsizes[2];
+		ext->glUniform3i(uniform, r, g, b);
+		break;
+	case 1:
+		b = key & colorsizes[2];
+		key >>= colorbits[2];
+		g = key & colorsizes[1];
+		key >>= colorbits[1];
+		r = key & colorsizes[0];
+		ext->glUniform3i(uniform, r, g, b);
+		break;
+	case 2:
+		a = key & colorsizes[3];
+		key >>= colorbits[3];
+		r = key & colorsizes[0];
+		key >>= colorbits[0];
+		g = key & colorsizes[1];
+		key >>= colorbits[1];
+		b = key & colorsizes[2];
+		ext->glUniform3i(uniform, r, g, b);
+		break;
+	case 3:
+		a = key & colorsizes[3];
+		key >>= colorbits[3];
+		b = key & colorsizes[2];
+		key >>= colorbits[2];
+		g = key & colorsizes[1];
+		key >>= colorbits[1];
+		r = key & colorsizes[0];
+		ext->glUniform3i(uniform, r, g, b);
+		break;
+	case 4:
+		r = key & colorsizes[0];
+		if (ext->glver_major >= 3) ext->glUniform3i(uniform, r, 0, 0);
+		else ext->glUniform3i(uniform, r, r, r);
+		break;
+	case 5:
+		r = key & colorsizes[0];
+		ext->glUniform3i(uniform, r, r, r);
+		break;
+	case 6:
+		a = key & colorsizes[3];
+		ext->glUniform4i(uniform, 0, 0, 0, a);
+		break;
+	case 7:
+		r = key & colorsizes[0];
+		key >>= colorbits[0];
+		a = key & colorsizes[3];
+		ext->glUniform4i(uniform, r, r, r, a);
+		break;
+	}
+}
 void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
@@ -1022,105 +1150,15 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		This->blttexcoords[2].stencilt = This->blttexcoords[3].stencilt = This->bltvertices[2].y / (GLfloat)dest->fakey;
 	}
 	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
-	if(dwFlags & DDBLT_COLORFILL)
-	{
-		switch(This->ddInterface->GetBPP())
-		{
-		case 8:
-			This->bltvertices[0].r = This->bltvertices[0].g = This->bltvertices[0].b =
-				This->bltvertices[1].r = This->bltvertices[1].g = This->bltvertices[1].b =
-				This->bltvertices[2].r = This->bltvertices[2].g = This->bltvertices[2].b =
-				This->bltvertices[3].r = This->bltvertices[3].g = This->bltvertices[3].b = (GLubyte)lpDDBltFx->dwFillColor;
-			break;
-		case 15:
-			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
-				_5to8bit((lpDDBltFx->dwFillColor>>10) & 31);
-			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
-				_5to8bit((lpDDBltFx->dwFillColor>>5) & 31);
-			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
-				_5to8bit(lpDDBltFx->dwFillColor & 31);
-			break;
-		case 16:
-			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
-				_5to8bit((lpDDBltFx->dwFillColor>>11) & 31);
-			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
-				_6to8bit((lpDDBltFx->dwFillColor>>5) & 63);
-			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
-				_5to8bit(lpDDBltFx->dwFillColor & 31);
-			break;
-		case 24:
-		case 32:
-			This->bltvertices[0].r = This->bltvertices[1].r = This->bltvertices[2].r = This->bltvertices[3].r =
-				((lpDDBltFx->dwFillColor>>16) & 255);
-			This->bltvertices[0].g = This->bltvertices[1].g = This->bltvertices[2].g = This->bltvertices[3].g =
-				((lpDDBltFx->dwFillColor>>8) & 255);
-			This->bltvertices[0].b = This->bltvertices[1].b = This->bltvertices[2].b = This->bltvertices[3].b =
-				(lpDDBltFx->dwFillColor & 255);
-		default:
-			break;
-		}
-	}
-	if((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
-	{
-		switch(This->ddInterface->GetBPP())
-		{
-		case 8:
-			if(This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[5],src->colorkey[0].key.dwColorSpaceHighValue,0,0);
-			else This->ext->glUniform3i(shader->shader.uniforms[5],src->colorkey[0].key.dwColorSpaceHighValue,src->colorkey[0].key.dwColorSpaceHighValue,
-				src->colorkey[0].key.dwColorSpaceHighValue);
-			break;
-		case 15:
-			This->ext->glUniform3i(shader->shader.uniforms[5],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>10 & 31),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 31),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
-			break;
-		case 16:
-			This->ext->glUniform3i(shader->shader.uniforms[5],_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>11 & 31),
-				_6to8bit(src->colorkey[0].key.dwColorSpaceHighValue>>5 & 63),
-				_5to8bit(src->colorkey[0].key.dwColorSpaceHighValue & 31));
-			break;
-		case 24:
-		case 32:
-		default:
-			This->ext->glUniform3i(shader->shader.uniforms[5],(src->colorkey[0].key.dwColorSpaceHighValue>>16 & 255),
-				(src->colorkey[0].key.dwColorSpaceHighValue>>8 & 255),
-				(src->colorkey[0].key.dwColorSpaceHighValue & 255));
-			break;
-		}
-		This->ext->glUniform1i(shader->shader.uniforms[1],0);
-	}
+	if (dwFlags & DDBLT_COLORFILL) SetColorFillUniform(lpDDBltFx->dwFillColor, dest->texture->colorsizes,
+		dest->texture->colororder, dest->texture->colorbits, shader->shader.uniforms[12], This->ext);
+	if ((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
+		SetColorKeyUniform(src->colorkey[0].key.dwColorSpaceLowValue, src->texture->colorsizes,
+		src->texture->colororder, shader->shader.uniforms[5], src->texture->colorbits, This->ext);
+	if (!(dwFlags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 0);
 	if ((dwFlags & DDBLT_KEYDEST) && (This && dest->colorkey[1].enabled))
-	{
-		switch (This->ddInterface->GetBPP())
-		{
-		case 8:
-			if (This->ext->glver_major >= 3) This->ext->glUniform3i(shader->shader.uniforms[6], dest->colorkey[1].key.dwColorSpaceHighValue, 0, 0);
-			else This->ext->glUniform3i(shader->shader.uniforms[6], dest->colorkey[1].key.dwColorSpaceHighValue, dest->colorkey[1].key.dwColorSpaceHighValue,
-				dest->colorkey[1].key.dwColorSpaceHighValue);
-			break;
-		case 15:
-			This->ext->glUniform3i(shader->shader.uniforms[6], _5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 10 & 31),
-				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 5 & 31),
-				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue & 31));
-			break;
-		case 16:
-			This->ext->glUniform3i(shader->shader.uniforms[6], _5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 11 & 31),
-				_6to8bit(dest->colorkey[1].key.dwColorSpaceHighValue >> 5 & 63),
-				_5to8bit(dest->colorkey[1].key.dwColorSpaceHighValue & 31));
-			break;
-		case 24:
-		case 32:
-		default:
-			This->ext->glUniform3i(shader->shader.uniforms[5], (dest->colorkey[1].key.dwColorSpaceHighValue >> 16 & 255),
-				(dest->colorkey[1].key.dwColorSpaceHighValue >> 8 & 255),
-				(dest->colorkey[1].key.dwColorSpaceHighValue & 255));
-			break;
-		}
-	}
-	else if (!(dwFlags & DDBLT_COLORFILL))
-	{
-		This->ext->glUniform1i(shader->shader.uniforms[1],0);
-	}
+		SetColorKeyUniform(dest->colorkey[1].key.dwColorSpaceLowValue, dest->texture->colorsizes,
+		dest->texture->colororder, shader->shader.uniforms[6], dest->texture->colorbits, This->ext);
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
 		TextureManager_SetTexture(This->texman, 1, This->backbuffer);
@@ -1152,6 +1190,10 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	}
 	else TextureManager_SetTexture(This->texman,0,NULL);
 	This->ext->glUniform4f(shader->shader.uniforms[0],0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
+	if(src) This->ext->glUniform4i(shader->shader.uniforms[10], src->texture->colorsizes[0], src->texture->colorsizes[1],
+		src->texture->colorsizes[2], src->texture->colorsizes[3]);
+	if(dest) This->ext->glUniform4i(shader->shader.uniforms[11], dest->texture->colorsizes[0], dest->texture->colorsizes[1],
+		dest->texture->colorsizes[2], dest->texture->colorsizes[3]);
 	dest->dirty |= 2;
 	This->util->EnableArray(shader->shader.attribs[0],true);
 	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);

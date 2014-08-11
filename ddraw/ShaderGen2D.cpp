@@ -165,22 +165,26 @@ static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
 static const char unif_patternsize[] = "uniform ivec2 patternsize;\n";
-
+static const char unif_colorsizesrc[] = "uniform ivec4 colorsizesrc;\n";
+static const char unif_colorsizedest[] = "uniform ivec4 colorsizedest;\n";
+static const char unif_fillcolor[] = "uniform ivec4 fillcolor;\n";
 
 // Variables
 static const char var_dest[] = "ivec4 dest;\n";
 static const char var_pattern[] = "ivec4 pattern;\n";
 static const char var_pixel[] = "ivec4 pixel;\n";
+static const char var_src[] = "ivec4 src;\n";
 static const char var_patternst[] = "vec2 patternst;\n";
 
 // Operations
-static const char op_src[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*255.5);\n";
-static const char op_color[] = "pixel = ivec4(gl_Color*255.5);\n";
-static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*255.5);\n";
+static const char op_src[] = "src = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
+static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_color[] = "pixel = fillcolor;\n";
+static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
 mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
-pattern = ivec4(texture2D(patterntex,patternst)*255.5);\n";
-static const char op_destout[] = "gl_FragColor = vec4(pixel)/255.0;\n";
+pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
+static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
 vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
@@ -216,9 +220,9 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"pixel = pattern ^ ivec4(255);\n",//0F
+"pixel = pattern ^ colorsizedest;\n",//0F
 "",//10
-"pixel = (dest | pixel) ^ ivec4(255);\n",//11 NOTSRCERASE
+"pixel = (dest | pixel) ^ colorsizedest;\n",//11 NOTSRCERASE
 "",
 "",
 "",
@@ -252,7 +256,7 @@ static const char *op_ROP[256] = {
 "",//30
 "",
 "",
-"pixel = pixel ^ ivec4(255);\n",//33 NOTSRCCOPY
+"pixel = pixel ^ colorsizedest;\n",//33 NOTSRCCOPY
 "",
 "",
 "",
@@ -269,7 +273,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"pixel = pixel & (dest ^ ivec4(255));\n",//44 SRCERASE
+"pixel = pixel & (dest ^ colorsizedest);\n",//44 SRCERASE
 "",
 "",
 "",
@@ -286,7 +290,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"pixel = dest ^ ivec4(255);\n",//55 DSTINVERT
+"pixel = dest ^ colorsizedest;\n",//55 DSTINVERT
 "",
 "",
 "",
@@ -388,7 +392,7 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"pixel = dest | (pixel ^ ivec4(255));\n",//BB MERGEPAINT
+"pixel = dest | (pixel ^ colorsizedest);\n",//BB MERGEPAINT
 "",
 "",
 "",
@@ -452,11 +456,11 @@ static const char *op_ROP[256] = {
 "",
 "",
 "",
-"pixel = dest | pattern | (pixel ^ 255);\n",//FB PATPAINT
+"pixel = dest | pattern | (pixel ^ colorsizedest);\n",//FB PATPAINT
 "",
 "",
 "",
-"pixel = ivec4(255);\n",//FF WHITENESS
+"pixel = colorsizedest;\n",//FF WHITENESS
 };
 
 static const char *op_ROP_float[256] = {
@@ -813,8 +817,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 
 	// Attributes
 	String_Append(vsrc, attr_xy);
-	if (id & DDBLT_COLORFILL) String_Append(vsrc, attr_rgb);
-	else String_Append(vsrc, attr_srcst);
+	if (!(id & DDBLT_COLORFILL)) String_Append(vsrc, attr_srcst);
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 2) usedest = TRUE;
@@ -829,8 +832,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	// Main
 	String_Append(vsrc, mainstart);
 	String_Append(vsrc, op_vertex);
-	if (id & DDBLT_COLORFILL) String_Append(vsrc, op_vertcolorrgb);
-	else String_Append(vsrc, op_texcoord0);
+	if (!(id & DDBLT_COLORFILL)) String_Append(vsrc, op_texcoord0);
 	if(usedest) String_Append(vsrc, op_texcoord1);
 	if (id & 0x10000000) String_Append(vsrc, op_texcoord3);
 	String_Append(vsrc, mainend);
@@ -887,7 +889,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(fsrc, idstring);
 
 	// Uniforms
-	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, unif_srctex);
+	if (id & DDBLT_COLORFILL) String_Append(fsrc, unif_fillcolor);
+	else String_Append(fsrc, unif_srctex);
 	if (id & DDBLT_KEYDEST) usedest = TRUE;
 	if (id & DDBLT_ROP)
 	{
@@ -900,11 +903,17 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	}
 	if (usedest) String_Append(fsrc, unif_desttex);
 	if (id & 0x10000000) String_Append(fsrc, unif_stenciltex);
-	if (id & DDBLT_KEYSRC) String_Append(fsrc, unif_ckeysrc);
+	if (id & DDBLT_KEYSRC)
+	{
+		String_Append(fsrc, unif_ckeysrc);
+		String_Append(fsrc, unif_colorsizesrc);
+	}
+	String_Append(fsrc, unif_colorsizedest);
 	if (id & DDBLT_KEYDEST) String_Append(fsrc, unif_ckeydest);
 
 	// Variables
 	String_Append(fsrc, var_pixel);
+	if (id & DDBLT_KEYSRC) String_Append(fsrc, var_src);
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 4)
@@ -919,7 +928,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(fsrc, mainstart);
 	if (id & 0x10000000) String_Append(fsrc, op_clip);
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
-	else String_Append(fsrc, op_src);
+	else String_Append(fsrc, op_pixel);
+	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_src);
 	if (usedest) String_Append(fsrc, op_dest);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
 	if (id & DDBLT_KEYDEST) String_Append(fsrc, op_ckeydest);
@@ -992,4 +1002,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.uniforms[7] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrchigh");
 	gen->genshaders2D[index].shader.uniforms[8] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydesthigh");
 	gen->genshaders2D[index].shader.uniforms[9] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
+	gen->genshaders2D[index].shader.uniforms[10] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizesrc");
+	gen->genshaders2D[index].shader.uniforms[11] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizedest");
+	gen->genshaders2D[index].shader.uniforms[12] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "fillcolor");
+
 }

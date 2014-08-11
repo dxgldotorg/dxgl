@@ -7,7 +7,7 @@
 // version 2.1 of the License, or (at your option) any later version.
 
 // This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// but WITHOUT ANY W	ARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
@@ -35,11 +35,24 @@ typedef struct
 	GLint miplevel;
 	DWORD bordercolor;
 	GLint internalformats[8];
+	DWORD colorsizes[4];
+	DWORD colorbits[4];
+	int colororder;
 	GLenum format;
 	GLenum type;
 	GLuint pbo;
 	DDPIXELFORMAT pixelformat;
 } TEXTURE;
+
+// Color orders:
+// 0 - ABGR
+// 1 - ARGB
+// 2 - BGRA
+// 3 - RGBA
+// 4 - R or Indexed
+// 5 - Luminance
+// 6 - Alpha
+// 7 - Luminance Alpha
 
 typedef struct
 {
