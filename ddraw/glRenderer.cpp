@@ -1071,9 +1071,33 @@ void SetColorKeyUniform(DWORD key, DWORD *colorsizes, int colororder, GLint unif
 		break;
 	}
 }
+
+void BltFlipLR(BltVertex *vertices)
+{
+	GLfloat s1, s2;
+	s1 = vertices[0].s;
+	s2 = vertices[2].s;
+	vertices[0].s = vertices[1].s;
+	vertices[2].s = vertices[3].s;
+	vertices[1].s = s1;
+	vertices[3].s = s2;
+}
+
+void BltFlipUD(BltVertex *vertices)
+{
+	GLfloat t1, t2;
+	t1 = vertices[0].t;
+	t2 = vertices[1].t;
+	vertices[0].t = vertices[2].t;
+	vertices[1].t = vertices[3].t;
+	vertices[2].t = t1;
+	vertices[3].t = t2;
+}
+
 void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
+	int rotates = 0;
 	BOOL usedest = FALSE;
 	BOOL usepattern = FALSE;
 	LONG sizes[6];
@@ -1142,7 +1166,21 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
 	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
-	if(dwFlags & 0x10000000)
+	if ((lpDDBltFx) && (dwFlags & DDBLT_DDFX))
+	{
+		if (lpDDBltFx->dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
+			BltFlipLR(This->bltvertices);
+		if (lpDDBltFx->dwDDFX & DDBLTFX_MIRRORUPDOWN)
+			BltFlipUD(This->bltvertices);
+		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE90) rotates++;
+		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE180) rotates += 2;
+		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE270) rotates += 3;
+		rotates &= 3;
+		if (rotates)
+		{
+		}
+	}
+	if (dwFlags & 0x10000000)
 	{ 
 		This->bltvertices[1].stencils = This->bltvertices[3].stencils = This->bltvertices[1].x / (GLfloat)dest->fakex;
 		This->bltvertices[0].stencils = This->bltvertices[2].stencils = This->bltvertices[0].x / (GLfloat)dest->fakex;
