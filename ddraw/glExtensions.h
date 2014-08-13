@@ -114,6 +114,15 @@ typedef struct
 	void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
 	void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
 
+	void (APIENTRY *glTextureParameterf)(GLuint texture, GLenum pname, GLfloat param);
+	void (APIENTRY *glTextureParameterfv)(GLuint texture, GLenum pname, const GLfloat *params);
+	void (APIENTRY *glTextureParameteri)(GLuint texture, GLenum pname, GLint param);
+	void (APIENTRY *glTextureParameteriv)(GLuint texture, GLenum pname, const GLint *params);
+	void (APIENTRY *glTextureSubImage2D)(GLuint texture, GLint level, GLint xoffset, GLint yoffset,
+		GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+	void (APIENTRY *glGetTextureImage)(GLuint texture, GLint level, GLenum format, GLenum type, GLsizei bufSize, GLvoid *pixels);
+
+
 	void (APIENTRY *glBindSampler)(GLuint unit, GLuint sampler);
 	void (APIENTRY *glDeleteSamplers)(GLsizei n, const GLuint *samplers);
 	void (APIENTRY *glGenSamplers)(GLsizei n, GLuint *samplers);
@@ -132,6 +141,7 @@ typedef struct
 	int GLEXT_ATI_meminfo;
 	int GLEXT_ARB_ES2_compatibility;
 	int GLEXT_EXT_direct_state_access;
+	int GLEXT_ARB_direct_state_access;
 	int GLEXT_ARB_sampler_objects;
 	int GLEXT_EXT_gpu_shader4;
 	int glver_major;

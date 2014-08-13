@@ -1493,10 +1493,15 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min, glExtensio
 	}
 	else
 	{
-		if(ext->GLEXT_EXT_direct_state_access)
+		if(ext->GLEXT_ARB_direct_state_access)
 		{
-			ext->glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,mag);
-			ext->glTextureParameteriEXT(texture->id,GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,min);
+			ext->glTextureParameteri(texture->id,GL_TEXTURE_MAG_FILTER,mag);
+			ext->glTextureParameteri(texture->id,GL_TEXTURE_MIN_FILTER,min);
+		}
+		else if (ext->GLEXT_EXT_direct_state_access)
+		{
+			ext->glTextureParameteriEXT(texture->id, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
+			ext->glTextureParameteriEXT(texture->id, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
 		}
 		else
 		{

@@ -110,7 +110,10 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	else ext->GLEXT_ARB_ES2_compatibility = 0;
 	if(strstr((char*)glextensions,"GL_EXT_direct_state_access")) ext->GLEXT_EXT_direct_state_access = 1;
 	else ext->GLEXT_EXT_direct_state_access = 0;
-	if(strstr((char*)glextensions,"GL_ARB_sampler_objects") || (ext->glver_major >= 4)
+	if (strstr((char*)glextensions, "GL_ARB_direct_state_access") || (ext->glver_major >= 5)
+		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) ext->GLEXT_ARB_direct_state_access = 1;
+	else ext->GLEXT_ARB_direct_state_access = 0;
+	if (strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
 		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) ext->GLEXT_ARB_sampler_objects = 1;
 	else ext->GLEXT_ARB_sampler_objects = 0;
 	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4")) ext->GLEXT_EXT_gpu_shader4 = 1;
@@ -152,7 +155,16 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		ext->glMatrixLoadfEXT = (PFNGLMATRIXLOADFEXTPROC)wglGetProcAddress("glMatrixLoadfEXT");
 		ext->glMatrixMultfEXT = (PFNGLMATRIXMULTFEXTPROC)wglGetProcAddress("glMatrixMultfEXT");
 	}
-	if(ext->GLEXT_ARB_sampler_objects)
+	if (ext->GLEXT_ARB_direct_state_access)
+	{
+		ext->glTextureParameterf = (PFNGLTEXTUREPARAMETERFPROC)wglGetProcAddress("glTextureParameterf");
+		ext->glTextureParameterfv = (PFNGLTEXTUREPARAMETERFVPROC)wglGetProcAddress("glTextureParameterfv");
+		ext->glTextureParameteri = (PFNGLTEXTUREPARAMETERIPROC)wglGetProcAddress("glTextureParameteri");
+		ext->glTextureParameteriv = (PFNGLTEXTUREPARAMETERIVPROC)wglGetProcAddress("glTextureParameteriv");
+		ext->glTextureSubImage2D = (PFNGLTEXTURESUBIMAGE2DPROC)wglGetProcAddress("glTextureSubImage2D");
+		ext->glGetTextureImage = (PFNGLGETTEXTUREIMAGEPROC)wglGetProcAddress("glGetTextureImage");
+	}
+	if (ext->GLEXT_ARB_sampler_objects)
 	{
 		ext->glBindSampler = (PFNGLBINDSAMPLERPROC)wglGetProcAddress("glBindSampler");
 		ext->glDeleteSamplers = (PFNGLDELETESAMPLERSPROC)wglGetProcAddress("glDeleteSamplers");
