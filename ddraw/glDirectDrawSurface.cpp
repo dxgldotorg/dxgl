@@ -613,6 +613,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	TRACE_ENTER(6,14,this,26,lpDestRect,14,lpDDSrcSurface,26,lpSrcRect,9,dwFlags,14,lpDDBltFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if (dwFlags & DDBLT_ROP)
 	{
 		if (!lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
@@ -627,6 +628,12 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 					pattern->ddsd.ddpfPixelFormat.dwRGBBitCount);
 		}
 	}
+	if (dwFlags & DDBLT_KEYSRC)
+	{
+		if (!lpDDSrcSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (((glDirectDrawSurface7*)lpDDSrcSurface)->colorkey[0].colorspace) dwFlags |= 0x20000000;
+	}
+	if ((dwFlags & DDBLT_KEYDEST) && colorkey[1].colorspace) dwFlags |= 0x40000000;
 	glDirectDrawSurface7 *src = (glDirectDrawSurface7 *)lpDDSrcSurface;
 	if(dirty & 1)
 	{

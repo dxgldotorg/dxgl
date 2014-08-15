@@ -1191,12 +1191,20 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if (dwFlags & DDBLT_COLORFILL) SetColorFillUniform(lpDDBltFx->dwFillColor, dest->texture->colorsizes,
 		dest->texture->colororder, dest->texture->colorbits, shader->shader.uniforms[12], This->ext);
 	if ((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
+	{
 		SetColorKeyUniform(src->colorkey[0].key.dwColorSpaceLowValue, src->texture->colorsizes,
-		src->texture->colororder, shader->shader.uniforms[5], src->texture->colorbits, This->ext);
+			src->texture->colororder, shader->shader.uniforms[5], src->texture->colorbits, This->ext);
+		if (dwFlags & 0x20000000) SetColorKeyUniform(src->colorkey[0].key.dwColorSpaceHighValue, src->texture->colorsizes,
+			src->texture->colororder, shader->shader.uniforms[7], src->texture->colorbits, This->ext);
+	}
 	if (!(dwFlags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 0);
 	if ((dwFlags & DDBLT_KEYDEST) && (This && dest->colorkey[1].enabled))
+	{
 		SetColorKeyUniform(dest->colorkey[1].key.dwColorSpaceLowValue, dest->texture->colorsizes,
-		dest->texture->colororder, shader->shader.uniforms[6], dest->texture->colorbits, This->ext);
+			dest->texture->colororder, shader->shader.uniforms[6], dest->texture->colorbits, This->ext);
+		if(dwFlags & 0x40000000) SetColorKeyUniform(dest->colorkey[1].key.dwColorSpaceHighValue, dest->texture->colorsizes,
+			dest->texture->colororder, shader->shader.uniforms[8], dest->texture->colorbits, This->ext);
+	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
 		TextureManager_SetTexture(This->texman, 1, This->backbuffer);

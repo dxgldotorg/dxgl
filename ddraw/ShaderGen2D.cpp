@@ -51,8 +51,8 @@ Bit 25:	Depth fill (DDBLT_DEPTHFILL)
 Bit 26: ROP index bit 6
 Bit 27: ROP index bit 7
 Bit 28: (DXGL) Use Clipper
-Bit 29: reserved for DXGL usage
-Bit 30: reserved for DXGL usage
+Bit 29: (DXGL) Source color key range
+Bit 30: (DXGL) Dest. color key range
 Bit 31: reserved for DXGL usage
 AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 */
@@ -164,6 +164,8 @@ static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
 static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
+static const char unif_ckeysrchigh[] = "uniform ivec3 ckeysrchigh;\n";
+static const char unif_ckeydesthigh[] = "uniform ivec3 ckeydesthigh;\n";
 static const char unif_patternsize[] = "uniform ivec2 patternsize;\n";
 static const char unif_colorsizesrc[] = "uniform ivec4 colorsizesrc;\n";
 static const char unif_colorsizedest[] = "uniform ivec4 colorsizedest;\n";
@@ -197,9 +199,13 @@ static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
 static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
 static const char op_texcoord1[] = "gl_TexCoord[1] = vec4(destst,0.0,1.0);\n";
 static const char op_texcoord3[] = "gl_TexCoord[3] = vec4(stencilst,0.0,1.0);\n";
-static const char op_ckeysrc[] = "if(pixel.rgb == ckeysrc) discard;\n";
+static const char op_ckeysrc[] = "if(src.rgb == ckeysrc) discard;\n";
 static const char op_ckeydest[] = "if(dest.rgb != ckeydest) discard;\n";
-static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;";
+static const char op_ckeysrcrange[] = "if(!((src.r < ckeysrc.r) || (src.g < ckeysrc.g) || (src.b < ckeysrc.b) ||\
+   (src.r > ckeysrchigh.r) || (src.g > ckeysrchigh.g) || (src.b > ckeysrchigh.b))) discard;\n";
+static const char op_ckeydestrange[] = "if((dest.r < ckeydest.r) || (dest.g < ckeydest.g) || (dest.b < ckeydest.b) ||\
+   (dest.r > ckeydesthigh.r) || (dest.g > ckeydesthigh.g) || (dest.b > ckeydesthigh.b)) discard;\n";
+static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;\n";
 
 // Functions
 
@@ -906,10 +912,15 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_KEYSRC)
 	{
 		String_Append(fsrc, unif_ckeysrc);
+		if (id & 0x20000000) String_Append(fsrc, unif_ckeysrchigh);
 		String_Append(fsrc, unif_colorsizesrc);
 	}
 	String_Append(fsrc, unif_colorsizedest);
-	if (id & DDBLT_KEYDEST) String_Append(fsrc, unif_ckeydest);
+	if (id & DDBLT_KEYDEST)
+	{
+		String_Append(fsrc, unif_ckeydest);
+		if (id & 0x40000000) String_Append(fsrc, unif_ckeydesthigh);
+	}
 
 	// Variables
 	String_Append(fsrc, var_pixel);
@@ -931,8 +942,16 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	else String_Append(fsrc, op_pixel);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_src);
 	if (usedest) String_Append(fsrc, op_dest);
-	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_ckeysrc);
-	if (id & DDBLT_KEYDEST) String_Append(fsrc, op_ckeydest);
+	if (id & DDBLT_KEYSRC)
+	{
+		if (id & 0x20000000) String_Append(fsrc, op_ckeysrcrange);
+		else String_Append(fsrc, op_ckeysrc);
+	}
+	if (id & DDBLT_KEYDEST)
+	{
+		if (id & 0x40000000) String_Append(fsrc, op_ckeydestrange);
+		else String_Append(fsrc, op_ckeydest);
+	}
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 4) String_Append(fsrc, op_pattern);
