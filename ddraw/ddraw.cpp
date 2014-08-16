@@ -303,7 +303,7 @@ BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverNam
 HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext)
 {
 	TRACE_ENTER(2,14,lpCallback,14,lpContext);
-	if(IsBadReadPointer(lpCallback))
+	if(!IsReadablePointer(lpCallback))
 	{
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
@@ -341,7 +341,7 @@ BOOL WINAPI DDEnumW(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverN
 HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext)
 {
 	TRACE_ENTER(2,14,lpCallback,14,lpContext);
-	if(IsBadReadPointer(lpCallback))
+	if(!IsReadablePointer(lpCallback))
 	{
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
@@ -387,7 +387,7 @@ BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDrive
 HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,lpCallback,14,lpContext,9,dwFlags);
-	if(IsBadReadPointer(lpCallback))
+	if(!IsReadablePointer(lpCallback))
 	{
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
@@ -448,7 +448,7 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,lpCallback,14,lpContext,9,dwFlags);
-	if(IsBadReadPointer(lpCallback))
+	if(!IsReadablePointer(lpCallback))
 	{
 		TRACE_EXIT(23,DDERR_GENERIC);
 		return DDERR_INVALIDPARAMS;

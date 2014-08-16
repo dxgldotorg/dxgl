@@ -573,7 +573,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 {
 	TRACE_ENTER(3,14,this,24,lpGUID,14,pUnkOuter);
 	initialized = false;
-	if(((ULONG_PTR)lpGUID > 2) && IsBadReadPointer(lpGUID))
+	if(((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID))
 	{
 		error = DDERR_INVALIDPARAMS ;
 		TRACE_EXIT(-1,0);

@@ -27,36 +27,23 @@
   * @return
   *  Returns false if the pointer is valid, or true if an error occurs.
   */
-BOOL IsBadReadPointer(void *ptr)
+char IsReadablePointer(void *ptr)
 {
 	char a;
-	TRACE_ENTER(1, 14, ptr);
-	if(!ptr)
-	{
-		TRACE_EXIT(22,1);
-		return TRUE;
-	}
+	if(!ptr) return 0;
 #ifdef _MSC_VER
 	__try
 	{
 		a = *(char*)ptr;
-		if(a == *(char*)ptr)
-		{
-			TRACE_EXIT(22,0);
-			return FALSE;
-		}
-		else 
-		{
-			TRACE_EXIT(22,1);
-			return TRUE;
-		}
+		if (!a) a++;
+		return a;
 	}
 	__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION)
 	{
-		TRACE_EXIT(22,1);
-		return TRUE;
+		return 0;
 	}
 #else
-	TRACE_RET(BOOL, 22, IsBadReadPtr(ptr, 1));
+	if(IsBadReadPtr(ptr,1) return 0;
+	else return 1;)
 #endif
 }

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-BOOL IsBadReadPointer(void *ptr);
+char IsReadablePointer(void *ptr);
 
 #ifdef __cplusplus
 }
