@@ -1094,6 +1094,48 @@ void BltFlipUD(BltVertex *vertices)
 	vertices[3].t = t2;
 }
 
+void RotateBlt90(BltVertex *vertices, int times)
+{
+	GLfloat s0, s1, s2, s3;
+	GLfloat t0, t1, t2, t3;
+	switch (times)
+	{
+	case 0:
+	default:
+		return;
+	case 1:
+		s0 = vertices[0].s; t0 = vertices[0].t;
+		s1 = vertices[1].s; t1 = vertices[1].t;
+		s2 = vertices[2].s; t2 = vertices[2].t;
+		s3 = vertices[3].s; t3 = vertices[3].t;
+		vertices[0].s = s1; vertices[0].t = t1;
+		vertices[1].s = s3; vertices[1].t = t3;
+		vertices[2].s = s0; vertices[2].t = t0;
+		vertices[3].s = s2; vertices[3].t = t2;
+		break;
+	case 2:
+		s0 = vertices[0].s; t0 = vertices[0].t;
+		s1 = vertices[1].s; t1 = vertices[1].t;
+		s2 = vertices[2].s; t2 = vertices[2].t;
+		s3 = vertices[3].s; t3 = vertices[3].t;
+		vertices[0].s = s3; vertices[0].t = t3;
+		vertices[1].s = s2; vertices[1].t = t2;
+		vertices[2].s = s1; vertices[2].t = t1;
+		vertices[3].s = s0; vertices[3].t = t0;
+		break;
+	case 3:
+		s0 = vertices[0].s; t0 = vertices[0].t;
+		s1 = vertices[1].s; t1 = vertices[1].t;
+		s2 = vertices[2].s; t2 = vertices[2].t;
+		s3 = vertices[3].s; t3 = vertices[3].t;
+		vertices[0].s = s2; vertices[0].t = t2;
+		vertices[1].s = s0; vertices[1].t = t0;
+		vertices[2].s = s3; vertices[2].t = t3;
+		vertices[3].s = s1; vertices[3].t = t1;
+		break;
+	}
+}
+
 void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
@@ -1178,6 +1220,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		rotates &= 3;
 		if (rotates)
 		{
+			RotateBlt90(This->bltvertices, rotates);
 		}
 	}
 	if (dwFlags & 0x10000000)

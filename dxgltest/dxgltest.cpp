@@ -226,7 +226,8 @@ const TEST_ITEM Tests2D[] =
 	{1,		7,		0,		1,		true,		60.0,			false,		false,		_T("BltFast background and sprites")},
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random color fill Blt() paterns")},
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Mouse pointer event test")},
-	{1,		7,		1,		1,		true,		1.0,			false,		false,		_T("Raster Operation Blt() test")}
+	{1,		7,		1,		1,		true,		1.0,			false,		false,		_T("Raster Operation Blt() test")},
+	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Mirrored and Rotated Blt() test")}
 };
 const int END_2D = __LINE__ - 4;
 const int numtests2d = END_2D - START_2D;
@@ -383,7 +384,9 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		case IDC_TEST:
 			if(SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0)) resizable2d = true;
 			else resizable2d = false;
-			i = SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETCURSEL,0,0);
+			if (buffer2d < minbuffer2d) buffer2d = minbuffer2d;
+			if (buffer2d > maxbuffer2d) buffer2d = maxbuffer2d;
+			i = SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETCURSEL, 0, 0);
 			SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETTEXT,i,(LPARAM)tmpstring);
 			TranslateResolutionString(tmpstring,width,height,bpp,refresh);
 			RunTest2D(currenttest2d,width,height,bpp,refresh,buffer2d,api2d,framerate2d,fullscreen2d,resizable2d);

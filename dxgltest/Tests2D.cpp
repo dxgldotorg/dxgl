@@ -629,7 +629,7 @@ void InitTest2D(int test)
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsrender->GetPalette(&palette);
 		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 		if (ddver > 3) sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		else sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC);
 		memcpy(&sprites[1], &sprites[0], sizeof(DDSPRITE));
@@ -665,6 +665,18 @@ void InitTest2D(int test)
 		ddcaps.dwSize = sizeof(DDCAPS);
 		ddinterface->GetCaps(&ddcaps, NULL);
 		DrawROPPatterns(ddsrender, sprites, backbuffers, ddver, bpp, ddcaps.dwRops,hWnd,palette);
+		break;
+	case 8:
+		ddsrender->GetSurfaceDesc(&ddsd);
+		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (ddver > 3) sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC);
+		sprites[0].ddsd.dwWidth = sprites[0].ddsd.dwHeight =
+			sprites[0].rect.right = sprites[0].rect.bottom = 64;
+		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
+		DrawRotatedBlt(ddsrender, sprites);
+		break;
 	}
 }
 
