@@ -574,6 +574,7 @@ void InitTest2D(int test)
 		ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
 		ddsrender->GetPalette(&palette);
 		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		if(palette) palette->Release();
 		DrawGradients(ddsd, (unsigned char *)ddsd.lpSurface, hWnd, palette, 1, 0);
 		error = sprites[0].surface->Unlock(NULL);
 		sprites[0].width = (float)ddsd.dwWidth;

@@ -330,6 +330,7 @@ int SortRes(const DEVMODE *mode1, const DEVMODE *mode2)
 HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
 	if(!lpEnumModesCallback) return DDERR_INVALIDPARAMS;
+	if (dwFlags & 0xFFFFFFFC) return DDERR_INVALIDPARAMS;
 	bool match;
 	DWORD modenum = 0;
 	DWORD modemax = 128;
@@ -795,6 +796,7 @@ HRESULT WINAPI glDirectDraw7::Compact()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -924,6 +926,7 @@ HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 	HRESULT error = DD_OK;
 	if(primary)
 	{
+		if (!primary->GetBackbuffer()) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		if(primary->flipcount)
 		{
 			while(primary->flipcount != 0)
@@ -1234,6 +1237,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDSCL_EXCLUSIVE) && !hWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFE020) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	this->hWnd = hWnd;
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
@@ -1374,6 +1378,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 {
 	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (dwFlags & 0xFFFFFFFE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwBPP != 4) && (dwBPP != 8) && (dwBPP != 15) && (dwBPP != 16) && (dwBPP != 24) && (dwBPP != 32))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;

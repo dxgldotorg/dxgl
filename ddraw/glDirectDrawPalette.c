@@ -173,7 +173,12 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 	else entrysize = sizeof(PALETTEENTRY);
 	if((dwStartingEntry + dwCount) > allentries) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(((char *)This->palette)+(dwStartingEntry*entrysize),lpEntries,dwCount*entrysize);
-	TRACE_EXIT(23,DD_OK);
+	if (!(This->flags & DDPCAPS_ALLOW256))
+	{
+		memcpy(&This->palette[0], DefaultPalette, 4);
+		memcpy(&This->palette[255], DefaultPalette + 1020, 4);
+	}
+	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
 
@@ -205,13 +210,21 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
 	if (!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (dwFlags & 0xFFFFF000) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDPCAPS_8BIT) && (dwFlags & DDPCAPS_8BITENTRIES)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (((dwFlags & DDPCAPS_1BIT) || (dwFlags & DDPCAPS_2BIT) || (dwFlags & DDPCAPS_4BIT)) && (dwFlags & DDPCAPS_ALLOW256))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	newpal = (glDirectDrawPalette*)malloc(sizeof(glDirectDrawPalette));
 	if (!newpal) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	ZeroMemory(newpal, sizeof(glDirectDrawPalette));
 	newpal->refcount = 1;
 	newpal->flags = dwFlags;
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
-	if(lpDDColorArray == NULL) memcpy(newpal->palette,DefaultPalette,1024);
+	if (lpDDColorArray == NULL)
+	{
+		if (dwFlags & 0x800) memcpy(newpal->palette, DefaultPalette, 1024);
+		else return DDERR_INVALIDPARAMS;
+	}
 	else
 	{
 		if(newpal->flags & DDPCAPS_1BIT)
@@ -223,7 +236,15 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 		else if(newpal->flags & DDPCAPS_4BIT)
 			if(newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette,lpDDColorArray,16);
 			else memcpy(newpal->palette,lpDDColorArray,16*sizeof(PALETTEENTRY));
-		else memcpy(newpal->palette,lpDDColorArray,256*sizeof(PALETTEENTRY));
+		else
+		{
+			memcpy(newpal->palette, lpDDColorArray, 256 * sizeof(PALETTEENTRY));
+			if (!(dwFlags & DDPCAPS_ALLOW256))
+			{
+				memcpy(&newpal->palette[0], DefaultPalette, 4);
+				memcpy(&newpal->palette[255], DefaultPalette + 1020, 4);
+			}
+		}
 	}
 	if(lplpDDPalette) *lplpDDPalette = (LPDIRECTDRAWPALETTE)newpal;
 	TRACE_EXIT(23,DD_OK);

@@ -125,7 +125,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 		if(ddInterface->GetBPP() == 8)
 		{
-			if (!palettein) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,(LPDIRECTDRAWPALETTE*)&palette);
+			if (!palettein) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE|0x800,NULL,(LPDIRECTDRAWPALETTE*)&palette);
 			else
 			{
 				palette = palettein;
@@ -759,6 +759,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 	TRACE_ENTER(3,14,this,14,lpDDSurfaceTargetOverride,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = Flip2(lpDDSurfaceTargetOverride,dwFlags);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		if(ddInterface->lastsync)
@@ -1282,7 +1283,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	if(palette)
 	{
 		glDirectDrawPalette_Release(palette);
-		if(!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE,NULL,(LPDIRECTDRAWPALETTE*)&palette);
+		if(!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT|DDPCAPS_ALLOW256|DDPCAPS_PRIMARYSURFACE|0x800,NULL,(LPDIRECTDRAWPALETTE*)&palette);
 	}
 	if(lpDDPalette)
 	{
