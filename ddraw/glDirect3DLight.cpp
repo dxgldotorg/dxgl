@@ -36,7 +36,7 @@ glDirect3DLight::glDirect3DLight()
 	device = NULL;
 	ZeroMemory(&light,sizeof(D3DLIGHT7));
 	light.dltType = D3DLIGHT_DIRECTIONAL;
-	light.dcvAmbient.r = light.dcvAmbient.g = light.dcvAmbient.b = 1.0f;
+	light.dcvDiffuse.r = light.dcvDiffuse.g = light.dcvDiffuse.b = 1.0f;
 	light.dvDirection = D3DVECTOR(0,0,1.0);
 	TRACE_EXIT(-1,0);
 }

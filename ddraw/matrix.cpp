@@ -109,16 +109,18 @@ void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 				GLfloat r[16])
 {
     int i, j;
+	GLfloat out[16];
 
     for (i = 0; i < 4; i++) {
 	for (j = 0; j < 4; j++) {
-	    r[i*4+j] = 
+	    out[i*4+j] = 
 		a[i*4+0]*b[0*4+j] +
 		a[i*4+1]*b[1*4+j] +
 		a[i*4+2]*b[2*4+j] +
 		a[i*4+3]*b[3*4+j];
 	}
     }
+	memcpy(r, out, 16 * sizeof(GLfloat));
 }
 
 void __gluMakeIdentityf(GLfloat m[16])
@@ -140,4 +142,59 @@ void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4], GLfloat 
 	    in[2] * matrix[2*4+i] +
 	    in[3] * matrix[3*4+i];
     }
+}
+
+
+// Portions of this file are from the Wine project, distributed under the
+// following license:
+/*
+* Copyright (c) 1998-2004 Lionel Ulmer
+* Copyright (c) 2002-2005 Christian Costa
+* Copyright (c) 2006-2009, 2011-2013 Stefan Dösinger
+* Copyright (c) 2008 Alexander Dorofeyev
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+*/
+
+void multiply_matrix(struct wined3d_matrix *dest, const struct wined3d_matrix *src1,
+	const struct wined3d_matrix *src2)
+{
+	struct wined3d_matrix temp;
+
+	/* Now do the multiplication 'by hand'.
+	I know that all this could be optimised, but this will be done later :-) */
+	temp._11 = (src1->_11 * src2->_11) + (src1->_21 * src2->_12) + (src1->_31 * src2->_13) + (src1->_41 * src2->_14);
+	temp._21 = (src1->_11 * src2->_21) + (src1->_21 * src2->_22) + (src1->_31 * src2->_23) + (src1->_41 * src2->_24);
+	temp._31 = (src1->_11 * src2->_31) + (src1->_21 * src2->_32) + (src1->_31 * src2->_33) + (src1->_41 * src2->_34);
+	temp._41 = (src1->_11 * src2->_41) + (src1->_21 * src2->_42) + (src1->_31 * src2->_43) + (src1->_41 * src2->_44);
+
+	temp._12 = (src1->_12 * src2->_11) + (src1->_22 * src2->_12) + (src1->_32 * src2->_13) + (src1->_42 * src2->_14);
+	temp._22 = (src1->_12 * src2->_21) + (src1->_22 * src2->_22) + (src1->_32 * src2->_23) + (src1->_42 * src2->_24);
+	temp._32 = (src1->_12 * src2->_31) + (src1->_22 * src2->_32) + (src1->_32 * src2->_33) + (src1->_42 * src2->_34);
+	temp._42 = (src1->_12 * src2->_41) + (src1->_22 * src2->_42) + (src1->_32 * src2->_43) + (src1->_42 * src2->_44);
+
+	temp._13 = (src1->_13 * src2->_11) + (src1->_23 * src2->_12) + (src1->_33 * src2->_13) + (src1->_43 * src2->_14);
+	temp._23 = (src1->_13 * src2->_21) + (src1->_23 * src2->_22) + (src1->_33 * src2->_23) + (src1->_43 * src2->_24);
+	temp._33 = (src1->_13 * src2->_31) + (src1->_23 * src2->_32) + (src1->_33 * src2->_33) + (src1->_43 * src2->_34);
+	temp._43 = (src1->_13 * src2->_41) + (src1->_23 * src2->_42) + (src1->_33 * src2->_43) + (src1->_43 * src2->_44);
+
+	temp._14 = (src1->_14 * src2->_11) + (src1->_24 * src2->_12) + (src1->_34 * src2->_13) + (src1->_44 * src2->_14);
+	temp._24 = (src1->_14 * src2->_21) + (src1->_24 * src2->_22) + (src1->_34 * src2->_23) + (src1->_44 * src2->_24);
+	temp._34 = (src1->_14 * src2->_31) + (src1->_24 * src2->_32) + (src1->_34 * src2->_33) + (src1->_44 * src2->_34);
+	temp._44 = (src1->_14 * src2->_41) + (src1->_24 * src2->_42) + (src1->_34 * src2->_43) + (src1->_44 * src2->_44);
+
+	/* And copy the new matrix in the good storage.. */
+	memcpy(dest, &temp, 16 * sizeof(float));
 }

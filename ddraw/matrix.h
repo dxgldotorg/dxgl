@@ -56,4 +56,45 @@ void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 void __gluMakeIdentityf(GLfloat m[16]);
 void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4], GLfloat out[4]);
 
+// Portions of this file are from the Wine project, distributed under the
+// following license:
+/*
+* Copyright (c) 1998-2004 Lionel Ulmer
+* Copyright (c) 2002-2005 Christian Costa
+* Copyright (c) 2006-2009, 2011-2013 Stefan Dösinger
+* Copyright (c) 2008 Alexander Dorofeyev
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+*/
+
+struct wined3d_matrix
+{
+	union
+	{
+		struct
+		{
+			float _11, _12, _13, _14;
+			float _21, _22, _23, _24;
+			float _31, _32, _33, _34;
+			float _41, _42, _43, _44;
+		} DUMMYSTRUCTNAME;
+		float m[4][4];
+	} DUMMYUNIONNAME;
+};
+
+void multiply_matrix(struct wined3d_matrix *dest, const struct wined3d_matrix *src1,
+	const struct wined3d_matrix *src2);
+
 #endif //_MATRIX_H

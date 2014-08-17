@@ -146,7 +146,6 @@ public:
 	HRESULT Index(WORD wVertexIndex);
 	HRESULT Vertex(LPVOID lpVertex);
 	HRESULT End(DWORD dwFlags);
-	HRESULT ComputeSphereVisibility3(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues); 
 	HRESULT GetCaps3(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
 	HRESULT GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState);
 	HRESULT SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState);

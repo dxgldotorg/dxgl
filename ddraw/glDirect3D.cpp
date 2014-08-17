@@ -175,11 +175,6 @@ const D3DDEVICEDESC d3ddesc3_default =
 	d3ddesc_default.wMaxSimultaneousTextures
 };
 
-struct D3DDevice
-{
-	char *name;
-	char *devname;
-};
 const D3DDevice devices[3] =
 {
 	{
@@ -205,7 +200,8 @@ glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
 	glD3D2 = NULL;
 	glD3D1 = NULL;
 	glDD7 = gl_DD7;
-	TRACE_EXIT(-1,0);
+	memcpy(stored_devices, devices, 3 * sizeof(D3DDevice));
+	TRACE_EXIT(-1, 0);
 }
 
 glDirect3D7::~glDirect3D7()
@@ -401,7 +397,7 @@ HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesC
 			desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
 			break;
 		}
-		result = lpEnumDevicesCallback(devices[i].name,devices[i].devname,&desc,lpUserArg);
+		result = lpEnumDevicesCallback(stored_devices[i].name,stored_devices[i].devname,&desc,lpUserArg);
 		if(result != D3DENUMRET_OK) break;
 	}
 	TRACE_EXIT(23,D3D_OK);
@@ -416,10 +412,10 @@ HRESULT WINAPI glDirect3D7::EnumDevices3(LPD3DENUMDEVICESCALLBACK lpEnumDevicesC
 	HRESULT result;
 	D3DDEVICEDESC desc = d3ddesc3;
 	GUID guid = IID_IDirect3DRGBDevice;
-	result = lpEnumDevicesCallback(&guid,devices[0].name,devices[0].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,stored_devices[0].name,stored_devices[0].devname,&desc,&desc,lpUserArg);
 	if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
 	guid = IID_IDirect3DHALDevice;
-	result = lpEnumDevicesCallback(&guid,devices[1].name,devices[1].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,stored_devices[1].name,stored_devices[1].devname,&desc,&desc,lpUserArg);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

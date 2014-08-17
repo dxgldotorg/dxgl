@@ -418,7 +418,7 @@ int ExpandLightBuffer(glDirect3DLight ***lights, DWORD *maxlights, DWORD newmax)
 	if(!tmp) return 0;
 	*lights = tmp;
 	for(DWORD i = *maxlights; i < newmax; i++)
-		lights[i] = NULL;
+		(*lights)[i] = NULL;
 	*maxlights = newmax;
 	return 1;
 }
@@ -576,14 +576,107 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
+
+// ComputeSphereVisibility based on modified code from the Wine project, subject
+// to the following license terms:
+/*
+* Copyright (c) 1998-2004 Lionel Ulmer
+* Copyright (c) 2002-2005 Christian Costa
+* Copyright (c) 2006-2009, 2011-2013 Stefan Dösinger
+* Copyright (c) 2008 Alexander Dorofeyev
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+*/
+static DWORD in_plane(UINT plane, D3DVECTOR normal, D3DVALUE origin_plane, D3DVECTOR center, D3DVALUE radius)
+{
+	float distance, norm;
+
+	norm = sqrtf(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+	distance = (origin_plane + normal.x * center.x + normal.y * center.y + normal.z * center.z) / norm;
+
+	if (fabs(distance) < radius) return D3DSTATUS_CLIPUNIONLEFT << plane;
+	if (distance < -radius) return (D3DSTATUS_CLIPUNIONLEFT | D3DSTATUS_CLIPINTERSECTIONLEFT) << plane;
+	return 0;
+}
+
+
 HRESULT WINAPI glDirect3DDevice7::ComputeSphereVisibility(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres,
 	DWORD dwFlags, LPDWORD lpdwReturnValues)
 {
+	D3DMATRIX m, temp;
+	D3DVALUE origin_plane[6];
+	D3DVECTOR vec[6];
+	HRESULT hr;
+	UINT i, j;
+
 	TRACE_ENTER(6,14,this,14,lpCenters,14,lpRadii,8,dwNumSpheres,9,dwFlags,14,lpdwReturnValues);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirect3DDevice7::ComputeSphereVisibility: stub");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	hr = GetTransform(D3DTRANSFORMSTATE_WORLD, &m);
+	if (hr != DD_OK) return DDERR_INVALIDPARAMS;
+	hr = GetTransform(D3DTRANSFORMSTATE_VIEW, &temp);
+	if (hr != DD_OK) return DDERR_INVALIDPARAMS;
+	multiply_matrix((wined3d_matrix*)&m, (wined3d_matrix*)&temp, (wined3d_matrix*)&m);
+
+	hr = GetTransform(D3DTRANSFORMSTATE_PROJECTION, &temp);
+	if (hr != DD_OK) return DDERR_INVALIDPARAMS;
+	multiply_matrix((wined3d_matrix*)&m, (wined3d_matrix*)&temp, (wined3d_matrix*)&m);
+
+	/* Left plane */
+	vec[0].x = m._14 + m._11;
+	vec[0].y = m._24 + m._21;
+	vec[0].z = m._34 + m._31;
+	origin_plane[0] = m._44 + m._41;
+
+	/* Right plane */
+	vec[1].z = m._14 - m._11;
+	vec[1].y = m._24 - m._21;
+	vec[1].z = m._34 - m._31;
+	origin_plane[1] = m._44 - m._41;
+
+	/* Top plane */
+	vec[2].x = m._14 - m._12;
+	vec[2].y = m._24 - m._22;
+	vec[2].z = m._34 - m._32;
+	origin_plane[2] = m._44 - m._42;
+
+	/* Bottom plane */
+	vec[3].x = m._14 + m._12;
+	vec[3].y = m._24 + m._22;
+	vec[3].z = m._34 + m._32;
+	origin_plane[3] = m._44 + m._42;
+
+	/* Front plane */
+	vec[4].x = m._13;
+	vec[4].y = m._23;
+	vec[4].z = m._33;
+	origin_plane[4] = m._43;
+
+	/* Back plane*/
+	vec[5].x = m._14 - m._13;
+	vec[5].y = m._24 - m._23;
+	vec[5].z = m._34 - m._33;
+	origin_plane[5] = m._44 - m._43;
+
+	for (i = 0; i < dwNumSpheres; ++i)
+	{
+		lpdwReturnValues[i] = 0;
+		for (j = 0; j < 6; ++j)
+			lpdwReturnValues[i] |= in_plane(j, vec[j], origin_plane[j], lpCenters[i], lpRadii[i]);
+	}
+	TRACE_EXIT(23, D3D_OK);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::DeleteStateBlock(DWORD dwBlockHandle)
 {
@@ -935,8 +1028,8 @@ HRESULT WINAPI glDirect3DDevice7::GetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 	TRACE_ENTER(3,14,this,8,dwLightIndex,14,lpLight);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(dwLightIndex >= lightsmax) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lights[dwLightIndex]) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(dwLightIndex >= lightsmax) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!lights[dwLightIndex]) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	lights[dwLightIndex]->GetLight7(lpLight);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -945,8 +1038,8 @@ HRESULT WINAPI glDirect3DDevice7::GetLightEnable(DWORD dwLightIndex, BOOL* pbEna
 {
 	TRACE_ENTER(3,14,this,8,dwLightIndex,14,pbEnable);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(dwLightIndex >= lightsmax) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lights[dwLightIndex]) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(dwLightIndex >= lightsmax) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!lights[dwLightIndex]) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!pbEnable) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	*pbEnable = FALSE;
 	for(int i = 0; i < 8; i++)
@@ -1130,7 +1223,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 	bool foundlight = false;
 	if(dwLightIndex >= lightsmax)
 	{
-		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex-1)) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex+1)) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	}
 	if(!lights[dwLightIndex]) lights[dwLightIndex] = new glDirect3DLight;
 	if(bEnable)
@@ -1208,10 +1301,13 @@ HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 {
 	TRACE_ENTER(3,14,this,8,dwLightIndex,14,lpLight);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpLight) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((lpLight->dltType < D3DLIGHT_POINT) || (lpLight->dltType > D3DLIGHT_GLSPOT))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	bool foundlight = false;
 	if(dwLightIndex >= lightsmax)
 	{
-		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex-1)) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+		if(!ExpandLightBuffer(&lights,&lightsmax,dwLightIndex+1)) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	}
 	if(!lights[dwLightIndex]) lights[dwLightIndex] = new glDirect3DLight;
 	lights[dwLightIndex]->SetLight7(lpLight);
@@ -1947,15 +2043,6 @@ HRESULT glDirect3DDevice7::End(DWORD dwFlags)
 	TRACE_ENTER(2,14,this,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	FIXME("glDirect3DDevice7::End: stub");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	return DDERR_GENERIC;
-}
-
-HRESULT glDirect3DDevice7::ComputeSphereVisibility3(LPD3DVECTOR lpCenters, LPD3DVALUE lpRadii, DWORD dwNumSpheres, DWORD dwFlags, LPDWORD lpdwReturnValues)
-{
-	TRACE_ENTER(6,14,this,14,lpCenters,14,lpRadii,8,dwNumSpheres,9,dwFlags,14,lpdwReturnValues);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirect3DDevice3::ComputeSphereVisibility: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	return DDERR_GENERIC;
 }
@@ -2909,7 +2996,7 @@ HRESULT WINAPI glDirect3DDevice3::ComputeSphereVisibility(LPD3DVECTOR lpCenters,
 {
 	TRACE_ENTER(6,14,this,14,lpCenters,14,lpRadii,8,dwNumSpheres,9,dwFlags,14,lpdwReturnValues);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->ComputeSphereVisibility3(lpCenters,lpRadii,dwNumSpheres,dwFlags,lpdwReturnValues));
+	TRACE_RET(HRESULT,23,glD3DDev7->ComputeSphereVisibility(lpCenters,lpRadii,dwNumSpheres,dwFlags,lpdwReturnValues));
 }
 
 HRESULT WINAPI glDirect3DDevice3::DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
