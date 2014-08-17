@@ -895,9 +895,16 @@ HRESULT WINAPI glDirectDraw7::DuplicateSurface(LPDIRECTDRAWSURFACE7 lpDDSurface,
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lplpDupDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	FIXME("IDirectDraw::DuplicateSurface: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	DDSURFACEDESC2 ddsd;
+	HRESULT ret;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	lpDDSurface->GetSurfaceDesc(&ddsd);
+	ret = CreateSurface(&ddsd, lplpDupDDSurface, NULL);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ret = (*lplpDupDDSurface)->Blt(NULL, lpDDSurface, NULL, 0, NULL);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
@@ -908,16 +915,95 @@ HRESULT WINAPI glDirectDraw7::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 l
 	TRACE_EXIT(23,ret);
 	return ret;
 }
+
+HRESULT WINAPI EnumSurfacesCallback1(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext)
+{
+	LPVOID *lplpContext = (LPVOID*)lpContext;
+	LPDDENUMSURFACESCALLBACK callback = (LPDDENUMSURFACESCALLBACK)lplpContext[0];
+	LPVOID context = (LPVOID)lplpContext[1];
+	LPDIRECTDRAWSURFACE dds1;
+	DDSURFACEDESC ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	lpDDSurface->QueryInterface(IID_IDirectDrawSurface, (void**)&dds1);
+	lpDDSurface->Release();
+	dds1->GetSurfaceDesc(&ddsd);
+	return callback(dds1, &ddsd, context);
+}
+HRESULT WINAPI EnumSurfacesCallback2(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext)
+{
+	LPVOID *lplpContext = (LPVOID*)lpContext;
+	LPDDENUMSURFACESCALLBACK2 callback = (LPDDENUMSURFACESCALLBACK2)lplpContext[0];
+	LPVOID context = (LPVOID)lplpContext[1];
+	LPDIRECTDRAWSURFACE4 dds4;
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	lpDDSurface->QueryInterface(IID_IDirectDrawSurface4, (void**)&dds4);
+	lpDDSurface->Release();
+	dds4->GetSurfaceDesc(&ddsd);
+	return callback(dds4, &ddsd, context);
+}
+
 HRESULT WINAPI glDirectDraw7::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpEnumSurfacesCallback)
 {
+	int i;
+	BOOL match;
+	HRESULT ret;
+	LPDIRECTDRAWSURFACE7 surface;
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD2,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpDDSD2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!lpDDSD2 && !(dwFlags & DDENUMSURFACES_ALL)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpEnumSurfacesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFFFE0) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	FIXME("IDirectDraw::EnumSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if ((dwFlags & DDENUMSURFACES_CANBECREATED) && (dwFlags & DDENUMSURFACES_DOESEXIST)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!(dwFlags & DDENUMSURFACES_CANBECREATED) && !(dwFlags & DDENUMSURFACES_DOESEXIST)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDENUMSURFACES_CANBECREATED) && !(dwFlags & DDENUMSURFACES_MATCH)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDENUMSURFACES_ALL) && (dwFlags & DDENUMSURFACES_MATCH)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDENUMSURFACES_ALL) && (dwFlags & DDENUMSURFACES_NOMATCH)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDENUMSURFACES_MATCH) && (dwFlags & DDENUMSURFACES_NOMATCH)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (dwFlags & DDENUMSURFACES_CANBECREATED)
+	{
+		// create surface
+		ret = CreateSurface(lpDDSD2, &surface, NULL);
+		if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+		surface->GetSurfaceDesc(&ddsd);
+		lpEnumSurfacesCallback(surface, &ddsd, lpContext);
+		TRACE_EXIT(23, DD_OK);
+		return DD_OK;
+	}
+	else
+	{
+		for (i = 0; i < surfacecount; i++)
+		{
+			if (surfaces[i])
+			{
+				if (dwFlags & DDENUMSURFACES_ALL) match = TRUE;
+				if (dwFlags & DDENUMSURFACES_MATCH)
+				{
+					if (!memcmp(&surfaces[i]->ddsd, lpDDSD2, sizeof(DDSURFACEDESC2))) match = TRUE;
+					else match = FALSE;
+				}
+				if (dwFlags & DDENUMSURFACES_NOMATCH)
+				{
+					if (memcmp(&surfaces[i]->ddsd, lpDDSD2, sizeof(DDSURFACEDESC2))) match = TRUE;
+					else match = FALSE;
+				}
+				if (match)
+				{
+					surfaces[i]->AddRef();
+					surfaces[i]->GetSurfaceDesc(&ddsd);
+					ret = lpEnumSurfacesCallback(surfaces[i], &ddsd, lpContext);
+					if (ret == DDENUMRET_CANCEL) break;
+				}
+			}
+		}
+	}
+	TRACE_EXIT(23,DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::FlipToGDISurface()
 {
@@ -1888,10 +1974,19 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 HRESULT WINAPI glDirectDraw1::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
 	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw1::DuplicateSurface: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!lplpDupDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC ddsd;
+	HRESULT ret;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	lpDDSurface->GetSurfaceDesc(&ddsd);
+	ret = CreateSurface(&ddsd, lplpDupDDSurface, NULL);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ret = (*lplpDupDDSurface)->Blt(NULL, lpDDSurface, NULL, 0, NULL);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw1::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
@@ -1903,9 +1998,16 @@ HRESULT WINAPI glDirectDraw1::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw1::EnumSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpDDSD)TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSD->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, lpDDSD, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	TRACE_RET(HRESULT, 23, glDD7->EnumSurfaces(dwFlags, &ddsd, context, EnumSurfacesCallback1));
 }
 HRESULT WINAPI glDirectDraw1::FlipToGDISurface()
 {
@@ -2075,10 +2177,19 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 HRESULT WINAPI glDirectDraw2::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface)
 {
 	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw2::DuplicateSurface: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!lplpDupDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC ddsd;
+	HRESULT ret;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	lpDDSurface->GetSurfaceDesc(&ddsd);
+	ret = CreateSurface(&ddsd, lplpDupDDSurface, NULL);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ret = (*lplpDupDDSurface)->Blt(NULL, lpDDSurface, NULL, 0, NULL);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw2::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback)
 {
@@ -2090,9 +2201,16 @@ HRESULT WINAPI glDirectDraw2::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw2::EnumSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpDDSD)TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSD->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, lpDDSD, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	TRACE_RET(HRESULT, 23, glDD7->EnumSurfaces(dwFlags, &ddsd, context, EnumSurfacesCallback1));
 }
 HRESULT WINAPI glDirectDraw2::FlipToGDISurface()
 {
@@ -2286,10 +2404,19 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 HRESULT WINAPI glDirectDraw4::DuplicateSurface(LPDIRECTDRAWSURFACE4 lpDDSurface, LPDIRECTDRAWSURFACE4 FAR *lplpDupDDSurface)
 {
 	TRACE_ENTER(3,14,this,14,lpDDSurface,14,lplpDupDDSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw4::DuplicateSurface: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!lplpDupDDSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC2 ddsd;
+	HRESULT ret;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	lpDDSurface->GetSurfaceDesc(&ddsd);
+	ret = CreateSurface(&ddsd, lplpDupDDSurface, NULL);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ret = (*lplpDupDDSurface)->Blt(NULL, lpDDSurface, NULL, 0, NULL);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw4::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
@@ -2301,9 +2428,12 @@ HRESULT WINAPI glDirectDraw4::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC2 lpDDS
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDSD,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDraw4::EnumSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpDDSD)TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSD->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	TRACE_RET(HRESULT, 23, glDD7->EnumSurfaces(dwFlags, lpDDSD, context, EnumSurfacesCallback2));
 }
 HRESULT WINAPI glDirectDraw4::FlipToGDISurface()
 {
