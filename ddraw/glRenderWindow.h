@@ -26,7 +26,7 @@ void WaitForObjectAndMessages(HANDLE object);
 class glRenderWindow
 {
 public:
-	glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7);
+	glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7, bool devwnd);
 	~glRenderWindow();
 	void resize(int width, int height);
 	HWND GetHWnd(){return hWnd;};
@@ -42,6 +42,7 @@ private:
 	int height;
 	bool fullscreen;
 	bool dead;
+	bool device;
 	glDirectDraw7 *ddInterface;
 };
 

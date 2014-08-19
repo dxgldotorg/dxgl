@@ -1061,7 +1061,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DEVMODE mode;
 		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
-		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL);
+		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
 		if (tmprenderer->ext->glver_major >= 3) fullrop = TRUE;
 		if (tmprenderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
 		glRenderer_Delete(tmprenderer);
@@ -1329,6 +1329,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
 	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
 	bool exclusive = false;
+	devwnd = false;
 	if(dwFlags & DDSCL_ALLOWMODEX)
 	{
 		// Validate flags
@@ -1340,8 +1341,6 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	}
 	if(dwFlags & DDSCL_ALLOWREBOOT)
 		DEBUG("IDirectDraw::SetCooperativeLevel: DDSCL_ALLOWREBOOT unnecessary\n");
-	if(dwFlags & DDSCL_CREATEDEVICEWINDOW)
-		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_CREATEDEVICEWINDOW unsupported\n");
 	if(dwFlags & DDSCL_EXCLUSIVE)
 		exclusive = true;
 	else exclusive = false;
@@ -1350,7 +1349,12 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	else fullscreen = false;
 	if(exclusive)
 		if(!fullscreen) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(dwFlags & DDSCL_FPUPRESERVE)
+	if (dwFlags & DDSCL_CREATEDEVICEWINDOW)
+	{
+		if (!exclusive) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		devwnd = true;
+	}
+	if (dwFlags & DDSCL_FPUPRESERVE)
 		fpupreserve = true;
 	else fpupreserve = false;
 	if(dwFlags & DDSCL_FPUSETUP)
@@ -1392,7 +1396,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	bpp = devmode.dmBitsPerPel;
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
-	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this);
+	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1467,6 +1471,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	if (dwFlags & 0xFFFFFFFE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwBPP != 4) && (dwBPP != 8) && (dwBPP != 15) && (dwBPP != 16) && (dwBPP != 24) && (dwBPP != 32))
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
@@ -1506,7 +1511,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			primarybpp = dwBPP;
 			if(dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1539,7 +1544,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 		primarylost = true;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -1584,7 +1589,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 		primarylost = true;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -1599,7 +1604,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		else internalbpp = screenbpp = currmode.dmBitsPerPel;
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-		InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this);
+		InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 		break;
@@ -1637,7 +1642,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1682,7 +1687,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;
@@ -1698,7 +1703,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this);
+			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
 			primarylost = true;
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;

@@ -118,7 +118,7 @@ typedef struct glRenderer
 	ShaderManager *shaders;
 } glRenderer;
 
-void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7);
+void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
 static DWORD WINAPI glRenderer_ThreadEntry(void *entry);
 void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y, int bigx, int bigy, int pitch, int bigpitch, int bpp);
@@ -130,7 +130,7 @@ void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, 
 void glRenderer_DeleteTexture(glRenderer *This, TEXTURE *texture);
 void glRenderer_InitD3D(glRenderer *This, int zbuffer);
 void glRenderer_Flush(glRenderer *This);
-void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd);
+void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd);
 HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
@@ -154,7 +154,7 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer__Flush(glRenderer *This);
-void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd);
+void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
 void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
 void glRenderer__SetFogColor(glRenderer *This, DWORD color);

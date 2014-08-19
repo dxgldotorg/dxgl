@@ -194,8 +194,10 @@ void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer
   *  layered window will be created for the renderer.
   * @param glDD7
   *  Pointer to the glDirectDraw7 object that is managing the glRenderer object
+  * @param devwnd
+  *  True if creating window with name "DirectDrawDeviceWnd"
   */
-void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7)
+void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	This->oldswap = 0;
 	This->fogcolor = 0;
@@ -222,7 +224,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 		// TODO:  Adjust window rect
 	}
 	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7);
+	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;
 	This->inputs[2] = (void*)bpp;
@@ -231,6 +233,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	This->inputs[5] = (void*)This->hWnd;
 	This->inputs[6] = glDD7;
 	This->inputs[7] = This;
+	This->inputs[8] = (void*)devwnd;
 	This->hThread = CreateThread(NULL, 0, glRenderer_ThreadEntry, This->inputs, 0, NULL);
 	WaitForSingleObject(This->busy,INFINITE);
 }
@@ -557,8 +560,10 @@ void glRenderer_Flush(glRenderer *This)
   *  True if fullscreen
   * @param newwnd
   *  HWND of the new window
+  * @param devwnd
+  *  True if creating window with name "DirectDrawDeviceWnd"
   */
-void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
+void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
 	EnterCriticalSection(&This->cs);
 	if(fullscreen && newwnd)
@@ -573,6 +578,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 	This->inputs[3] = (void*)fullscreen;
 	This->inputs[4] = (void*)frequency;
 	This->inputs[5] = (void*)newwnd;
+	This->inputs[6] = (void*)devwnd;
 	This->opcode = OP_SETWND;
 	SetEvent(This->start);
 	WaitForObjectAndMessages(This->busy);
@@ -734,7 +740,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_SETWND:
 			glRenderer__SetWnd(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2],
-				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5]);
+				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],(BOOL)This->inputs[6]);
 			break;
 		case OP_CREATE:
 			glRenderer__MakeTexture(This,(TEXTURE*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
@@ -1649,7 +1655,7 @@ void glRenderer__Flush(glRenderer *This)
 	SetEvent(This->busy);
 }
 
-void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd)
+void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
 	if(newwnd != This->hWnd)
 	{
@@ -1657,7 +1663,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		wglMakeCurrent(NULL, NULL);
 		ReleaseDC(This->hWnd,This->hDC);
 		delete This->RenderWnd;
-		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface);
+		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface, devwnd);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
 		InterlockedIncrement(&gllock);

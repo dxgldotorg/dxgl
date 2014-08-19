@@ -61,6 +61,6 @@ extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
 class glDirectDraw7;
-void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
+void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd);
 
 #endif //_DDRAW_PRIVATE_H

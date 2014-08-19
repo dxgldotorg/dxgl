@@ -47,12 +47,13 @@ void WaitForObjectAndMessages(HANDLE object)
 
 }
 
-glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7)
+glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7, bool devwnd)
 {
 	ddInterface = glDD7;
 	this->width = width;
 	this->height = height;
 	this->fullscreen = fullscreen;
+	this->device = devwnd;
 	hParentWnd = parent;
 	ReadyEvent = CreateEvent(NULL,false,false,NULL);
 	hThread = CreateThread(NULL,0,ThreadEntry,this,0,NULL);
@@ -68,6 +69,9 @@ DWORD WINAPI glRenderWindow::ThreadEntry(void *entry)
 
 DWORD glRenderWindow::_Entry()
 {
+	char *windowname;
+	if (device) windowname = "DirectDrawDeviceWnd";
+	else windowname = "Renderer";
     MSG Msg;
 	if(!wndclasscreated)
 	{
@@ -81,7 +85,7 @@ DWORD glRenderWindow::_Entry()
 		wndclass.hCursor = NULL;
 		wndclass.hbrBackground = NULL;
 		wndclass.lpszMenuName = NULL;
-		wndclass.lpszClassName = "DXGLRenderWindow";
+		wndclass.lpszClassName = "DirectDrawDeviceWnd";
 		wndclass.hIconSm = NULL;
 		RegisterClassExA(&wndclass);
 		wndclasscreated = true;
@@ -91,7 +95,7 @@ DWORD glRenderWindow::_Entry()
 	dead = false;
 	if(hParentWnd)
 	{
-		hWnd = CreateWindowA("DXGLRenderWindow","Renderer",WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
+		hWnd = CreateWindowA("DirectDrawDeviceWnd",windowname,WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
 			rectRender.bottom - rectRender.top,hParentWnd,NULL,wndclass.hInstance,this);
 		SetWindowPos(hWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
 	}
@@ -100,7 +104,7 @@ DWORD glRenderWindow::_Entry()
 		width = GetSystemMetrics(SM_CXSCREEN);
 		height = GetSystemMetrics(SM_CYSCREEN);
 		hWnd = CreateWindowExA(WS_EX_TOOLWINDOW|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,
-			"DXGLRenderWindow","Renderer",WS_POPUP,0,0,width,height,0,0,NULL,this);
+			"DirectDrawDeviceWnd",windowname,WS_POPUP,0,0,width,height,0,0,NULL,this);
 		SetWindowPos(hWnd,HWND_TOP,0,0,width,height,SWP_SHOWWINDOW|SWP_NOACTIVATE);
 	}
 	#ifdef _DEBUG

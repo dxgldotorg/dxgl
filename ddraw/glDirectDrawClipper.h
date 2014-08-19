@@ -31,7 +31,7 @@ typedef struct glDirectDrawClipper
 	bool hasparent;
 	bool initialized;
 	HWND hWnd;
-	RECT *cliplist;
+	RGNDATA *cliplist;
 	BltVertex *vertices;
 	WORD *indices;
 	int clipsize;

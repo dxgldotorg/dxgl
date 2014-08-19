@@ -117,10 +117,125 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+
 HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
+	HRGN rgnrect;
+	HRGN rgncliplist;
+	RGNDATA *rgn;
+	DWORD rgnsize;
 	TRACE_ENTER(4,14,This,26,lpRect,14,lpClipList,14,lpdwSize);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpdwSize) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!This->clipsize) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
+	if (!lpClipList)
+	{
+		if (lpRect)
+		{
+			rgnrect = CreateRectRgnIndirect(lpRect);
+			rgncliplist = ExtCreateRegion(NULL, (sizeof(RGNDATAHEADER) + (This->cliplist->rdh.nCount*sizeof(RECT))),
+				This->cliplist);
+			if (CombineRgn(rgncliplist, rgnrect, rgncliplist, RGN_AND) == ERROR)
+			{
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			}
+			rgnsize = GetRegionData(rgncliplist, 0, NULL);
+			rgn = (RGNDATA*)malloc(rgnsize);
+			if (!rgn)
+			{
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+			}
+			GetRegionData(rgncliplist, rgnsize, rgn);
+			*lpdwSize = sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT));
+			free(rgn);
+			DeleteObject(rgnrect);
+			DeleteObject(rgncliplist);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+		else
+		{
+			*lpdwSize = sizeof(RGNDATAHEADER) + (This->clipsize*sizeof(RECT));
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+	}
+	else
+	{
+		if (lpRect)
+		{
+			rgnrect = CreateRectRgnIndirect(lpRect);
+			rgncliplist = ExtCreateRegion(NULL, (sizeof(RGNDATAHEADER) + (This->cliplist->rdh.nCount*sizeof(RECT))),
+				This->cliplist);
+			if (CombineRgn(rgncliplist, rgnrect, rgncliplist, RGN_AND) == ERROR)
+			{
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			}
+			rgnsize = GetRegionData(rgncliplist, 0, NULL);
+			rgn = (RGNDATA*)malloc(rgnsize);
+			if (!rgn)
+			{
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+			}
+			GetRegionData(rgncliplist, rgnsize, rgn);
+			if (*lpdwSize < (sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT))))
+			{
+				free(rgn);
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_REGIONTOOSMALL);
+			}
+			*lpdwSize = sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT));
+#ifdef _MSC_VER
+			__try
+			{
+#endif
+				memcpy(lpClipList, rgn, sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT)));
+#ifdef _MSC_VER
+			}
+			__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION)
+			{
+				free(rgn);
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDCLIPLIST);
+			}
+#endif
+			free(rgn);
+			DeleteObject(rgnrect);
+			DeleteObject(rgncliplist);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+		else
+		{
+			if(*lpdwSize < (sizeof(RGNDATAHEADER) + (This->clipsize*sizeof(RECT))))
+				TRACE_RET(HRESULT,23,DDERR_REGIONTOOSMALL);
+			*lpdwSize = sizeof(RGNDATAHEADER) + (This->clipsize*sizeof(RECT));
+#ifdef _MSC_VER
+			__try
+			{
+#endif
+				memcpy(lpClipList, This->cliplist, sizeof(RGNDATAHEADER) + (This->clipsize*sizeof(RECT)));
+#ifdef _MSC_VER
+			}
+			__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION)
+			{
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDCLIPLIST);
+			}
+#endif
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+	}
 	FIXME("IDirectDrawClipper::GetClipList: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
@@ -179,7 +294,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		{
 			memfail = false;
 			This->maxsize = lpClipList->rdh.nCount;
-			This->cliplist = (RECT*)malloc(This->maxsize*sizeof(RECT));
+			This->cliplist = (RGNDATA*)malloc(sizeof(RGNDATAHEADER)+(This->maxsize*sizeof(RECT)));
 			if(!This->cliplist) memfail = true;
 			if(!memfail) This->vertices = (BltVertex*)malloc(This->maxsize*4*sizeof(BltVertex));
 			if(!This->vertices) memfail = true;
@@ -204,10 +319,10 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		if(lpClipList->rdh.nCount > This->maxsize)
 		{
 			memfail = false;
-			RECT *newcliplist = NULL;
+			RGNDATA *newcliplist = NULL;
 			BltVertex *newvertices = NULL;
 			WORD *newindices = NULL;
-			newcliplist = (RECT*)realloc(This->cliplist,lpClipList->rdh.nCount*sizeof(RECT));
+			newcliplist = (RGNDATA*)realloc(This->cliplist,sizeof(RGNDATAHEADER)+(lpClipList->rdh.nCount*sizeof(RECT)));
 			if(!newcliplist) memfail = true;
 			else This->cliplist = newcliplist;
 			if(!memfail) newvertices = (BltVertex*)realloc(This->vertices,lpClipList->rdh.nCount*4*sizeof(BltVertex));
@@ -220,13 +335,14 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 			This->maxsize = lpClipList->rdh.nCount;
 		}
 		This->clipsize = lpClipList->rdh.nCount;
-		memcpy(This->cliplist,lpClipList->Buffer,lpClipList->rdh.nCount*sizeof(RECT));
+		memcpy(This->cliplist,lpClipList,sizeof(RGNDATAHEADER)+(lpClipList->rdh.nCount*sizeof(RECT)));
+		RECT *buffer = (RECT*)This->cliplist->Buffer;
 		for(int i = 0; i < lpClipList->rdh.nCount; i++)
 		{
-			This->vertices[(i*4)+1].x = This->vertices[(i*4)+3].x = This->cliplist[i].left;
-			This->vertices[i*4].x = This->vertices[(i*4)+2].x = This->cliplist[i].right;
-			This->vertices[i*4].y = This->vertices[(i*4)+1].y = This->cliplist[i].top;
-			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = This->cliplist[i].bottom;
+			This->vertices[(i*4)+1].x = This->vertices[(i*4)+3].x = buffer[i].left;
+			This->vertices[i*4].x = This->vertices[(i*4)+2].x = buffer[i].right;
+			This->vertices[i*4].y = This->vertices[(i*4)+1].y = buffer[i].top;
+			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = buffer[i].bottom;
 			// 0 1 2 2 1 3
 			This->indices[i*6] = i*4;
 			This->indices[(i*6)+1] = This->indices[(i*6)+4] = (i*4)+1;

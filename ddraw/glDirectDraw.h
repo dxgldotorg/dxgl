@@ -113,6 +113,7 @@ private:
 	bool initialized;
 	glDirect3D7 *glD3D7;
 	DWORD timer;
+	bool devwnd;
 };
 
 class glDirectDraw1 : public IDirectDraw

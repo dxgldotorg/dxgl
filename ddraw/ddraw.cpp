@@ -37,15 +37,15 @@ const GUID device_template =
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
 
 
-void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
+void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
 	if (!glDD7->renderer)
 	{
 		glDD7->renderer = (glRenderer*)malloc(sizeof(glRenderer));
-		glRenderer_Init(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd,glDD7);
+		glRenderer_Init(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd,glDD7,devwnd);
 	}
-	else glRenderer_SetWnd(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd);
+	else glRenderer_SetWnd(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd,devwnd);
 	TRACE_EXIT(0,0);
 }
 
