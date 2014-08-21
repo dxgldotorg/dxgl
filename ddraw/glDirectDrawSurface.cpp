@@ -702,7 +702,7 @@ HRESULT WINAPI glDirectDrawSurface7::BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWS
 {
 	TRACE_ENTER(6,14,this,8,dwX,8,dwY,14,lpDDSrcSurface,26,lpSrcRect,9,dwTrans);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if (clipper) TRACE_RET(HRESULT,23,DDERR_UNSUPPORTED);
+	if (clipper) TRACE_RET(HRESULT, 23, DDERR_BLTFASTCANTCLIP);
 	DDSURFACEDESC2 ddsd;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	lpDDSrcSurface->GetSurfaceDesc(&ddsd);
@@ -862,7 +862,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 	TRACE_ENTER(3,14,this,14,lpDDSCaps,14,lplpDDAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	DDSCAPS2 ddsComp;
-	backbuffer->GetCaps(&ddsComp);
+	if (backbuffer)	backbuffer->GetCaps(&ddsComp);
 	unsigned __int64 comp1,comp2;
 	memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
 	memcpy(&comp2,&ddsComp,sizeof(unsigned __int64));
@@ -1566,7 +1566,21 @@ glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
 	refcount = 1;
-	TRACE_EXIT(-1,0);
+	attachments = (glDirectDrawSurface1**)malloc(16 * sizeof(glDirectDrawSurface1*));
+	attachcount = 0;
+	maxattach = 16;
+	if (attachments)
+	{
+		if (attachcount)
+		{
+			for (int i = 0; i < attachcount; i++)
+			{
+				if (attachments[i]) attachments[i]->Release();
+			}
+		}
+		free(attachments);
+	}
+	TRACE_EXIT(-1, 0);
 }
 glDirectDrawSurface1::~glDirectDrawSurface1()
 {
@@ -1608,12 +1622,60 @@ ULONG WINAPI glDirectDrawSurface1::Release()
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+void glDirectDrawSurface1::AddAttach(glDirectDrawSurface1 *attach)
+{
+	bool emptyspace = false;
+	int index;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (!attachments[i])
+		{
+			emptyspace = true;
+			index = i;
+			break;
+		}
+	}
+	if (emptyspace) attachments[index] = attach;
+	else
+	{
+		attachcount++;
+		if (attachcount >= maxattach)
+		{
+			glDirectDrawSurface1 **newattach = (glDirectDrawSurface1**)realloc(attachments,
+				(maxattach + 16)*sizeof(glDirectDrawSurface1*));
+			if (newattach)
+			{
+				maxattach += 16;
+				attachments = newattach;
+			}
+		}
+		attachments[attachcount-1] = attach;
+	}
+	attach->AddRef();
+}
+void glDirectDrawSurface1::DeleteAttach(glDirectDrawSurface1 *attach)
+{
+	if (!attachcount) return;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (attachments[i] == attach)
+		{
+			attach->Release();
+			attachments[i] = NULL;
+			return;
+		}
+	}
+}
 HRESULT WINAPI glDirectDrawSurface1::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDDS7->AddAttachedSurface(((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7()));
+	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	AddAttach((glDirectDrawSurface1*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface1::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -1658,7 +1720,11 @@ HRESULT WINAPI glDirectDrawSurface1::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->DeleteAttachedSurface(dwFlags,(LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface));
+	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	DeleteAttach((glDirectDrawSurface1*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface1::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
@@ -1855,14 +1921,28 @@ glDirectDrawSurface2::glDirectDrawSurface2(glDirectDrawSurface7 *gl_DDS7)
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
 	refcount = 1;
-	TRACE_EXIT(-1,0);
+	attachments = (glDirectDrawSurface2**)malloc(16 * sizeof(glDirectDrawSurface2*));
+	attachcount = 0;
+	maxattach = 16;
+	TRACE_EXIT(-1, 0);
 }
 glDirectDrawSurface2::~glDirectDrawSurface2()
 {
 	TRACE_ENTER(1,14,this);
 	glDDS7->dds2 = NULL;
 	glDDS7->Release();
-	TRACE_EXIT(-1,0);
+	if (attachments)
+	{
+		if (attachcount)
+		{
+			for (int i = 0; i < attachcount; i++)
+			{
+				if (attachments[i]) attachments[i]->Release();
+			}
+		}
+		free(attachments);
+	}
+	TRACE_EXIT(-1, 0);
 }
 HRESULT WINAPI glDirectDrawSurface2::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -1896,12 +1976,60 @@ ULONG WINAPI glDirectDrawSurface2::Release()
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+void glDirectDrawSurface2::AddAttach(glDirectDrawSurface2 *attach)
+{
+	bool emptyspace = false;
+	int index;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (!attachments[i])
+		{
+			emptyspace = true;
+			index = i;
+			break;
+		}
+	}
+	if (emptyspace) attachments[index] = attach;
+	else
+	{
+		attachcount++;
+		if (attachcount >= maxattach)
+		{
+			glDirectDrawSurface2 **newattach = (glDirectDrawSurface2**)realloc(attachments,
+				(maxattach + 16)*sizeof(glDirectDrawSurface2*));
+			if (newattach)
+			{
+				maxattach += 16;
+				attachments = newattach;
+			}
+		}
+		attachments[attachcount-1] = attach;
+	}
+	attach->AddRef();
+}
+void glDirectDrawSurface2::DeleteAttach(glDirectDrawSurface2 *attach)
+{
+	if (!attachcount) return;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (attachments[i] == attach)
+		{
+			attach->Release();
+			attachments[i] = NULL;
+			return;
+		}
+	}
+}
 HRESULT WINAPI glDirectDrawSurface2::AddAttachedSurface(LPDIRECTDRAWSURFACE2 lpDDSAttachedSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDDS7->AddAttachedSurface(((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7()));
+	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	AddAttach((glDirectDrawSurface2*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface2::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -1946,7 +2074,11 @@ HRESULT WINAPI glDirectDrawSurface2::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->DeleteAttachedSurface(dwFlags,(LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface));
+	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	DeleteAttach((glDirectDrawSurface2*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface2::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
@@ -2166,14 +2298,28 @@ glDirectDrawSurface3::glDirectDrawSurface3(glDirectDrawSurface7 *gl_DDS7)
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
 	refcount = 1;
-	TRACE_EXIT(-1,0);
+	attachments = (glDirectDrawSurface3**)malloc(16 * sizeof(glDirectDrawSurface3*));
+	attachcount = 0;
+	maxattach = 16;
+	TRACE_EXIT(-1, 0);
 }
 glDirectDrawSurface3::~glDirectDrawSurface3()
 {
 	TRACE_ENTER(1,14,this);
 	glDDS7->dds3 = NULL;
 	glDDS7->Release();
-	TRACE_EXIT(-1,0);
+	if (attachments)
+	{
+		if (attachcount)
+		{
+			for (int i = 0; i < attachcount; i++)
+			{
+				if (attachments[i]) attachments[i]->Release();
+			}
+		}
+		free(attachments);
+	}
+	TRACE_EXIT(-1, 0);
 }
 HRESULT WINAPI glDirectDrawSurface3::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -2208,12 +2354,60 @@ ULONG WINAPI glDirectDrawSurface3::Release()
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+void glDirectDrawSurface3::AddAttach(glDirectDrawSurface3 *attach)
+{
+	bool emptyspace = false;
+	int index;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (!attachments[i])
+		{
+			emptyspace = true;
+			index = i;
+			break;
+		}
+	}
+	if (emptyspace) attachments[index] = attach;
+	else
+	{
+		attachcount++;
+		if (attachcount >= maxattach)
+		{
+			glDirectDrawSurface3 **newattach = (glDirectDrawSurface3**)realloc(attachments,
+				(maxattach + 16)*sizeof(glDirectDrawSurface3*));
+			if (newattach)
+			{
+				maxattach += 16;
+				attachments = newattach;
+			}
+		}
+		attachments[attachcount-1] = attach;
+	}
+	attach->AddRef();
+}
+void glDirectDrawSurface3::DeleteAttach(glDirectDrawSurface3 *attach)
+{
+	if (!attachcount) return;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (attachments[i] == attach)
+		{
+			attach->Release();
+			attachments[i] = NULL;
+			return;
+		}
+	}
+}
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDDS7->AddAttachedSurface(((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7()));
+	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	AddAttach((glDirectDrawSurface3*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -2258,7 +2452,11 @@ HRESULT WINAPI glDirectDrawSurface3::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->DeleteAttachedSurface(dwFlags,(LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface));
+	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	DeleteAttach((glDirectDrawSurface3*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
@@ -2485,13 +2683,27 @@ glDirectDrawSurface4::glDirectDrawSurface4(glDirectDrawSurface7 *gl_DDS7)
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
 	refcount = 1;
-	TRACE_EXIT(-1,0);
+	attachments = (glDirectDrawSurface4**)malloc(16 * sizeof(glDirectDrawSurface4*));
+	attachcount = 0;
+	maxattach = 16;
+	TRACE_EXIT(-1, 0);
 }
 glDirectDrawSurface4::~glDirectDrawSurface4()
 {
 	TRACE_ENTER(1,14,this);
 	glDDS7->dds4 = NULL;
 	glDDS7->Release();
+	if (attachments)
+	{
+		if (attachcount)
+		{
+			for (int i = 0; i < attachcount; i++)
+			{
+				if (attachments[i]) attachments[i]->Release();
+			}
+		}
+		free(attachments);
+	}
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDrawSurface4::QueryInterface(REFIID riid, void** ppvObj)
@@ -2527,11 +2739,59 @@ ULONG WINAPI glDirectDrawSurface4::Release()
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+void glDirectDrawSurface4::AddAttach(glDirectDrawSurface4 *attach)
+{
+	bool emptyspace = false;
+	int index;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (!attachments[i])
+		{
+			emptyspace = true;
+			index = i;
+			break;
+		}
+	}
+	if (emptyspace) attachments[index] = attach;
+	else
+	{
+		attachcount++;
+		if (attachcount >= maxattach)
+		{
+			glDirectDrawSurface4 **newattach = (glDirectDrawSurface4**)realloc(attachments,
+				(maxattach + 16)*sizeof(glDirectDrawSurface4*));
+			if (newattach)
+			{
+				maxattach += 16;
+				attachments = newattach;
+			}
+		}
+		attachments[attachcount-1] = attach;
+	}
+	attach->AddRef();
+}
+void glDirectDrawSurface4::DeleteAttach(glDirectDrawSurface4 *attach)
+{
+	if (!attachcount) return;
+	for (int i = 0; i < attachcount; i++)
+	{
+		if (attachments[i] == attach)
+		{
+			attach->Release();
+			attachments[i] = NULL;
+			return;
+		}
+	}
+}
 HRESULT WINAPI glDirectDrawSurface4::AddAttachedSurface(LPDIRECTDRAWSURFACE4 lpDDSAttachedSurface)
 {
 	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->AddAttachedSurface(((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7()));
+	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	AddAttach((glDirectDrawSurface4*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface4::AddOverlayDirtyRect(LPRECT lpRect)
 {
@@ -2576,7 +2836,11 @@ HRESULT WINAPI glDirectDrawSurface4::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->DeleteAttachedSurface(dwFlags,(LPDIRECTDRAWSURFACE7)lpDDSAttachedSurface));
+	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7());
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	DeleteAttach((glDirectDrawSurface4*)lpDDSAttachedSurface);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface4::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpEnumSurfacesCallback)
 {

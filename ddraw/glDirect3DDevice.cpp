@@ -504,6 +504,7 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 			return D3D_OK;
 		}
 	}
+	if (glDDS7) TRACE_RET(HRESULT, 23, glDDS7->QueryInterface(riid, ppvObj));
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }

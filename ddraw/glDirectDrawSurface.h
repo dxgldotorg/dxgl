@@ -198,9 +198,14 @@ public:
 	HRESULT WINAPI UpdateOverlayDisplay(DWORD dwFlags);
 	HRESULT WINAPI UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSReference);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
+	void AddAttach(glDirectDrawSurface1 *attach);
+	void DeleteAttach(glDirectDrawSurface1 *attach);
 private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
+	glDirectDrawSurface1 **attachments;
+	int attachcount;
+	int maxattach;
 };
 class glDirectDrawSurface2 : public IDirectDrawSurface2
 {
@@ -249,9 +254,14 @@ public:
 	HRESULT WINAPI PageLock(DWORD dwFlags);
 	HRESULT WINAPI PageUnlock(DWORD dwFlags);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
+	void AddAttach(glDirectDrawSurface2 *attach);
+	void DeleteAttach(glDirectDrawSurface2 *attach);
 private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
+	glDirectDrawSurface2 **attachments;
+	int attachcount;
+	int maxattach;
 };
 class glDirectDrawSurface3 : public IDirectDrawSurface3
 {
@@ -302,9 +312,14 @@ public:
 	// ddraw 3+ api
 	HRESULT WINAPI SetSurfaceDesc(LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
+	void AddAttach(glDirectDrawSurface3 *attach);
+	void DeleteAttach(glDirectDrawSurface3 *attach);
 private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
+	glDirectDrawSurface3 **attachments;
+	int attachcount;
+	int maxattach;
 };
 class glDirectDrawSurface4 : public IDirectDrawSurface4
 {
@@ -361,8 +376,13 @@ public:
 	HRESULT WINAPI GetUniquenessValue(LPDWORD lpValue);
 	HRESULT WINAPI ChangeUniquenessValue();
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
+	void AddAttach(glDirectDrawSurface4 *attach);
+	void DeleteAttach(glDirectDrawSurface4 *attach);
 private:
 	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
+	glDirectDrawSurface4 **attachments;
+	int attachcount;
+	int maxattach;
 };
 #endif //_GLDIRECTDRAWSURFACE_H

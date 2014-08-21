@@ -200,6 +200,7 @@ glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
 	glD3D2 = NULL;
 	glD3D1 = NULL;
 	glDD7 = gl_DD7;
+	glDD7->AddRef();
 	memcpy(stored_devices, devices, 3 * sizeof(D3DDevice));
 	TRACE_EXIT(-1, 0);
 }
@@ -207,6 +208,7 @@ glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
 glDirect3D7::~glDirect3D7()
 {
 	TRACE_ENTER(1,14,this);
+	glDD7->Release();
 	if(glD3D3) glD3D3->Release();
 	if(glD3D2) glD3D2->Release();
 	if(glD3D1) glD3D1->Release();
