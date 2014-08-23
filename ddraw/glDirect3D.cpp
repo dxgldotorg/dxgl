@@ -371,10 +371,10 @@ HRESULT WINAPI glDirect3D7::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport,
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpD3DViewport = new glDirect3DViewport3();
+	HRESULT ret = glDirect3DViewport3_Create(lplpD3DViewport);
 	TRACE_VAR("*lplpD3DViewport",14,*lplpD3DViewport);
-	TRACE_EXIT(23,D3D_OK);
-	return D3D_OK;
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {

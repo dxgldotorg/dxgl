@@ -390,9 +390,9 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	{
 		if(viewports[i])
 		{
-			viewports[i]->SetDevice(NULL);
-			viewports[i]->SetCurrent(false);
-			viewports[i]->Release();
+			glDirect3DViewport3_SetDevice(viewports[i], NULL);
+			glDirect3DViewport3_SetCurrent(viewports[i], false);
+			glDirect3DViewport3_Release(viewports[i]);
 		}
 	}
 	for(int i = 0; i < texturecount; i++)
@@ -1915,10 +1915,10 @@ HRESULT glDirect3DDevice7::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
 	if(!lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	for(int i = 0; i < maxviewports; i++)
 	{
-		if(viewports[i] == lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+		if(viewports[i] == (glDirect3DViewport3*)lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	}
 	viewports[viewportcount] = (glDirect3DViewport3*)lpDirect3DViewport;
-	viewports[viewportcount]->AddRef();
+	glDirect3DViewport3_AddRef(viewports[viewportcount]);
 	viewportcount++;
 	if(viewportcount >= maxviewports)
 	{
@@ -1928,13 +1928,13 @@ HRESULT glDirect3DDevice7::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
 		if(!newviewport)
 		{
 			viewports--;
-			viewports[viewportcount]->Release();
+			glDirect3DViewport3_Release(viewports[viewportcount]);
 			viewports[viewportcount] = NULL;
 			maxviewports -= 32;
 			TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 		}
 	}
-	viewports[viewportcount-1]->SetDevice(this);
+	glDirect3DViewport3_SetDevice(viewports[viewportcount-1],this);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1946,11 +1946,11 @@ HRESULT glDirect3DDevice7::DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport
 	if(!lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	for(int i = 0; i < maxviewports; i++)
 	{
-		if(viewports[i] == lpDirect3DViewport)
+		if(viewports[i] == (glDirect3DViewport3*)lpDirect3DViewport)
 		{
-			viewports[i]->SetCurrent(false);
-			viewports[i]->SetDevice(NULL);
-			viewports[i]->Release();
+			glDirect3DViewport3_SetCurrent(viewports[i],false);
+			glDirect3DViewport3_SetDevice(viewports[i],NULL);
+			glDirect3DViewport3_Release(viewports[i]);
 			if(currentviewport == viewports[i]) currentviewport = NULL;
 			viewports[i] = NULL;
 			TRACE_EXIT(23,D3D_OK);
@@ -1978,8 +1978,8 @@ HRESULT glDirect3DDevice7::GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewpo
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpd3dViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!currentviewport) TRACE_RET(HRESULT,23,D3DERR_NOCURRENTVIEWPORT);
-	*lplpd3dViewport = currentviewport;
-	currentviewport->AddRef();
+	*lplpd3dViewport = (LPDIRECT3DVIEWPORT3)currentviewport;
+	glDirect3DViewport3_AddRef(currentviewport);
 	TRACE_VAR("*lplpd3dViewport",14,*lplpd3dViewport);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1990,12 +1990,12 @@ HRESULT glDirect3DDevice7::SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport)
 	TRACE_ENTER(2,14,this,14,lpd3dViewport);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpd3dViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(currentviewport == lpd3dViewport) TRACE_RET(HRESULT,23,D3D_OK);
+	if(currentviewport == (glDirect3DViewport3*)lpd3dViewport) TRACE_RET(HRESULT,23,D3D_OK);
 	for(int i = 0; i < maxviewports; i++)
 	{
-		if(lpd3dViewport == viewports[i])
+		if(lpd3dViewport == (LPDIRECT3DVIEWPORT3)viewports[i])
 		{
-			viewports[i]->SetCurrent(true);
+			glDirect3DViewport3_SetCurrent(viewports[i],true);
 			currentviewport = (glDirect3DViewport3*)lpd3dViewport;
 			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
@@ -3331,8 +3331,8 @@ HRESULT WINAPI glDirect3DDevice2::AddViewport(LPDIRECT3DVIEWPORT2 lpDirect3DView
 	if(!lpDirect3DViewport2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport2->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->AddViewport(glD3DV3);
-	glD3DV3->Release();
+	HRESULT ret = glD3DDev7->AddViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -3381,10 +3381,11 @@ HRESULT WINAPI glDirect3DDevice2::DeleteViewport(LPDIRECT3DVIEWPORT2 lpDirect3DV
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DViewport2);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDirect3DViewport2) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport2->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->DeleteViewport(glD3DV3);
-	glD3DV3->Release();
+	HRESULT ret = glD3DDev7->DeleteViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -3470,8 +3471,8 @@ HRESULT WINAPI glDirect3DDevice2::GetCurrentViewport(LPDIRECT3DVIEWPORT2 *lplpd3
 	glDirect3DViewport3 *glD3DV3;
 	HRESULT ret = glD3DDev7->GetCurrentViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3);
 	if(!glD3DV3) TRACE_RET(HRESULT,23,ret);
-	glD3DV3->QueryInterface(IID_IDirect3DViewport2,(void**)lplpd3dViewport2);
-	glD3DV3->Release();
+	glDirect3DViewport3_QueryInterface(glD3DV3,IID_IDirect3DViewport2,(void**)lplpd3dViewport2);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_VAR("*lplpd3dViewport2",14,*lplpd3dViewport2);
 	TRACE_EXIT(23,ret);
 	return ret;
@@ -3572,8 +3573,8 @@ HRESULT WINAPI glDirect3DDevice2::SetCurrentViewport(LPDIRECT3DVIEWPORT2 lpd3dVi
 	if(!lpd3dViewport2) TRACE_RET(HRESULT,23,glD3DDev7->SetCurrentViewport(NULL));
 	glDirect3DViewport3 *glD3DV3;
 	lpd3dViewport2->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->SetCurrentViewport(glD3DV3);
-	glD3DV3->Release();
+	HRESULT ret = glD3DDev7->SetCurrentViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -3681,8 +3682,8 @@ HRESULT WINAPI glDirect3DDevice1::AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewp
 	if(!lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->AddViewport(glD3DV3);
-	glD3DV3->Release();
+	HRESULT ret = glD3DDev7->AddViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -3715,10 +3716,11 @@ HRESULT WINAPI glDirect3DDevice1::DeleteViewport(LPDIRECT3DVIEWPORT lpDirect3DVi
 {
 	TRACE_ENTER(2,14,this,14,lpDirect3DViewport);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDirect3DViewport) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->DeleteViewport(glD3DV3);
-	glD3DV3->Release();
+	HRESULT ret = glD3DDev7->DeleteViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }

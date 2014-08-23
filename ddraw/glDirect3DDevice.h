@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -63,7 +63,7 @@ struct D3D1MATRIX
 class glDirect3DLight;
 class glDirectDrawSurface7;
 class glDirect3DMaterial3;
-class glDirect3DViewport3;
+struct glDirect3DViewport3;
 class glDirect3DDevice3;
 class glDirect3DDevice2;
 class glDirect3DDevice1;

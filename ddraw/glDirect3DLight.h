@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 #ifndef __GLDIRECT3DLIGHT_H
 #define __GLDIRECT3DLIGHT_H
 
-class glDirect3DViewport3;
+struct glDirect3DViewport3;
 class glDirect3DLight : public IDirect3DLight
 {
 public:
