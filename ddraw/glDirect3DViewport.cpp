@@ -38,6 +38,31 @@ inline D3DCOLOR d3dcvtod3dcolor(D3DCOLORVALUE value)
 	return b|(g<<8)|(r<<16)|(a<<24);
 }
 
+glDirect3DViewport3Vtbl glDirect3DViewport3_iface =
+{
+	glDirect3DViewport3_QueryInterface,
+	glDirect3DViewport3_AddRef,
+	glDirect3DViewport3_Release,
+	glDirect3DViewport3_Initialize,
+	glDirect3DViewport3_GetViewport,
+	glDirect3DViewport3_SetViewport,
+	glDirect3DViewport3_TransformVertices,
+	glDirect3DViewport3_LightElements,
+	glDirect3DViewport3_SetBackground,
+	glDirect3DViewport3_GetBackground,
+	glDirect3DViewport3_SetBackgroundDepth,
+	glDirect3DViewport3_GetBackgroundDepth,
+	glDirect3DViewport3_Clear,
+	glDirect3DViewport3_AddLight,
+	glDirect3DViewport3_DeleteLight,
+	glDirect3DViewport3_NextLight,
+	glDirect3DViewport3_GetViewport2,
+	glDirect3DViewport3_SetViewport2,
+	glDirect3DViewport3_SetBackgroundDepth2,
+	glDirect3DViewport3_GetBackgroundDepth2,
+	glDirect3DViewport3_Clear2
+};
+
 HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport)
 {
 	glDirect3DViewport3 *newvp;
@@ -46,6 +71,7 @@ HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport)
 	newvp = (glDirect3DViewport3*)malloc(sizeof(glDirect3DViewport3));
 	if (!newvp) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	*viewport = (LPDIRECT3DVIEWPORT3)newvp;
+	newvp->lpVtbl = &glDirect3DViewport3_iface;
 	newvp->background = 0;
 	ZeroMemory(&newvp->viewport,sizeof(D3DVIEWPORT2));
 	newvp->viewport.dwSize = sizeof(D3DVIEWPORT2);
@@ -95,7 +121,7 @@ HRESULT WINAPI glDirect3DViewport3_QueryInterface(glDirect3DViewport3 *This, REF
 		}
 		else
 		{
-			ret = glDirect3DViewport2_Create(This, (LPDIRECT3DVIEWPORT2*)*ppvObj);
+			ret = glDirect3DViewport2_Create(This, (LPDIRECT3DVIEWPORT2*)ppvObj);
 			if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 			glDirect3DViewport3_AddRef(This);
 			This->glD3DV2 = (glDirect3DViewport2*)*ppvObj;
@@ -116,7 +142,7 @@ HRESULT WINAPI glDirect3DViewport3_QueryInterface(glDirect3DViewport3 *This, REF
 		}
 		else
 		{
-			ret = glDirect3DViewport1_Create(This, (LPDIRECT3DVIEWPORT*)*ppvObj);
+			ret = glDirect3DViewport1_Create(This, (LPDIRECT3DVIEWPORT*)ppvObj);
 			if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 			glDirect3DViewport3_AddRef(This);
 			This->glD3DV1 = (glDirect3DViewport1*)*ppvObj;
@@ -450,6 +476,27 @@ void glDirect3DViewport3_SyncLights(glDirect3DViewport3 *This)
 	TRACE_EXIT(0,0);
 }
 
+glDirect3DViewport2Vtbl glDirect3DViewport2_iface =
+{
+	glDirect3DViewport2_QueryInterface,
+	glDirect3DViewport2_AddRef,
+	glDirect3DViewport2_Release,
+	glDirect3DViewport2_Initialize,
+	glDirect3DViewport2_GetViewport,
+	glDirect3DViewport2_SetViewport,
+	glDirect3DViewport2_TransformVertices,
+	glDirect3DViewport2_LightElements,
+	glDirect3DViewport2_SetBackground,
+	glDirect3DViewport2_GetBackground,
+	glDirect3DViewport2_SetBackgroundDepth,
+	glDirect3DViewport2_GetBackgroundDepth,
+	glDirect3DViewport2_Clear,
+	glDirect3DViewport2_AddLight,
+	glDirect3DViewport2_DeleteLight,
+	glDirect3DViewport2_NextLight,
+	glDirect3DViewport2_GetViewport2,
+	glDirect3DViewport2_SetViewport2
+};
 
 HRESULT glDirect3DViewport2_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWPORT2 *viewport)
 {
@@ -459,6 +506,7 @@ HRESULT glDirect3DViewport2_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWP
 	newvp = (glDirect3DViewport2*)malloc(sizeof(glDirect3DViewport2));
 	if (!newvp) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	*viewport = (LPDIRECT3DVIEWPORT2)newvp;
+	newvp->lpVtbl = &glDirect3DViewport2_iface;
 	newvp->glD3DV3 = glD3DV3;
 	newvp->refcount = 1;
 	TRACE_EXIT(23, DD_OK);
@@ -598,6 +646,26 @@ HRESULT WINAPI glDirect3DViewport2_TransformVertices(glDirect3DViewport2 *This, 
 }
 
 
+glDirect3DViewport1Vtbl glDirect3DViewport1_iface =
+{
+	glDirect3DViewport1_QueryInterface,
+	glDirect3DViewport1_AddRef,
+	glDirect3DViewport1_Release,
+	glDirect3DViewport1_Initialize,
+	glDirect3DViewport1_GetViewport,
+	glDirect3DViewport1_SetViewport,
+	glDirect3DViewport1_TransformVertices,
+	glDirect3DViewport1_LightElements,
+	glDirect3DViewport1_SetBackground,
+	glDirect3DViewport1_GetBackground,
+	glDirect3DViewport1_SetBackgroundDepth,
+	glDirect3DViewport1_GetBackgroundDepth,
+	glDirect3DViewport1_Clear,
+	glDirect3DViewport1_AddLight,
+	glDirect3DViewport1_DeleteLight,
+	glDirect3DViewport1_NextLight
+};
+
 HRESULT glDirect3DViewport1_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWPORT *viewport)
 {
 	glDirect3DViewport1 *newvp;
@@ -606,6 +674,7 @@ HRESULT glDirect3DViewport1_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWP
 	newvp = (glDirect3DViewport1*)malloc(sizeof(glDirect3DViewport1));
 	if (!newvp) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	*viewport = (LPDIRECT3DVIEWPORT)newvp;
+	newvp->lpVtbl = &glDirect3DViewport1_iface;
 	newvp->glD3DV3 = glD3DV3;
 	newvp->refcount = 1;
 	TRACE_EXIT(23, DD_OK);

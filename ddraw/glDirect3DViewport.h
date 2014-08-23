@@ -53,7 +53,7 @@ typedef struct glDirect3DViewport3
 	bool current;
 };
 
-typedef struct glDirect3DViewportVtbl
+typedef struct glDirect3DViewport3Vtbl
 {
 	HRESULT(WINAPI *QueryInterface)(glDirect3DViewport3 *This, REFIID riid, void** ppvObj);
 	ULONG(WINAPI *AddRef)(glDirect3DViewport3 *This);
