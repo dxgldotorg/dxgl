@@ -98,14 +98,16 @@ inline void glRenderer__SetSwap(glRenderer *This, int swap)
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
+  * @param miplevel
+  *  Mipmap level of texture to write
   */
 void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp)
+	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	if(bpp == 15) bpp = 16;
 	if((x == bigx && y == bigy) || !bigbuffer)
 	{
-		TextureManager__UploadTexture(This->texman, texture, 0, buffer, x, y, FALSE);
+		TextureManager__UploadTexture(This->texman, texture, miplevel, buffer, x, y, FALSE);
 	}
 	else
 	{
@@ -125,7 +127,7 @@ void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, 
 			break;
 		break;
 		}
-		TextureManager__UploadTexture(This->texman, texture, 0, bigbuffer, bigx, bigy, FALSE);
+		TextureManager__UploadTexture(This->texman, texture, miplevel, bigbuffer, bigx, bigy, FALSE);
 	}
 }
 
@@ -150,17 +152,19 @@ void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, 
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
+  * @param miplevel
+  *  Mipmap level of texture to read
   */
 void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp)
+	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	if((bigx == x && bigy == y) || !bigbuffer)
 	{
-		TextureManager__DownloadTexture(This->texman,texture,0,buffer);
+		TextureManager__DownloadTexture(This->texman,texture,miplevel,buffer);
 	}
 	else
 	{
-		TextureManager__DownloadTexture(This->texman,texture,0,bigbuffer);
+		TextureManager__DownloadTexture(This->texman,texture,miplevel,bigbuffer);
 		switch(bpp)
 		{
 		case 8:
@@ -320,9 +324,11 @@ void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWO
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
+  * @param miplevel
+  *  Mipmap level of texture to write
   */
 void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp)
+	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = buffer;
@@ -335,6 +341,7 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, T
 	This->inputs[7] = (void*)pitch;
 	This->inputs[8] = (void*)bigpitch;
 	This->inputs[9] = (void*)bpp;
+	This->inputs[10] = (void*)miplevel;
 	This->opcode = OP_UPLOAD;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -362,9 +369,11 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, T
   *  Pitch of the scaled surface buffer
   * @param bpp
   *  Number of bits per surface pixel
+  * @param miplevel
+  *  Mipmap level of texture to read
   */
 void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp)
+	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = buffer;
@@ -377,6 +386,7 @@ void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer,
 	This->inputs[7] = (void*)pitch;
 	This->inputs[8] = (void*)bigpitch;
 	This->inputs[9] = (void*)bpp;
+	This->inputs[10] = (void*)miplevel;
 	This->opcode = OP_DOWNLOAD;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -749,13 +759,13 @@ DWORD glRenderer__Entry(glRenderer *This)
 		case OP_UPLOAD:
 			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
 				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9]);
+				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
 			SetEvent(This->busy);
 			break;
 		case OP_DOWNLOAD:
 			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
 				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9]);
+				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
 			SetEvent(This->busy);
 			break;
 		case OP_DELETETEX:
@@ -1450,7 +1460,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		glRenderer__UploadTexture(This,src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
 			(NextMultipleOf4((This->ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
-			src->ddsd.ddpfPixelFormat.dwRGBBitCount);
+			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->miplevel);
 		src->dirty &= ~1;
 	}
 	if(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
@@ -1963,7 +1973,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 					device->texstages[i].texture->ddsd.dwHeight,device->texstages[i].texture->fakex,
 					device->texstages[i].texture->fakey,device->texstages[i].texture->ddsd.lPitch,
 					(device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*device->texstages[i].texture->fakex),
-					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount);
+					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount, device->texstages[i].texture->miplevel);
 				device->texstages[i].texture->dirty &= ~1;
 			}
 			if(device->texstages[i].texture)

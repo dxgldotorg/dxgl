@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "TextureManager.h"
+#include <math.h>
 
 // Use EXACTLY one line per entry.  Don't change layout of the list.
 static const int START_TEXFORMATS = __LINE__;
@@ -52,6 +53,28 @@ void ClearError()
 	{
 		if (glGetError() == GL_NO_ERROR) break;
 	} while (1);
+}
+
+DWORD CalculateMipLevels(DWORD width, DWORD height)
+{
+	DWORD x, y;
+	DWORD levels = 1;
+	if ((!width) || (!height)) return 0;
+	if ((width == 1) || (height == 1)) return 1;
+	x = width;
+	y = height;
+miploop:
+	x = max(1,(DWORD)floorf((float)x / 2.0f));
+	y = max(1,(DWORD)floorf((float)y / 2.0f));
+	levels++;
+	if ((x == 1) || (y == 1)) return levels;
+	else goto miploop;
+}
+
+void ShrinkMip(DWORD *x, DWORD *y)
+{
+	*x = max(1, (DWORD)floorf((float)*x / 2.0f));
+	*y = max(1, (DWORD)floorf((float)*y / 2.0f));
 }
 
 TextureManager *TextureManager_Create(glExtensions *glext)
@@ -119,6 +142,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 {
 	int texformat = -1;
 	int i;
+	int x, y;
 	GLenum error;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
 	for(i = 0; i < numtexformats; i++)
@@ -430,27 +454,33 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	texture->height = height;
 	glGenTextures(1,&texture->id);
 	TextureManager_SetTexture(This,0,texture);
-	do
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texture->minfilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texture->magfilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texture->wraps);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texture->wrapt);
+	x = texture->width;
+	y = texture->height;
+	for (i = 0; i < texture->miplevel; i++)
 	{
-		ClearError();
-		glTexImage2D(GL_TEXTURE_2D, 0, texture->internalformats[0], texture->width, texture->height, 0, texture->format, texture->type, NULL);
-		error = glGetError();
-		if (error != GL_NO_ERROR)
+		do
 		{
-			if (texture->internalformats[1] == 0)
+			ClearError();
+			glTexImage2D(GL_TEXTURE_2D, i, texture->internalformats[0], x, y, 0, texture->format, texture->type, NULL);
+			ShrinkMip(&x, &y);
+			error = glGetError();
+			if (error != GL_NO_ERROR)
 			{
-				FIXME("Failed to create texture, cannot find internal format");
-				break;
+				if (texture->internalformats[1] == 0)
+				{
+					FIXME("Failed to create texture, cannot find internal format");
+					break;
+				}
+				memmove(&texture->internalformats[0], &texture->internalformats[1], 7 * sizeof(GLint));
+				texture->internalformats[7] = 0;
 			}
-			memmove(&texture->internalformats[0], &texture->internalformats[1], 7 * sizeof(GLint));
-			texture->internalformats[7] = 0;
-		}
-		else break;
-	} while (1);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,texture->minfilter);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,texture->magfilter);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,texture->wraps);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,texture->wrapt);
+			else break;
+		} while (1);
+	}
 }
 
 void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)

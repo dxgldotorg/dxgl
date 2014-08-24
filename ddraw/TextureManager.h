@@ -74,6 +74,8 @@ typedef struct TextureManager
 	GLuint textures[16];
 } TextureManager;
 
+DWORD CalculateMipLevels(DWORD width, DWORD height);
+
 TextureManager *TextureManager_Create(glExtensions *glext);
 void TextureManager_InitSamplers(TextureManager *This);
 void TextureManager_DeleteSamplers(TextureManager *This);
