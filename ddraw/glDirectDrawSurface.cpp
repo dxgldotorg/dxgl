@@ -74,6 +74,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	ddInterface = (glDirectDraw7 *)lpDD7;
 	hRC = ddInterface->renderer->hRC;
 	ddsd = *lpDDSurfaceDesc2;
+	miptexture = NULL;
 	LONG sizes[6];
 	ddInterface->GetSizes(sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
@@ -877,19 +878,23 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 	TRACE_ENTER(3,14,this,14,lpDDSCaps,14,lplpDDAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	DDSCAPS2 ddsComp;
-	if (backbuffer)	backbuffer->GetCaps(&ddsComp);
+	ZeroMemory(&ddsComp, sizeof(DDSCAPS2));
 	unsigned __int64 comp1,comp2;
-	memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
-	memcpy(&comp2,&ddsComp,sizeof(unsigned __int64));
-	if((comp1 & comp2) == comp1)
-	{
-		*lplpDDAttachedSurface = backbuffer;
-		backbuffer->AddRef();
-		TRACE_VAR("*lplpDDAttachedSurface",14,*lplpDDAttachedSurface);
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
+	if (backbuffer)
+	{ 
+		backbuffer->GetCaps(&ddsComp);
+		memcpy(&comp1, lpDDSCaps, sizeof(unsigned __int64));
+		memcpy(&comp2, &ddsComp, sizeof(unsigned __int64));
+		if ((comp1 & comp2) == comp1)
+		{
+			*lplpDDAttachedSurface = backbuffer;
+			backbuffer->AddRef();
+			TRACE_VAR("*lplpDDAttachedSurface", 14, *lplpDDAttachedSurface);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
 	}
-	else if(zbuffer)
+	if(zbuffer)
 	{
 		zbuffer->GetCaps(&ddsComp);
 		memcpy(&comp1,lpDDSCaps,sizeof(unsigned __int64));
@@ -903,6 +908,21 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 			return DD_OK;
 		}
 	}
+	if (miptexture)
+	{
+		miptexture->GetCaps(&ddsComp);
+		memcpy(&comp1, lpDDSCaps, sizeof(unsigned __int64));
+		memcpy(&comp2, &ddsComp, sizeof(unsigned __int64));
+		if ((comp1 & comp2) == comp1)
+		{
+			*lplpDDAttachedSurface = miptexture;
+			miptexture->AddRef();
+			TRACE_VAR("*lplpDDAttachedSurface", 14, *lplpDDAttachedSurface);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+	}
+
 	TRACE_EXIT(23,DDERR_NOTFOUND);
 	ERR(DDERR_NOTFOUND);
 }
