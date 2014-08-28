@@ -144,6 +144,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	int i;
 	int x, y;
 	GLenum error;
+	if (!texture->miplevel) texture->miplevel = 1;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
 	for(i = 0; i < numtexformats; i++)
 	{
@@ -572,21 +573,20 @@ void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE
 	}
 }
 
-BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty)
+BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level)
 {
 	// data should be null to create uninitialized texture or be pointer to top-level
 	// buffer to retain texture data
 	TEXTURE newtexture;
 	GLenum error;
 	memcpy(&newtexture, texture, sizeof(TEXTURE));
-	if (texture->miplevel > 0) return FALSE;
 	if (texture->internalformats[1] == 0) return FALSE;
 	glGenTextures(1, &newtexture.id);
 	TextureManager_SetActiveTexture(This, 0);
 	if (data)
 	{
 		TextureManager_SetTexture(This, 0, texture);
-		glGetTexImage(GL_TEXTURE_2D, 0, texture->format, texture->type, data);
+		glGetTexImage(GL_TEXTURE_2D, level, texture->format, texture->type, data);
 		if (dirty) *dirty |= 2;
 	}
 	TextureManager_SetTexture(This, 0, &newtexture);
@@ -595,7 +595,7 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 		memmove(&newtexture.internalformats[0], &newtexture.internalformats[1], 7 * sizeof(GLint));
 		newtexture.internalformats[7] = 0;
 		ClearError();
-		glTexImage2D(GL_TEXTURE_2D, 0, newtexture.internalformats[0], newtexture.width, newtexture.height,
+		glTexImage2D(GL_TEXTURE_2D, level, newtexture.internalformats[0], newtexture.width, newtexture.height,
 			0, newtexture.format, newtexture.type, data);
 		error = glGetError();
 		if (error != GL_NO_ERROR)

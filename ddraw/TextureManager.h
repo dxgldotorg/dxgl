@@ -89,7 +89,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture);
 void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror);
 void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data);
-BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty);
+BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level);
 
 #ifdef __cplusplus
 }

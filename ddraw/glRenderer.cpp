@@ -1198,7 +1198,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		if (This->util->SetFBO(dest) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!dest->texture->internalformats[1]) break;
-		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty);
+		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty, dest->miplevel);
 		This->util->SetFBO((FBO*)NULL);
 		dest->fbo.fbcolor = NULL;
 		dest->fbo.fbz = NULL;
@@ -1623,7 +1623,7 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	{
 		if (This->util->SetFBO(target) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!target->texture->internalformats[1]) break;
-		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty);
+		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty, target->miplevel);
 		This->util->SetFBO((FBO*)NULL);
 		target->fbo.fbcolor = NULL;
 		target->fbo.fbz = NULL;
@@ -2003,7 +2003,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		if (This->util->SetFBO(device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!device->glDDS7->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, device->glDDS7->texture,
-			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty);
+			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty, device->glDDS7->miplevel);
 		This->util->SetFBO((FBO*)NULL);
 		device->glDDS7->fbo.fbcolor = NULL;
 		device->glDDS7->fbo.fbz = NULL;
