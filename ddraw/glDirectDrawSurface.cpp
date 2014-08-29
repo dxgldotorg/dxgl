@@ -1875,7 +1875,16 @@ HRESULT WINAPI glDirectDrawSurface1::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->GetSurfaceDesc((LPDDSURFACEDESC2)lpDDSurfaceDesc));
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	HRESULT ret = glDDS7->GetSurfaceDesc(&ddsd);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface1::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
@@ -1894,7 +1903,15 @@ HRESULT WINAPI glDirectDrawSurface1::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->Lock(lpDestRect,(LPDDSURFACEDESC2)lpDDSurfaceDesc,dwFlags,hEvent));
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface1::ReleaseDC(HDC hDC)
 {
@@ -2228,7 +2245,16 @@ HRESULT WINAPI glDirectDrawSurface2::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->GetSurfaceDesc((LPDDSURFACEDESC2)lpDDSurfaceDesc));
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	HRESULT ret = glDDS7->GetSurfaceDesc(&ddsd);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface2::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
@@ -2247,7 +2273,15 @@ HRESULT WINAPI glDirectDrawSurface2::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->Lock(lpDestRect,(LPDDSURFACEDESC2)lpDDSurfaceDesc,dwFlags,hEvent));
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface2::ReleaseDC(HDC hDC)
 {
@@ -2606,7 +2640,16 @@ HRESULT WINAPI glDirectDrawSurface3::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceD
 {
 	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->GetSurfaceDesc((LPDDSURFACEDESC2)lpDDSurfaceDesc));
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	HRESULT ret = glDDS7->GetSurfaceDesc(&ddsd);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc)
 {
@@ -2625,7 +2668,15 @@ HRESULT WINAPI glDirectDrawSurface3::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->Lock(lpDestRect,(LPDDSURFACEDESC2)lpDDSurfaceDesc,dwFlags,hEvent));
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
+	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	memcpy(lpDDSurfaceDesc, &ddsd, sizeof(DDSURFACEDESC));
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::ReleaseDC(HDC hDC)
 {
