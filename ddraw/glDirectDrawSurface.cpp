@@ -193,7 +193,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		bitmapinfo->bmiHeader.biClrImportant = 0;
 		bitmapinfo->bmiHeader.biClrUsed = 0;
 		bitmapinfo->bmiHeader.biCompression = BI_RGB;
-		bitmapinfo->bmiHeader.biBitCount = (WORD)ddInterface->GetBPPMultipleOf8();
+		bitmapinfo->bmiHeader.biBitCount = 0;
 	}
 	surfacetype=2;
 	bitmapinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);

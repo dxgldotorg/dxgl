@@ -647,7 +647,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 			if (hUser32) FreeLibrary(hUser32);
 		}
 	}
-	DelCompatFlag(_T("DWM8And16BitMitigation"), initial);
+	if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);
 }
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {
