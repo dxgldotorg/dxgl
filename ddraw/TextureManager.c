@@ -459,6 +459,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texture->magfilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texture->wraps);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texture->wrapt);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, texture->miplevel - 1);
 	x = texture->width;
 	y = texture->height;
 	for (i = 0; i < texture->miplevel; i++)
