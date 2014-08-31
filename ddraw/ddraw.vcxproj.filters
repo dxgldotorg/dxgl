@@ -199,9 +199,6 @@
     <ClCompile Include="glDirect3DExecuteBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="timer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -233,6 +230,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShaderGen2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

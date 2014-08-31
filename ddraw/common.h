@@ -116,7 +116,5 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 extern CRITICAL_SECTION dll_cs;
 
 #include "trace.h"
-#ifdef __cplusplus
 #include "../cfgmgr/cfgmgr.h"
-#endif
 #endif //_COMMON_H

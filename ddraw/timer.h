@@ -19,19 +19,27 @@
 #ifndef _TIMER_H
 #define _TIMER_H
 
-class DXGLTimer
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct DXGLTimer
 {
-public:
-	DXGLTimer();
-	void Calibrate(unsigned int lines, unsigned int frequency);
-	unsigned int GetScanLine();
-private:
 	int timertype;
 	unsigned int lines;
 	unsigned int vsync_lines;
 	double monitor_period;
 	double timer_frequency;
 	LARGE_INTEGER timer_base;
-};
+} DXGLTimer;
+
+void DXGLTimer_Init(DXGLTimer *timer);
+void DXGLTimer_Calibrate(DXGLTimer *timer, unsigned int lines, unsigned int frequency);
+unsigned int DXGLTimer_GetScanLine(DXGLTimer *timer);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

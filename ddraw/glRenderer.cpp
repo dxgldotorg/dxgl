@@ -683,7 +683,7 @@ void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
   */
 unsigned int glRenderer_GetScanLine(glRenderer *This)
 {
-	return This->timer.GetScanLine();
+	return DXGLTimer_GetScanLine(&This->timer);
 }
 
 /**
@@ -888,7 +888,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glRenderer__SetSwap(This,1);
 	SwapBuffers(This->hDC);
 	glFinish();
-	This->timer.Calibrate(height, frequency);
+	DXGLTimer_Init(&This->timer);
+	DXGLTimer_Calibrate(&This->timer, height, frequency);
 	glRenderer__SetSwap(This,0);
 	This->util->SetViewport(0,0,width,height);
 	glViewport(0,0,width,height);
@@ -1698,7 +1699,8 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		LeaveCriticalSection(&dll_cs);
 		glRenderer__SetSwap(This,1);
 		SwapBuffers(This->hDC);
-		This->timer.Calibrate(height, frequency);
+		DXGLTimer_Init(&This->timer);
+		DXGLTimer_Calibrate(&This->timer, height, frequency);
 		glRenderer__SetSwap(This,0);
 		This->util->SetViewport(0,0,width,height);
 	}
