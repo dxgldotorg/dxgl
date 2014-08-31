@@ -19,10 +19,17 @@
 #ifndef _SCALERS_H
 #define _SCALERS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ScaleNearest8(void *dest, void *src, int dw, int dh, int sw, int sh, int inpitch, int outpitch);
 void ScaleNearest16(void *dest, void *src, int dw, int dh, int sw, int sh, int inpitch, int outpitch);
 void ScaleNearest24(void *dest, void *src, int dw, int dh, int sw, int sh, int inpitch, int outpitch);
 void ScaleNearest32(void *dest, void *src, int dw, int dh, int sw, int sh, int inpitch, int outpitch);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_SCALERS_H

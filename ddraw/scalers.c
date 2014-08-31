@@ -26,13 +26,15 @@ void ScaleNearest8(void *dest, void *src, int dw, int dh, int sw, int sh, int in
 	BYTE *s = (BYTE *)src;
 	int rx = (int)((sw<<16)/dw)+1;
 	int ry = (int)((sh<<16)/dh)+1;
+	int x,y;
 	int x2,y2;
-	for(int y = 0; y < dh; y++)
+	int b1,b2;
+	for(y = 0; y < dh; y++)
 	{
-		int b1 = y*outpitch;
+		b1 = y*outpitch;
 		y2 = ((y*ry)>>16);
-		int b2 = y2*inpitch;
-		for(int x = 0; x < dw; x++)
+		b2 = y2*inpitch;
+		for(x = 0; x < dw; x++)
 		{
 			x2 = ((x*rx)>>16);
 			y2 = ((y*ry)>>16);
@@ -46,13 +48,15 @@ void ScaleNearest16(void *dest, void *src, int dw, int dh, int sw, int sh, int i
 	WORD *s = (WORD *)src;
 	int rx = (int)((sw<<16)/dw)+1;
 	int ry = (int)((sh<<16)/dh)+1;
+	int x,y;
 	int x2,y2;
-	for(int y = 0; y < dh; y++)
+	int b1,b2;
+	for(y = 0; y < dh; y++)
 	{
-		int b1 = y*outpitch;
+		b1 = y*outpitch;
 		y2 = ((y*ry)>>16);
-		int b2 = y2*inpitch;
-		for(int x = 0; x < dw; x++)
+		b2 = y2*inpitch;
+		for(x = 0; x < dw; x++)
 		{
 			x2 = ((x*rx)>>16);
 			y2 = ((y*ry)>>16);
@@ -68,15 +72,16 @@ void ScaleNearest24(void *dest, void *src, int dw, int dh, int sw, int sh, int i
 	char *s8 = (char*)src;
 	int rx = (int)((sw<<16)/dw)+1;
 	int ry = (int)((sh<<16)/dh)+1;
+	int x,y;
 	int x2,y2;
-	for(int y = 0; y < dh; y++)
+	for(y = 0; y < dh; y++)
 	{
 		d8 = (y*outpitch)+(char*)dest;
 		y2 = ((y*ry)>>16);
 		s8 = (y2*inpitch)+(char*)src;
 		d = (RGBTRIPLE*)d8;
 		s = (RGBTRIPLE*)s8;
-		for(int x = 0; x < dw; x++)
+		for(x = 0; x < dw; x++)
 		{
 			x2 = ((x*rx)>>16);
 			y2 = ((y*ry)>>16);
@@ -90,13 +95,15 @@ void ScaleNearest32(void *dest, void *src, int dw, int dh, int sw, int sh, int i
 	DWORD *s = (DWORD *)src;
 	int rx = (int)((sw<<16)/dw)+1;
 	int ry = (int)((sh<<16)/dh)+1;
+	int x,y;
 	int x2,y2;
-	for(int y = 0; y < dh; y++)
+	int b1,b2;
+	for(y = 0; y < dh; y++)
 	{
-		int b1 = y*outpitch;
+		b1 = y*outpitch;
 		y2 = ((y*ry)>>16);
-		int b2 = y2*inpitch;
-		for(int x = 0; x < dw; x++)
+		b2 = y2*inpitch;
+		for(x = 0; x < dw; x++)
 		{
 			x2 = ((x*rx)>>16);
 			d[b1+x] = s[b2+x2];

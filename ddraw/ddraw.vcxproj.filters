@@ -160,9 +160,6 @@
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scalers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glClassFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -176,9 +173,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glRenderWindow.cpp">
@@ -233,6 +227,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="timer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="matrix.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scalers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

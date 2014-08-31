@@ -50,6 +50,10 @@
 #ifndef _MATRIX_H
 #define _MATRIX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int __gluInvertMatrixf(const GLfloat m[16], GLfloat invOut[16]);
 void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 				GLfloat r[16]);
@@ -96,5 +100,9 @@ struct wined3d_matrix
 
 void multiply_matrix(struct wined3d_matrix *dest, const struct wined3d_matrix *src1,
 	const struct wined3d_matrix *src2);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_MATRIX_H
