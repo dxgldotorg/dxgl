@@ -394,6 +394,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer->Release();
+	if(miptexture) miptexture->Release();
 	if(device) device->Release();
 	ddInterface->DeleteSurface(this);
 	TRACE_EXIT(-1,0);
@@ -758,9 +759,26 @@ HRESULT WINAPI glDirectDrawSurface7::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 {
 	TRACE_ENTER(3,14,this,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::EnumAttachedSurfaces: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	HRESULT enumret = DDENUMRET_OK;
+	if (backbuffer)
+	{
+		backbuffer->AddRef();
+		enumret = lpEnumSurfacesCallback(backbuffer, &backbuffer->ddsd, lpContext);
+	}
+	if (enumret == DDENUMRET_CANCEL) TRACE_RET(HRESULT, 23, DD_OK);
+	if (zbuffer)
+	{
+		zbuffer->AddRef();
+		enumret = lpEnumSurfacesCallback(zbuffer, &zbuffer->ddsd, lpContext);
+	}
+	if (enumret == DDENUMRET_CANCEL) TRACE_RET(HRESULT, 23, DD_OK);
+	if (miptexture)
+	{
+		miptexture->AddRef();
+		enumret = lpEnumSurfacesCallback(miptexture, &miptexture->ddsd, lpContext);
+	}
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpfnCallback)
 {
@@ -924,7 +942,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 	}
 
 	TRACE_EXIT(23,DDERR_NOTFOUND);
-	ERR(DDERR_NOTFOUND);
+	return DDERR_NOTFOUND;
 }
 HRESULT WINAPI glDirectDrawSurface7::GetBltStatus(DWORD dwFlags)
 {
@@ -1772,7 +1790,11 @@ HRESULT WINAPI glDirectDrawSurface1::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 {
 	TRACE_ENTER(3,14,this,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->EnumAttachedSurfaces(lpContext,(LPDDENUMSURFACESCALLBACK7)lpEnumSurfacesCallback));
+	if (!lpEnumSurfacesCallback) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	TRACE_RET(HRESULT,23,glDDS7->EnumAttachedSurfaces(context,EnumSurfacesCallback1));
 }
 HRESULT WINAPI glDirectDrawSurface1::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback)
 {
@@ -2143,7 +2165,11 @@ HRESULT WINAPI glDirectDrawSurface2::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 {
 	TRACE_ENTER(3,14,this,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->EnumAttachedSurfaces(lpContext,(LPDDENUMSURFACESCALLBACK7)lpEnumSurfacesCallback));
+	if (!lpEnumSurfacesCallback) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	TRACE_RET(HRESULT, 23, glDDS7->EnumAttachedSurfaces(context, EnumSurfacesCallback1));
 }
 HRESULT WINAPI glDirectDrawSurface2::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback)
 {
@@ -2538,7 +2564,11 @@ HRESULT WINAPI glDirectDrawSurface3::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 {
 	TRACE_ENTER(3,14,this,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->EnumAttachedSurfaces(lpContext,(LPDDENUMSURFACESCALLBACK7)lpEnumSurfacesCallback));
+	if (!lpEnumSurfacesCallback) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	TRACE_RET(HRESULT, 23, glDDS7->EnumAttachedSurfaces(context, EnumSurfacesCallback1));
 }
 HRESULT WINAPI glDirectDrawSurface3::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback)
 {
@@ -2939,7 +2969,11 @@ HRESULT WINAPI glDirectDrawSurface4::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 {
 	TRACE_ENTER(3,14,this,14,lpContext,14,lpEnumSurfacesCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->EnumAttachedSurfaces(lpContext,(LPDDENUMSURFACESCALLBACK7)lpEnumSurfacesCallback));
+	if (!lpEnumSurfacesCallback) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPVOID context[2];
+	context[0] = lpEnumSurfacesCallback;
+	context[1] = lpContext;
+	TRACE_RET(HRESULT, 23, glDDS7->EnumAttachedSurfaces(context, EnumSurfacesCallback2));
 }
 HRESULT WINAPI glDirectDrawSurface4::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpfnCallback)
 {

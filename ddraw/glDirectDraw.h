@@ -230,4 +230,8 @@ private:
 	ULONG refcount;
 	glDirectDraw7 *glDD7;
 };
+
+HRESULT WINAPI EnumSurfacesCallback1(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext);
+HRESULT WINAPI EnumSurfacesCallback2(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext);
+
 #endif //_GLDIRECTDRAW_H

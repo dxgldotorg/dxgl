@@ -849,6 +849,7 @@ HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIREC
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc2) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (pUnkOuter) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!renderer) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
 	if (primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && (renderer->hRC == primary->hRC))
 	{
 		if (primarylost)
