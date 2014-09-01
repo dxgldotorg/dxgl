@@ -140,6 +140,7 @@ public:
 	FBO fbo;
 	FBO stencilfbo;
 	glDirectDrawClipper *clipper;
+	IUnknown *creator;
 private:
 	int swapinterval;
 	ULONG refcount;

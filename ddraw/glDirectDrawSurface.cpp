@@ -40,6 +40,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel)
 {
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
+	creator = NULL;
 	overlay = false;
 	hasstencil = false;
 	dirty = 2;
@@ -397,6 +398,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(miptexture) miptexture->Release();
 	if(device) device->Release();
 	ddInterface->DeleteSurface(this);
+	if (creator) creator->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)

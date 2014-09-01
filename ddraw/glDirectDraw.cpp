@@ -645,7 +645,6 @@ glDirectDraw7::~glDirectDraw7()
 	TRACE_ENTER(1,14,this);
 	if(initialized)
 	{
-		if(glD3D7) glD3D7->Release();
 		RestoreDisplayMode();
 		if(clippers)
 		{
@@ -897,7 +896,14 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 	if(!lpDDSurfaceDesc2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,CreateSurface2(lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter,TRUE));
+	HRESULT ret = CreateSurface2(lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter,TRUE);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawSurface7*)lplpDDSurface)->creator = this;
+	}
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 
 
@@ -2028,6 +2034,8 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
+		this->AddRef();
+		((glDirectDrawSurface7*)lpDDS7)->creator = this;
 		TRACE_VAR("*lplpDDSurface",14,lplpDDSurface);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -2221,7 +2229,9 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
-		TRACE_EXIT(23,DD_OK);
+		this->AddRef();
+		((glDirectDrawSurface7*)lpDDS7)->creator = this;
+		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
 	TRACE_EXIT(23,err);
@@ -2394,13 +2404,13 @@ ULONG WINAPI glDirectDraw4::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glDD7->AddRef());
+	TRACE_RET(ULONG, 8, glDD7->AddRef4());
 }
 ULONG WINAPI glDirectDraw4::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glDD7->Release());
+	TRACE_RET(ULONG, 8, glDD7->Release4());
 }
 HRESULT WINAPI glDirectDraw4::Compact()
 {
@@ -2433,7 +2443,9 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
-		TRACE_EXIT(23,DD_OK);
+		this->AddRef();
+		((glDirectDrawSurface7*)lpDDS7)->creator = this;
+		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
 	TRACE_EXIT(23,err);
