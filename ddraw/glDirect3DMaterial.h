@@ -49,7 +49,6 @@ class glDirect3DMaterial2 : public IDirect3DMaterial2
 {
 public:
 	glDirect3DMaterial2(glDirect3DMaterial3 *glD3DM3);
-	virtual ~glDirect3DMaterial2();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -57,7 +56,6 @@ public:
 	HRESULT WINAPI GetMaterial(LPD3DMATERIAL lpMat);
 	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
 private:
-	ULONG refcount;
 	glDirect3DMaterial3 *glD3DM3;
 };
 
@@ -65,7 +63,6 @@ class glDirect3DMaterial1 : public IDirect3DMaterial
 {
 public:
 	glDirect3DMaterial1(glDirect3DMaterial3 *glD3DM3);
-	virtual ~glDirect3DMaterial1();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -76,7 +73,6 @@ public:
 	HRESULT WINAPI SetMaterial(LPD3DMATERIAL lpMat);
 	HRESULT WINAPI Unreserve();
 private:
-	ULONG refcount;
 	glDirect3DMaterial3 *glD3DM3;
 };
 
