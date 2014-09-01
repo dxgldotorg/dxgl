@@ -30,16 +30,11 @@ typedef int glDirect3DDevice7;
 typedef int glDirectDrawSurface7;
 #endif
 
-struct glDirect3DViewport1;
-struct glDirect3DViewport2;
-
 struct glDirect3DViewport3Vtbl;
 
 typedef struct glDirect3DViewport3
 {
 	glDirect3DViewport3Vtbl *lpVtbl;
-	glDirect3DViewport2 *glD3DV2;
-	glDirect3DViewport1 *glD3DV1;
 	ULONG refcount;
 	glDirect3DLight *lights[8];
 	glDirect3DDevice7 *device;
@@ -107,106 +102,6 @@ HRESULT WINAPI glDirect3DViewport3_GetBackgroundDepth2(glDirect3DViewport3 *This
 HRESULT WINAPI glDirect3DViewport3_Clear2(glDirect3DViewport3 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
 
 
-struct glDirect3DViewport2Vtbl;
-
-typedef struct glDirect3DViewport2
-{
-	glDirect3DViewport2Vtbl *lpVtbl;
-	glDirect3DViewport3 *glD3DV3;
-	int refcount;
-};
-
-typedef struct glDirect3DViewport2Vtbl
-{
-	HRESULT(WINAPI *QueryInterface)(glDirect3DViewport2 *This, REFIID riid, void** ppvObj);
-	ULONG(WINAPI *AddRef)(glDirect3DViewport2 *This);
-	ULONG(WINAPI *Release)(glDirect3DViewport2 *This);
-	HRESULT(WINAPI *Initialize)(glDirect3DViewport2 *This, LPDIRECT3D lpDirect3D);
-	HRESULT(WINAPI *GetViewport)(glDirect3DViewport2 *This, LPD3DVIEWPORT lpData);
-	HRESULT(WINAPI *SetViewport)(glDirect3DViewport2 *This, LPD3DVIEWPORT lpData);
-	HRESULT(WINAPI *TransformVertices)(glDirect3DViewport2 *This, DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
-	HRESULT(WINAPI *LightElements)(glDirect3DViewport2 *This, DWORD dwElementCount, LPD3DLIGHTDATA lpData);
-	HRESULT(WINAPI *SetBackground)(glDirect3DViewport2 *This, D3DMATERIALHANDLE hMat);
-	HRESULT(WINAPI *GetBackground)(glDirect3DViewport2 *This, LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid);
-	HRESULT(WINAPI *SetBackgroundDepth)(glDirect3DViewport2 *This, LPDIRECTDRAWSURFACE lpDDSurface);
-	HRESULT(WINAPI *GetBackgroundDepth)(glDirect3DViewport2 *This, LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid);
-	HRESULT(WINAPI *Clear)(glDirect3DViewport2 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags);
-	HRESULT(WINAPI *AddLight)(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpLight);
-	HRESULT(WINAPI *DeleteLight)(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpDirect3DLight);
-	HRESULT(WINAPI *NextLight)(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags);
-	HRESULT(WINAPI *GetViewport2)(glDirect3DViewport2 *This, LPD3DVIEWPORT2 lpData);
-	HRESULT(WINAPI *SetViewport2)(glDirect3DViewport2 *This, LPD3DVIEWPORT2 lpData);
-};
-
-HRESULT glDirect3DViewport2_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWPORT2 *viewport);
-
-HRESULT WINAPI glDirect3DViewport2_QueryInterface(glDirect3DViewport2 *This, REFIID riid, void** ppvObj);
-ULONG WINAPI glDirect3DViewport2_AddRef(glDirect3DViewport2 *This);
-ULONG WINAPI glDirect3DViewport2_Release(glDirect3DViewport2 *This);
-HRESULT WINAPI glDirect3DViewport2_AddLight(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpLight);
-HRESULT WINAPI glDirect3DViewport2_Clear(glDirect3DViewport2 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags);
-HRESULT WINAPI glDirect3DViewport2_DeleteLight(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpDirect3DLight);
-HRESULT WINAPI glDirect3DViewport2_GetBackground(glDirect3DViewport2 *This, LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid);
-HRESULT WINAPI glDirect3DViewport2_GetBackgroundDepth(glDirect3DViewport2 *This, LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid);
-HRESULT WINAPI glDirect3DViewport2_GetViewport(glDirect3DViewport2 *This, LPD3DVIEWPORT lpData);
-HRESULT WINAPI glDirect3DViewport2_GetViewport2(glDirect3DViewport2 *This, LPD3DVIEWPORT2 lpData);
-HRESULT WINAPI glDirect3DViewport2_Initialize(glDirect3DViewport2 *This, LPDIRECT3D lpDirect3D);
-HRESULT WINAPI glDirect3DViewport2_LightElements(glDirect3DViewport2 *This, DWORD dwElementCount, LPD3DLIGHTDATA lpData);
-HRESULT WINAPI glDirect3DViewport2_NextLight(glDirect3DViewport2 *This, LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags);
-HRESULT WINAPI glDirect3DViewport2_SetBackground(glDirect3DViewport2 *This, D3DMATERIALHANDLE hMat);
-HRESULT WINAPI glDirect3DViewport2_SetBackgroundDepth(glDirect3DViewport2 *This, LPDIRECTDRAWSURFACE lpDDSurface);
-HRESULT WINAPI glDirect3DViewport2_SetViewport(glDirect3DViewport2 *This, LPD3DVIEWPORT lpData);
-HRESULT WINAPI glDirect3DViewport2_SetViewport2(glDirect3DViewport2 *This, LPD3DVIEWPORT2 lpData);
-HRESULT WINAPI glDirect3DViewport2_TransformVertices(glDirect3DViewport2 *This, DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
-
-
-struct glDirect3DViewport1Vtbl;
-
-typedef struct glDirect3DViewport1
-{
-	glDirect3DViewport1Vtbl *lpVtbl;
-	glDirect3DViewport3 *glD3DV3;
-	int refcount;
-};
-
-typedef struct glDirect3DViewport1Vtbl
-{
-	HRESULT(WINAPI *QueryInterface)(glDirect3DViewport1 *This, REFIID riid, void** ppvObj);
-	ULONG(WINAPI *AddRef)(glDirect3DViewport1 *This);
-	ULONG(WINAPI *Release)(glDirect3DViewport1 *This);
-	HRESULT(WINAPI *Initialize)(glDirect3DViewport1 *This, LPDIRECT3D lpDirect3D);
-	HRESULT(WINAPI *GetViewport)(glDirect3DViewport1 *This, LPD3DVIEWPORT lpData);
-	HRESULT(WINAPI *SetViewport)(glDirect3DViewport1 *This, LPD3DVIEWPORT lpData);
-	HRESULT(WINAPI *TransformVertices)(glDirect3DViewport1 *This, DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
-	HRESULT(WINAPI *LightElements)(glDirect3DViewport1 *This, DWORD dwElementCount, LPD3DLIGHTDATA lpData);
-	HRESULT(WINAPI *SetBackground)(glDirect3DViewport1 *This, D3DMATERIALHANDLE hMat);
-	HRESULT(WINAPI *GetBackground)(glDirect3DViewport1 *This, LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid);
-	HRESULT(WINAPI *SetBackgroundDepth)(glDirect3DViewport1 *This, LPDIRECTDRAWSURFACE lpDDSurface);
-	HRESULT(WINAPI *GetBackgroundDepth)(glDirect3DViewport1 *This, LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid);
-	HRESULT(WINAPI *Clear)(glDirect3DViewport1 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags);
-	HRESULT(WINAPI *AddLight)(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpLight);
-	HRESULT(WINAPI *DeleteLight)(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpDirect3DLight);
-	HRESULT(WINAPI *NextLight)(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags);
-};
-
-HRESULT glDirect3DViewport1_Create(glDirect3DViewport3 *glD3DV3, LPDIRECT3DVIEWPORT *viewport);
-
-HRESULT WINAPI glDirect3DViewport1_QueryInterface(glDirect3DViewport1 *This, REFIID riid, void** ppvObj);
-ULONG WINAPI glDirect3DViewport1_AddRef(glDirect3DViewport1 *This);
-ULONG WINAPI glDirect3DViewport1_Release(glDirect3DViewport1 *This);
-HRESULT WINAPI glDirect3DViewport1_AddLight(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpLight);
-HRESULT WINAPI glDirect3DViewport1_Clear(glDirect3DViewport1 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags);
-HRESULT WINAPI glDirect3DViewport1_DeleteLight(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpDirect3DLight);
-HRESULT WINAPI glDirect3DViewport1_GetBackground(glDirect3DViewport1 *This, LPD3DMATERIALHANDLE lphMat, LPBOOL lpValid);
-HRESULT WINAPI glDirect3DViewport1_GetBackgroundDepth(glDirect3DViewport1 *This, LPDIRECTDRAWSURFACE* lplpDDSurface, LPBOOL lpValid);
-HRESULT WINAPI glDirect3DViewport1_GetViewport(glDirect3DViewport1 *This, LPD3DVIEWPORT lpData);
-HRESULT WINAPI glDirect3DViewport1_Initialize(glDirect3DViewport1 *This, LPDIRECT3D lpDirect3D);
-HRESULT WINAPI glDirect3DViewport1_LightElements(glDirect3DViewport1 *This, DWORD dwElementCount, LPD3DLIGHTDATA lpData);
-HRESULT WINAPI glDirect3DViewport1_NextLight(glDirect3DViewport1 *This, LPDIRECT3DLIGHT lpDirect3DLight, LPDIRECT3DLIGHT* lplpDirect3DLight, DWORD dwFlags);
-HRESULT WINAPI glDirect3DViewport1_SetBackground(glDirect3DViewport1 *This, D3DMATERIALHANDLE hMat);
-HRESULT WINAPI glDirect3DViewport1_SetBackgroundDepth(glDirect3DViewport1 *This, LPDIRECTDRAWSURFACE lpDDSurface);
-HRESULT WINAPI glDirect3DViewport1_SetViewport(glDirect3DViewport1 *This, LPD3DVIEWPORT lpData);
-HRESULT WINAPI glDirect3DViewport1_TransformVertices(glDirect3DViewport1 *This, DWORD dwVertexCount, LPD3DTRANSFORMDATA lpData, DWORD dwFlags, LPDWORD lpOffscreen);
 
 #ifdef __cplusplus
 }
