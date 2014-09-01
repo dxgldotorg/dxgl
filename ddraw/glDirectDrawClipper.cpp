@@ -45,6 +45,7 @@ HRESULT glDirectDrawClipper_CreateNoInit(LPDIRECTDRAWCLIPPER *lplpDDClipper)
 	newclipper->refcount = 1;
 	newclipper->initialized = false;
 	newclipper->lpVtbl = &glDirectDrawClipper_iface;
+	newclipper->creator = NULL;
 	if (lplpDDClipper) *lplpDDClipper = (LPDIRECTDRAWCLIPPER)newclipper;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;	
@@ -61,6 +62,7 @@ HRESULT glDirectDrawClipper_Create(DWORD dwFlags, glDirectDraw7 *parent, LPDIREC
 	newclipper->refcount = 1;
 	newclipper->initialized = false;
 	newclipper->lpVtbl = &glDirectDrawClipper_iface;
+	newclipper->creator = NULL;
 	glDirectDrawClipper_Initialize(newclipper, (LPDIRECTDRAW)parent, dwFlags);
 	if (lplpDDClipper) *lplpDDClipper = (LPDIRECTDRAWCLIPPER)newclipper;
 	TRACE_EXIT(23, DD_OK);
@@ -112,6 +114,7 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->vertices) free(This->vertices);
 		if (This->indices) free(This->indices);
 		if (This->glDD7) This->glDD7->DeleteClipper(This);
+		if (This->creator) This->creator->Release();
 		free(This);
 	};
 	TRACE_EXIT(8,ret);

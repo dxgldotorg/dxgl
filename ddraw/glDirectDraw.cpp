@@ -861,6 +861,19 @@ HRESULT WINAPI glDirectDraw7::Compact()
 }
 HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
 {
+	TRACE_ENTER(4, 14, this, 9, dwFlags, 14, lplpDDClipper, 14, pUnkOuter);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	HRESULT ret = CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)lplpDDClipper)->creator = this;
+	}
+	TRACE_EXIT(23, ret);
+	return ret;
+}
+HRESULT glDirectDraw7::CreateClipper2(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter)
+{
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDClipper) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -875,7 +888,7 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 		ZeroMemory(&clippers[clippercountmax],1024*sizeof(glDirectDrawClipper *));
 		clippercountmax += 1024;
 	}
-	TRACE_RET(HRESULT, 23, glDirectDrawClipper_Create(dwFlags, this, lplpDDClipper));
+	TRACE_RET(HRESULT,23,glDirectDrawClipper_Create(dwFlags, this, lplpDDClipper));
 }
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
@@ -2010,7 +2023,14 @@ HRESULT WINAPI glDirectDraw1::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 {
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
+	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)lplpDDClipper)->creator = this;
+	}
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw1::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
@@ -2204,7 +2224,14 @@ HRESULT WINAPI glDirectDraw2::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 {
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
+	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)lplpDDClipper)->creator = this;
+	}
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw2::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
@@ -2422,7 +2449,14 @@ HRESULT WINAPI glDirectDraw4::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 {
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDD7->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter));
+	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)lplpDDClipper)->creator = this;
+	}
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirectDraw4::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {

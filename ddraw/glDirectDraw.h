@@ -88,7 +88,8 @@ public:
 	ULONG WINAPI AddRef1();
 	ULONG WINAPI Release1();
 	HRESULT CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface);
-	HRESULT err() {return error;}
+	HRESULT CreateClipper2(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter);
+	HRESULT err() { return error; }
 	void RemoveSurface(glDirectDrawSurface7 *surface);
 	void GetSizes(LONG *sizes);
 	DWORD GetBPP(){return primarybpp;}
