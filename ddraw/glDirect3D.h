@@ -27,17 +27,10 @@ class glDirect3D3;
 class glDirect3D2;
 class glDirect3D1;
 
-struct D3DDevice
-{
-	char name[64];
-	char devname[64];
-};
-
 class glDirect3D7 : public IDirect3D7
 {
 public:
 	glDirect3D7(glDirectDraw7 *gl_DD7);
-	virtual ~glDirect3D7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -51,22 +44,13 @@ public:
 	HRESULT WINAPI EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
 	HRESULT WINAPI EvictManagedTextures();
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
-	glDirect3D3 *glD3D3;
-	glDirect3D2 *glD3D2;
-	glDirect3D1 *glD3D1;
 	glDirectDraw7 *glDD7;
-private:
-	D3DDevice stored_devices[3];
-	ULONG refcount;
-	D3DDEVICEDESC7 d3ddesc;
-	D3DDEVICEDESC d3ddesc3;
 };
 
 class glDirect3D3 : public IDirect3D3
 {
 public:
 	glDirect3D3(glDirect3D7 *glD3D7);
-	virtual ~glDirect3D3();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -80,7 +64,6 @@ public:
 	HRESULT WINAPI EvictManagedTextures();
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 private:
-	ULONG refcount;
 	glDirect3D7 *glD3D7;
 };
 
@@ -88,7 +71,6 @@ class glDirect3D2 : public IDirect3D2
 {
 public:
 	glDirect3D2(glDirect3D7 *glD3D7);
-	virtual ~glDirect3D2();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -99,7 +81,6 @@ public:
 	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 private:
-	ULONG refcount;
 	glDirect3D7 *glD3D7;
 };
 
@@ -107,7 +88,6 @@ class glDirect3D1 : public IDirect3D
 {
 public:
 	glDirect3D1(glDirect3D7 *glD3D7);
-	virtual ~glDirect3D1();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -118,7 +98,6 @@ public:
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 	HRESULT WINAPI Initialize(REFIID lpREFIID);
 private:
-	ULONG refcount;
 	glDirect3D7 *glD3D7;
 };
 

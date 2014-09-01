@@ -2453,10 +2453,10 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 		(*output)[i+dest].dvTV = input[i+start].dvTV;
 		diffuse.r = diffuse.g = diffuse.b = diffuse.a = 0;
 		specular.r = specular.g = specular.b = specular.a = 0;
-		ambient.r = (D3DVALUE)RGBA_GETRED(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
-		ambient.g = (D3DVALUE)RGBA_GETGREEN(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
-		ambient.b = (D3DVALUE)RGBA_GETBLUE(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
-		ambient.a = (D3DVALUE)RGBA_GETALPHA(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0;
+		ambient.r = (D3DVALUE)RGBA_GETRED(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0f;
+		ambient.g = (D3DVALUE)RGBA_GETGREEN(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0f;
+		ambient.b = (D3DVALUE)RGBA_GETBLUE(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0f;
+		ambient.a = (D3DVALUE)RGBA_GETALPHA(renderstate[D3DRENDERSTATE_AMBIENT]) / 255.0f;
 		for(int l = 0; l < 8; l++)
 		{
 			if(gllights[l] != -1)
@@ -2496,15 +2496,15 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 					length = len3(V);
 					if((length > lights[gllights[l]]->light.dvRange) && (lights[gllights[l]]->light.dvRange != 0.0)) continue;
 					normalize(V);
-					attenuation = 1.0/(lights[gllights[l]]->light.dvAttenuation0+(length*lights[gllights[l]]->light.dvAttenuation1)
+					attenuation = 1.0f/(lights[gllights[l]]->light.dvAttenuation0+(length*lights[gllights[l]]->light.dvAttenuation1)
 						+((length*length)*lights[gllights[l]]->light.dvAttenuation2));
-					NdotV = max(0.0,dot3((float*)&input[i+start].dvNX,V));
+					NdotV = max(0.0f,dot3((float*)&input[i+start].dvNX,V));
 					AddVec3(V,eye);
 					normalize(V);
-					NdotHV = max(0.0,dot3((float*)&input[i+start].dvNX,V));
-					if(NdotV == 0.0) pf = 0.0;
-					else if(material.dvPower != 0.0) pf = pow(NdotHV,material.dvPower);
-					else pf = 0.0;
+					NdotHV = max(0.0f,dot3((float*)&input[i+start].dvNX,V));
+					if(NdotV == 0.0f) pf = 0.0f;
+					else if(material.dvPower != 0.0f) pf = pow(NdotHV,material.dvPower);
+					else pf = 0.0f;
 					color1 = lights[gllights[l]]->light.dcvDiffuse;
 					MulD3DCVFloat(&color1,NdotV*attenuation);
 					AddD3DCV(&diffuse,&color1);

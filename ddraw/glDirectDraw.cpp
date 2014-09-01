@@ -39,6 +39,22 @@ const DDDEVICEIDENTIFIER2 devid_default = {
 	0,0,0,0,
 	0,0};
 
+const D3DDevice d3ddevices[3] =
+{
+	{
+		"Simulated RGB Rasterizer",
+		"DXGL RGB Rasterizer",
+	},
+	{
+		"DXGL Hardware Accelerator",
+		"DXGL D3D HAL",
+	},
+	{
+		"DXGL Hardware Accelerator with Transform and Lighting",
+		"DXGL D3D T&L HAL",
+	}
+};
+
 void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 {
 	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
@@ -557,24 +573,40 @@ HRESULT EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID
 glDirectDraw7::glDirectDraw7()
 {
 	TRACE_ENTER(1,14,this);
-	glDD1 = NULL;
-	glDD2 = NULL;
-	glDD4 = NULL;
-	glD3D7 = NULL;
+	glDD1 = new glDirectDraw1(this);
+	glDD2 = new glDirectDraw2(this);
+	glDD4 = new glDirectDraw4(this);
+	glD3D7 = new glDirect3D7(this);
+	glD3D3 = new glDirect3D3(glD3D7);
+	glD3D2 = new glDirect3D2(glD3D7);
+	glD3D1 = new glDirect3D1(glD3D7);
 	clippers = NULL;
 	surfaces = NULL;
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
-	refcount = 1;
+	refcount7 = 1;
+	refcount4 = 0;
+	refcount2 = 0;
+	refcount1 = 0;
 	renderer = NULL;
-	TRACE_EXIT(-1,0);
+	d3ddesc = d3ddesc_default;
+	d3ddesc3 = d3ddesc3_default;
+	memcpy(stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
+	TRACE_EXIT(-1, 0);
 }
 
 glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 {
 	TRACE_ENTER(3,14,this,24,lpGUID,14,pUnkOuter);
 	initialized = false;
-	if(((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID))
+	glDD1 = new glDirectDraw1(this);
+	glDD2 = new glDirectDraw2(this);
+	glDD4 = new glDirectDraw4(this);
+	glD3D7 = new glDirect3D7(this);
+	glD3D3 = new glDirect3D3(glD3D7);
+	glD3D2 = new glDirect3D2(glD3D7);
+	glD3D1 = new glDirect3D1(glD3D7);
+	if (((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID))
 	{
 		error = DDERR_INVALIDPARAMS ;
 		TRACE_EXIT(-1,0);
@@ -601,8 +633,11 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
 	renderer = NULL;
 	error = glDirectDraw7::Initialize(lpGUID);
-	refcount = 1;
-	TRACE_EXIT(-1,0);
+	refcount7 = 1;
+	refcount4 = 0;
+	refcount2 = 0;
+	refcount1 = 0;
+	TRACE_EXIT(-1, 0);
 }
 
 glDirectDraw7::~glDirectDraw7()
@@ -637,6 +672,13 @@ glDirectDraw7::~glDirectDraw7()
 		}
 		renderer = NULL;
 	}
+	if (glDD1) delete glDD1;
+	if (glDD2) delete glDD2;
+	if (glDD4) delete glDD4;
+	if (glD3D7) delete glD3D7;
+	if (glD3D3) delete glD3D3;
+	if (glD3D2) delete glD3D2;
+	if (glD3D1) delete glD3D1;
 	TRACE_EXIT(-1,0);
 }
 
@@ -645,7 +687,7 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(riid == IID_IUnknown)
+	if((riid == IID_IUnknown) || (riid == IID_IDirectDraw7))
 	{
 		this->AddRef();
 		*ppvObj = this;
@@ -655,106 +697,56 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirectDraw)
 	{
-		if(glDD1)
-		{
-			*ppvObj = glDD1;
-			glDD1->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			// Create an IDirectDraw1 interface
-			this->AddRef();
-			*ppvObj = new glDirectDraw1(this);
-			glDD1 = (glDirectDraw1*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef1();
+		*ppvObj = glDD1;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDraw2)
 	{
-		if(glDD2)
-		{
-			*ppvObj = glDD2;
-			glDD2->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			// Create an IDirectDraw2 interface
-			this->AddRef();
-			*ppvObj = new glDirectDraw2(this);
-			glDD2 = (glDirectDraw2*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef2();
+		*ppvObj = glDD2;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDraw4)
 	{
-		if(glDD4)
-		{
-			*ppvObj = glDD4;
-			glDD4->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			// Create an IDirectDraw4 interface
-			this->AddRef();
-			*ppvObj = new glDirectDraw4(this);
-			glDD4 = (glDirectDraw4*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-	}
-	if(riid == IID_IDirectDraw7)
-	{
-		// Probably non-DX compliant, but give a copy of the IDirectDraw7 interface
-		this->AddRef();
-		*ppvObj = this;
+		this->AddRef4();
+		*ppvObj = glDD4;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
-		tmp->QueryInterface(IID_IDirect3D,ppvObj);
-		tmp->Release();
+		this->AddRef1();
+		*ppvObj = glD3D1;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D2)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
-		tmp->QueryInterface(IID_IDirect3D2,ppvObj);
-		tmp->Release();
+		this->AddRef1();
+		*ppvObj = glD3D2;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D3)
 	{
-		glDirect3D7 *tmp = new glDirect3D7(this);
-		tmp->QueryInterface(IID_IDirect3D3,ppvObj);
-		tmp->Release();
+		this->AddRef1();
+		*ppvObj = glD3D3;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3D7)
 	{
-		*ppvObj = new glDirect3D7(this);
+		this->AddRef();
+		*ppvObj = glD3D7;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -770,28 +762,96 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		ERR(DDERR_GENERIC);
 	}*/
 	TRACE_EXIT(23,E_NOINTERFACE);
-	ERR(E_NOINTERFACE);
+	return E_NOINTERFACE;
 }
 ULONG WINAPI glDirectDraw7::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	refcount7++;
+	TRACE_EXIT(8,refcount7);
+	return refcount7;
 }
 ULONG WINAPI glDirectDraw7::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0)
+	if (refcount7 == 0) TRACE_RET(ULONG,8,0);
+	refcount7--;
+	ret = refcount7;
+	if((refcount7 == 0) && (refcount4 == 0) && (refcount2 == 0) && (refcount1 == 0))
 		delete this;
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+
+ULONG WINAPI glDirectDraw7::AddRef4()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount4++;
+	TRACE_EXIT(8, refcount4);
+	return refcount4;
+}
+ULONG WINAPI glDirectDraw7::Release4()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount4 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount4--;
+	ret = refcount4;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount2 == 0) && (refcount1 == 0))
+		delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+
+ULONG WINAPI glDirectDraw7::AddRef2()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount2++;
+	TRACE_EXIT(8, refcount2);
+	return refcount2;
+}
+ULONG WINAPI glDirectDraw7::Release2()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount2 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount2--;
+	ret = refcount2;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount2 == 0) && (refcount1 == 0))
+		delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+
+ULONG WINAPI glDirectDraw7::AddRef1()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount1++;
+	TRACE_EXIT(8, refcount1);
+	return refcount1;
+}
+ULONG WINAPI glDirectDraw7::Release1()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount1 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount1--;
+	ret = refcount1;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount2 == 0) && (refcount1 == 0))
+		delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+
 HRESULT WINAPI glDirectDraw7::Compact()
 {
 	TRACE_ENTER(1,14,this);
@@ -1277,10 +1337,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	if(initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	devid = devid_default;
 	primarylost = true;
-	glD3D7 = NULL;
-	glDD1 = NULL;
-	glDD2 = NULL;
-	glDD4 = NULL;
 	renderer = NULL;
 	primary = NULL;
 	lastsync = false;
@@ -1908,14 +1964,6 @@ glDirectDraw1::glDirectDraw1(glDirectDraw7 *gl_DD7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-glDirectDraw1::~glDirectDraw1()
-{
-	TRACE_ENTER(1,14,this);
-	glDD7->glDD1 = NULL;
-	glDD7->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw1::QueryInterface(REFIID riid, void** ppvObj)
@@ -1938,20 +1986,13 @@ ULONG WINAPI glDirectDraw1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDD7->AddRef1());
 }
 ULONG WINAPI glDirectDraw1::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glDD7->Release1());
 }
 HRESULT WINAPI glDirectDraw1::Compact()
 {
@@ -2117,14 +2158,6 @@ glDirectDraw2::glDirectDraw2(glDirectDraw7 *gl_DD7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-glDirectDraw2::~glDirectDraw2()
-{
-	TRACE_ENTER(1,14,this);
-	glDD7->glDD2 = NULL;
-	glDD7->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw2::QueryInterface(REFIID riid, void** ppvObj)
@@ -2145,20 +2178,13 @@ ULONG WINAPI glDirectDraw2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDD7->AddRef2());
 }
 ULONG WINAPI glDirectDraw2::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glDD7->Release2());
 }
 HRESULT WINAPI glDirectDraw2::Compact()
 {
@@ -2349,14 +2375,6 @@ glDirectDraw4::glDirectDraw4(glDirectDraw7 *gl_DD7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DD7);
 	glDD7 = gl_DD7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-glDirectDraw4::~glDirectDraw4()
-{
-	TRACE_ENTER(1,14,this);
-	glDD7->glDD4 = NULL;
-	glDD7->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDraw4::QueryInterface(REFIID riid, void** ppvObj)
@@ -2376,20 +2394,13 @@ ULONG WINAPI glDirectDraw4::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDD7->AddRef());
 }
 ULONG WINAPI glDirectDraw4::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glDD7->Release());
 }
 HRESULT WINAPI glDirectDraw4::Compact()
 {

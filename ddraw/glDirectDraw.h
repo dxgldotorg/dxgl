@@ -24,7 +24,16 @@
 class glDirectDrawSurface7;
 struct glDirectDrawClipper;
 class glDirect3D7;
+class glDirect3D3;
+class glDirect3D2;
+class glDirect3D1;
 struct glRenderer;
+
+struct D3DDevice
+{
+	char name[64];
+	char devname[64];
+};
 
 class glDirectDraw1;
 class glDirectDraw2;
@@ -72,6 +81,12 @@ public:
     HRESULT WINAPI EvaluateMode(DWORD dwFlags, DWORD *pSecondsUntilTimeout);
 
     // internal functions
+	ULONG WINAPI AddRef4();
+	ULONG WINAPI Release4();
+	ULONG WINAPI AddRef2();
+	ULONG WINAPI Release2();
+	ULONG WINAPI AddRef1();
+	ULONG WINAPI Release1();
 	HRESULT CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface);
 	HRESULT err() {return error;}
 	void RemoveSurface(glDirectDrawSurface7 *surface);
@@ -95,9 +110,12 @@ public:
 	DDDEVICEIDENTIFIER2 devid;
 	glRenderer *renderer;
 	glDirectDrawSurface7 *tmpsurface;
+	D3DDevice stored_devices[3];
+	D3DDEVICEDESC7 d3ddesc;
+	D3DDEVICEDESC d3ddesc3;
 private:
 	HRESULT error;
-	ULONG refcount;
+	ULONG refcount7, refcount4, refcount2, refcount1;
 	HWND hWnd;
 	bool fullscreen;
 	bool fpupreserve;
@@ -112,6 +130,9 @@ private:
 	DEVMODE oldmode;
 	bool initialized;
 	glDirect3D7 *glD3D7;
+	glDirect3D3 *glD3D3;
+	glDirect3D2 *glD3D2;
+	glDirect3D1 *glD3D1;
 	DWORD timer;
 	bool devwnd;
 };
@@ -120,7 +141,6 @@ class glDirectDraw1 : public IDirectDraw
 {
 public:
 	glDirectDraw1(glDirectDraw7 *gl_DD7);
-	virtual ~glDirectDraw1();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -147,7 +167,6 @@ public:
 	HRESULT WINAPI WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent);
 	HRESULT err() {return glDD7->err();}
 private:
-	ULONG refcount;
 	glDirectDraw7 *glDD7;
 };
 
@@ -155,7 +174,6 @@ class glDirectDraw2 : public IDirectDraw2
 {
 public:
 	glDirectDraw2(glDirectDraw7 *gl_DD7);
-	virtual ~glDirectDraw2();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -185,14 +203,12 @@ public:
 
 	HRESULT err() {return glDD7->err();}
 private:
-	ULONG refcount;
 	glDirectDraw7 *glDD7;
 };
 class glDirectDraw4 : public IDirectDraw4
 {
 public:
 	glDirectDraw4(glDirectDraw7 *gl_DD7);
-	virtual ~glDirectDraw4();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -227,7 +243,6 @@ public:
 
 	HRESULT err() {return glDD7->err();}
 private:
-	ULONG refcount;
 	glDirectDraw7 *glDD7;
 };
 

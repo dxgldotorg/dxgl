@@ -175,141 +175,31 @@ const D3DDEVICEDESC d3ddesc3_default =
 	d3ddesc_default.wMaxSimultaneousTextures
 };
 
-const D3DDevice devices[3] =
-{
-	{
-		"Simulated RGB Rasterizer",
-		"DXGL RGB Rasterizer",
-	},
-	{
-		"DXGL Hardware Accelerator",
-		"DXGL D3D HAL",
-	},
-	{
-		"DXGL Hardware Accelerator with Transform and Lighting",
-		"DXGL D3D T&L HAL",
-	}
-};
 glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
 {
 	TRACE_ENTER(1,14,this,14,gl_DD7);
-	d3ddesc = d3ddesc_default;
-	d3ddesc3 = d3ddesc3_default;
-	refcount=1;
-	glD3D3 = NULL;
-	glD3D2 = NULL;
-	glD3D1 = NULL;
 	glDD7 = gl_DD7;
-	glDD7->AddRef();
-	memcpy(stored_devices, devices, 3 * sizeof(D3DDevice));
 	TRACE_EXIT(-1, 0);
-}
-
-glDirect3D7::~glDirect3D7()
-{
-	TRACE_ENTER(1,14,this);
-	glDD7->Release();
-	if(glD3D3) glD3D3->Release();
-	if(glD3D2) glD3D2->Release();
-	if(glD3D1) glD3D1->Release();
-	TRACE_EXIT(-1,0);
 }
 
 ULONG WINAPI glDirect3D7::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDD7->AddRef());
 }
 ULONG WINAPI glDirect3D7::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,refcount);
-	return ret;
+	TRACE_RET(ULONG, 8, glDD7->Release());
 }
 
 HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(riid == IID_IUnknown)
-	{
-		this->AddRef();
-		*ppvObj = this;
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
-	if(riid == IID_IDirect3D3)
-	{
-		if(glD3D3)
-		{
-			*ppvObj = glD3D3;
-			glD3D3->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3D3(this);
-			glD3D3 = (glDirect3D3*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-	}
-	if(riid == IID_IDirect3D2)
-	{
-		if(glD3D2)
-		{
-			*ppvObj = glD3D2;
-			glD3D2->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3D2(this);
-			glD3D2 = (glDirect3D2*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-	}
-	if(riid == IID_IDirect3D)
-	{
-		if(glD3D1)
-		{
-			*ppvObj = glD3D1;
-			glD3D1->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3D1(this);
-			glD3D1 = (glDirect3D1*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-	}
-	TRACE_EXIT(23,E_NOINTERFACE);
-	return E_NOINTERFACE;
+	TRACE_RET(HRESULT, 23, glDD7->QueryInterface(riid, ppvObj));
 }
 
 
@@ -382,7 +272,7 @@ HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesC
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	D3DDEVICEDESC7 desc = d3ddesc;
+	D3DDEVICEDESC7 desc = glDD7->d3ddesc;
 	for(int i = 0; i < 3; i++)
 	{
 		switch(i)
@@ -399,7 +289,7 @@ HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesC
 			desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
 			break;
 		}
-		result = lpEnumDevicesCallback(stored_devices[i].name,stored_devices[i].devname,&desc,lpUserArg);
+		result = lpEnumDevicesCallback(glDD7->stored_devices[i].name,glDD7->stored_devices[i].devname,&desc,lpUserArg);
 		if(result != D3DENUMRET_OK) break;
 	}
 	TRACE_EXIT(23,D3D_OK);
@@ -412,12 +302,12 @@ HRESULT WINAPI glDirect3D7::EnumDevices3(LPD3DENUMDEVICESCALLBACK lpEnumDevicesC
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	D3DDEVICEDESC desc = d3ddesc3;
+	D3DDEVICEDESC desc = glDD7->d3ddesc3;
 	GUID guid = IID_IDirect3DRGBDevice;
-	result = lpEnumDevicesCallback(&guid,stored_devices[0].name,stored_devices[0].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,glDD7->stored_devices[0].name,glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
 	if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
 	guid = IID_IDirect3DHALDevice;
-	result = lpEnumDevicesCallback(&guid,stored_devices[1].name,stored_devices[1].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,glDD7->stored_devices[1].name,glDD7->stored_devices[1].devname,&desc,&desc,lpUserArg);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -477,58 +367,58 @@ HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 	{
 		if(lpD3DFDS->dwFlags & D3DFDS_ALPHACMPCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
+			if((glDD7->d3ddesc.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_DSTBLENDCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwDestBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_MISCCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwMiscCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_RASTERCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwRasterCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SHADECAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwShadeCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SRCBLENDCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREBLENDCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTURECAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREFILTERCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps) found = false;
 		}
 		if(lpD3DFDS->dwCaps & D3DFDS_ZCMPCAPS)
 		{
-			if((d3ddesc.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
+			if ((glDD7->d3ddesc.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwZCmpCaps) found = false;
 		}
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_COLORMODEL)
 	{
-		if((d3ddesc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
+		if ((glDD7->d3ddesc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_GUID)
 	{
@@ -546,8 +436,8 @@ HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 		else if(!lpD3DFDS->bHardware) guid = IID_IDirect3DRGBDevice;
 	}
 	if(!found) TRACE_RET(HRESULT,23,DDERR_NOTFOUND);
-	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = d3ddesc3;
-	else lpD3DFDR->ddHwDesc = d3ddesc3;
+	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = glDD7->d3ddesc3;
+	else lpD3DFDR->ddHwDesc = glDD7->d3ddesc3;
 	lpD3DFDR->guid = guid;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -559,15 +449,6 @@ glDirect3D3::glDirect3D3(glDirect3D7 *glD3D7)
 {
 	TRACE_ENTER(2,14,this,14,glD3D7);
 	this->glD3D7 = glD3D7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3D3::~glDirect3D3()
-{
-	TRACE_ENTER(1,14,this);
-	glD3D7->Release();
-	glD3D7->glD3D3 = NULL;
 	TRACE_EXIT(-1,0);
 }
 
@@ -590,21 +471,14 @@ ULONG WINAPI glDirect3D3::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->AddRef1());
 }
 
 ULONG WINAPI glDirect3D3::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->Release1());
 }
 
 HRESULT WINAPI glDirect3D3::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter)
@@ -694,15 +568,6 @@ glDirect3D2::glDirect3D2(glDirect3D7 *glD3D7)
 {
 	TRACE_ENTER(2,14,this,14,glD3D7);
 	this->glD3D7 = glD3D7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3D2::~glDirect3D2()
-{
-	TRACE_ENTER(1,14,this);
-	glD3D7->Release();
-	glD3D7->glD3D2 = NULL;
 	TRACE_EXIT(-1,0);
 }
 
@@ -725,21 +590,14 @@ ULONG WINAPI glDirect3D2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->AddRef1());
 }
 
 ULONG WINAPI glDirect3D2::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->Release1());
 }
 
 HRESULT WINAPI glDirect3D2::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice)
@@ -816,15 +674,6 @@ glDirect3D1::glDirect3D1(glDirect3D7 *glD3D7)
 {
 	TRACE_ENTER(2,14,this,14,glD3D7);
 	this->glD3D7 = glD3D7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3D1::~glDirect3D1()
-{
-	TRACE_ENTER(1,14,this);
-	glD3D7->Release();
-	glD3D7->glD3D1 = NULL;
 	TRACE_EXIT(-1,0);
 }
 
@@ -847,21 +696,14 @@ ULONG WINAPI glDirect3D1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->AddRef1());
 }
 
 ULONG WINAPI glDirect3D1::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3D7->glDD7->Release1());
 }
 
 HRESULT WINAPI glDirect3D1::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
