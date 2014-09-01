@@ -49,7 +49,7 @@ extern const SHADER shader_template[];
 #define PROG_CLIPSTENCIL 5
 
 struct TEXTURESTAGE;
-class ShaderGen3D;
+struct ShaderGen3D;
 
 typedef struct ShaderManager
 {

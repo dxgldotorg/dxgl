@@ -21,32 +21,32 @@
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
-#include <string>
-using namespace std;
 #include "string.h"
 #include "ShaderGen3D.h"
 #include "ShaderGen2D.h"
 #include "ShaderManager.h"
 #include "../common/version.h"
 
-ShaderGen3D::ShaderGen3D(glExtensions *glext, ShaderManager *shaderman)
+extern "C" {
+
+void ShaderGen3D_Init(glExtensions *glext, ShaderManager *shaderman, ShaderGen3D *gen)
 {
-	ext = glext;
-	shaders = shaderman;
-	ZeroMemory(current_texid,8*sizeof(__int64));
-	shadercount = 0;
-	genindex = 0;
-	maxshaders = 256;
-	genshaders = (GenShader*)malloc(256 * sizeof(GenShader));
-	ZeroMemory(genshaders, 256 * sizeof(GenShader));
-	current_shader = 0;
-	current_shadertype = 0;
+	gen->ext = glext;
+	gen->shaders = shaderman;
+	ZeroMemory(gen->current_texid,8*sizeof(__int64));
+	gen->shadercount = 0;
+	gen->genindex = 0;
+	gen->maxshaders = 256;
+	gen->genshaders = (GenShader*)malloc(256 * sizeof(GenShader));
+	ZeroMemory(gen->genshaders, 256 * sizeof(GenShader));
+	gen->current_shader = 0;
+	gen->current_shadertype = 0;
 }
 
-ShaderGen3D::~ShaderGen3D()
+void ShaderGen3D_Delete(ShaderGen3D *This)
 {
-	ClearShaders();
-	free(genshaders);
+	ShaderGen3D_ClearShaders(This);
+	free(This->genshaders);
 }
 /* Bits in Shader ID:
 Bits 0-1 - Shading mode:  00=flat 01=gouraud 11=phong 10=flat per-pixel GL/VS/FS
@@ -114,29 +114,33 @@ Bit 60: Texture has color key
 
 /**
   * Deletes all shader programs in the array.
+  * @param This
+  *  Pointer to ShaderGen3D structure
   */
-void ShaderGen3D::ClearShaders()
+void ShaderGen3D_ClearShaders(ShaderGen3D *This)
 {
-	if(!genshaders) return;
-	for(int i = 0; i < shadercount; i++)
+	if(!This->genshaders) return;
+	for(int i = 0; i < This->shadercount; i++)
 	{
-		genshaders[i].id = 0;
-		ZeroMemory(genshaders[i].texids,8*sizeof(__int64));
-		if(genshaders[i].shader.prog) ext->glDeleteProgram(genshaders[i].shader.prog);
-		if(genshaders[i].shader.fs) ext->glDeleteShader(genshaders[i].shader.fs);
-		if(genshaders[i].shader.vs) ext->glDeleteShader(genshaders[i].shader.vs);
-		if(genshaders[i].shader.fsrc.ptr) String_Free(&genshaders[i].shader.fsrc);
-		if(genshaders[i].shader.vsrc.ptr) String_Free(&genshaders[i].shader.vsrc);
+		This->genshaders[i].id = 0;
+		ZeroMemory(This->genshaders[i].texids,8*sizeof(__int64));
+		if(This->genshaders[i].shader.prog) This->ext->glDeleteProgram(This->genshaders[i].shader.prog);
+		if(This->genshaders[i].shader.fs) This->ext->glDeleteShader(This->genshaders[i].shader.fs);
+		if(This->genshaders[i].shader.vs) This->ext->glDeleteShader(This->genshaders[i].shader.vs);
+		if(This->genshaders[i].shader.fsrc.ptr) String_Free(&This->genshaders[i].shader.fsrc);
+		if(This->genshaders[i].shader.vsrc.ptr) String_Free(&This->genshaders[i].shader.vsrc);
 	}
-	if(genshaders) free(genshaders);
-	genshaders = NULL;
-	current_genshader = -1;
-	shadercount = 0;
-	genindex = 0;
+	if(This->genshaders) free(This->genshaders);
+	This->genshaders = NULL;
+	This->current_genshader = -1;
+	This->shadercount = 0;
+	This->genindex = 0;
 }
 
 /**
   * Sets a shader by render state.  If the shader does not exist, generates it.
+  * @param This
+  *  Pointer to ShaderGen3D structure
   * @param id
   *  64-bit value containing current render states
   * @param texstate
@@ -149,25 +153,25 @@ void ShaderGen3D::ClearShaders()
   *  1 for generated 2D
   *  2 for generated 3D
   */
-void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
+void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
 {
 	int shaderindex = -1;
 	switch(type)
 	{
 	case 0:  // Static built-in shader
-		if((current_shadertype == 0) && (shaders->shaders[id].prog == current_shader)) return;
-		ext->glUseProgram(shaders->shaders[id].prog);
-		current_shader = shaders->shaders[id].prog;
-		current_shadertype = 0;
-		current_genshader = -1;
+		if((This->current_shadertype == 0) && (This->shaders->shaders[id].prog == This->current_shader)) return;
+		This->ext->glUseProgram(This->shaders->shaders[id].prog);
+		This->current_shader = This->shaders->shaders[id].prog;
+		This->current_shadertype = 0;
+		This->current_genshader = -1;
 		break;
 	case 1:  // 2D generated shader
-		if ((current_shadertype == 1) && (id == current_shader)) return;
-		current_shader = id;
-		current_shadertype = 1;
+		if ((This->current_shadertype == 1) && (id == This->current_shader)) return;
+		This->current_shader = id;
+		This->current_shadertype = 1;
 		for (int i = 0; i < gen2d->shadercount; i++)
 		{
-			if (shaders->gen2d->genshaders2D[i].id == id)
+			if (This->shaders->gen2d->genshaders2D[i].id == id)
 			{
 				shaderindex = i;
 				break;
@@ -179,10 +183,10 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
 			if (gen2d->shadercount > 256) gen2d->shadercount = 256;
 			if (gen2d->genshaders2D[gen2d->genindex].shader.prog)
 			{
-				ext->glUseProgram(0);
-				ext->glDeleteProgram(gen2d->genshaders2D[gen2d->genindex].shader.prog);
-				ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.vs);
-				ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.fs);
+				This->ext->glUseProgram(0);
+				This->ext->glDeleteProgram(gen2d->genshaders2D[gen2d->genindex].shader.prog);
+				This->ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.vs);
+				This->ext->glDeleteShader(gen2d->genshaders2D[gen2d->genindex].shader.fs);
 				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.vsrc);
 				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.fsrc);
 				ZeroMemory(&gen2d->genshaders2D[gen2d->genindex], sizeof(GenShader2D));
@@ -193,27 +197,27 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
 			if (gen2d->genindex >= 256) gen2d->genindex = 0;
 		}
 		gen2d->genshaders2D[shaderindex].id = id;
-		ext->glUseProgram(gen2d->genshaders2D[shaderindex].shader.prog);
-		current_prog = gen2d->genshaders2D[shaderindex].shader.prog;
-		current_genshader = shaderindex;
+		This->ext->glUseProgram(gen2d->genshaders2D[shaderindex].shader.prog);
+		This->current_prog = gen2d->genshaders2D[shaderindex].shader.prog;
+		This->current_genshader = shaderindex;
 		break;
 	case 2:  // 3D generated shader
-		if((current_shadertype == 2) && (id == current_shader))
+		if((This->current_shadertype == 2) && (id == This->current_shader))
 		{
-			if(!memcmp(current_texid,texstate,8*sizeof(__int64))) return;
+			if(!memcmp(This->current_texid,texstate,8*sizeof(__int64))) return;
 		}
-		current_shader = id;
-		current_shadertype = 2;
-		for(int i = 0; i < shadercount; i++)
+		This->current_shader = id;
+		This->current_shadertype = 2;
+		for(int i = 0; i < This->shadercount; i++)
 		{
-			if(genshaders[i].id == id)
+			if(This->genshaders[i].id == id)
 			{
 				bool texidmatch = true;
 				for(int j = 0; j < 8; j++)
-					if(genshaders[i].texids[j] != texstate[j].shaderid) texidmatch = false;
+					if(This->genshaders[i].texids[j] != texstate[j].shaderid) texidmatch = false;
 				if(texidmatch)
 				{
-					if(!memcmp(genshaders[i].texcoords,texcoords,8*sizeof(int)))
+					if(!memcmp(This->genshaders[i].texcoords,texcoords,8*sizeof(int)))
 					{
 						shaderindex = i;
 						break;
@@ -223,43 +227,45 @@ void ShaderGen3D::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, 
 		}
 		if(shaderindex == -1)
 		{
-			shadercount++;
-			if(shadercount > 256) shadercount = 256;
-			if(genshaders[genindex].shader.prog)
+			This->shadercount++;
+			if(This->shadercount > 256) This->shadercount = 256;
+			if(This->genshaders[This->genindex].shader.prog)
 			{
-				ext->glUseProgram(0);
-				ext->glDeleteProgram(genshaders[genindex].shader.prog);
-				ext->glDeleteShader(genshaders[genindex].shader.vs);
-				ext->glDeleteShader(genshaders[genindex].shader.fs);
-				String_Free(&genshaders[genindex].shader.vsrc);
-				String_Free(&genshaders[genindex].shader.fsrc);
-				ZeroMemory(&genshaders[genindex],sizeof(GenShader));
+				This->ext->glUseProgram(0);
+				This->ext->glDeleteProgram(This->genshaders[This->genindex].shader.prog);
+				This->ext->glDeleteShader(This->genshaders[This->genindex].shader.vs);
+				This->ext->glDeleteShader(This->genshaders[This->genindex].shader.fs);
+				String_Free(&This->genshaders[This->genindex].shader.vsrc);
+				String_Free(&This->genshaders[This->genindex].shader.fsrc);
+				ZeroMemory(&This->genshaders[This->genindex],sizeof(GenShader));
 			}
-			CreateShader(genindex,id,texstate,texcoords);
-			shaderindex = genindex;
-			genindex++;
-			if(genindex >= 256) genindex = 0;
+			ShaderGen3D_CreateShader(This, This->genindex,id,texstate,texcoords);
+			shaderindex = This->genindex;
+			This->genindex++;
+			if(This->genindex >= 256) This->genindex = 0;
 		}
-		genshaders[shaderindex].id = id;
+		This->genshaders[shaderindex].id = id;
 		for(int i = 0; i < 8; i++)
-			genshaders[shaderindex].texids[i] = texstate[i].shaderid;
-		memcpy(genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
-		ext->glUseProgram(genshaders[shaderindex].shader.prog);
-		current_prog = genshaders[shaderindex].shader.prog;
-		current_genshader = shaderindex;
+			This->genshaders[shaderindex].texids[i] = texstate[i].shaderid;
+		memcpy(This->genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
+		This->ext->glUseProgram(This->genshaders[shaderindex].shader.prog);
+		This->current_prog = This->genshaders[shaderindex].shader.prog;
+		This->current_genshader = shaderindex;
 	}
 }
 
 /**
   * Retrieves the GLSL program currently in use
+  * @param This
+  *  Pointer to ShaderGen3D structure
   * @return
   *  Number of the current GLSL program, or if using built-in shaders, the ID of
   *  the shader
   */
-GLuint ShaderGen3D::GetProgram()
+GLuint ShaderGen3D_GetProgram(ShaderGen3D *This)
 {
-	if (current_shadertype == 0) return current_shader & 0xFFFFFFFF;
-	else return current_prog;
+	if (This->current_shadertype == 0) return This->current_shader & 0xFFFFFFFF;
+	else return This->current_prog;
 }
 
 
@@ -429,6 +435,8 @@ specular += light.specular*pf*attenuation;\n\
 
 /**
   * Creates an OpenGL shader program
+  * @param This
+  *  Pointer to ShaderGen3D structure
   * @param index
   *  Index of the shader in the array to generate
   * @param id
@@ -438,9 +446,10 @@ specular += light.specular*pf*attenuation;\n\
   * @param texcoords
   *  Pointer to number of texture coordinates in each texture stage
   */
-void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
+void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
 {
-	string tmp;
+	STRING tmp;
+	ZeroMemory(&tmp, sizeof(STRING));
 	int i;
 	bool hasdir = false;
 	bool haspoint = false;
@@ -457,11 +466,11 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	char idstring[22];
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
-	genshaders[index].shader.vsrc.ptr = NULL;
-	genshaders[index].shader.fsrc.ptr = NULL;
+	This->genshaders[index].shader.vsrc.ptr = NULL;
+	This->genshaders[index].shader.fsrc.ptr = NULL;
 	// Create vertex shader
 	//Header
-	STRING *vsrc = &genshaders[index].shader.vsrc;
+	STRING *vsrc = &This->genshaders[index].shader.vsrc;
 	String_Append(vsrc, header);
 	String_Append(vsrc, vertexshader);
 	String_Append(vsrc, idheader);
@@ -469,27 +478,27 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	// Attributes
 	String_Append(vsrc, attr_xyz);
 	if((id>>50)&1) String_Append(vsrc, attr_rhw);
-	tmp = attr_rgba;
+	String_Assign(&tmp, attr_rgba);
 	if((id>>35)&1)
 	{
-		tmp.replace(19,1,"0");
-		String_Append(vsrc, tmp.c_str());
+		tmp.ptr[19] = '0';
+		String_Append(vsrc, tmp.ptr);
 	}
 	if((id>>36)&1)
 	{
-		tmp.replace(19,1,"1");
-		String_Append(vsrc, tmp.c_str());
+		tmp.ptr[19] = '1';
+		String_Append(vsrc, tmp.ptr);
 	}
 	if((id>>37)&1) String_Append(vsrc, attr_nxyz);
 	else String_Append(vsrc, const_nxyz);
 	count = (id>>46)&7;
 	if(count)
 	{
-		tmp = attr_blend;
+		String_Assign(&tmp,attr_blend);
 		for(i = 0; i < count; i++)
 		{
-			tmp.replace(21,1,_itoa(i,idstring,10));
-			String_Append(vsrc, tmp.c_str());
+			tmp.ptr[21] = *(_itoa(i,idstring,10));
+			String_Append(vsrc, tmp.ptr);
 		}
 	}
 	for(i = 0; i < 8; i++)
@@ -499,23 +508,23 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		case -1:
 			continue;
 		case 3:
-			tmp = attr_s;
-			tmp.replace(16,1,_itoa(i,idstring,10));
+			String_Assign(&tmp,attr_s);
+			tmp.ptr[16] = *(_itoa(i,idstring,10));
 			break;
 		case 0:
-			tmp = attr_st;
-			tmp.replace(17,1,_itoa(i,idstring,10));
+			String_Assign(&tmp, attr_st);
+			tmp.ptr[17] = *(_itoa(i,idstring,10));
 			break;
 		case 1:
-			tmp = attr_str;
-			tmp.replace(18,1,_itoa(i,idstring,10));
+			String_Assign(&tmp, attr_str);
+			tmp.ptr[18] = *(_itoa(i,idstring,10));
 			break;
 		case 2:
-			tmp = attr_strq;
-			tmp.replace(19,1,_itoa(i,idstring,10));
+			String_Assign(&tmp, attr_strq);
+			tmp.ptr[19] = *(_itoa(i,idstring,10));
 			break;
 		}
-		String_Append(vsrc, tmp.c_str());
+		String_Append(vsrc, tmp.ptr);
 	}
 
 	// Uniforms
@@ -528,11 +537,11 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	{
 		String_Append(vsrc, lightstruct);
 		String_Append(vsrc, unif_world);
-		tmp = unif_light;
+		String_Assign(&tmp, unif_light);
 		for(i = 0; i < numlights; i++)
 		{
-			tmp.replace(19,1,_itoa(i,idstring,10));
-			String_Append(vsrc, tmp.c_str());
+			tmp.ptr[19] = *(_itoa(i,idstring,10));
+			String_Append(vsrc, tmp.ptr);
 		}
 	}
 	
@@ -564,7 +573,7 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	else String_Append(vsrc, op_transform);
 	if((id>>49)&1) String_Append(vsrc, op_normalize);
 	else String_Append(vsrc, op_normalpassthru);
-	const string colorargs[] = {"gl_FrontMaterial.diffuse","gl_FrontMaterial.ambient","gl_FrontMaterial.specular",
+	const char *colorargs[] = {"gl_FrontMaterial.diffuse","gl_FrontMaterial.ambient","gl_FrontMaterial.specular",
 		"gl_FrontMaterial.emission","rgba0.bgra","rgba1.bgra"};
 	if(numlights)
 	{
@@ -575,22 +584,22 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			{
 				if(id>>(51+i)&1)
 				{
-					tmp = op_spotlight;
-					tmp.replace(15,1,_itoa(i,idstring,10));
-					String_Append(vsrc, tmp.c_str());
+					String_Assign(&tmp, op_spotlight);
+					tmp.ptr[15] = *(_itoa(i,idstring,10));
+					String_Append(vsrc, tmp.ptr);
 				}
 				else
 				{
-					tmp = op_pointlight;
-					tmp.replace(16,1,_itoa(i,idstring,10));
-					String_Append(vsrc, tmp.c_str());
+					String_Assign(&tmp, op_pointlight);
+					tmp.ptr[16] = *(_itoa(i,idstring,10));
+					String_Append(vsrc, tmp.ptr);
 				}
 			}
 			else
 			{
-				tmp = op_dirlight;
-				tmp.replace(14,1,_itoa(i,idstring,10));
-				String_Append(vsrc, tmp.c_str());
+				String_Assign(&tmp, op_dirlight);
+				tmp.ptr[14] = *(_itoa(i,idstring,10));
+				String_Append(vsrc, tmp.ptr);
 			}
 		}
 		if((id>>60)&1)
@@ -602,24 +611,24 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			int matcolor;
 			String_Append(vsrc, "gl_FrontColor = (");
 			matcolor = ((id>>23)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
-			else String_Append(vsrc, colorargs[0].c_str());
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
+			else String_Append(vsrc, colorargs[0]);
 			String_Append(vsrc, " * diffuse) + (");
 			matcolor = ((id>>27)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
-			else String_Append(vsrc, colorargs[1].c_str());
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
+			else String_Append(vsrc, colorargs[1]);
 			String_Append(vsrc, " * ambient)\n+ (");
 			matcolor = ((id>>25)&3);
-			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
-			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
-			else String_Append(vsrc, colorargs[2].c_str());
+			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
+			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
+			else String_Append(vsrc, colorargs[2]);
 			String_Append(vsrc, " * specular) + ");
 			matcolor = ((id>>29)&3);
-			if ((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4].c_str());
-			else if ((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5].c_str());
-			else String_Append(vsrc, colorargs[3].c_str());
+			if ((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
+			else if ((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
+			else String_Append(vsrc, colorargs[3]);
 			String_Append(vsrc, ";\n");
 		}
 		else String_Append(vsrc, op_colorout);
@@ -639,9 +648,9 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		}
 		else
 		{
-			tmp = op_texpassthru1;
-			tmp.replace(12,1,_itoa(i,idstring,10));
-			String_Append(vsrc, tmp.c_str());
+			String_Assign(&tmp,op_texpassthru1);
+			tmp.ptr[12] = *(_itoa(i,idstring,10));
+			String_Append(vsrc, tmp.ptr);
 			texindex = (texstate[i].shaderid>>54)&3;
 			switch(texcoords[texindex])
 			{
@@ -649,25 +658,25 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 				String_Append(vsrc, op_texpassthru2null);
 				break;
 			case 0: // st
-				tmp = op_texpassthru2st;
-				tmp.replace(7,1,_itoa(texindex,idstring,10));
-				String_Append(vsrc, tmp.c_str());
+				String_Assign(&tmp, op_texpassthru2st);
+				tmp.ptr[7] = *(_itoa(texindex,idstring,10));
+				String_Append(vsrc, tmp.ptr);
 			default:
 				break;
 			case 1: // str
-				tmp = op_texpassthru2str;
-				tmp.replace(8,1,_itoa(texindex,idstring,10));
-				String_Append(vsrc, tmp.c_str());
+				String_Assign(&tmp, op_texpassthru2str);
+				tmp.ptr[8] = *(_itoa(texindex,idstring,10));
+				String_Append(vsrc, tmp.ptr);
 				break;
 			case 2: // strq
-				tmp = op_texpassthru2strq;
-				tmp.replace(4,1,_itoa(texindex,idstring,10));
-				String_Append(vsrc, tmp.c_str());
+				String_Assign(&tmp, op_texpassthru2strq);
+				tmp.ptr[4] = *(_itoa(texindex,idstring,10));
+				String_Append(vsrc, tmp.ptr);
 				break;
 			case 3: // s
-				tmp = op_texpassthru2s;
-				tmp.replace(6,1,_itoa(texindex,idstring,10));
-				String_Append(vsrc, tmp.c_str());
+				String_Assign(&tmp, op_texpassthru2s);
+				tmp.ptr[6] = *(_itoa(texindex,idstring,10));
+				String_Append(vsrc, tmp.ptr);
 				break;
 			}
 		}
@@ -699,21 +708,21 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	TRACE_STRING(vsrc->ptr);
 	TRACE_STRING("\nCompiling vertex shader:\n");
 #endif
-	genshaders[index].shader.vs = ext->glCreateShader(GL_VERTEX_SHADER);
+	This->genshaders[index].shader.vs = This->ext->glCreateShader(GL_VERTEX_SHADER);
 	const char *src = vsrc->ptr;
 	GLint srclen = strlen(src);
-	ext->glShaderSource(genshaders[index].shader.vs,1,&src,&srclen);
-	ext->glCompileShader(genshaders[index].shader.vs);
+	This->ext->glShaderSource(This->genshaders[index].shader.vs,1,&src,&srclen);
+	This->ext->glCompileShader(This->genshaders[index].shader.vs);
 	GLint result;
 	char *infolog = NULL;
-	ext->glGetShaderiv(genshaders[index].shader.vs,GL_COMPILE_STATUS,&result);
+	This->ext->glGetShaderiv(This->genshaders[index].shader.vs,GL_COMPILE_STATUS,&result);
 #ifdef _DEBUG
 	GLint loglen;
 	if(!result)
 	{
-		ext->glGetShaderiv(genshaders[index].shader.vs,GL_INFO_LOG_LENGTH,&loglen);
+		This->ext->glGetShaderiv(This->genshaders[index].shader.vs,GL_INFO_LOG_LENGTH,&loglen);
 		infolog = (char*)malloc(loglen);
-		ext->glGetShaderInfoLog(genshaders[index].shader.vs,loglen,&result,infolog);
+		This->ext->glGetShaderInfoLog(This->genshaders[index].shader.vs,loglen,&result,infolog);
 		OutputDebugStringA("Compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
 		TRACE_STRING("Compilation failed. Error messages:\n");
@@ -722,7 +731,7 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	}
 #endif
 	// Create fragment shader
-	STRING *fsrc = &genshaders[index].shader.fsrc;
+	STRING *fsrc = &This->genshaders[index].shader.fsrc;
 	String_Append(fsrc, header);
 	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
@@ -733,9 +742,9 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	for(i = 0; i < 8; i++)
 	{
 		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
-		tmp = unif_tex;
-		tmp.replace(21,1,_itoa(i,idstring,10));
-		String_Append(fsrc, tmp.c_str());
+		String_Assign(&tmp, unif_tex);
+		tmp.ptr[21] = *(_itoa(i,idstring,10));
+		String_Append(fsrc, tmp.ptr);
 	}
 	if((id>>13)&1)
 	{
@@ -743,9 +752,9 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		{
 			if((texstate[i].shaderid>>60)&1)
 			{
-				tmp = unif_key;
-				tmp.replace(17,1,_itoa(i,idstring,10));
-				String_Append(fsrc, tmp.c_str());
+				String_Assign(&tmp, unif_key);
+				tmp.ptr[17] = *(_itoa(i,idstring,10));
+				String_Append(fsrc, tmp.ptr);
 			}
 		}
 	}
@@ -758,12 +767,15 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	// Main
 	String_Append(fsrc, mainstart);
 	String_Append(fsrc, op_colorfragin);
-	string arg1,arg2;
-	string texarg;
+	STRING arg1,arg2;
+	STRING texarg;
+	ZeroMemory(&arg1, sizeof(STRING));
+	ZeroMemory(&arg2, sizeof(STRING));
+	ZeroMemory(&texarg, sizeof(STRING));
 	int args[4];
 	bool texfail;
 	bool alphadisabled = false;
-	const string blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
+	const char *blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
 		"","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a",".aaa"};
 	bool usecolorkey = false;
 	if((id>>13)&1) usecolorkey = true;
@@ -779,11 +791,11 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		{
 			if((texstate[i].shaderid>>60)&1)
 			{
-				arg1.assign(op_colorkey);
-				arg1.replace(26,1,_itoa(i,idstring,10));
-				arg1.replace(40,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-				arg1.replace(57,1,_itoa(i,idstring,10));
-				String_Append(fsrc, arg1.c_str());
+				String_Assign(&arg1, op_colorkey);
+				arg1.ptr[26] = *(_itoa(i,idstring,10));
+				arg1.ptr[40] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+				arg1.ptr[57] = *(_itoa(i,idstring,10));
+				String_Append(fsrc, arg1.ptr);
 			}
 		}
 		// Color stage
@@ -792,60 +804,74 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg1 = blendargs[0];
+				String_Assign(&arg1, blendargs[0]);
 				break;
 			case D3DTA_DIFFUSE:
-				arg1 = blendargs[1];
+				String_Assign(&arg1, blendargs[1]);
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg1 = blendargs[2];
-					arg1.replace(17,1,_itoa(i,idstring,10));
-					arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					String_Assign(&arg1, blendargs[2]);
+					arg1.ptr[17] = *(_itoa(i,idstring,10));
+					arg1.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg1 = blendargs[4];
+				String_Append(&arg1, blendargs[4]);
 				break;
 			case D3DTA_SPECULAR:
-				arg1 = blendargs[5];
+				String_Append(&arg1, blendargs[5]);
 				break;
 		}
-		if(args[0] & D3DTA_COMPLEMENT) arg1 = "(1.0 - " + arg1 + ")";
-		if(args[0] & D3DTA_ALPHAREPLICATE) arg1.append(blendargs[10]);
-		else arg1.append(blendargs[8]);
+		if (args[0] & D3DTA_COMPLEMENT)
+		{
+			String_Assign(&tmp, arg1.ptr);
+			String_Append(&tmp, "(1.0 - ");
+			String_Append(&tmp, arg1.ptr);
+			String_Append(&tmp, ")");
+			String_Assign(&arg1, tmp.ptr);
+		}
+		if (args[0] & D3DTA_ALPHAREPLICATE) String_Append(&arg1, blendargs[10]);
+		else String_Append(&arg1, blendargs[8]);
 		switch(args[1]&7) //arg2
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg2 = blendargs[0];
+				String_Assign(&arg2, blendargs[0]);
 				break;
 			case D3DTA_DIFFUSE:
-				arg2 = blendargs[1];
+				String_Assign(&arg2, blendargs[1]);
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg2 = blendargs[2];
-					arg2.replace(17,1,_itoa(i,idstring,10));
-					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					String_Assign(&arg2, blendargs[2]);
+					arg2.ptr[17] = *(_itoa(i,idstring,10));
+					arg2.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg2 = blendargs[4];
+				String_Assign(&arg2, blendargs[4]);
 				break;
 			case D3DTA_SPECULAR:
-				arg2 = blendargs[5];
+				String_Assign(&arg2, blendargs[5]);
 				break;
 		}
-		if(args[1] & D3DTA_COMPLEMENT) arg2 = "(1.0 - " + arg2 + ")";
-		if(args[1] & D3DTA_ALPHAREPLICATE) arg2.append(blendargs[10]);
-		else arg2.append(blendargs[8]);
+		if(args[1] & D3DTA_COMPLEMENT)
+		{
+			String_Assign(&tmp, arg2.ptr);
+			String_Append(&tmp, "(1.0 - ");
+			String_Append(&tmp, arg2.ptr);
+			String_Append(&tmp, ")");
+			String_Assign(&arg2, tmp.ptr);
+		}
+		if (args[1] & D3DTA_ALPHAREPLICATE) String_Append(&arg2, blendargs[10]);
+		else String_Append(&arg2, blendargs[8]);
 		if(!texfail) switch(texstate[i].shaderid & 31)
 		{
 		case D3DTOP_DISABLE:
@@ -853,119 +879,119 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 			break;
 		case D3DTOP_SELECTARG1:
 			String_Append(fsrc, "color.rgb = ");
-				String_Append(fsrc, arg1.c_str());
+				String_Append(fsrc, arg1.ptr);
 				String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
 			String_Append(fsrc, "color.rgb = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
 			String_Append(fsrc, "color.rgb = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
 			String_Append(fsrc, "color.rgb = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " - ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_BLENDDIFFUSEALPHA:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * gl_Color.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
-			texarg = blendargs[2];
-			texarg.replace(17,1,_itoa(i,idstring,10));
-			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			String_Assign(&texarg, blendargs[2]);
+			texarg.ptr[17] = *(_itoa(i,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDFACTORALPHA:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * texfactor.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-texfactor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHAPM:
-			texarg = blendargs[2];
-			texarg.replace(17,1,_itoa(i,idstring,10));
-			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			String_Assign(&texarg, blendargs[2]);
+			texarg.ptr[17] = *(_itoa(i,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDCURRENTALPHA:
 			String_Append(fsrc, "color.rgb = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * color.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-color.a);\n");
 			break;
 		}
@@ -977,178 +1003,200 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg1 = blendargs[0]+blendargs[9];
+				String_Assign(&arg1, blendargs[0]);
+				String_Append(&arg1, blendargs[9]);
 				break;
 			case D3DTA_DIFFUSE:
-				arg1 = blendargs[1]+blendargs[9];
+				String_Assign(&arg1, blendargs[1]);
+				String_Append(&arg1, blendargs[9]);
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg1 = blendargs[2]+blendargs[9];
-					arg1.replace(17,1,_itoa(i,idstring,10));
-					arg1.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					String_Assign(&arg1, blendargs[2]);
+					String_Append(&arg1, blendargs[9]);
+					arg1.ptr[17] = *(_itoa(i,idstring,10));
+					arg1.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg1 = blendargs[4]+blendargs[9];
+				String_Assign(&arg1, blendargs[4]);
+				String_Append(&arg1, blendargs[9]);
 				break;
 			case D3DTA_SPECULAR:
-				arg1 = blendargs[5]+blendargs[9];
+				String_Assign(&arg1, blendargs[5]);
+				String_Append(&arg1, blendargs[9]);
 				break;
 		}
 		if(args[2] & D3DTA_COMPLEMENT)
-			arg1 = "(1.0 - " + arg1 + ")";
-		switch(args[3]&7) //arg2
+		{
+			String_Assign(&tmp, arg1.ptr);
+			String_Append(&tmp, "(1.0 - ");
+			String_Append(&tmp, arg1.ptr);
+			String_Append(&tmp, ")");
+			String_Assign(&arg1, tmp.ptr);
+		}
+		switch (args[3] & 7) //arg2
 		{
 			case D3DTA_CURRENT:
 			default:
-				arg2 = blendargs[1]+blendargs[9];
+				String_Assign(&arg2, blendargs[0]);
+				String_Append(&arg2, blendargs[9]);
 				break;
 			case D3DTA_DIFFUSE:
-				arg2 = blendargs[1]+blendargs[9];
+				String_Assign(&arg2, blendargs[1]);
+				String_Append(&arg2, blendargs[9]);
 				break;
 			case D3DTA_TEXTURE:
 				if((texstate[i].shaderid >> 59)&1)
 				{
-					arg2 = blendargs[2]+blendargs[9];
-					arg2.replace(17,1,_itoa(i,idstring,10));
-					arg2.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					String_Assign(&arg2, blendargs[2]);
+					String_Append(&arg2, blendargs[9]);
+					arg2.ptr[17] = *(_itoa(i,idstring,10));
+					arg2.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
 			case D3DTA_TFACTOR:
 				FIXME("Support texture factor value");
-				arg2 = blendargs[4]+blendargs[9];
+				String_Assign(&arg2, blendargs[4]);
+				String_Append(&arg2, blendargs[9]);
 				break;
 			case D3DTA_SPECULAR:
-				arg2 = blendargs[5]+blendargs[9];
+				String_Assign(&arg2, blendargs[5]);
+				String_Append(&arg2, blendargs[9]);
 				break;
 		}
 		if(args[3] & D3DTA_COMPLEMENT)
-			arg2 = "(1.0 - " + arg2 + ")";
-		if(!texfail) switch((texstate[i].shaderid>>17) & 31)
+		{
+			String_Assign(&tmp, arg2.ptr);
+			String_Append(&tmp, "(1.0 - ");
+			String_Append(&tmp, arg2.ptr);
+			String_Append(&tmp, ")");
+			String_Assign(&arg2, tmp.ptr);
+		}
+		if (!texfail) switch ((texstate[i].shaderid >> 17) & 31)
 		{
 		case D3DTOP_DISABLE:
 		default:
 			break;
 		case D3DTOP_SELECTARG1:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_SELECTARG2:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_MODULATE2X:
 			String_Append(fsrc, "color.a = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ") * 2.0;\n");
 			break;
 		case D3DTOP_MODULATE4X:
 			String_Append(fsrc, "color.a = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ") * 4.0;\n");
 			break;
 		case D3DTOP_ADD:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSIGNED:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - .5;\n");
 			break;
 		case D3DTOP_ADDSIGNED2X:
 			String_Append(fsrc, "color.a = (");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - .5) * 2.0;\n");
 			break;
 		case D3DTOP_SUBTRACT:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " - ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_ADDSMOOTH:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " - ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, ";\n");
 			break;
 		case D3DTOP_BLENDDIFFUSEALPHA:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * gl_Color.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
-			texarg = blendargs[2];
-			texarg.replace(17,1,_itoa(i,idstring,10));
-			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			String_Assign(&texarg, blendargs[2]);
+			texarg.ptr[17] = *(_itoa(i,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDFACTORALPHA:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * texfactor.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-texfactor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHAPM:
-			texarg = blendargs[2];
-			texarg.replace(17,1,_itoa(i,idstring,10));
-			texarg.replace(31,1,_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			String_Assign(&texarg, blendargs[2]);
+			texarg.ptr[17] = *(_itoa(i,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-");
-			String_Append(fsrc, texarg.c_str());
+			String_Append(fsrc, texarg.ptr);
 			String_Append(fsrc, ".a);\n");
 			break;
 		case D3DTOP_BLENDCURRENTALPHA:
 			String_Append(fsrc, "color.a = ");
-			String_Append(fsrc, arg1.c_str());
+			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * color.a + ");
-			String_Append(fsrc, arg2.c_str());
+			String_Append(fsrc, arg2.ptr);
 			String_Append(fsrc, " * (1.0-color.a);\n");
 			break;
 		}
@@ -1205,6 +1253,10 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
 	String_Append(fsrc, op_colorfragout);
 	String_Append(fsrc, mainend);
+	String_Free(&tmp);
+	String_Free(&arg1);
+	String_Free(&arg2);
+	String_Free(&texarg);
 #ifdef _DEBUG
 	OutputDebugStringA("Fragment shader:\n");
 	OutputDebugStringA(fsrc->ptr);
@@ -1213,18 +1265,18 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	TRACE_STRING(fsrc->ptr);
 	TRACE_STRING("\nCompiling fragment shader:\n"); 
 #endif
-	genshaders[index].shader.fs = ext->glCreateShader(GL_FRAGMENT_SHADER);
+	This->genshaders[index].shader.fs = This->ext->glCreateShader(GL_FRAGMENT_SHADER);
 	src = fsrc->ptr;
 	srclen = strlen(src);
-	ext->glShaderSource(genshaders[index].shader.fs,1,&src,&srclen);
-	ext->glCompileShader(genshaders[index].shader.fs);
-	ext->glGetShaderiv(genshaders[index].shader.fs,GL_COMPILE_STATUS,&result);
+	This->ext->glShaderSource(This->genshaders[index].shader.fs,1,&src,&srclen);
+	This->ext->glCompileShader(This->genshaders[index].shader.fs);
+	This->ext->glGetShaderiv(This->genshaders[index].shader.fs,GL_COMPILE_STATUS,&result);
 #ifdef _DEBUG
 	if(!result)
 	{
-		ext->glGetShaderiv(genshaders[index].shader.fs,GL_INFO_LOG_LENGTH,&loglen);
+		This->ext->glGetShaderiv(This->genshaders[index].shader.fs,GL_INFO_LOG_LENGTH,&loglen);
 		infolog = (char*)malloc(loglen);
-		ext->glGetShaderInfoLog(genshaders[index].shader.fs,loglen,&result,infolog);
+		This->ext->glGetShaderInfoLog(This->genshaders[index].shader.fs,loglen,&result,infolog);
 		OutputDebugStringA("Compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
 		TRACE_STRING("Compilation failed. Error messages:\n");
@@ -1233,17 +1285,17 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	}
 	OutputDebugStringA("\nLinking program:\n");
 #endif
-	genshaders[index].shader.prog = ext->glCreateProgram();
-	ext->glAttachShader(genshaders[index].shader.prog,genshaders[index].shader.vs);
-	ext->glAttachShader(genshaders[index].shader.prog,genshaders[index].shader.fs);
-	ext->glLinkProgram(genshaders[index].shader.prog);
-	ext->glGetProgramiv(genshaders[index].shader.prog,GL_LINK_STATUS,&result);
+	This->genshaders[index].shader.prog = This->ext->glCreateProgram();
+	This->ext->glAttachShader(This->genshaders[index].shader.prog,This->genshaders[index].shader.vs);
+	This->ext->glAttachShader(This->genshaders[index].shader.prog,This->genshaders[index].shader.fs);
+	This->ext->glLinkProgram(This->genshaders[index].shader.prog);
+	This->ext->glGetProgramiv(This->genshaders[index].shader.prog,GL_LINK_STATUS,&result);
 #ifdef _DEBUG
 	if(!result)
 	{
-		ext->glGetProgramiv(genshaders[index].shader.prog,GL_INFO_LOG_LENGTH,&loglen);
+		This->ext->glGetProgramiv(This->genshaders[index].shader.prog,GL_INFO_LOG_LENGTH,&loglen);
 		infolog = (char*)malloc(loglen);
-		ext->glGetProgramInfoLog(genshaders[index].shader.prog,loglen,&result,infolog);
+		This->ext->glGetProgramInfoLog(This->genshaders[index].shader.prog,loglen,&result,infolog);
 		OutputDebugStringA("Program link failed. Error messages:\n");
 		OutputDebugStringA(infolog);
 		TRACE_STRING("Program link failed. Error messages:\n");
@@ -1252,41 +1304,41 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	}
 #endif
 	// Attributes
-	genshaders[index].shader.attribs[0] = ext->glGetAttribLocation(genshaders[index].shader.prog,"xyz");
-	genshaders[index].shader.attribs[1] = ext->glGetAttribLocation(genshaders[index].shader.prog,"rhw");
-	genshaders[index].shader.attribs[2] = ext->glGetAttribLocation(genshaders[index].shader.prog,"blend0");
-	genshaders[index].shader.attribs[3] = ext->glGetAttribLocation(genshaders[index].shader.prog,"blend1");
-	genshaders[index].shader.attribs[4] = ext->glGetAttribLocation(genshaders[index].shader.prog,"blend2");
-	genshaders[index].shader.attribs[5] = ext->glGetAttribLocation(genshaders[index].shader.prog,"blend3");
-	genshaders[index].shader.attribs[6] = ext->glGetAttribLocation(genshaders[index].shader.prog,"blend4");
-	genshaders[index].shader.attribs[7] = ext->glGetAttribLocation(genshaders[index].shader.prog,"nxyz");
-	genshaders[index].shader.attribs[8] = ext->glGetAttribLocation(genshaders[index].shader.prog,"rgba0");
-	genshaders[index].shader.attribs[9] = ext->glGetAttribLocation(genshaders[index].shader.prog,"rgba1");
+	This->genshaders[index].shader.attribs[0] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"xyz");
+	This->genshaders[index].shader.attribs[1] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"rhw");
+	This->genshaders[index].shader.attribs[2] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"blend0");
+	This->genshaders[index].shader.attribs[3] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"blend1");
+	This->genshaders[index].shader.attribs[4] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"blend2");
+	This->genshaders[index].shader.attribs[5] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"blend3");
+	This->genshaders[index].shader.attribs[6] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"blend4");
+	This->genshaders[index].shader.attribs[7] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"nxyz");
+	This->genshaders[index].shader.attribs[8] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"rgba0");
+	This->genshaders[index].shader.attribs[9] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"rgba1");
 	char attrS[] = "sX";
 	for(int i = 0; i < 8; i++)
 	{
 		attrS[1] = i + '0';
-		genshaders[index].shader.attribs[i+10] = ext->glGetAttribLocation(genshaders[index].shader.prog,attrS);
+		This->genshaders[index].shader.attribs[i + 10] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog, attrS);
 	}
 	char attrST[] = "stX";
 	for(int i = 0; i < 8; i++)
 	{
 		attrST[2] = i + '0';
-		genshaders[index].shader.attribs[i+18] = ext->glGetAttribLocation(genshaders[index].shader.prog,attrST);
+		This->genshaders[index].shader.attribs[i + 18] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog, attrST);
 	}
 	char attrSTR[] = "strX";
 	for(int i = 0; i < 8; i++)
 	{
 		attrSTR[3] = i + '0';
-		genshaders[index].shader.attribs[i+26] = ext->glGetAttribLocation(genshaders[index].shader.prog,attrSTR);
+		This->genshaders[index].shader.attribs[i + 26] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog, attrSTR);
 	}
 	char attrSTRQ[] = "strqX";
 	for(int i = 0; i < 8; i++)
 	{
 		attrSTRQ[4] = i + '0';
-		genshaders[index].shader.attribs[i+34] = ext->glGetAttribLocation(genshaders[index].shader.prog,attrSTRQ);
+		This->genshaders[index].shader.attribs[i + 34] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog, attrSTRQ);
 	}
-	genshaders[index].shader.uniforms[0] = ext->glGetUniformLocation(genshaders[index].shader.prog,"matWorld");
+	This->genshaders[index].shader.uniforms[0] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matWorld");
 	// Uniforms
 	// TODO: 4-14 world1-3 and texture0-7
 	char uniflight[] = "lightX.            ";
@@ -1294,46 +1346,48 @@ void ShaderGen3D::CreateShader(int index, __int64 id, TEXTURESTAGE *texstate, in
 	{
 		uniflight[5] = i + '0';
 		strcpy(uniflight+7,"diffuse");
-		genshaders[index].shader.uniforms[20+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[20 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"specular");
-		genshaders[index].shader.uniforms[21+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[21 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"ambient");
-		genshaders[index].shader.uniforms[22+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[22 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"position");
-		genshaders[index].shader.uniforms[23+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[23 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"direction");
-		genshaders[index].shader.uniforms[24+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[24 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"range");
-		genshaders[index].shader.uniforms[25+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[25 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"falloff");
-		genshaders[index].shader.uniforms[26+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[26 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"constant");
-		genshaders[index].shader.uniforms[27+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[27 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"linear");
-		genshaders[index].shader.uniforms[28+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[28 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"quad");
-		genshaders[index].shader.uniforms[29+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[29 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"theta");
-		genshaders[index].shader.uniforms[30+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[30 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 		strcpy(uniflight+7,"phi");
-		genshaders[index].shader.uniforms[31+(i*12)] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniflight);
+		This->genshaders[index].shader.uniforms[31 + (i * 12)] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniflight);
 	}
 	char uniftex[] = "texX";
 	for(int i = 0; i < 8; i++)
 	{
 		uniftex[3] = i + '0';
-		genshaders[index].shader.uniforms[128+i] = ext->glGetUniformLocation(genshaders[index].shader.prog,uniftex);
+		This->genshaders[index].shader.uniforms[128 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, uniftex);
 	}
-	genshaders[index].shader.uniforms[136] = ext->glGetUniformLocation(genshaders[index].shader.prog,"ambientcolor");
-	genshaders[index].shader.uniforms[137] = ext->glGetUniformLocation(genshaders[index].shader.prog,"width");
-	genshaders[index].shader.uniforms[138] = ext->glGetUniformLocation(genshaders[index].shader.prog,"height");
-	genshaders[index].shader.uniforms[139] = ext->glGetUniformLocation(genshaders[index].shader.prog,"xoffset");
-	genshaders[index].shader.uniforms[140] = ext->glGetUniformLocation(genshaders[index].shader.prog,"yoffset");
-	genshaders[index].shader.uniforms[141] = ext->glGetUniformLocation(genshaders[index].shader.prog,"alpharef");
+	This->genshaders[index].shader.uniforms[136] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"ambientcolor");
+	This->genshaders[index].shader.uniforms[137] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"width");
+	This->genshaders[index].shader.uniforms[138] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"height");
+	This->genshaders[index].shader.uniforms[139] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"xoffset");
+	This->genshaders[index].shader.uniforms[140] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"yoffset");
+	This->genshaders[index].shader.uniforms[141] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"alpharef");
 	char unifkey[] = "keyX";
 	for(int i = 0; i < 8; i++)
 	{
 		unifkey[3] = i + '0';
-		genshaders[index].shader.uniforms[142+i] = ext->glGetUniformLocation(genshaders[index].shader.prog,unifkey);
+		This->genshaders[index].shader.uniforms[142 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkey);
 	}
+}
+
 }

@@ -17,10 +17,9 @@
 
 #include "common.h"
 #include "TextureManager.h"
-#include "glUtil.h"
 #include "timer.h"
+#include "glUtil.h"
 #include "glRenderer.h"
-#include "glDirect3DDevice.h"
 #include "string.h"
 #include "ShaderManager.h"
 #include "ShaderGen3D.h"
@@ -170,7 +169,8 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 		shaderman->shaders[i].pal = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"pal");
 		shaderman->shaders[i].view = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"view");
 	}
-	shaderman->gen3d = new ShaderGen3D(shaderman->ext, shaderman);
+	shaderman->gen3d = (ShaderGen3D*)malloc(sizeof(ShaderGen3D));
+	ShaderGen3D_Init(shaderman->ext, shaderman, shaderman->gen3d);
 	shaderman->gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
 	ZeroMemory(shaderman->gen2d, sizeof(ShaderGen2D));
 	ShaderGen2D_Init(shaderman->gen2d, shaderman->ext, shaderman);
@@ -200,12 +200,13 @@ void ShaderManager_Delete(ShaderManager *This)
 	free(This->shaders);
 	ShaderGen2D_Delete(This->gen2d);
 	free(This->gen2d);
-	delete This->gen3d;
+	ShaderGen3D_Delete(This->gen3d);
+	free(This->gen3d);
 }
 
 void ShaderManager_SetShader(ShaderManager *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
 {
-	This->gen3d->SetShader(id, texstate, texcoords, type, This->gen2d);
+	ShaderGen3D_SetShader(This->gen3d, id, texstate, texcoords, type, This->gen2d);
 }
 
 }
