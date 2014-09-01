@@ -732,7 +732,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 					This->backx = 0;
 					This->backy = 0;
 				}
-				delete This->shaders;
+				ShaderManager_Delete(This->shaders);
+				free(This->shaders);
 				free(This->texman);
 				free(This->ext);
 				delete This->util;
@@ -909,7 +910,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	}
 	else This->gl_caps.ShaderVer = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&This->gl_caps.TextureMax);
-	This->shaders = new ShaderManager(This->ext);
+	This->shaders = (ShaderManager*)malloc(sizeof(ShaderManager));
+	ShaderManager_Init(This->ext, This->shaders);
 	This->fbo.fbo = 0;
 	This->util->InitFBO(&This->fbo);
 	This->util->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1185,14 +1187,14 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if (dwFlags & DDBLT_KEYDEST) usedest = TRUE;
 	if (usedest)
 	{
-		This->shaders->SetShader(PROG_TEXTURE, NULL, NULL, 0);
+		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, NULL, 0);
 		glRenderer__DrawBackbufferRect(This, dest->texture, destrect, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
 		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backx;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.;
 		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backy);
 	}
-	This->shaders->SetShader(shaderid, NULL, NULL, 1);
+	ShaderManager_SetShader(This->shaders, shaderid, NULL, NULL, 1);
 	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
 	This->util->BlendEnable(false);
 	do
@@ -1501,7 +1503,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(This->ddInterface->GetBPP() == 8)
 	{
-		This->shaders->SetShader(PROG_PAL256,NULL,NULL,0);
+		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,NULL,0);
 		progtype = PROG_PAL256;
 		TextureManager__UploadTexture(This->texman,paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1,FALSE);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -1511,7 +1513,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		if(dxglcfg.scalingfilter)
 		{
 			glRenderer__DrawBackbuffer(This,&texture,dest->fakex,dest->fakey,progtype);
-			This->shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
+			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,NULL,0);
 			progtype = PROG_TEXTURE;
 			TextureManager_SetTexture(This->texman,0,texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -1524,7 +1526,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	}
 	else
 	{
-		This->shaders->SetShader(PROG_TEXTURE,NULL,NULL,0);
+		ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,NULL,0);
 		progtype = PROG_TEXTURE;
 		TextureManager_SetTexture(This->texman,0,texture);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -1828,7 +1830,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		return;
 	}
 	__int64 shader = device->SelectShader(vertices);
-	This->shaders->SetShader(shader,device->texstages,texformats,2);
+	ShaderManager_SetShader(This->shaders,shader,device->texstages,texformats,2);
 	device->SetDepthComp(This->util);
 	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
 	else This->util->DepthTest(false);
@@ -2065,7 +2067,7 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	view[3] = (GLfloat)surface->ddsd.dwHeight;
 	This->util->SetViewport(0,0,surface->ddsd.dwWidth,surface->ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT);
-	This->shaders->SetShader(PROG_CLIPSTENCIL,NULL,NULL,0);
+	ShaderManager_SetShader(This->shaders,PROG_CLIPSTENCIL,NULL,NULL,0);
 	This->ext->glUniform4f(This->shaders->shaders[PROG_CLIPSTENCIL].view,view[0],view[1],view[2],view[3]);
 	This->util->EnableArray(This->shaders->shaders[PROG_CLIPSTENCIL].pos,true);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[PROG_CLIPSTENCIL].pos,

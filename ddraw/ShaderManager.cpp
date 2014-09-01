@@ -21,12 +21,12 @@
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
-#include <string>
-using namespace std;
 #include "string.h"
 #include "ShaderManager.h"
 #include "ShaderGen3D.h"
 #include "ShaderGen2D.h"
+
+extern "C" {
 
 const char frag_Texture[] = "\
 #version 110\n\
@@ -132,77 +132,80 @@ const SHADER shader_template[] =
 const int SHADER_END = __LINE__ - 4;
 const int NumberOfShaders = SHADER_END - SHADER_START;
 
-ShaderManager::ShaderManager(glExtensions *glext)
+
+void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 {
-	ext = glext;
-	shaders = (SHADER*)malloc(sizeof(SHADER)*NumberOfShaders);
-	memcpy(shaders, shader_template, sizeof(SHADER)*NumberOfShaders);
+	shaderman->ext = glext;
+	shaderman->shaders = (SHADER*)malloc(sizeof(SHADER)*NumberOfShaders);
+	memcpy(shaderman->shaders, shader_template, sizeof(SHADER)*NumberOfShaders);
 	const GLchar *src;
 	GLint srclen;
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
-		shaders[i].prog = ext->glCreateProgram();
-		if(shaders[i].vsrc)
+		shaderman->shaders[i].prog = shaderman->ext->glCreateProgram();
+		if(shaderman->shaders[i].vsrc)
 		{
-			shaders[i].vs = ext->glCreateShader(GL_VERTEX_SHADER);
-			src = shaders[i].vsrc;
-			srclen = strlen(shaders[i].vsrc);
-			ext->glShaderSource(shaders[i].vs,1,&src,&srclen);
-			ext->glCompileShader(shaders[i].vs);
-			ext->glAttachShader(shaders[i].prog,shaders[i].vs);
+			shaderman->shaders[i].vs = shaderman->ext->glCreateShader(GL_VERTEX_SHADER);
+			src = shaderman->shaders[i].vsrc;
+			srclen = strlen(shaderman->shaders[i].vsrc);
+			shaderman->ext->glShaderSource(shaderman->shaders[i].vs,1,&src,&srclen);
+			shaderman->ext->glCompileShader(shaderman->shaders[i].vs);
+			shaderman->ext->glAttachShader(shaderman->shaders[i].prog,shaderman->shaders[i].vs);
 		}
-		if(shaders[i].fsrc)
+		if(shaderman->shaders[i].fsrc)
 		{
-			shaders[i].fs = ext->glCreateShader(GL_FRAGMENT_SHADER);
-			src = shaders[i].fsrc;
-			srclen = strlen(shaders[i].fsrc);
-			ext->glShaderSource(shaders[i].fs,1,&src,&srclen);
-			ext->glCompileShader(shaders[i].fs);
-			ext->glAttachShader(shaders[i].prog,shaders[i].fs);
+			shaderman->shaders[i].fs = shaderman->ext->glCreateShader(GL_FRAGMENT_SHADER);
+			src = shaderman->shaders[i].fsrc;
+			srclen = strlen(shaderman->shaders[i].fsrc);
+			shaderman->ext->glShaderSource(shaderman->shaders[i].fs,1,&src,&srclen);
+			shaderman->ext->glCompileShader(shaderman->shaders[i].fs);
+			shaderman->ext->glAttachShader(shaderman->shaders[i].prog,shaderman->shaders[i].fs);
 		}
-		ext->glLinkProgram(shaders[i].prog);
-		shaders[i].pos = ext->glGetAttribLocation(shaders[i].prog,"xy");
-		shaders[i].texcoord = ext->glGetAttribLocation(shaders[i].prog,"st");
-		shaders[i].tex0 = ext->glGetUniformLocation(shaders[i].prog,"tex0");
-		shaders[i].tex1 = ext->glGetUniformLocation(shaders[i].prog,"tex1");
-		shaders[i].ckey = ext->glGetUniformLocation(shaders[i].prog,"ckey");
-		shaders[i].pal = ext->glGetUniformLocation(shaders[i].prog,"pal");
-		shaders[i].view = ext->glGetUniformLocation(shaders[i].prog,"view");
+		shaderman->ext->glLinkProgram(shaderman->shaders[i].prog);
+		shaderman->shaders[i].pos = shaderman->ext->glGetAttribLocation(shaderman->shaders[i].prog,"xy");
+		shaderman->shaders[i].texcoord = shaderman->ext->glGetAttribLocation(shaderman->shaders[i].prog,"st");
+		shaderman->shaders[i].tex0 = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"tex0");
+		shaderman->shaders[i].tex1 = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"tex1");
+		shaderman->shaders[i].ckey = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"ckey");
+		shaderman->shaders[i].pal = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"pal");
+		shaderman->shaders[i].view = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"view");
 	}
-	gen3d = new ShaderGen3D(ext, this);
-	gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
-	ZeroMemory(gen2d, sizeof(ShaderGen2D));
-	ShaderGen2D_Init(gen2d, ext, this);
+	shaderman->gen3d = new ShaderGen3D(shaderman->ext, shaderman);
+	shaderman->gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
+	ZeroMemory(shaderman->gen2d, sizeof(ShaderGen2D));
+	ShaderGen2D_Init(shaderman->gen2d, shaderman->ext, shaderman);
 }
 
-ShaderManager::~ShaderManager()
+void ShaderManager_Delete(ShaderManager *This)
 {
-	ext->glUseProgram(0);
+	This->ext->glUseProgram(0);
 	for(int i = 0; i < NumberOfShaders; i++)
 	{
-		if(shaders[i].prog)
+		if(This->shaders[i].prog)
 		{
-			ext->glDeleteProgram(shaders[i].prog);
-			shaders[i].prog = 0;
+			This->ext->glDeleteProgram(This->shaders[i].prog);
+			This->shaders[i].prog = 0;
 		}
-		if(shaders[i].vs)
+		if(This->shaders[i].vs)
 		{
-			ext->glDeleteShader(shaders[i].vs);
-			shaders[i].vs = 0;
+			This->ext->glDeleteShader(This->shaders[i].vs);
+			This->shaders[i].vs = 0;
 		}
-		if(shaders[i].fs)
+		if(This->shaders[i].fs)
 		{
-			ext->glDeleteShader(shaders[i].fs);
-			shaders[i].fs = 0;
+			This->ext->glDeleteShader(This->shaders[i].fs);
+			This->shaders[i].fs = 0;
 		}
 	}
-	free(shaders);
-	ShaderGen2D_Delete(gen2d);
-	free(gen2d);
-	delete gen3d;
+	free(This->shaders);
+	ShaderGen2D_Delete(This->gen2d);
+	free(This->gen2d);
+	delete This->gen3d;
 }
 
-void ShaderManager::SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
+void ShaderManager_SetShader(ShaderManager *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type)
 {
-	gen3d->SetShader(id, texstate, texcoords, type, gen2d);
+	This->gen3d->SetShader(id, texstate, texcoords, type, This->gen2d);
+}
+
 }

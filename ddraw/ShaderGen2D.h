@@ -19,7 +19,11 @@
 #ifndef _SHADERGEN2D_H
 #define _SHADERGEN2D_H
 
-class ShaderManager;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct ShaderManager;
 
 typedef struct
 {
@@ -58,5 +62,9 @@ DWORD PackROPBits(DWORD rop, DWORD flags);
 void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman);
 void ShaderGen2D_Delete(ShaderGen2D *gen);
 void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_SHADERGEN2D_H

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,10 @@
 #pragma once
 #ifndef __SHADERS_H
 #define __SHADERS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -47,17 +51,20 @@ extern const SHADER shader_template[];
 struct TEXTURESTAGE;
 class ShaderGen3D;
 
-class ShaderManager
+typedef struct ShaderManager
 {
-public:
-	ShaderManager(glExtensions *glext);
-	~ShaderManager();
-	void SetShader(__int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
 	SHADER *shaders;
 	ShaderGen3D *gen3d;
 	ShaderGen2D *gen2d;
-private:
 	glExtensions *ext;
-};
+} ShaderManager;
+
+void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman);
+void ShaderManager_Delete(ShaderManager *This);
+void ShaderManager_SetShader(ShaderManager *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__SHADERS_H
