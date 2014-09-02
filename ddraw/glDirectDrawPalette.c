@@ -120,7 +120,11 @@ ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 	if(!This) return 0;
 	This->refcount--;
 	ret = This->refcount;
-	if (This->refcount == 0) free(This);
+	if (This->refcount == 0)
+	{
+		if (This->creator) This->creator->lpVtbl->Release(This->creator);
+		free(This);
+	}
 	TRACE_EXIT(8,ret);
 	return ret;
 }
@@ -209,7 +213,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 {
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
-	if (!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!lplpDDPalette) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (dwFlags & 0xFFFFF000) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDPCAPS_8BIT) && (dwFlags & DDPCAPS_8BITENTRIES)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (((dwFlags & DDPCAPS_1BIT) || (dwFlags & DDPCAPS_2BIT) || (dwFlags & DDPCAPS_4BIT)) && (dwFlags & DDPCAPS_ALLOW256))
@@ -220,6 +224,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	newpal->refcount = 1;
 	newpal->flags = dwFlags;
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
+	newpal->creator = NULL;
 	if (lpDDColorArray == NULL)
 	{
 		if (dwFlags & 0x800) memcpy(newpal->palette, DefaultPalette, 1024);

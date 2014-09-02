@@ -31,6 +31,7 @@ typedef struct glDirectDrawPalette
 	ULONG refcount;
 	PALETTEENTRY palette[256];
 	DWORD flags;
+	IUnknown *creator;
 } glDirectDrawPalette;
 
 typedef struct glDirectDrawPaletteVtbl
