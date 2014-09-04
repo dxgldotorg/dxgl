@@ -23,7 +23,6 @@ class glDirect3DTexture2 : public IDirect3DTexture2
 {
 public:
 	glDirect3DTexture2(glDirectDrawSurface7 *glDDS7);
-	virtual ~glDirect3DTexture2();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -33,14 +32,12 @@ public:
 	glDirectDrawSurface7 *GetDDS7(){return glDDS7;}
 private:
 	glDirectDrawSurface7 *glDDS7;
-	ULONG refcount;
 };
 
 class glDirect3DTexture1 : public IDirect3DTexture
 {
 public:
 	glDirect3DTexture1(glDirectDrawSurface7 *glDDS7);
-	virtual ~glDirect3DTexture1();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -52,7 +49,6 @@ public:
 	glDirectDrawSurface7 *GetDDS7(){return glDDS7;}
 private:
 	glDirectDrawSurface7 *glDDS7;
-	ULONG refcount;
 };
 
 #endif //__GLDIRECT3DTEXTURE_H

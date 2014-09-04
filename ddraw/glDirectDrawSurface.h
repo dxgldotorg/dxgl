@@ -39,7 +39,7 @@ class glDirect3DDevice7;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
-	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel);
+	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version);
 	virtual ~glDirectDrawSurface7();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
@@ -96,13 +96,26 @@ public:
 	HRESULT WINAPI SetLOD(DWORD dwMaxLOD);
 	HRESULT WINAPI GetLOD(LPDWORD lpdwMaxLOD);
 	// internal functions
+	ULONG WINAPI AddRef4();
+	ULONG WINAPI Release4();
+	ULONG WINAPI AddRef3();
+	ULONG WINAPI Release3();
+	ULONG WINAPI AddRef2();
+	ULONG WINAPI Release2();
+	ULONG WINAPI AddRef1();
+	ULONG WINAPI Release1();
+	ULONG WINAPI AddRefGamma();
+	ULONG WINAPI ReleaseGamma();
+	ULONG WINAPI AddRefColor();
+	ULONG WINAPI ReleaseColor();
 	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, TextureManager *texman);
 	TEXTURE *GetTexture(){
 		return texture;
 	}
 	void Restore2();
 	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags);
-	void SetTexture(TEXTURE *newtexture){texture = newtexture;};
+	HRESULT AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface);
+	void SetTexture(TEXTURE *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
 	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface, int vsync);
@@ -128,33 +141,36 @@ public:
 	TEXTURE *stencil;
 	bool hasstencil;
 	DWORD miplevel;
-	glDirectDrawSurface7 *miptexture;
 	char *buffer;
 	char *bigbuffer;
 	char *gdibuffer;
 	DDSURFACEDESC2 ddsd;
 	glDirectDrawPalette *palette;
 	HGLRC hRC;
-	glDirectDrawSurface7 *zbuffer;
 	D3DMATERIALHANDLE handle;
 	FBO fbo;
 	FBO stencilfbo;
 	glDirectDrawClipper *clipper;
 	IUnknown *creator;
+	IUnknown *textureparent;
+	glDirectDrawSurface7 *zbuffer;
+	glDirectDrawSurface7 *miptexture;
+	glDirectDrawSurface7 *backbuffer;
 private:
 	int swapinterval;
-	ULONG refcount;
+	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
+	ULONG refcountgamma, refcountcolor;
 	int locked;
 	HDC hdc;
 	HBITMAP hbitmap;
 	BITMAPINFO *bitmapinfo;
 	glDirectDraw7 *ddInterface;
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
-	glDirectDrawSurface7 *backbuffer;
 	int pagelocked;
 	GLint magfilter,minfilter;
 	glDirect3DDevice7 *device;
 	bool overlay;
+	IUnknown *zbuffer_iface;
 };
 
 // Legacy DDRAW Interfaces
@@ -162,7 +178,6 @@ class glDirectDrawSurface1 : public IDirectDrawSurface
 {
 public:
 	glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7);
-	virtual ~glDirectDrawSurface1();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -201,20 +216,13 @@ public:
 	HRESULT WINAPI UpdateOverlayDisplay(DWORD dwFlags);
 	HRESULT WINAPI UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSReference);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
-	void AddAttach(glDirectDrawSurface1 *attach);
-	void DeleteAttach(glDirectDrawSurface1 *attach);
 private:
-	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
-	glDirectDrawSurface1 **attachments;
-	int attachcount;
-	int maxattach;
 };
 class glDirectDrawSurface2 : public IDirectDrawSurface2
 {
 public:
 	glDirectDrawSurface2(glDirectDrawSurface7 *gl_DDS7);
-	virtual ~glDirectDrawSurface2();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -257,20 +265,13 @@ public:
 	HRESULT WINAPI PageLock(DWORD dwFlags);
 	HRESULT WINAPI PageUnlock(DWORD dwFlags);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
-	void AddAttach(glDirectDrawSurface2 *attach);
-	void DeleteAttach(glDirectDrawSurface2 *attach);
 private:
-	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
-	glDirectDrawSurface2 **attachments;
-	int attachcount;
-	int maxattach;
 };
 class glDirectDrawSurface3 : public IDirectDrawSurface3
 {
 public:
 	glDirectDrawSurface3(glDirectDrawSurface7 *gl_DDS7);
-	virtual ~glDirectDrawSurface3();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -315,20 +316,13 @@ public:
 	// ddraw 3+ api
 	HRESULT WINAPI SetSurfaceDesc(LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
-	void AddAttach(glDirectDrawSurface3 *attach);
-	void DeleteAttach(glDirectDrawSurface3 *attach);
 private:
-	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
-	glDirectDrawSurface3 **attachments;
-	int attachcount;
-	int maxattach;
 };
 class glDirectDrawSurface4 : public IDirectDrawSurface4
 {
 public:
 	glDirectDrawSurface4(glDirectDrawSurface7 *gl_DDS7);
-	virtual ~glDirectDrawSurface4();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -379,13 +373,7 @@ public:
 	HRESULT WINAPI GetUniquenessValue(LPDWORD lpValue);
 	HRESULT WINAPI ChangeUniquenessValue();
 	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
-	void AddAttach(glDirectDrawSurface4 *attach);
-	void DeleteAttach(glDirectDrawSurface4 *attach);
 private:
-	UINT refcount;
 	glDirectDrawSurface7 *glDDS7;
-	glDirectDrawSurface4 **attachments;
-	int attachcount;
-	int maxattach;
 };
 #endif //_GLDIRECTDRAWSURFACE_H

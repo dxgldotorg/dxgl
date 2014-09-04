@@ -589,9 +589,6 @@ glDirectDraw7::glDirectDraw7()
 	refcount2 = 0;
 	refcount1 = 0;
 	renderer = NULL;
-	d3ddesc = d3ddesc_default;
-	d3ddesc3 = d3ddesc3_default;
-	memcpy(stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
 	TRACE_EXIT(-1, 0);
 }
 
@@ -749,12 +746,6 @@ HRESULT WINAPI glDirectDraw7::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
-	}
-	if(riid == IID_IDirectDrawGammaControl)
-	{
-		FIXME("Add gamma control\n");
-		TRACE_EXIT(23,DDERR_GENERIC);
-		ERR(DDERR_GENERIC);
 	}
 	/*if(riid == IID_IDDVideoPortContainer)
 	{
@@ -923,18 +914,18 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 	if(!lpDDSurfaceDesc2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	HRESULT ret = CreateSurface2(lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter,TRUE);
+	HRESULT ret = CreateSurface2(lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter,TRUE,7);
 	if (ret == DD_OK)
 	{
 		this->AddRef();
-		((glDirectDrawSurface7*)lplpDDSurface)->creator = this;
+		((glDirectDrawSurface7*)*lplpDDSurface)->creator = this;
 	}
 	TRACE_EXIT(23, ret);
 	return ret;
 }
 
 
-HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface)
+HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface, int version)
 {
 	HRESULT error;
 	int mipcount;
@@ -977,7 +968,7 @@ HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIREC
 			ZeroMemory(&surfaces[surfacecountmax], 1024 * sizeof(glDirectDrawSurface7 *));
 			surfacecountmax += 1024;
 		}
-		surfaces[surfacecount - 1] = new glDirectDrawSurface7(this, lpDDSurfaceDesc2, &error, NULL, NULL, 0);
+		surfaces[surfacecount - 1] = new glDirectDrawSurface7(this, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version);
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
 			primary = surfaces[surfacecount - 1];
@@ -988,7 +979,7 @@ HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIREC
 	else
 	{
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		*lplpDDSurface = new glDirectDrawSurface7(this, lpDDSurfaceDesc2, &error, NULL, NULL, 0);
+		*lplpDDSurface = new glDirectDrawSurface7(this, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version);
 	}
 	TRACE_VAR("*lplpDDSurface",14,*lplpDDSurface);
 	TRACE_EXIT(23,error);
@@ -1406,6 +1397,9 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 		useguid = true;
 		DEBUG("Display GUIDs not yet supported, using primary.\n");
 	}
+	d3ddesc = d3ddesc_default;
+	d3ddesc3 = d3ddesc3_default;
+	memcpy(stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
 	initialized = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1951,11 +1945,11 @@ HRESULT glDirectDraw7::SetupTempSurface(DWORD width, DWORD height)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
 		ddsd.dwWidth = width;
 		ddsd.dwHeight = height;
-		error = CreateSurface2(&ddsd, (LPDIRECTDRAWSURFACE7*)&tmpsurface, NULL, FALSE);
+		error = CreateSurface2(&ddsd, (LPDIRECTDRAWSURFACE7*)&tmpsurface, NULL, FALSE, 7);
 		if (error == DDERR_OUTOFVIDEOMEMORY)
 		{
 			ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
-			error = CreateSurface2(&ddsd, (LPDIRECTDRAWSURFACE7*)&tmpsurface, NULL, FALSE);
+			error = CreateSurface2(&ddsd, (LPDIRECTDRAWSURFACE7*)&tmpsurface, NULL, FALSE, 7);
 		}
 		if (error != DD_OK) return error;
 	}
@@ -2065,7 +2059,7 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd2, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
 	ddsd2.dwSize = sizeof(DDSURFACEDESC2);
-	HRESULT err = glDD7->CreateSurface2(&ddsd2,&lpDDS7,pUnkOuter,TRUE);
+	HRESULT err = glDD7->CreateSurface2(&ddsd2,&lpDDS7,pUnkOuter,TRUE,1);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
@@ -2269,7 +2263,7 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd2, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
 	ddsd2.dwSize = sizeof(DDSURFACEDESC2);
-	HRESULT err = glDD7->CreateSurface2(&ddsd2, &lpDDS7, pUnkOuter, TRUE);
+	HRESULT err = glDD7->CreateSurface2(&ddsd2, &lpDDS7, pUnkOuter, TRUE, 2);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
@@ -2497,7 +2491,7 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
-	HRESULT err = glDD7->CreateSurface2((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter,TRUE);
+	HRESULT err = glDD7->CreateSurface2((LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter,TRUE,4);
 	if(err == DD_OK)
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);

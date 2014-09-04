@@ -29,15 +29,6 @@ glDirect3DTexture2::glDirect3DTexture2(glDirectDrawSurface7 *glDDS7)
 {
 	TRACE_ENTER(2,14,this,14,glDDS7);
 	this->glDDS7 = glDDS7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3DTexture2::~glDirect3DTexture2()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->d3dt2 = NULL;
-	glDDS7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -60,21 +51,14 @@ ULONG WINAPI glDirect3DTexture2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDDS7->textureparent->AddRef());
 }
 
 ULONG WINAPI glDirect3DTexture2::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glDDS7->textureparent->Release());
 }
 
 HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2, LPD3DTEXTUREHANDLE lpHandle)
@@ -109,14 +93,6 @@ glDirect3DTexture1::glDirect3DTexture1(glDirectDrawSurface7 *glDDS7)
 {
 	TRACE_ENTER(2,14,this,14,glDDS7);
 	this->glDDS7 = glDDS7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-glDirect3DTexture1::~glDirect3DTexture1()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->d3dt1 = NULL;
-	glDDS7->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirect3DTexture1::QueryInterface(REFIID riid, void** ppvObj)
@@ -137,20 +113,13 @@ ULONG WINAPI glDirect3DTexture1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDDS7->textureparent->AddRef());
 }
 ULONG WINAPI glDirect3DTexture1::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glDDS7->textureparent->Release());
 }
 
 HRESULT WINAPI glDirect3DTexture1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DTEXTUREHANDLE lpHandle)

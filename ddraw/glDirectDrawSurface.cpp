@@ -37,7 +37,7 @@ using namespace std;
 
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error,
-	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel)
+	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version)
 {
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
 	creator = NULL;
@@ -60,12 +60,12 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	texture = NULL;
 	clipper = NULL;
 	hdc = NULL;
-	dds1 = NULL;
-	dds2 = NULL;
-	dds3 = NULL;
-	dds4 = NULL;
-	d3dt2 = NULL;
-	d3dt1 = NULL;
+	dds1 = new glDirectDrawSurface1(this);
+	dds2 = new glDirectDrawSurface2(this);
+	dds3 = new glDirectDrawSurface3(this);
+	dds4 = new glDirectDrawSurface4(this);
+	d3dt2 = new glDirect3DTexture2(this);
+	d3dt1 = new glDirect3DTexture1(this);
 	buffer = gdibuffer = NULL;
 	bigbuffer = NULL;
 	zbuffer = NULL;
@@ -327,7 +327,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		newdesc.ddsCaps.dwCaps2 |= DDSCAPS2_MIPMAPSUBLEVEL;
 		newdesc.dwMipMapCount = ddsd.dwMipMapCount - 1;
 		HRESULT miperror;
-		if(newdesc.dwMipMapCount) miptexture = new glDirectDrawSurface7(lpDD7, &newdesc, &miperror, palette, texture, miplevel + 1);
+		if(newdesc.dwMipMapCount) miptexture = new glDirectDrawSurface7(lpDD7, &newdesc, &miperror, palette, texture, miplevel + 1, version);
 	}
 
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
@@ -339,7 +339,13 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	}
 	if(!bitmapinfo->bmiHeader.biBitCount)
 		bitmapinfo->bmiHeader.biBitCount = (WORD)ddsd.ddpfPixelFormat.dwRGBBitCount;
-	refcount = 1;
+	refcount7 = 1;
+	refcount4 = 0;
+	refcount3 = 0;
+	refcount2 = 0;
+	refcount1 = 0;
+	refcountgamma = 0;
+	refcountcolor = 0;
 	*error = DD_OK;
 	backbuffer = NULL;
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_COMPLEX)
@@ -354,11 +360,26 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsdBack.dwBackBufferCount--;
 				ddsdBack.ddsCaps.dwCaps |= DDSCAPS_BACKBUFFER;
 				ddsdBack.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
-				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,palette,parenttex,miplevel);
+				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,palette,parenttex,miplevel,version);
 			}
 			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT){}
 			else *error = DDERR_INVALIDPARAMS;
 		}
+	}
+	switch (version)
+	{
+	case 1:
+	case 2:
+	case 3:
+	default:
+		textureparent = this->dds1;
+		break;
+	case 4:
+		textureparent = this->dds4;
+		break;
+	case 7:
+		textureparent = this;
+		break;
 	}
 	TRACE_VAR("*error",23,*error);
 	TRACE_EXIT(-1,0);
@@ -367,16 +388,18 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 {
 	TRACE_ENTER(1,14,this);
 	AddRef();
-	if(dds1) dds1->Release();
-	if(dds2) dds2->Release();
-	if(dds3) dds3->Release();
-	if(dds4) dds4->Release();
+	if (dds1) delete dds1;
+	if (dds2) delete dds2;
+	if (dds3) delete dds3;
+	if (dds4) delete dds4;
+	if (d3dt1) delete d3dt1;
+	if (d3dt2) delete d3dt2;
 	if(paltex)
 	{
 		glRenderer_DeleteTexture(ddInterface->renderer, paltex);
 		delete paltex;
 	}
-	if(texture)
+	if(texture && !(ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
 	{
 		glRenderer_DeleteTexture(ddInterface->renderer, texture);
 		delete texture;
@@ -394,7 +417,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(clipper) glDirectDrawClipper_Release(clipper);
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
-	if(zbuffer) zbuffer->Release();
+	if(zbuffer) zbuffer_iface->Release();
 	if(miptexture) miptexture->Release();
 	if(device) device->Release();
 	ddInterface->DeleteSurface(this);
@@ -406,15 +429,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(riid == IID_IUnknown)
-	{
-		this->AddRef();
-		*ppvObj = this;
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
-	}
-	if(riid == IID_IDirectDrawSurface7)
+	if((riid == IID_IUnknown) || (riid == IID_IDirectDrawSurface7))
 	{
 		this->AddRef();
 		*ppvObj = this;
@@ -424,125 +439,65 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirectDrawSurface4)
 	{
-		if(dds4)
-		{
-			*ppvObj = dds4;
-			dds4->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirectDrawSurface4(this);
-			dds4 = (glDirectDrawSurface4*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef4();
+		*ppvObj = dds4;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawSurface3)
 	{
-		if(dds3)
-		{
-			*ppvObj = dds3;
-			dds3->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirectDrawSurface3(this);
-			dds3 = (glDirectDrawSurface3*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef3();
+		*ppvObj = dds3;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawSurface2)
 	{
-		if(dds2)
-		{
-			*ppvObj = dds2;
-			dds2->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirectDrawSurface2(this);
-			dds2 = (glDirectDrawSurface2*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef2();
+		*ppvObj = dds2;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirectDrawSurface)
 	{
-		if(dds1)
-		{
-			*ppvObj = dds1;
-			dds1->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirectDrawSurface1(this);
-			dds1 = (glDirectDrawSurface1*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		this->AddRef1();
+		*ppvObj = dds1;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirect3DTexture2)
 	{
-		if(d3dt2)
-		{
-			*ppvObj = d3dt2;
-			d3dt2->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3DTexture2(this);
-			d3dt2 = (glDirect3DTexture2*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		d3dt2->AddRef();
+		*ppvObj = d3dt2;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if(riid == IID_IDirect3DTexture)
 	{
-		if(d3dt1)
-		{
-			*ppvObj = d3dt1;
-			d3dt1->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3DTexture1(this);
-			d3dt1 = (glDirect3DTexture1*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		}
+		d3dt1->AddRef();
+		*ppvObj = d3dt1;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
-	if((riid == IID_IDirect3DDevice) || (riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
+	if (riid == IID_IDirectDrawGammaControl)
+	{
+		FIXME("Add gamma control\n");
+		TRACE_EXIT(23, E_NOINTERFACE);
+		ERR(E_NOINTERFACE);
+	}
+	if (riid == IID_IDirectDrawColorControl)
+	{
+		FIXME("Add color control\n");
+		TRACE_EXIT(23, E_NOINTERFACE);
+		ERR(E_NOINTERFACE);
+	}
+	if ((riid == IID_IDirect3DDevice) || (riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
 		(riid == IID_IDirect3DRampDevice) || (riid == IID_IDirect3DRefDevice))
 	{
 
@@ -582,24 +537,169 @@ ULONG WINAPI glDirectDrawSurface7::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	refcount7++;
+	TRACE_EXIT(8,refcount7);
+	return refcount7;
 }
 ULONG WINAPI glDirectDrawSurface7::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
+	if (refcount7 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount7--;
+	ret = refcount7;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
 	TRACE_EXIT(8,ret);
 	return ret;
 }
+ULONG WINAPI glDirectDrawSurface7::AddRef4()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount4++;
+	TRACE_EXIT(8, refcount4);
+	return refcount4;
+}
+ULONG WINAPI glDirectDrawSurface7::Release4()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount4 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount4--;
+	ret = refcount4;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+ULONG WINAPI glDirectDrawSurface7::AddRef3()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount3++;
+	TRACE_EXIT(8, refcount3);
+	return refcount3;
+}
+ULONG WINAPI glDirectDrawSurface7::Release3()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount3 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount3--;
+	ret = refcount3;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+ULONG WINAPI glDirectDrawSurface7::AddRef2()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount2++;
+	TRACE_EXIT(8, refcount2);
+	return refcount2;
+}
+ULONG WINAPI glDirectDrawSurface7::Release2()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount2 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount2--;
+	ret = refcount2;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+ULONG WINAPI glDirectDrawSurface7::AddRef1()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcount1++;
+	TRACE_EXIT(8, refcount1);
+	return refcount1;
+}
+ULONG WINAPI glDirectDrawSurface7::Release1()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcount1 == 0) TRACE_RET(ULONG, 8, 0);
+	refcount1--;
+	ret = refcount1;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+ULONG WINAPI glDirectDrawSurface7::AddRefGamma()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcountgamma++;
+	TRACE_EXIT(8, refcountgamma);
+	return refcountgamma;
+}
+ULONG WINAPI glDirectDrawSurface7::ReleaseGamma()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcountgamma == 0) TRACE_RET(ULONG, 8, 0);
+	refcountgamma--;
+	ret = refcountgamma;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+ULONG WINAPI glDirectDrawSurface7::AddRefColor()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	refcountcolor++;
+	TRACE_EXIT(8, refcountcolor);
+	return refcountcolor;
+}
+ULONG WINAPI glDirectDrawSurface7::ReleaseColor()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	ULONG ret;
+	if (refcountcolor == 0) TRACE_RET(ULONG, 8, 0);
+	refcountcolor--;
+	ret = refcountcolor;
+	if ((refcount7 == 0) && (refcount4 == 0) && (refcount3 == 0) && (refcount2 == 0) &&
+		(refcount1 == 0) && (refcountgamma == 0) && (refcountcolor == 0))delete this;
+	TRACE_EXIT(8, ret);
+	return ret;
+}
+
 HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT ret;
+	ret = ((IUnknown*)lpDDSAttachedSurface)->QueryInterface(IID_IDirectDrawSurface7, (void**)&dds7);
+	if (ret != S_OK) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = AddAttachedSurface2(dds7, lpDDSAttachedSurface);
+	if (ret == DD_OK) ((IUnknown*)lpDDSAttachedSurface)->AddRef();
+	dds7->Release();
+	TRACE_RET(HRESULT, 23, ret);
+	return ret;
+}
+
+HRESULT glDirectDrawSurface7::AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface)
+{
+	TRACE_ENTER(3,14,this,14,lpDDSAttachedSurface,iface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(zbuffer) TRACE_RET(HRESULT,23,DDERR_SURFACEALREADYATTACHED);
@@ -609,8 +709,8 @@ HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpD
 	attached->GetSurfaceDesc(&ddsd);
 	if((ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER) || (ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER))
 	{
-		attached->AddRef();
 		zbuffer = attached;
+		zbuffer_iface = iface;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -750,7 +850,7 @@ HRESULT WINAPI glDirectDrawSurface7::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(lpDDSAttachedSurface == (LPDIRECTDRAWSURFACE7)zbuffer)
 	{
-		zbuffer->Release();
+		zbuffer_iface->Release();
 		zbuffer = NULL;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -1627,29 +1727,7 @@ glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
-	refcount = 1;
-	attachments = (glDirectDrawSurface1**)malloc(16 * sizeof(glDirectDrawSurface1*));
-	attachcount = 0;
-	maxattach = 16;
-	if (attachments)
-	{
-		if (attachcount)
-		{
-			for (int i = 0; i < attachcount; i++)
-			{
-				if (attachments[i]) attachments[i]->Release();
-			}
-		}
-		free(attachments);
-	}
 	TRACE_EXIT(-1, 0);
-}
-glDirectDrawSurface1::~glDirectDrawSurface1()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->dds1 = NULL;
-	glDDS7->Release();
-	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDrawSurface1::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -1669,74 +1747,27 @@ ULONG WINAPI glDirectDrawSurface1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDDS7->AddRef1());
 }
 ULONG WINAPI glDirectDrawSurface1::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
-}
-void glDirectDrawSurface1::AddAttach(glDirectDrawSurface1 *attach)
-{
-	bool emptyspace = false;
-	int index;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (!attachments[i])
-		{
-			emptyspace = true;
-			index = i;
-			break;
-		}
-	}
-	if (emptyspace) attachments[index] = attach;
-	else
-	{
-		attachcount++;
-		if (attachcount >= maxattach)
-		{
-			glDirectDrawSurface1 **newattach = (glDirectDrawSurface1**)realloc(attachments,
-				(maxattach + 16)*sizeof(glDirectDrawSurface1*));
-			if (newattach)
-			{
-				maxattach += 16;
-				attachments = newattach;
-			}
-		}
-		attachments[attachcount-1] = attach;
-	}
-	attach->AddRef();
-}
-void glDirectDrawSurface1::DeleteAttach(glDirectDrawSurface1 *attach)
-{
-	if (!attachcount) return;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (attachments[i] == attach)
-		{
-			attach->Release();
-			attachments[i] = NULL;
-			return;
-		}
-	}
+	TRACE_RET(ULONG, 8, glDDS7->Release1());
 }
 HRESULT WINAPI glDirectDrawSurface1::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
-	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	AddAttach((glDirectDrawSurface1*)lpDDSAttachedSurface);
-	TRACE_EXIT(23, ret);
+	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT ret;
+	ret = ((IUnknown*)lpDDSAttachedSurface)->QueryInterface(IID_IDirectDrawSurface7, (void**)&dds7);
+	if (ret != S_OK) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = glDDS7->AddAttachedSurface2(dds7, lpDDSAttachedSurface);
+	if (ret == DD_OK) ((IUnknown*)lpDDSAttachedSurface)->AddRef();
+	dds7->Release();
+	TRACE_RET(HRESULT, 23, ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface1::AddOverlayDirtyRect(LPRECT lpRect)
@@ -1784,7 +1815,6 @@ HRESULT WINAPI glDirectDrawSurface1::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface1*)lpDDSAttachedSurface)->GetDDS7());
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	DeleteAttach((glDirectDrawSurface1*)lpDDSAttachedSurface);
 	TRACE_EXIT(23, ret);
 	return ret;
 }
@@ -2003,28 +2033,6 @@ glDirectDrawSurface2::glDirectDrawSurface2(glDirectDrawSurface7 *gl_DDS7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
-	refcount = 1;
-	attachments = (glDirectDrawSurface2**)malloc(16 * sizeof(glDirectDrawSurface2*));
-	attachcount = 0;
-	maxattach = 16;
-	TRACE_EXIT(-1, 0);
-}
-glDirectDrawSurface2::~glDirectDrawSurface2()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->dds2 = NULL;
-	glDDS7->Release();
-	if (attachments)
-	{
-		if (attachcount)
-		{
-			for (int i = 0; i < attachcount; i++)
-			{
-				if (attachments[i]) attachments[i]->Release();
-			}
-		}
-		free(attachments);
-	}
 	TRACE_EXIT(-1, 0);
 }
 HRESULT WINAPI glDirectDrawSurface2::QueryInterface(REFIID riid, void** ppvObj)
@@ -2044,74 +2052,27 @@ ULONG WINAPI glDirectDrawSurface2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDDS7->AddRef2());
 }
 ULONG WINAPI glDirectDrawSurface2::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
-}
-void glDirectDrawSurface2::AddAttach(glDirectDrawSurface2 *attach)
-{
-	bool emptyspace = false;
-	int index;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (!attachments[i])
-		{
-			emptyspace = true;
-			index = i;
-			break;
-		}
-	}
-	if (emptyspace) attachments[index] = attach;
-	else
-	{
-		attachcount++;
-		if (attachcount >= maxattach)
-		{
-			glDirectDrawSurface2 **newattach = (glDirectDrawSurface2**)realloc(attachments,
-				(maxattach + 16)*sizeof(glDirectDrawSurface2*));
-			if (newattach)
-			{
-				maxattach += 16;
-				attachments = newattach;
-			}
-		}
-		attachments[attachcount-1] = attach;
-	}
-	attach->AddRef();
-}
-void glDirectDrawSurface2::DeleteAttach(glDirectDrawSurface2 *attach)
-{
-	if (!attachcount) return;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (attachments[i] == attach)
-		{
-			attach->Release();
-			attachments[i] = NULL;
-			return;
-		}
-	}
+	TRACE_RET(ULONG, 8, glDDS7->Release2());
 }
 HRESULT WINAPI glDirectDrawSurface2::AddAttachedSurface(LPDIRECTDRAWSURFACE2 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
-	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	AddAttach((glDirectDrawSurface2*)lpDDSAttachedSurface);
-	TRACE_EXIT(23, ret);
+	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT ret;
+	ret = ((IUnknown*)lpDDSAttachedSurface)->QueryInterface(IID_IDirectDrawSurface7, (void**)&dds7);
+	if (ret != S_OK) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = glDDS7->AddAttachedSurface2(dds7, lpDDSAttachedSurface);
+	if (ret == DD_OK) ((IUnknown*)lpDDSAttachedSurface)->AddRef();
+	dds7->Release();
+	TRACE_RET(HRESULT, 23, ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface2::AddOverlayDirtyRect(LPRECT lpRect)
@@ -2159,7 +2120,6 @@ HRESULT WINAPI glDirectDrawSurface2::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface2*)lpDDSAttachedSurface)->GetDDS7());
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	DeleteAttach((glDirectDrawSurface2*)lpDDSAttachedSurface);
 	TRACE_EXIT(23, ret);
 	return ret;
 }
@@ -2401,28 +2361,6 @@ glDirectDrawSurface3::glDirectDrawSurface3(glDirectDrawSurface7 *gl_DDS7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
-	refcount = 1;
-	attachments = (glDirectDrawSurface3**)malloc(16 * sizeof(glDirectDrawSurface3*));
-	attachcount = 0;
-	maxattach = 16;
-	TRACE_EXIT(-1, 0);
-}
-glDirectDrawSurface3::~glDirectDrawSurface3()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->dds3 = NULL;
-	glDDS7->Release();
-	if (attachments)
-	{
-		if (attachcount)
-		{
-			for (int i = 0; i < attachcount; i++)
-			{
-				if (attachments[i]) attachments[i]->Release();
-			}
-		}
-		free(attachments);
-	}
 	TRACE_EXIT(-1, 0);
 }
 HRESULT WINAPI glDirectDrawSurface3::QueryInterface(REFIID riid, void** ppvObj)
@@ -2442,75 +2380,28 @@ HRESULT WINAPI glDirectDrawSurface3::QueryInterface(REFIID riid, void** ppvObj)
 ULONG WINAPI glDirectDrawSurface3::AddRef()
 {
 	TRACE_ENTER(1,14,this);
-	if(!this) return 0;
-	refcount++;
-	TRACE_EXIT(23,refcount);
-	return refcount;
+	if (!this) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, glDDS7->AddRef3());
 }
 ULONG WINAPI glDirectDrawSurface3::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
-}
-void glDirectDrawSurface3::AddAttach(glDirectDrawSurface3 *attach)
-{
-	bool emptyspace = false;
-	int index;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (!attachments[i])
-		{
-			emptyspace = true;
-			index = i;
-			break;
-		}
-	}
-	if (emptyspace) attachments[index] = attach;
-	else
-	{
-		attachcount++;
-		if (attachcount >= maxattach)
-		{
-			glDirectDrawSurface3 **newattach = (glDirectDrawSurface3**)realloc(attachments,
-				(maxattach + 16)*sizeof(glDirectDrawSurface3*));
-			if (newattach)
-			{
-				maxattach += 16;
-				attachments = newattach;
-			}
-		}
-		attachments[attachcount-1] = attach;
-	}
-	attach->AddRef();
-}
-void glDirectDrawSurface3::DeleteAttach(glDirectDrawSurface3 *attach)
-{
-	if (!attachcount) return;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (attachments[i] == attach)
-		{
-			attach->Release();
-			attachments[i] = NULL;
-			return;
-		}
-	}
+	TRACE_RET(ULONG, 8, glDDS7->Release3());
 }
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpDDSAttachedSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
-	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	AddAttach((glDirectDrawSurface3*)lpDDSAttachedSurface);
-	TRACE_EXIT(23, ret);
+	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT ret;
+	ret = ((IUnknown*)lpDDSAttachedSurface)->QueryInterface(IID_IDirectDrawSurface7, (void**)&dds7);
+	if (ret != S_OK) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = glDDS7->AddAttachedSurface2(dds7, lpDDSAttachedSurface);
+	if (ret == DD_OK) ((IUnknown*)lpDDSAttachedSurface)->AddRef();
+	dds7->Release();
+	TRACE_RET(HRESULT, 23, ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface3::AddOverlayDirtyRect(LPRECT lpRect)
@@ -2558,7 +2449,6 @@ HRESULT WINAPI glDirectDrawSurface3::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface3*)lpDDSAttachedSurface)->GetDDS7());
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	DeleteAttach((glDirectDrawSurface3*)lpDDSAttachedSurface);
 	TRACE_EXIT(23, ret);
 	return ret;
 }
@@ -2807,29 +2697,7 @@ glDirectDrawSurface4::glDirectDrawSurface4(glDirectDrawSurface7 *gl_DDS7)
 {
 	TRACE_ENTER(2,14,this,14,gl_DDS7);
 	glDDS7 = gl_DDS7;
-	refcount = 1;
-	attachments = (glDirectDrawSurface4**)malloc(16 * sizeof(glDirectDrawSurface4*));
-	attachcount = 0;
-	maxattach = 16;
 	TRACE_EXIT(-1, 0);
-}
-glDirectDrawSurface4::~glDirectDrawSurface4()
-{
-	TRACE_ENTER(1,14,this);
-	glDDS7->dds4 = NULL;
-	glDDS7->Release();
-	if (attachments)
-	{
-		if (attachcount)
-		{
-			for (int i = 0; i < attachcount; i++)
-			{
-				if (attachments[i]) attachments[i]->Release();
-			}
-		}
-		free(attachments);
-	}
-	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDrawSurface4::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -2849,73 +2717,27 @@ ULONG WINAPI glDirectDrawSurface4::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glDDS7->AddRef4());
 }
 ULONG WINAPI glDirectDrawSurface4::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
-}
-void glDirectDrawSurface4::AddAttach(glDirectDrawSurface4 *attach)
-{
-	bool emptyspace = false;
-	int index;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (!attachments[i])
-		{
-			emptyspace = true;
-			index = i;
-			break;
-		}
-	}
-	if (emptyspace) attachments[index] = attach;
-	else
-	{
-		attachcount++;
-		if (attachcount >= maxattach)
-		{
-			glDirectDrawSurface4 **newattach = (glDirectDrawSurface4**)realloc(attachments,
-				(maxattach + 16)*sizeof(glDirectDrawSurface4*));
-			if (newattach)
-			{
-				maxattach += 16;
-				attachments = newattach;
-			}
-		}
-		attachments[attachcount-1] = attach;
-	}
-	attach->AddRef();
-}
-void glDirectDrawSurface4::DeleteAttach(glDirectDrawSurface4 *attach)
-{
-	if (!attachcount) return;
-	for (int i = 0; i < attachcount; i++)
-	{
-		if (attachments[i] == attach)
-		{
-			attach->Release();
-			attachments[i] = NULL;
-			return;
-		}
-	}
+	TRACE_RET(ULONG, 8, glDDS7->Release4());
 }
 HRESULT WINAPI glDirectDrawSurface4::AddAttachedSurface(LPDIRECTDRAWSURFACE4 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2,14,this,14,lpDDSAttachedSurface);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	HRESULT ret = glDDS7->AddAttachedSurface(((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7());
-	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	AddAttach((glDirectDrawSurface4*)lpDDSAttachedSurface);
-	TRACE_EXIT(23, ret);
+	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	LPDIRECTDRAWSURFACE7 dds7;
+	HRESULT ret;
+	ret = ((IUnknown*)lpDDSAttachedSurface)->QueryInterface(IID_IDirectDrawSurface7, (void**)&dds7);
+	if (ret != S_OK) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = glDDS7->AddAttachedSurface2(dds7, lpDDSAttachedSurface);
+	if (ret == DD_OK) ((IUnknown*)lpDDSAttachedSurface)->AddRef();
+	dds7->Release();
+	TRACE_RET(HRESULT, 23, ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDrawSurface4::AddOverlayDirtyRect(LPRECT lpRect)
@@ -2963,7 +2785,6 @@ HRESULT WINAPI glDirectDrawSurface4::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDDS7->DeleteAttachedSurface(dwFlags, ((glDirectDrawSurface4*)lpDDSAttachedSurface)->GetDDS7());
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
-	DeleteAttach((glDirectDrawSurface4*)lpDDSAttachedSurface);
 	TRACE_EXIT(23, ret);
 	return ret;
 }
