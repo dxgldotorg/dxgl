@@ -1703,7 +1703,7 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 	device = glD3DDev7;
 	handle = device->AddTexture(this);
 	if(handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	//device->AddRef();
+	device->AddRef();
 	*lpHandle = handle;
 	TRACE_VAR("*lpHandle",9,*lpHandle);
 	TRACE_EXIT(23,D3D_OK);
