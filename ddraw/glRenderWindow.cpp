@@ -109,7 +109,11 @@ DWORD glRenderWindow::_Entry()
 	}
 	#ifdef _DEBUG
 	if(RegisterHotKey(hWnd,1,MOD_CONTROL,VK_CANCEL)) hotkeyregistered = true;
-	else Beep(120,1000);
+	else
+	{
+		TRACE_STRING("Failed to register hotkey.\n");
+		Beep(120, 1000);
+	}
 	#endif
 	SetEvent(ReadyEvent);
 	while((GetMessage(&Msg, NULL, 0, 0) > 0) && !dead)
