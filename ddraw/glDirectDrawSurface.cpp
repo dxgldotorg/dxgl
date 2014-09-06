@@ -683,7 +683,7 @@ ULONG WINAPI glDirectDrawSurface7::ReleaseColor()
 
 HRESULT WINAPI glDirectDrawSurface7::AddAttachedSurface(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 14, lpDDSAttachedSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 dds7;
@@ -1703,7 +1703,7 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 	device = glD3DDev7;
 	handle = device->AddTexture(this);
 	if(handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	device->AddRef();
+	//device->AddRef();
 	*lpHandle = handle;
 	TRACE_VAR("*lpHandle",9,*lpHandle);
 	TRACE_EXIT(23,D3D_OK);
@@ -1757,7 +1757,7 @@ ULONG WINAPI glDirectDrawSurface1::Release()
 }
 HRESULT WINAPI glDirectDrawSurface1::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 14, lpDDSAttachedSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 dds7;
@@ -2062,7 +2062,7 @@ ULONG WINAPI glDirectDrawSurface2::Release()
 }
 HRESULT WINAPI glDirectDrawSurface2::AddAttachedSurface(LPDIRECTDRAWSURFACE2 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 14, lpDDSAttachedSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 dds7;
@@ -2391,7 +2391,7 @@ ULONG WINAPI glDirectDrawSurface3::Release()
 }
 HRESULT WINAPI glDirectDrawSurface3::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 14, lpDDSAttachedSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 dds7;
@@ -2727,7 +2727,7 @@ ULONG WINAPI glDirectDrawSurface4::Release()
 }
 HRESULT WINAPI glDirectDrawSurface4::AddAttachedSurface(LPDIRECTDRAWSURFACE4 lpDDSAttachedSurface)
 {
-	TRACE_ENTER(2, 14, this, 15, lpDDSAttachedSurface);
+	TRACE_ENTER(2, 14, this, 14, lpDDSAttachedSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 dds7;

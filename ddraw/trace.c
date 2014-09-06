@@ -947,7 +947,7 @@ static void trace_decode_arg(int type, void *arg)
 		if(!arg) WriteFile(outfile,"NULL",4,&byteswritten,NULL);
 		else
 		{
-			WriteFile(outfile,"L\"",1,&byteswritten,NULL);
+			WriteFile(outfile,"L\"",2,&byteswritten,NULL);
 			buffersize = WideCharToMultiByte(CP_UTF8,0,(wchar_t*)arg,-1,NULL,0,NULL,NULL);
 			mbcsbuffer = (char*)malloc(buffersize);
 			if(!mbcsbuffer) WriteFile(outfile,"OUT OF MEMORY",13,&byteswritten,NULL);

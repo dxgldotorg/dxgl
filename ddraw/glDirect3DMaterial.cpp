@@ -73,7 +73,7 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DMaterial2)
 	{
-		this - AddRef();
+		this->AddRef();
 		*ppvObj = glD3DM2;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,D3D_OK);
@@ -81,7 +81,7 @@ HRESULT WINAPI glDirect3DMaterial3::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DMaterial)
 	{
-		this - AddRef();
+		this->AddRef();
 		*ppvObj = glD3DM1;
 		TRACE_VAR("*ppvObj", 14, *ppvObj);
 		TRACE_EXIT(23, D3D_OK);
@@ -102,6 +102,7 @@ ULONG WINAPI glDirect3DMaterial3::AddRef()
 
 ULONG WINAPI glDirect3DMaterial3::Release()
 {
+	TRACE_ENTER(1, 14, this);
 	if(!this) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	refcount--;
