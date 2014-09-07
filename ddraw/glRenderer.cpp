@@ -2013,6 +2013,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(prog.uniforms[139]!= -1) This->ext->glUniform1f(prog.uniforms[139],device->viewport.dwX);
 	if(prog.uniforms[140]!= -1) This->ext->glUniform1f(prog.uniforms[140],device->viewport.dwY);
 	if(prog.uniforms[141]!= -1) This->ext->glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
+	if(prog.uniforms[150]!= -1) This->ext->glUniform4iv(prog.uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
 	do
 	{
 		if (This->util->SetFBO(device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;

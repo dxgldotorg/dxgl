@@ -101,6 +101,7 @@
   <ItemGroup>
     <None Include="configuration.htm">
       <DeploymentContent>true</DeploymentContent>
+      <SubType>Designer</SubType>
     </None>
     <None Include="dxgl.css" />
     <None Include="dxgl.hhp" />

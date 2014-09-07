@@ -772,6 +772,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	if(renderstate[D3DRENDERSTATE_LIGHTING]) shader |= (1i64 << 59);
 	if(renderstate[D3DRENDERSTATE_COLORVERTEX]) shader |= (1i64 << 60);
 	if(renderstate[D3DRENDERSTATE_FOGENABLE]) shader |= (1i64 << 61);
+	if(renderstate[D3DRENDERSTATE_DITHERENABLE]) shader |= (1i64 << 62);
 	for(i = 0; i < 8; i++)
 	{
 		if(!texstages[i].dirty) continue;

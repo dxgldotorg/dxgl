@@ -81,6 +81,7 @@ Bits 51-58 - Point or spot light  VS/FS
 Bit 59 - Enable lights  VS/FS
 Bit 60 - Use vertex colors  VS
 Bit 61 - Enable fog  VS/FS
+Bit 62 - Enable dithering  FS
 */
 
 /* Bits in Texture Stage ID:
@@ -270,8 +271,9 @@ GLuint ShaderGen3D_GetProgram(ShaderGen3D *This)
 
 
 static const char header[] =
-	"//REV" STR(SHADER3DVERSION) "\n\
-#version 110\n";
+	"//REV" STR(SHADER3DVERSION) "\n";
+static const char ver110[] = "#version 110\n";
+static const char ver120[] = "#version 120\n";
 static const char vertexshader[] = "//Vertex Shader\n";
 static const char fragshader[] = "//Fragment Shader\n";
 static const char idheader[] = "//ID: 0x";
@@ -282,7 +284,6 @@ static const char mainend[] = "} ";
 static const char attr_xyz[] = "attribute vec3 xyz;\n";
 static const char attr_rhw[] = "attribute float rhw;\n";
 static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
-static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
 static const char attr_blend[] = "attribute float blendX;\n";
 static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
 static const char attr_s[] = "attribute float sX;\n";
@@ -318,6 +319,7 @@ uniform float yoffset;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec3 keyX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
+static const char unif_ditherbits[] = "uniform ivec4 ditherbits;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -327,6 +329,17 @@ static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
 static const char var_fogfactorpixel[] = "float fogfactor;\n";
+// Constants
+static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
+static const char const_threshold[] = "float threshold[64] = float[64](\n\
+0, 32, 8, 40, 2, 34, 10, 42,\n\
+48, 16, 56, 24, 50, 18, 58, 26,\n\
+12, 44, 4, 36, 14, 46, 6, 38,\n\
+60, 28, 52, 20, 62, 30, 54, 22,\n\
+3, 35, 11, 43, 1, 33, 9, 41,\n\
+51, 19, 59, 27, 49, 17, 57, 25,\n\
+15, 47, 7, 39, 13, 45, 5, 37,\n\
+63, 31, 55, 23, 61, 29, 53, 21);\n";
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1.0);\n\
 vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
@@ -348,6 +361,7 @@ static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
+static const char op_dither[] = "color = dither(color);\n";
 static const char op_colorfragin[] = "color = gl_Color;\n";
 static const char op_colorkey[] = "if(ivec3(texture2DProj(texX,gl_TexCoord[Y])*255.5).rgb == keyZ) discard;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
@@ -432,7 +446,34 @@ diffuse += light.diffuse*NdotV*attenuation;\n\
 ambient += light.ambient;\n\
 specular += light.specular*pf*attenuation;\n\
 }\n";
-
+static const char func_dither[] = "vec4 dither(vec4 color2)\n\
+{\n\
+	vec4 color = color2;\n\
+	int x = int(mod(gl_FragCoord.x, 8.0));\n\
+	int y = int(mod(gl_FragCoord.y, 8.0));\n\
+	vec4 limit;\n\
+	limit.r = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.r)) - 1.0)*64.0);\n\
+	limit.g = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.g)) - 1.0)*64.0);\n\
+	limit.b = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.b)) - 1.0)*64.0);\n\
+	limit.a = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.a)) - 1.0)*64.0);\n\
+	color.r += limit.r;\n\
+	color.g += limit.g;\n\
+	color.b += limit.b;\n\
+	color.a += limit.a;\n\
+	color.r *= pow(2.0, float(ditherbits.r)) - 1.0;\n\
+	color.r = floor(color.r);\n\
+	color.g *= pow(2.0, float(ditherbits.g)) - 1.0;\n\
+	color.g = floor(color.g);\n\
+	color.b *= pow(2.0, float(ditherbits.b)) - 1.0;\n\
+	color.b = floor(color.b);\n\
+	color.a *= pow(2.0, float(ditherbits.a)) - 1.0;\n\
+	color.a = floor(color.a);\n\
+	color.r /= pow(2.0, float(ditherbits.r)) - 1.0;\n\
+	color.g /= pow(2.0, float(ditherbits.g)) - 1.0;\n\
+	color.b /= pow(2.0, float(ditherbits.b)) - 1.0;\n\
+	color.a /= pow(2.0, float(ditherbits.a)) - 1.0;\n\
+	return color;\n\
+}\n";
 
 
 /**
@@ -456,6 +497,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	bool hasdir = false;
 	bool haspoint = false;
 	bool hasspot = false;
+	bool dither = false;
 	int count;
 	int numlights;
 	int vertexfog,pixelfog;
@@ -474,6 +516,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	//Header
 	STRING *vsrc = &This->genshaders[index].shader.vsrc;
 	String_Append(vsrc, header);
+	String_Append(vsrc, ver110);
 	String_Append(vsrc, vertexshader);
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
@@ -733,8 +776,15 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	}
 #endif
 	// Create fragment shader
+	if ((id>>62)&1)
+	{
+		if ((This->ext->glver_major > 2) || ((This->ext->glver_major == 2) && (This->ext->glver_minor >= 1)))
+			dither = true;
+	}
 	STRING *fsrc = &This->genshaders[index].shader.fsrc;
 	String_Append(fsrc, header);
+	if (dither) String_Append(fsrc, ver120);
+	else String_Append(fsrc, ver110);
 	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
@@ -761,11 +811,14 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		}
 	}
 	if((id>>2)&1) String_Append(fsrc, unif_alpharef);
+	if (dither) String_Append(fsrc, unif_ditherbits);
 	// Variables
 	String_Append(fsrc, var_color);
 	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
+	if (dither) String_Append(fsrc, const_threshold);
 	// Functions
+	if (dither) String_Append(fsrc, func_dither);
 	// Main
 	String_Append(fsrc, mainstart);
 	String_Append(fsrc, op_colorfragin);
@@ -1253,6 +1306,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		String_Append(fsrc, op_fogblend);
 	}
 	if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
+	if (dither) String_Append(fsrc,op_dither);
 	String_Append(fsrc, op_colorfragout);
 	String_Append(fsrc, mainend);
 	String_Free(&tmp);
@@ -1390,6 +1444,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		unifkey[3] = i + '0';
 		This->genshaders[index].shader.uniforms[142 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkey);
 	}
+	This->genshaders[index].shader.uniforms[150] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"ditherbits");
 }
 
 }
