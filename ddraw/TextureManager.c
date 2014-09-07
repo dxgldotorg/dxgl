@@ -505,13 +505,18 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 		do
 		{
 			ClearError();
-			if (This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
-				width, height, 0, texture->format, texture->type, data);
+			if (This->ext->GLEXT_EXT_direct_state_access)
+			{
+				This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
+				//This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+				//	width, height, 0, texture->format, texture->type, data);
+			}
 			else
 			{
 				TextureManager_SetActiveTexture(This, 0);
 				TextureManager_SetTexture(This, 0, texture);
-				glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+				glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
+				//glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
 			}
 			error = glGetError();
 			if (error != GL_NO_ERROR)
@@ -529,13 +534,18 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 	}
 	else
 	{
-		if (This->ext->GLEXT_EXT_direct_state_access) This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
-			width, height, 0, texture->format, texture->type, data);
+		if (This->ext->GLEXT_EXT_direct_state_access)
+		{
+			This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
+			//This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+			//width, height, 0, texture->format, texture->type, data);
+		}
 		else
 		{
 			TextureManager_SetActiveTexture(This, 0);
 			TextureManager_SetTexture(This, 0, texture);
-			glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+			glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
+			//glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
 		}
 	}
 }

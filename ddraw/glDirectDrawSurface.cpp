@@ -510,7 +510,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			tmpd3d->CreateDevice(riid,this,(LPDIRECT3DDEVICE7*)&tmpdev);
 			if(!tmpdev)
 			{
-				tmpdev->Release();
+				tmpd3d->Release();
 				TRACE_EXIT(23,E_NOINTERFACE);
 				return E_NOINTERFACE;
 			}

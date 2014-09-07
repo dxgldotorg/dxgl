@@ -21,6 +21,7 @@
 glDirect3DExecuteBuffer::glDirect3DExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc)
 {
 	TRACE_ENTER(2,14,this,14,lpDesc);
+	refcount = 1;
 	locked = false;
 	inuse = false;
 	data = NULL;
