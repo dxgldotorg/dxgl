@@ -455,23 +455,18 @@ static const char func_dither[] = "vec4 dither(vec4 color2)\n\
 	limit.r = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.r)) - 1.0)*64.0);\n\
 	limit.g = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.g)) - 1.0)*64.0);\n\
 	limit.b = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.b)) - 1.0)*64.0);\n\
-	limit.a = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.a)) - 1.0)*64.0);\n\
 	color.r += limit.r;\n\
 	color.g += limit.g;\n\
 	color.b += limit.b;\n\
-	color.a += limit.a;\n\
 	color.r *= pow(2.0, float(ditherbits.r)) - 1.0;\n\
 	color.r = floor(color.r);\n\
 	color.g *= pow(2.0, float(ditherbits.g)) - 1.0;\n\
 	color.g = floor(color.g);\n\
 	color.b *= pow(2.0, float(ditherbits.b)) - 1.0;\n\
 	color.b = floor(color.b);\n\
-	color.a *= pow(2.0, float(ditherbits.a)) - 1.0;\n\
-	color.a = floor(color.a);\n\
 	color.r /= pow(2.0, float(ditherbits.r)) - 1.0;\n\
 	color.g /= pow(2.0, float(ditherbits.g)) - 1.0;\n\
 	color.b /= pow(2.0, float(ditherbits.b)) - 1.0;\n\
-	color.a /= pow(2.0, float(ditherbits.a)) - 1.0;\n\
 	return color;\n\
 }\n";
 
