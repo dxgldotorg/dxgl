@@ -10,6 +10,7 @@ Valid settings:
 4 - Change display mode, stretch if matching mode not found
 5 - Change display mode, aspect corrected stretch if matching mode not found
 6 - Change display mode, center if matching mode not found
+7 - Crop output to desktop, preserving aspect ratio
 
 Member colormode
 REG_DWORD HKCU\DXGL\<app>\ChangeColorDepth

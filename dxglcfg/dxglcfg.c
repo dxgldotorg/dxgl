@@ -531,6 +531,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,5,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
+		_tcscpy(buffer,_T("Crop to screen (experimental)"));
+		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// colormode
 		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);

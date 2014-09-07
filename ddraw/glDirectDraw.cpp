@@ -1807,6 +1807,51 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			break;
 		}
 		break;
+	case 7: // Crop to screen, aspect corrected
+		primaryx = dwWidth;
+		screenx = currmode.dmPelsWidth;
+		primaryy = dwHeight;
+		screeny = currmode.dmPelsHeight;
+		if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
+		{
+			aspect = (float)dwWidth / (float)dwHeight;
+			xmul = (float)screenx / (float)dwWidth;
+			ymul = (float)screeny / (float)dwHeight;
+			if ((float)dwWidth*(float)ymul < (float)screenx)
+			{
+				internalx = (DWORD)((float)dwWidth * (float)xmul);
+				internaly = (DWORD)((float)dwHeight * (float)xmul);
+			}
+			else
+			{
+				internalx = (DWORD)((float)dwWidth * (float)ymul);
+				internaly = (DWORD)((float)dwHeight * (float)ymul);
+			}
+		}
+		else
+		{
+			aspect = dxglcfg.aspect;
+			if (screenx/aspect < screeny)
+			{
+				internalx = (DWORD)((float)screeny * (float)aspect);
+				internaly = screeny;
+			}
+			else
+			{
+				internalx = screenx;
+				internaly = (DWORD)((float)screenx / (float)aspect);
+			}
+		}
+		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+		else internalbpp = screenbpp = currmode.dmBitsPerPel;
+		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+		primarybpp = dwBPP;
+		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
+		primarylost = true;
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
+		break;
 	}
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
