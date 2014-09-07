@@ -66,6 +66,7 @@ void glExtensions_Init(glExtensions *ext)
 		ext->glUniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
 		ext->glUniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
 		ext->glUniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
+		ext->glUniform3iv = (PFNGLUNIFORM3IVPROC)wglGetProcAddress("glUniform3iv");
 		ext->glUniform4iv = (PFNGLUNIFORM4IVPROC)wglGetProcAddress("glUniform4iv");
 		ext->glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
 		ext->glUniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");

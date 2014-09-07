@@ -1715,7 +1715,10 @@ HRESULT glDirectDrawSurface7::Load(glDirectDrawSurface7 *src)
 	TRACE_ENTER(2,14,this,14,src);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!src) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (src == this) TRACE_RET(HRESULT, 23, DD_OK);
 	this->Blt(NULL,src,NULL,DDBLT_WAIT,NULL);
+	if (src->ddsd.dwFlags & DDSD_CKSRCBLT)
+		this->SetColorKey(DDCKEY_SRCBLT, &src->colorkey[0].key);
 	ddsd.ddsCaps.dwCaps &= ~DDSCAPS_ALLOCONLOAD;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

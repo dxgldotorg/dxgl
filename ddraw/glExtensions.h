@@ -77,6 +77,7 @@ typedef struct
 	void (APIENTRY *glUniform2i) (GLint location, GLint v0, GLint v1);
 	void (APIENTRY *glUniform3i) (GLint location, GLint v0, GLint v1, GLint v2);
 	void (APIENTRY *glUniform4i) (GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+	void (APIENTRY *glUniform3iv) (GLint location, GLsizei count, const GLint* value);
 	void (APIENTRY *glUniform4iv) (GLint location, GLsizei count, const GLint* value);
 	void (APIENTRY *glUniform1f) (GLint location, GLfloat v0);
 	void (APIENTRY *glUniform2f) (GLint location, GLfloat v0, GLfloat v1);

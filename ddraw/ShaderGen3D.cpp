@@ -316,7 +316,7 @@ uniform float height;\n\
 uniform float xoffset;\n\
 uniform float yoffset;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
-static const char unif_key[] = "uniform ivec4 keyX;\n";
+static const char unif_key[] = "uniform ivec3 keyX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
@@ -333,7 +333,9 @@ vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
-static const char op_tlvertex[] = "gl_Position = vec4((((xyz.x-xoffset)+.5)/(width/2.0))-1.0,(((xyz.y-yoffset)+.5)/(height/2.0))-1.0,(xyz.z),1.0);\n";
+static const char op_tlvertex[] = "xyzw = vec4(xyz.x/rhw,xyz.y/rhw,xyz.z/rhw,1.0/rhw);\n\
+vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
+gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
@@ -347,7 +349,7 @@ static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_colorfragin[] = "color = gl_Color;\n";
-static const char op_colorkey[] = "if(ivec4(texture2DProj(texX,gl_TexCoord[Y])*255.5) == keyZ) discard;\n";
+static const char op_colorkey[] = "if(ivec3(texture2DProj(texX,gl_TexCoord[Y])*255.5).rgb == keyZ) discard;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
@@ -547,7 +549,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	
 	// Variables
 	String_Append(vsrc, var_common);
-	if(!((id>>50)&1)) String_Append(vsrc, var_xyzw);
+	String_Append(vsrc, var_xyzw);
 	if(vertexfog && !pixelfog) String_Append(vsrc, var_fogfactorvertex);
 
 	// Functions
@@ -794,7 +796,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Assign(&arg1, op_colorkey);
 				arg1.ptr[26] = *(_itoa(i,idstring,10));
 				arg1.ptr[40] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-				arg1.ptr[57] = *(_itoa(i,idstring,10));
+				arg1.ptr[61] = *(_itoa(i,idstring,10));
 				String_Append(fsrc, arg1.ptr);
 			}
 		}
