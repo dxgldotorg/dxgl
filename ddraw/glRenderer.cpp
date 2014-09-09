@@ -2024,7 +2024,10 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		device->glDDS7->fbo.fbcolor = NULL;
 		device->glDDS7->fbo.fbz = NULL;
 	} while (1);
-	This->util->SetViewport(device->viewport.dwX, device->viewport.dwY, device->viewport.dwWidth, device->viewport.dwHeight);
+	This->util->SetViewport((int)((float)device->viewport.dwX*device->glDDS7->mulx),
+		(int)((float)device->viewport.dwY*device->glDDS7->muly),
+		(int)((float)device->viewport.dwWidth*device->glDDS7->mulx),
+		(int)((float)device->viewport.dwHeight*device->glDDS7->muly));
 	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
 	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
 	else This->util->BlendEnable(false);

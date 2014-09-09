@@ -346,6 +346,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	refcount1 = 0;
 	refcountgamma = 0;
 	refcountcolor = 0;
+	mulx = (float)fakex / (float)ddsd.dwWidth;
+	muly = (float)fakey / (float)ddsd.dwHeight;
 	*error = DD_OK;
 	backbuffer = NULL;
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_COMPLEX)

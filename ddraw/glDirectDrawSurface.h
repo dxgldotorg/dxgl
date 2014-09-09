@@ -131,6 +131,7 @@ public:
 	glDirect3DTexture1 *d3dt1;
 	DWORD flipcount;
 	DWORD fakex,fakey;
+	float mulx, muly;
 	DWORD dirty;
 	// dirty bits:
 	// 1 - Surface was locked
