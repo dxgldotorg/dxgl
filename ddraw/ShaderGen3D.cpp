@@ -331,15 +331,12 @@ static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
 static const char var_fogfactorpixel[] = "float fogfactor;\n";
 // Constants
 static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
-static const char const_threshold[] = "float threshold[64] = float[64](\n\
-0, 32, 8, 40, 2, 34, 10, 42,\n\
-48, 16, 56, 24, 50, 18, 58, 26,\n\
-12, 44, 4, 36, 14, 46, 6, 38,\n\
-60, 28, 52, 20, 62, 30, 54, 22,\n\
-3, 35, 11, 43, 1, 33, 9, 41,\n\
-51, 19, 59, 27, 49, 17, 57, 25,\n\
-15, 47, 7, 39, 13, 45, 5, 37,\n\
-63, 31, 55, 23, 61, 29, 53, 21);\n";
+static const char const_threshold[] = "mat4 threshold = mat4(\n\
+1.0, 9.0, 3.0, 11.0,\n\
+13.0, 5.0, 15.0, 7.0,\n\
+4.0, 12.0, 2.0, 10.0,\n\
+16.0, 8.0, 14.0, 6.0);\n";
+
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1.0);\n\
 vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
@@ -449,12 +446,12 @@ specular += light.specular*pf*attenuation;\n\
 static const char func_dither[] = "vec4 dither(vec4 color2)\n\
 {\n\
 	vec4 color = color2;\n\
-	int x = int(mod(gl_FragCoord.x, 8.0));\n\
-	int y = int(mod(gl_FragCoord.y, 8.0));\n\
+	int x = int(mod(gl_FragCoord.x, 4.0));\n\
+	int y = int(mod(gl_FragCoord.y, 4.0));\n\
 	vec4 limit;\n\
-	limit.r = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.r)) - 1.0)*64.0);\n\
-	limit.g = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.g)) - 1.0)*64.0);\n\
-	limit.b = (threshold[x + (y * 8)]) / ((pow(2.0, float(ditherbits.b)) - 1.0)*64.0);\n\
+	limit.r = (threshold[x][y]) / ((pow(2.0, float(ditherbits.r)) - 1.0)*16.0);\n\
+	limit.g = (threshold[x][y]) / ((pow(2.0, float(ditherbits.g)) - 1.0)*16.0);\n\
+	limit.b = (threshold[x][y]) / ((pow(2.0, float(ditherbits.b)) - 1.0)*16.0);\n\
 	color.r += limit.r;\n\
 	color.g += limit.g;\n\
 	color.b += limit.b;\n\
@@ -771,15 +768,10 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	}
 #endif
 	// Create fragment shader
-	if ((id>>62)&1)
-	{
-		if ((This->ext->glver_major > 2) || ((This->ext->glver_major == 2) && (This->ext->glver_minor >= 1)))
-			dither = true;
-	}
+	if ((id>>62)&1)	dither = true;
 	STRING *fsrc = &This->genshaders[index].shader.fsrc;
 	String_Append(fsrc, header);
-	if (dither) String_Append(fsrc, ver120);
-	else String_Append(fsrc, ver110);
+	String_Append(fsrc, ver110);
 	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
