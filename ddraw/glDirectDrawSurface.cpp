@@ -504,7 +504,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23, E_NOINTERFACE);
 		ERR(E_NOINTERFACE);
 	}
-	if ((riid == IID_IDirect3DDevice) || (riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
+	if ((riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
 		(riid == IID_IDirect3DRampDevice) || (riid == IID_IDirect3DRefDevice))
 	{
 
