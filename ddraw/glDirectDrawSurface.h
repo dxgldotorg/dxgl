@@ -36,6 +36,7 @@ class glDirectDrawSurface4;
 class glDirect3DTexture2;
 class glDirect3DTexture1;
 class glDirect3DDevice7;
+struct glDirectDrawGammaControl;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
@@ -123,12 +124,15 @@ public:
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
 	HRESULT Load(glDirectDrawSurface7 *src);
+	HRESULT GetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData);
+	HRESULT SetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData);
 	glDirectDrawSurface1 *dds1;
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
 	glDirectDrawSurface4 *dds4;
 	glDirect3DTexture2 *d3dt2;
 	glDirect3DTexture1 *d3dt1;
+	glDirectDrawGammaControl *gammacontrol;
 	DWORD flipcount;
 	DWORD fakex,fakey;
 	float mulx, muly;

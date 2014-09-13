@@ -29,6 +29,7 @@
 #include "glDirect3DTexture.h"
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
+#include "glDirectDrawGammaControl.h"
 #include "glRenderer.h"
 #include <string>
 using namespace std;
@@ -66,6 +67,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dds4 = new glDirectDrawSurface4(this);
 	d3dt2 = new glDirect3DTexture2(this);
 	d3dt1 = new glDirect3DTexture1(this);
+	glDirectDrawGammaControl_Create(this, (LPDIRECTDRAWGAMMACONTROL*)&gammacontrol);
 	buffer = gdibuffer = NULL;
 	bigbuffer = NULL;
 	zbuffer = NULL;
@@ -396,6 +398,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (dds4) delete dds4;
 	if (d3dt1) delete d3dt1;
 	if (d3dt2) delete d3dt2;
+	if (gammacontrol) free(gammacontrol);
 	if(paltex)
 	{
 		glRenderer_DeleteTexture(ddInterface->renderer, paltex);
@@ -489,9 +492,11 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if (riid == IID_IDirectDrawGammaControl)
 	{
-		FIXME("Add gamma control\n");
-		TRACE_EXIT(23, E_NOINTERFACE);
-		ERR(E_NOINTERFACE);
+		this->AddRefGamma();
+		*ppvObj = gammacontrol;
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,DD_OK);
+		return DD_OK;
 	}
 	if (riid == IID_IDirectDrawColorControl)
 	{
@@ -1726,6 +1731,23 @@ HRESULT glDirectDrawSurface7::Load(glDirectDrawSurface7 *src)
 	return D3D_OK;
 }
 
+HRESULT glDirectDrawSurface7::GetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData)
+{
+	TRACE_ENTER(3, 14, this, 9, dwFlags, 14, lpRampData);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	FIXME("glDirectDrawSurface7::GetGammaRamp: stub\n");
+	TRACE_EXIT(23, DDERR_GENERIC);
+	ERR(DDERR_GENERIC);
+}
+
+HRESULT glDirectDrawSurface7::SetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData)
+{
+	TRACE_ENTER(3, 14, this, 9, dwFlags, 14, lpRampData);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	FIXME("glDirectDrawSurface7::SetGammaRamp: stub\n");
+	TRACE_EXIT(23, DDERR_GENERIC);
+	ERR(DDERR_GENERIC);
+}
 
 // DDRAW1 wrapper
 glDirectDrawSurface1::glDirectDrawSurface1(glDirectDrawSurface7 *gl_DDS7)
