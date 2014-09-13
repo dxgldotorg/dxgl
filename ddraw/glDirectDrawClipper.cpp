@@ -123,6 +123,9 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 
 HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize)
 {
+	int error;
+	POINT origin;
+	HDC hdc;
 	HRGN rgnrect;
 	HRGN rgncliplist;
 	RGNDATA *rgn;
@@ -130,7 +133,86 @@ HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT
 	TRACE_ENTER(4,14,This,26,lpRect,14,lpClipList,14,lpdwSize);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpdwSize) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	if (!This->clipsize) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
+	if (!This->clipsize)
+	{
+		if (!This->hWnd) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
+		hdc = GetDC(This->hWnd);
+		if (!hdc) TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+		rgncliplist = CreateRectRgn(0, 0, 0, 0);
+		if (!rgncliplist)
+		{
+			ReleaseDC(This->hWnd, hdc);
+			TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+		}
+		error = GetRandomRgn(hdc, rgncliplist, SYSRGN);
+		if (error == -1)
+		{
+			DeleteObject(rgncliplist);
+			ReleaseDC(This->hWnd, hdc);
+			TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+		}
+		if (GetVersion() & 0x80000000)
+		{
+			GetDCOrgEx(hdc, &origin);
+			OffsetRgn(rgncliplist, origin.x, origin.y);
+		}
+		ReleaseDC(This->hWnd, hdc);
+		if (lpRect)
+		{
+			rgnrect = CreateRectRgnIndirect(lpRect);
+			if (CombineRgn(rgncliplist, rgnrect, rgncliplist, RGN_AND) == ERROR)
+			{
+				DeleteObject(rgnrect);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			}
+			DeleteObject(rgnrect);
+		}
+		rgnsize = GetRegionData(rgncliplist, 0, NULL);
+		rgn = (RGNDATA*)malloc(rgnsize);
+		if (!rgn)
+		{
+			DeleteObject(rgncliplist);
+			TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+		}
+		GetRegionData(rgncliplist, rgnsize, rgn);
+		if (!lpClipList)
+		{
+			*lpdwSize = sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT));
+			free(rgn);
+			DeleteObject(rgncliplist);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+		else
+		{
+			if (*lpdwSize < (sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT))))
+			{
+				free(rgn);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_REGIONTOOSMALL);
+			}
+			*lpdwSize = sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT));
+#ifdef _MSC_VER
+			__try
+			{
+#endif
+				memcpy(lpClipList, rgn, sizeof(RGNDATAHEADER) + (rgn->rdh.nCount*sizeof(RECT)));
+#ifdef _MSC_VER
+			}
+			__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION)
+			{
+				free(rgn);
+				DeleteObject(rgncliplist);
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDCLIPLIST);
+			}
+#endif
+			free(rgn);
+			DeleteObject(rgncliplist);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+	}
 	if (!lpClipList)
 	{
 		if (lpRect)
