@@ -70,7 +70,7 @@ class glDirect3DDevice1;
 class glDirect3DDevice7 : public IDirect3DDevice7
 {
 public:
-	glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7);
+	glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator);
 	virtual ~glDirect3DDevice7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -170,6 +170,8 @@ public:
 	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	void SetScale(D3DVALUE x, D3DVALUE y){scalex = x; scaley = y;}
+	ULONG AddRefInternal();
+	ULONG ReleaseInternal();
 	GLfloat matWorld[16];
 	GLfloat matView[16];
 	GLfloat matProjection[16];
@@ -232,6 +234,7 @@ private:
 	D3DDEVICEDESC7 d3ddesc;
 	D3DDEVICEDESC d3ddesc3;
 	glRenderer *renderer;
+	IUnknown *creator;
 };
 
 #endif //__GLDIRECT3DDEVICE_H
@@ -240,7 +243,6 @@ class glDirect3DDevice3 : public IDirect3DDevice3
 {
 public:
 	glDirect3DDevice3(glDirect3DDevice7 *glD3DDev7);
-	virtual ~glDirect3DDevice3();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -292,7 +294,6 @@ public:
 	glDirect3DDevice7 *GetGLD3DDev7(){return glD3DDev7;}
 private:
 	glDirect3DDevice7 *glD3DDev7;
-	ULONG refcount;
 };
 
 
@@ -300,7 +301,6 @@ class glDirect3DDevice2 : public IDirect3DDevice2
 {
 public:
 	glDirect3DDevice2(glDirect3DDevice7 *glD3DDev7);
-	virtual ~glDirect3DDevice2();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -338,14 +338,12 @@ public:
 	HRESULT WINAPI Vertex(LPVOID lpVertexType);
 private:
 	glDirect3DDevice7 *glD3DDev7;
-	ULONG refcount;
 };
 
 class glDirect3DDevice1 : public IDirect3DDevice
 {
 public:
 	glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7);
-	virtual ~glDirect3DDevice1();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
 	ULONG WINAPI Release();
@@ -372,5 +370,4 @@ public:
 	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
 private:
 	glDirect3DDevice7 *glD3DDev7;
-	ULONG refcount;
 };

@@ -271,15 +271,12 @@ void AddStats(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwCount, D3DSTATS *stat
 	}
 }
 
-glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7)
+glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator)
 {
 	TRACE_ENTER(4,14,this,24,&rclsid,14,glD3D7,14,glDDS7);
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
 	int zbuffer = 0;
-	glD3DDev3 = NULL;
-	glD3DDev2 = NULL;
-	glD3DDev1 = NULL;
 	maxmaterials = 32;
 	materials = (glDirect3DMaterial3**)malloc(32*sizeof(glDirect3DMaterial3*));
 	if(!materials)
@@ -339,7 +336,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
-	glDDS7->AddRef();
+	if(!creator) glDDS7->AddRef();
 	renderer = this->glD3D7->glDD7->renderer;
 	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
 	if(glDDS7->GetZBuffer()) zbuffer = 1;
@@ -367,6 +364,10 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	scalex = scaley = 0;
 	mhWorld = mhView = mhProjection = 0;
 	glRenderer_InitD3D(renderer,zbuffer);
+	glD3DDev3 = new glDirect3DDevice3(this);
+	glD3DDev2 = new glDirect3DDevice2(this);
+	glD3DDev1 = new glDirect3DDevice1(this);
+	this->creator = creator;
 	error = D3D_OK;
 	TRACE_EXIT(-1,0);
 }
@@ -406,8 +407,11 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	free(materials);
 	free(textures);
 	if(matrices) free(matrices);
+	if (glD3DDev3) delete glD3DDev3;
+	if (glD3DDev2) delete glD3DDev2;
+	if (glD3DDev1) delete glD3DDev1;
 	glD3D7->Release();
-	glDDS7->Release();
+	if(!creator) glDDS7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -446,70 +450,50 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DDevice3)
 	{
-		if(glD3DDev3)
-		{
-			*ppvObj = glD3DDev3;
-			glD3DDev3->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3DDevice3(this);
-			glD3DDev3 = (glDirect3DDevice3*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
+		*ppvObj = glD3DDev3;
+		glD3DDev3->AddRef();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
+		return D3D_OK;
 	}
 	if(riid == IID_IDirect3DDevice2)
 	{
-		if(glD3DDev2)
-		{
-			*ppvObj = glD3DDev2;
-			glD3DDev2->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3DDevice2(this);
-			glD3DDev2 = (glDirect3DDevice2*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
+		*ppvObj = glD3DDev2;
+		glD3DDev2->AddRef();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
+		return D3D_OK;
 	}
 	if(riid == IID_IDirect3DDevice)
 	{
-		if(glD3DDev1)
-		{
-			*ppvObj = glD3DDev1;
-			glD3DDev1->AddRef();
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
-		else
-		{
-			this->AddRef();
-			*ppvObj = new glDirect3DDevice1(this);
-			glD3DDev1 = (glDirect3DDevice1*)*ppvObj;
-			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,D3D_OK);
-			return D3D_OK;
-		}
+		*ppvObj = glD3DDev1;
+		glD3DDev1->AddRef();
+		TRACE_VAR("*ppvObj",14,*ppvObj);
+		TRACE_EXIT(23,D3D_OK);
+		return D3D_OK;
 	}
-	if (glDDS7) TRACE_RET(HRESULT, 23, glDDS7->QueryInterface(riid, ppvObj));
+	if (creator) TRACE_RET(HRESULT, 23, creator->QueryInterface(riid, ppvObj));
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
 
 ULONG WINAPI glDirect3DDevice7::AddRef()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	if (creator) TRACE_RET(ULONG, 8, creator->AddRef());
+	TRACE_RET(ULONG, 8, AddRefInternal());
+}
+
+ULONG WINAPI glDirect3DDevice7::Release()
+{
+	TRACE_ENTER(1, 14, this);
+	if (!this) TRACE_RET(ULONG, 8, 0);
+	if (creator) TRACE_RET(ULONG, 8, creator->Release());
+	TRACE_RET(ULONG, 8, ReleaseInternal());
+}
+
+ULONG glDirect3DDevice7::AddRefInternal()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
@@ -517,7 +501,7 @@ ULONG WINAPI glDirect3DDevice7::AddRef()
 	TRACE_EXIT(8,refcount);
 	return refcount;
 }
-ULONG WINAPI glDirect3DDevice7::Release()
+ULONG glDirect3DDevice7::ReleaseInternal()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
@@ -1458,7 +1442,7 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRend
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	lpNewRenderTarget->GetSurfaceDesc(&ddsd);
 	if(!(ddsd.ddsCaps.dwCaps & DDSCAPS_3DDEVICE)) TRACE_RET(HRESULT,23,DDERR_INVALIDSURFACETYPE);
-	glDDS7->Release();
+	if(glDDS7) glDDS7->Release();
 	glDDS7 = (glDirectDrawSurface7*)lpNewRenderTarget;
 	glDDS7->AddRef();
 	TRACE_EXIT(23,D3D_OK);
@@ -2918,15 +2902,6 @@ glDirect3DDevice3::glDirect3DDevice3(glDirect3DDevice7 *glD3DDev7)
 {
 	TRACE_ENTER(2,14,this,14,glD3DDev7);
 	this->glD3DDev7 = glD3DDev7;
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3DDevice3::~glDirect3DDevice3()
-{
-	TRACE_ENTER(1,14,this);
-	glD3DDev7->glD3DDev3 = NULL;
-	glD3DDev7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -2949,21 +2924,14 @@ ULONG WINAPI glDirect3DDevice3::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3DDev7->AddRef());
 }
 
 ULONG WINAPI glDirect3DDevice3::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3DDev7->Release());
 }
 
 HRESULT WINAPI glDirect3DDevice3::AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport)
@@ -3277,15 +3245,6 @@ glDirect3DDevice2::glDirect3DDevice2(glDirect3DDevice7 *glD3DDev7)
 	TRACE_ENTER(2,14,this,14,glD3DDev7);
 	this->glD3DDev7 = glD3DDev7;
 	glD3DDev7->InitDX5();
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3DDevice2::~glDirect3DDevice2()
-{
-	TRACE_ENTER(1,14,this);
-	glD3DDev7->glD3DDev2 = NULL;
-	glD3DDev7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -3308,21 +3267,14 @@ ULONG WINAPI glDirect3DDevice2::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3DDev7->AddRef());
 }
 
 ULONG WINAPI glDirect3DDevice2::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3DDev7->Release());
 }
 
 HRESULT WINAPI glDirect3DDevice2::AddViewport(LPDIRECT3DVIEWPORT2 lpDirect3DViewport2)
@@ -3628,15 +3580,6 @@ glDirect3DDevice1::glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7)
 	TRACE_ENTER(2,14,this,14,glD3DDev7);
 	this->glD3DDev7 = glD3DDev7;
 	glD3DDev7->InitDX5();
-	refcount = 1;
-	TRACE_EXIT(-1,0);
-}
-
-glDirect3DDevice1::~glDirect3DDevice1()
-{
-	TRACE_ENTER(1,14,this);
-	glD3DDev7->glD3DDev1 = NULL;
-	glD3DDev7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -3659,21 +3602,14 @@ ULONG WINAPI glDirect3DDevice1::AddRef()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_RET(ULONG, 8, glD3DDev7->AddRef());
 }
 
 ULONG WINAPI glDirect3DDevice1::Release()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(ULONG,8,0);
-	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
-	TRACE_EXIT(8,ret);
-	return ret;
+	TRACE_RET(ULONG, 8, glD3DDev7->Release());
 }
 
 HRESULT WINAPI glDirect3DDevice1::AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport)

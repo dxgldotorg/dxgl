@@ -208,7 +208,7 @@ HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 l
 	TRACE_ENTER(4,14,this,24,&rclsid,14,lpDDS,14,lplpD3DDevice);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret;
-	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(rclsid,this,(glDirectDrawSurface7*)lpDDS);
+	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(rclsid,this,(glDirectDrawSurface7*)lpDDS,NULL);
 	if(!glD3DDev7) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	if(FAILED(glD3DDev7->err()))
 	{

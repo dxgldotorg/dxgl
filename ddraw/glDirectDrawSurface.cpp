@@ -47,6 +47,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dirty = 2;
 	handle = 0;
 	device = NULL;
+	device1 = NULL;
 	locked = 0;
 	pagelocked = 0;
 	flipcount = 0;
@@ -424,13 +425,15 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(bigbuffer) free(bigbuffer);
 	if(zbuffer) zbuffer_iface->Release();
 	if(miptexture) miptexture->Release();
-	if(device) device->Release();
+	if (device) device->Release(); 
+	if (device1) delete device1;
 	ddInterface->DeleteSurface(this);
 	if (creator) creator->Release();
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 {
+	HRESULT ret;
 	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -500,34 +503,34 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if (riid == IID_IDirectDrawColorControl)
 	{
-		FIXME("Add color control\n");
+		DEBUG("FIXME:  Add color control\n");
 		TRACE_EXIT(23, E_NOINTERFACE);
-		ERR(E_NOINTERFACE);
+		return E_NOINTERFACE;
 	}
 	if ((riid == IID_IDirect3DHALDevice) || (riid == IID_IDirect3DRGBDevice) ||
 		(riid == IID_IDirect3DRampDevice) || (riid == IID_IDirect3DRefDevice))
 	{
 
-		if(!device)
+		if(!device1)
 		{
 			glDirect3D7 *tmpd3d;
-			glDirect3DDevice7 *tmpdev;
 			ddInterface->QueryInterface(IID_IDirect3D7,(void**)&tmpd3d);
 			if(!tmpd3d) TRACE_RET(HRESULT,23,E_NOINTERFACE);
-			tmpd3d->CreateDevice(riid,this,(LPDIRECT3DDEVICE7*)&tmpdev);
-			if(!tmpdev)
+			device1 = new glDirect3DDevice7(riid, tmpd3d, this, dds1);
+			if (FAILED(device1->err()))
 			{
+				ret = device1->err();
+				delete device1;
 				tmpd3d->Release();
-				TRACE_EXIT(23,E_NOINTERFACE);
-				return E_NOINTERFACE;
+				TRACE_EXIT(23, ret);
+				return ret;
 			}
-			HRESULT ret = tmpdev->QueryInterface(IID_IDirect3DDevice,ppvObj);
-			tmpdev->SetRenderTarget(this,0);
-			tmpdev->Release();
+			*ppvObj = device1->glD3DDev1;
+			device1->glD3DDev1->AddRef();
 			tmpd3d->Release();
 			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,ret);
-			return ret;
+			TRACE_EXIT(23,DD_OK);
+			return DD_OK;
 		}
 		else
 		{

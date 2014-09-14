@@ -173,6 +173,7 @@ private:
 	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	int pagelocked;
 	GLint magfilter,minfilter;
+	glDirect3DDevice7 *device1;
 	glDirect3DDevice7 *device;
 	bool overlay;
 	IUnknown *zbuffer_iface;
