@@ -41,6 +41,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version)
 {
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
+	this->version = version;
 	creator = NULL;
 	overlay = false;
 	hasstencil = false;
@@ -534,14 +535,22 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 		}
 		else
 		{
-			HRESULT ret = device->QueryInterface(IID_IDirect3DDevice,ppvObj);
+			HRESULT ret = device1->QueryInterface(IID_IDirect3DDevice,ppvObj);
 			TRACE_VAR("*ppvObj",14,*ppvObj);
 			TRACE_EXIT(23,ret);
 			return ret;
 		}
 	}
-	TRACE_EXIT(23,E_NOINTERFACE);
-	return E_NOINTERFACE;
+	if (version == 7)
+	{
+		TRACE_EXIT(23, E_NOINTERFACE);
+		return E_NOINTERFACE;
+	}
+	else
+	{
+		TRACE_EXIT(23, DDERR_INVALIDPARAMS);
+		return DDERR_INVALIDPARAMS;
+	}
 }
 ULONG WINAPI glDirectDrawSurface7::AddRef()
 {

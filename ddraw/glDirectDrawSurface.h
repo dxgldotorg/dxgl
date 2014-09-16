@@ -177,6 +177,7 @@ private:
 	glDirect3DDevice7 *device;
 	bool overlay;
 	IUnknown *zbuffer_iface;
+	int version;
 };
 
 // Legacy DDRAW Interfaces
