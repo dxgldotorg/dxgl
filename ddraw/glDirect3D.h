@@ -45,6 +45,7 @@ public:
 	HRESULT WINAPI EvictManagedTextures();
 	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 	glDirectDraw7 *glDD7;
+	HRESULT CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version);
 };
 
 class glDirect3D3 : public IDirect3D3

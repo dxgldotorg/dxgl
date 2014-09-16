@@ -70,7 +70,7 @@ class glDirect3DDevice1;
 class glDirect3DDevice7 : public IDirect3DDevice7
 {
 public:
-	glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator);
+	glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator, int version);
 	virtual ~glDirect3DDevice7();
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
 	ULONG WINAPI AddRef();
@@ -235,6 +235,7 @@ private:
 	D3DDEVICEDESC d3ddesc3;
 	glRenderer *renderer;
 	IUnknown *creator;
+	int version;
 };
 
 #endif //__GLDIRECT3DDEVICE_H
@@ -336,6 +337,7 @@ public:
 	HRESULT WINAPI SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDIRECT3DTEXTURE2 lpD3DTex2);
 	HRESULT WINAPI Vertex(LPVOID lpVertexType);
+	glDirect3DDevice7 *GetGLD3DDev7(){ return glD3DDev7; }
 private:
 	glDirect3DDevice7 *glD3DDev7;
 };
@@ -368,6 +370,7 @@ public:
 		LPD3DRECT lpRect);
 	HRESULT WINAPI SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
 	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
+	glDirect3DDevice7 *GetGLD3DDev7(){ return glD3DDev7; }
 private:
 	glDirect3DDevice7 *glD3DDev7;
 };

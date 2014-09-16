@@ -517,7 +517,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			glDirect3D7 *tmpd3d;
 			ddInterface->QueryInterface(IID_IDirect3D7,(void**)&tmpd3d);
 			if(!tmpd3d) TRACE_RET(HRESULT,23,E_NOINTERFACE);
-			device1 = new glDirect3DDevice7(riid, tmpd3d, this, dds1);
+			device1 = new glDirect3DDevice7(riid, tmpd3d, this, dds1, 1);
 			if (FAILED(device1->err()))
 			{
 				ret = device1->err();
@@ -535,10 +535,11 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 		}
 		else
 		{
-			HRESULT ret = device1->QueryInterface(IID_IDirect3DDevice,ppvObj);
+			*ppvObj = device1->glD3DDev1;
+			device1->glD3DDev1->AddRef();
 			TRACE_VAR("*ppvObj",14,*ppvObj);
-			TRACE_EXIT(23,ret);
-			return ret;
+			TRACE_EXIT(23,DD_OK);
+			return DD_OK;
 		}
 	}
 	if (version == 7)

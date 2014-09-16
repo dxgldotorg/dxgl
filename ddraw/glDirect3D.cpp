@@ -202,13 +202,20 @@ HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
 	TRACE_RET(HRESULT, 23, glDD7->QueryInterface(riid, ppvObj));
 }
 
-
 HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
 {
-	TRACE_ENTER(4,14,this,24,&rclsid,14,lpDDS,14,lplpD3DDevice);
+	TRACE_ENTER(4, 14, this, 24, &rclsid, 14, lpDDS, 14, lplpD3DDevice);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULLT, 23, CreateDevice2(rclsid, lpDDS, lplpD3DDevice, 7));
+}
+
+HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version)
+{
+	TRACE_ENTER(5,14,this,24,&rclsid,14,lpDDS,14,lplpD3DDevice,11,version);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret;
-	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(rclsid,this,(glDirectDrawSurface7*)lpDDS,NULL);
+	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(rclsid,this,(glDirectDrawSurface7*)lpDDS,NULL,version);
 	if(!glD3DDev7) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	if(FAILED(glD3DDev7->err()))
 	{
@@ -487,7 +494,7 @@ HRESULT WINAPI glDirect3D3::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE4 l
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
-	HRESULT err = glD3D7->CreateDevice(rclsid,((glDirectDrawSurface4*)lpDDS)->GetDDS7(),&lpD3DDev7);
+	HRESULT err = glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface4*)lpDDS)->GetDDS7(),&lpD3DDev7,3);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice3,(LPVOID*)lplpD3DDevice);
@@ -606,7 +613,7 @@ HRESULT WINAPI glDirect3D2::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lp
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
-	HRESULT err = glD3D7->CreateDevice(rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7);
+	HRESULT err = glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice2,(LPVOID*)lplpD3DDevice);

@@ -271,9 +271,10 @@ void AddStats(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwCount, D3DSTATS *stat
 	}
 }
 
-glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator)
+glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7, IUnknown *creator, int version)
 {
 	TRACE_ENTER(4,14,this,24,&rclsid,14,glD3D7,14,glDDS7);
+	this->version = version;
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
 	int zbuffer = 0;
@@ -440,39 +441,45 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	if(riid == IID_IDirect3DDevice7)
-	{
-		this->AddRef();
-		*ppvObj = this;
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
-	if(riid == IID_IDirect3DDevice3)
-	{
-		*ppvObj = glD3DDev3;
-		glD3DDev3->AddRef();
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
-	if(riid == IID_IDirect3DDevice2)
-	{
-		*ppvObj = glD3DDev2;
-		glD3DDev2->AddRef();
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
-	if(riid == IID_IDirect3DDevice)
-	{
-		*ppvObj = glD3DDev1;
-		glD3DDev1->AddRef();
-		TRACE_VAR("*ppvObj",14,*ppvObj);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
 	if (creator) TRACE_RET(HRESULT, 23, creator->QueryInterface(riid, ppvObj));
+	if (version == 7)
+	{
+		if (riid == IID_IDirect3DDevice7)
+		{
+			this->AddRef();
+			*ppvObj = this;
+			TRACE_VAR("*ppvObj", 14, *ppvObj);
+			TRACE_EXIT(23, D3D_OK);
+			return D3D_OK;
+		}
+	}
+	else
+	{
+		if ((riid == IID_IDirect3DDevice3) && (version >= 3))
+		{
+			*ppvObj = glD3DDev3;
+			glD3DDev3->AddRef();
+			TRACE_VAR("*ppvObj", 14, *ppvObj);
+			TRACE_EXIT(23, D3D_OK);
+			return D3D_OK;
+		}
+		if ((riid == IID_IDirect3DDevice2) && (version >= 2))
+		{
+			*ppvObj = glD3DDev2;
+			glD3DDev2->AddRef();
+			TRACE_VAR("*ppvObj", 14, *ppvObj);
+			TRACE_EXIT(23, D3D_OK);
+			return D3D_OK;
+		}
+		if (riid == IID_IDirect3DDevice)
+		{
+			*ppvObj = glD3DDev1;
+			glD3DDev1->AddRef();
+			TRACE_VAR("*ppvObj", 14, *ppvObj);
+			TRACE_EXIT(23, D3D_OK);
+			return D3D_OK;
+		}
+	}
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
