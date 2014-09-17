@@ -161,6 +161,7 @@ public:
 	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawSurface7 *miptexture;
 	glDirectDrawSurface7 *backbuffer;
+	int bigpitch;
 private:
 	int swapinterval;
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
@@ -178,6 +179,7 @@ private:
 	bool overlay;
 	IUnknown *zbuffer_iface;
 	int version;
+	bool clientmem;
 };
 
 // Legacy DDRAW Interfaces

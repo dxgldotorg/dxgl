@@ -33,6 +33,7 @@ typedef struct
 	GLint wraps;
 	GLint wrapt;
 	GLint miplevel;
+	GLint pitch;
 	DWORD bordercolor;
 	GLint internalformats[8];
 	DWORD colorsizes[4];
@@ -83,11 +84,11 @@ void TextureManager_SetActiveTexture(TextureManager *This, int level);
 void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE *texture);
 void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height);
 void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture);
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror);
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc);
 void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data);
 void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height);
 void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture);
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror);
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc);
 void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data);
 BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level);
 

@@ -55,6 +55,19 @@ void ClearError()
 	} while (1);
 }
 
+int pixelsfrompitch(int pitch, int bpp)
+{
+	int bytesperpixel = bpp / 8;
+	return pitch / bytesperpixel;
+}
+
+int bufferalign(int pitch)
+{
+	if (pitch & 1) return 1;
+	if (pitch & 2) return 2;
+	if (pitch & 4) return 4;
+	return 8;
+}
 DWORD CalculateMipLevels(DWORD width, DWORD height)
 {
 	DWORD x, y;
@@ -98,9 +111,9 @@ void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture)
 {
 	TextureManager_DeleteTexture(This, texture);
 }
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror)
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc)
 {
-	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror);
+	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror, realloc);
 }
 void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data)
 {
@@ -495,11 +508,13 @@ void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 }
 
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror)
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc)
 {
 	GLenum error;
 	texture->width = width;
 	texture->height = height;
+	glPixelStorei(GL_UNPACK_ALIGNMENT, bufferalign(texture->pitch));
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, pixelsfrompitch(texture->pitch, texture->pixelformat.dwRGBBitCount));
 	if (checkerror)
 	{
 		do
@@ -507,16 +522,16 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 			ClearError();
 			if (This->ext->GLEXT_EXT_direct_state_access)
 			{
-				This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
-				//This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
-				//	width, height, 0, texture->format, texture->type, data);
+				if (realloc)This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+					width, height, 0, texture->format, texture->type, data);
+				else This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 			}
 			else
 			{
 				TextureManager_SetActiveTexture(This, 0);
 				TextureManager_SetTexture(This, 0, texture);
-				glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
-				//glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+				if (realloc)glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+				else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 			}
 			error = glGetError();
 			if (error != GL_NO_ERROR)
@@ -536,22 +551,24 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 	{
 		if (This->ext->GLEXT_EXT_direct_state_access)
 		{
-			This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
-			//This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
-			//width, height, 0, texture->format, texture->type, data);
+			if (realloc)This->ext->glTextureImage2DEXT(texture->id, GL_TEXTURE_2D, level, texture->internalformats[0],
+				width, height, 0, texture->format, texture->type, data);
+			else This->ext->glTextureSubImage2DEXT(texture->id, GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 		}
 		else
 		{
 			TextureManager_SetActiveTexture(This, 0);
 			TextureManager_SetTexture(This, 0, texture);
-			glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
-			//glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+			if (realloc)glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
+			else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 		}
 	}
 }
 
 void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data)
 {
+	glPixelStorei(GL_PACK_ALIGNMENT, bufferalign(texture->pitch));
+	glPixelStorei(GL_PACK_ROW_LENGTH, bufferalign(texture->pixelformat.dwRGBBitCount));
 	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
 	{
