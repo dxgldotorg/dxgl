@@ -179,7 +179,7 @@ private:
 	bool overlay;
 	IUnknown *zbuffer_iface;
 	int version;
-	bool clientmem;
+	unsigned char *clientbuffer;
 };
 
 // Legacy DDRAW Interfaces
