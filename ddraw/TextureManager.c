@@ -55,19 +55,6 @@ void ClearError()
 	} while (1);
 }
 
-int pixelsfrompitch(int pitch, int bpp)
-{
-	int bytesperpixel = bpp / 8;
-	return pitch / bytesperpixel;
-}
-
-int bufferalign(int pitch)
-{
-	if (pitch & 1) return 1;
-	if (pitch & 2) return 2;
-	if (pitch & 4) return 4;
-	return 8;
-}
 DWORD CalculateMipLevels(DWORD width, DWORD height)
 {
 	DWORD x, y;
@@ -513,9 +500,6 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 	GLenum error;
 	texture->width = width;
 	texture->height = height;
-	//glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, bufferalign(texture->pitch));
-	//glPixelStorei(GL_UNPACK_ROW_LENGTH, pixelsfrompitch(texture->pitch, texture->pixelformat.dwRGBBitCount));
 	if (checkerror)
 	{
 		do
@@ -564,14 +548,10 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 			else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 		}
 	}
-	//glPopClientAttrib();
 }
 
 void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data)
 {
-	//glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-	//glPixelStorei(GL_PACK_ALIGNMENT, bufferalign(texture->pitch));
-	//glPixelStorei(GL_PACK_ROW_LENGTH, bufferalign(texture->pixelformat.dwRGBBitCount));
 	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
 	{
@@ -579,7 +559,6 @@ void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *textur
 		TextureManager_SetTexture(This, 0,texture);
 		glGetTexImage(GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	}
-	//glPopClientAttrib();
 }
 
 void TextureManager_SetActiveTexture(TextureManager *This, int level)

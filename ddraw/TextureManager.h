@@ -33,7 +33,6 @@ typedef struct
 	GLint wraps;
 	GLint wrapt;
 	GLint miplevel;
-	GLint pitch;
 	DWORD bordercolor;
 	GLint internalformats[8];
 	DWORD colorsizes[4];

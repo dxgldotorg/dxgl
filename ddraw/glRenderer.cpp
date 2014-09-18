@@ -1348,14 +1348,12 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 			This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
 			This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
 			This->backbuffer->pixelformat.dwRGBBitCount = 32;
-			This->backbuffer->pitch = (4 * x);
 		TextureManager__CreateTexture(This->texman,This->backbuffer,x,y);
 		This->backx = x;
 		This->backy = y;
 	}
 	if((This->backx != x) || (This->backy != y))
 	{
-		This->backbuffer->pitch = (4 * x);
 		TextureManager__UploadTexture(This->texman,This->backbuffer,0,NULL,x,y, FALSE, TRUE);
 		This->backx = x;
 		This->backy = y;
@@ -1402,7 +1400,6 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 		This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
 		This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
 		This->backbuffer->pixelformat.dwRGBBitCount = 32;
-		This->backbuffer->pitch = (4 * x);
 		TextureManager__CreateTexture(This->texman, This->backbuffer, x, y);
 		This->backx = x;
 		This->backy = y;
@@ -1411,7 +1408,6 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 	{
 		if (This->backx > x) x = This->backx;
 		if (This->backx > y) y = This->backx;
-		This->backbuffer->pitch = (4 * x);
 		TextureManager__UploadTexture(This->texman, This->backbuffer, 0, NULL, x, y, FALSE, TRUE);
 		This->backx = x;
 		This->backy = y;
@@ -2074,7 +2070,6 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 		surface->stencil->pixelformat.dwRBitMask = 0xF00;
 		surface->stencil->pixelformat.dwZBitMask = 0xF000;
 		surface->stencil->pixelformat.dwRGBBitCount = 16;
-		surface->stencil->pitch = NextMultipleOf4(2 * surface->ddsd.dwWidth);
 		TextureManager__CreateTexture(This->texman, surface->stencil, surface->ddsd.dwWidth, surface->ddsd.dwHeight);
 	}
 	if ((surface->ddsd.dwWidth != surface->stencil->width) ||

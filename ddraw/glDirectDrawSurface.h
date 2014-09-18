@@ -161,7 +161,6 @@ public:
 	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawSurface7 *miptexture;
 	glDirectDrawSurface7 *backbuffer;
-	int bigpitch;
 private:
 	int swapinterval;
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
