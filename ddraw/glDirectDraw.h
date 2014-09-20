@@ -137,6 +137,7 @@ private:
 	glDirect3D1 *glD3D1;
 	DWORD timer;
 	bool devwnd;
+	DWORD cooplevel;
 };
 
 class glDirectDraw1 : public IDirectDraw

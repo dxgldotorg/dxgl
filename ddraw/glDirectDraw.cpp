@@ -885,6 +885,7 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 {
 	TRACE_ENTER(5, 14, this, 9, dwFlags, 14, lpDDColorArray, 14, lplpDDPalette, 14, pUnkOuter);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (pUnkOuter) TRACE_RET(HRESULT, 23, CLASS_E_NOAGGREGATION);
 	HRESULT ret = CreatePalette2(dwFlags, lpDDColorArray, lplpDDPalette, pUnkOuter);
 	if (ret == DD_OK)
 	{
@@ -900,7 +901,8 @@ HRESULT glDirectDraw7::CreatePalette2(DWORD dwFlags, LPPALETTEENTRY lpDDColorArr
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(pUnkOuter) TRACE_RET(HRESULT,23,CLASS_E_NOAGGREGATION);
+	if (!cooplevel) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
 	HRESULT ret = glDirectDrawPalette_Create(dwFlags, lpDDColorArray, lplpDDPalette);
 	TRACE_VAR("*lplpDDPalette",14,*lplpDDPalette);
 	TRACE_EXIT(23,ret);
@@ -1369,6 +1371,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	fpusetup = false;
 	threadsafe = false;
 	nowindowchanges = false;
+	cooplevel = 0;
 	timer = timeGetTime();
 	ZeroMemory(&oldmode,sizeof(DEVMODE));
 	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
@@ -1494,6 +1497,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
+	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -2109,8 +2113,6 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
-		this->AddRef();
-		((glDirectDrawSurface7*)lpDDS7)->creator = this;
 		TRACE_VAR("*lplpDDSurface",14,lplpDDSurface);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -2313,8 +2315,6 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 	{
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
-		this->AddRef();
-		((glDirectDrawSurface7*)lpDDS7)->creator = this;
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
