@@ -38,7 +38,7 @@ using namespace std;
 
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error,
-	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version)
+	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front)
 {
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
 	this->version = version;
@@ -207,6 +207,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bitmapinfo->bmiHeader.biHeight = -(signed)ddsd.dwHeight;
 	bitmapinfo->bmiHeader.biPlanes = 1;
 	backbuffer = NULL;
+	backbufferwraparound = NULL;
 	if ((ddsd.ddsCaps.dwCaps & DDSCAPS_MIPMAP) && !(ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
 	{
 		if (!(ddsd.dwFlags & DDSD_MIPMAPCOUNT))
@@ -332,7 +333,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		newdesc.ddsCaps.dwCaps2 |= DDSCAPS2_MIPMAPSUBLEVEL;
 		newdesc.dwMipMapCount = ddsd.dwMipMapCount - 1;
 		HRESULT miperror;
-		if(newdesc.dwMipMapCount) miptexture = new glDirectDrawSurface7(lpDD7, &newdesc, &miperror, palette, texture, miplevel + 1, version);
+		if(newdesc.dwMipMapCount) miptexture = new glDirectDrawSurface7(lpDD7, &newdesc, &miperror, palette, texture, miplevel + 1, version, NULL);
 	}
 
 	if(ddsd.ddpfPixelFormat.dwRGBBitCount > 8)
@@ -367,9 +368,12 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsdBack.dwBackBufferCount--;
 				ddsdBack.ddsCaps.dwCaps |= DDSCAPS_BACKBUFFER;
 				ddsdBack.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
-				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,palette,parenttex,miplevel,version);
+				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,palette,parenttex,miplevel,version,front?front:this);
 			}
-			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT){}
+			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT)
+			{
+				backbufferwraparound = front;
+			}
 			else *error = DDERR_INVALIDPARAMS;
 		}
 	}
@@ -1030,6 +1034,20 @@ HRESULT WINAPI glDirectDrawSurface7::GetAttachedSurface(LPDDSCAPS2 lpDDSCaps, LP
 		{
 			*lplpDDAttachedSurface = backbuffer;
 			backbuffer->AddRef();
+			TRACE_VAR("*lplpDDAttachedSurface", 14, *lplpDDAttachedSurface);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+		}
+	}
+	if (backbufferwraparound)
+	{ 
+		backbufferwraparound->GetCaps(&ddsComp);
+		memcpy(&comp1, lpDDSCaps, sizeof(unsigned __int64));
+		memcpy(&comp2, &ddsComp, sizeof(unsigned __int64));
+		if ((comp1 & comp2) == comp1)
+		{
+			*lplpDDAttachedSurface = backbufferwraparound;
+			backbufferwraparound->AddRef();
 			TRACE_VAR("*lplpDDAttachedSurface", 14, *lplpDDAttachedSurface);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;

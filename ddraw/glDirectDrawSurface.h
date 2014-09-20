@@ -40,7 +40,8 @@ struct glDirectDrawGammaControl;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
-	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version);
+	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein,
+		TEXTURE *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front);
 	virtual ~glDirectDrawSurface7();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
@@ -161,6 +162,7 @@ public:
 	glDirectDrawSurface7 *zbuffer;
 	glDirectDrawSurface7 *miptexture;
 	glDirectDrawSurface7 *backbuffer;
+	glDirectDrawSurface7 *backbufferwraparound;
 private:
 	int swapinterval;
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
