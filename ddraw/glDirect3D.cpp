@@ -206,7 +206,7 @@ HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 l
 {
 	TRACE_ENTER(4, 14, this, 24, &rclsid, 14, lpDDS, 14, lplpD3DDevice);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULLT, 23, CreateDevice2(rclsid, lpDDS, lplpD3DDevice, 7));
+	TRACE_RET(HRESULT, 23, CreateDevice2(rclsid, lpDDS, lplpD3DDevice, 7));
 }
 
 HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version)
