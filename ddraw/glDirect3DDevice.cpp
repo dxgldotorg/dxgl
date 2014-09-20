@@ -1969,8 +1969,8 @@ HRESULT glDirect3DDevice7::GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewpo
 	TRACE_ENTER(2,14,this,14,lplpd3dViewport);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpd3dViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(!currentviewport) TRACE_RET(HRESULT,23,D3DERR_NOCURRENTVIEWPORT);
 	*lplpd3dViewport = (LPDIRECT3DVIEWPORT3)currentviewport;
+	if (!currentviewport) TRACE_RET(HRESULT, 23, D3DERR_NOCURRENTVIEWPORT);
 	glDirect3DViewport3_AddRef(currentviewport);
 	TRACE_VAR("*lplpd3dViewport",14,*lplpd3dViewport);
 	TRACE_EXIT(23,D3D_OK);
