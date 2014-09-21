@@ -1492,7 +1492,8 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 {
 	TRACE_ENTER(2,14,this,26,lpRect);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!locked) TRACE_RET(HRESULT,23,DDERR_NOTLOCKED);
+	dirty |= 1;
+	if (!locked) TRACE_RET(HRESULT, 23, DDERR_NOTLOCKED);
 	locked--;
 	ddsd.lpSurface = NULL;
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
