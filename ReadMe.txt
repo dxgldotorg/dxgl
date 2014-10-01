@@ -9,7 +9,7 @@ DXGL is currently in an alpha stage, but several applications and games already 
 
 == System Requirements ==
 
-* Windows XP, Vista, 7, or 8 (May work under recent builds of Wine)
+* Windows XP, Vista, 7, 8, 8.1, or 10 (May work under recent builds of Wine)
 * OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures
 * Visual C++ 2010 x86 runtime, available at http://www.microsoft.com/download/en/details.aspx?id=5555 (will be installed if not present)
 
