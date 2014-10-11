@@ -274,12 +274,43 @@ HRESULT WINAPI glDirect3D7::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport,
 	TRACE_EXIT(23,ret);
 	return ret;
 }
+
+void FixCapsTexture(D3DDEVICEDESC7 *d3ddesc, D3DDEVICEDESC *d3ddesc3, glRenderer *renderer)
+{
+	if (!d3ddesc->dwMaxTextureWidth)
+	{
+		if (!renderer)
+		{
+			HWND hGLWnd = CreateWindow(_T("Test"), NULL, WS_POPUP, 0, 0, 16, 16, NULL, NULL, NULL, NULL);
+			glRenderer *tmprenderer = (glRenderer*)malloc(sizeof(glRenderer));
+			DEVMODE mode;
+			mode.dmSize = sizeof(DEVMODE);
+			EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
+			glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
+			d3ddesc->dwMaxTextureWidth = d3ddesc->dwMaxTextureHeight =
+				d3ddesc->dwMaxTextureRepeat = d3ddesc->dwMaxTextureAspectRatio = tmprenderer->gl_caps.TextureMax;
+			d3ddesc3->dwMaxTextureWidth = d3ddesc3->dwMaxTextureHeight =
+				d3ddesc3->dwMaxTextureRepeat = d3ddesc3->dwMaxTextureAspectRatio = tmprenderer->gl_caps.TextureMax;
+			glRenderer_Delete(tmprenderer);
+			free(tmprenderer);
+		}
+		else
+		{
+			d3ddesc->dwMaxTextureWidth = d3ddesc->dwMaxTextureHeight =
+				d3ddesc->dwMaxTextureRepeat = d3ddesc->dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
+			d3ddesc3->dwMaxTextureWidth = d3ddesc3->dwMaxTextureHeight =
+				d3ddesc3->dwMaxTextureRepeat = d3ddesc3->dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
+		}
+	}
+}
+
 HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {
 	TRACE_ENTER(3,14,this,14,lpEnumDevicesCallback,14,lpUserArg);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
+	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
 	D3DDEVICEDESC7 desc = glDD7->d3ddesc;
 	for(int i = 0; i < 3; i++)
 	{
@@ -310,6 +341,7 @@ HRESULT WINAPI glDirect3D7::EnumDevices3(LPD3DENUMDEVICESCALLBACK lpEnumDevicesC
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
+	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
 	D3DDEVICEDESC desc = glDD7->d3ddesc3;
 	GUID guid = IID_IDirect3DRGBDevice;
 	result = lpEnumDevicesCallback(&guid,glDD7->stored_devices[0].name,glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
@@ -369,6 +401,7 @@ HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 	if(!lpD3DFDR) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDR->dwSize < sizeof(D3DFINDDEVICERESULT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDS->dwSize < sizeof(D3DFINDDEVICESEARCH)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
 	bool found = true;
 	GUID guid = IID_IDirect3DHALDevice;
 	if((lpD3DFDS->dwFlags & D3DFDS_LINES) || (lpD3DFDS->dwFlags & D3DFDS_TRIANGLES))

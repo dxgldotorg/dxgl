@@ -1403,29 +1403,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	}
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
-	if (!renderer)
-	{
-		HWND hGLWnd = CreateWindow(_T("Test"), NULL, WS_POPUP, 0, 0, 16, 16, NULL, NULL, NULL, NULL);
-		glRenderer *tmprenderer = (glRenderer*)malloc(sizeof(glRenderer));
-		DEVMODE mode;
-		mode.dmSize = sizeof(DEVMODE);
-		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
-		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
-		d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
-			d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = tmprenderer->gl_caps.TextureMax;
-		d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
-			d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = tmprenderer->gl_caps.TextureMax;
-		glRenderer_Delete(tmprenderer);
-		free(tmprenderer);
-	}
-	else
-	{
-		d3ddesc.dwMaxTextureWidth = d3ddesc.dwMaxTextureHeight =
-			d3ddesc.dwMaxTextureRepeat = d3ddesc.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
-		d3ddesc3.dwMaxTextureWidth = d3ddesc3.dwMaxTextureHeight =
-			d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
-	}
-
 	memcpy(stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
 	winstyle = winstyleex = 0;
 	initialized = true;
