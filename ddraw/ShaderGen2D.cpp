@@ -117,7 +117,7 @@ const DWORD rop_texture_usage[256] = {
 
 const DWORD supported_rops[8] = {
 	0xFFFFFFFF,
-	0x00080000,
+	0xFFFFFFFF,
 	0x04200010,
 	0x00000040,
 	0x00000100,
@@ -243,38 +243,38 @@ static const char *op_ROP[256] = {
 "pixel = (dest ^ colorsizedest) ^ (pixel & (dest ^ pattern));",
 "pixel = pattern ^ (dest | pixel);",
 "pixel = (pattern & (dest | pixel)) ^ colorsizedest;",//1F
-"",//20
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",//2F
-"",//30
-"",
-"",
+"pixel = dest & (pattern & (pixel ^ colorsizedest));",//20
+"pixel = (pixel | (dest ^ pattern)) ^ colorsizedest;",
+"pixel = (pixel ^ colorsizedest) & dest;",
+"pixel = (pixel | (pattern & (dest ^ colorsizedest))) ^ colorsizedest;",
+"pixel = (pixel ^ pattern) & (pixel ^ dest);",
+"pixel = (pattern ^ colorsizedest) ^ (dest & ((pixel & pattern) ^ colorsizedest));",
+"pixel = pixel ^ (dest | (pixel & pattern));",
+"pixel = pixel ^ (dest | ((pattern ^ pixel) ^ colorsizedest));",
+"pixel = dest & (pattern ^ pixel);",
+"pixel = (pattern ^ colorsizedest) ^ pixel ^ (dest | (pattern & pixel));",
+"pixel = dest & ((pattern & pixel) ^ colorsizedest);",
+"pixel = (pixel ^ colorsizedest) ^ ((pattern ^ pixel) & (pattern ^ dest));",
+"pixel = pixel ^ (pattern & (pixel | dest));",
+"pixel = pattern ^ (pixel | (dest ^ colorsizedest));",
+"pixel = pattern ^ (pixel | (dest ^ pattern));",
+"pixel = (pattern & (pixel | (dest ^ pattern)))^ colorsizedest;",//2F
+"pixel = pattern & (pixel ^ colorsizedest);",//30
+"pixel = (pixel | (dest & (pattern ^ colorsizedest))) ^ colorsizedest;",
+"pixel = pixel ^ (dest | pattern | pixel);",
 "pixel = pixel ^ colorsizedest;\n",//33 NOTSRCCOPY
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",//3F
+"pixel = pixel ^ (pattern | (dest & pixel));",
+"pixel = pixel ^ (pattern | ((dest ^ pixel) ^ colorsizedest));",
+"pixel = pixel ^ (dest | pattern);",
+"pixel = (pixel & (dest | pattern)) ^ colorsizedest;",
+"pixel = pattern ^ (pixel & (dest | pattern));",
+"pixel = pixel ^ (pattern | (dest ^ colorsizedest));",
+"pixel = pixel ^ (pattern | (dest ^ pixel));",
+"pixel = (pixel & (pattern | (dest ^ colorsizedest))) ^ colorsizedest;",
+"pixel = pattern ^ pixel;",
+"pixel = pixel ^ (pattern | ((dest | pixel) ^ colorsizedest));",
+"pixel = pixel ^ (pattern | (dest & (pixel ^ colorsizedest)));",
+"pixel = (pattern & pixel) ^ colorsizedest;",//3F
 "",//40
 "",
 "",
