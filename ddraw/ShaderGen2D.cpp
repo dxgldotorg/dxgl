@@ -123,7 +123,7 @@ const DWORD supported_rops[8] = {
 	0xFFFFFFFF,
 	0xFFFFFFFF,
 	0xFFFFFFFF,
-	0x88014000
+	0xFFFFFFFF
 };
 
 const DWORD supported_rops_gl2[8] = {
@@ -435,37 +435,37 @@ static const char *op_ROP[256] = {
 "pixel = pixel | (dest ^ colorsizedest);\n",
 "pixel = pixel | (dest ^ pattern);\n",
 "pixel = pixel | ((dest & pattern) ^ colorsizedest);\n",//DF
-"",//E0
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
+"pixel = pattern & (dest | pixel);\n",//E0
+"pixel = (pattern ^ colorsizedest) ^ (dest | pixel);\n",
+"pixel = dest ^ (pixel & (pattern ^ dest));\n",
+"pixel = (pattern ^ colorsizedest) ^ (pixel | (dest & pattern));\n",
+"pixel = pixel ^ (dest & (pattern ^ pixel));\n",
+"pixel = (pattern ^ colorsizedest) ^ (dest | (pixel & pattern));\n",
+"pixel = pixel ^ (dest & ((pattern & pixel) ^ colorsizedest));\n",
+"pixel = ((pixel ^ pattern) & (dest ^ pattern)) ^ colorsizedest;\n",
+"pixel = pixel ^ ((pixel ^ pattern) & (pixel ^ dest));\n",
+"pixel = (dest ^ colorsizedest) ^ pixel ^ (pattern & ((pixel & dest) ^ colorsizedest));\n",
+"pixel = dest | (pattern & pixel);\n",
+"pixel = dest | ((pattern ^ pixel) ^ colorsizedest);\n",
+"pixel = pixel | (dest & pattern);\n",
+"pixel = pixel | ((dest ^ pattern) ^ colorsizedest);\n",
 "pixel = pixel | dest;\n",//EE SRCPAINT
-"",//EF
+"pixel = pixel | dest | (pattern ^ colorsizedest);\n",//EF
 "pixel = pattern;\n",//F0 PATCOPY
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
+"pixel = pattern | ((dest | pixel) ^ colorsizedest);\n",
+"pixel = pattern | (dest & (pixel ^ colorsizedest));\n",
+"pixel = pattern | (pixel ^ colorsizedest);\n",
+"pixel = pattern | (pixel & (dest ^ colorsizedest));\n",
+"pixel = pattern | (dest ^ colorsizedest);\n",
+"pixel = pattern | (dest ^ pixel);\n",
+"pixel = pattern | ((pixel & dest) ^ colorsizedest);\n",
+"pixel = pattern | (dest & pixel);\n",
+"pixel = pattern | ((dest ^ pixel) ^ colorsizedest);\n",
+"pixel = dest | pattern;\n",
 "pixel = dest | pattern | (pixel ^ colorsizedest);\n",//FB PATPAINT
-"",
-"",
-"",
+"pixel = pattern | pixel;\n",
+"pixel = pattern | pixel | (dest ^ colorsizedest);\n",
+"pixel = pattern | dest | pixel;\n",
 "pixel = colorsizedest;\n",//FF WHITENESS
 };
 
