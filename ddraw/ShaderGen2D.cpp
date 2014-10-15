@@ -122,7 +122,7 @@ const DWORD supported_rops[8] = {
 	0xFFFFFFFF,
 	0xFFFFFFFF,
 	0xFFFFFFFF,
-	0x00001001,
+	0xFFFFFFFF,
 	0x88014000
 };
 
@@ -404,37 +404,37 @@ static const char *op_ROP[256] = {
 "pixel = dest | (pattern ^ pixel);\n",
 "pixel = dest | ((pattern & pixel) ^ colorsizedest);\n",//BF
 "pixel = pixel & pattern;\n",//C0 MERGECOPY
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",//CC SRCCOPY  pixel=pixel
-"",
-"",
-"",//CF
-"",//D0
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",
-"",//DF
+"pixel = (pixel ^ colorsizedest) ^ (pattern | (dest & (pixel ^ colorsizedest)));\n",
+"pixel = (pixel ^ colorsizedest) ^ (pattern | ((dest | pixel) ^ colorsizedest));\n",
+"pixel = (pattern ^ colorsizedest) ^ pixel;\n",
+"pixel = pixel & (pattern | (dest ^ colorsizedest));\n",
+"pixel = (pixel ^ colorsizedest) ^ (pattern | (dest ^ pixel));\n",
+"pixel = pixel ^ (dest & (pattern ^ colorsizedest));\n",
+"pixel = (pattern ^ colorsizedest) ^ (pixel & (dest | pattern));\n",
+"pixel = pixel & (dest | pattern);\n",
+"pixel = (pixel ^ colorsizedest) ^ (pattern | dest);\n",
+"pixel = dest ^ (pattern & (pixel ^ dest));\n",
+"pixel = (pixel ^ colorsizedest) ^ (pattern | (dest & pixel));\n",
+"//ROP is a no-op for srccopy\n",//CC SRCCOPY  pixel=pixel
+"pixel = pixel | ((dest | pattern) ^ colorsizedest);\n",
+"pixel = pixel | (dest & (pattern ^ colorsizedest));\n",
+"pixel = pixel | (pattern ^ colorsizedest);\n",//CF
+"pixel = pattern & (pixel | (dest ^ colorsizedest));\n",//D0
+"pixel = (pattern ^ colorsizedest) ^ (pixel | (dest ^ pattern));\n",
+"pixel = pattern ^ (dest & (pixel ^ colorsizedest));\n",
+"pixel = (pixel ^ colorsizedest) ^ (pattern & (dest | pixel));\n",
+"pixel = pixel ^ ((pixel ^ pattern) & (dest ^ pattern));\n",
+"pixel = (dest & ((pattern & pixel) ^ colorsizedest)) ^ colorsizedest;\n",
+"pixel = pixel ^ pattern ^ (dest | (pattern & pixel));\n",
+"pixel = (dest & (pattern ^ pixel)) ^ colorsizedest;\n",
+"pixel = pattern ^ (dest & (pixel ^ pattern));\n",
+"pixel = (pixel ^ colorsizedest) ^ (dest | (pattern & pixel));\n",
+"pixel = dest ^ (pattern & ((pixel & dest) ^ colorsizedest));\n",
+"pixel = ((pixel ^ pattern) & (pixel ^ dest)) ^ colorsizedest;\n",
+"pixel = pixel | (pattern & (dest ^ colorsizedest));\n",
+"pixel = pixel | (dest ^ colorsizedest);\n",
+"pixel = pixel | (dest ^ pattern);\n",
+"pixel = pixel | ((dest & pattern) ^ colorsizedest);\n",//DF
 "",//E0
 "",
 "",
