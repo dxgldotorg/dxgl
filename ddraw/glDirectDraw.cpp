@@ -643,7 +643,6 @@ glDirectDraw7::~glDirectDraw7()
 	if(initialized)
 	{
 		RestoreDisplayMode();
-		SetCooperativeLevel(hWnd, DDSCL_NORMAL);
 		if(clippers)
 		{
 			for(int i = 0; i < clippercount; i++)
@@ -1404,7 +1403,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
 	memcpy(stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
-	winstyle = winstyleex = 0;
 	initialized = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1427,23 +1425,9 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDSCL_EXCLUSIVE) && !hWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFE020) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if (((hWnd != this->hWnd) && this->hWnd) || (this->hWnd && (dwFlags & DDSCL_NORMAL)))
-	{
-		if (winstyle)
-		{
-			SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle);
-			SetWindowLongPtrA(hWnd, GWL_EXSTYLE, winstyleex);
-			ShowWindow(hWnd, SW_RESTORE);
-			winstyle = winstyleex = 0;
-			SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-		}
-	}
 	this->hWnd = hWnd;
-	if (!winstyle && !winstyleex)
-	{
-		winstyle = GetWindowLongPtrA(hWnd, GWL_STYLE);
-		winstyleex = GetWindowLongPtrA(hWnd, GWL_EXSTYLE);
-	}
+	winstyle = GetWindowLongPtrA(hWnd,GWL_STYLE);
+	winstyleex = GetWindowLongPtrA(hWnd,GWL_EXSTYLE);
 	bool exclusive = false;
 	devwnd = false;
 	if(dwFlags & DDSCL_ALLOWMODEX)
@@ -1512,14 +1496,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	bpp = devmode.dmBitsPerPel;
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
-	if (fullscreen)
-	{
-		SetWindowLongPtrA(hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-		SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
-		ShowWindow(hWnd, SW_MAXIMIZE);
-	}
-	SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	InitGL(x, y, bpp, fullscreen, internalrefresh, hWnd, this, devwnd);
+	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
 	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

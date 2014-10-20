@@ -217,6 +217,17 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	InitializeCriticalSection(&This->cs);
 	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
 	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
+	if(fullscreen)
+	{
+		SetWindowLongPtrA(This->hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
+		SetWindowLongPtrA(This->hWnd,GWL_STYLE,WS_OVERLAPPED);
+		ShowWindow(This->hWnd,SW_MAXIMIZE);
+	}
+	if(width)
+	{
+		// TODO:  Adjust window rect
+	}
+	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;
@@ -565,6 +576,12 @@ void glRenderer_Flush(glRenderer *This)
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
 	EnterCriticalSection(&This->cs);
+	if(fullscreen && newwnd)
+	{
+		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
+		SetWindowLongPtrA(newwnd,GWL_STYLE,WS_OVERLAPPED);
+		ShowWindow(newwnd,SW_MAXIMIZE);
+	}
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;
 	This->inputs[2] = (void*)bpp;
