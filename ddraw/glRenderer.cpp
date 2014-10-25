@@ -203,6 +203,7 @@ void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer
   */
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
+	LONG_PTR winstyle, winstyleex;
 	This->oldswap = 0;
 	This->fogcolor = 0;
 	This->fogstart = 0.0f;
@@ -219,8 +220,10 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
 	if(fullscreen)
 	{
-		SetWindowLongPtrA(This->hWnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-		SetWindowLongPtrA(This->hWnd,GWL_STYLE,WS_OVERLAPPED);
+		winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+		winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+		SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+		SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
 		ShowWindow(This->hWnd,SW_MAXIMIZE);
 	}
 	if(width)
