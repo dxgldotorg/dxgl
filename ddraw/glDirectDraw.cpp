@@ -1425,17 +1425,17 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDSCL_EXCLUSIVE) && !hWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFE020) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if (((hWnd != this->hWnd) && this->hWnd) || (this->hWnd && (dwFlags & DDSCL_NORMAL)))
+	/*if (((hWnd != this->hWnd) && this->hWnd) || (this->hWnd && (dwFlags & DDSCL_NORMAL)))
 	{
 		if (winstyle)
 		{
 			SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle);
 			SetWindowLongPtrA(hWnd, GWL_EXSTYLE, winstyleex);
-			//ShowWindow(hWnd, SW_RESTORE);
+			ShowWindow(hWnd, SW_RESTORE);
 			winstyle = winstyleex = 0;
 			SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 		}
-	}
+	}*/  // Currently breaks The Settlers IV
 	this->hWnd = hWnd;
 	if (!winstyle && !winstyleex)
 	{
