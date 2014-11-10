@@ -724,6 +724,7 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	NMHDR *nm;
 	HICON icon;
 	int newtab;
+	ZeroMemory(&tab, sizeof(TCITEM));
     switch(Msg)
     {
     case WM_INITDIALOG:

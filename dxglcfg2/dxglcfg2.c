@@ -464,6 +464,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regkey;
 	BOOL failed;
 	RECT r;
+	TCITEM tab;
 	drawitem = (DRAWITEMSTRUCT*)lParam;
 	switch (Msg)
 	{
@@ -517,6 +518,21 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		wglDeleteContext(rc);
 		ReleaseDC(hGLWnd,dc);
 		DestroyWindow(hGLWnd);
+		// Add tabs
+		ZeroMemory(&tab, sizeof(TCITEM));
+		tab.mask = TCIF_TEXT;
+		tab.pszText = _T("Display");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 0, (LPARAM)&tab);
+		tab.pszText = _T("3D Graphics");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 1, (LPARAM)&tab);
+		tab.pszText = _T("Effects");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 2, (LPARAM)&tab);
+		tab.pszText = _T("Advanced");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
+		tab.pszText = _T("Debug");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
+
+
 		// Load global settings.
 /*		// scaler
 		_tcscpy(buffer,_T("Change desktop resolution"));
