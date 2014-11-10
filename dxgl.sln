@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ddraw", "ddraw\ddraw.vcxproj", "{9F051466-EA2C-4195-80B1-1B7C5B3F4AC2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{55A95F84-E00E-4C65-BB09-41D27C5845AC} = {55A95F84-E00E-4C65-BB09-41D27C5845AC}
@@ -45,6 +47,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Installer", "Installer\Inst
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minilibc", "minilibc\minilibc.vcxproj", "{F88980E4-C887-4046-A826-B1D81FAE67DC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxglcfg2", "dxglcfg2\dxglcfg2.vcxproj", "{C59AC409-F7D0-4153-9874-184CA00D537B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -159,6 +163,18 @@ Global
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Debug|Win32.ActiveCfg = Debug|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release no DXGL|Win32.ActiveCfg = Release|Win32
 		{F88980E4-C887-4046-A826-B1D81FAE67DC}.Release|Win32.ActiveCfg = Release|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug no DXGL|Win32.ActiveCfg = Debug no DXGL|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug no DXGL|Win32.Build.0 = Debug no DXGL|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug No MSVCRT|Win32.ActiveCfg = Debug No MSVCRT|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug No MSVCRT|Win32.Build.0 = Debug No MSVCRT|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.ActiveCfg = Debug No MSVCRT|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.Build.0 = Debug No MSVCRT|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug|Win32.Build.0 = Debug|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Release no DXGL|Win32.ActiveCfg = Release no DXGL|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Release no DXGL|Win32.Build.0 = Release no DXGL|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Release|Win32.ActiveCfg = Release|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
