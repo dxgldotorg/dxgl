@@ -451,7 +451,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	TCHAR verpath[64];
 	WORD translation[2];
 	DWORD cursel;
-	DRAWITEMSTRUCT* drawitem = (DRAWITEMSTRUCT*)lParam;
+	DRAWITEMSTRUCT* drawitem;
 	BOOL hasname;
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
@@ -463,6 +463,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regpath;
 	LPTSTR regkey;
 	BOOL failed;
+	RECT r;
+	drawitem = (DRAWITEMSTRUCT*)lParam;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -516,7 +518,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		ReleaseDC(hGLWnd,dc);
 		DestroyWindow(hGLWnd);
 		// Load global settings.
-		// scaler
+/*		// scaler
 		_tcscpy(buffer,_T("Change desktop resolution"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch to screen"));
@@ -711,7 +713,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Windows AppCompat"));
 		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
+		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);*/
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
@@ -831,10 +833,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		free(keyname);
 		for(i = 0; i < appcount; i++)
 		{
-			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name);
+			SendDlgItemMessage(hWnd,IDC_APPS,CB_ADDSTRING,0,(LPARAM)apps[i].name);
 		}
 		current_app = 0;
-		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,0);
+		SendDlgItemMessage(hWnd,IDC_APPS,CB_SETCURSEL,0,0);
+		GetWindowRect(GetDlgItem(hWnd, IDC_APPS), &r);
+		SetWindowPos(GetDlgItem(hWnd, IDC_APPS), HWND_TOP, r.left, r.top, r.right - r.left,
+			(r.bottom - r.top) + (16 * (GetSystemMetrics(SM_CYSMICON) + 1)+(2*GetSystemMetrics(SM_CYBORDER))),
+			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
 		if(osver.dwMajorVersion >= 6)
 		{
 			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
@@ -851,7 +857,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		else
 		{
-			EnableWindow(GetDlgItem(hWnd, IDC_DPISCALE), FALSE);
+			//EnableWindow(GetDlgItem(hWnd, IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
 		return TRUE;
@@ -932,7 +938,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),TRUE);
 				}
 				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),FALSE);
-				// Set 3-state status
+/*				// Set 3-state status
 				if(current_app && !tristate)
 				{
 					tristate = TRUE;
@@ -1002,9 +1008,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);*/
 			}
-		case IDC_VIDMODE:
+			break;
+/*		case IDC_VIDMODE:
 			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,&cfgmask->scaler);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
@@ -1101,7 +1108,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}
-			break;
+			break;*/
 		case IDC_ADD:
 			selectedfile[0] = 0;
 			ZeroMemory(&filename,OPENFILENAME_SIZE_VERSION_400);

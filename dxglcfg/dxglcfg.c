@@ -1004,6 +1004,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
+			break;
 		case IDC_VIDMODE:
 			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,&cfgmask->scaler);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
