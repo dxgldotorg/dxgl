@@ -48,6 +48,7 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "Sort video modes", IDC_STATIC, 114, 57, 56, 8, SS_LEFT, WS_EX_LEFT
     COMBOBOX        IDC_VIDMODE, 7, 17, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
     LTEXT           "Video mode", IDC_STATIC, 7, 7, 38, 8, SS_LEFT, WS_EX_LEFT
+    AUTOCHECKBOX    "Change display color depth", IDC_COLOR, 7, 110, 100, 10, 0, WS_EX_LEFT
 }
 
 

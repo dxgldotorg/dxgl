@@ -58,3 +58,4 @@
 #define IDC_EXTRAMODES                          1026
 #define IDC_CUSTOMSCALEY                        1027
 #define IDC_VSYNC                               1028
+#define IDC_COLOR                               1029
