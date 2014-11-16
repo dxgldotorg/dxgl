@@ -24,13 +24,30 @@ Valid settings:
 0 - Nearest-neighbor stretching
 1 - Bilinear interpolation
 
-Member highres
+Member primaryscale
 REG_DWORD HKCU\DXGL\<app>\AdjustPrimaryResolution
 Changes primary resolution to match desktop resolution.
 May cause glitches
 Valid settings:
-0 - Use native primary surface size.  More compatible.
-1 - Adjust primary surface size.
+0 - Use native primary surface size.  Most compatible.
+1 - Adjust primary surface size to match display.
+2 - Adjust primary surface to nearest integer multiple of native.
+3 - Use exact 2x scale.
+4 - Use exact 3x scale.
+5 - Use exact 4x scale.
+6 - Use custom scale.
+
+Member primaryscalex
+REG_DWORD HKCU\DXGL\<app>\PrimaryScaleX
+Custom X scale for primary scaling.
+Stored as a 32-bit float encoded as a DWORD.
+If zero, negative, or an invalid value, set to 1.
+
+Member primaryscaley
+REG_DWORD HKCU\DXGL\<app>\PrimaryScaleY
+Custom X scale for primary scaling.
+Stored as a 32-bit float encoded as a DWORD.
+If zero, negative, or an invalid value, set to 1.
 
 Member texfilter
 REG_DWORD HKCU\DXGL\<app>\TextureFilter
@@ -87,25 +104,45 @@ Valid settings:
 
 Member AllColorDepths
 REG_DWORD HKCU\DXGL\<app>\AllColorDepths
-Enable all color depths, even if unsupported by the system
+[DEPRECATED]Enable all color depths, even if unsupported by the system
 Valid settings:
 0 - Off
 1 - On
 
-Member LowResModes
-REG_DWORD HKCU\DXGL\<app>\LowResModes
-Enable low resolution video modes, even if unsupported by the system
+Member AddColorDepths
+REG_DWORD HKCU\DXGL\<app>\AddColorDepths
+Adds color depths, even if unsupported by the system
+Bit-mapped variable
+Valid settings, OR'ed to combine settings:
+0 - None
+1 - Add 8-bit modes
+2 - Add 15-bit modes
+4 - Add 16-bit modes
+8 - Add 24-bit modes
+16 - Add 32-bit modes
+
+Member ExtraModes
+REG_DWORD HKCU\DXGL\<app>\ExtraModes
+[DEPRECATED]Enable extra video modes, even if unsupported by the system
 Valid settings:
 0 - Off
 1 - On
+
+member AddModes
+REG_DWORD HKCU\DXGL\<app>\AddModes
+Adds additional video modes, even if unsupported by the system
+Bit-mapped variable
+Valid settings, OR'ed to combine settings:
+0 - None
+1 - Add common low-resolution modes
+2 - Add less common low-resolution modes
+4 - Add higher resolution modes
 
 Member vsync
 REG_DWORD HKCU\DXGL\<app>\VSync
 Vertical retrace control
 Valid settings:
 0 - Determined by application
-1 - Off
-2 - On
 
 Member TextureFormat
 REG_DWORD HKCU\DXGL\<app>\TextureFormat

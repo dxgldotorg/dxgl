@@ -99,7 +99,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			{
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
-				if(dxglcfg.highres)
+				if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
 				{
 					fakex = sizes[0];
 					fakey = sizes[1];
@@ -1338,7 +1338,7 @@ void glDirectDrawSurface7::Restore2()
 		{
 			ddsd.dwWidth = sizes[2];
 			ddsd.dwHeight = sizes[3];
-			if(dxglcfg.highres)
+			if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
 			{
 				fakex = sizes[0];
 				fakey = sizes[1];
@@ -1378,7 +1378,7 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 			{
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
-				if(dxglcfg.highres)
+				if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
 				{
 					fakex = sizes[0];
 					fakey = sizes[1];

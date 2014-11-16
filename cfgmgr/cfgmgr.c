@@ -353,6 +353,25 @@ BOOL ReadBool(HKEY hKey, BOOL original, BOOL *mask, LPCTSTR value)
 	}
 }
 
+DWORD ReadDeprecatedBool(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value, DWORD true_value, DWORD false_value)
+{
+	DWORD dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error = RegQueryValueEx(hKey, value, NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		*mask = 1;
+		if (dwOut) return true_value;
+		else return false_value;
+	}
+	else
+	{
+		*mask = 0;
+		return original;
+	}
+}
+
 DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 {
 	DWORD dwOut;
@@ -418,11 +437,15 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	cfg->msaa = ReadDWORD(hKey,cfg->msaa,&cfgmask->msaa,_T("Antialiasing"));
 	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,&cfgmask->aspect3d,_T("AdjustAspectRatio"));
-	cfg->highres = ReadBool(hKey,cfg->highres,&cfgmask->highres,_T("AdjustPrimaryResolution"));
+	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
+	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
+	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,&cfgmask->SortModes,_T("SortModes"));
-	cfg->AllColorDepths = ReadBool(hKey,cfg->AllColorDepths,&cfgmask->AllColorDepths,_T("AllColorDepths"));
-	cfg->ExtraModes = ReadBool(hKey,cfg->ExtraModes,&cfgmask->ExtraModes,_T("ExtraModes"));
+	cfg->AddColorDepths = ReadDeprecatedBool(hKey, cfg->AddColorDepths, &cfgmask->AddColorDepths, _T("AddColorDepths"), 1 | 4 | 16, 0);
+	cfg->AddColorDepths = ReadDWORD(hKey,cfg->AddColorDepths,&cfgmask->AddColorDepths,_T("AddColorDepths"));
+	cfg->AddModes = ReadDeprecatedBool(hKey, cfg->AddModes, &cfgmask->AddModes, _T("ExtraModes"),7,0);
+	cfg->AddModes = ReadDWORD(hKey, cfg->AddModes, &cfgmask->AddModes, _T("AddModes"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
@@ -506,11 +529,13 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
 	WriteDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
-	WriteBool(hKey,cfg->highres,cfgmask->highres,_T("AdjustPrimaryResolution"));
+	WriteBool(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
+	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
+	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
 	WritePath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
-	WriteBool(hKey,cfg->AllColorDepths,cfgmask->AllColorDepths,_T("AllColorDepths"));
-	WriteBool(hKey,cfg->ExtraModes,cfgmask->ExtraModes,_T("ExtraModes"));
+	WriteBool(hKey,cfg->AddColorDepths,cfgmask->AddColorDepths,_T("AddColorDepths"));
+	WriteBool(hKey,cfg->AddModes,cfgmask->AddModes,_T("AddModes"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
@@ -666,7 +691,7 @@ void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 			GetVersionEx(&osver);
 			if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
 			if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
-			if (cfg->Windows8Detected) cfg->AllColorDepths = TRUE;
+			if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
 		}
 		RegCloseKey(hKey);
 	}

@@ -32,12 +32,14 @@ typedef struct
 	DWORD anisotropic;
 	DWORD msaa;
 	DWORD aspect3d;
-	BOOL highres;
+	DWORD primaryscale;
+	float primaryscalex;
+	float primaryscaley;
 	DWORD vsync;
 	TCHAR shaderfile[MAX_PATH+1];
 	DWORD SortModes;
-	BOOL AllColorDepths;
-	BOOL ExtraModes;
+	DWORD AddColorDepths;
+	DWORD AddModes;
 	DWORD TextureFormat;
 	DWORD TexUpload;
 	DWORD DPIScale;

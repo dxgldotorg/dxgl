@@ -348,6 +348,24 @@ BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 	}
 }
 
+DWORD GetCheckWithSpecificValue(HWND hWnd, int DlgItem, DWORD *mask, DWORD true_value, DWORD false_value)
+{
+	int check = SendDlgItemMessage(hWnd, DlgItem, BM_GETCHECK, 0, 0);
+	switch (check)
+	{
+	case BST_CHECKED:
+		*mask = 1;
+		return true_value;
+	case BST_UNCHECKED:
+		*mask = 1;
+		return false_value;
+	case BST_INDETERMINATE:
+	default:
+		*mask = 0;
+		return false_value;
+	}
+}
+
 DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 {
 	int value = SendDlgItemMessage(hWnd,DlgItem,CB_GETCURSEL,0,0);
@@ -557,7 +575,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 		
 		// highres
-		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
+		if(cfg->primaryscale) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
@@ -689,10 +707,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
 		// color depths
-		if(cfg->AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,0);
+		if(cfg->AddColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,0);
 		// extra modes
-		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
+		if(cfg->AddModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
 		// shader path
 		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
@@ -995,11 +1013,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
 				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
 				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
-				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
-				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
+				SetCheck(hWnd,IDC_HIGHRES,cfg->primaryscale,cfgmask->primaryscale,tristate);
+				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AddColorDepths,cfgmask->AddColorDepths,tristate);
 				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
-				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
+				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
@@ -1051,17 +1069,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			*dirty = TRUE;
 			break;
 		case IDC_HIGHRES:
-			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->highres);
+			cfg->primaryscale = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->primaryscale);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
 		case IDC_UNCOMMONCOLOR:
-			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,&cfgmask->AllColorDepths);
+			cfg->AddColorDepths = GetCheckWithSpecificValue(hWnd, IDC_UNCOMMONCOLOR, &cfgmask->AddColorDepths, 1 | 4 | 16, 0);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
 		case IDC_EXTRAMODES:
-			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,&cfgmask->ExtraModes);
+			cfg->AddModes = GetCheckWithSpecificValue(hWnd,IDC_EXTRAMODES,&cfgmask->AddModes, 7, 0);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
@@ -1300,6 +1318,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
+	MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
+		_T("Notice"), MB_OK | MB_ICONWARNING);
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();

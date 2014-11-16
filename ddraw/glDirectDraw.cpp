@@ -377,9 +377,9 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.AllColorDepths) AddExtraColorModes(&modes,&modenum);
+	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.ExtraModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);
+	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
@@ -488,8 +488,8 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.AllColorDepths) AddExtraColorModes(&modes,&modenum);
-	if(dxglcfg.ExtraModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);
+	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
+	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
