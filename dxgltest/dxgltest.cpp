@@ -777,7 +777,6 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			}
 		}
 		break;
-    break;
     default:
         return FALSE;
     }

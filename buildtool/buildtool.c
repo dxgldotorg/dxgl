@@ -230,7 +230,7 @@ int MakeHelp(char *path)
 			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
 			startinfo.cb = sizeof(STARTUPINFOA);
 			strcat(hhcpath," ");
-			strcat(hhcpath,path);
+			strncat(hhcpath,path,MAX_PATH);
 			if(CreateProcessA(NULL,hhcpath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
 			{
 				foundhhc = TRUE;
@@ -269,7 +269,7 @@ int MakeInstaller(char *path)
 			ZeroMemory(&startinfo,sizeof(STARTUPINFOA));
 			startinfo.cb = sizeof(STARTUPINFOA);
 			strcat(nsispath," ");
-			strcat(nsispath,path);
+			strncat(nsispath,path,MAX_PATH);
 			if(CreateProcessA(NULL,nsispath,NULL,NULL,FALSE,0,NULL,NULL,&startinfo,&process))
 			{
 				foundnsis = TRUE;

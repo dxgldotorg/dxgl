@@ -677,7 +677,7 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 	HKEY hKey;
 	TCHAR regkey[MAX_PATH + 24];
 	_tcscpy(regkey,regkeybase);
-	_tcscat(regkey,name);
+	_tcsncat(regkey, name, MAX_PATH);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
@@ -697,7 +697,7 @@ void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 	HKEY hKey;
 	TCHAR regkey[MAX_PATH + 24];
 	_tcscpy(regkey, regkeybase);
-	_tcscat(regkey, name);
+	_tcsncat(regkey, name, MAX_PATH);
 	RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	WriteSettings(hKey,cfg,mask,FALSE);
 	RegCloseKey(hKey);

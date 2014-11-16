@@ -75,6 +75,9 @@ int maxapps;
 DWORD current_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
+HWND hTab;
+HWND hTabs[5];
+int tabopen;
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
 {
@@ -385,11 +388,11 @@ float GetAspectCombo(HWND hWnd, int DlgItem, float *mask)
 			if (ptr)
 			{
 				*ptr = 0;
-				numerator = _ttof(buffer);
-				denominator = _ttof(ptr + 1);
+				numerator = (float)_ttof(buffer);
+				denominator = (float)_ttof(ptr + 1);
 				return numerator / denominator;
 			}
-			else return _ttof(buffer);
+			else return (float)_ttof(buffer);
 		}
 	}
 }
@@ -400,7 +403,61 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 	if(str[0] == 0) mask[0] = 0;
 	else mask[0] = 0xff;
 }
-
+LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -464,6 +521,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regkey;
 	BOOL failed;
 	RECT r;
+	NMHDR *nm;
+	int newtab;
 	TCITEM tab;
 	drawitem = (DRAWITEMSTRUCT*)lParam;
 	switch (Msg)
@@ -531,7 +590,19 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
 		tab.pszText = _T("Debug");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
-
+		hTab = GetDlgItem(hWnd, IDC_TABS);
+		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
+		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
+		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
+		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
+		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+		ShowWindow(hTabs[1], SW_HIDE);
+		ShowWindow(hTabs[2], SW_HIDE);
+		ShowWindow(hTabs[3], SW_HIDE);
+		ShowWindow(hTabs[4], SW_HIDE);
+		tabopen = 0;
 
 		// Load global settings.
 /*		// scaler
@@ -885,6 +956,20 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
 		default:
 			break;
+		}
+		break;
+	case WM_NOTIFY:
+		nm = (LPNMHDR)lParam;
+		if (nm->code == TCN_SELCHANGE)
+		{
+			newtab = SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETCURSEL, 0, 0);
+			if (newtab != tabopen)
+			{
+				ShowWindow(hTabs[tabopen], SW_HIDE);
+				tabopen = newtab;
+				SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+				SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+			}
 		}
 		break;
 	case WM_DRAWITEM:
