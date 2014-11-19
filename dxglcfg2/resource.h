@@ -59,3 +59,5 @@
 #define IDC_CUSTOMSCALEY                        1027
 #define IDC_VSYNC                               1028
 #define IDC_COLOR                               1029
+#define IDC_USESHADER                           1030
+#define IDC_PROGRESS                            1031

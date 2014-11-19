@@ -32,10 +32,12 @@ Valid settings:
 0 - Use native primary surface size.  Most compatible.
 1 - Adjust primary surface size to match display.
 2 - Adjust primary surface to nearest integer multiple of native.
-3 - Use exact 2x scale.
-4 - Use exact 3x scale.
-5 - Use exact 4x scale.
-6 - Use custom scale.
+3 - Use exact 1.5x scale.
+4 - Use exact 2x scale.
+5 - Use exact 2.5x scale.
+6 - Use exact 3x scale.
+7 - Use exact 4x scale.
+8 - Use custom scale.
 
 Member primaryscalex
 REG_DWORD HKCU\DXGL\<app>\PrimaryScaleX

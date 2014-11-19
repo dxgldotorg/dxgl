@@ -442,7 +442,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,&cfgmask->SortModes,_T("SortModes"));
-	cfg->AddColorDepths = ReadDeprecatedBool(hKey, cfg->AddColorDepths, &cfgmask->AddColorDepths, _T("AddColorDepths"), 1 | 4 | 16, 0);
+	cfg->AddColorDepths = ReadDeprecatedBool(hKey, cfg->AddColorDepths, &cfgmask->AddColorDepths, _T("AllColorDepths"), 1 | 4 | 16, 0);
 	cfg->AddColorDepths = ReadDWORD(hKey,cfg->AddColorDepths,&cfgmask->AddColorDepths,_T("AddColorDepths"));
 	cfg->AddModes = ReadDeprecatedBool(hKey, cfg->AddModes, &cfgmask->AddModes, _T("ExtraModes"),7,0);
 	cfg->AddModes = ReadDWORD(hKey, cfg->AddModes, &cfgmask->AddModes, _T("AddModes"));

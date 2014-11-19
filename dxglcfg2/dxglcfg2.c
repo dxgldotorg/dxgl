@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
+#include <windowsx.h>
 #include <HtmlHelp.h>
 #include <CommCtrl.h>
 #include <string.h>
@@ -78,6 +79,45 @@ TCHAR strdefault[] = _T("(global default)");
 HWND hTab;
 HWND hTabs[5];
 int tabopen;
+
+static const TCHAR *colormodes[32] = {
+	_T("None"),
+	_T("8-bit"),
+	_T("15-bit"),
+	_T("8/15-bit"),
+	_T("16-bit"),
+	_T("8/16-bit"),
+	_T("8/15-bit"),
+	_T("8/15/16-bit"),
+	_T("24-bit"),
+	_T("8/24-bit"),
+	_T("15/24-bit"),
+	_T("8/15/24-bit"),
+	_T("16/24-bit"),
+	_T("8/16/24-bit"),
+	_T("8/15/24-bit"),
+	_T("8/15/16/24-bit"),
+	_T("32-bit"),
+	_T("8/32-bit"),
+	_T("15/32-bit"),
+	_T("8/15/32-bit"),
+	_T("16/32-bit"),
+	_T("8/16/32-bit"),
+	_T("8/15/32-bit"),
+	_T("8/15/16/32-bit"),
+	_T("24/32-bit"),
+	_T("8/24/32-bit"),
+	_T("15/24/32-bit"),
+	_T("8/15/24/32-bit"),
+	_T("16/24/32-bit"),
+	_T("8/16/24/32-bit"),
+	_T("8/15/24/32-bit"),
+	_T("8/15/16/24/32-bit")
+};
+
+LRESULT CALLBACK CheckedComboProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+}
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
 {
@@ -308,6 +348,30 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 	else
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
+}
+
+__inline DWORD EncodePrimaryScale(DWORD scale)
+{
+	switch (scale)
+	{
+	case 0:
+		return 2;
+	case 1:
+		return 0;
+	case 2:
+		return 1;
+	default:
+		return scale;
+	}
+}
+
+void SetPrimaryScaleCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
+{
+	if (tristate && !mask)
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+		SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL, EncodePrimaryScale(value), 0);
 }
 
 void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, BOOL tristate)
@@ -605,114 +669,130 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		tabopen = 0;
 
 		// Load global settings.
-/*		// scaler
+		// scaler
 		_tcscpy(buffer,_T("Change desktop resolution"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch to screen"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Aspect corrected stretch"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Center image on screen"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,3,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,4,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Scale if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,5,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 6, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to screen (experimental)"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// colormode
-		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,0);
+		if (cfg->colormode) SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
 		// scalingfilter
 		_tcscpy(buffer,_T("Nearest"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
+		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("4:3"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("16:10"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("16:9"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-		
-		// highres
-		if(cfg->highres) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+		// primaryscale
+		_tcscpy(buffer, _T("Auto (Window Size)"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Auto (Multiple of Native)"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1x Native (Recommended)"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1.5x Native"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 3, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x Native"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 4, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2.5x Native"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 5, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x Native"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 6, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x Native"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 7, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom"));
+		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 8, (LPARAM)buffer);
+		SetPrimaryScaleCombo(hTabs[2], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, nearest mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,3,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, linear mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,4,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, nearest mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,5,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, linear mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
+		SendDlgItemMessage(hTabs[1],IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1],IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
 		// anisotropic
 		if (anisotropic < 2)
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,0,0);
-			EnableWindow(GetDlgItem(hWnd,IDC_ANISO),FALSE);
+			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_ANISO), FALSE);
 			cfg->anisotropic = 0;
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,1,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(anisotropic >= 2)
 			{
 				_tcscpy(buffer,_T("2x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,2,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 2, (LPARAM)buffer);
 			}
 			if(anisotropic >= 4)
 			{
 				_tcscpy(buffer,_T("4x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
 			if(anisotropic >= 8)
 			{
 				_tcscpy(buffer,_T("8x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,8,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 8, (LPARAM)buffer);
 			}
 			if(anisotropic >= 16)
 			{
 				_tcscpy(buffer,_T("16x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,16,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 16, (LPARAM)buffer);
 			}
 			if(anisotropic >= 32)
 			{
 				_tcscpy(buffer,_T("32x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,cfg->anisotropic,0);
+			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
 		}
 		// msaa
 		if(msaa)
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,1,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(maxcoverage)
 			{
 				for(i = 0; i < maxcoverage; i++)
@@ -720,7 +800,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					if((msaamodes[i] & 0xfff) <= 4)
 						_sntprintf(buffer,64,_T("%dx"),msaamodes[i] & 0xfff);
 					else _sntprintf(buffer,64,_T("%dx coverage, %dx color"),(msaamodes[i] & 0xfff), (msaamodes[i] >> 12));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,msaamodes[i],(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, msaamodes[i], (LPARAM)buffer);
 				}
 			}
 			else
@@ -728,59 +808,63 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(maxsamples >= 2)
 				{
 					_tcscpy(buffer,_T("2x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,2,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 2, (LPARAM)buffer);
 				}
 				if(maxsamples >= 4)
 				{
 					_tcscpy(buffer,_T("4x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,4,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 4, (LPARAM)buffer);
 				}
 				if(maxsamples >= 8)
 				{
 					_tcscpy(buffer,_T("8x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,8,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 8, (LPARAM)buffer);
 				}
 				if(maxsamples >= 16)
 				{
 					_tcscpy(buffer,_T("16x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,16,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 16, (LPARAM)buffer);
 				}
 				if(maxsamples >= 32)
 				{
 					_tcscpy(buffer,_T("32x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,32,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 32, (LPARAM)buffer);
 				}
 			}
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,cfg->msaa,0);
+			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_SETCURSEL, cfg->msaa, 0);
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,0,0);
-			EnableWindow(GetDlgItem(hWnd,IDC_MSAA),FALSE);
+			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_MSAA), FALSE);
 			cfg->msaa = 0;
 		}
 		// aspect3d
 		_tcscpy(buffer,_T("Stretch to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Expand viewable area"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_ASPECT3D, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
+		SendDlgItemMessage(hTabs[1],IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1],IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by color depth"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by resolution"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
+		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
 		// color depths
-		if(cfg->AllColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,0);
-		// extra modes
+		for (i = 0; i < 32; i++)
+		{
+			_tcscpy(buffer, colormodes[i]);
+			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
+		}
+		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
+		/*// extra modes
 		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
 		// shader path
@@ -944,7 +1028,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		else
 		{
-			//EnableWindow(GetDlgItem(hWnd, IDC_DPISCALE), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
 		return TRUE;
@@ -1383,6 +1467,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
+	WNDCLASSEX wc;
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
@@ -1403,6 +1488,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	iccex = (BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
+	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.lpfnWndProc = CheckedComboProc;
+	wc.hInstance = hInstance;
+	wc.lpszClassName = _T("CheckedComboBox");
+	RegisterClassEx(&wc);
 	hinstance = hInstance;
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
