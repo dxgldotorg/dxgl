@@ -36,6 +36,7 @@ typedef struct
 	float primaryscalex;
 	float primaryscaley;
 	DWORD vsync;
+	BOOL EnableShader;
 	TCHAR shaderfile[MAX_PATH+1];
 	DWORD SortModes;
 	DWORD AddColorDepths;

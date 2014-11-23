@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
-#include <windowsx.h>
 #include <HtmlHelp.h>
 #include <CommCtrl.h>
 #include <string.h>
@@ -30,6 +29,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <io.h>
+#include <Uxtheme.h>
+#include <Vsstyle.h>
 #include "resource.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
@@ -56,6 +57,13 @@ BOOL msaa = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
+HMODULE uxtheme = NULL;
+HTHEME hThemeDisplay = NULL;
+HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
+HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
+HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
+	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
+
 
 typedef struct
 {
@@ -114,10 +122,6 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15/24/32-bit"),
 	_T("8/15/16/24/32-bit")
 };
-
-LRESULT CALLBACK CheckedComboProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-}
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
 {
@@ -266,6 +270,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	float fract;
 	TCHAR denominator[5];
 	int i;
+	if (_isnan(f)) f = 0; //Handle NAN condition
 	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
 	{
 		_tcscpy(aspect, _T("1000:1"));
@@ -469,10 +474,65 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 }
 LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	DRAWITEMSTRUCT* drawitem;
+	COLORREF OldTextColor, OldBackColor;
+	RECT r;
+	TCHAR combotext[64];
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (uxtheme) hThemeDisplay = _OpenThemeData(hWnd, L"Button");
+		else hThemeDisplay = NULL;
 		return TRUE;
+	case WM_MEASUREITEM:
+		switch (wParam)
+		{
+		case IDC_EXTRAMODES:
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			break;
+		default:
+			break;
+		}
+	case WM_DRAWITEM:
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
+		{
+		case IDC_EXTRAMODES:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if ((drawitem->itemAction | ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
+				!(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+			}
+			else ExtTextOut(drawitem->hDC, 0, 0, ETO_OPAQUE, &drawitem->rcItem, NULL, 0, NULL);
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			r.left = r.left + 2;
+			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+			if (hThemeDisplay) _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX,
+				CBS_CHECKEDNORMAL, &r, NULL);
+			else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
+			drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			combotext[0] = 0;
+			SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
+			DrawText(drawitem->hDC, combotext,	_tcslen(combotext), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			SetTextColor(drawitem->hDC, OldTextColor);
+			SetBkColor(drawitem->hDC, OldBackColor);
+			DefWindowProc(hWnd, Msg, wParam, lParam);
+			break;
+		default:
+			break;
+		}
+	case WM_THEMECHANGED:
+		if (uxtheme)
+		{
+			if (hThemeDisplay) _CloseThemeData(hThemeDisplay);
+			_OpenThemeData(hWnd, L"Button");
+		}
 	default:
 		return FALSE;
 	}
@@ -588,7 +648,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	NMHDR *nm;
 	int newtab;
 	TCITEM tab;
-	drawitem = (DRAWITEMSTRUCT*)lParam;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -641,6 +700,21 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		wglDeleteContext(rc);
 		ReleaseDC(hGLWnd,dc);
 		DestroyWindow(hGLWnd);
+		uxtheme = LoadLibrary(_T("uxtheme.dll"));
+		if (uxtheme)
+		{
+
+			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
+			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
+			_DrawThemeBackground = 
+				(HRESULT(WINAPI*)(HTHEME, HDC, int, int, const RECT*, const RECT*))
+				GetProcAddress(uxtheme, "DrawThemeBackground");
+			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground))
+			{
+				FreeLibrary(uxtheme);
+				uxtheme = NULL;
+			}
+		}
 		// Add tabs
 		ZeroMemory(&tab, sizeof(TCITEM));
 		tab.mask = TCIF_TEXT;
@@ -864,27 +938,34 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
 		}
 		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
-		/*// extra modes
-		if(cfg->ExtraModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
+		_tcscpy(buffer, _T("Common low resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Uncommon low resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Higher resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 2, (LPARAM)buffer);
+		//FIXME:  Populate extra resolution combobox
+		// Enable shader
+		if (cfg->colormode) SendDlgItemMessage(hTabs[2], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[2], IDC_USESHADER, BM_SETCHECK, BST_UNCHECKED, 0);
 		// shader path
-		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
+		SetText(hTabs[2],IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
 		// texture format
 		_tcscpy(buffer,_T("Automatic"));
-		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_SETCURSEL,cfg->TextureFormat,0);
+		SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_SETCURSEL,cfg->TextureFormat,0);
 		// Texture upload
 		_tcscpy(buffer,_T("Automatic"));
-		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
+		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
 		// DPI
 		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Enabled"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Windows AppCompat"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);*/
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
@@ -1036,8 +1117,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		switch(wParam)
 		{
 		case IDC_APPS:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON)+1;
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON) + 1;
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
+			break;
 		default:
 			break;
 		}
@@ -1057,7 +1139,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		break;
 	case WM_DRAWITEM:
-		switch(wParam)
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
 		{
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
@@ -1467,7 +1550,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
-	WNDCLASSEX wc;
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
@@ -1488,12 +1570,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	iccex = (BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))GetProcAddress(comctl32,"InitCommonControlsEx");
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
-	ZeroMemory(&wc, sizeof(WNDCLASSEX));
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.lpfnWndProc = CheckedComboProc;
-	wc.hInstance = hInstance;
-	wc.lpszClassName = _T("CheckedComboBox");
-	RegisterClassEx(&wc);
 	hinstance = hInstance;
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);

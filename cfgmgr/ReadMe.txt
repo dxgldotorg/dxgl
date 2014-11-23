@@ -92,6 +92,10 @@ Valid settings:
 1 - Expand viewable area.  May have glitches on edge of screen.
 2 - Crop to viewable area. May cause graphics to get cut off.
 
+Member EnableShader
+REG_DWORD HKCU\DXGL\<app>\EnableShader
+If nonzero, enables post-process shaders.
+
 Member shaderfile
 REG_SZ HKCU\DXGL\<app>\ShaderFile
 Full path to file containing a post-process shader script.
