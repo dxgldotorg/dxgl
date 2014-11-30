@@ -1,20 +1,3 @@
-// DXGL
-// Copyright (C) 2011-2014 William Feely
-
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
 #ifndef IDC_STATIC
 #define IDC_STATIC (-1)
 #endif
@@ -29,6 +12,7 @@
 #define IDD_EFFECTS                             113
 #define IDD_ADVANCED                            114
 #define IDD_DEBUG                               115
+#define IDD_PATHS                               116
 #define IDC_APPLY                               1000
 #define IDC_APPS                                1001
 #define IDC_ADD                                 1002
@@ -61,3 +45,5 @@
 #define IDC_COLOR                               1029
 #define IDC_USESHADER                           1030
 #define IDC_PROGRESS                            1031
+#define IDC_DISPLAYNAME                         1032
+#define IDC_PATHS                               1033

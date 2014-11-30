@@ -582,6 +582,17 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	}
 	return TRUE;
 }
+LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -728,18 +739,22 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
 		tab.pszText = _T("Debug");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
+		tab.pszText = _T("Paths");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
 		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
 		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
+		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_PATHS), hTab, PathsTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);
 		ShowWindow(hTabs[2], SW_HIDE);
 		ShowWindow(hTabs[3], SW_HIDE);
 		ShowWindow(hTabs[4], SW_HIDE);
+		ShowWindow(hTabs[5], SW_HIDE);
 		tabopen = 0;
 
 		// Load global settings.
