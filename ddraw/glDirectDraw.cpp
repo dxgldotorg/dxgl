@@ -252,7 +252,7 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			break;
-		case 16:
+/*		case 16:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 15;
 			if(!ScanModeList(*array,compmode,*count))
@@ -260,7 +260,7 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				array2[count2] = compmode;
 				count2++;
 			}
-			break;
+			break;*/
 		case 24:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 32;
@@ -286,13 +286,13 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			compmode = (*array)[i];
-			compmode.dmBitsPerPel = 15;
+/*			compmode.dmBitsPerPel = 15;
 			if(!ScanModeList(*array,compmode,*count))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
-			compmode = (*array)[i];
+			compmode = (*array)[i];*/
 			compmode.dmBitsPerPel = 8;
 			if(!ScanModeList(*array,compmode,*count))
 			{

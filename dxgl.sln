@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ddraw", "ddraw\ddraw.vcxproj", "{9F051466-EA2C-4195-80B1-1B7C5B3F4AC2}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -167,8 +167,8 @@ Global
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug no DXGL|Win32.Build.0 = Debug no DXGL|Win32
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug No MSVCRT|Win32.ActiveCfg = Debug No MSVCRT|Win32
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug No MSVCRT|Win32.Build.0 = Debug No MSVCRT|Win32
-		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.ActiveCfg = Debug No MSVCRT|Win32
-		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.Build.0 = Debug No MSVCRT|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.ActiveCfg = Debug|Win32
+		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug Trace|Win32.Build.0 = Debug|Win32
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Debug|Win32.Build.0 = Debug|Win32
 		{C59AC409-F7D0-4153-9874-184CA00D537B}.Release no DXGL|Win32.ActiveCfg = Release no DXGL|Win32
