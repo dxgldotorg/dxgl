@@ -1318,8 +1318,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
-	MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
-		_T("Notice"), MB_OK | MB_ICONWARNING);
+	/*MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
+		_T("Notice"), MB_OK | MB_ICONWARNING);*/
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
