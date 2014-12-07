@@ -75,7 +75,8 @@ HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport)
 	newvp->background = 0;
 	ZeroMemory(&newvp->viewport,sizeof(D3DVIEWPORT2));
 	newvp->viewport.dwSize = sizeof(D3DVIEWPORT2);
-	newvp->maxX = newvp->maxY = newvp->scaleX = newvp->scaleY = 0;
+	ZeroMemory(&newvp->viewport, sizeof(D3DVIEWPORT));
+	newvp->viewport.dwSize = sizeof(D3DVIEWPORT);
 	newvp->device = NULL;
 	newvp->backZ = NULL;
 	for(int i = 0; i < 8; i++)
@@ -251,11 +252,7 @@ HRESULT WINAPI glDirect3DViewport3_GetViewport(glDirect3DViewport3 *This, LPD3DV
 	TRACE_ENTER(2,14,This,14,lpData);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	memcpy(lpData,&This->viewport,sizeof(D3DVIEWPORT2));
-	lpData->dvScaleX = This->scaleX;
-	lpData->dvScaleY = This->scaleY;
-	lpData->dvMaxX = This->maxX;
-	lpData->dvMaxY = This->maxY;
+	memcpy(lpData,&This->viewport1,sizeof(D3DVIEWPORT2));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -342,10 +339,10 @@ HRESULT WINAPI glDirect3DViewport3_SetViewport(glDirect3DViewport3 *This, LPD3DV
 	vp.dvClipY = This->viewport.dvClipY;
 	if((vp.dvMinZ == 0) && (vp.dvMaxZ == 0)) vp.dvMaxZ = 1.0f;
 	This->viewport = vp;
-	This->maxX = lpData->dvMaxX;
-	This->maxY = lpData->dvMaxY;
-	This->scaleX = lpData->dvScaleX;
-	This->scaleY = lpData->dvScaleY;
+	This->viewport1 = *lpData;
+	if ((This->viewport1.dvMinZ == 0) && (This->viewport1.dvMaxZ == 0))
+		This->viewport1.dvMaxZ = 1.0f;
+	This->viewportver = 1;
 	if(This->current && This->device) glDirect3DViewport3_Sync(This);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -356,8 +353,18 @@ HRESULT WINAPI glDirect3DViewport3_SetViewport2(glDirect3DViewport3 *This, LPD3D
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	D3DVIEWPORT vp;
+	memcpy(&vp, lpData, sizeof(D3DVIEWPORT2));
+	vp.dvMaxX = This->viewport1.dvMaxX;
+	vp.dvMaxY = This->viewport1.dvMaxY;
+	vp.dvScaleX = This->viewport1.dvScaleX;
+	vp.dvScaleY = This->viewport1.dvScaleY;
+	if ((vp.dvMinZ == 0) && (vp.dvMaxZ == 0)) vp.dvMaxZ = 1.0f;
 	This->viewport = *lpData;
-	if(This->current && This->device) glDirect3DViewport3_Sync(This);
+	This->viewport1 = vp;
+	if ((This->viewport.dvMinZ == 0) && (This->viewport.dvMaxZ == 0))
+		This->viewport.dvMaxZ = 1.0f;
+	if (This->current && This->device) glDirect3DViewport3_Sync(This);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -403,7 +410,7 @@ void glDirect3DViewport3_Sync(glDirect3DViewport3 *This)
 	vp7.dvMinZ = This->viewport.dvMinZ;
 	vp7.dvMaxZ = This->viewport.dvMaxZ;
 	This->device->SetViewport(&vp7);
-	This->device->SetScale(This->scaleX,This->scaleY);
+	This->device->SetScale(This->viewport1.dvScaleX,This->viewport1.dvScaleY);
 	TRACE_EXIT(0,0);
 }
 

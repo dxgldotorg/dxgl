@@ -40,11 +40,9 @@ typedef struct glDirect3DViewport3
 	glDirect3DDevice7 *device;
 	glDirectDrawSurface7 *backZ;
 	D3DMATERIALHANDLE background;
+	D3DVIEWPORT viewport1;
 	D3DVIEWPORT2 viewport;
-	D3DVALUE maxX;
-	D3DVALUE maxY;
-	D3DVALUE scaleX;
-	D3DVALUE scaleY;
+	int viewportver;
 	bool current;
 };
 
