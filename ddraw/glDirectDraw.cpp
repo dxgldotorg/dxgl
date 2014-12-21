@@ -31,6 +31,7 @@ using namespace std;
 #include "glDirectDrawPalette.h"
 #include "glRenderer.h"
 #include "../common/version.h"
+#include "hooks.h"
 
 const DDDEVICEIDENTIFIER2 devid_default = {
 	"ddraw.dll",
@@ -1436,6 +1437,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 			SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 		}
 	}*/  // Currently breaks The Settlers IV
+	if (this->hWnd && fullscreen) UninstallDXGLFullscreenHook(this->hWnd);
 	this->hWnd = hWnd;
 	if (!winstyle && !winstyleex)
 	{
@@ -1511,6 +1513,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
+	if (fullscreen) InstallDXGLFullscreenHook(hWnd);
 	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

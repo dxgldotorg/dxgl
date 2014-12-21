@@ -285,6 +285,7 @@
     <ClInclude Include="glRenderer.h" />
     <ClInclude Include="glRenderWindow.h" />
     <ClInclude Include="glUtil.h" />
+    <ClInclude Include="hooks.h" />
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />
     <ClInclude Include="include\d3dtypes.h" />
@@ -366,6 +367,14 @@
     <ClCompile Include="glRenderer.cpp" />
     <ClCompile Include="glRenderWindow.cpp" />
     <ClCompile Include="glUtil.cpp" />
+    <ClCompile Include="hooks.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug No MSVCRT|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="matrix.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>

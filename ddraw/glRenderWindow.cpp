@@ -27,36 +27,6 @@ bool wndclasscreated = false;
 bool hotkeyregistered = false;
 #endif
 
-const TCHAR *wndprop = _T("DXGLWndProc");
-
-LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void InstallDXGLHook(HWND hWnd)
-{
-	if (GetProp(hWnd, wndprop)) return;
-	SetProp(hWnd, wndprop, (HANDLE)GetWindowLongPtr(hWnd, GWLP_WNDPROC));
-	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
-}
-void UninstallDXGLHook(HWND hWnd)
-{
-	if (!GetProp(hWnd, wndprop)) return;
-	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)GetProp(hWnd, wndprop));
-	RemoveProp(hWnd, wndprop);
-}
-LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	WNDPROC parentproc = (WNDPROC)GetProp(hWnd, wndprop);
-	switch (uMsg)
-	{
-	case WM_DESTROY:
-		UninstallDXGLHook(hWnd);
-		break;
-	case WM_ACTIVATEAPP:
-		if (!wParam) ShowWindow(hWnd, SW_MINIMIZE);
-		break;
-	}
-	return parentproc(hWnd,uMsg,wParam,lParam);
-}
-
 void WaitForObjectAndMessages(HANDLE object)
 {
 	MSG Msg;
@@ -128,7 +98,6 @@ DWORD glRenderWindow::_Entry()
 		hWnd = CreateWindowA("DirectDrawDeviceWnd",windowname,WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
 			rectRender.bottom - rectRender.top,hParentWnd,NULL,wndclass.hInstance,this);
 		SetWindowPos(hWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
-		if (fullscreen) InstallDXGLHook(hParentWnd);
 	}
 	else
 	{
@@ -230,7 +199,6 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		else return SendMessage(hParent,msg,wParam,lParam);
 	case WM_CLOSE:
-		if (fullscreen) UninstallDXGLHook(hParentWnd);
 		DestroyWindow(hWnd);
 		return 0;
 	case WM_DESTROY:
