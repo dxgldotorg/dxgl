@@ -1513,7 +1513,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
-	if (fullscreen) InstallDXGLFullscreenHook(hWnd);
+	if (fullscreen) InstallDXGLFullscreenHook(hWnd,this);
 	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1587,6 +1587,12 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (dwFlags & 0xFFFFFFFE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwWidth == -1) && (dwHeight == -1) && (dwBPP == -1) && (dwRefreshRate == -1))
+	{
+		WaitForVerticalBlank(0, NULL);
+		WaitForVerticalBlank(0, NULL);
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	}
 	if ((dwBPP != 4) && (dwBPP != 8) && (dwBPP != 15) && (dwBPP != 16) && (dwBPP != 24) && (dwBPP != 32))
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);

@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void InstallDXGLFullscreenHook(HWND hWnd);
+void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
 void UninstallDXGLFullscreenHook(HWND hWnd);
 
 #ifdef __cplusplus

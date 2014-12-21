@@ -19,12 +19,14 @@
 #include "hooks.h"
 
 const TCHAR *wndprop = _T("DXGLWndProc");
+const TCHAR *wndpropdd7 = _T("DXGLWndDD7");
 
-void InstallDXGLFullscreenHook(HWND hWnd)
+void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 {
 	HANDLE wndproc = GetWindowLongPtr(hWnd, GWLP_WNDPROC);
 	if (GetProp(hWnd, wndprop)) return;
 	SetProp(hWnd, wndprop, wndproc);
+	SetProp(hWnd, wndpropdd7, lpDD7);
 	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
 }
 void UninstallDXGLFullscreenHook(HWND hWnd)
@@ -32,17 +34,23 @@ void UninstallDXGLFullscreenHook(HWND hWnd)
 	if (!GetProp(hWnd, wndprop)) return;
 	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)GetProp(hWnd, wndprop));
 	RemoveProp(hWnd, wndprop);
+	RemoveProp(hWnd, wndpropdd7);
 }
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	WNDPROC parentproc = (WNDPROC)GetProp(hWnd, wndprop);
+	LPDIRECTDRAW7 lpDD7 = GetProp(hWnd, wndpropdd7);
 	switch (uMsg)
 	{
 	case WM_DESTROY:
 		UninstallDXGLFullscreenHook(hWnd);
 		break;
 	case WM_ACTIVATEAPP:
-		if (!wParam) ShowWindow(hWnd, SW_MINIMIZE);
+		if (!wParam)
+		{
+			ShowWindow(hWnd, SW_MINIMIZE);
+			if (lpDD7) IDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
+		}
 		break;
 	}
 	return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
