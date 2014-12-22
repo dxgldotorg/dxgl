@@ -643,6 +643,7 @@ glDirectDraw7::~glDirectDraw7()
 	TRACE_ENTER(1,14,this);
 	if(initialized)
 	{
+		if (fullscreen) UninstallDXGLFullscreenHook(hWnd);
 		RestoreDisplayMode();
 		if(clippers)
 		{
