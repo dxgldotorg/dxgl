@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _TEXTURE_H
-#define _TEXTURE_H
+#ifndef _TEXTUREMANAGER_H
+#define _TEXTUREMANAGER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,4 +95,4 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 }
 #endif
 
-#endif //_TEXTURE_H
+#endif //_TEXTUREMANAGER_H

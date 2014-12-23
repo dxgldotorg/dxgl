@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _TIMER_H
-#define _TIMER_H
+#ifndef _DXGLTIMER_H
+#define _DXGLTIMER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,4 +42,4 @@ unsigned int DXGLTimer_GetScanLine(DXGLTimer *timer);
 #endif
 
 
-#endif
+#endif //_DXGLTIMER_H

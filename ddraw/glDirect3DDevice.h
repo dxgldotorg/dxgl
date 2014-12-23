@@ -238,8 +238,6 @@ private:
 	int version;
 };
 
-#endif //__GLDIRECT3DDEVICE_H
-
 class glDirect3DDevice3 : public IDirect3DDevice3
 {
 public:
@@ -374,3 +372,5 @@ public:
 private:
 	glDirect3DDevice7 *glD3DDev7;
 };
+
+#endif //__GLDIRECT3DDEVICE_H

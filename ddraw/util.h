@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _DXGLUTIL_H
+#define _DXGLUTIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,4 +29,4 @@ char IsReadablePointer(void *ptr);
 }
 #endif
 
-#endif
+#endif //_DXGLUITIL_H

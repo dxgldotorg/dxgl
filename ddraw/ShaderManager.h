@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef __SHADERS_H
-#define __SHADERS_H
+#ifndef __SHADERMANAGER_H
+#define __SHADERMANAGER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,4 +67,4 @@ void ShaderManager_SetShader(ShaderManager *This, __int64 id, TEXTURESTAGE *texs
 }
 #endif
 
-#endif //__SHADERS_H
+#endif //__SHADERMANAGER_H

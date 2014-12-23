@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _TRACE_H
-#define _TRACE_H
+#ifndef _DXGLTRACE_H
+#define _DXGLTRACE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,4 +51,4 @@ void trace_sysinfo();
 }
 #endif
 
-#endif //_TRACE_H
+#endif //_DXGLTRACE_H

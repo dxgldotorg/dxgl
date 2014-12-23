@@ -15,6 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#pragma once
+#ifndef __GLDIRECT3DEXECUTEBUFFER_H
+#define __GLDIRECT3DEXECUTEBUFFER_H
+
 class glDirect3DExecuteBuffer : public IDirect3DExecuteBuffer
 
 {
@@ -41,3 +45,5 @@ private:
 	bool locked;
 	bool inuse;
 };
+
+#endif //__GLDIRECT3DEXECUTEBUFFER_H

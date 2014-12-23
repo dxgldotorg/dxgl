@@ -15,8 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SHADERGEN_H
-#define _SHADERGEN_H
+#ifndef _SHADERGEN3D_H
+#define _SHADERGEN3D_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,4 +73,4 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 }
 #endif
 
-#endif
+#endif //_SHADERGEN3D_H
