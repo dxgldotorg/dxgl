@@ -21,6 +21,12 @@
 const TCHAR *wndprop = _T("DXGLWndProc");
 const TCHAR *wndpropdd7 = _T("DXGLWndDD7");
 
+
+LRESULT CALLBACK nullwndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return 0;
+}
+
 void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 {
 	HANDLE wndproc = GetWindowLongPtr(hWnd, GWLP_WNDPROC);
