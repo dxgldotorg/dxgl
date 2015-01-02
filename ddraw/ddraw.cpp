@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,8 +25,8 @@
 #include "glDirectDrawClipper.h"
 #include "timer.h"
 #include "glRenderer.h"
+#include "hooks.h"
 #include <intrin.h>
-#include <tlhelp32.h>
 
 DXGLCFG dxglcfg;
 DWORD gllock = 0;
@@ -106,39 +106,6 @@ DDRAW_API void WINAPI DSoundHelp()
 	TRACE_ENTER(0);
 	FIXME("DSoundHelp: stub\n");
 	TRACE_EXIT(0,0);
-}
-
-/**
-  * This function is used by DirectDrawCreate to test if opengl32.dll is calling
-  * these functions.  If so, DirectDrawCreate will load the system ddraw.dll and
-  * call its DirectDrawCreate function.
-  * @param returnaddress
-  *  The address to evaluate whether it is from opengl32.dll or not.
-  *  The return address of the calling function may be obtained with the
-  *  _ReturnAddress() function.
-  * @return
-  *  Returns nonzero if the address points to opengl32.dll, otherwise returns zero.
-  */
-BOOL IsCallerOpenGL(void *returnaddress)
-{
-	TRACE_ENTER(1,14,returnaddress);
-	int isgl = 0;
-	MODULEENTRY32 modentry = {0};
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE,0);
-	modentry.dwSize = sizeof(MODULEENTRY32);
-	Module32First(hSnapshot,&modentry);
-	do
-	{
-		if((modentry.modBaseAddr <= returnaddress) &&
-			(modentry.modBaseAddr+modentry.modBaseSize > returnaddress))
-		{
-			if(!_tcsicmp(modentry.szModule,_T("opengl32.dll"))) isgl=1;
-			break;
-		}
-	} while(Module32Next(hSnapshot,&modentry));
-	CloseHandle(hSnapshot);
-	TRACE_EXIT(22,isgl);
-	return isgl;
 }
 
 /**

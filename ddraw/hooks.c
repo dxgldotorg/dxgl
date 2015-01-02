@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014 William Feely
+// Copyright (C) 2014-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -17,9 +17,121 @@
 
 #include "common.h"
 #include "hooks.h"
+#include <tlhelp32.h>
+#include "../minhook-1.3/include/MinHook.h"
 
 const TCHAR *wndprop = _T("DXGLWndProc");
 const TCHAR *wndpropdd7 = _T("DXGLWndDD7");
+static HWND_HOOK *hwndhooks = NULL;
+static int hwndhook_count = 0;
+static int hwndhook_max = 0;
+CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
+static BOOL hooks_init = FALSE;
+
+LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
+LONG(WINAPI *_SetWindowLongW)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
+LONG(WINAPI *_GetWindowLongA)(HWND hWnd, int nIndex) = NULL;
+LONG(WINAPI *_GetWindowLongW)(HWND hWnd, int nIndex) = NULL;
+#ifdef _M_X64
+LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+LONG_PTR(WINAPI *_GetWindowLongPtrA)(HWND hWnd, int nIndex) = NULL;
+LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
+#else
+#define _SetWindowLongPtrA   _SetWindowLongA
+#define _SetWindowLongPtrW   _SetWindowLongW
+#define _GetWindowLongPtrA   _GetWindowLongA
+#define _GetWindowLongPtrW   _GetWindowLongW
+#endif
+UINT wndhook_count = 0;
+
+int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
+{
+	if (!cmp->hwnd) return 1; // Put blanks at end for cleanup
+	if (key->hwnd < cmp->hwnd) return -1;
+	if (key->hwnd == cmp->hwnd) return 0;
+	if (key->hwnd > cmp->hwnd) return 1;
+}
+
+void SetHookWndProc(HWND hWnd, WNDPROC wndproc, LPDIRECTDRAW7 lpDD7, BOOL proconly, BOOL delete)
+{
+	HWND_HOOK cmphook;
+	HWND_HOOK *hook;
+	cmphook.hwnd = hWnd;
+	if (!hwndhooks)
+	{
+		hwndhooks = (HWND_HOOK*)malloc(16 * sizeof(HWND_HOOK));
+		hwndhook_count = 0;
+		hwndhook_max = 16;
+	}
+	hook = bsearch(&cmphook, hwndhooks, hwndhook_count, sizeof(HWND_HOOK), hwndhookcmp);
+	if (delete)
+	{
+		if (!hook) return;
+		hook->hwnd = NULL;
+		hook->wndproc = NULL;
+		hook->lpDD7 = NULL;
+		qsort(hwndhooks, hwndhook_count, sizeof(HWND_HOOK), hwndhookcmp);
+		hwndhook_count--;
+		return;
+	}
+	if (!hook)
+	{
+		hwndhook_count++;
+		if (hwndhook_count >= hwndhook_max)
+		{
+			hwndhook_max += 16;
+			hwndhooks = (HWND_HOOK*)realloc(hwndhooks, hwndhook_max*sizeof(HWND_HOOK));
+		}
+		hook = &hwndhooks[hwndhook_count - 1];
+	}
+	hook->hwnd = hWnd;
+	hook->wndproc = wndproc;
+	if (!proconly) hook->lpDD7 = lpDD7;
+	qsort(hwndhooks, hwndhook_count, sizeof(HWND_HOOK), hwndhookcmp);
+}
+
+HWND_HOOK *GetWndHook(HWND hWnd)
+{
+	HWND_HOOK cmphook;
+	cmphook.hwnd = hWnd;
+	if (!hwndhooks) return NULL;
+	return bsearch(&cmphook, hwndhooks, hwndhook_count, sizeof(HWND_HOOK), hwndhookcmp);
+}
+
+/**
+* This function is used by DirectDrawCreate to test if opengl32.dll is calling
+* these functions.  If so, DirectDrawCreate will load the system ddraw.dll and
+* call its DirectDrawCreate function.
+* @param returnaddress
+*  The address to evaluate whether it is from opengl32.dll or not.
+*  The return address of the calling function may be obtained with the
+*  _ReturnAddress() function.
+* @return
+*  Returns nonzero if the address points to opengl32.dll, otherwise returns zero.
+*/
+BOOL IsCallerOpenGL(void *returnaddress)
+{
+	HANDLE hSnapshot;
+	int isgl = 0;
+	MODULEENTRY32 modentry = { 0 };
+	TRACE_ENTER(1, 14, returnaddress);
+	hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+	modentry.dwSize = sizeof(MODULEENTRY32);
+	Module32First(hSnapshot, &modentry);
+	do
+	{
+		if ((modentry.modBaseAddr <= returnaddress) &&
+			(modentry.modBaseAddr + modentry.modBaseSize > returnaddress))
+		{
+			if (!_tcsicmp(modentry.szModule, _T("opengl32.dll"))) isgl = 1;
+			break;
+		}
+	} while (Module32Next(hSnapshot, &modentry));
+	CloseHandle(hSnapshot);
+	TRACE_EXIT(22, isgl);
+	return isgl;
+}
 
 
 LRESULT CALLBACK nullwndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -27,25 +139,123 @@ LRESULT CALLBACK nullwndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+void InitHooks()
+{
+	if (hooks_init) return;
+	EnterCriticalSection(&hook_cs);
+	wndhook_count = 0;
+	MH_Initialize();
+	MH_CreateHook(&SetWindowLongA, HookSetWindowLongA, &_SetWindowLongA);
+	MH_CreateHook(&SetWindowLongW, HookSetWindowLongW, &_SetWindowLongW);
+	MH_CreateHook(&GetWindowLongA, HookGetWindowLongA, &_GetWindowLongA);
+	MH_CreateHook(&GetWindowLongW, HookGetWindowLongW, &_GetWindowLongW);
+#ifdef _M_X64
+	MH_CreateHook(&SetWindowLongPtrA, HookSetWindowLongPtrA, &_SetWindowLongPtrA);
+	MH_CreateHook(&SetWindowLongPtrW, HookSetWindowLongPtrW, &_SetWindowLongPtrW);
+	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, &_GetWindowLongPtrA);
+	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, &_GetWindowLongPtrW);
+#endif
+	hooks_init = TRUE;
+	LeaveCriticalSection(&hook_cs);
+}
+
+void ShutdownHooks()
+{
+	if (!hooks_init) return;
+	EnterCriticalSection(&hook_cs);
+	MH_RemoveHook(&SetWindowLongA);
+	MH_RemoveHook(&SetWindowLongW);
+	MH_RemoveHook(&GetWindowLongA);
+	MH_RemoveHook(&GetWindowLongW);
+#ifdef _M_X64
+	MH_RemoveHook(&SetWindowLongPtrA);
+	MH_RemoveHook(&SetWindowLongPtrW);
+	MH_RemoveHook(&GetWindowLongPtrA);
+	MH_RemoveHook(&GetWindowLongPtrW);
+#endif
+	MH_Uninitialize();
+	wndhook_count = 0;
+	hooks_init = FALSE;
+	LeaveCriticalSection(&hook_cs);
+}
+
+void EnableWindowLongHooks()
+{
+	EnterCriticalSection(&hook_cs);
+	wndhook_count++;
+	if (wndhook_count == 1)
+	{
+		MH_EnableHook(&SetWindowLongA);
+		MH_EnableHook(&SetWindowLongW);
+		MH_EnableHook(&GetWindowLongA);
+		MH_EnableHook(&GetWindowLongW);
+#ifdef _M_X64
+		MH_EnableHook(&SetWindowLongPtrA);
+		MH_EnableHook(&SetWindowLongPtrW);
+		MH_EnableHook(&GetWindowLongPtrA);
+		MH_EnableHook(&GetWindowLongPtrW);
+#endif
+	}
+	LeaveCriticalSection(&hook_cs);
+}
+
+void DisableWindowLongHooks(BOOL force)
+{
+	if (!wndhook_count) return;
+	EnterCriticalSection(&hook_cs);
+	wndhook_count--;
+	if (force) wndhook_count = 0;
+	if (!wndhook_count)
+	{
+		MH_DisableHook(&SetWindowLongA);
+		MH_DisableHook(&SetWindowLongW);
+		MH_DisableHook(&GetWindowLongA);
+		MH_DisableHook(&GetWindowLongW);
+#ifdef _M_X64
+		MH_DisableHook(&SetWindowLongPtrA);
+		MH_DisableHook(&SetWindowLongPtrW);
+		MH_DisableHook(&GetWindowLongPtrA);
+		MH_DisableHook(&GetWindowLongPtrW);
+#endif
+	}
+	LeaveCriticalSection(&hook_cs);
+}
+
 void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 {
-	HANDLE wndproc = GetWindowLongPtr(hWnd, GWLP_WNDPROC);
-	if (GetProp(hWnd, wndprop)) return;
-	SetProp(hWnd, wndprop, wndproc);
-	SetProp(hWnd, wndpropdd7, lpDD7);
-	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
+	WNDPROC wndproc;
+	HWND_HOOK *wndhook = GetWndHook(hWnd);
+	if (wndhook)
+	{
+		if (lpDD7) wndhook->lpDD7 = lpDD7;
+		return;
+	}
+	wndproc = _GetWindowLongPtrA(hWnd, GWLP_WNDPROC);
+	SetHookWndProc(hWnd, wndproc, lpDD7, FALSE, FALSE);
+	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
+	EnableWindowLongHooks();
 }
 void UninstallDXGLFullscreenHook(HWND hWnd)
 {
-	if (!GetProp(hWnd, wndprop)) return;
-	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)GetProp(hWnd, wndprop));
-	RemoveProp(hWnd, wndprop);
-	RemoveProp(hWnd, wndpropdd7);
+	HWND_HOOK *wndhook = GetWndHook(hWnd);
+	if (!wndhook) return;
+	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)wndhook->wndproc);
+	SetHookWndProc(hWnd, NULL, NULL, FALSE, TRUE);
+	DisableWindowLongHooks(FALSE);
 }
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	WNDPROC parentproc = (WNDPROC)GetProp(hWnd, wndprop);
-	LPDIRECTDRAW7 lpDD7 = GetProp(hWnd, wndpropdd7);
+	WNDPROC parentproc;
+	HWND_HOOK *wndhook;
+	LPDIRECTDRAW7 lpDD7;
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook)
+	{
+		parentproc = nullwndproc;
+		lpDD7 = NULL;
+	}
+	parentproc = wndhook->wndproc;
+	lpDD7 = wndhook->lpDD7;
 	switch (uMsg)
 	{
 	case WM_DESTROY:
@@ -61,3 +271,83 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	}
 	return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 }
+
+
+LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong)
+{
+	LONG oldproc;
+	HWND_HOOK *wndhook;
+	if (nIndex != GWL_WNDPROC) return _SetWindowLongA(hWnd, nIndex, dwNewLong);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _SetWindowLongA(hWnd, nIndex, dwNewLong);
+	oldproc = (LONG)wndhook->wndproc;
+	wndhook->wndproc = (WNDPROC)dwNewLong;
+	return oldproc;
+}
+LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong)
+{
+	LONG oldproc;
+	HWND_HOOK *wndhook;
+	if (nIndex != GWL_WNDPROC) return _SetWindowLongW(hWnd, nIndex, dwNewLong);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _SetWindowLongW(hWnd, nIndex, dwNewLong);
+	oldproc = (LONG)wndhook->wndproc;
+	wndhook->wndproc = (WNDPROC)dwNewLong;
+	return oldproc;
+}
+LONG WINAPI HookGetWindowLongA(HWND hWnd, int nIndex)
+{
+	HWND_HOOK *wndhook;
+	if (nIndex != GWL_WNDPROC) return _GetWindowLongA(hWnd, nIndex);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _GetWindowLongA(hWnd, nIndex);
+	return (LONG)wndhook->wndproc;
+}
+LONG WINAPI HookGetWindowLongW(HWND hWnd, int nIndex)
+{
+	HWND_HOOK *wndhook;
+	if (nIndex != GWL_WNDPROC) return _GetWindowLongW(hWnd, nIndex);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _GetWindowLongW(hWnd, nIndex);
+	return (LONG)wndhook->wndproc;
+}
+#ifdef _M_X64
+LONG_PTR WINAPI HookSetWindowLongPtrA(HWND hWnd, int nIndex, LONG_PTR dwNewLong)
+{
+	LONG_PTR oldproc;
+	HWND_HOOK *wndhook;
+	if (nIndex != GWLP_WNDPROC) return _SetWindowLongPtrA(hWnd, nIndex, dwNewLong);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _SetWindowLongPtrA(hWnd, nIndex, dwNewLong);
+	oldproc = (LONG_PTR)wndhook->wndproc;
+	wndhook->wndproc = (WNDPROC)dwNewLong;
+	return oldproc;
+}
+LONG_PTR WINAPI HookSetWindowLongPtrW(HWND hWnd, int nIndex, LONG_PTR dwNewLong)
+{
+	LONG_PTR oldproc;
+	HWND_HOOK *wndhook;
+	if (nIndex != GWLP_WNDPROC) return _SetWindowLongPtrW(hWnd, nIndex, dwNewLong);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _SetWindowLongPtrW(hWnd, nIndex, dwNewLong);
+	oldproc = (LONG_PTR)wndhook->wndproc;
+	wndhook->wndproc = (WNDPROC)dwNewLong;
+	return oldproc;
+}
+LONG_PTR WINAPI HookGetWindowLongPtrA(HWND hWnd, int nIndex)
+{
+	HWND_HOOK *wndhook;
+	if (nIndex != GWLP_WNDPROC) return _GetWindowLongPtrA(hWnd, nIndex);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _GetWindowLongPtrA(hWnd, nIndex);
+	return (LONG_PTR)wndhook->wndproc;
+}
+LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex)
+{
+	HWND_HOOK *wndhook;
+	if (nIndex != GWLP_WNDPROC) return _GetWindowLongPtrW(hWnd, nIndex);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _GetWindowLongPtrW(hWnd, nIndex);
+	return (LONG_PTR)wndhook->wndproc;
+}
+#endif

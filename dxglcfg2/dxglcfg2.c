@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -85,7 +85,7 @@ DWORD current_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 HWND hTab;
-HWND hTabs[5];
+HWND hTabs[6];
 int tabopen;
 
 static const TCHAR *colormodes[32] = {

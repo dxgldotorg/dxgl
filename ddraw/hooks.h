@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014 William Feely
+// Copyright (C) 2014-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -21,9 +21,33 @@
 extern "C" {
 #endif
 
+typedef struct
+{
+	HWND hwnd;
+	WNDPROC wndproc;
+	LPDIRECTDRAW7 lpDD7;
+} HWND_HOOK;
+
+extern CRITICAL_SECTION hook_cs;
+
+BOOL IsCallerOpenGL(void *returnaddress);
+
+void InitHooks();
+void ShutdownHooks();
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
 void UninstallDXGLFullscreenHook(HWND hWnd);
+
+LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong);
+LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);
+LONG WINAPI HookGetWindowLongA(HWND hWnd, int nIndex);
+LONG WINAPI HookGetWindowLongW(HWND hWnd, int nIndex);
+#ifdef _M_X64
+LONG_PTR WINAPI HookSetWindowLongPtrA(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+LONG_PTR WINAPI HookSetWindowLongPtrW(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+LONG_PTR WINAPI HookGetWindowLongPtrA(HWND hWnd, int nIndex);
+LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "ddraw.h"
+#include "hooks.h"
 ATOM WindowClass = NULL;
 CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -28,11 +29,19 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	{
 	case DLL_PROCESS_ATTACH:
 		if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
+		if (!hook_cs.LockCount && !hook_cs.OwningThread) InitializeCriticalSection(&hook_cs);
+		InitHooks();
 		GetCurrentConfig(&dxglcfg, true);
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
+		break;
 	case DLL_PROCESS_DETACH:
+		ShutdownHooks();
+		DeleteCriticalSection(&hook_cs);
+		ZeroMemory(&hook_cs, sizeof(CRITICAL_SECTION));
+		DeleteCriticalSection(&dll_cs);
+		ZeroMemory(&dll_cs, sizeof(CRITICAL_SECTION));
 		break;
 	}
 	return TRUE;
