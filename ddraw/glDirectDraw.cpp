@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1420,6 +1420,17 @@ HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
+extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
+{
+	if (!This) return;
+	TRACE_ENTER(1, 14, This);
+	if (This->currmode.dmSize != 0)
+	{
+		ChangeDisplaySettingsEx(NULL, &This->currmode, NULL, CDS_FULLSCREEN, NULL);
+	}
+	TRACE_EXIT(0, 0);
+}
+
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,this,13,hWnd,9,dwFlags);
@@ -1592,6 +1603,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	{
 		WaitForVerticalBlank(0, NULL);
 		WaitForVerticalBlank(0, NULL);
+		RestoreDisplayMode();
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
 	if ((dwBPP != 4) && (dwBPP != 8) && (dwBPP != 15) && (dwBPP != 16) && (dwBPP != 24) && (dwBPP != 32))
@@ -1610,6 +1622,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	}
 	currmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
+	this->currmode.dmSize = 0;
 	switch(dxglcfg.scaler)
 	{
 	case 0: // No scaling, switch mode
@@ -1630,6 +1643,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		switch(error)
 		{
 		case DISP_CHANGE_SUCCESSFUL:
+			if (fullscreen) this->currmode = newmode;
 			internalx = primaryx = screenx = newmode.dmPelsWidth;
 			internaly = primaryy = screeny = newmode.dmPelsHeight;
 			internalbpp = screenbpp = newmode.dmBitsPerPel;
@@ -1755,6 +1769,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			error = ChangeDisplaySettingsEx(NULL,&newmode2,NULL,flags,NULL);
 		}
 		else newmode2 = newmode;
+		if (error == DISP_CHANGE_SUCCESSFUL) this->currmode = newmode2;
 		switch(dxglcfg.scaler)
 		{
 		case 4:

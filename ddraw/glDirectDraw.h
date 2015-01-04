@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -115,6 +115,7 @@ public:
 	D3DDevice stored_devices[3];
 	D3DDEVICEDESC7 d3ddesc;
 	D3DDEVICEDESC d3ddesc3;
+	DEVMODE currmode;
 private:
 	HRESULT error;
 	ULONG refcount7, refcount4, refcount2, refcount1;
@@ -139,6 +140,8 @@ private:
 	bool devwnd;
 	DWORD cooplevel;
 };
+
+extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
 
 class glDirectDraw1 : public IDirectDraw
 {
