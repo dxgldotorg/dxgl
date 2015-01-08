@@ -315,7 +315,9 @@ static const char unif_tex[] = "uniform sampler2D texX;\n";
 static const char unif_viewport[] = "uniform float width;\n\
 uniform float height;\n\
 uniform float xoffset;\n\
-uniform float yoffset;\n";
+uniform float yoffset;\n\
+uniform float minz;\n\
+uniform float maxz;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec3 keyX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
@@ -343,9 +345,8 @@ vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
-static const char op_tlvertex[] = "xyzw = vec4(xyz.x/rhw,xyz.y/rhw,xyz.z/rhw,1.0/rhw);\n\
-vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
-gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
+static const char op_tlvertex[] = "gl_Position = vec4(((((xyz.x-xoffset)+.5)/(width/2.0))-1.0)/rhw,\
+((((xyz.y-yoffset)+.5)/(height/2.0))-1.0)/rhw,xyz.z/rhw,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
@@ -1432,6 +1433,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		This->genshaders[index].shader.uniforms[142 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkey);
 	}
 	This->genshaders[index].shader.uniforms[150] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"ditherbits");
+	This->genshaders[index].shader.uniforms[151] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "minz");
+	This->genshaders[index].shader.uniforms[151] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "maxz");
 }
 
 }

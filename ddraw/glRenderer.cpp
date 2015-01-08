@@ -1849,14 +1849,6 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 			This->util->EnableArray(prog.attribs[1],true);
 			This->ext->glVertexAttribPointer(prog.attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
 		}
-		device->modelview_dirty = true;
-		device->projection_dirty = true;
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0.0, device->viewport.dwWidth, device->viewport.dwHeight, 0.0,
-			-device->viewport.dvMinZ, device->viewport.dvMaxZ);
 	}
 	for(i = 0; i < 5; i++)
 	{
@@ -1927,11 +1919,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 
 		}
 	}
-	if (!transformed)
-	{
-		if (device->modelview_dirty) This->util->SetMatrix(GL_MODELVIEW, device->matView, device->matWorld, &device->modelview_dirty);
-		if (device->projection_dirty) This->util->SetMatrix(GL_PROJECTION, device->matProjection, NULL, &device->projection_dirty);
-	}
+	if (device->modelview_dirty) This->util->SetMatrix(GL_MODELVIEW, device->matView, device->matWorld, &device->modelview_dirty);
+	if (device->projection_dirty) This->util->SetMatrix(GL_PROJECTION, device->matProjection, NULL, &device->projection_dirty);
 
 	This->util->SetMaterial((GLfloat*)&device->material.ambient,(GLfloat*)&device->material.diffuse,(GLfloat*)&device->material.specular,
 		(GLfloat*)&device->material.emissive,device->material.power);
