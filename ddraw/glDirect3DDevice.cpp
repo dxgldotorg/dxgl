@@ -275,6 +275,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 {
 	TRACE_ENTER(4,14,this,24,&rclsid,14,glD3D7,14,glDDS7);
 	this->version = version;
+	dx2init = dx5init = FALSE;
 	d3ddesc = d3ddesc_default;
 	d3ddesc3 = d3ddesc3_default;
 	int zbuffer = 0;
@@ -467,6 +468,11 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glD3DDev2;
 			glD3DDev2->AddRef();
+			if (!dx5init)
+			{
+				InitDX5();
+				dx5init = TRUE;
+			}
 			TRACE_VAR("*ppvObj", 14, *ppvObj);
 			TRACE_EXIT(23, D3D_OK);
 			return D3D_OK;
@@ -475,6 +481,16 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 		{
 			*ppvObj = glD3DDev1;
 			glD3DDev1->AddRef();
+			if (!dx5init)
+			{
+				InitDX5();
+				dx5init = TRUE;
+			}
+			if (!dx2init)
+			{
+				InitDX2();
+				dx5init = TRUE;
+			}
 			TRACE_VAR("*ppvObj", 14, *ppvObj);
 			TRACE_EXIT(23, D3D_OK);
 			return D3D_OK;
@@ -2161,6 +2177,13 @@ HRESULT glDirect3DDevice7::SwapTextureHandles(LPDIRECT3DTEXTURE2 lpD3DTex1, LPDI
 	return DDERR_GENERIC;
 }
 
+void glDirect3DDevice7::InitDX2()
+{
+	TRACE_ENTER(1, 14, this);
+	SetRenderState(D3DRENDERSTATE_COLORKEYENABLE, TRUE);
+	TRACE_EXIT(0, 0);
+}
+
 void glDirect3DDevice7::InitDX5()
 {
 	TRACE_ENTER(1,14,this);
@@ -3251,7 +3274,6 @@ glDirect3DDevice2::glDirect3DDevice2(glDirect3DDevice7 *glD3DDev7)
 {
 	TRACE_ENTER(2,14,this,14,glD3DDev7);
 	this->glD3DDev7 = glD3DDev7;
-	glD3DDev7->InitDX5();
 	TRACE_EXIT(-1,0);
 }
 
@@ -3586,7 +3608,6 @@ glDirect3DDevice1::glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7)
 {
 	TRACE_ENTER(2,14,this,14,glD3DDev7);
 	this->glD3DDev7 = glD3DDev7;
-	glD3DDev7->InitDX5();
 	TRACE_EXIT(-1,0);
 }
 

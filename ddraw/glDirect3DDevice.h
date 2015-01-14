@@ -167,6 +167,7 @@ public:
 	INT TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
 	INT CopyVertices(D3DTLVERTEX **output, DWORD *outsize, D3DTLVERTEX *input, WORD start, WORD dest, DWORD count, D3DRECT *extents);
 	void UpdateTransform();
+	void InitDX2();
 	void InitDX5();
 	__int64 SelectShader(GLVERTEX *VertexType);
 	void SetScale(D3DVALUE x, D3DVALUE y){scalex = x; scaley = y;}
@@ -236,6 +237,8 @@ private:
 	glRenderer *renderer;
 	IUnknown *creator;
 	int version;
+	BOOL dx5init;
+	BOOL dx2init;
 };
 
 class glDirect3DDevice3 : public IDirect3DDevice3

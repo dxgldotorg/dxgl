@@ -345,8 +345,8 @@ vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
 static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
 static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
-static const char op_tlvertex[] = "gl_Position = vec4(((((xyz.x-xoffset)+.5)/(width/2.0))-1.0)/rhw,\
-((((xyz.y-yoffset)+.5)/(height/2.0))-1.0)/rhw,xyz.z/rhw,1.0/rhw);\n";
+static const char op_tlvertex[] = "gl_Position = vec4(((xyz.x-xoffset)/(width/2.0)-1.0)/rhw,\
+((xyz.y-yoffset)/(height/2.0)-1.0)/rhw,xyz.z/rhw,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
 ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
