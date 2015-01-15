@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1995,8 +1995,13 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		{
 			if(device->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
 			{
-				dwordto4int(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,keycolor);
-				This->ext->glUniform3iv(prog.uniforms[142+i],1,keycolor);
+				SetColorKeyUniform(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,
+					device->texstages[i].texture->texture->colorsizes, device->texstages[i].texture->texture->colororder,
+					prog.uniforms[142 + i], device->texstages[i].texture->texture->colorbits, This->ext);
+				This->ext->glUniform4i(prog.uniforms[153+i], device->texstages[i].texture->texture->colorsizes[0], 
+					device->texstages[i].texture->texture->colorsizes[1],
+					device->texstages[i].texture->texture->colorsizes[2],
+					device->texstages[i].texture->texture->colorsizes[3]);
 			}
 		}
 	}

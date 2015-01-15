@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -320,6 +320,7 @@ uniform float minz;\n\
 uniform float maxz;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec3 keyX;\n";
+static const char unif_keybits[] = "uniform ivec4 keybitsX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
 static const char unif_ditherbits[] = "uniform ivec4 ditherbits;\n";
 // Variables
@@ -331,6 +332,7 @@ static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
 static const char var_fogfactorpixel[] = "float fogfactor;\n";
+static const char var_keycomp[] = "ivec4 keycomp;\n";
 // Constants
 static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
 static const char const_threshold[] = "mat4 threshold = mat4(\n\
@@ -361,7 +363,8 @@ static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_dither[] = "color = dither(color);\n";
 static const char op_colorfragin[] = "color = gl_Color;\n";
-static const char op_colorkey[] = "if(ivec3(texture2DProj(texX,gl_TexCoord[Y])*255.5).rgb == keyZ) discard;\n";
+static const char op_colorkeyin[] = "keycomp = ivec4(texture2DProj(texX,gl_TexCoord[Y])*vec4(keybitsZ)+.5);\n";
+static const char op_colorkey[] = "if(keycomp.rgb == keyX) discard;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
@@ -491,6 +494,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	bool haspoint = false;
 	bool hasspot = false;
 	bool dither = false;
+	BOOL haskey = FALSE;
 	int count;
 	int numlights;
 	int vertexfog,pixelfog;
@@ -795,6 +799,10 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Assign(&tmp, unif_key);
 				tmp.ptr[17] = *(_itoa(i,idstring,10));
 				String_Append(fsrc, tmp.ptr);
+				String_Assign(&tmp, unif_keybits);
+				tmp.ptr[21] = *(_itoa(i, idstring, 10));
+				String_Append(fsrc, tmp.ptr);
+				haskey = TRUE;
 			}
 		}
 	}
@@ -805,6 +813,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
+	if (haskey) String_Append(fsrc, var_keycomp);
 	// Functions
 	if (dither) String_Append(fsrc, func_dither);
 	// Main
@@ -834,10 +843,13 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		{
 			if((texstate[i].shaderid>>60)&1)
 			{
+				String_Assign(&arg1, op_colorkeyin);
+				arg1.ptr[33] = *(_itoa(i, idstring, 10));
+				arg1.ptr[47] = *(_itoa((texstate[i].shaderid >> 54) & 7, idstring, 10));
+				arg1.ptr[63] = *(_itoa(i, idstring, 10));
+				String_Append(fsrc, arg1.ptr);
 				String_Assign(&arg1, op_colorkey);
-				arg1.ptr[26] = *(_itoa(i,idstring,10));
-				arg1.ptr[40] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
-				arg1.ptr[61] = *(_itoa(i,idstring,10));
+				arg1.ptr[21] = *(_itoa(i,idstring,10));
 				String_Append(fsrc, arg1.ptr);
 			}
 		}
@@ -1434,7 +1446,13 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	}
 	This->genshaders[index].shader.uniforms[150] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog,"ditherbits");
 	This->genshaders[index].shader.uniforms[151] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "minz");
-	This->genshaders[index].shader.uniforms[151] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "maxz");
+	This->genshaders[index].shader.uniforms[152] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "maxz");
+	char unifkeybits[] = "keybitsX";
+	for (int i = 0; i < 8; i++)
+	{
+		unifkeybits[7] = i + '0';
+		This->genshaders[index].shader.uniforms[153 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkeybits);
+	}
 }
 
 }
