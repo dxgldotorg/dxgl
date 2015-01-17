@@ -690,6 +690,31 @@ unsigned int glRenderer_GetScanLine(glRenderer *This)
 }
 
 /**
+* Fills a depth surface with a specified value.
+* @param This
+*  Pointer to glRenderer object
+* @param lpDestRect
+*  Pointer to bounding rectangle for depth fill.  If NULL, then fill entire surface
+* @param dest
+*  Destination surface to depth fill
+* @param lpDDBltFx
+*  Pointer to DDBLTFX structure with dwFillDepth defining the depth value.
+*/
+HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = lpDestRect;
+	This->inputs[1] = dest;
+	This->inputs[2] = lpDDBltFx;
+	This->opcode = OP_DEPTHFILL;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+	return (HRESULT)This->outputs[0];
+}
+
+
+/**
   * Main loop for glRenderer class
   * @param This
   *  Pointer to glRenderer object
@@ -804,6 +829,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_UPDATECLIPPER:
 			glRenderer__UpdateClipper(This,(glDirectDrawSurface7*)This->inputs[0]);
+			break;
+		case OP_DEPTHFILL:
+			glRenderer__DepthFill(This, (LPRECT)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1],
+				(LPDDBLTFX)This->inputs[2]);
 			break;
 		}
 	}
@@ -1644,6 +1673,7 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
 		This->util->ClearDepth(dvZ);
+		This->util->DepthWrite(true);
 	}
 	if(dwFlags & D3DCLEAR_STENCIL)
 	{
@@ -2089,6 +2119,67 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
 		6 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
 	This->util->SetFBO((FBO*)NULL);
+	SetEvent(This->busy);
+}
+
+void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
+{
+	RECT destrect;
+	DDSURFACEDESC2 ddsd;
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	dest->GetSurfaceDesc(&ddsd);
+	if (!lpDestRect)
+	{
+		destrect.left = 0;
+		destrect.top = 0;
+		destrect.right = ddsd.dwWidth;
+		destrect.bottom = ddsd.dwHeight;
+	}
+	else destrect = *lpDestRect;
+	if (dest->attachparent)
+	{
+		do
+		{
+			if (This->util->SetFBO(dest->attachparent) == GL_FRAMEBUFFER_COMPLETE) break;
+			if (!dest->attachparent->texture->internalformats[1]) break;
+			TextureManager_FixTexture(This->texman, dest->attachparent->texture, 
+				(dest->attachparent->bigbuffer ? dest->attachparent->bigbuffer : dest->attachparent->buffer),
+				&dest->attachparent->dirty, dest->attachparent->miplevel);
+			This->util->SetFBO((FBO*)NULL);
+			dest->attachparent->fbo.fbcolor = NULL;
+			dest->attachparent->fbo.fbz = NULL;
+		} while (1);
+	}
+	else
+	{
+		if (!dest->dummycolor)
+		{
+			dest->dummycolor = (TEXTURE*)malloc(sizeof(TEXTURE));
+			ZeroMemory(dest->dummycolor, sizeof(TEXTURE));
+			dest->dummycolor->minfilter = dest->dummycolor->magfilter = GL_NEAREST;
+			dest->dummycolor->wraps = dest->dummycolor->wrapt = GL_CLAMP_TO_EDGE;
+			dest->dummycolor->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
+			dest->dummycolor->pixelformat.dwBBitMask = 0xF;
+			dest->dummycolor->pixelformat.dwGBitMask = 0xF0;
+			dest->dummycolor->pixelformat.dwRBitMask = 0xF00;
+			dest->dummycolor->pixelformat.dwZBitMask = 0xF000;
+			dest->dummycolor->pixelformat.dwRGBBitCount = 16;
+			TextureManager__CreateTexture(This->texman, dest->dummycolor, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
+		}
+		if ((dest->ddsd.dwWidth != dest->dummycolor->width) ||
+			(dest->ddsd.dwHeight != dest->dummycolor->height))
+			TextureManager__UploadTexture(This->texman, dest->dummycolor, 0, NULL,
+			dest->ddsd.dwWidth, dest->ddsd.dwHeight, FALSE, TRUE);
+		This->util->SetFBO(&dest->zfbo, dest->dummycolor, dest->texture, false);
+	}
+	This->util->SetViewport(0, 0, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
+	if (lpDestRect) This->util->SetScissor(true, lpDestRect->left, lpDestRect->top,
+		lpDestRect->right, lpDestRect->bottom);
+	This->util->DepthWrite(true);
+	This->util->ClearDepth(lpDDBltFx->dwFillDepth / (double)0xFFFF);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	if (lpDestRect)This->util->SetScissor(false, 0, 0, 0, 0);
+	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
 

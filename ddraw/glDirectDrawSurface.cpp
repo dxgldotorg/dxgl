@@ -56,12 +56,14 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bitmapinfo = (BITMAPINFO *)malloc(sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	ZeroMemory(bitmapinfo,sizeof(BITMAPINFO)+(255*sizeof(RGBQUAD)));
 	ZeroMemory(&fbo,sizeof(FBO));
+	ZeroMemory(&zfbo,sizeof(FBO));
 	ZeroMemory(&stencilfbo,sizeof(FBO));
 	palette = NULL;
 	stencil = NULL;
 	paltex = NULL;
 	texture = NULL;
 	clipper = NULL;
+	dummycolor = NULL;
 	hdc = NULL;
 	dds1 = new glDirectDrawSurface1(this);
 	dds2 = new glDirectDrawSurface2(this);
@@ -74,6 +76,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	bigbuffer = NULL;
 	clientbuffer = NULL;
 	zbuffer = NULL;
+	attachcount = 0;
+	attachparent = NULL;
 	this->miplevel = miplevel;
 	DWORD colormasks[3];
 	magfilter = minfilter = GL_NEAREST;
@@ -429,7 +433,13 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(clipper) glDirectDrawClipper_Release(clipper);
 	if(buffer) free(buffer);
 	if(bigbuffer) free(bigbuffer);
-	if(zbuffer) zbuffer_iface->Release();
+	if (zbuffer)
+	{
+		if (zbuffer->attachparent == this) zbuffer->attachparent = NULL;
+		if (zbuffer->attachcount) zbuffer->attachcount--;
+		if (!zbuffer->attachcount) zbuffer->attachparent = NULL;
+		zbuffer_iface->Release();
+	}
 	if(miptexture) miptexture->Release();
 	if (device) device->Release(); 
 	if (device1) delete device1;
@@ -736,8 +746,23 @@ HRESULT glDirectDrawSurface7::AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAtta
 	attached->GetSurfaceDesc(&ddsd);
 	if((ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER) || (ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER))
 	{
+		if (zbuffer)
+		{
+			if (zbuffer->zfbo.fbo)
+			{
+				glRenderer_DeleteFBO(ddInterface->renderer, &zbuffer->zfbo);
+				ZeroMemory(&zbuffer->zfbo, sizeof(FBO));
+			}
+			if (zbuffer->dummycolor)
+			{
+				glRenderer_DeleteTexture(ddInterface->renderer, zbuffer->dummycolor);
+				zbuffer->dummycolor = NULL;
+			}
+		}
 		zbuffer = attached;
 		zbuffer_iface = iface;
+		if (!zbuffer->attachcount) zbuffer->attachparent = this;
+		zbuffer->attachcount++;
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -758,6 +783,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	glDirectDrawSurface7 *pattern;
 	TRACE_ENTER(6,14,this,26,lpDestRect,14,lpDDSrcSurface,26,lpSrcRect,9,dwFlags,14,lpDDBltFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT,32,DDERR_INVALIDPARAMS);
 	if((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if (dwFlags & DDBLT_ROP)
@@ -823,6 +849,11 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			dwFlags |= 0x10000000;
 		}
 	}
+	if (dwFlags & DDBLT_DEPTHFILL)
+	{
+		if (!(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)) TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
+		TRACE_RET(HRESULT, 23, glRenderer_DepthFill(ddInterface->renderer, lpDestRect, this, lpDDBltFx));
+	}
 	if (this == src)
 	{
 		tmprect.left = tmprect.top = 0;
@@ -877,6 +908,9 @@ HRESULT WINAPI glDirectDrawSurface7::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(lpDDSAttachedSurface == (LPDIRECTDRAWSURFACE7)zbuffer)
 	{
+		if (zbuffer->attachparent == this) zbuffer->attachparent = NULL;
+		if (zbuffer->attachcount) zbuffer->attachcount--;
+		if (!zbuffer->attachcount) zbuffer->attachparent = NULL;
 		zbuffer_iface->Release();
 		zbuffer = NULL;
 		TRACE_EXIT(23,DD_OK);

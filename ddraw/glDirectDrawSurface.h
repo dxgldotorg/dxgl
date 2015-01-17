@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -145,6 +145,7 @@ public:
 	TEXTURE *texture;
 	TEXTURE *paltex;
 	TEXTURE *stencil;
+	TEXTURE *dummycolor;
 	bool hasstencil;
 	DWORD miplevel;
 	char *buffer;
@@ -155,6 +156,7 @@ public:
 	HGLRC hRC;
 	D3DMATERIALHANDLE handle;
 	FBO fbo;
+	FBO zfbo;
 	FBO stencilfbo;
 	glDirectDrawClipper *clipper;
 	IUnknown *creator;
@@ -163,6 +165,8 @@ public:
 	glDirectDrawSurface7 *miptexture;
 	glDirectDrawSurface7 *backbuffer;
 	glDirectDrawSurface7 *backbufferwraparound;
+	DWORD attachcount;
+	glDirectDrawSurface7 *attachparent;
 private:
 	int swapinterval;
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;

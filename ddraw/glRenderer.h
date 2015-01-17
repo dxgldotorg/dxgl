@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,8 @@ typedef struct
 #define OP_FLUSH					11
 #define OP_DRAWPRIMITIVES			12
 #define OP_DELETEFBO				13
-#define OP_UPDATECLIPPER            14
+#define OP_UPDATECLIPPER			14
+#define OP_DEPTHFILL				15
 
 #ifdef __cplusplus
 class glDirectDraw7;
@@ -137,6 +138,7 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
 void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
 unsigned int glRenderer_GetScanLine(glRenderer *This);
+HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
@@ -157,6 +159,7 @@ void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
 void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
+void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx);
 void glRenderer__SetFogColor(glRenderer *This, DWORD color);
 void glRenderer__SetFogStart(glRenderer *This, GLfloat start);
 void glRenderer__SetFogEnd(glRenderer *This, GLfloat end);
