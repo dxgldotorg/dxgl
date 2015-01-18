@@ -919,7 +919,6 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glExtensions_Init(This->ext);
 	This->util = new glUtil(This->ext);
 	glRenderer__SetSwap(This,1);
-	SwapBuffers(This->hDC);
 	glFinish();
 	DXGLTimer_Init(&This->timer);
 	DXGLTimer_Calibrate(&This->timer, height, frequency);
