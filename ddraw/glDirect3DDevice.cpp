@@ -977,6 +977,7 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 	DDPIXELFORMAT fmt;
 	for(int i = 0; i < numtexformats; i++)
 	{
+		if (i == 7) continue;
 		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
 		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
 		memcpy(&fmt,&::texformats[i],sizeof(DDPIXELFORMAT));
