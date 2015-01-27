@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -61,7 +61,7 @@ typedef struct ShaderManager
 
 void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman);
 void ShaderManager_Delete(ShaderManager *This);
-void ShaderManager_SetShader(ShaderManager *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type);
+void ShaderManager_SetShader(ShaderManager *This, __int64 id, __int64 *texstate, int *texcoords, int type);
 
 #ifdef __cplusplus
 }

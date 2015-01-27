@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -64,10 +64,10 @@ typedef struct ShaderGen3D
 void ShaderGen3D_Init(glExtensions *glext, ShaderManager *shaderman, ShaderGen3D *gen);
 void ShaderGen3D_Delete(ShaderGen3D *This);
 void ShaderGen3D_ClearShaders(ShaderGen3D *This);
-void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d);
+void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int *texcoords, int type, ShaderGen2D *gen2d);
 GLuint ShaderGen3D_GetProgram(ShaderGen3D *This);
 void ShaderGen3D_ZeroShaderArray(ShaderGen3D *This);
-void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords);
+void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate, int *texcoords);
 
 #ifdef __cplusplus
 }

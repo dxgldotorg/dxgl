@@ -61,7 +61,7 @@ Bit 10 - Range based fog  VS/FS
 Bit 11 - Specular highlights  VS/FS
 Bit 12 - Stippled alpha  FS
 Bit 13 - Color key transparency  FS
-Bit 14-17 - Z bias  FS
+Bit 14-17 - Reserved
 Bits 18-20 - Number of lights  VS/FS
 Bit 21 - Camera relative specular highlights  VS/FS
 Bit 22 - Alpha blended color key  FS
@@ -93,6 +93,9 @@ Bits 22-27: Texture alpha argument 1  FS
 Bits 28-33: Texture alpha argument 2  FS
 Bits 34-36: Texture coordinate index  VS
 Bits 37-38: Texture coordinate flags  VS
+	Bits in flags:
+	00=passthru 01=cameraspacenormal
+	10=cameraspaceposition 11=cameraspacereflectionvector
 Bits 39-40: U Texture address  GL
 Bits 41-42: V Texture address  GL
 Bits 43-45: Texture magnification filter  GL/FS?
@@ -103,11 +106,7 @@ Bits 51-52: Number of texcoord dimensions  VS
 Bit 53: Projected texcoord  VS
 Bits in texcoord ID:
 00=2dim  01=3dim 10=4dim 11=1dim
-Bits 54-56: Texture coordinate index  VS
-Bits 57-58: Texture coordinate flags  VS
-Bits in flags:
-00=passthru 01=cameraspacenormal
-10=cameraspaceposition 11=cameraspacereflectionvector
+Bits 54-58: Reserved
 Bit 59: Texture image enabled
 Bit 60: Texture has color key
 */
@@ -145,7 +144,7 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
   * @param id
   *  64-bit value containing current render states
   * @param texstate
-  *  Pointer to the texture stage state array, containing 8 64-bit state values
+  *  Pointer to the texture state ID.
   * @param texcoords
   *  Pointer to number of texture coordinates in each texture stage
   * @param type
@@ -154,7 +153,7 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
   *  1 for generated 2D
   *  2 for generated 3D
   */
-void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, TEXTURESTAGE *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
+void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
 {
 	int shaderindex = -1;
 	switch(type)
@@ -215,7 +214,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, TEXTURESTAGE *texstate
 			{
 				bool texidmatch = true;
 				for(int j = 0; j < 8; j++)
-					if(This->genshaders[i].texids[j] != texstate[j].shaderid) texidmatch = false;
+					if(This->genshaders[i].texids[j] != texstate[j]) texidmatch = false;
 				if(texidmatch)
 				{
 					if(!memcmp(This->genshaders[i].texcoords,texcoords,8*sizeof(int)))
@@ -247,7 +246,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, TEXTURESTAGE *texstate
 		}
 		This->genshaders[shaderindex].id = id;
 		for(int i = 0; i < 8; i++)
-			This->genshaders[shaderindex].texids[i] = texstate[i].shaderid;
+			This->genshaders[shaderindex].texids[i] = texstate[i];
 		memcpy(This->genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
 		This->ext->glUseProgram(This->genshaders[shaderindex].shader.prog);
 		This->current_prog = This->genshaders[shaderindex].shader.prog;
@@ -485,7 +484,7 @@ static const char func_dither[] = "vec4 dither(vec4 color2)\n\
   * @param texcoords
   *  Pointer to number of texture coordinates in each texture stage
   */
-void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURESTAGE *texstate, int *texcoords)
+void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate, int *texcoords)
 {
 	STRING tmp;
 	ZeroMemory(&tmp, sizeof(STRING));
@@ -684,7 +683,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	int texindex;
 	for(i = 0; i < 8; i++)
 	{
-		if((texstate[i].shaderid>>50)&1)
+		if((texstate[i]>>50)&1)
 		{
 			FIXME("Support texture coordinate transform");
 		}
@@ -693,7 +692,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 			String_Assign(&tmp,op_texpassthru1);
 			tmp.ptr[12] = *(_itoa(i,idstring,10));
 			String_Append(vsrc, tmp.ptr);
-			texindex = (texstate[i].shaderid>>54)&3;
+			texindex = (texstate[i]>>34)&3;
 			switch(texcoords[texindex])
 			{
 			case -1: // No texcoords
@@ -785,7 +784,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	// Uniforms
 	for(i = 0; i < 8; i++)
 	{
-		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
+		if((texstate[i] & 31) == D3DTOP_DISABLE)break;
 		String_Assign(&tmp, unif_tex);
 		tmp.ptr[21] = *(_itoa(i,idstring,10));
 		String_Append(fsrc, tmp.ptr);
@@ -794,7 +793,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	{
 		for(i = 0; i < 8; i++)
 		{
-			if((texstate[i].shaderid>>60)&1)
+			if((texstate[i]>>60)&1)
 			{
 				String_Assign(&tmp, unif_key);
 				tmp.ptr[17] = *(_itoa(i,idstring,10));
@@ -833,19 +832,19 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 	if((id>>13)&1) usecolorkey = true;
 	for(i = 0; i < 8; i++)
 	{
-		if((texstate[i].shaderid & 31) == D3DTOP_DISABLE)break;
-		args[0] = (texstate[i].shaderid>>5)&63;
-		args[1] = (texstate[i].shaderid>>11)&63;
-		args[2] = (texstate[i].shaderid>>22)&63;
-		args[3] = (texstate[i].shaderid>>28)&63;
+		if((texstate[i] & 31) == D3DTOP_DISABLE)break;
+		args[0] = (texstate[i]>>5)&63;
+		args[1] = (texstate[i]>>11)&63;
+		args[2] = (texstate[i]>>22)&63;
+		args[3] = (texstate[i]>>28)&63;
 		// Color key
 		if(usecolorkey)
 		{
-			if((texstate[i].shaderid>>60)&1)
+			if((texstate[i]>>60)&1)
 			{
 				String_Assign(&arg1, op_colorkeyin);
 				arg1.ptr[33] = *(_itoa(i, idstring, 10));
-				arg1.ptr[47] = *(_itoa((texstate[i].shaderid >> 54) & 7, idstring, 10));
+				arg1.ptr[47] = *(_itoa((texstate[i] >> 34) & 7, idstring, 10));
 				arg1.ptr[63] = *(_itoa(i, idstring, 10));
 				String_Append(fsrc, arg1.ptr);
 				String_Assign(&arg1, op_colorkey);
@@ -865,11 +864,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Assign(&arg1, blendargs[1]);
 				break;
 			case D3DTA_TEXTURE:
-				if((texstate[i].shaderid >> 59)&1)
+				if((texstate[i] >> 59)&1)
 				{
 					String_Assign(&arg1, blendargs[2]);
 					arg1.ptr[17] = *(_itoa(i,idstring,10));
-					arg1.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					arg1.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -901,11 +900,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Assign(&arg2, blendargs[1]);
 				break;
 			case D3DTA_TEXTURE:
-				if((texstate[i].shaderid >> 59)&1)
+				if((texstate[i] >> 59)&1)
 				{
 					String_Assign(&arg2, blendargs[2]);
 					arg2.ptr[17] = *(_itoa(i,idstring,10));
-					arg2.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					arg2.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -927,7 +926,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		}
 		if (args[1] & D3DTA_ALPHAREPLICATE) String_Append(&arg2, blendargs[10]);
 		else String_Append(&arg2, blendargs[8]);
-		if(!texfail) switch(texstate[i].shaderid & 31)
+		if(!texfail) switch(texstate[i] & 31)
 		{
 		case D3DTOP_DISABLE:
 		default:
@@ -1012,7 +1011,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
@@ -1033,7 +1032,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
@@ -1050,7 +1049,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 			String_Append(fsrc, " * (1.0-color.a);\n");
 			break;
 		}
-		if(((texstate[i].shaderid>>17) & 31) == D3DTOP_DISABLE)alphadisabled = true;
+		if(((texstate[i]>>17) & 31) == D3DTOP_DISABLE)alphadisabled = true;
 		if(alphadisabled) continue;
 		// Alpha stage
 		texfail = false;
@@ -1066,12 +1065,12 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Append(&arg1, blendargs[9]);
 				break;
 			case D3DTA_TEXTURE:
-				if((texstate[i].shaderid >> 59)&1)
+				if((texstate[i] >> 59)&1)
 				{
 					String_Assign(&arg1, blendargs[2]);
 					String_Append(&arg1, blendargs[9]);
 					arg1.ptr[17] = *(_itoa(i,idstring,10));
-					arg1.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					arg1.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1105,12 +1104,12 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 				String_Append(&arg2, blendargs[9]);
 				break;
 			case D3DTA_TEXTURE:
-				if((texstate[i].shaderid >> 59)&1)
+				if((texstate[i] >> 59)&1)
 				{
 					String_Assign(&arg2, blendargs[2]);
 					String_Append(&arg2, blendargs[9]);
 					arg2.ptr[17] = *(_itoa(i,idstring,10));
-					arg2.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+					arg2.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1132,7 +1131,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 			String_Append(&tmp, ")");
 			String_Assign(&arg2, tmp.ptr);
 		}
-		if (!texfail) switch ((texstate[i].shaderid >> 17) & 31)
+		if (!texfail) switch ((texstate[i] >> 17) & 31)
 		{
 		case D3DTOP_DISABLE:
 		default:
@@ -1217,7 +1216,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
@@ -1238,7 +1237,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i].shaderid>>54)&7,idstring,10));
+			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
@@ -1305,7 +1304,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, TEXTURES
 		String_Append(fsrc, op_fogclamp);
 		String_Append(fsrc, op_fogblend);
 	}
-	if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
+	//if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
 	if (dither) String_Append(fsrc,op_dither);
 	String_Append(fsrc, op_colorfragout);
 	String_Append(fsrc, mainend);

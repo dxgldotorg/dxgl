@@ -191,8 +191,6 @@ const TEXTURESTAGE texstagedefault0 =
 	0,
 	D3DTTFF_DISABLE,
 	NULL,
-	false,
-	0,
 	GL_NEAREST,
 	GL_NEAREST
 };
@@ -219,8 +217,6 @@ const TEXTURESTAGE texstagedefault1 =
 	0,
 	D3DTTFF_DISABLE,
 	NULL,
-	false,
-	0,
 	GL_NEAREST,
 	GL_NEAREST
 };
@@ -365,7 +361,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 		d3ddesc3.dwMaxTextureRepeat = d3ddesc3.dwMaxTextureAspectRatio = renderer->gl_caps.TextureMax;
 	scalex = scaley = 0;
 	mhWorld = mhView = mhProjection = 0;
-	glRenderer_InitD3D(renderer,zbuffer);
+	glRenderer_InitD3D(renderer,zbuffer,glDDS7->ddsd.dwWidth,glDDS7->ddsd.dwHeight);
 	glD3DDev3 = new glDirect3DDevice3(this);
 	glD3DDev2 = new glDirect3DDevice2(this);
 	glD3DDev1 = new glDirect3DDevice1(this);
@@ -378,7 +374,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	TRACE_ENTER(1,14,this);
 	for(int i = 0; i < lightsmax; i++)
 		if(lights[i]) delete lights[i];
-	delete lights;
+	free(lights);
 	for(int i = 0; i < 8; i++)
 		if(texstages[i].texture) texstages[i].texture->Release();
 	for(int i = 0; i < materialcount; i++)
@@ -705,7 +701,7 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 	TRACE_EXIT(0,0);
 }
 
-__int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
+/*__int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 {
 	TRACE_ENTER(2,14,this,14,VertexType);
 	int i;
@@ -730,7 +726,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	if(renderstate[D3DRENDERSTATE_SPECULARENABLE]) shader |= (1i64 << 11);
 	if(renderstate[D3DRENDERSTATE_STIPPLEDALPHA]) shader |= (1i64 << 12);
 	if(renderstate[D3DRENDERSTATE_COLORKEYENABLE]) shader |= (1i64 << 13);
-	shader |= (((__int64)renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
+	//shader |= (((__int64)renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
 	int numlights = 0;
 	for(i = 0; i < 8; i++)
 		if(gllights[i] != -1) numlights++;
@@ -768,7 +764,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	if(VertexType[1].data) shader |= (1i64 << 50);
 	if(renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
-		bool noalpha = false;;
+		bool noalpha = false;
 		if(!texstages[0].texture) noalpha = true;
 		if(texstages[0].texture)
 			if(!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
@@ -812,7 +808,7 @@ __int64 glDirect3DDevice7::SelectShader(GLVERTEX *VertexType)
 	}
 	TRACE_EXIT(10,&shader);
 	return shader;
-}
+}*/
 
 HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 {
@@ -1246,6 +1242,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 			{
 				foundlight = true;
 				gllights[i] = dwLightIndex;
+				glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light, FALSE);
 				break;
 			}
 		}
@@ -1258,6 +1255,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 			if(gllights[i] == dwLightIndex)
 			{
 				gllights[i] = -1;
+				glRenderer_SetLight(renderer, i, NULL, TRUE);
 			}
 		}
 		TRACE_EXIT(23,D3D_OK);
@@ -1321,6 +1319,10 @@ HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 	}
 	if(!lights[dwLightIndex]) lights[dwLightIndex] = new glDirect3DLight;
 	lights[dwLightIndex]->SetLight7(lpLight);
+	for (int i = 0; i < 8; i++)
+	{
+		if (gllights[i] == dwLightIndex) glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light, FALSE);
+	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1330,17 +1332,21 @@ HRESULT WINAPI glDirect3DDevice7::SetMaterial(LPD3DMATERIAL7 lpMaterial)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpMaterial) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	memcpy(&material,lpMaterial,sizeof(D3DMATERIAL7));
+	glRenderer_SetMaterial(renderer, lpMaterial);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
 HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
-	TRACE_ENTER(3,14,this,27,dwRendStateType,9,dwRenderState);
+	BOOL devstate = TRUE;
+	BOOL noalpha = FALSE;
+	TRACE_ENTER(3, 14, this, 27, dwRendStateType, 9, dwRenderState);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	switch(dwRendStateType)
 	{
 	case D3DRENDERSTATE_TEXTUREHANDLE:
+		devstate = FALSE;
 		if(dwRenderState > texturecount-1) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if(dwRenderState)
 		{
@@ -1350,18 +1356,24 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 		else SetTexture(0,NULL);
 		break;
 	case D3DRENDERSTATE_TEXTUREADDRESS:
+		devstate = FALSE;
 		SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSU,dwRenderState);
 		SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSV,dwRenderState);
 		break;
 	case D3DRENDERSTATE_WRAPU:
+		devstate = FALSE;
 		if(dwRenderState) renderstate[D3DRENDERSTATE_WRAP0] |= D3DWRAP_U;
 		else renderstate[D3DRENDERSTATE_WRAP0] &= ~D3DWRAP_U;
+		SetRenderState(D3DRENDERSTATE_WRAP0, renderstate[D3DRENDERSTATE_WRAP0]);
 		break;
 	case D3DRENDERSTATE_WRAPV:
-		if(dwRenderState) renderstate[D3DRENDERSTATE_WRAP0] |= D3DWRAP_V;
+		devstate = FALSE;
+		if (dwRenderState) renderstate[D3DRENDERSTATE_WRAP0] |= D3DWRAP_V;
 		else renderstate[D3DRENDERSTATE_WRAP0] &= ~D3DWRAP_V;
+		SetRenderState(D3DRENDERSTATE_WRAP0, renderstate[D3DRENDERSTATE_WRAP0]);
 		break;
 	case D3DRENDERSTATE_TEXTUREMAG:
+		devstate = FALSE;
 		switch(dwRenderState)
 		{
 		case D3DFILTER_NEAREST:
@@ -1373,6 +1385,7 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 		}
 		break;
 	case D3DRENDERSTATE_TEXTUREMIN:
+		devstate = FALSE;
 		switch(dwRenderState)
 		{
 		case D3DFILTER_NEAREST:
@@ -1420,7 +1433,13 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 			SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
 			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
 			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_MODULATE);
-			break; // Automatically selected based on texture
+			if (!texstages[0].texture) noalpha = TRUE;
+			if (texstages[0].texture)
+				if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+					noalpha = TRUE;
+			if (noalpha) SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG2);
+			else SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+			break;
 		case D3DTBLEND_DECALALPHA:
 			SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
 			SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_CURRENT);
@@ -1453,6 +1472,7 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 	if(dwRendStateType > 152) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwRendStateType < 0) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	renderstate[dwRendStateType] = dwRenderState;
+	if (devstate) glRenderer_SetRenderState(renderer, dwRendStateType, dwRenderState);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1487,13 +1507,24 @@ HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(texstages[dwStage].texture) texstages[dwStage].texture->Release();
 	texstages[dwStage].texture = (glDirectDrawSurface7*)lpTexture;
-	texstages[dwStage].dirty = true;
 	if(lpTexture) lpTexture->AddRef();
+	glRenderer_SetTexture(renderer, dwStage, texstages[dwStage].texture);
+	if (renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
+	{
+		bool noalpha = false;
+		if (!texstages[0].texture) noalpha = true;
+		if (texstages[0].texture)
+			if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+				noalpha = true;
+		if (noalpha) SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+		else SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
+	BOOL devstate = TRUE;
 	TRACE_ENTER(4,14,this,8,dwStage,28,dwState,9,dwValue);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -1501,238 +1532,107 @@ HRESULT WINAPI glDirect3DDevice7::SetTextureStageState(DWORD dwStage, D3DTEXTURE
 	{
 	case D3DTSS_COLOROP:
 		if(!dwValue || (dwValue > 24)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(dwStage == 0)renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] = 0;
+		if (dwStage == 0)SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND, 0);
 		texstages[dwStage].colorop = (D3DTEXTUREOP)dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_COLORARG1:
 		if((dwValue & D3DTA_SELECTMASK) > 4) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if(dwValue > 0x34) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].colorarg1 = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_COLORARG2:
 		if((dwValue & D3DTA_SELECTMASK) > 4) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if(dwValue > 0x34) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].colorarg2 = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_ALPHAOP:
 		if(!dwValue || (dwValue > 24)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(dwStage == 0)renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] = 0;
-		texstages[dwStage].alphaop = (D3DTEXTUREOP )dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		if (dwStage == 0)SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND, 0);
+		texstages[dwStage].alphaop = (D3DTEXTUREOP)dwValue;
+		break;
 	case D3DTSS_ALPHAARG1:
 		if((dwValue & D3DTA_SELECTMASK) > 4) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if(dwValue > 0x34) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].alphaarg1 = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_RET(HRESULT,23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_ALPHAARG2:
 		if((dwValue & D3DTA_SELECTMASK) > 4) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if(dwValue > 0x34) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].alphaarg2 = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVMAT00:
 		memcpy(&texstages[dwStage].bumpenv00,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVMAT01:
 		memcpy(&texstages[dwStage].bumpenv01,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVMAT10:
 		memcpy(&texstages[dwStage].bumpenv10,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVMAT11:
 		memcpy(&texstages[dwStage].bumpenv11,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_TEXCOORDINDEX:
 		if((dwValue & 0xFFFF) > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if((dwValue >> 16) > 3) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].texcoordindex = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_ADDRESS:
 		if(!dwValue || (dwValue > 4)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		texstages[dwStage].addressu = (D3DTEXTUREADDRESS)dwValue;
-		texstages[dwStage].addressv = (D3DTEXTUREADDRESS)dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		devstate = FALSE;
+		SetTextureStageState(dwStage, D3DTSS_ADDRESSU, dwValue);
+		SetTextureStageState(dwStage, D3DTSS_ADDRESSV, dwValue);
+		break;
 	case D3DTSS_ADDRESSU:
 		if(!dwValue || (dwValue > 4)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].addressu = (D3DTEXTUREADDRESS)dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_ADDRESSV:
 		if(!dwValue || (dwValue > 4)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].addressv = (D3DTEXTUREADDRESS)dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BORDERCOLOR:
 		texstages[dwStage].bordercolor = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MAGFILTER:
 		if(!dwValue || (dwValue > 5)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].magfilter = (D3DTEXTUREMAGFILTER)dwValue;
-		texstages[dwStage].dirty = true;
-		switch(texstages[dwStage].magfilter)
-		{
-		case 1:
-		default:
-			texstages[dwStage].glmagfilter = GL_NEAREST;
-			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			texstages[dwStage].glmagfilter = GL_LINEAR;
-			break;
-		}
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MINFILTER:
 		if(!dwValue || (dwValue > 3)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].minfilter = (D3DTEXTUREMINFILTER)dwValue;
-		texstages[dwStage].dirty = true;
-		switch(texstages[dwStage].minfilter)
-		{
-		case 1:
-		default:
-			switch(texstages[dwStage].mipfilter)
-			{
-			case 1:
-			default:
-				texstages[dwStage].glminfilter = GL_NEAREST;
-				break;
-			case 2:
-				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
-				break;
-			case 3:
-				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
-				break;
-			}
-			break;
-		case 2:
-		case 3:
-			switch(texstages[dwStage].mipfilter)
-			{
-			case 1:
-			default:
-				texstages[dwStage].glminfilter = GL_LINEAR;
-				break;
-			case 2:
-				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
-				break;
-			case 3:
-				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
-				break;
-			}
-			break;
-		}
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MIPFILTER:
 		if(!dwValue || (dwValue > 3)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].mipfilter = (D3DTEXTUREMIPFILTER)dwValue;
-		texstages[dwStage].dirty = true;
-		switch(texstages[dwStage].mipfilter)
-		{
-		case 1:
-		default:
-			switch(texstages[dwStage].minfilter)
-			{
-			case 1:
-			default:
-				texstages[dwStage].glminfilter = GL_NEAREST;
-			case 2:
-			case 3:
-				texstages[dwStage].glminfilter = GL_LINEAR;
-			}
-			break;
-		case 2:
-			switch(texstages[dwStage].minfilter)
-			{
-			case 1:
-			default:
-				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
-			case 2:
-			case 3:
-				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
-			}
-			break;
-		case 3:
-			switch(texstages[dwStage].minfilter)
-			{
-			case 1:
-			default:
-				texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
-			case 2:
-			case 3:
-				texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
-			}
-			break;
-		}
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MIPMAPLODBIAS:
 		memcpy(&texstages[dwStage].lodbias,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MAXMIPLEVEL:
 		texstages[dwStage].miplevel = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_MAXANISOTROPY:
 		texstages[dwStage].anisotropy = dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVLSCALE:
 		memcpy(&texstages[dwStage].bumpenvlscale,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_BUMPENVLOFFSET:
 		memcpy(&texstages[dwStage].bumpenvloffset,&dwValue,sizeof(D3DVALUE));
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTSS_TEXTURETRANSFORMFLAGS:
 		if((dwValue & 0xFF) > 4) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		if((dwValue >> 8) > 1) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 		texstages[dwStage].textransform = (D3DTEXTURETRANSFORMFLAGS)dwValue;
-		texstages[dwStage].dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	default:
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
 	}
-	TRACE_RET(HRESULT,23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (devstate) glRenderer_SetTextureStageState(renderer, dwStage, dwState, dwValue);
+	TRACE_EXIT(23, D3D_OK);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
@@ -1744,25 +1644,23 @@ HRESULT WINAPI glDirect3DDevice7::SetTransform(D3DTRANSFORMSTATETYPE dtstTransfo
 		memcpy(&matWorld,lpD3DMatrix,sizeof(D3DMATRIX));
 		modelview_dirty = true;
 		transform_dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTRANSFORMSTATE_VIEW:
 		memcpy(&matView,lpD3DMatrix,sizeof(D3DMATRIX));
 		modelview_dirty = true;
 		transform_dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	case D3DTRANSFORMSTATE_PROJECTION:
 		memcpy(&matProjection,lpD3DMatrix,sizeof(D3DMATRIX));
 		projection_dirty = true;
 		transform_dirty = true;
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
+		break;
 	default:
 		TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	}
-	TRACE_EXIT(23,DDERR_GENERIC);
-	return DDERR_GENERIC;
+	glRenderer_SetTransform(renderer, dtstTransformStateType, lpD3DMatrix);
+	TRACE_EXIT(23, D3D_OK);
+	return D3D_OK;
 }
 HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 {
@@ -1770,6 +1668,7 @@ HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	memcpy(&viewport,lpViewport,sizeof(D3DVIEWPORT7));
 	transform_dirty = true;
+	glRenderer_SetViewport(renderer, lpViewport);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1831,39 +1730,6 @@ HRESULT WINAPI glDirect3DDevice7::ValidateDevice(LPDWORD lpdwPasses)
 	return D3D_OK;
 }
 
-void glDirect3DDevice7::SetDepthComp(glUtil *util)
-{
-	TRACE_ENTER(1,14,this,14,util);
-	switch(renderstate[D3DRENDERSTATE_ZFUNC])
-	{
-	case D3DCMP_NEVER:
-		util->SetDepthComp(GL_NEVER);
-		break;
-	case D3DCMP_LESS:
-		util->SetDepthComp(GL_LESS);
-		break;
-	case D3DCMP_EQUAL:
-		util->SetDepthComp(GL_EQUAL);
-		break;
-	case D3DCMP_LESSEQUAL:
-		util->SetDepthComp(GL_LEQUAL);
-		break;
-	case D3DCMP_GREATER:
-		util->SetDepthComp(GL_GREATER);
-		break;
-	case D3DCMP_NOTEQUAL:
-		util->SetDepthComp(GL_NOTEQUAL);
-		break;
-	case D3DCMP_GREATEREQUAL:
-		util->SetDepthComp(GL_GEQUAL);
-		break;
-	case D3DCMP_ALWAYS:
-	default:
-		util->SetDepthComp(GL_ALWAYS);
-		break;
-	}
-	TRACE_EXIT(0,0);
-}
 
 D3DMATERIALHANDLE glDirect3DDevice7::AddMaterial(glDirect3DMaterial3 *material)
 {

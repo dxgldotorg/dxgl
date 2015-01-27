@@ -502,9 +502,12 @@ void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, 
   * @param zbuffer
   *  Nonzero if a Z buffer is present.
   */
-void glRenderer_InitD3D(glRenderer *This, int zbuffer)
+void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
 	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)zbuffer;
+	This->inputs[1] = (void*)x;
+	This->inputs[2] = (void*)y;
 	This->opcode = OP_INITD3D;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -713,6 +716,146 @@ HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSu
 	return (HRESULT)This->outputs[0];
 }
 
+/**
+* Sets a render state within the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param dwRendStateType
+*  Render state to change
+* @param dwRenderState
+*  New render state value
+*/
+void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)dwRendStateType;
+	This->inputs[1] = (void*)dwRenderState;
+	This->opcode = OP_SETRENDERSTATE;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Binds a surface to a texture stage in the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param dwStage
+*  Texture stage to bind
+* @param Texture
+*  Texture to bind to the stage; old texture will be released; NULL to unbind
+*/
+void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)dwStage;
+	This->inputs[1] = Texture;
+	This->opcode = OP_SETTEXTURE;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Sets a texture stage state within the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param dwStage
+*  Texture stage to modify
+* @param dwState
+*  Texture stage state to modify
+* @param dwValue
+*  New value for texture stage state.
+*/
+void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)dwStage;
+	This->inputs[1] = (void*)dwState;
+	This->inputs[2] = (void*)dwValue;
+	This->opcode = OP_SETTEXTURESTAGESTATE;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Sets a transform matrix in the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param dtstTransformStateType
+*  Transform matrix to replace
+* @param lpD3DMatrix
+*  New transform matrix
+*/
+void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)dtstTransformStateType;
+	This->inputs[1] = lpD3DMatrix;
+	This->opcode = OP_SETTRANSFORM;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Sets the material in the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param lpMaterial
+*  New material parameters
+*/
+void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = lpMaterial;
+	This->opcode = OP_SETMATERIAL;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Sets a light in the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param index
+*  Index of light to set
+* @param light
+*  Pointer to light to change, ignored if remove is TRUE
+* @param remove
+*  TRUE to clear a light from the renderer.
+*/
+
+void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)index;
+	This->inputs[1] = light;
+	This->inputs[2] = (void*)remove;
+	This->opcode = OP_SETLIGHT;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+* Sets the viewport for the renderer.
+* @param This
+*  Pointer to glRenderer object
+* @param lpViewport
+*  New viewport parameters for renderer.
+*/
+void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = lpViewport;
+	This->opcode = OP_SETVIEWPORT;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
 
 /**
   * Main loop for glRenderer class
@@ -809,7 +952,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 				(glDirectDrawSurface7*)This->inputs[2],(glDirectDrawSurface7*)This->inputs[3],(GLint)This->inputs[4],true);
 			break;
 		case OP_INITD3D:
-			glRenderer__InitD3D(This,(int)This->inputs[0]);
+			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
 			break;
 		case OP_CLEAR:
 			memcpy(&tmpfloats[0],&This->inputs[5],4);
@@ -833,6 +976,28 @@ DWORD glRenderer__Entry(glRenderer *This)
 		case OP_DEPTHFILL:
 			glRenderer__DepthFill(This, (LPRECT)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1],
 				(LPDDBLTFX)This->inputs[2]);
+			break;
+		case OP_SETRENDERSTATE:
+			glRenderer__SetRenderState(This, (D3DRENDERSTATETYPE)(DWORD)This->inputs[0], (DWORD)This->inputs[1]);
+			break;
+		case OP_SETTEXTURE:
+			glRenderer__SetTexture(This, (DWORD)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1]);
+			break;
+		case OP_SETTEXTURESTAGESTATE:
+			glRenderer__SetTextureStageState(This, (DWORD)This->inputs[0], (D3DTEXTURESTAGESTATETYPE)(DWORD)This->inputs[1],
+				(DWORD)This->inputs[2]);
+			break;
+		case OP_SETTRANSFORM:
+			glRenderer__SetTransform(This, (D3DTRANSFORMSTATETYPE)(DWORD)This->inputs[0], (LPD3DMATRIX)This->inputs[1]);
+			break;
+		case OP_SETMATERIAL:
+			glRenderer__SetMaterial(This, (LPD3DMATERIAL7)This->inputs[0]);
+			break;
+		case OP_SETLIGHT:
+			glRenderer__SetLight(This, (DWORD)This->inputs[0], (LPD3DLIGHT7)This->inputs[1], (BOOL)This->inputs[2]);
+			break;
+		case OP_SETVIEWPORT:
+			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
 			break;
 		}
 	}
@@ -1632,7 +1797,101 @@ void glRenderer__DeleteTexture(glRenderer *This, TEXTURE *texture)
 	SetEvent(This->busy);
 }
 
-void glRenderer__InitD3D(glRenderer *This, int zbuffer)
+__int64 InitShaderState(glRenderer *renderer, DWORD *renderstate, TEXTURESTAGE *texstages, D3DLIGHT7 *lights)
+{
+	int i;
+	__int64 shader = 0;
+	switch (renderstate[D3DRENDERSTATE_SHADEMODE])
+	{
+	case D3DSHADE_FLAT:
+	default:
+		break;
+	case D3DSHADE_GOURAUD:
+		shader |= 1;
+		break;
+	case D3DSHADE_PHONG:
+		shader |= 3;
+		break;
+	}
+	if (renderstate[D3DRENDERSTATE_ALPHATESTENABLE]) shader |= 4;
+	shader |= ((((__int64)renderstate[D3DRENDERSTATE_ALPHAFUNC] - 1) & 7) << 3);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_FOGTABLEMODE] & 3) << 6);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_FOGVERTEXMODE] & 3) << 8);
+	if (renderstate[D3DRENDERSTATE_RANGEFOGENABLE]) shader |= (1i64 << 10);
+	if (renderstate[D3DRENDERSTATE_SPECULARENABLE]) shader |= (1i64 << 11);
+	if (renderstate[D3DRENDERSTATE_STIPPLEDALPHA]) shader |= (1i64 << 12);
+	if (renderstate[D3DRENDERSTATE_COLORKEYENABLE]) shader |= (1i64 << 13);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_ZBIAS] & 15) << 14);
+	int numlights = 0;
+	for (i = 0; i < 8; i++)
+		if (lights[i].dltType) numlights++;
+	shader |= (__int64)numlights << 18;
+	if (renderstate[D3DRENDERSTATE_LOCALVIEWER]) shader |= (1i64 << 21);
+	if (renderstate[D3DRENDERSTATE_COLORKEYBLENDENABLE]) shader |= (1i64 << 22);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_DIFFUSEMATERIALSOURCE] & 3) << 23);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_SPECULARMATERIALSOURCE] & 3) << 25);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_AMBIENTMATERIALSOURCE] & 3) << 27);
+	shader |= (((__int64)renderstate[D3DRENDERSTATE_EMISSIVEMATERIALSOURCE] & 3) << 29);
+	int lightindex = 0;
+	for (i = 0; i < 8; i++)
+	{
+		if (lights[i].dltType)
+		{
+			if (lights[i].dltType != D3DLIGHT_DIRECTIONAL)
+				shader |= (1i64 << (38 + lightindex));
+			if (lights[i].dltType == D3DLIGHT_SPOT)
+				shader |= (1i64 << (51 + lightindex));
+			lightindex++;
+		}
+	}
+	if (renderstate[D3DRENDERSTATE_NORMALIZENORMALS]) shader |= (1i64 << 49);
+	if (renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
+	{
+		bool noalpha = false;;
+		if (!texstages[0].texture) noalpha = true;
+		if (texstages[0].texture)
+			if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+				noalpha = true;
+		if (noalpha) texstages[0].alphaop = D3DTOP_SELECTARG2;
+		else texstages[0].alphaop = D3DTOP_MODULATE;
+	}
+	if (renderstate[D3DRENDERSTATE_LIGHTING]) shader |= (1i64 << 59);
+	if (renderstate[D3DRENDERSTATE_COLORVERTEX]) shader |= (1i64 << 60);
+	if (renderstate[D3DRENDERSTATE_FOGENABLE]) shader |= (1i64 << 61);
+	if (renderstate[D3DRENDERSTATE_DITHERENABLE]) shader |= (1i64 << 62);
+	for (i = 0; i < 8; i++)
+	{
+		renderer->shaderstate3d.texstageid[i] = texstages[i].colorop & 31;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].colorarg1 & 63) << 5;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].colorarg2 & 63) << 11;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].alphaop & 31) << 17;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].alphaarg1 & 63) << 22;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].alphaarg2 & 63) << 28;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].texcoordindex & 7) << 34;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)((texstages[i].texcoordindex >> 16) & 3) << 37;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)((texstages[i].addressu - 1) & 3) << 39;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)((texstages[i].addressv - 1) & 3) << 41;
+		//renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].magfilter & 7) << 43;
+		//renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].minfilter & 3) << 46;
+		//renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].mipfilter & 3) << 48;
+		if (texstages[i].textransform & 7)
+		{
+			renderer->shaderstate3d.texstageid[i] |= 1i64 << 50;
+			renderer->shaderstate3d.texstageid[i] |= (__int64)(((texstages[i].textransform & 7) - 1) & 3) << 51;
+		}
+		if (texstages[i].textransform & D3DTTFF_PROJECTED) renderer->shaderstate3d.texstageid[i] |= 1i64 << 53;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)(texstages[i].texcoordindex & 7) << 54;
+		renderer->shaderstate3d.texstageid[i] |= (__int64)((texstages[i].texcoordindex >> 16) & 3) << 57;
+		if (texstages[i].texture)
+		{
+			renderer->shaderstate3d.texstageid[i] |= 1i64 << 59;
+			if (texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT) renderer->shaderstate3d.texstageid[i] |= 1i64 << 60;
+		}
+	}
+	return shader;
+}
+
+void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
 	SetEvent(This->busy);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
@@ -1643,9 +1902,24 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer)
 	__gluMakeIdentityf(identity);
 	This->util->SetMatrix(GL_MODELVIEW,identity,identity,NULL);
 	This->util->SetMatrix(GL_PROJECTION,identity,NULL,NULL);
+	for (int i = 0; i < 24; i++)
+		memcpy(&This->transform[i], identity, sizeof(D3DMATRIX));
 	GLfloat one[4] = {1,1,1,1};
 	GLfloat zero[4] = {0,0,0,1};
 	This->util->SetMaterial(one,one,zero,zero,0);
+	ZeroMemory(&This->material, sizeof(D3DMATERIAL7));
+	ZeroMemory(&This->lights, 8 * sizeof(D3DLIGHT7));
+	memcpy(&This->renderstate, &renderstate_default, 153 * sizeof(DWORD));
+	This->texstages[0] = texstagedefault0;
+	This->texstages[1] = This->texstages[2] = This->texstages[3] = This->texstages[4] =
+		This->texstages[5] = This->texstages[6] = This->texstages[7] = texstagedefault1;
+	This->viewport.dwX = 0;
+	This->viewport.dwY = 0;
+	This->viewport.dwWidth = x;
+	This->viewport.dwHeight = y;
+	This->viewport.dvMinZ = 0.0f;
+	This->viewport.dvMaxZ = 1.0f;
+	This->shaderstate3d.stateid = InitShaderState(This, This->renderstate, This->texstages, This->lights);
 }
 
 void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
@@ -1861,51 +2135,63 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		SetEvent(This->busy);
 		return;
 	}
-	__int64 shader = device->SelectShader(vertices);
-	ShaderManager_SetShader(This->shaders,shader,device->texstages,texformats,2);
-	device->SetDepthComp(This->util);
-	if(device->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
+	This->shaderstate3d.stateid &= 0xFFFA3FFC7FFFFFFFi64;
+	int numtextures = 0;
+	for (i = 0; i < 8; i++)
+		if (vertices[i + 10].data) numtextures++;
+	This->shaderstate3d.stateid |= (__int64)numtextures << 31;
+	int blendweights = 0;
+	for (i = 0; i < 5; i++)
+		if (vertices[i + 2].data) blendweights++;
+	This->shaderstate3d.stateid |= (__int64)blendweights << 46;
+	if (vertices[1].data) This->shaderstate3d.stateid |= (1i64 << 50);
+	if (vertices[8].data) This->shaderstate3d.stateid |= (1i64 << 35);
+	if (vertices[9].data) This->shaderstate3d.stateid |= (1i64 << 36);
+	if (vertices[7].data) This->shaderstate3d.stateid |= (1i64 << 37);
+	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,texformats,2);
+	glRenderer__SetDepthComp(This);
+	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
 	else This->util->DepthTest(false);
-	if(device->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) This->util->DepthWrite(true);
+	if(This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) This->util->DepthWrite(true);
 	else This->util->DepthWrite(false);
-	_GENSHADER prog = This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
-	This->util->EnableArray(prog.attribs[0],true);
-	This->ext->glVertexAttribPointer(prog.attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
+	_GENSHADER *prog = &This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
+	This->util->EnableArray(prog->attribs[0],true);
+	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
 	if(transformed)
 	{
-		if(prog.attribs[1] != -1)
+		if(prog->attribs[1] != -1)
 		{
-			This->util->EnableArray(prog.attribs[1],true);
-			This->ext->glVertexAttribPointer(prog.attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+			This->util->EnableArray(prog->attribs[1],true);
+			This->ext->glVertexAttribPointer(prog->attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
 		}
 	}
 	for(i = 0; i < 5; i++)
 	{
 		if(vertices[i+2].data)
 		{
-			if(prog.attribs[i+2] != -1)
+			if(prog->attribs[i+2] != -1)
 			{
-				This->util->EnableArray(prog.attribs[i+2],true);
-				This->ext->glVertexAttribPointer(prog.attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
+				This->util->EnableArray(prog->attribs[i+2],true);
+				This->ext->glVertexAttribPointer(prog->attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
 			}
 		}
 	}
 	if(vertices[7].data)
 	{
-		if(prog.attribs[7] != -1)
+		if(prog->attribs[7] != -1)
 		{
-			This->util->EnableArray(prog.attribs[7],true);
-			This->ext->glVertexAttribPointer(prog.attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
+			This->util->EnableArray(prog->attribs[7],true);
+			This->ext->glVertexAttribPointer(prog->attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
 		}
 	}
 	for(i = 0; i < 2; i++)
 	{
 		if(vertices[i+8].data)
 		{
-			if(prog.attribs[8+i] != -1)
+			if(prog->attribs[8+i] != -1)
 			{
-				This->util->EnableArray(prog.attribs[8+i],true);
-				This->ext->glVertexAttribPointer(prog.attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
+				This->util->EnableArray(prog->attribs[8+i],true);
+				This->ext->glVertexAttribPointer(prog->attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
 			}
 		}
 	}
@@ -1917,129 +2203,131 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 			case -1: // Null
 				break;
 			case 0: // st
-				if(prog.attribs[i+18] != -1)
+				if(prog->attribs[i+18] != -1)
 				{
-					This->util->EnableArray(prog.attribs[i+18],true);
-					This->ext->glVertexAttribPointer(prog.attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog->attribs[i+18],true);
+					This->ext->glVertexAttribPointer(prog->attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 1: // str
-				if(prog.attribs[i+26] != -1)
+				if(prog->attribs[i+26] != -1)
 				{
-					This->util->EnableArray(prog.attribs[i+26],true);
-					This->ext->glVertexAttribPointer(prog.attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog->attribs[i+26],true);
+					This->ext->glVertexAttribPointer(prog->attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 2: // strq
-				if(prog.attribs[i+34] != -1)
+				if(prog->attribs[i+34] != -1)
 				{
-					This->util->EnableArray(prog.attribs[i+34],true);
-					This->ext->glVertexAttribPointer(prog.attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog->attribs[i+34],true);
+					This->ext->glVertexAttribPointer(prog->attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 3: // s
-				if(prog.attribs[i+10] != -1)
+				if(prog->attribs[i+10] != -1)
 				{
-					This->util->EnableArray(prog.attribs[i+10],true);
-					This->ext->glVertexAttribPointer(prog.attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->util->EnableArray(prog->attribs[i+10],true);
+					This->ext->glVertexAttribPointer(prog->attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			}
 
 		}
 	}
-	if (device->modelview_dirty) This->util->SetMatrix(GL_MODELVIEW, device->matView, device->matWorld, &device->modelview_dirty);
-	if (device->projection_dirty) This->util->SetMatrix(GL_PROJECTION, device->matProjection, NULL, &device->projection_dirty);
+	This->util->SetMatrix(GL_MODELVIEW, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_VIEW], 
+		(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD],NULL);
+	This->util->SetMatrix(GL_PROJECTION, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_PROJECTION], NULL, NULL);
 
-	This->util->SetMaterial((GLfloat*)&device->material.ambient,(GLfloat*)&device->material.diffuse,(GLfloat*)&device->material.specular,
-		(GLfloat*)&device->material.emissive,device->material.power);
+	This->util->SetMaterial((GLfloat*)&This->material.ambient,(GLfloat*)&This->material.diffuse,(GLfloat*)&This->material.specular,
+		(GLfloat*)&This->material.emissive,This->material.power);
 
 	int lightindex = 0;
 	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
 	for(i = 0; i < 8; i++)
 	{
-		if(device->gllights[i] != -1)
+		if(This->lights[i].dltType)
 		{
-			if(prog.uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog.uniforms[0],1,false,device->matWorld);
-			if(prog.uniforms[20+(i*12)] != -1)
-				This->ext->glUniform4fv(prog.uniforms[20+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvDiffuse);
-			if(prog.uniforms[21+(i*12)] != -1)
-				This->ext->glUniform4fv(prog.uniforms[21+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvSpecular);
-			if(prog.uniforms[22+(i*12)] != -1)
-				This->ext->glUniform4fv(prog.uniforms[22+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dcvAmbient);
-			if(prog.uniforms[24+(i*12)] != -1)
-				This->ext->glUniform3fv(prog.uniforms[24+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvDirection);
-			if(device->lights[device->gllights[i]]->light.dltType != D3DLIGHT_DIRECTIONAL)
+			if(prog->uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[0],1,false,
+				(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD]);
+			if(prog->uniforms[20+(i*12)] != -1)
+				This->ext->glUniform4fv(prog->uniforms[20+(i*12)],1,(GLfloat*)&This->lights[i].dcvDiffuse);
+			if(prog->uniforms[21+(i*12)] != -1)
+				This->ext->glUniform4fv(prog->uniforms[21+(i*12)],1,(GLfloat*)&This->lights[i].dcvSpecular);
+			if(prog->uniforms[22+(i*12)] != -1)
+				This->ext->glUniform4fv(prog->uniforms[22+(i*12)],1,(GLfloat*)&This->lights[i].dcvAmbient);
+			if(prog->uniforms[24+(i*12)] != -1)
+				This->ext->glUniform3fv(prog->uniforms[24+(i*12)],1,(GLfloat*)&This->lights[i].dvDirection);
+			if(This->lights[i].dltType != D3DLIGHT_DIRECTIONAL)
 			{
-				if(prog.uniforms[23+(i*12)] != -1)
-					This->ext->glUniform3fv(prog.uniforms[23+(i*12)],1,(GLfloat*)&device->lights[device->gllights[i]]->light.dvPosition);
-				if(prog.uniforms[25+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[25+(i*12)],device->lights[device->gllights[i]]->light.dvRange);
-				if(prog.uniforms[26+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[26+(i*12)],device->lights[device->gllights[i]]->light.dvFalloff);
-				if(prog.uniforms[27+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[27+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation0);
-				if(prog.uniforms[28+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[28+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation1);
-				if(prog.uniforms[29+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[29+(i*12)],device->lights[device->gllights[i]]->light.dvAttenuation2);
-				if(prog.uniforms[30+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[30+(i*12)],device->lights[device->gllights[i]]->light.dvTheta);
-				if(prog.uniforms[31+(i*12)] != -1)
-					This->ext->glUniform1f(prog.uniforms[31+(i*12)],device->lights[device->gllights[i]]->light.dvPhi);
+				if(prog->uniforms[23+(i*12)] != -1)
+					This->ext->glUniform3fv(prog->uniforms[23+(i*12)],1,(GLfloat*)&This->lights[i].dvPosition);
+				if(prog->uniforms[25+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[25+(i*12)],This->lights[i].dvRange);
+				if(prog->uniforms[26+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[26+(i*12)],This->lights[i].dvFalloff);
+				if(prog->uniforms[27+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[27+(i*12)],This->lights[i].dvAttenuation0);
+				if(prog->uniforms[28+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[28+(i*12)],This->lights[i].dvAttenuation1);
+				if(prog->uniforms[29+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[29+(i*12)],This->lights[i].dvAttenuation2);
+				if(prog->uniforms[30+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[30+(i*12)],This->lights[i].dvTheta);
+				if(prog->uniforms[31+(i*12)] != -1)
+					This->ext->glUniform1f(prog->uniforms[31+(i*12)],This->lights[i].dvPhi);
 			}
 		}
 		lightindex++;
 	}
 
-	DWORD ambient = device->renderstate[D3DRENDERSTATE_AMBIENT];
-	if(prog.uniforms[136] != -1)
-		This->ext->glUniform4f(prog.uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
+	DWORD ambient = This->renderstate[D3DRENDERSTATE_AMBIENT];
+	if(prog->uniforms[136] != -1)
+		This->ext->glUniform4f(prog->uniforms[136],RGBA_GETRED(ambient),RGBA_GETGREEN(ambient),
 			RGBA_GETBLUE(ambient),RGBA_GETALPHA(ambient));
 	GLint keycolor[4];
 	for(i = 0; i < 8; i++)
 	{
-		if(device->texstages[i].colorop == D3DTOP_DISABLE) break;
-		if(device->texstages[i].texture)
+		if(This->texstages[i].colorop == D3DTOP_DISABLE) break;
+		if(This->texstages[i].texture)
 		{
-			if(device->texstages[i].texture->dirty & 1)
+			if(This->texstages[i].texture->dirty & 1)
 			{
-				glRenderer__UploadTexture(This,device->texstages[i].texture->buffer,device->texstages[i].texture->bigbuffer,
-					device->texstages[i].texture->texture,device->texstages[i].texture->ddsd.dwWidth,
-					device->texstages[i].texture->ddsd.dwHeight,device->texstages[i].texture->fakex,
-					device->texstages[i].texture->fakey,device->texstages[i].texture->ddsd.lPitch,
-					(device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*device->texstages[i].texture->fakex),
-					device->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount, device->texstages[i].texture->miplevel);
-				device->texstages[i].texture->dirty &= ~1;
+				glRenderer__UploadTexture(This,This->texstages[i].texture->buffer,This->texstages[i].texture->bigbuffer,
+					This->texstages[i].texture->texture,This->texstages[i].texture->ddsd.dwWidth,
+					This->texstages[i].texture->ddsd.dwHeight,This->texstages[i].texture->fakex,
+					This->texstages[i].texture->fakey,This->texstages[i].texture->ddsd.lPitch,
+					(This->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*This->texstages[i].texture->fakex),
+					This->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount, This->texstages[i].texture->miplevel);
+				This->texstages[i].texture->dirty &= ~1;
 			}
-			if(device->texstages[i].texture)
-				device->texstages[i].texture->SetFilter(i,device->texstages[i].glmagfilter,device->texstages[i].glminfilter,This->ext,This->texman);
-			TextureManager_SetTexture(This->texman,i,device->texstages[i].texture->texture);
-			This->util->SetWrap(i,0,device->texstages[i].addressu,This->texman);
-			This->util->SetWrap(i,1,device->texstages[i].addressv,This->texman);
+			if(This->texstages[i].texture)
+				This->texstages[i].texture->SetFilter(i,This->texstages[i].glmagfilter,This->texstages[i].glminfilter,This->ext,This->texman);
+			TextureManager_SetTexture(This->texman,i,This->texstages[i].texture->texture);
+			This->util->SetWrap(i,0,This->texstages[i].addressu,This->texman);
+			This->util->SetWrap(i,1,This->texstages[i].addressv,This->texman);
 		}
 		TextureManager_SetTexture(This->texman,i,0);
-		This->ext->glUniform1i(prog.uniforms[128+i],i);
-		if(device->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && device->texstages[i].texture && (prog.uniforms[142+i] != -1))
+		This->ext->glUniform1i(prog->uniforms[128+i],i);
+		if(This->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && This->texstages[i].texture && (prog->uniforms[142+i] != -1))
 		{
-			if(device->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
+			if(This->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
 			{
-				SetColorKeyUniform(device->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,
-					device->texstages[i].texture->texture->colorsizes, device->texstages[i].texture->texture->colororder,
-					prog.uniforms[142 + i], device->texstages[i].texture->texture->colorbits, This->ext);
-				This->ext->glUniform4i(prog.uniforms[153+i], device->texstages[i].texture->texture->colorsizes[0], 
-					device->texstages[i].texture->texture->colorsizes[1],
-					device->texstages[i].texture->texture->colorsizes[2],
-					device->texstages[i].texture->texture->colorsizes[3]);
+				SetColorKeyUniform(This->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,
+					This->texstages[i].texture->texture->colorsizes, This->texstages[i].texture->texture->colororder,
+					prog->uniforms[142 + i], This->texstages[i].texture->texture->colorbits, This->ext);
+				This->ext->glUniform4i(prog->uniforms[153+i], This->texstages[i].texture->texture->colorsizes[0], 
+					This->texstages[i].texture->texture->colorsizes[1],
+					This->texstages[i].texture->texture->colorsizes[2],
+					This->texstages[i].texture->texture->colorsizes[3]);
 			}
 		}
 	}
-	if(prog.uniforms[137]!= -1) This->ext->glUniform1f(prog.uniforms[137],device->viewport.dwWidth);
-	if(prog.uniforms[138]!= -1) This->ext->glUniform1f(prog.uniforms[138],device->viewport.dwHeight);
-	if(prog.uniforms[139]!= -1) This->ext->glUniform1f(prog.uniforms[139],device->viewport.dwX);
-	if(prog.uniforms[140]!= -1) This->ext->glUniform1f(prog.uniforms[140],device->viewport.dwY);
-	if(prog.uniforms[141]!= -1) This->ext->glUniform1i(prog.uniforms[141],device->renderstate[D3DRENDERSTATE_ALPHAREF]);
-	if(prog.uniforms[150]!= -1) This->ext->glUniform4iv(prog.uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
+	if(prog->uniforms[137]!= -1) This->ext->glUniform1f(prog->uniforms[137],This->viewport.dwWidth);
+	if(prog->uniforms[138]!= -1) This->ext->glUniform1f(prog->uniforms[138],This->viewport.dwHeight);
+	if(prog->uniforms[139]!= -1) This->ext->glUniform1f(prog->uniforms[139],This->viewport.dwX);
+	if(prog->uniforms[140]!= -1) This->ext->glUniform1f(prog->uniforms[140],This->viewport.dwY);
+	if(prog->uniforms[141]!= -1) This->ext->glUniform1i(prog->uniforms[141],This->renderstate[D3DRENDERSTATE_ALPHAREF]);
+	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
 	do
 	{
 		if (This->util->SetFBO(device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
@@ -2050,21 +2338,21 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		device->glDDS7->fbo.fbcolor = NULL;
 		device->glDDS7->fbo.fbz = NULL;
 	} while (1);
-	This->util->SetViewport((int)((float)device->viewport.dwX*device->glDDS7->mulx),
-		(int)((float)device->viewport.dwY*device->glDDS7->muly),
-		(int)((float)device->viewport.dwWidth*device->glDDS7->mulx),
-		(int)((float)device->viewport.dwHeight*device->glDDS7->muly));
-	This->util->SetDepthRange(device->viewport.dvMinZ,device->viewport.dvMaxZ);
-	if(device->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
+	This->util->SetViewport((int)((float)This->viewport.dwX*device->glDDS7->mulx),
+		(int)((float)This->viewport.dwY*device->glDDS7->muly),
+		(int)((float)This->viewport.dwWidth*device->glDDS7->mulx),
+		(int)((float)This->viewport.dwHeight*device->glDDS7->muly));
+	This->util->SetDepthRange(This->viewport.dvMinZ,This->viewport.dvMaxZ);
+	if(This->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
 	else This->util->BlendEnable(false);
-	glRenderer__SetBlend(This,device->renderstate[D3DRENDERSTATE_SRCBLEND],device->renderstate[D3DRENDERSTATE_DESTBLEND]);
-	This->util->SetCull((D3DCULL)device->renderstate[D3DRENDERSTATE_CULLMODE]);
-	glRenderer__SetFogColor(This,device->renderstate[D3DRENDERSTATE_FOGCOLOR]);
-	glRenderer__SetFogStart(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGSTART]));
-	glRenderer__SetFogEnd(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGEND]));
-	glRenderer__SetFogDensity(This,*(GLfloat*)(&device->renderstate[D3DRENDERSTATE_FOGDENSITY]));
-	This->util->SetPolyMode((D3DFILLMODE)device->renderstate[D3DRENDERSTATE_FILLMODE]);
-	This->util->SetShadeMode((D3DSHADEMODE)device->renderstate[D3DRENDERSTATE_SHADEMODE]);
+	glRenderer__SetBlend(This,This->renderstate[D3DRENDERSTATE_SRCBLEND],This->renderstate[D3DRENDERSTATE_DESTBLEND]);
+	This->util->SetCull((D3DCULL)This->renderstate[D3DRENDERSTATE_CULLMODE]);
+	glRenderer__SetFogColor(This,This->renderstate[D3DRENDERSTATE_FOGCOLOR]);
+	glRenderer__SetFogStart(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGSTART]));
+	glRenderer__SetFogEnd(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGEND]));
+	glRenderer__SetFogDensity(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGDENSITY]));
+	This->util->SetPolyMode((D3DFILLMODE)This->renderstate[D3DRENDERSTATE_FILLMODE]);
+	This->util->SetShadeMode((D3DSHADEMODE)This->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
@@ -2182,6 +2470,371 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 	SetEvent(This->busy);
 }
 
+void glRenderer__SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
+{
+	SetEvent(This->busy);
+	if (This->renderstate[dwRendStateType] == dwRenderState) return;
+	This->renderstate[dwRendStateType] = dwRenderState;
+	switch (dwRendStateType)
+	{
+	case D3DRENDERSTATE_SHADEMODE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFFFCi64;
+		switch (dwRenderState)
+		{
+		case D3DSHADE_FLAT:
+		default:
+			break;
+		case D3DSHADE_GOURAUD:
+			This->shaderstate3d.stateid |= 1;
+			break;
+		case D3DSHADE_PHONG:
+			This->shaderstate3d.stateid |= 3;
+			break;
+		}
+		break;
+	case D3DRENDERSTATE_ALPHATESTENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= 4;
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFFFBi64;
+		break;
+	case D3DRENDERSTATE_ALPHAFUNC:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFFC7i64;
+		This->shaderstate3d.stateid |= ((((__int64)dwRenderState - 1) & 7) << 3);
+		break;
+	case D3DRENDERSTATE_FOGTABLEMODE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFF3Fi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 6);
+		break;
+	case D3DRENDERSTATE_FOGVERTEXMODE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFCFFi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 8);
+		break;
+	case D3DRENDERSTATE_RANGEFOGENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 10);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFFBFFi64;
+		break;
+	case D3DRENDERSTATE_SPECULARENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 11);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFF7FFi64;
+		break;
+	case D3DRENDERSTATE_STIPPLEDALPHA:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 12);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFEFFFi64;
+		break;
+	case D3DRENDERSTATE_COLORKEYENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 13);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFFFDFFFi64;
+		break;
+	case D3DRENDERSTATE_LOCALVIEWER:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 21);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFDFFFFFi64;
+		break;
+	case D3DRENDERSTATE_COLORKEYBLENDENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 22);
+		else This->shaderstate3d.stateid &= 0xFFFFFFFFFFBFFFFFi64;
+		break;
+	case D3DRENDERSTATE_DIFFUSEMATERIALSOURCE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFFE7FFFFFi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 23);
+		break;
+	case D3DRENDERSTATE_SPECULARMATERIALSOURCE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFF9FFFFFFi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 25);
+		break;
+	case D3DRENDERSTATE_AMBIENTMATERIALSOURCE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFE7FFFFFFi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 27);
+		break;
+	case D3DRENDERSTATE_EMISSIVEMATERIALSOURCE:
+		This->shaderstate3d.stateid &= 0xFFFFFFFFBFFFFFFFi64;
+		This->shaderstate3d.stateid |= (((__int64)dwRenderState & 3) << 29);
+		break;
+	case D3DRENDERSTATE_NORMALIZENORMALS:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 49);
+		else This->shaderstate3d.stateid &= 0xFFFDFFFFFFFFFFFFi64;
+		break;
+	case D3DRENDERSTATE_LIGHTING:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 59);
+		else This->shaderstate3d.stateid &= 0xF7FFFFFFFFFFFFFFi64;
+		break;
+	case D3DRENDERSTATE_COLORVERTEX:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 60);
+		else This->shaderstate3d.stateid &= 0xEFFFFFFFFFFFFFFFi64;
+		break;
+	case D3DRENDERSTATE_FOGENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 61);
+		else This->shaderstate3d.stateid &= 0xDFFFFFFFFFFFFFFFi64;
+		break;
+	case D3DRENDERSTATE_DITHERENABLE:
+		if (dwRenderState) This->shaderstate3d.stateid |= (1i64 << 62);
+		else This->shaderstate3d.stateid &= 0xBFFFFFFFFFFFFFFFi64;
+		break;
+	default:
+		break;
+	}
+}
+
+void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
+{
+	if (This->texstages[dwStage].texture == Texture)
+	{
+		SetEvent(This->busy);
+		return;
+	}
+	This->texstages[dwStage].texture = Texture;
+	if (Texture)
+	{
+		This->shaderstate3d.texstageid[dwStage] |= 1i64 << 59;
+		if (Texture->ddsd.dwFlags & DDSD_CKSRCBLT) This->shaderstate3d.texstageid[dwStage] |= 1i64 << 60;
+		else This->shaderstate3d.texstageid[dwStage] &= 0xEFFFFFFFFFFFFFFFi64;
+	}
+	else This->shaderstate3d.texstageid[dwStage] &= 0xE7FFFFFFFFFFFFFFi64;
+	SetEvent(This->busy);
+}
+
+void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
+{
+	SetEvent(This->busy);
+	switch (dwState)
+	{
+	case D3DTSS_COLOROP:
+		This->texstages[dwStage].colorop = (D3DTEXTUREOP)dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFFFFFFFFE0i64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)dwValue & 31);
+		break;
+	case D3DTSS_COLORARG1:
+		This->texstages[dwStage].colorarg1 = dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFFFFFFF81Fi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 63) << 5);
+		break;
+	case D3DTSS_COLORARG2:
+		This->texstages[dwStage].colorarg2 = dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFFFFFE07FFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 63) << 11);
+		break;
+	case D3DTSS_ALPHAOP:
+		This->texstages[dwStage].alphaop = (D3DTEXTUREOP)dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFFFFC1FFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 31) << 17);
+		break;
+	case D3DTSS_ALPHAARG1:
+		This->texstages[dwStage].alphaarg1 = dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFFF03FFFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 63) << 22);
+		break;
+	case D3DTSS_ALPHAARG2:
+		This->texstages[dwStage].alphaarg2 = dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFFFC0FFFFFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 63) << 28);
+		break;
+	case D3DTSS_BUMPENVMAT00:
+		This->texstages[dwStage].bumpenv00 = dwValue;
+		break;
+	case D3DTSS_BUMPENVMAT01:
+		This->texstages[dwStage].bumpenv01 = dwValue;
+		break;
+	case D3DTSS_BUMPENVMAT10:
+		This->texstages[dwStage].bumpenv10 = dwValue;
+		break;
+	case D3DTSS_BUMPENVMAT11:
+		This->texstages[dwStage].bumpenv11 = dwValue;
+		break;
+	case D3DTSS_TEXCOORDINDEX:
+		This->texstages[dwStage].texcoordindex = dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFF83FFFFFFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 7) << 34);
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)((dwValue>>16) & 7) << 37);
+		break;
+	case D3DTSS_ADDRESSU:
+		This->texstages[dwStage].addressu = (D3DTEXTUREADDRESS)dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFFE7FFFFFFFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 3) << 39);
+		break;
+	case D3DTSS_ADDRESSV:
+		This->texstages[dwStage].addressv = (D3DTEXTUREADDRESS)dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFFFF9FFFFFFFFFFi64;
+		This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 3) << 41);
+		break;
+	case D3DTSS_BORDERCOLOR:
+		This->texstages[dwStage].bordercolor = dwValue;
+		break;
+	case D3DTSS_MAGFILTER:
+		This->texstages[dwStage].magfilter = (D3DTEXTUREMAGFILTER)dwValue;
+		//This->shaderstate3d.texstageid[dwStage] &= 0xFFFFC7FFFFFFFFFFi64;
+		//This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 7) << 43);
+		switch (This->texstages[dwStage].magfilter)
+		{
+		case 1:
+		default:
+			This->texstages[dwStage].glmagfilter = GL_NEAREST;
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			This->texstages[dwStage].glmagfilter = GL_LINEAR;
+			break;
+		}
+		break;
+	case D3DTSS_MINFILTER:
+		This->texstages[dwStage].minfilter = (D3DTEXTUREMINFILTER)dwValue;
+		//This->shaderstate3d.texstageid[dwStage] &= 0xFFFF3FFFFFFFFFFFi64;
+		//This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 7) << 46);
+		switch (This->texstages[dwStage].minfilter)
+		{
+		case 1:
+		default:
+			switch (This->texstages[dwStage].mipfilter)
+			{
+			case 1:
+			default:
+				This->texstages[dwStage].glminfilter = GL_NEAREST;
+				break;
+			case 2:
+				This->texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
+				break;
+			case 3:
+				This->texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
+				break;
+			}
+			break;
+		case 2:
+		case 3:
+			switch (This->texstages[dwStage].mipfilter)
+			{
+			case 1:
+			default:
+				This->texstages[dwStage].glminfilter = GL_LINEAR;
+				break;
+			case 2:
+				This->texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
+				break;
+			case 3:
+				This->texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
+				break;
+			}
+			break;
+		}
+		break;
+	case D3DTSS_MIPFILTER:
+		This->texstages[dwStage].mipfilter = (D3DTEXTUREMIPFILTER)dwValue;
+		//This->shaderstate3d.texstageid[dwStage] &= 0xFFFCFFFFFFFFFFFFi64;
+		//This->shaderstate3d.texstageid[dwStage] |= ((__int64)(dwValue & 7) << 48);
+		switch (This->texstages[dwStage].mipfilter)
+		{
+		case 1:
+		default:
+			switch (This->texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				This->texstages[dwStage].glminfilter = GL_NEAREST;
+			case 2:
+			case 3:
+				This->texstages[dwStage].glminfilter = GL_LINEAR;
+			}
+			break;
+		case 2:
+			switch (This->texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				This->texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_NEAREST;
+			case 2:
+			case 3:
+				This->texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_NEAREST;
+			}
+			break;
+		case 3:
+			switch (This->texstages[dwStage].minfilter)
+			{
+			case 1:
+			default:
+				This->texstages[dwStage].glminfilter = GL_NEAREST_MIPMAP_LINEAR;
+			case 2:
+			case 3:
+				This->texstages[dwStage].glminfilter = GL_LINEAR_MIPMAP_LINEAR;
+			}
+			break;
+		}
+		break;
+	case D3DTSS_MIPMAPLODBIAS:
+		memcpy(&This->texstages[dwStage].lodbias, &dwValue, sizeof(D3DVALUE));
+		break;
+	case D3DTSS_MAXMIPLEVEL:
+		This->texstages[dwStage].miplevel = dwValue;
+		break;
+	case D3DTSS_MAXANISOTROPY:
+		This->texstages[dwStage].anisotropy = dwValue;
+		break;
+	case D3DTSS_BUMPENVLSCALE:
+		memcpy(&This->texstages[dwStage].bumpenvlscale, &dwValue, sizeof(D3DVALUE));
+		break;
+	case D3DTSS_BUMPENVLOFFSET:
+		memcpy(&This->texstages[dwStage].bumpenvloffset, &dwValue, sizeof(D3DVALUE));
+		break;
+	case D3DTSS_TEXTURETRANSFORMFLAGS:
+		This->texstages[dwStage].textransform = (D3DTEXTURETRANSFORMFLAGS)dwValue;
+		This->shaderstate3d.texstageid[dwStage] &= 0xFFC3FFFFFFFFFFFFi64;
+		if (dwValue & 7)
+		{
+			This->shaderstate3d.texstageid[dwStage] |= 1i64 << 50;
+			This->shaderstate3d.texstageid[dwStage] |= (__int64)(((dwValue & 7) - 1) & 3) << 51;
+		}
+		if (dwValue & D3DTTFF_PROJECTED) This->shaderstate3d.texstageid[dwStage] |= 1i64 << 53;
+		break;
+	default:
+		break;
+	}
+}
+
+void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
+{
+	if (dtstTransformStateType > 23)
+	{
+		SetEvent(This->busy);
+		return;
+	}
+	memcpy(&This->transform[dtstTransformStateType], lpD3DMatrix, sizeof(D3DMATRIX));
+	SetEvent(This->busy);
+}
+
+void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
+{
+	memcpy(&This->material, lpMaterial, sizeof(D3DMATERIAL));
+	SetEvent(This->busy);
+}
+
+void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
+{
+	int numlights = 0;
+	int lightindex = 0;
+	if(!remove)memcpy(&This->lights[index], light, sizeof(D3DLIGHT7));
+	else ZeroMemory(&This->lights[index], sizeof(D3DLIGHT7));
+	SetEvent(This->busy);
+	for (int i = 0; i < 8; i++)
+		if (This->lights[i].dltType) numlights++;
+	This->shaderstate3d.stateid &= 0xF807C03FFFE3FFFFi64;
+	This->shaderstate3d.stateid |= ((__int64)numlights << 18);
+	for (int i = 0; i < 8; i++)
+	{
+		if (This->lights[i].dltType != 1)
+		{
+			if (This->lights[i].dltType != D3DLIGHT_DIRECTIONAL)
+				This->shaderstate3d.stateid |= (1i64 << (38 + lightindex));
+			if (This->lights[i].dltType == D3DLIGHT_SPOT)
+				This->shaderstate3d.stateid |= (1i64 << (51 + lightindex));
+			lightindex++;
+		}
+	}
+
+}
+
+void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
+{
+	memcpy(&This->viewport, lpViewport, sizeof(D3DVIEWPORT7));
+	SetEvent(This->busy);
+}
+
 void glRenderer__SetFogColor(glRenderer *This, DWORD color)
 {
 	if (color == This->fogcolor) return;
@@ -2213,6 +2866,38 @@ void glRenderer__SetFogDensity(glRenderer *This, GLfloat density)
 	if (density == This->fogdensity) return;
 	This->fogdensity = density;
 	glFogf(GL_FOG_DENSITY, density);
+}
+
+void glRenderer__SetDepthComp(glRenderer *This)
+{
+	switch (This->renderstate[D3DRENDERSTATE_ZFUNC])
+	{
+	case D3DCMP_NEVER:
+		This->util->SetDepthComp(GL_NEVER);
+		break;
+	case D3DCMP_LESS:
+		This->util->SetDepthComp(GL_LESS);
+		break;
+	case D3DCMP_EQUAL:
+		This->util->SetDepthComp(GL_EQUAL);
+		break;
+	case D3DCMP_LESSEQUAL:
+		This->util->SetDepthComp(GL_LEQUAL);
+		break;
+	case D3DCMP_GREATER:
+		This->util->SetDepthComp(GL_GREATER);
+		break;
+	case D3DCMP_NOTEQUAL:
+		This->util->SetDepthComp(GL_NOTEQUAL);
+		break;
+	case D3DCMP_GREATEREQUAL:
+		This->util->SetDepthComp(GL_GEQUAL);
+		break;
+	case D3DCMP_ALWAYS:
+	default:
+		This->util->SetDepthComp(GL_ALWAYS);
+		break;
+	}
 }
 
 }

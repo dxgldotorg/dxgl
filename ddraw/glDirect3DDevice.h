@@ -22,38 +22,6 @@
 class glDirectDrawSurface7;
 class glDirect3D7;
 
-struct TEXTURESTAGE
-{
-	D3DTEXTUREOP colorop;
-	DWORD colorarg1;
-	DWORD colorarg2;
-	D3DTEXTUREOP alphaop;
-	DWORD alphaarg1;
-	DWORD alphaarg2;
-	D3DVALUE bumpenv00;
-	D3DVALUE bumpenv01;
-	D3DVALUE bumpenv10;
-	D3DVALUE bumpenv11;
-	DWORD texcoordindex;
-	D3DTEXTUREADDRESS addressu;
-	D3DTEXTUREADDRESS addressv;
-	DWORD bordercolor;
-	D3DTEXTUREMAGFILTER magfilter;
-	D3DTEXTUREMINFILTER minfilter;
-	D3DTEXTUREMIPFILTER mipfilter;
-	D3DVALUE lodbias;
-	DWORD miplevel;
-	DWORD anisotropy;
-	D3DVALUE bumpenvlscale;
-	D3DVALUE bumpenvloffset;
-	D3DTEXTURETRANSFORMFLAGS textransform;
-	glDirectDrawSurface7 *texture;
-	bool dirty;
-	__int64 shaderid;
-	GLint glmagfilter;
-	GLint glminfilter;
-};
-
 struct D3D1MATRIX
 {
 	BOOL active;
@@ -133,7 +101,6 @@ public:
 	HRESULT WINAPI ValidateDevice(LPDWORD lpdwPasses);
 	HRESULT err() {return error;}
 	void SetArraySize(DWORD size, DWORD vertex, DWORD texcoord);
-	void SetDepthComp(glUtil *util);
 	D3DMATERIALHANDLE AddMaterial(glDirect3DMaterial3* material);
 	D3DTEXTUREHANDLE AddTexture(glDirectDrawSurface7* texture);
 	HRESULT AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
@@ -169,7 +136,7 @@ public:
 	void UpdateTransform();
 	void InitDX2();
 	void InitDX5();
-	__int64 SelectShader(GLVERTEX *VertexType);
+	//__int64 SelectShader(GLVERTEX *VertexType);
 	void SetScale(D3DVALUE x, D3DVALUE y){scalex = x; scaley = y;}
 	ULONG AddRefInternal();
 	ULONG ReleaseInternal();
