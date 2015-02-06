@@ -61,7 +61,7 @@ typedef struct ShaderManager
 
 void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman);
 void ShaderManager_Delete(ShaderManager *This);
-void ShaderManager_SetShader(ShaderManager *This, __int64 id, __int64 *texstate, int *texcoords, int type);
+void ShaderManager_SetShader(ShaderManager *This, __int64 id, __int64 *texstate, int type);
 
 #ifdef __cplusplus
 }

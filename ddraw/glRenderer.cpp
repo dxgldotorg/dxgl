@@ -1383,14 +1383,14 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if (dwFlags & DDBLT_KEYDEST) usedest = TRUE;
 	if (usedest)
 	{
-		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, NULL, 0);
+		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 		glRenderer__DrawBackbufferRect(This, dest->texture, destrect, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
 		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backx;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.;
 		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backy);
 	}
-	ShaderManager_SetShader(This->shaders, shaderid, NULL, NULL, 1);
+	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
 	This->util->BlendEnable(false);
 	do
@@ -1699,7 +1699,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(This->ddInterface->GetBPP() == 8)
 	{
-		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,NULL,0);
+		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,0);
 		progtype = PROG_PAL256;
 		TextureManager__UploadTexture(This->texman,paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1,FALSE,FALSE);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -1709,7 +1709,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		if(dxglcfg.scalingfilter)
 		{
 			glRenderer__DrawBackbuffer(This,&texture,dest->fakex,dest->fakey,progtype);
-			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,NULL,0);
+			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 			progtype = PROG_TEXTURE;
 			TextureManager_SetTexture(This->texman,0,texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -1722,7 +1722,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	}
 	else
 	{
-		ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,NULL,0);
+		ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 		progtype = PROG_TEXTURE;
 		TextureManager_SetTexture(This->texman,0,texture);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
@@ -2135,11 +2135,16 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		SetEvent(This->busy);
 		return;
 	}
-	This->shaderstate3d.stateid &= 0xFFFA3FFC7FFFFFFFi64;
+	This->shaderstate3d.stateid &= 0xFFFA3FF87FFFFFFFi64;
 	int numtextures = 0;
 	for (i = 0; i < 8; i++)
+	{
+		This->shaderstate3d.texstageid[i] &= 0xFFE7FFFFFFFFFFFFi64;
+		This->shaderstate3d.texstageid[i] |= (__int64)(texformats[i] - 1) << 51;
 		if (vertices[i + 10].data) numtextures++;
-	This->shaderstate3d.stateid |= (__int64)numtextures << 31;
+	}
+	This->shaderstate3d.stateid |= (__int64)((numtextures-1)&7) << 31;
+	if (numtextures) This->shaderstate3d.stateid |= (1i64 << 34);
 	int blendweights = 0;
 	for (i = 0; i < 5; i++)
 		if (vertices[i + 2].data) blendweights++;
@@ -2148,7 +2153,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if (vertices[8].data) This->shaderstate3d.stateid |= (1i64 << 35);
 	if (vertices[9].data) This->shaderstate3d.stateid |= (1i64 << 36);
 	if (vertices[7].data) This->shaderstate3d.stateid |= (1i64 << 37);
-	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,texformats,2);
+	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,2);
 	glRenderer__SetDepthComp(This);
 	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
 	else This->util->DepthTest(false);
@@ -2202,32 +2207,32 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 			{
 			case -1: // Null
 				break;
-			case 0: // st
+			case 1: // s
+				if (prog->attribs[i + 10] != -1)
+				{
+					This->util->EnableArray(prog->attribs[i + 10], true);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 10], 1, GL_FLOAT, false, vertices[i + 10].stride, vertices[i + 10].data);
+				}
+				break;
+			case 2: // st
 				if(prog->attribs[i+18] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+18],true);
 					This->ext->glVertexAttribPointer(prog->attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
-			case 1: // str
+			case 3: // str
 				if(prog->attribs[i+26] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+26],true);
 					This->ext->glVertexAttribPointer(prog->attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
-			case 2: // strq
+			case 4: // strq
 				if(prog->attribs[i+34] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+34],true);
 					This->ext->glVertexAttribPointer(prog->attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
-				}
-				break;
-			case 3: // s
-				if(prog->attribs[i+10] != -1)
-				{
-					This->util->EnableArray(prog->attribs[i+10],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+10],1,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			}
@@ -2396,7 +2401,7 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	view[3] = (GLfloat)surface->ddsd.dwHeight;
 	This->util->SetViewport(0,0,surface->ddsd.dwWidth,surface->ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT);
-	ShaderManager_SetShader(This->shaders,PROG_CLIPSTENCIL,NULL,NULL,0);
+	ShaderManager_SetShader(This->shaders,PROG_CLIPSTENCIL,NULL,0);
 	This->ext->glUniform4f(This->shaders->shaders[PROG_CLIPSTENCIL].view,view[0],view[1],view[2],view[3]);
 	This->util->EnableArray(This->shaders->shaders[PROG_CLIPSTENCIL].pos,true);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[PROG_CLIPSTENCIL].pos,

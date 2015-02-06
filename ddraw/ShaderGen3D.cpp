@@ -70,6 +70,7 @@ Bits 25-26 - Specular material source  VS
 Bits 27-28 - Ambient material source  VS
 Bits 29-30 - Emissive material source  VS
 Bits 31-33 - Number of textures  VS/FS
+Bit 34 - More than 0 textures  VS/FS
 Bit 35 - Use diffuse color  VS
 Bit 36 - Use specular color  VS
 Bit 37 - Enable normals  VS
@@ -153,7 +154,7 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
   *  1 for generated 2D
   *  2 for generated 3D
   */
-void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int *texcoords, int type, ShaderGen2D *gen2d)
+void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int type, ShaderGen2D *gen2d)
 {
 	int shaderindex = -1;
 	switch(type)
@@ -215,14 +216,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				bool texidmatch = true;
 				for(int j = 0; j < 8; j++)
 					if(This->genshaders[i].texids[j] != texstate[j]) texidmatch = false;
-				if(texidmatch)
-				{
-					if(!memcmp(This->genshaders[i].texcoords,texcoords,8*sizeof(int)))
-					{
-						shaderindex = i;
-						break;
-					}
-				}
+				if(texidmatch) shaderindex = i;
 			}
 		}
 		if(shaderindex == -1)
@@ -239,7 +233,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				String_Free(&This->genshaders[This->genindex].shader.fsrc);
 				ZeroMemory(&This->genshaders[This->genindex],sizeof(GenShader));
 			}
-			ShaderGen3D_CreateShader(This, This->genindex,id,texstate,texcoords);
+			ShaderGen3D_CreateShader(This, This->genindex,id,texstate);
 			shaderindex = This->genindex;
 			This->genindex++;
 			if(This->genindex >= 256) This->genindex = 0;
@@ -247,7 +241,6 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->genshaders[shaderindex].id = id;
 		for(int i = 0; i < 8; i++)
 			This->genshaders[shaderindex].texids[i] = texstate[i];
-		memcpy(This->genshaders[shaderindex].texcoords,texcoords,8*sizeof(int));
 		This->ext->glUseProgram(This->genshaders[shaderindex].shader.prog);
 		This->current_prog = This->genshaders[shaderindex].shader.prog;
 		This->current_genshader = shaderindex;
@@ -484,7 +477,7 @@ static const char func_dither[] = "vec4 dither(vec4 color2)\n\
   * @param texcoords
   *  Pointer to number of texture coordinates in each texture stage
   */
-void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate, int *texcoords)
+void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate)
 {
 	STRING tmp;
 	ZeroMemory(&tmp, sizeof(STRING));
@@ -496,8 +489,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	BOOL haskey = FALSE;
 	int count;
 	int numlights;
+	int numtex;
 	int vertexfog,pixelfog;
 	vertexfog = pixelfog = 0;
+	if ((id>>34)&1) numtex = ((id >> 31) & 7) + 1;
+	else numtex = 0;
 	if((id>>61)&1)
 	{
 		vertexfog = (id>>8)&3;
@@ -542,25 +538,23 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			String_Append(vsrc, tmp.ptr);
 		}
 	}
-	for(i = 0; i < 8; i++)
+	for(i = 0; i < numtex; i++)
 	{
-		switch(texcoords[i])
+		switch ((texstate[i] >> 51)&3)
 		{
-		case -1:
-			continue;
-		case 3:
+		case 0:
 			String_Assign(&tmp,attr_s);
 			tmp.ptr[16] = *(_itoa(i,idstring,10));
 			break;
-		case 0:
+		case 1:
 			String_Assign(&tmp, attr_st);
 			tmp.ptr[17] = *(_itoa(i,idstring,10));
 			break;
-		case 1:
+		case 2:
 			String_Assign(&tmp, attr_str);
 			tmp.ptr[18] = *(_itoa(i,idstring,10));
 			break;
-		case 2:
+		case 3:
 			String_Assign(&tmp, attr_strq);
 			tmp.ptr[19] = *(_itoa(i,idstring,10));
 			break;
@@ -693,30 +687,26 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			tmp.ptr[12] = *(_itoa(i,idstring,10));
 			String_Append(vsrc, tmp.ptr);
 			texindex = (texstate[i]>>34)&3;
-			switch(texcoords[texindex])
+			switch ((texstate[texindex] >> 51) & 3)
 			{
-			case -1: // No texcoords
-				String_Append(vsrc, op_texpassthru2null);
+			case 0: // s
+				String_Assign(&tmp, op_texpassthru2s);
+				tmp.ptr[6] = *(_itoa(texindex, idstring, 10));
+				String_Append(vsrc, tmp.ptr);
 				break;
-			case 0: // st
+			case 1: // st
 				String_Assign(&tmp, op_texpassthru2st);
 				tmp.ptr[7] = *(_itoa(texindex,idstring,10));
 				String_Append(vsrc, tmp.ptr);
-			default:
 				break;
-			case 1: // str
+			case 2: // str
 				String_Assign(&tmp, op_texpassthru2str);
 				tmp.ptr[8] = *(_itoa(texindex,idstring,10));
 				String_Append(vsrc, tmp.ptr);
 				break;
-			case 2: // strq
+			case 3: // strq
 				String_Assign(&tmp, op_texpassthru2strq);
 				tmp.ptr[4] = *(_itoa(texindex,idstring,10));
-				String_Append(vsrc, tmp.ptr);
-				break;
-			case 3: // s
-				String_Assign(&tmp, op_texpassthru2s);
-				tmp.ptr[6] = *(_itoa(texindex,idstring,10));
 				String_Append(vsrc, tmp.ptr);
 				break;
 			}

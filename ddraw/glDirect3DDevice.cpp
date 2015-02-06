@@ -814,6 +814,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 {
 	TRACE_ENTER(3,14,this,9,dwVertexTypeDesc,14,vertptr);
 	int i;
+	int texformats1[8];
 	int ptr = 0;
 	if((dwVertexTypeDesc & D3DFVF_XYZ) && (dwVertexTypeDesc & D3DFVF_XYZRHW))
 		TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -865,21 +866,28 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 	for(i = 0; i < 8; i++)
 	{
 		vertdata[i+10].data = &vertptr[ptr];
-		if(i >= numtex) texformats[i] = -1;
-		else texformats[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
-		switch(texformats[i])
+		if(i >= numtex) texformats1[i] = -1;
+		else texformats1[i] = (dwVertexTypeDesc>>(16+(2*i))&3);
+		switch(texformats1[i])
 		{
 		case 0: // st
 			ptr += 2;
+			texformats[i] = 2;
 			break;
 		case 1: // str
 			ptr += 3;
+			texformats[i] = 3;
 			break;
 		case 2: // strq
 			ptr += 4;
+			texformats[i] = 4;
 			break;
 		case 3: // s
 			ptr++;
+			texformats[i] = 1;
+			break;
+		default:
+			texformats[i] = 2;
 			break;
 		}
 	}

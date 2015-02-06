@@ -204,9 +204,9 @@ void ShaderManager_Delete(ShaderManager *This)
 	free(This->gen3d);
 }
 
-void ShaderManager_SetShader(ShaderManager *This, __int64 id, __int64 *texstate, int *texcoords, int type)
+void ShaderManager_SetShader(ShaderManager *This, __int64 id, __int64 *texstate, int type)
 {
-	ShaderGen3D_SetShader(This->gen3d, id, texstate, texcoords, type, This->gen2d);
+	ShaderGen3D_SetShader(This->gen3d, id, texstate, type, This->gen2d);
 }
 
 }

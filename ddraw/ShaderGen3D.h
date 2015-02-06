@@ -38,7 +38,6 @@ typedef struct
 	_GENSHADER shader;
 	__int64 id;
 	__int64 texids[8];
-	int texcoords[8];
 } GenShader;
 
 #define D3DTOP_DXGL_DECALMASK 0x101;
@@ -64,10 +63,10 @@ typedef struct ShaderGen3D
 void ShaderGen3D_Init(glExtensions *glext, ShaderManager *shaderman, ShaderGen3D *gen);
 void ShaderGen3D_Delete(ShaderGen3D *This);
 void ShaderGen3D_ClearShaders(ShaderGen3D *This);
-void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int *texcoords, int type, ShaderGen2D *gen2d);
+void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int type, ShaderGen2D *gen2d);
 GLuint ShaderGen3D_GetProgram(ShaderGen3D *This);
 void ShaderGen3D_ZeroShaderArray(ShaderGen3D *This);
-void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate, int *texcoords);
+void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 *texstate);
 
 #ifdef __cplusplus
 }
