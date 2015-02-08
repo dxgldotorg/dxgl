@@ -98,7 +98,7 @@ BYTE *opqueue_putlock(OPQUEUE *queue, DWORD size)
 			queue->waitfull = TRUE;
 			_exitspinlock(&queue->readlock);
 			_enterspinlock(&queue->writelock);
-			WaitForSingleObject(queue->waitevent, 10);
+			Sleep(0);
 		}
 		if (waitfull) ResetEvent(queue->waitevent);
 		queue->waitfull = FALSE;
@@ -121,18 +121,20 @@ void opqueue_putunlock(OPQUEUE *queue, DWORD size)
 
 BYTE *opqueue_getlock(OPQUEUE *queue)
 {
+	BOOL exit = TRUE;
 	_enterspinlock(&queue->readlock);
 	_enterspinlock(&queue->writelock);
 	if (queue->readptr == queue->writeptr)
 	{
-		_exitspinlock(&queue->readlock);
 		queue->waitempty = TRUE;
 		ResetEvent(queue->waitevent);
+		_exitspinlock(&queue->readlock);
 		_exitspinlock(&queue->writelock);
 		WaitForSingleObject(queue->waitevent, INFINITE);
 		_enterspinlock(&queue->readlock);
+		exit = FALSE;
 	}
-	_exitspinlock(&queue->writelock);
+	if(exit) _exitspinlock(&queue->writelock);
 	return queue->data + queue->readptr;
 }
 void opqueue_getunlock(OPQUEUE *queue, DWORD size)

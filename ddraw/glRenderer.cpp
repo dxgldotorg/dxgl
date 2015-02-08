@@ -395,7 +395,6 @@ void glRenderer_UploadTexture(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, T
 	uploadop->texture = texture;
 	memcpy(opbuffer, outbuffer, outy*outpitch);
 	opqueue_putunlock(&This->queue, uploadopsize);
-	glRenderer_Sync(This);
 }
 
 /**
@@ -932,7 +931,7 @@ void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL 
 	lightop->opcode.size = sizeof(SETLIGHTOP);
 	lightop->index = index;
 	lightop->remove = remove;
-	memcpy(&lightop->light, light, sizeof(D3DLIGHT7));
+	if(light) memcpy(&lightop->light, light, sizeof(D3DLIGHT7));
 	opqueue_putunlock(&This->queue, sizeof(SETLIGHTOP));
 }
 
@@ -1155,6 +1154,10 @@ DWORD WINAPI glRenderer__Entry(glRenderer *This)
 			setviewportop = (SETVIEWPORTOP*)opcode;
 			glRenderer__SetViewport(This, &setviewportop->viewport);
 			opqueue_getunlock(&This->queue, setviewportop->opcode.size);
+			break;
+		default:
+			FIXME("Invalid opcode detected");
+			opqueue_getunlock(&This->queue, opcode->opcode.size);
 			break;
 		}
 	}
