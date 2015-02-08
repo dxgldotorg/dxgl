@@ -867,6 +867,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx);
 	}
 	else glRenderer_Blt(ddInterface->renderer,lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx);
+	if (this == ddInterface->primary) glRenderer_Sync(ddInterface->renderer);
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }

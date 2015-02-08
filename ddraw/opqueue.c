@@ -93,9 +93,11 @@ BYTE *opqueue_putlock(OPQUEUE *queue, DWORD size)
 		while(queue->readptr)
 		{
 			waitfull = TRUE;
+			_exitspinlock(&queue->writelock);
 			_enterspinlock(&queue->readlock);
 			queue->waitfull = TRUE;
 			_exitspinlock(&queue->readlock);
+			_enterspinlock(&queue->writelock);
 			WaitForSingleObject(queue->waitevent, 10);
 		}
 		if (waitfull) ResetEvent(queue->waitevent);
