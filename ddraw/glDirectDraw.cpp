@@ -1164,6 +1164,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
 		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
+		glRenderer_Sync(tmprenderer);
 		if (tmprenderer->ext->glver_major >= 3) fullrop = TRUE;
 		if (tmprenderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
 		glRenderer_Delete(tmprenderer);
@@ -1171,6 +1172,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	}
 	else
 	{
+		glRenderer_Sync(renderer);
 		if (renderer->ext->glver_major >= 3) fullrop = TRUE;
 		if (renderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
 	}
