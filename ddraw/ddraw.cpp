@@ -28,6 +28,8 @@
 #include "hooks.h"
 #include <intrin.h>
 
+extern "C" {
+
 DXGLCFG dxglcfg;
 DWORD gllock = 0;
 HMODULE sysddraw = NULL;
@@ -567,4 +569,6 @@ DDRAW_API BOOL IsDXGLDDraw()
 	TRACE_ENTER(0);
 	TRACE_EXIT(0,0);
 	return TRUE;
+}
+
 }

@@ -23,6 +23,7 @@
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glRenderWindow.h"
+#include "spinlock.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
@@ -83,52 +84,85 @@ inline void glRenderer__SetSwap(glRenderer *This, int swap)
   *  Pointer to glRenderer object
   * @param buffer
   *  Contains the contents of the surface
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to upload to
   * @param x,y
   *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
   * @param pitch
   *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
   * @param miplevel
   *  Mipmap level of texture to write
   */
-void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer__UploadTexture(glRenderer *This, BYTE *buffer, TEXTURE *texture,
+	DWORD x, DWORD y, DWORD pitch, DWORD miplevel)
 {
-	if(bpp == 15) bpp = 16;
-	if((x == bigx && y == bigy) || !bigbuffer)
+	TextureManager__UploadTexture(This->texman, texture, miplevel, buffer, x, y, FALSE, FALSE);
+}
+
+/**
+* Uploads the content of a surface to an OpenGL texture, called from the backend.
+* @param This
+*  Pointer to glRenderer object
+* @param buffer
+*  Contains the contents of the surface
+* @param bigbuffer
+*  Optional buffer to receive the rescaled surface contents, for when primary
+*  scaling is enabled.  Scaling will be performed before the surface is uploaded.
+* @param texture
+*  Texture object to upload to
+* @param x,y
+*  Width and height of the surface
+* @param bigx,bigy
+*  Width and height of the scaled surface buffer
+* @param pitch
+*  Bytes from one line of graphics to the next in the surface
+* @param bigpitch
+*  Pitch of the scaled surface buffer
+* @param bpp
+*  Number of bits per surface pixel
+* @param miplevel
+*  Mipmap level of texture to write
+*/
+void glRenderer__UploadTextureSurface(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, TEXTURE *texture, DWORD x, DWORD y, DWORD bigx, DWORD bigy, DWORD pitch, DWORD bigpitch, DWORD bpp, DWORD miplevel)
+{
+	BYTE *outbuffer;
+	DWORD outx, outy, outpitch, outbpp;
+	UPLOADOP *uploadop;
+	DWORD *opbuffer;
+	DWORD uploadopsize;
+	if (bpp == 15) outbpp = 16;
+	else outbpp = bpp;
+	if ((x == bigx && y == bigy) || !bigbuffer)
 	{
-		TextureManager__UploadTexture(This->texman, texture, miplevel, buffer, x, y, FALSE, FALSE);
+		outbuffer = buffer;
+		outx = x;
+		outy = y;
+		outpitch = pitch;
 	}
 	else
 	{
-		switch(bpp)
+		switch (outbpp)
 		{
 		case 8:
-			ScaleNearest8(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
+			ScaleNearest8(bigbuffer, buffer, bigx, bigy, x, y, pitch, bigpitch);
 			break;
 		case 16:
-			ScaleNearest16(bigbuffer,buffer,bigx,bigy,x,y,pitch/2,bigpitch/2);
+			ScaleNearest16(bigbuffer, buffer, bigx, bigy, x, y, pitch / 2, bigpitch / 2);
 			break;
 		case 24:
-			ScaleNearest24(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
+			ScaleNearest24(bigbuffer, buffer, bigx, bigy, x, y, pitch, bigpitch);
 			break;
 		case 32:
-			ScaleNearest32(bigbuffer,buffer,bigx,bigy,x,y,pitch/4,bigpitch/4);
+			ScaleNearest32(bigbuffer, buffer, bigx, bigy, x, y, pitch / 4, bigpitch / 4);
 			break;
-		break;
+			break;
 		}
-		TextureManager__UploadTexture(This->texman, texture, miplevel, bigbuffer, bigx, bigy, FALSE, FALSE);
+		outbuffer = bigbuffer;
+		outx = bigx;
+		outy = bigy;
+		outpitch = bigpitch;
 	}
+	glRenderer__UploadTexture(This, outbuffer, texture, outx, outy, outpitch, miplevel);
 }
 
 /**
@@ -137,52 +171,14 @@ void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, 
   *  Pointer to glRenderer object
   * @param buffer
   *  Buffer to receive the surface contents
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to download from
-  * @param x,y
-  *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
-  * @param pitch
-  *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
   * @param miplevel
   *  Mipmap level of texture to read
   */
-void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer__DownloadTexture(glRenderer *This, BYTE *buffer, TEXTURE *texture, DWORD miplevel)
 {
-	if((bigx == x && bigy == y) || !bigbuffer)
-	{
-		TextureManager__DownloadTexture(This->texman,texture,miplevel,buffer);
-	}
-	else
-	{
-		TextureManager__DownloadTexture(This->texman,texture,miplevel,bigbuffer);
-		switch(bpp)
-		{
-		case 8:
-			ScaleNearest8(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 15:
-		case 16:
-			ScaleNearest16(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/2,pitch/2);
-			break;
-		case 24:
-			ScaleNearest24(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 32:
-			ScaleNearest32(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/4,pitch/4);
-			break;
-		break;
-		}
-	}
+	TextureManager__DownloadTexture(This->texman,texture,miplevel,buffer);
 }
 
 /**
@@ -201,9 +197,10 @@ void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer
   * @param devwnd
   *  True if creating window with name "DirectDrawDeviceWnd"
   */
-void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
+void glRenderer_Init(glRenderer *This, DWORD width, DWORD height, DWORD bpp, BOOL fullscreen, DWORD frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	LONG_PTR winstyle, winstyleex;
+	INITOP *initop;
 	This->oldswap = 0;
 	This->fogcolor = 0;
 	This->fogstart = 0.0f;
@@ -215,10 +212,8 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	This->PBO = 0;
 	This->dib.enabled = false;
 	This->hWnd = hwnd;
-	InitializeCriticalSection(&This->cs);
-	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
-	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
-	if(fullscreen)
+	This->syncevent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (fullscreen)
 	{
 		winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 		winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
@@ -232,17 +227,21 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	}
 	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
-	This->inputs[0] = (void*)width;
-	This->inputs[1] = (void*)height;
-	This->inputs[2] = (void*)bpp;
-	This->inputs[3] = (void*)fullscreen;
-	This->inputs[4] = (void*)frequency;
-	This->inputs[5] = (void*)This->hWnd;
-	This->inputs[6] = glDD7;
-	This->inputs[7] = This;
-	This->inputs[8] = (void*)devwnd;
-	This->hThread = CreateThread(NULL, 0, glRenderer_ThreadEntry, This->inputs, 0, NULL);
-	WaitForSingleObject(This->busy,INFINITE);
+	This->queue.data_size = 0;
+	opqueue_init(&This->queue);
+	initop = (INITOP*)opqueue_putlock(&This->queue,sizeof(INITOP));
+	initop->opcode.opcode = OP_INIT;
+	initop->opcode.size = sizeof(INITOP);
+	initop->width = width;
+	initop->height = height;
+	initop->bpp = bpp;
+	initop->fullscreen = fullscreen;
+	initop->frequency = frequency;
+	initop->devwnd = devwnd;
+	initop->hwnd = This->hWnd;
+	initop->glDD7 = glDD7;
+	opqueue_putunlock(&This->queue, sizeof(INITOP));
+	This->hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)glRenderer__Entry, This, 0, NULL);
 }
 
 /**
@@ -252,27 +251,37 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
   */
 void glRenderer_Delete(glRenderer *This)
 {
-	EnterCriticalSection(&This->cs);
-	This->opcode = OP_DELETE;
-	SetEvent(This->start);
-	WaitForObjectAndMessages(This->busy);
-	CloseHandle(This->start);
-	CloseHandle(This->busy);
-	LeaveCriticalSection(&This->cs);
-	DeleteCriticalSection(&This->cs);
+	DELETEOP *deleteop;
+	MSG Msg;
+	deleteop = (DELETEOP*)opqueue_putlock(&This->queue, sizeof(DELETEOP));
+	deleteop->opcode.opcode = OP_DELETE;
+	deleteop->opcode.size = sizeof(DELETEOP);
+	opqueue_putunlock(&This->queue, sizeof(DELETEOP));
+	while (!This->shutdownfinished)
+	{
+		if (PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
+	CloseHandle(This->syncevent);
 	CloseHandle(This->hThread);
 }
 
 /**
-  * Entry point for the renderer thread
-  * @param entry
-  *  Pointer to the inputs passed by the CreateThread function
+  * Waits for the queue to be emptied
+  * @param This
+  *  Pointer to glRenderer object
   */
-DWORD WINAPI glRenderer_ThreadEntry(void *entry)
+void glRenderer_Sync(glRenderer *This)
 {
-	void **inputsin = (void**)entry;
-	glRenderer *This = (glRenderer*)inputsin[7];
-	return glRenderer__Entry(This);
+	SYNCOP *syncop = (SYNCOP*)opqueue_putlock(&This->queue, sizeof(SYNCOP));
+	syncop->opcode.opcode = OP_SYNC;
+	syncop->opcode.size = sizeof(SYNCOP);
+	opqueue_putunlock(&This->queue, sizeof(SYNCOP));
+	WaitForSingleObject(This->syncevent, INFINITE);
 }
 
 /**
@@ -296,14 +305,17 @@ DWORD WINAPI glRenderer_ThreadEntry(void *entry)
   */
 void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = texture;
-	This->inputs[1] = (void*)width;
-	This->inputs[2] = (void*)height;
-	This->opcode = OP_CREATE;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	CREATEOP *texop;
+	texture->width = width;
+	texture->height = height;
+	texop = (CREATEOP*)opqueue_putlock(&This->queue, sizeof(CREATEOP));
+	texop->opcode.opcode = OP_CREATE;
+	texop->opcode.size = sizeof(CREATEOP);
+	texop->width = width;
+	texop->height = height;
+	texop->texture = texture;
+	opqueue_putunlock(&This->queue, sizeof(CREATEOP));
+	glRenderer_Sync(This);
 }
 
 /**
@@ -314,7 +326,7 @@ void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWO
   *  Contains the contents of the surface
   * @param bigbuffer
   *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
+  *  scaling is enabled.  Scaling will be performed before the surface is uploaded.
   * @param texture
   *  Texture object to upload to
   * @param x,y
@@ -330,25 +342,60 @@ void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWO
   * @param miplevel
   *  Mipmap level of texture to write
   */
-void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer_UploadTexture(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, TEXTURE *texture, DWORD x, DWORD y,
+	DWORD bigx, DWORD bigy, DWORD pitch, DWORD bigpitch, DWORD bpp, DWORD miplevel)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = buffer;
-	This->inputs[1] = bigbuffer;
-	This->inputs[2] = texture;
-	This->inputs[3] = (void*)x;
-	This->inputs[4] = (void*)y;
-	This->inputs[5] = (void*)bigx;
-	This->inputs[6] = (void*)bigy;
-	This->inputs[7] = (void*)pitch;
-	This->inputs[8] = (void*)bigpitch;
-	This->inputs[9] = (void*)bpp;
-	This->inputs[10] = (void*)miplevel;
-	This->opcode = OP_UPLOAD;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	BYTE *outbuffer;
+	DWORD outx, outy, outpitch, outbpp;
+	UPLOADOP *uploadop;
+	DWORD *opbuffer;
+	DWORD uploadopsize;
+	if (bpp == 15) outbpp = 16;
+	else outbpp = bpp;
+	if ((x == bigx && y == bigy) || !bigbuffer)
+	{
+		outbuffer = buffer;
+		outx = x;
+		outy = y;
+		outpitch = pitch;
+	}
+	else
+	{
+		switch (outbpp)
+		{
+		case 8:
+			ScaleNearest8(bigbuffer, buffer, bigx, bigy, x, y, pitch, bigpitch);
+			break;
+		case 16:
+			ScaleNearest16(bigbuffer, buffer, bigx, bigy, x, y, pitch / 2, bigpitch / 2);
+			break;
+		case 24:
+			ScaleNearest24(bigbuffer, buffer, bigx, bigy, x, y, pitch, bigpitch);
+			break;
+		case 32:
+			ScaleNearest32(bigbuffer, buffer, bigx, bigy, x, y, pitch / 4, bigpitch / 4);
+			break;
+			break;
+		}
+		outbuffer = bigbuffer;
+		outx = bigx;
+		outy = bigy;
+		outpitch = bigpitch;
+	}
+	uploadopsize = sizeof(UPLOADOP) + (outy*outpitch);
+	opqueue_alloc(&This->queue, uploadopsize);
+	uploadop = (UPLOADOP*)opqueue_putlock(&This->queue, uploadopsize);
+	opbuffer = (DWORD*)&uploadop[1];
+	uploadop->opcode.opcode = OP_UPLOAD;
+	uploadop->opcode.size = uploadopsize;
+	uploadop->width = outx;
+	uploadop->height = outy;
+	uploadop->pitch = outpitch;
+	uploadop->miplevel = miplevel;
+	uploadop->texture = texture;
+	memcpy(opbuffer, outbuffer, outy*outpitch);
+	opqueue_putunlock(&This->queue, uploadopsize);
+	glRenderer_Sync(This);
 }
 
 /**
@@ -359,7 +406,7 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, T
   *  Buffer to receive the surface contents
   * @param bigbuffer
   *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
+  *  scaling is enabled.  Scaling will be performed after the download is complete.
   * @param texture
   *  Texture object to download from
   * @param x,y
@@ -375,25 +422,57 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, T
   * @param miplevel
   *  Mipmap level of texture to read
   */
-void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer_DownloadTexture(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, TEXTURE *texture, DWORD x, DWORD y,
+	DWORD bigx, DWORD bigy, DWORD pitch, DWORD bigpitch, DWORD bpp, DWORD miplevel)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = buffer;
-	This->inputs[1] = bigbuffer;
-	This->inputs[2] = texture;
-	This->inputs[3] = (void*)x;
-	This->inputs[4] = (void*)y;
-	This->inputs[5] = (void*)bigx;
-	This->inputs[6] = (void*)bigy;
-	This->inputs[7] = (void*)pitch;
-	This->inputs[8] = (void*)bigpitch;
-	This->inputs[9] = (void*)bpp;
-	This->inputs[10] = (void*)miplevel;
-	This->opcode = OP_DOWNLOAD;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	BOOL doscale;
+	BYTE *inbuffer;
+	DWORD inx, iny, inpitch;
+	DOWNLOADOP *downloadop;
+	if ((x == bigx && y == bigy) || !bigbuffer)
+	{
+		doscale = FALSE;
+		inbuffer = buffer;
+		inx = x;
+		iny = y;
+		inpitch = pitch;
+	}
+	else
+	{
+		doscale = TRUE;
+		inbuffer = bigbuffer;
+		inx = bigx;
+		iny = bigy;
+		inpitch = bigpitch;
+	}
+	downloadop = (DOWNLOADOP*)opqueue_putlock(&This->queue, sizeof(DOWNLOADOP));
+	downloadop->opcode.opcode = OP_DOWNLOAD;
+	downloadop->opcode.size = sizeof(DOWNLOADOP);
+	downloadop->miplevel = miplevel;
+	downloadop->buffer = inbuffer;
+	downloadop->texture = texture;
+	opqueue_putunlock(&This->queue, sizeof(DOWNLOADOP));
+	glRenderer_Sync(This);
+	if (doscale)
+	{
+		switch (bpp)
+		{
+		case 8:
+			ScaleNearest8(buffer, bigbuffer, x, y, bigx, bigy, bigpitch, pitch);
+			break;
+		case 15:
+		case 16:
+			ScaleNearest16(buffer, bigbuffer, x, y, bigx, bigy, bigpitch / 2, pitch / 2);
+			break;
+		case 24:
+			ScaleNearest24(buffer, bigbuffer, x, y, bigx, bigy, bigpitch, pitch);
+			break;
+		case 32:
+			ScaleNearest32(buffer, bigbuffer, x, y, bigx, bigy, bigpitch / 4, pitch / 4);
+			break;
+			break;
+		}
+	}
 }
 
 /**
@@ -405,12 +484,12 @@ void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer,
   */
 void glRenderer_DeleteTexture(glRenderer *This, TEXTURE * texture)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = texture;
-	This->opcode = OP_DELETETEX;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	DELETETEXOP *deleteop = (DELETETEXOP*)opqueue_putlock(&This->queue, sizeof(DELETETEXOP));
+	deleteop->opcode.opcode = OP_DELETETEX;
+	deleteop->opcode.size = 4 * sizeof(DWORD);
+	deleteop->texture = texture;
+	opqueue_putunlock(&This->queue, 4 * sizeof(DWORD));
+	glRenderer_Sync(This);
 }
 
 /**
@@ -435,13 +514,10 @@ void glRenderer_DeleteTexture(glRenderer *This, TEXTURE * texture)
   *  - DDBLT_WAIT:  Waits until the Blt command is processed before returning.
   * @param lpDDBltFx
   *  Effect parameters for the Blt operation.
-  * @return
-  *  DD_OK if the call succeeds, or DDERR_WASSTILLDRAWING if busy.
   */
-HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
+void glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	EnterCriticalSection(&This->cs);
 	RECT r,r2;
 	if(((dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
@@ -453,17 +529,20 @@ HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7
 		if(memcmp(&r2,&r,sizeof(RECT)))
 		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
-	This->inputs[0] = lpDestRect;
-	This->inputs[1] = src;
-	This->inputs[2] = dest;
-	This->inputs[3] = lpSrcRect;
-	This->inputs[4] = (void*)dwFlags;
-	This->inputs[5] = lpDDBltFx;
-	This->opcode = OP_BLT;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
-	return (HRESULT)This->outputs[0];
+	BLTOP *bltop = (BLTOP*)opqueue_putlock(&This->queue, sizeof(BLTOP));
+	bltop->opcode.opcode = OP_BLT;
+	bltop->opcode.size = sizeof(BLTOP);
+	bltop->nulls = 0;
+	if(lpDestRect) memcpy(&bltop->destrect, lpDestRect, sizeof(RECT));
+	else bltop->nulls |= 1;
+	if(lpSrcRect) memcpy(&bltop->srcrect, lpSrcRect, sizeof(RECT));
+	else bltop->nulls |= 2;
+	bltop->flags = dwFlags;
+	if (lpDDBltFx) memcpy(&bltop->bltfx, lpDDBltFx, sizeof(DDBLTFX));
+	else bltop->nulls |= 4;
+	bltop->dest = dest;
+	bltop->src = src;
+	opqueue_putunlock(&This->queue, sizeof(BLTOP));
 }
 
 /**
@@ -483,16 +562,16 @@ HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7
   */
 void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = texture;
-	This->inputs[1] = paltex;
-	This->inputs[2] = dest;
-	This->inputs[3] = src;
-	This->inputs[4] = (void*)vsync;
-	This->opcode = OP_DRAWSCREEN;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	DRAWSCREENOP *drawop = (DRAWSCREENOP*)opqueue_putlock(&This->queue, sizeof(DRAWSCREENOP));
+	drawop->opcode.opcode = OP_DRAWSCREEN;
+	drawop->opcode.size = sizeof(DRAWSCREENOP);
+	drawop->texture = texture;
+	drawop->paltex = paltex;
+	drawop->dest = dest;
+	drawop->src = src;
+	drawop->vsync = vsync;
+	opqueue_putunlock(&This->queue, sizeof(DRAWSCREENOP));
+	glRenderer_Sync(This);
 }
 
 /**
@@ -504,14 +583,13 @@ void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, 
   */
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)zbuffer;
-	This->inputs[1] = (void*)x;
-	This->inputs[2] = (void*)y;
-	This->opcode = OP_INITD3D;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	INITD3DOP *initop = (INITD3DOP*)opqueue_putlock(&This->queue, sizeof(INITD3DOP));
+	initop->opcode.opcode = OP_INITD3D;
+	initop->opcode.size = sizeof(INITD3DOP);
+	initop->zbuffer = zbuffer;
+	initop->x = x;
+	initop->y = y;
+	opqueue_putunlock(&This->queue, sizeof(INITD3DOP));
 }
 
 /**
@@ -532,24 +610,25 @@ void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
   *  Value to fill the Z buffer with.
   * @param dwStencil
   *  Value to fill the stencil buffer with.
-  * @return
-  *  Returns D3D_OK
   */
-HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+void glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = target;
-	This->inputs[1] = (void*)dwCount;
-	This->inputs[2] = lpRects;
-	This->inputs[3] = (void*)dwFlags;
-	This->inputs[4] = (void*)dwColor;
-	memcpy(&This->inputs[5],&dvZ,4);
-	This->inputs[6] = (void*)dwStencil;
-	This->opcode = OP_CLEAR;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
-	return (HRESULT)This->outputs[0];
+	CLEAROP *clearop;
+	D3DRECT *rectbuffer;
+	DWORD opsize = sizeof(CLEAROP) + (dwCount*sizeof(D3DRECT));
+	if (opsize > 131072) opqueue_alloc(&This->queue, opsize);
+	clearop = (CLEAROP*)opqueue_putlock(&This->queue, opsize);
+	clearop->opcode.opcode = OP_CLEAR;
+	clearop->opcode.size = opsize;
+	clearop->target = target;
+	clearop->count = dwCount;
+	clearop->flags = dwFlags;
+	clearop->color = dwColor;
+	clearop->z = dvZ;
+	clearop->stencil = dwStencil;
+	rectbuffer = (D3DRECT*)&clearop[1];
+	if (dwCount) memcpy(rectbuffer, lpRects, dwCount*sizeof(D3DRECT));
+	opqueue_putunlock(&This->queue, opsize);
 }
 
 /**
@@ -559,11 +638,10 @@ HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD d
   */
 void glRenderer_Flush(glRenderer *This)
 {
-	EnterCriticalSection(&This->cs);
-	This->opcode = OP_FLUSH;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	FLUSHOP *flushop = (FLUSHOP*)opqueue_putlock(&This->queue, sizeof(FLUSHOP));
+	flushop->opcode.opcode = OP_FLUSH;
+	flushop->opcode.size = sizeof(FLUSHOP);
+	opqueue_putunlock(&This->queue, sizeof(FLUSHOP));
 }
 
 /**
@@ -579,26 +657,37 @@ void glRenderer_Flush(glRenderer *This)
   * @param devwnd
   *  True if creating window with name "DirectDrawDeviceWnd"
   */
-void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
+void glRenderer_SetWnd(glRenderer *This, DWORD width, DWORD height, DWORD bpp, DWORD fullscreen, DWORD frequency, HWND newwnd, BOOL devwnd)
 {
-	EnterCriticalSection(&This->cs);
+	SETWNDOP *setwndop;
+	MSG Msg;
 	if(fullscreen && newwnd)
 	{
 		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
 		SetWindowLongPtrA(newwnd,GWL_STYLE,WS_OVERLAPPED);
 		ShowWindow(newwnd,SW_MAXIMIZE);
 	}
-	This->inputs[0] = (void*)width;
-	This->inputs[1] = (void*)height;
-	This->inputs[2] = (void*)bpp;
-	This->inputs[3] = (void*)fullscreen;
-	This->inputs[4] = (void*)frequency;
-	This->inputs[5] = (void*)newwnd;
-	This->inputs[6] = (void*)devwnd;
-	This->opcode = OP_SETWND;
-	SetEvent(This->start);
-	WaitForObjectAndMessages(This->busy);
-	LeaveCriticalSection(&This->cs);
+	setwndop = (SETWNDOP*)opqueue_putlock(&This->queue, sizeof(SETWNDOP));
+	This->setwndfinished = FALSE;
+	setwndop->opcode.opcode = OP_SETWND;
+	setwndop->opcode.size = sizeof(SETWNDOP);
+	setwndop->width = width;
+	setwndop->height = height;
+	setwndop->bpp = bpp;
+	setwndop->fullscreen = fullscreen;
+	setwndop->frequency = frequency;
+	setwndop->hwnd = newwnd;
+	setwndop->devwnd = devwnd;
+	opqueue_putunlock(&This->queue, sizeof(SETWNDOP));
+	while (!This->setwndfinished)
+	{
+		if (PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		Sleep(0);
+	}
 }
 /**
   * Draws one or more primitives to the currently selected render target.
@@ -608,12 +697,12 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
   *  glDirect3DDevice7 interface to use for drawing
   * @param mode
   *  OpenGL primitive drawing mode to use
+  * @param stride
+  *  Distance between vertex sets in bytes
   * @param vertices
   *  Pointer to vertex data
-  * @param packed
-  *  True if vertex data is packed (e.g. xyz,normal,texcoord,xyz,normal,etc.)
-  * @param texformats
-  *  Pointer to texture coordinate formats used in the call
+  * @param dwVertexTypeDesc
+  *  FVF flags for vertex type.
   * @param count
   *  Number of vertices to copy to the draw command
   * @param indices
@@ -622,29 +711,40 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
   * @param indexcount
   *  Number of vertex indices.  May be 0 for non-indexed mode.
   * @param flags
-  *  Set to D3DDP_WAIT to wait until the queue has processed the call. (not yet
-  *  implemented)
+  *  Set to D3DDP_WAIT to wait until the queue has processed the call.
   * @return
   *  D3D_OK if the call succeeds, or D3DERR_INVALIDVERTEXTYPE if the vertex format
   *  has no position coordinates.
   */
-HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+void glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, DWORD stride, BYTE *vertices, DWORD dwVertexTypeDesc, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = device;
-	This->inputs[1] = (void*)mode;
-	This->inputs[2] = vertices;
-	This->inputs[3] = texformats;
-	This->inputs[4] = (void*)count;
-	This->inputs[5] = indices;
-	This->inputs[6] = (void*)indexcount;
-	This->inputs[7] = (void*)flags;
-	This->opcode = OP_DRAWPRIMITIVES;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
-	return (HRESULT)This->outputs[0];
+	DRAWPRIMITIVESOP *drawop;
+	BYTE *vertexop;
+	BYTE *indexop;
+	DWORD vertexsize = NextMultipleOfWord(count * stride);
+	DWORD indexsize = NextMultipleOfWord(indexcount * sizeof(WORD));
+	DWORD opsize = sizeof(DRAWPRIMITIVESOP) + vertexsize + indexsize;
+	if (opsize > 131072) opqueue_alloc(&This->queue, opsize);
+	drawop = (DRAWPRIMITIVESOP*)opqueue_putlock(&This->queue, opsize);
+	vertexop = (BYTE*)&drawop[1];
+	indexop = vertexop + vertexsize;
+	drawop->opcode.opcode = OP_DRAWPRIMITIVES;
+	drawop->opcode.size = opsize;
+	drawop->device = device;
+	drawop->mode = mode;
+	drawop->stride = stride;
+	drawop->fvf = dwVertexTypeDesc;
+	drawop->count = count;
+	drawop->indexcount = indexcount;
+	drawop->flags = flags;
+	drawop->vertexoffset = sizeof(DRAWPRIMITIVESOP);
+	if (indices) drawop->indexoffset = sizeof(DRAWPRIMITIVESOP) + vertexsize;
+	else drawop->indexcount = 0;
+	memcpy(vertexop, vertices, count*stride);
+	if (indices) memcpy(indexop, indices, indexcount*sizeof(WORD));
+	opqueue_putunlock(&This->queue, opsize);
+	if (flags & D3DDP_WAIT) glRenderer_Sync(This);
 }
 
 /**
@@ -656,12 +756,12 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
   */
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = fbo;
-	This->opcode = OP_DELETEFBO;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	DELETEFBOOP *fboop = (DELETEFBOOP*)opqueue_putlock(&This->queue, sizeof(DELETEFBOOP));
+	fboop->opcode.opcode = OP_DELETEFBO;
+	fboop->opcode.size = sizeof(DELETEFBOOP);
+	fboop->fbo = fbo;
+	opqueue_putunlock(&This->queue, sizeof(DELETEFBOOP));
+	glRenderer_Sync(This);
 }
 
 /**
@@ -673,12 +773,11 @@ void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
   */
 void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = surface;
-	This->opcode = OP_UPDATECLIPPER;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
+	UPDATECLIPPEROP *updateop = (UPDATECLIPPEROP*)opqueue_putlock(&This->queue, sizeof(UPDATECLIPPEROP));
+	updateop->opcode.opcode = OP_UPDATECLIPPER;
+	updateop->opcode.size = sizeof(UPDATECLIPPEROP);
+	updateop->surface = surface;
+	opqueue_putunlock(&This->queue, sizeof(UPDATECLIPPEROP));
 }
 
 
@@ -703,17 +802,20 @@ unsigned int glRenderer_GetScanLine(glRenderer *This)
 * @param lpDDBltFx
 *  Pointer to DDBLTFX structure with dwFillDepth defining the depth value.
 */
-HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
+void glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = lpDestRect;
-	This->inputs[1] = dest;
-	This->inputs[2] = lpDDBltFx;
-	This->opcode = OP_DEPTHFILL;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
-	return (HRESULT)This->outputs[0];
+	DEPTHFILLOP *depthop = (DEPTHFILLOP*)opqueue_putlock(&This->queue, sizeof(DEPTHFILLOP));
+	depthop->opcode.opcode = OP_DEPTHFILL;
+	depthop->opcode.size = sizeof(DEPTHFILLOP);
+	if (lpDestRect)
+	{
+		depthop->userect = TRUE;
+		memcpy(&depthop->rect, lpDestRect, sizeof(RECT));
+	}
+	else depthop->userect = FALSE;
+	memcpy(&depthop->bltfx, lpDDBltFx, sizeof(DDBLTFX));
+	depthop->dest = dest;
+	opqueue_putunlock(&This->queue, sizeof(DEPTHFILLOP));
 }
 
 /**
@@ -727,13 +829,12 @@ HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSu
 */
 void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)dwRendStateType;
-	This->inputs[1] = (void*)dwRenderState;
-	This->opcode = OP_SETRENDERSTATE;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETRENDERSTATEOP *stateop = (SETRENDERSTATEOP*)opqueue_putlock(&This->queue, sizeof(SETRENDERSTATEOP));
+	stateop->opcode.opcode = OP_SETRENDERSTATE;
+	stateop->opcode.size = sizeof(SETRENDERSTATEOP);
+	stateop->state = dwRendStateType;
+	stateop->value = dwRenderState;
+	opqueue_putunlock(&This->queue, sizeof(SETRENDERSTATEOP));
 }
 
 /**
@@ -747,13 +848,12 @@ void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateT
 */
 void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)dwStage;
-	This->inputs[1] = Texture;
-	This->opcode = OP_SETTEXTURE;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETTEXTUREOP *texop = (SETTEXTUREOP*)opqueue_putlock(&This->queue, sizeof(SETTEXTUREOP));
+	texop->opcode.opcode = OP_SETTEXTURE;
+	texop->opcode.size = sizeof(SETTEXTUREOP);
+	texop->stage = dwStage;
+	texop->texture = Texture;
+	opqueue_putunlock(&This->queue, sizeof(SETTEXTUREOP));
 }
 
 /**
@@ -769,14 +869,13 @@ void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7
 */
 void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)dwStage;
-	This->inputs[1] = (void*)dwState;
-	This->inputs[2] = (void*)dwValue;
-	This->opcode = OP_SETTEXTURESTAGESTATE;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETTEXTURESTAGESTATEOP *stateop = (SETTEXTURESTAGESTATEOP*)opqueue_putlock(&This->queue, sizeof(SETTEXTURESTAGESTATEOP));
+	stateop->opcode.opcode = OP_SETTEXTURESTAGESTATE;
+	stateop->opcode.size = sizeof(SETTEXTURESTAGESTATEOP);
+	stateop->stage = dwStage;
+	stateop->state = dwState;
+	stateop->value = dwValue;
+	opqueue_putunlock(&This->queue, sizeof(SETTEXTURESTAGESTATEOP));
 }
 
 /**
@@ -790,13 +889,12 @@ void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURE
 */
 void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)dtstTransformStateType;
-	This->inputs[1] = lpD3DMatrix;
-	This->opcode = OP_SETTRANSFORM;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETTRANSFORMOP *transformop = (SETTRANSFORMOP*)opqueue_putlock(&This->queue, sizeof(SETTRANSFORMOP));
+	transformop->opcode.opcode = OP_SETTRANSFORM;
+	transformop->opcode.size = sizeof(SETTRANSFORMOP);
+	transformop->state = dtstTransformStateType;
+	memcpy(&transformop->matrix, lpD3DMatrix, sizeof(D3DMATRIX));
+	opqueue_putunlock(&This->queue, sizeof(SETTRANSFORMOP));
 }
 
 /**
@@ -808,12 +906,11 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 */
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = lpMaterial;
-	This->opcode = OP_SETMATERIAL;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETMATERIALOP *materialop = (SETMATERIALOP*)opqueue_putlock(&This->queue, sizeof(SETMATERIALOP));
+	materialop->opcode.opcode = OP_SETMATERIAL;
+	materialop->opcode.size = sizeof(SETMATERIALOP);
+	memcpy(&materialop->material, lpMaterial, sizeof(D3DMATERIAL));
+	opqueue_putunlock(&This->queue, sizeof(SETMATERIALOP));
 }
 
 /**
@@ -830,14 +927,13 @@ void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = (void*)index;
-	This->inputs[1] = light;
-	This->inputs[2] = (void*)remove;
-	This->opcode = OP_SETLIGHT;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETLIGHTOP *lightop = (SETLIGHTOP*)opqueue_putlock(&This->queue, sizeof(SETLIGHTOP));
+	lightop->opcode.opcode = OP_SETLIGHT;
+	lightop->opcode.size = sizeof(SETLIGHTOP);
+	lightop->index = index;
+	lightop->remove = remove;
+	memcpy(&lightop->light, light, sizeof(D3DLIGHT7));
+	opqueue_putunlock(&This->queue, sizeof(SETLIGHTOP));
 }
 
 /**
@@ -849,12 +945,11 @@ void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL 
 */
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = lpViewport;
-	This->opcode = OP_SETVIEWPORT;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy, INFINITE);
-	LeaveCriticalSection(&This->cs);
+	SETVIEWPORTOP *viewportop = (SETVIEWPORTOP*)opqueue_putlock(&This->queue, sizeof(SETVIEWPORTOP));
+	viewportop->opcode.opcode = OP_SETVIEWPORT;
+	viewportop->opcode.size = sizeof(SETVIEWPORTOP);
+	memcpy(&viewportop->viewport, lpViewport, sizeof(D3DVIEWPORT7));
+	opqueue_putunlock(&This->queue,sizeof(SETVIEWPORTOP));
 }
 
 /**
@@ -864,19 +959,40 @@ void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
   * @return
   *  Returns 0 to signal successful thread termination
   */
-DWORD glRenderer__Entry(glRenderer *This)
+DWORD WINAPI glRenderer__Entry(glRenderer *This)
 {
 	float tmpfloats[16];
-	EnterCriticalSection(&This->cs);
-	glRenderer__InitGL(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2],
-		(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],
-		(glDirectDraw7*)This->inputs[6]);
-	LeaveCriticalSection(&This->cs);
-	SetEvent(This->busy);
+	NULLOP *opcode;
+	SETWNDOP *wndop;
+	CREATEOP *createop;
+	UPLOADOP *uploadop;
+	DOWNLOADOP *downloadop;
+	DELETETEXOP *deletetexop;
+	BLTOP *bltop;
+	DRAWSCREENOP *drawscreenop;
+	INITD3DOP *initd3dop;
+	CLEAROP *clearop;
+	DRAWPRIMITIVESOP *drawprimitivesop;
+	BYTE *drawprimitivesdata;
+	DELETEFBOOP *deletefboop;
+	UPDATECLIPPEROP *updateclipperop;
+	DEPTHFILLOP *depthfillop;
+	SETRENDERSTATEOP *setrenderstateop;
+	SETTEXTUREOP *settextureop;
+	SETTEXTURESTAGESTATEOP *settexturestagestateop;
+	SETTRANSFORMOP *settransformop;
+	SETMATERIALOP *setmaterialop;
+	SETLIGHTOP *setlightop;
+	SETVIEWPORTOP *setviewportop;
+	This->shutdownfinished = FALSE;
+	INITOP *initop = (INITOP*)opqueue_getlock(&This->queue);
+	glRenderer__InitGL(This, initop->width, initop->height, initop->bpp, initop->fullscreen,
+		initop->frequency, initop->hwnd, initop->glDD7);
+	opqueue_getunlock(&This->queue, initop->opcode.size);
 	while(1)
 	{
-		WaitForSingleObject(This->start,INFINITE);
-		switch(This->opcode)
+		opcode = (NULLOP*)opqueue_getlock(&This->queue);
+		switch(opcode->opcode.opcode)
 		{
 		case OP_DELETE:
 			if(This->hRC)
@@ -917,87 +1033,128 @@ DWORD glRenderer__Entry(glRenderer *This)
 			This->hDC = NULL;
 			delete This->RenderWnd;
 			This->RenderWnd = NULL;
-			SetEvent(This->busy);
+			opqueue_getunlock(&This->queue, opcode->opcode.size);
+			opqueue_delete(&This->queue);
+			This->shutdownfinished = TRUE;
 			return 0;
 			break;
+		case OP_SYNC:
+			SetEvent(This->syncevent);
+			opqueue_getunlock(&This->queue, opcode->opcode.size);
+			break;
 		case OP_SETWND:
-			glRenderer__SetWnd(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2],
-				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],(BOOL)This->inputs[6]);
+			wndop = (SETWNDOP*)opcode;
+			glRenderer__SetWnd(This, wndop->width, wndop->height, wndop->bpp, wndop->fullscreen,
+				wndop->frequency, wndop->hwnd, wndop->devwnd);
+			opqueue_getunlock(&This->queue, wndop->opcode.size);
 			break;
 		case OP_CREATE:
-			glRenderer__MakeTexture(This,(TEXTURE*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
-			SetEvent(This->busy);
+			createop = (CREATEOP*)opcode;
+			glRenderer__MakeTexture(This, createop->texture, createop->width, createop->height);
+			opqueue_getunlock(&This->queue, createop->opcode.size);
 			break;
 		case OP_UPLOAD:
-			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
-				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
-			SetEvent(This->busy);
+			uploadop = (UPLOADOP*)opcode;
+			glRenderer__UploadTexture(This, (BYTE*)&uploadop[1], uploadop->texture, uploadop->width, uploadop->height,
+				uploadop->pitch, uploadop->miplevel);
+			opqueue_getunlock(&This->queue, uploadop->opcode.size);
 			break;
 		case OP_DOWNLOAD:
-			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
-				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
-			SetEvent(This->busy);
+			downloadop = (DOWNLOADOP*)opcode;
+			glRenderer__DownloadTexture(This, downloadop->buffer, downloadop->texture, downloadop->miplevel);
+			opqueue_getunlock(&This->queue, downloadop->opcode.size);
 			break;
 		case OP_DELETETEX:
-			glRenderer__DeleteTexture(This,(TEXTURE*)This->inputs[0]);
+			deletetexop = (DELETETEXOP*)opcode;
+			glRenderer__DeleteTexture(This,deletetexop->texture);
+			opqueue_getunlock(&This->queue, deletetexop->opcode.size);
 			break;
 		case OP_BLT:
-			glRenderer__Blt(This,(LPRECT)This->inputs[0],(glDirectDrawSurface7*)This->inputs[1],
-				(glDirectDrawSurface7*)This->inputs[2],(LPRECT)This->inputs[3],(DWORD)This->inputs[4],(LPDDBLTFX)This->inputs[5]);
+			bltop = (BLTOP*)opcode;
+			glRenderer__Blt(This, (bltop->nulls & 1) ? NULL : &bltop->destrect, bltop->src, bltop->dest,
+				(bltop->nulls & 2) ? NULL : &bltop->srcrect, bltop->flags, (bltop->nulls & 4) ? NULL : &bltop->bltfx);
+			opqueue_getunlock(&This->queue, bltop->opcode.size);
 			break;
 		case OP_DRAWSCREEN:
-			glRenderer__DrawScreen(This,(TEXTURE*)This->inputs[0],(TEXTURE*)This->inputs[1],
-				(glDirectDrawSurface7*)This->inputs[2],(glDirectDrawSurface7*)This->inputs[3],(GLint)This->inputs[4],true);
+			drawscreenop = (DRAWSCREENOP*)opcode;
+			glRenderer__DrawScreen(This, drawscreenop->texture, drawscreenop->paltex, drawscreenop->dest,
+				drawscreenop->src, drawscreenop->vsync);
+			opqueue_getunlock(&This->queue, drawscreenop->opcode.size);
 			break;
 		case OP_INITD3D:
-			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
+			initd3dop = (INITD3DOP*)opcode;
+			glRenderer__InitD3D(This, initd3dop->zbuffer, initd3dop->x, initd3dop->y);
+			opqueue_getunlock(&This->queue, initd3dop->opcode.size);
 			break;
 		case OP_CLEAR:
-			memcpy(&tmpfloats[0],&This->inputs[5],4);
-			glRenderer__Clear(This,(glDirectDrawSurface7*)This->inputs[0],(DWORD)This->inputs[1],
-				(LPD3DRECT)This->inputs[2],(DWORD)This->inputs[3],(DWORD)This->inputs[4],tmpfloats[0],(DWORD)This->inputs[6]);
+			clearop = (CLEAROP*)opcode;
+			glRenderer__Clear(This, clearop->target, clearop->count, (LPD3DRECT)&clearop[1],
+				clearop->flags, clearop->color, clearop->z, clearop->stencil);
+			opqueue_getunlock(&This->queue, clearop->opcode.size);
 			break;
 		case OP_FLUSH:
 			glRenderer__Flush(This);
+			opqueue_getunlock(&This->queue, opcode->opcode.size);
 			break;
 		case OP_DRAWPRIMITIVES:
-			glRenderer__DrawPrimitives(This,(glDirect3DDevice7*)This->inputs[0],(GLenum)This->inputs[1],
-				(GLVERTEX*)This->inputs[2],(int*)This->inputs[3],(DWORD)This->inputs[4],(LPWORD)This->inputs[5],
-				(DWORD)This->inputs[6],(DWORD)This->inputs[7]);
+			drawprimitivesop = (DRAWPRIMITIVESOP*)opcode;
+			drawprimitivesdata = (BYTE*)opcode;
+			glRenderer__DrawPrimitives(This, drawprimitivesop->device, drawprimitivesop->mode, drawprimitivesop->stride,
+				&drawprimitivesdata[drawprimitivesop->vertexoffset], drawprimitivesop->fvf, drawprimitivesop->count,
+				(WORD*)&drawprimitivesdata[drawprimitivesop->indexoffset], drawprimitivesop->indexcount, drawprimitivesop->flags);
+			opqueue_getunlock(&This->queue, drawprimitivesop->opcode.size);
 			break;
 		case OP_DELETEFBO:
-			glRenderer__DeleteFBO(This,(FBO*)This->inputs[0]);
+			deletefboop = (DELETEFBOOP*)opcode;
+			glRenderer__DeleteFBO(This,deletefboop->fbo);
+			opqueue_getunlock(&This->queue, deletefboop->opcode.size);
 			break;
 		case OP_UPDATECLIPPER:
-			glRenderer__UpdateClipper(This,(glDirectDrawSurface7*)This->inputs[0]);
+			updateclipperop = (UPDATECLIPPEROP*)opcode;
+			glRenderer__UpdateClipper(This, updateclipperop->surface);
+			opqueue_getunlock(&This->queue, updateclipperop->opcode.size);
 			break;
 		case OP_DEPTHFILL:
-			glRenderer__DepthFill(This, (LPRECT)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1],
-				(LPDDBLTFX)This->inputs[2]);
+			depthfillop = (DEPTHFILLOP*)opcode;
+			glRenderer__DepthFill(This, depthfillop->userect ? &depthfillop->rect : NULL, depthfillop->dest,
+				&depthfillop->bltfx);
+			opqueue_getunlock(&This->queue, depthfillop->opcode.size);
 			break;
 		case OP_SETRENDERSTATE:
-			glRenderer__SetRenderState(This, (D3DRENDERSTATETYPE)(DWORD)This->inputs[0], (DWORD)This->inputs[1]);
+			setrenderstateop = (SETRENDERSTATEOP*)opcode;
+			glRenderer__SetRenderState(This, setrenderstateop->state, setrenderstateop->value);
+			opqueue_getunlock(&This->queue, setrenderstateop->opcode.size);
 			break;
 		case OP_SETTEXTURE:
-			glRenderer__SetTexture(This, (DWORD)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1]);
+			settextureop = (SETTEXTUREOP*)opcode;
+			glRenderer__SetTexture(This, settextureop->stage, settextureop->texture);
+			opqueue_getunlock(&This->queue, settextureop->opcode.size);
 			break;
 		case OP_SETTEXTURESTAGESTATE:
-			glRenderer__SetTextureStageState(This, (DWORD)This->inputs[0], (D3DTEXTURESTAGESTATETYPE)(DWORD)This->inputs[1],
-				(DWORD)This->inputs[2]);
+			settexturestagestateop = (SETTEXTURESTAGESTATEOP*)opcode;
+			glRenderer__SetTextureStageState(This, settexturestagestateop->stage,
+				settexturestagestateop->state, settexturestagestateop->value);
+			opqueue_getunlock(&This->queue, settexturestagestateop->opcode.size);
 			break;
 		case OP_SETTRANSFORM:
-			glRenderer__SetTransform(This, (D3DTRANSFORMSTATETYPE)(DWORD)This->inputs[0], (LPD3DMATRIX)This->inputs[1]);
+			settransformop = (SETTRANSFORMOP*)opcode;
+			glRenderer__SetTransform(This, settransformop->state, &settransformop->matrix);
+			opqueue_getunlock(&This->queue, settransformop->opcode.size);
 			break;
 		case OP_SETMATERIAL:
-			glRenderer__SetMaterial(This, (LPD3DMATERIAL7)This->inputs[0]);
+			setmaterialop = (SETMATERIALOP*)opcode;
+			glRenderer__SetMaterial(This, &setmaterialop->material);
+			opqueue_getunlock(&This->queue, setmaterialop->opcode.size);
 			break;
 		case OP_SETLIGHT:
-			glRenderer__SetLight(This, (DWORD)This->inputs[0], (LPD3DLIGHT7)This->inputs[1], (BOOL)This->inputs[2]);
+			setlightop = (SETLIGHTOP*)opcode;
+			glRenderer__SetLight(This, setlightop->index, &setlightop->light, setlightop->remove);
+			opqueue_getunlock(&This->queue, setlightop->opcode.size);
 			break;
 		case OP_SETVIEWPORT:
-			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
+			setviewportop = (SETVIEWPORTOP*)opcode;
+			glRenderer__SetViewport(This, &setviewportop->viewport);
+			opqueue_getunlock(&This->queue, setviewportop->opcode.size);
 			break;
 		}
 	}
@@ -1022,7 +1179,7 @@ DWORD glRenderer__Entry(glRenderer *This)
   * @return
   *  TRUE if OpenGL has been initialized, FALSE otherwise.
   */
-BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7)
+BOOL glRenderer__InitGL(glRenderer *This, DWORD width, DWORD height, DWORD bpp, BOOL fullscreen, DWORD frequency, HWND hWnd, glDirectDraw7 *glDD7)
 {
 	EnterCriticalSection(&dll_cs);
 	This->ddInterface = glDD7;
@@ -1519,9 +1676,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,dest->texture,dest->paltex,dest,dest,0,false);
-	This->outputs[0] = DD_OK;
-	SetEvent(This->busy);
+		glRenderer__DrawScreen(This,dest->texture,dest->paltex,dest,dest,0);
 }
 
 void glRenderer__MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
@@ -1636,7 +1791,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 	This->util->SetFBO((FBO*)NULL);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
+void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
 {
 	int progtype;
 	RECT r,r2;
@@ -1656,7 +1811,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	GLint viewport[4];
 	if(src->dirty & 1)
 	{
-		glRenderer__UploadTexture(This,src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
+		glRenderer__UploadTextureSurface(This,src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
 			src->fakex,src->fakey,src->ddsd.lPitch,
 			(NextMultipleOf4((This->ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
 			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->miplevel);
@@ -1787,14 +1942,11 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		SelectObject(This->dib.hdc,hPrevObj);
 		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
 	}
-	if(setsync) SetEvent(This->busy);
-
 }
 
 void glRenderer__DeleteTexture(glRenderer *This, TEXTURE *texture)
 {
 	TextureManager__DeleteTexture(This->texman,texture);
-	SetEvent(This->busy);
 }
 
 __int64 InitShaderState(glRenderer *renderer, DWORD *renderstate, TEXTURESTAGE *texstages, D3DLIGHT7 *lights)
@@ -1893,7 +2045,6 @@ __int64 InitShaderState(glRenderer *renderer, DWORD *renderstate, TEXTURESTAGE *
 
 void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
-	SetEvent(This->busy);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
 	if(zbuffer) This->util->DepthTest(true);
@@ -1924,7 +2075,6 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 
 void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	This->outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	dwordto4float(dwColor,color);
 	do
@@ -1965,16 +2115,14 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	else glClear(clearbits);
 	if(target->zbuffer) target->zbuffer->dirty |= 2;
 	target->dirty |= 2;
-	SetEvent(This->busy);
 }
 
 void glRenderer__Flush(glRenderer *This)
 {
 	glFlush();
-	SetEvent(This->busy);
 }
 
-void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
+void glRenderer__SetWnd(glRenderer *This, DWORD width, DWORD height, DWORD fullscreen, DWORD bpp, DWORD frequency, HWND newwnd, BOOL devwnd)
 {
 	if(newwnd != This->hWnd)
 	{
@@ -2012,8 +2160,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		glRenderer__SetSwap(This,0);
 		This->util->SetViewport(0,0,width,height);
 	}
-
-	SetEvent(This->busy);
+	This->setwndfinished = TRUE;
 }
 
 void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
@@ -2118,7 +2265,7 @@ void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
 	This->util->BlendFunc(glsrc,gldest);
 }
 
-void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, DWORD stride, BYTE *vertices, DWORD dwVertexTypeDesc, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
 	bool transformed;
@@ -2127,113 +2274,140 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	char strvar[] = "strX";
 	char strqvar[] = "strqX";
 	int i;
-	if(vertices[1].data) transformed = true;
+	int ptr = 0;
+	int numtex;
+	int texcoords[8];
+	if ((dwVertexTypeDesc & D3DFVF_POSITION_MASK) == D3DFVF_XYZRHW) transformed = true;
 	else transformed = false;
-	if(!vertices[0].data)
-	{
-		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
-		SetEvent(This->busy);
-		return;
-	}
+	This->shaderstate3d.stateid &= 0xFFFA3FFC7FFFFFFFi64;
 	This->shaderstate3d.stateid &= 0xFFFA3FF87FFFFFFFi64;
-	int numtextures = 0;
-	for (i = 0; i < 8; i++)
-	{
-		This->shaderstate3d.texstageid[i] &= 0xFFE7FFFFFFFFFFFFi64;
-		This->shaderstate3d.texstageid[i] |= (__int64)(texformats[i] - 1) << 51;
-		if (vertices[i + 10].data) numtextures++;
-	}
+	int numtextures = (dwVertexTypeDesc & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
 	This->shaderstate3d.stateid |= (__int64)((numtextures-1)&7) << 31;
 	if (numtextures) This->shaderstate3d.stateid |= (1i64 << 34);
 	int blendweights = 0;
-	for (i = 0; i < 5; i++)
-		if (vertices[i + 2].data) blendweights++;
+	if (((dwVertexTypeDesc & D3DFVF_POSITION_MASK) >> 1) > 2)
+		blendweights = ((dwVertexTypeDesc & D3DFVF_POSITION_MASK) >> 1) - 2;
 	This->shaderstate3d.stateid |= (__int64)blendweights << 46;
-	if (vertices[1].data) This->shaderstate3d.stateid |= (1i64 << 50);
-	if (vertices[8].data) This->shaderstate3d.stateid |= (1i64 << 35);
-	if (vertices[9].data) This->shaderstate3d.stateid |= (1i64 << 36);
-	if (vertices[7].data) This->shaderstate3d.stateid |= (1i64 << 37);
-	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,2);
+	if (transformed) This->shaderstate3d.stateid |= (1i64 << 50);
+	if (dwVertexTypeDesc & D3DFVF_DIFFUSE) This->shaderstate3d.stateid |= (1i64 << 35);
+	if (dwVertexTypeDesc & D3DFVF_SPECULAR) This->shaderstate3d.stateid |= (1i64 << 36);
+	if (dwVertexTypeDesc & D3DFVF_NORMAL) This->shaderstate3d.stateid |= (1i64 << 37);
+	numtex = (dwVertexTypeDesc & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
+	for(i = 0; i < numtex; i++)
+	{
+		This->shaderstate3d.texstageid[i] &= 0xFFE7FFFFFFFFFFFFi64;
+		switch (dwVertexTypeDesc >> (16 + (2 * i)) & 3)
+		{
+		case 0: // st
+			texcoords[i] = 2;
+			break;
+		case 1: // str
+			texcoords[i] = 3;
+			break;
+		case 2: // strq
+			texcoords[i] = 4;
+			break;
+		case 3: // s
+			texcoords[i] = 1;
+			break;
+		}
+		This->shaderstate3d.texstageid[i] |= (__int64)(texcoords[i] - 1) << 51;
+	}
+	ShaderManager_SetShader(This->shaders, This->shaderstate3d.stateid, This->shaderstate3d.texstageid, 2);
+	_GENSHADER *prog = &This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
+	This->util->EnableArray(prog->attribs[0], true);
+	This->ext->glVertexAttribPointer(prog->attribs[0], 3, GL_FLOAT, false, stride, &vertices[ptr]);
+	ptr += 12;
+	if (transformed)
+	{
+		if (prog->attribs[1] != -1)
+		{
+			This->util->EnableArray(prog->attribs[1], true);
+			This->ext->glVertexAttribPointer(prog->attribs[1], 4, GL_FLOAT, false, stride, &vertices[ptr]);
+		}
+		ptr += 4;
+	}
+	else if (dwVertexTypeDesc & D3DFVF_RESERVED1) ptr += 4;
 	glRenderer__SetDepthComp(This);
 	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
 	else This->util->DepthTest(false);
 	if(This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) This->util->DepthWrite(true);
 	else This->util->DepthWrite(false);
-	_GENSHADER *prog = &This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
-	This->util->EnableArray(prog->attribs[0],true);
-	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
-	if(transformed)
+	for(i = 0; i < blendweights; i++)
 	{
-		if(prog->attribs[1] != -1)
+		if(prog->attribs[i+2] != -1)
 		{
-			This->util->EnableArray(prog->attribs[1],true);
-			This->ext->glVertexAttribPointer(prog->attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+			This->util->EnableArray(prog->attribs[i+2],true);
+			This->ext->glVertexAttribPointer(prog->attribs[i + 2], 1, GL_FLOAT, false, stride, &vertices[ptr]);
 		}
+		ptr += 4;
 	}
-	for(i = 0; i < 5; i++)
-	{
-		if(vertices[i+2].data)
-		{
-			if(prog->attribs[i+2] != -1)
-			{
-				This->util->EnableArray(prog->attribs[i+2],true);
-				This->ext->glVertexAttribPointer(prog->attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
-			}
-		}
-	}
-	if(vertices[7].data)
+	if (dwVertexTypeDesc & D3DFVF_NORMAL)
 	{
 		if(prog->attribs[7] != -1)
 		{
 			This->util->EnableArray(prog->attribs[7],true);
-			This->ext->glVertexAttribPointer(prog->attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
+			This->ext->glVertexAttribPointer(prog->attribs[7], 3, GL_FLOAT, false, stride, &vertices[ptr]);
 		}
+		ptr += 12;
 	}
-	for(i = 0; i < 2; i++)
+	if (dwVertexTypeDesc & D3DFVF_DIFFUSE)
 	{
-		if(vertices[i+8].data)
+		if (prog->attribs[8] != -1)
 		{
-			if(prog->attribs[8+i] != -1)
-			{
-				This->util->EnableArray(prog->attribs[8+i],true);
-				This->ext->glVertexAttribPointer(prog->attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
-			}
+			This->util->EnableArray(prog->attribs[8], true);
+			This->ext->glVertexAttribPointer(prog->attribs[8], 4, GL_UNSIGNED_BYTE, true, stride, &vertices[ptr]);
 		}
+		ptr += 4;
 	}
-	for(i = 0; i < 8; i++)
+	if (dwVertexTypeDesc & D3DFVF_SPECULAR)
+	{
+		if (prog->attribs[9] != -1)
+		{
+			This->util->EnableArray(prog->attribs[9], true);
+			This->ext->glVertexAttribPointer(prog->attribs[9], 4, GL_UNSIGNED_BYTE, true, stride, &vertices[ptr]);
+		}
+		ptr += 4;
+	}
+	for(i = 0; i < numtex; i++)
 	{
 		{
-			switch(texformats[i])
+			switch(texcoords[i])
 			{
 			case -1: // Null
+			default:
 				break;
 			case 1: // s
 				if (prog->attribs[i + 10] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i + 10], true);
-					This->ext->glVertexAttribPointer(prog->attribs[i + 10], 1, GL_FLOAT, false, vertices[i + 10].stride, vertices[i + 10].data);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 10], 1, GL_FLOAT, false, stride, &vertices[ptr]);
 				}
+				ptr += 4;
 				break;
 			case 2: // st
 				if(prog->attribs[i+18] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+18],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 18], 2, GL_FLOAT, false, stride, &vertices[ptr]);
 				}
+				ptr += 8;
 				break;
 			case 3: // str
 				if(prog->attribs[i+26] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+26],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 26], 3, GL_FLOAT, false, stride, &vertices[ptr]);
 				}
+				ptr += 12;
 				break;
 			case 4: // strq
 				if(prog->attribs[i+34] != -1)
 				{
 					This->util->EnableArray(prog->attribs[i+34],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 34], 4, GL_FLOAT, false, stride, &vertices[ptr]);
 				}
+				ptr += 16;
 				break;
 			}
 
@@ -2297,7 +2471,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		{
 			if(This->texstages[i].texture->dirty & 1)
 			{
-				glRenderer__UploadTexture(This,This->texstages[i].texture->buffer,This->texstages[i].texture->bigbuffer,
+				glRenderer__UploadTextureSurface(This,This->texstages[i].texture->buffer,This->texstages[i].texture->bigbuffer,
 					This->texstages[i].texture->texture,This->texstages[i].texture->ddsd.dwWidth,
 					This->texstages[i].texture->ddsd.dwHeight,This->texstages[i].texture->fakex,
 					This->texstages[i].texture->fakey,This->texstages[i].texture->ddsd.lPitch,
@@ -2363,15 +2537,12 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
 	device->glDDS7->dirty |= 2;
 	if(flags & D3DDP_WAIT) glFlush();
-	This->outputs[0] = (void*)D3D_OK;
-	SetEvent(This->busy);
 	return;
 }
 
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 {
 	This->util->DeleteFBO(fbo);
-	SetEvent(This->busy);
 }
 
 void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
@@ -2411,7 +2582,6 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
 		6 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
 	This->util->SetFBO((FBO*)NULL);
-	SetEvent(This->busy);
 }
 
 void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
@@ -2471,13 +2641,11 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 	This->util->ClearDepth(lpDDBltFx->dwFillDepth / (double)0xFFFF);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	if (lpDestRect)This->util->SetScissor(false, 0, 0, 0, 0);
-	This->outputs[0] = DD_OK;
-	SetEvent(This->busy);
 }
 
 void glRenderer__SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
-	SetEvent(This->busy);
+	if (dwRendStateType > 152) return;
 	if (This->renderstate[dwRendStateType] == dwRenderState) return;
 	This->renderstate[dwRendStateType] = dwRenderState;
 	switch (dwRendStateType)
@@ -2580,11 +2748,7 @@ void glRenderer__SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendState
 
 void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
 {
-	if (This->texstages[dwStage].texture == Texture)
-	{
-		SetEvent(This->busy);
-		return;
-	}
+	if (This->texstages[dwStage].texture == Texture) return;
 	This->texstages[dwStage].texture = Texture;
 	if (Texture)
 	{
@@ -2593,12 +2757,10 @@ void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface
 		else This->shaderstate3d.texstageid[dwStage] &= 0xEFFFFFFFFFFFFFFFi64;
 	}
 	else This->shaderstate3d.texstageid[dwStage] &= 0xE7FFFFFFFFFFFFFFi64;
-	SetEvent(This->busy);
 }
 
 void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
-	SetEvent(This->busy);
 	switch (dwState)
 	{
 	case D3DTSS_COLOROP:
@@ -2794,19 +2956,13 @@ void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTUR
 
 void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
-	if (dtstTransformStateType > 23)
-	{
-		SetEvent(This->busy);
-		return;
-	}
+	if (dtstTransformStateType > 23) return;
 	memcpy(&This->transform[dtstTransformStateType], lpD3DMatrix, sizeof(D3DMATRIX));
-	SetEvent(This->busy);
 }
 
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 {
 	memcpy(&This->material, lpMaterial, sizeof(D3DMATERIAL));
-	SetEvent(This->busy);
 }
 
 void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
@@ -2815,7 +2971,6 @@ void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL
 	int lightindex = 0;
 	if(!remove)memcpy(&This->lights[index], light, sizeof(D3DLIGHT7));
 	else ZeroMemory(&This->lights[index], sizeof(D3DLIGHT7));
-	SetEvent(This->busy);
 	for (int i = 0; i < 8; i++)
 		if (This->lights[i].dltType) numlights++;
 	This->shaderstate3d.stateid &= 0xF807C03FFFE3FFFFi64;
@@ -2837,7 +2992,6 @@ void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
 	memcpy(&This->viewport, lpViewport, sizeof(D3DVIEWPORT7));
-	SetEvent(This->busy);
 }
 
 void glRenderer__SetFogColor(glRenderer *This, DWORD color)

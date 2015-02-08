@@ -18,9 +18,11 @@
 #include "common.h"
 #include "ddraw.h"
 #include "hooks.h"
-ATOM WindowClass = NULL;
+ATOM WindowClass = 0;
+BOOL smp = FALSE;
 CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
-BOOL APIENTRY DllMain( HMODULE hModule,
+SYSTEM_INFO sysinfo;
+BOOL APIENTRY DllMain(HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
 					 )
@@ -28,10 +30,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
+		GetSystemInfo(&sysinfo);
+		if (sysinfo.dwNumberOfProcessors > 1) smp = TRUE;
 		if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 		if (!hook_cs.LockCount && !hook_cs.OwningThread) InitializeCriticalSection(&hook_cs);
 		InitHooks();
-		GetCurrentConfig(&dxglcfg, true);
+		GetCurrentConfig(&dxglcfg, TRUE);
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:

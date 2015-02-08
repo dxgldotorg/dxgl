@@ -148,9 +148,9 @@ public:
 	TEXTURE *dummycolor;
 	bool hasstencil;
 	DWORD miplevel;
-	char *buffer;
-	char *bigbuffer;
-	char *gdibuffer;
+	BYTE *buffer;
+	BYTE *bigbuffer;
+	BYTE *gdibuffer;
 	DDSURFACEDESC2 ddsd;
 	glDirectDrawPalette *palette;
 	HGLRC hRC;

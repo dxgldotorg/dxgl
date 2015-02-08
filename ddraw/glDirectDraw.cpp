@@ -1908,7 +1908,7 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lastsync) lastsync = true;
-	else primary->RenderScreen(primary->texture,primary,1);
+	else if(primary) primary->RenderScreen(primary->texture,primary,1);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
