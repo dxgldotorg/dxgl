@@ -161,14 +161,23 @@ int glRenderer_AddQueue(glRenderer *This, DWORD opcode, int mode, DWORD size, in
 	{
 		argsize = va_arg(params, int);
 		argptr = va_arg(params, void*);
-		if (!argsize) continue;
+		if (!argsize)
+		{
+			This->queue[This->queue_write++] = argsize;
+			size -= 1;
+			continue;
+		}
 		if ((NextMultipleOf4(argsize) / 4) > size) break;
 		This->queue[This->queue_write++] = argsize;
 		if (argptr) memcpy(This->queue + This->queue_write, argptr, argsize);
 		This->queue_write += (NextMultipleOf4(argsize) / 4);
-		size -= (NextMultipleOf4(argsize) / 4);
+		size -= 1 + (NextMultipleOf4(argsize) / 4);
 	}
 	va_end(params);
+	if (size != 0)
+	{
+		FIXME("Opcode size mismatch!\n")
+	}
 	This->queuelength++;
 	if (!This->running) SetEvent(This->start);
 	LeaveCriticalSection(&This->queuecs);
@@ -742,9 +751,9 @@ void glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLen
 	DWORD vertsize = 0;
 	DWORD indexsize = 0;
 	if (!indices) indexcount = 0;
-	vertsize = (stride * count) / 4;
-	indexsize = NextMultipleOf2(indexcount) / 2;
-	glRenderer_AddQueue(This, OP_DRAWPRIMITIVES, 0, 16 + vertsize + indexsize, 8, 4, &device,
+	vertsize = stride * count;
+	indexsize = NextMultipleOf4(indexcount * 2);
+	glRenderer_AddQueue(This, OP_DRAWPRIMITIVES, 0, 16 + ((vertsize + indexsize)/4), 8, 4, &device,
 		4, &mode, 4, &stride, 4, &dwVertexTypeDesc, 4, &count, 4, &indexcount,
 		vertsize, vertices, indexsize, indices);
 	if (flags & D3DDP_WAIT) glRenderer_Sync(This, 0);
@@ -876,7 +885,7 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 {
 	EnterCriticalSection(&This->commandcs);
 	if (!This->running) memcpy(&This->transform[dtstTransformStateType], lpD3DMatrix, sizeof(D3DMATRIX));
-	else glRenderer_AddQueue(This, OP_SETTRANSFORM, 0, 4 + (sizeof(D3DMATRIX) / 4), 2,
+	else glRenderer_AddQueue(This, OP_SETTRANSFORM, 0, 5 + (sizeof(D3DMATRIX) / 4), 2,
 		4, &dtstTransformStateType, sizeof(D3DMATRIX), lpD3DMatrix);
 	LeaveCriticalSection(&This->commandcs);
 }
@@ -892,8 +901,8 @@ void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 {
 	EnterCriticalSection(&This->commandcs);
 	if (!This->running) memcpy(&This->material, lpMaterial, sizeof(D3DMATERIAL7));
-	glRenderer_AddQueue(This, OP_SETMATERIAL, 0, 2 + (sizeof(D3DMATERIAL7) / 4), 1,
-		sizeof(D3DMATERIAL), lpMaterial);
+	glRenderer_AddQueue(This, OP_SETMATERIAL, 0, 3 + (sizeof(D3DMATERIAL7) / 4), 1,
+		sizeof(D3DMATERIAL7), lpMaterial);
 	LeaveCriticalSection(&This->commandcs);
 }
 
@@ -917,7 +926,7 @@ void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL 
 	DWORD _remove = remove;
 	if (light) light7 = light;
 	else light7 = &null_light;
-	glRenderer_AddQueue(This, OP_SETLIGHT, 0, 6 + (sizeof(D3DLIGHT7) / 4), 3, 4, &index,
+	glRenderer_AddQueue(This, OP_SETLIGHT, 0, 7 + (sizeof(D3DLIGHT7) / 4), 3, 4, &index,
 		4, &_remove, sizeof(D3DLIGHT7), light7);
 	LeaveCriticalSection(&This->commandcs);
 }
@@ -932,7 +941,7 @@ void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL 
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
 	EnterCriticalSection(&This->commandcs);
-	glRenderer_AddQueue(This, OP_SETVIEWPORT, 0, 2 + (sizeof(D3DVIEWPORT7) / 4), 1,
+	glRenderer_AddQueue(This, OP_SETVIEWPORT, 0, 3 + (sizeof(D3DVIEWPORT7) / 4), 1,
 		sizeof(D3DVIEWPORT7), lpViewport);
 	LeaveCriticalSection(&This->commandcs);
 }
@@ -1111,21 +1120,21 @@ queueloop:
 				(D3DTEXTURESTAGESTATETYPE)This->queue[This->queue_read + 5], (DWORD)This->queue[This->queue_read + 7]);
 			break;
 		case OP_SETTRANSFORM:
-			if (This->queue[This->queue_read + 1] != (4 + (sizeof(D3DMATRIX) / 4))) break;
+			if (This->queue[This->queue_read + 1] != (5 + (sizeof(D3DMATRIX) / 4))) break;
 			glRenderer__SetTransform(This, (D3DTRANSFORMSTATETYPE)This->queue[This->queue_read + 3],
 				(LPD3DMATRIX)&This->queue[This->queue_read + 5]);
 			break;
 		case OP_SETMATERIAL:
-			if (This->queue[This->queue_read + 1] != (2 + (sizeof(D3DMATERIAL7) / 4))) break;
+			if (This->queue[This->queue_read + 1] != (3 + (sizeof(D3DMATERIAL7) / 4))) break;
 			glRenderer__SetMaterial(This, (LPD3DMATERIAL7)&This->queue[This->queue_read + 3]);
 			break;
 		case OP_SETLIGHT:
-			if (This->queue[This->queue_read + 1] != (6 + (sizeof(D3DLIGHT7) / 4))) break;
+			if (This->queue[This->queue_read + 1] != (7 + (sizeof(D3DLIGHT7) / 4))) break;
 			glRenderer__SetLight(This, (DWORD)This->queue[This->queue_read + 3], (LPD3DLIGHT7)&This->queue[This->queue_read + 7],
 				(BOOL)This->queue[This->queue_read + 5]);
 			break;
 		case OP_SETVIEWPORT:
-			if (This->queue[This->queue_read + 1] != (2 + (sizeof(D3DVIEWPORT7) / 4))) break;
+			if (This->queue[This->queue_read + 1] != (3 + (sizeof(D3DVIEWPORT7) / 4))) break;
 			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)&This->queue[This->queue_read + 3]);
 			break;
 		case OP_RESETQUEUE:
