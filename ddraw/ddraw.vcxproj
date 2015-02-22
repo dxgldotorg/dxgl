@@ -295,13 +295,11 @@
     <ClInclude Include="include\GL\wglext.h" />
     <ClInclude Include="include\winedef.h" />
     <ClInclude Include="matrix.h" />
-    <ClInclude Include="opqueue.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="scalers.h" />
     <ClInclude Include="ShaderGen3D.h" />
     <ClInclude Include="ShaderGen2D.h" />
     <ClInclude Include="ShaderManager.h" />
-    <ClInclude Include="spinlock.h" />
     <ClInclude Include="string.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="timer.h" />
@@ -382,14 +380,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug No MSVCRT|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="opqueue.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug No MSVCRT|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -452,9 +442,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ddraw.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="spinlock.x86.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

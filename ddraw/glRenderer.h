@@ -88,31 +88,31 @@ struct TEXTURESTAGE
 };
 
 #define OP_NULL						0
-#define OP_SYNC                     1
-#define OP_INIT						2
-#define OP_SETWND					3
-#define OP_DELETE					4
-#define OP_CREATE					5
-#define OP_UPLOAD					6
-#define OP_UPLOADINLINE				7
-#define OP_DOWNLOAD					8
-#define OP_DELETETEX				9
-#define OP_BLT						10
-#define OP_DRAWSCREEN				11
-#define OP_INITD3D					12
-#define OP_CLEAR					13
-#define OP_FLUSH					14
-#define OP_DRAWPRIMITIVES			15
-#define OP_DELETEFBO				16
-#define OP_UPDATECLIPPER			17
-#define OP_DEPTHFILL				18
-#define OP_SETRENDERSTATE			19
-#define OP_SETTEXTURE				20
-#define OP_SETTEXTURESTAGESTATE		21
-#define OP_SETTRANSFORM				22
-#define OP_SETMATERIAL				23
-#define OP_SETLIGHT					24
-#define OP_SETVIEWPORT				25
+#define OP_INIT						1
+#define OP_SETWND					2
+#define OP_DELETE					3
+#define OP_CREATE					4
+#define OP_UPLOAD					5
+#define OP_DOWNLOAD					6
+#define OP_DELETETEX				7
+#define OP_BLT						8
+#define OP_DRAWSCREEN				9
+#define OP_INITD3D					10
+#define OP_CLEAR					11
+#define OP_FLUSH					12
+#define OP_DRAWPRIMITIVES			13
+#define OP_DELETEFBO				14
+#define OP_UPDATECLIPPER			15
+#define OP_DEPTHFILL				16
+#define OP_SETRENDERSTATE			17
+#define OP_SETTEXTURE				18
+#define OP_SETTEXTURESTAGESTATE		19
+#define OP_SETTRANSFORM				20
+#define OP_SETMATERIAL				21
+#define OP_SETLIGHT					22
+#define OP_SETVIEWPORT				23
+
+#define OP_RESETQUEUE 0xFFFFFFFF
 
 #ifdef __cplusplus
 class glDirectDraw7;
@@ -125,183 +125,6 @@ typedef int glDirect3DDevice7;
 typedef int glDirectDrawSurface7;
 typedef int glRenderWindow;
 #endif
-
-typedef struct OPCODE
-{
-	DWORD opcode;
-	DWORD size;
-} OPCODE;
-typedef struct NULLOP
-{
-	OPCODE opcode;
-} NULLOP;
-typedef NULLOP SYNCOP;
-typedef struct INITOP
-{
-	OPCODE opcode;
-	DWORD width;
-	DWORD height;
-	DWORD bpp;
-	DWORD fullscreen;
-	DWORD frequency;
-	DWORD devwnd;
-	HWND hwnd;
-	glDirectDraw7 *glDD7;
-} INITOP;
-typedef struct  SETWNDOP
-{
-	OPCODE opcode;
-	DWORD width;
-	DWORD height;
-	DWORD bpp;
-	DWORD frequency;
-	DWORD fullscreen;
-	BOOL devwnd;
-	HWND hwnd;
-} SETWNDOP;
-typedef NULLOP DELETEOP;
-typedef struct CREATEOP
-{
-	OPCODE opcode;
-	DWORD width;
-	DWORD height;
-	TEXTURE *texture;
-} CREATEOP;
-typedef struct UPLOADOP
-{
-	OPCODE opcode;
-	DWORD width;
-	DWORD height;
-	DWORD pitch;
-	DWORD miplevel;
-	TEXTURE *texture;
-} UPLOADOP;
-typedef struct DOWNLOADOP
-{
-	OPCODE opcode;
-	DWORD miplevel;
-	BYTE *buffer;
-	TEXTURE *texture;
-} DOWNLOADOP;
-typedef struct DELETETEXOP
-{
-	OPCODE opcode;
-	TEXTURE *texture;
-} DELETETEXOP;
-typedef struct BLTOP
-{
-	OPCODE opcode;
-	RECT destrect;
-	RECT srcrect;
-	DWORD flags;
-	DWORD nulls;
-	DDBLTFX bltfx;
-	glDirectDrawSurface7 *dest;
-	glDirectDrawSurface7 *src;
-} BLTOP;
-typedef struct DRAWSCREENOP
-{
-	OPCODE opcode;
-	GLint vsync;
-	glDirectDrawSurface7 *dest;
-	glDirectDrawSurface7 *src;
-	TEXTURE *texture;
-	TEXTURE *paltex;
-} DRAWSCREENOP;
-typedef struct INITD3DOP
-{
-	OPCODE opcode;
-	DWORD zbuffer;
-	DWORD x;
-	DWORD y;
-	DWORD padding;
-} INITD3DOP;
-typedef struct CLEAROP
-{
-	OPCODE opcode;
-	DWORD count;
-	DWORD flags;
-	DWORD color;
-	D3DVALUE z;
-	DWORD stencil;
-	glDirectDrawSurface7 *target;
-} CLEAROP;
-typedef NULLOP FLUSHOP;
-typedef struct DRAWPRIMITIVESOP
-{
-	OPCODE opcode;
-	GLenum mode;
-	DWORD stride;
-	DWORD fvf;
-	DWORD count;
-	DWORD indexcount;
-	DWORD flags;
-	DWORD vertexoffset;
-	DWORD indexoffset;
-	glDirect3DDevice7 *device;
-} DRAWPRIMITIVESOP;
-typedef struct DELETEFBOOP
-{
-	OPCODE opcode;
-	FBO *fbo;
-} DELETEFBOOP;
-typedef struct UPDATECLIPPEROP
-{
-	OPCODE opcode;
-	glDirectDrawSurface7 *surface;
-} UPDATECLIPPEROP;
-typedef struct DEPTHFILLOP
-{
-	OPCODE opcode;
-	BOOL userect;
-	RECT rect;
-	DDBLTFX bltfx;
-	glDirectDrawSurface7 *dest;
-} DEPTHFILLOP;
-typedef struct SETRENDERSTATEOP
-{
-	OPCODE opcode;
-	D3DRENDERSTATETYPE state;
-	DWORD value;
-} SETRENDERSTATEOP;
-typedef struct SETTEXTUREOP
-{
-	OPCODE opcode;
-	DWORD stage;
-	glDirectDrawSurface7 *texture;
-} SETTEXTUREOP;
-typedef struct SETTEXTURESTAGESTATEOP
-{
-	OPCODE opcode;
-	DWORD stage;
-	D3DTEXTURESTAGESTATETYPE state;
-	DWORD value;
-	DWORD padding;
-} SETTEXTURESTAGESTATEOP;
-typedef struct SETTRANSFORMOP
-{
-	OPCODE opcode;
-	D3DTRANSFORMSTATETYPE state;
-	DWORD padding;
-	D3DMATRIX matrix;
-} SETTRANSFORMOP;
-typedef struct SETMATERIALOP
-{
-	OPCODE opcode;
-	D3DMATERIAL7 material;
-} SETMATERIALOP;
-typedef struct SETLIGHTOP
-{
-	OPCODE opcode;
-	DWORD index;
-	BOOL remove;
-	D3DLIGHT7 light;
-} SETLIGHTOP;
-typedef struct SETVIEWPORTOP
-{
-	OPCODE opcode;
-	D3DVIEWPORT7 viewport;
-} SETVIEWPORTOP;
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -320,6 +143,8 @@ typedef struct glRenderer
 	GLCAPS gl_caps;
 	glExtensions *ext;
 	glDirectDraw7 *ddInterface;
+	void* inputs[7];
+	void *output;
 	HANDLE hThread;
 	HDC hDC;
 	HWND hWnd;
@@ -327,7 +152,6 @@ typedef struct glRenderer
 	DIB dib;
 	FBO fbo;
 	GLuint PBO;
-	OPQUEUE queue;
 	unsigned int frequency;
 	DXGLTimer timer;
 	TEXTURE *backbuffer;
@@ -349,17 +173,28 @@ typedef struct glRenderer
 	D3DLIGHT7 lights[8];
 	D3DMATRIX transform[24];
 	D3DVIEWPORT7 viewport;
-	BOOL shutdownfinished;
-	BOOL setwndfinished;
-	HANDLE syncevent;
+	HANDLE busy;
+	HANDLE start;
+	HANDLE sync;
+	BOOL running;
+	CRITICAL_SECTION commandcs;
+	CRITICAL_SECTION queuecs;
+	LPDWORD queue;
+	DWORD queuesize;
+	DWORD queuelength;
+	DWORD queue_read;
+	DWORD queue_write;
+	DWORD syncsize;
+	BOOL dead;
 } glRenderer;
 
 void glRenderer_Init(glRenderer *This, DWORD width, DWORD height, DWORD bpp, BOOL fullscreen, DWORD frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
-void glRenderer_Sync(glRenderer *This);
+int glRenderer_AddQueue(glRenderer *This, DWORD opcode, int mode, DWORD size, int paramcount, ...);
+void glRenderer_Sync(glRenderer *This, int size);
 void glRenderer_UploadTexture(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, TEXTURE *texture, DWORD x, DWORD y, DWORD bigx, DWORD bigy, DWORD pitch, DWORD bigpitch, DWORD bpp, DWORD miplevel);
 void glRenderer_DownloadTexture(glRenderer *This, BYTE *buffer, BYTE *bigbuffer, TEXTURE *texture, DWORD x, DWORD y, DWORD bigx, DWORD bigy, DWORD pitch, DWORD bigpitch, DWORD bpp, DWORD miplevel);
-void glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
+HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
 	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
 void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height);
 void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync);

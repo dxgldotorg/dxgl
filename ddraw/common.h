@@ -31,7 +31,6 @@
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
 #include "glExtensions.h"
-#include "opqueue.h"
 #ifdef __cplusplus
 #include "string.h"
 #include "ShaderGen2D.h"

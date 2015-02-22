@@ -867,7 +867,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx);
 	}
 	else glRenderer_Blt(ddInterface->renderer,lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx);
-	if (this == ddInterface->primary) glRenderer_Sync(ddInterface->renderer);
+	if (this == ddInterface->primary) glRenderer_Sync(ddInterface->renderer,0);
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -990,7 +990,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 		else if(dwFlags & DDFLIP_INTERVAL4) swapinterval=4;
 		else swapinterval=1;
 	}
-	glRenderer_Sync(ddInterface->renderer);
+	glRenderer_Sync(ddInterface->renderer,0);
 	int flips = 1;
 	if(lpDDSurfaceTargetOverride)
 	{
