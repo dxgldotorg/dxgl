@@ -1086,7 +1086,7 @@ queueloop:
 			if (This->queue[This->queue_read + 1] < 16) break;
 			glRenderer__DrawPrimitives(This, (glDirect3DDevice7*)This->queue[This->queue_read + 3], (GLenum)This->queue[This->queue_read+5],
 				(DWORD)This->queue[This->queue_read + 7], (BYTE*)&This->queue[This->queue_read+15], (DWORD)This->queue[This->queue_read + 9],
-				(DWORD)This->queue[This->queue_read + 11], (LPWORD)&This->queue[This->queue_read + 16+This->queue[This->queue_read+14]],
+				(DWORD)This->queue[This->queue_read + 11], (LPWORD)&This->queue[This->queue_read + 16+(This->queue[This->queue_read+14]/4)],
 				(DWORD)This->queue[This->queue_read + 13], 0);
 			break;
 		case OP_DELETEFBO:
