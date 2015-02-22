@@ -776,7 +776,7 @@ void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 {
 	EnterCriticalSection(&This->commandcs);
-	glRenderer_AddQueue(This, OP_UPDATECLIPPER, 0, 4, 4, surface);
+	glRenderer_AddQueue(This, OP_UPDATECLIPPER, 0, 4, 1, 4, &surface);
 	LeaveCriticalSection(&This->commandcs);
 }
 
