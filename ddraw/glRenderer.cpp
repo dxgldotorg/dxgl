@@ -816,7 +816,7 @@ void glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurfa
 	EnterCriticalSection(&This->commandcs);
 	RECT emptyrect = nullrect;
 	if (!lpDestRect) lpDestRect = &emptyrect;
-	glRenderer_AddQueue(This, OP_DEPTHFILL, 0, 4 + (sizeof(RECT) / 4) + (sizeof(DDBLTFX) / 4),
+	glRenderer_AddQueue(This, OP_DEPTHFILL, 0, 6 + (sizeof(RECT) / 4) + (sizeof(DDBLTFX) / 4),
 		3, 4, dest, sizeof(RECT), lpDestRect, sizeof(DDBLTFX), lpDDBltFx);
 	LeaveCriticalSection(&This->commandcs);
 }

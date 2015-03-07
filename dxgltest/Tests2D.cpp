@@ -39,7 +39,8 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,2};
+static int testtypes[] = {0,1,0,1,0,1,2,2,2,1};
+static DWORD counter;
 
 static DDSPRITE sprites[16];
 
@@ -678,6 +679,17 @@ void InitTest2D(int test)
 		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
 		DrawRotatedBlt(ddsrender, sprites);
 		break;
+	case 9:
+		ddsrender->GetSurfaceDesc(&ddsd);
+		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (ddver > 3) sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC);
+		sprites[0].ddsd.dwWidth = sprites[0].ddsd.dwHeight =
+			sprites[0].rect.right = sprites[0].rect.bottom = 255;
+		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
+		counter = 0;
+		break;
 	}
 }
 
@@ -737,6 +749,7 @@ void RunTestLooped2D(int test)
 	error = ddsrender->GetSurfaceDesc(&ddsd);
 	MultiDirectDrawSurface *temp1 = NULL;
 	DDSCAPS2 ddscaps;
+	DWORD bitmask;
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
 	int op;
@@ -850,6 +863,52 @@ void RunTestLooped2D(int test)
 			OffsetRect(&destrect,p.x,p.y);
 			SetRect(&srcrect,0,0,width,height);
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+		}
+		break;
+	case 9:
+		bltfx.dwSize = sizeof(DDBLTFX);
+		switch (bpp)
+		{
+		case 8:
+			bitmask = 0xFF;
+			break;
+		case 15:
+			bitmask = 0x7FFF;
+			break;
+		case 16:
+			bitmask = 0xFFFF;
+			break;
+		case 24:
+			bitmask = 0xFFFFFF;
+			break;
+		case 32:
+		default:
+			bitmask = 0xFFFFFFFF;
+			break;
+		}
+		for (int y = 0; y < 255; y++)
+		{
+			for (int x = 0; x < 255; x++)
+			{
+				bltfx.dwFillColor = counter & bitmask;
+				destrect.left = x;
+				destrect.right = x + 1;
+				destrect.top = y;
+				destrect.bottom = y + 1;
+				counter++;
+				sprites[0].surface->Blt(&destrect, NULL, NULL, DDBLT_COLORFILL, &bltfx);
+			}
+		}
+		ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+		if (!fullscreen)
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &destrect);
+			OffsetRect(&destrect, p.x, p.y);
+			SetRect(&srcrect, 0, 0, width, height);
+			if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 		}
 		break;
 	}

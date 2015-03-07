@@ -401,6 +401,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
 	TRACE_ENTER(1,14,this);
+	glRenderer_Sync(ddInterface->renderer, 0);
 	AddRef();
 	if (dds1) delete dds1;
 	if (dds2) delete dds2;
