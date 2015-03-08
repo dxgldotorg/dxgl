@@ -128,7 +128,7 @@ int glRenderer_AddQueue(glRenderer *This, DWORD opcode, int mode, DWORD size, in
 	}
 	if (This->queuesize - This->queue_write < size)
 	{
-		if (This->queue_read < size)
+/*		if (This->queue_read < size)
 		{
 			if (mode == 1)
 			{
@@ -143,7 +143,10 @@ int glRenderer_AddQueue(glRenderer *This, DWORD opcode, int mode, DWORD size, in
 			LeaveCriticalSection(&This->queuecs);
 			glRenderer_Sync(This, size);
 			EnterCriticalSection(&This->queuecs);
-		}
+		}*/
+		LeaveCriticalSection(&This->queuecs);
+		glRenderer_Sync(This, 0);
+		EnterCriticalSection(&This->queuecs);
 	}
 	if (This->queue_write < This->queue_read)
 	{
@@ -817,7 +820,7 @@ void glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurfa
 	RECT emptyrect = nullrect;
 	if (!lpDestRect) lpDestRect = &emptyrect;
 	glRenderer_AddQueue(This, OP_DEPTHFILL, 0, 6 + (sizeof(RECT) / 4) + (sizeof(DDBLTFX) / 4),
-		3, 4, dest, sizeof(RECT), lpDestRect, sizeof(DDBLTFX), lpDDBltFx);
+		3, 4, &dest, sizeof(RECT), lpDestRect, sizeof(DDBLTFX), lpDDBltFx);
 	LeaveCriticalSection(&This->commandcs);
 }
 
@@ -1100,11 +1103,11 @@ queueloop:
 			glRenderer__UpdateClipper(This, (glDirectDrawSurface7*)This->queue[This->queue_read + 3]);
 			break;
 		case OP_DEPTHFILL:
-			if (This->queue[This->queue_read + 1] != (4 + (sizeof(RECT) / 4) + (sizeof(DDBLTFX) / 4))) break;
+			if (This->queue[This->queue_read + 1] != (6 + (sizeof(RECT) / 4) + (sizeof(DDBLTFX) / 4))) break;
 			r1 = (RECT*)&This->queue[This->queue_read + 5];
 			if (!memcmp(r1, &nullrect, sizeof(RECT))) r1 = NULL;
 			glRenderer__DepthFill(This, r1, (glDirectDrawSurface7*)This->queue[This->queue_read + 3],
-				(LPDDBLTFX)&This->queue[This->queue_read + 4 + sizeof(RECT)]);
+				(LPDDBLTFX)&This->queue[This->queue_read + 6 + (sizeof(RECT) / 4)]);
 			break;
 		case OP_SETRENDERSTATE:
 			if (This->queue[This->queue_read + 1] != 6) break;
