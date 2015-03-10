@@ -1376,7 +1376,6 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	threadsafe = false;
 	nowindowchanges = false;
 	cooplevel = 0;
-	timer = timeGetTime();
 	ZeroMemory(&oldmode,sizeof(DEVMODE));
 	surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
 	if(!surfaces) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);

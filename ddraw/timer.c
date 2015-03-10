@@ -28,10 +28,10 @@ void DXGLTimer_Init(DXGLTimer *timer)
 	QueryPerformanceFrequency(&freq);
 	if (!freq.QuadPart)
 	{
-		timeGetDevCaps(&mmcaps, sizeof(TIMECAPS));
+		/*timeGetDevCaps(&mmcaps, sizeof(TIMECAPS));
 		timeBeginPeriod(mmcaps.wPeriodMin);
 		timer->timer_frequency = ((double) mmcaps.wPeriodMin / 1.0) * 1000.0;
-		timer->timertype = 2;
+		timer->timertype = 2;*/
 	}
 	else
 	{
@@ -52,7 +52,7 @@ void DXGLTimer_Calibrate(DXGLTimer *timer, unsigned int lines, unsigned int freq
 	}
 	else
 	{
-		timer->timer_base.QuadPart = timeGetTime();
+		//timer->timer_base.QuadPart = timeGetTime();
 		linesperms = (double) lines / ((1.0 / (double) frequency) * 1000.0);
 		timer->vsync_lines = (unsigned int)(linesperms * (frequency / 1000.0));
 		timer->lines = lines + timer->vsync_lines;
@@ -65,7 +65,7 @@ unsigned int DXGLTimer_GetScanLine(DXGLTimer *timer)
 	double sync_pos;
 	double milliseconds;
 	if (timer->timertype == 1)	QueryPerformanceCounter(&timerpos);
-	else timerpos.QuadPart = timeGetTime();
+	//else timerpos.QuadPart = timeGetTime();
 	timerpos.QuadPart -= timer->timer_base.QuadPart;
 	if (timer->timertype == 1) milliseconds = ((double) timerpos.QuadPart / (double)timer->timer_frequency) * 1000.0;
 	else milliseconds = (double) timerpos.QuadPart;
