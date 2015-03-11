@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -88,7 +88,6 @@ extern const GUID device_template;
 #define ERR(error) return error;
 #endif
 
-static INLINE int NextMultipleOf64K(int number){return ((number+65535) & (~65535));}
 static INLINE int NextMultipleOf8(int number){return ((number+7) & (~7));}
 static INLINE int NextMultipleOf4(int number){return ((number+3) & (~3));}
 static INLINE int NextMultipleOf2(int number){return ((number+1) & (~1));}
@@ -114,16 +113,7 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-	extern CRITICAL_SECTION dll_cs;
-	extern BOOL smp;
-}
-#else
 extern CRITICAL_SECTION dll_cs;
-extern BOOL smp;
-#endif
 
 #include "trace.h"
 #include "../cfgmgr/cfgmgr.h"

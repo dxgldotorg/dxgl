@@ -578,9 +578,7 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 	TRACE_ENTER(7,14,this,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil);
-	TRACE_EXIT(23, DD_OK);
-	return DD_OK;
+	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
 
 // ComputeSphereVisibility based on modified code from the Wine project, subject
@@ -812,49 +810,6 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 	return shader;
 }*/
 
-HRESULT GetFVFStride(DWORD dwVertexTypeDesc, LPDWORD stride)
-{
-	TRACE_ENTER(2, 9, dwVertexTypeDesc, 14, stride);
-	int i;
-	int pos = (dwVertexTypeDesc & D3DFVF_POSITION_MASK) >> 1;
-	int ptr = 0;
-	DWORD texformats[8];
-	if (pos == 1)
-	{
-		ptr += 3;
-		if (dwVertexTypeDesc & D3DFVF_RESERVED1) ptr++;
-	}
-	else if (pos == 2) ptr += 4;
-	else if (!pos) { TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS); }
-	else ptr += (3 + (pos - 2));
-	if (dwVertexTypeDesc & D3DFVF_NORMAL) ptr += 3;
-	if (dwVertexTypeDesc & D3DFVF_DIFFUSE) ptr++;
-	if (dwVertexTypeDesc & D3DFVF_SPECULAR) ptr++;
-	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
-	for (i = 0; i < 8; i++)
-	{
-		if (i >= numtex) texformats[i] = -1;
-		else texformats[i] = (dwVertexTypeDesc >> (16 + (2 * i)) & 3);
-		switch (texformats[i])
-		{
-		case 0: // st
-			ptr += 2;
-			break;
-		case 1: // str
-			ptr += 3;
-			break;
-		case 2: // strq
-			ptr += 4;
-			break;
-		case 3: // s
-			ptr++;
-			break;
-		}
-	}
-	*stride = ptr * 4;
-	TRACE_EXIT(23, D3D_OK);
-	return D3D_OK;
-}
 HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 {
 	TRACE_ENTER(3,14,this,9,dwVertexTypeDesc,14,vertptr);
@@ -907,7 +862,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 	else vertdata[9].data = NULL;
 	for(i = 0; i < 8; i++)
 		vertdata[i+10].data = NULL;
-	int numtex = (dwVertexTypeDesc & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT;
+	int numtex = (dwVertexTypeDesc&D3DFVF_TEXCOUNT_MASK)>>D3DFVF_TEXCOUNT_SHIFT;
 	for(i = 0; i < 8; i++)
 	{
 		vertdata[i+10].data = &vertptr[ptr];
@@ -949,15 +904,12 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	TRACE_ENTER(8,9,d3dptPrimitiveType,9,dwVertexTypeDesc,14,lpvVertices,8,dwVertexCount,14,lpwIndices,8,dwIndexCount,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!inscene) TRACE_RET(HRESULT,23,D3DERR_SCENE_NOT_IN_SCENE);
-	DWORD stride;
-	HRESULT err = GetFVFStride(dwVertexTypeDesc, &stride);
+	HRESULT err = fvftoglvertex(dwVertexTypeDesc,(LPDWORD)lpvVertices);
 	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&stats);
 	else AddStats(d3dptPrimitiveType,dwVertexCount,&stats);
 	if(err != D3D_OK) TRACE_RET(HRESULT,23,err);
-	glRenderer_DrawPrimitives(renderer,this,setdrawmode(d3dptPrimitiveType),stride,(BYTE*)lpvVertices,
-		dwVertexTypeDesc,dwVertexCount,lpwIndices,dwIndexCount,dwFlags);
-	TRACE_EXIT(23, D3D_OK);
-	return D3D_OK;
+	TRACE_RET(HRESULT,23,glRenderer_DrawPrimitives(renderer,this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
+		dwVertexCount,lpwIndices,dwIndexCount,dwFlags));
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVertexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)

@@ -136,6 +136,7 @@ private:
 	glDirect3D3 *glD3D3;
 	glDirect3D2 *glD3D2;
 	glDirect3D1 *glD3D1;
+	DWORD timer;
 	bool devwnd;
 	DWORD cooplevel;
 };

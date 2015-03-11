@@ -151,6 +151,9 @@
     <ClCompile Include="ddraw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="glDirectDraw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -242,9 +245,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dllmain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

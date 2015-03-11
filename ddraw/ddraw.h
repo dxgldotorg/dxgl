@@ -19,10 +19,6 @@
 #ifndef _DDRAW_PRIVATE_H
 #define _DDRAW_PRIVATE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef DDRAW_EXPORTS
 #define DDRAW_API __declspec(dllexport)
 #else
@@ -55,7 +51,7 @@ HRESULT WINAPI DllCanUnloadNow();
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
 DDRAW_API void WINAPI GetDDSurfaceLocal();
 DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1);
-DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS);
+DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS);
 DDRAW_API void WINAPI RegisterSpecialCase();
 DDRAW_API void WINAPI ReleaseDDThreadLock();
 DDRAW_API BOOL IsDXGLDDraw();
@@ -64,17 +60,7 @@ extern DXGLCFG dxglcfg;
 extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
-#ifdef __cplusplus
 class glDirectDraw7;
-#else
-typedef void glDirectDraw7;
-typedef BOOL bool;
-#endif
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd);
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif //_DDRAW_PRIVATE_H

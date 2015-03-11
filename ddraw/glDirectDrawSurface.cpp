@@ -30,6 +30,7 @@
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawGammaControl.h"
+#include "glRenderer.h"
 #include <string>
 using namespace std;
 #include "ShaderGen3D.h"
@@ -224,9 +225,9 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	switch(surfacetype)
 	{
 	case 0:
-		buffer = (BYTE *)malloc(NextMultipleOf4((ddsd.ddpfPixelFormat.dwRGBBitCount * ddsd.dwWidth)/8) * ddsd.dwHeight);
+		buffer = (char *)malloc(NextMultipleOf4((ddsd.ddpfPixelFormat.dwRGBBitCount * ddsd.dwWidth)/8) * ddsd.dwHeight);
 		if((ddsd.dwWidth != fakex) || (ddsd.dwHeight != fakey))
-			bigbuffer = (BYTE *)malloc(NextMultipleOf4((ddsd.ddpfPixelFormat.dwRGBBitCount * fakex)/8) * fakey);
+			bigbuffer = (char *)malloc(NextMultipleOf4((ddsd.ddpfPixelFormat.dwRGBBitCount * fakex)/8) * fakey);
 		if(!buffer) *error = DDERR_OUTOFMEMORY;
 		goto maketex;
 		break;
@@ -401,7 +402,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
 	TRACE_ENTER(1,14,this);
-	glRenderer_Sync(ddInterface->renderer, 0);
 	AddRef();
 	if (dds1) delete dds1;
 	if (dds2) delete dds2;
@@ -852,9 +852,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	if (dwFlags & DDBLT_DEPTHFILL)
 	{
 		if (!(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)) TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
-		glRenderer_DepthFill(ddInterface->renderer, lpDestRect, this, lpDDBltFx);
-		TRACE_EXIT(23, DD_OK);
-		return DD_OK;
+		TRACE_RET(HRESULT, 23, glRenderer_DepthFill(ddInterface->renderer, lpDestRect, this, lpDDBltFx));
 	}
 	if (this == src)
 	{
@@ -865,12 +863,9 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		if (error) TRACE_RET(HRESULT, 23, error);
 		error = ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
 		if (error) TRACE_RET(HRESULT, 23, error);
-		this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx);
+		TRACE_RET(HRESULT,23,this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx));
 	}
-	else glRenderer_Blt(ddInterface->renderer,lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx);
-	if (this == ddInterface->primary) glRenderer_Sync(ddInterface->renderer,0);
-	TRACE_EXIT(23, DD_OK);
-	return DD_OK;
+	else TRACE_RET(HRESULT,23,glRenderer_Blt(ddInterface->renderer,lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx));
 }
 HRESULT WINAPI glDirectDrawSurface7::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
@@ -991,7 +986,6 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 		else if(dwFlags & DDFLIP_INTERVAL4) swapinterval=4;
 		else swapinterval=1;
 	}
-	glRenderer_Sync(ddInterface->renderer,0);
 	int flips = 1;
 	if(lpDDSurfaceTargetOverride)
 	{
@@ -1332,9 +1326,9 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 		ERR(DDERR_UNSUPPORTED);
 		break;
 	case 2:
-		buffer = (BYTE *)malloc(ddsd.lPitch * ddsd.dwHeight);
+		buffer = (char *)malloc(ddsd.lPitch * ddsd.dwHeight);
 		if((ddsd.dwWidth != fakex) || (ddsd.dwHeight != fakey))
-			bigbuffer = (BYTE *)malloc((ddsd.ddpfPixelFormat.dwRGBBitCount * NextMultipleOf4(fakex) * fakey)/8);
+			bigbuffer = (char *)malloc((ddsd.ddpfPixelFormat.dwRGBBitCount * NextMultipleOf4(fakex) * fakey)/8);
 		else bigbuffer = NULL;
 		glRenderer_DownloadTexture(ddInterface->renderer,buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,fakex,fakey,ddsd.lPitch,
 			(ddInterface->GetBPPMultipleOf8()/8)*fakex,ddsd.ddpfPixelFormat.dwRGBBitCount,miplevel);

@@ -129,7 +129,7 @@ glRenderWindow::~glRenderWindow()
 	#ifdef _DEBUG
 	if(hotkeyregistered) UnregisterHotKey(hWnd,1);
 	#endif
-	PostMessage(hWnd,WM_CLOSE,0,0);
+	SendMessage(hWnd,WM_CLOSE,0,0);
 	WaitForSingleObject(hThread,INFINITE);
 	CloseHandle(hThread);
 }
