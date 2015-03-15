@@ -38,15 +38,6 @@ typedef struct
 
 typedef struct
 {
-	GLuint buffer;
-	GLsizei size;
-	void *pointer;
-	bool mapped;
-	bool busy;
-} PBO;
-
-typedef struct
-{
 	void *data;
 	int stride;
 } GLVERTEX;

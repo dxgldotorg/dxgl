@@ -25,6 +25,16 @@ extern "C" {
 
 typedef struct
 {
+	ULONG refcount;
+	GLuint buffer;
+	GLsizei size;
+	void *pointer;
+	BOOL mapped;
+	BOOL busy;
+} PBO;
+
+typedef struct
+{
 	GLuint id;
 	GLsizei width;
 	GLsizei height;

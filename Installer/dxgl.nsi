@@ -63,6 +63,8 @@ SetCompressor /SOLID lzma
 !define KEY_ENUMERATE_SUB_KEYS   0x0008
 !define ROOT_KEY         ${HKEY_CURRENT_USER}
 !define GetVersion       "Kernel32::GetVersion() i"
+!define msvcr100_sha512  "D2D99E06D49A5990B449CF31D82A33104A6B45164E76FBEB34C43D10BCD25C3622AF52E59A2D4B7F5F45F83C3BA4D23CF1A5FC0C03B3606F42426988E63A9770"
+!addplugindir "..\${SRCDIR}"
 Var SUBKEY
 
 !ifdef _DEBUG
@@ -174,11 +176,20 @@ SectionEnd
 
 !ifndef _DEBUG
 Section "Download Visual C++ 2010 Redistributable" SEC_VCREDIST
+  downloadretry:
   DetailPrint "Downloading Visual C++ 2010 Runtime"
   NSISdl::download http://www.williamfeely.info/download/vc10/vcredist_x86.exe $TEMP\vcredist_x86.exe
-  DetailPrint "Installing Visual C++ 2010 Runtime"
-  ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
-  Delete $TEMP\vcredist_x86.exe
+  DetailPrint "Checking Visual C++ 2010 Runtime"
+  sha512-nsis::CalculateSha512Sum $TEMP\vcredist_x86.exe ${msvcr100_sha512}
+  Pop $0
+  ${If} $0 == "0"
+    MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download Visual C++ 2010 Redistributable.  Would you like to retry?" IDYES downloadretry
+    Delete $TEMP\vcredist_x86.exe
+  ${Else}
+    DetailPrint "Installing Visual C++ 2010 Runtime"
+    ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart'
+    Delete $TEMP\vcredist_x86.exe
+  ${Endif}
 SectionEnd
 !endif
 

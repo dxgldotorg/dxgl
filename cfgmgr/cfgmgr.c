@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -15,8 +15,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "stdafx.h"
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <Windows.h>
+#include <ShellAPI.h>
+#ifndef LSTATUS
+typedef LONG LSTATUS;
+#endif
 #include "crc32.h"
+#include "LibSha256.h"
 #include "cfgmgr.h"
 #include "../ddraw/resource.h"
 #include <tchar.h>
@@ -674,7 +684,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 			if (hUser32) FreeLibrary(hUser32);
 		}
 	}
-	if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);
+	//if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);  // Windows 10 compatibility issues; not needed?
 }
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {
