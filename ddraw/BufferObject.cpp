@@ -33,6 +33,7 @@ void BufferObject_Create(BufferObject **out, glExtensions *ext, glUtil *util)
 	buffer->ext = ext;
 	buffer->util = util;
 	ext->glGenBuffers(1, &buffer->buffer);
+	*out = buffer;
 }
 
 void BufferObject_AddRef(BufferObject *This)

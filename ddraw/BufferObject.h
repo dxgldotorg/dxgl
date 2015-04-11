@@ -21,6 +21,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+class glUtil;
 #else
 typedef int glUtil;
 #endif
