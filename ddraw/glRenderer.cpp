@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "BufferObject.h"
 #include "TextureManager.h"
 #include "glUtil.h"
 #include "timer.h"
@@ -212,7 +213,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	This->backbuffer = NULL;
 	This->hDC = NULL;
 	This->hRC = NULL;
-	This->PBO = 0;
+	This->pbo = NULL;
 	This->dib.enabled = false;
 	This->hWnd = hwnd;
 	InitializeCriticalSection(&This->cs);
@@ -889,11 +890,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 				}
 				TextureManager_DeleteSamplers(This->texman);
 				This->util->DeleteFBO(&This->fbo);
-				if(This->PBO)
+				if(This->pbo)
 				{
-					This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
-					This->ext->glDeleteBuffers(1,&This->PBO);
-					This->PBO = 0;
+					BufferObject_Release(This->pbo);
+					This->pbo = NULL;
 				}
 				if(This->backbuffer)
 				{
@@ -1149,10 +1149,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 		This->dib.hbitmap = CreateDIBSection(This->dib.hdc,&This->dib.info,
 			DIB_RGB_COLORS,(void**)&This->dib.pixels,NULL,0);
 	}
-	This->ext->glGenBuffers(1,&This->PBO);
-	This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,This->PBO);
-	This->ext->glBufferData(GL_PIXEL_PACK_BUFFER,width*height*4,NULL,GL_STREAM_READ);
-	This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+	BufferObject_Create(&This->pbo, This->ext, This->util);
+	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
 	TextureManager_InitSamplers(This->texman);
 	TRACE_SYSINFO();
 	return TRUE;
@@ -1759,20 +1757,21 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	else
 	{
 		glReadBuffer(GL_FRONT);
-		This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,This->PBO);
+		BufferObject_Bind(This->pbo, GL_PIXEL_PACK_BUFFER);
 		GLint packalign;
 		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
 		glPixelStorei(GL_PACK_ALIGNMENT,1);
 		This->ddInterface->GetSizes(sizes);
 		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
-		GLubyte *pixels = (GLubyte*)This->ext->glMapBuffer(GL_PIXEL_PACK_BUFFER,GL_READ_ONLY);
+		BufferObject_Map(This->pbo, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		GLubyte *pixels = (GLubyte*)This->pbo->pointer;
 		for(int i = 0; i < sizes[5];i++)
 		{
 			memcpy(&This->dib.pixels[This->dib.pitch*i],
 				&pixels[((sizes[5]-1)-i)*(sizes[4]*4)],sizes[4]*4);
 		}
-		This->ext->glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-		This->ext->glBindBuffer(GL_PIXEL_PACK_BUFFER,0);
+		BufferObject_Unmap(This->pbo, GL_PIXEL_PACK_BUFFER);
+		BufferObject_Unbind(This->pbo, GL_PIXEL_PACK_BUFFER);
 		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
 		HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->GetHWnd());
 		HGDIOBJ hPrevObj = 0;

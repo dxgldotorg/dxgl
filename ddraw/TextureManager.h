@@ -23,17 +23,9 @@
 extern "C" {
 #endif
 
-typedef struct
-{
-	ULONG refcount;
-	GLuint buffer;
-	GLsizei size;
-	void *pointer;
-	BOOL mapped;
-	BOOL busy;
-} PBO;
+struct BufferObject;
 
-typedef struct
+typedef struct TEXTURE
 {
 	GLuint id;
 	GLsizei width;
@@ -50,7 +42,8 @@ typedef struct
 	int colororder;
 	GLenum format;
 	GLenum type;
-	GLuint pbo;
+	BufferObject *pboPack;
+	BufferObject *pboUnpack;
 	DDPIXELFORMAT pixelformat;
 } TEXTURE;
 

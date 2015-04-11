@@ -106,6 +106,7 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 	out[2] = (GLint)(in& 0xff);
 	out[3] = (GLint)((in>>24) & 0xff);
 }
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 #ifdef _M_X64
 #define NextMultipleOfWord NextMultipleOf8

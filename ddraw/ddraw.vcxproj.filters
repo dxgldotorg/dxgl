@@ -146,6 +146,9 @@
     <ClInclude Include="hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BufferObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -245,6 +248,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BufferObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

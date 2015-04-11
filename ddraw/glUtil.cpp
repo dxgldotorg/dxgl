@@ -18,6 +18,7 @@
 #include "common.h"
 #include "TextureManager.h"
 #include "glUtil.h"
+#include "BufferObject.h"
 #include "glDirectDrawSurface.h"
 
 glUtil::glUtil(glExtensions *glext)
@@ -60,6 +61,8 @@ glUtil::glUtil(glExtensions *glext)
 	cullenabled = false;
 	polymode = D3DFILL_SOLID;
 	shademode = D3DSHADE_GOURAUD;
+	pboPackBinding = pboUnpackBinding = vboArrayBinding =
+		vboElementArrayBinding = uboUniformBufferBinding = LastBoundBuffer = NULL;
 }
 void glUtil::InitFBO(FBO *fbo)
 {
@@ -522,4 +525,42 @@ void glUtil::SetShadeMode(D3DSHADEMODE mode)
 			break;
 		}
 	}
+}
+
+void glUtil::BindBuffer(BufferObject *buffer, GLenum target)
+{
+	switch (target)
+	{
+	case GL_PIXEL_PACK_BUFFER:
+		LastBoundBuffer = pboPackBinding;
+		pboPackBinding = buffer;
+		break;
+	case GL_PIXEL_UNPACK_BUFFER:
+		LastBoundBuffer = pboUnpackBinding;
+		pboUnpackBinding = buffer;
+		break;
+	case GL_ARRAY_BUFFER:
+		LastBoundBuffer = vboArrayBinding;
+		vboArrayBinding = buffer;
+		break;
+	case GL_ELEMENT_ARRAY_BUFFER:
+		LastBoundBuffer = vboElementArrayBinding;
+		vboElementArrayBinding = buffer;
+		break;
+	case GL_UNIFORM_BUFFER:
+		LastBoundBuffer = uboUniformBufferBinding;
+		uboUniformBufferBinding = buffer;
+		break;
+	default:
+		LastBoundBuffer = NULL;
+	}
+	if(buffer) ext->glBindBuffer(target, buffer->buffer);
+	else ext->glBindBuffer(target, 0);
+}
+
+void glUtil::UndoBindBuffer(GLenum target)
+{
+	if (LastBoundBuffer) ext->glBindBuffer(target, LastBoundBuffer->buffer);
+	else ext->glBindBuffer(target, 0);
+	LastBoundBuffer = NULL;
 }

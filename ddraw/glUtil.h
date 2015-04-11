@@ -19,6 +19,10 @@
 #ifndef _GLUTIL_H
 #define _GLUTIL_H
 
+struct TEXTURE;
+struct BufferObject;
+struct TextureManager;
+
 typedef struct
 {
 	GLuint fbo;
@@ -68,7 +72,14 @@ public:
 	void SetCull(D3DCULL mode);
 	void SetPolyMode(D3DFILLMODE mode);
 	void SetShadeMode(D3DSHADEMODE mode);
+	void BindBuffer(BufferObject *buffer, GLenum target);
+	void UndoBindBuffer(GLenum target);
 	FBO *currentfbo;
+	BufferObject *pboPackBinding;
+	BufferObject *pboUnpackBinding;
+	BufferObject *vboArrayBinding;
+	BufferObject *vboElementArrayBinding;
+	BufferObject *uboUniformBufferBinding;
 private:
 	glExtensions *ext;
 	bool depthwrite;
@@ -107,6 +118,7 @@ private:
 	bool cullenabled;
 	D3DFILLMODE polymode;
 	D3DSHADEMODE shademode;
+	BufferObject *LastBoundBuffer;
 };
 
 #endif //_GLUTIL_H

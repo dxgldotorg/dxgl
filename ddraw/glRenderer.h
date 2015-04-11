@@ -137,7 +137,7 @@ typedef struct glRenderer
 	glRenderWindow *RenderWnd;
 	DIB dib;
 	FBO fbo;
-	GLuint PBO;
+	BufferObject *pbo;
 	CRITICAL_SECTION cs;
 	HANDLE busy;
 	HANDLE start;

@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "BufferObject.h"
 #include "TextureManager.h"
 #include <math.h>
 
@@ -491,7 +492,8 @@ void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 	texture->bordercolor = texture->format = texture->type = texture->width =
 		texture->height = texture->magfilter = texture->minfilter =
 		texture->miplevel = texture->wraps = texture->wrapt =
-		texture->pbo = texture->id = 0;
+		texture->id = 0;
+	texture->pboPack = texture->pboUnpack = NULL;
 	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 }
 

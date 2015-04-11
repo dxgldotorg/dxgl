@@ -114,6 +114,9 @@ typedef struct
 	void (APIENTRY *glGetTextureImageEXT)(GLuint texture, GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels);
 	void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
 	void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
+	void (APIENTRY *glNamedBufferDataEXT)(GLuint buffer, GLsizeiptr size, const void *data, GLenum usage);
+	void* (APIENTRY *glMapNamedBufferEXT)(GLuint buffer, GLenum access);
+	GLboolean (APIENTRY *glUnmapNamedBufferEXT)(GLuint buffer);
 
 	void (APIENTRY *glTextureParameterf)(GLuint texture, GLenum pname, GLfloat param);
 	void (APIENTRY *glTextureParameterfv)(GLuint texture, GLenum pname, const GLfloat *params);
@@ -122,7 +125,9 @@ typedef struct
 	void (APIENTRY *glTextureSubImage2D)(GLuint texture, GLint level, GLint xoffset, GLint yoffset,
 		GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 	void (APIENTRY *glGetTextureImage)(GLuint texture, GLint level, GLenum format, GLenum type, GLsizei bufSize, GLvoid *pixels);
-
+	void (APIENTRY *glNamedBufferData)(GLuint buffer, GLsizei size, const void *data, GLenum usage);
+	void* (APIENTRY *glMapNamedBuffer)(GLuint buffer, GLenum access);
+	GLboolean (APIENTRY *glUnmapNamedBuffer)(GLuint buffer);
 
 	void (APIENTRY *glBindSampler)(GLuint unit, GLuint sampler);
 	void (APIENTRY *glDeleteSamplers)(GLsizei n, const GLuint *samplers);
