@@ -889,7 +889,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 					ZeroMemory(&This->dib,sizeof(DIB));
 				}
 				TextureManager_DeleteSamplers(This->texman);
-				This->util->DeleteFBO(&This->fbo);
+				glUtil_DeleteFBO(This->util, &This->fbo);
 				if(This->pbo)
 				{
 					BufferObject_Release(This->pbo);
@@ -904,10 +904,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 					This->backy = 0;
 				}
 				ShaderManager_Delete(This->shaders);
+				glUtil_Release(This->util);
 				free(This->shaders);
 				free(This->texman);
 				free(This->ext);
-				delete This->util;
 				This->ext = NULL;
 				wglMakeCurrent(NULL,NULL);
 				wglDeleteContext(This->hRC);
@@ -1082,21 +1082,21 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	LeaveCriticalSection(&dll_cs);
 	This->ext = (glExtensions *)malloc(sizeof(glExtensions));
 	glExtensions_Init(This->ext);
-	This->util = new glUtil(This->ext);
+	glUtil_Create(This->ext, &This->util);
 	glRenderer__SetSwap(This,1);
 	glFinish();
 	DXGLTimer_Init(&This->timer);
 	DXGLTimer_Calibrate(&This->timer, height, frequency);
 	glRenderer__SetSwap(This,0);
-	This->util->SetViewport(0,0,width,height);
+	glUtil_SetViewport(This->util,0,0,width,height);
 	glViewport(0,0,width,height);
-	This->util->SetDepthRange(0.0,1.0);
-	This->util->DepthWrite(true);
-	This->util->DepthTest(false);
-	This->util->MatrixMode(GL_MODELVIEW);
+	glUtil_SetDepthRange(This->util,0.0,1.0);
+	glUtil_DepthWrite(This->util,TRUE);
+	glUtil_DepthTest(This->util,FALSE);
+	glUtil_MatrixMode(This->util,GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
-	This->util->SetDepthComp(GL_LESS);
+	glUtil_SetDepthComp(This->util,GL_LESS);
 	const GLubyte *glver = glGetString(GL_VERSION);
 	This->gl_caps.Version = (GLfloat)atof((char*)glver);
 	if(This->gl_caps.Version >= 2)
@@ -1109,18 +1109,18 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	This->shaders = (ShaderManager*)malloc(sizeof(ShaderManager));
 	ShaderManager_Init(This->ext, This->shaders);
 	This->fbo.fbo = 0;
-	This->util->InitFBO(&This->fbo);
-	This->util->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	This->util->ClearDepth(1.0);
-	This->util->ClearStencil(0);
-	This->util->EnableArray(-1,false);
-	This->util->BlendFunc(GL_ONE,GL_ZERO);
-	This->util->BlendEnable(false);
+	glUtil_InitFBO(This->util,&This->fbo);
+	glUtil_ClearColor(This->util, 0.0f, 0.0f, 0.0f, 0.0f);
+	glUtil_ClearDepth(This->util, 1.0);
+	glUtil_ClearStencil(This->util, 0);
+	glUtil_EnableArray(This->util,-1,FALSE);
+	glUtil_BlendFunc(This->util,GL_ONE,GL_ZERO);
+	glUtil_BlendEnable(This->util,FALSE);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
-	This->util->SetScissor(false,0,0,0,0);
+	glUtil_SetScissor(This->util,FALSE,0,0,0,0);
 	glDisable(GL_SCISSOR_TEST);
-	This->util->SetCull(D3DCULL_CCW);
+	glUtil_SetCull(This->util,D3DCULL_CCW);
 	glEnable(GL_CULL_FACE);
 	SwapBuffers(This->hDC);
 	This->texman = TextureManager_Create(This->ext);
@@ -1129,11 +1129,11 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glRenderer__SetFogStart(This,0);
 	glRenderer__SetFogEnd(This,1);
 	glRenderer__SetFogDensity(This,1);
-	This->util->SetPolyMode(D3DFILL_SOLID);
-	This->util->SetShadeMode(D3DSHADE_GOURAUD);
+	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
+	glUtil_SetShadeMode(This->util, D3DSHADE_GOURAUD);
 	if(hWnd)
 	{
-		This->dib.enabled = true;
+		This->dib.enabled = TRUE;
 		This->dib.width = width;
 		This->dib.height = height;
 		This->dib.pitch = (((width<<3)+31)&~31) >>3;
@@ -1390,18 +1390,18 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	}
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
-	This->util->BlendEnable(false);
+	glUtil_BlendEnable(This->util, FALSE);
 	do
 	{
-		if (This->util->SetFBO(dest) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (glUtil_SetFBOSurface(This->util, dest) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!dest->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty, dest->miplevel);
-		This->util->SetFBO((FBO*)NULL);
+		glUtil_SetFBO(This->util, NULL);
 		dest->fbo.fbcolor = NULL;
 		dest->fbo.fbz = NULL;
 	} while (1);
-	This->util->SetViewport(0,0,dest->fakex,dest->fakey);
-	This->util->DepthTest(false);
+	glUtil_SetViewport(This->util,0,0,dest->fakex,dest->fakey);
+	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
 	if(src) src->GetSurfaceDesc(&ddsdSrc);
@@ -1477,8 +1477,8 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		TextureManager_SetTexture(This->texman, 3, dest->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],3);
-		This->util->EnableArray(shader->shader.attribs[5],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].stencils);
+		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
 	}
 	if(src)
 	{
@@ -1497,22 +1497,22 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if(dest) This->ext->glUniform4i(shader->shader.uniforms[11], dest->texture->colorsizes[0], dest->texture->colorsizes[1],
 		dest->texture->colorsizes[2], dest->texture->colorsizes[3]);
 	dest->dirty |= 2;
-	This->util->EnableArray(shader->shader.attribs[0],true);
-	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
+	glUtil_EnableArray(This->util, shader->shader.attribs[0], TRUE);
+	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
 	if(!(dwFlags & DDBLT_COLORFILL))
 	{
-		This->util->EnableArray(shader->shader.attribs[3],true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
+		glUtil_EnableArray(This->util, shader->shader.attribs[3], TRUE);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);
 	}
 	if (usedest)
 	{
-		This->util->EnableArray(shader->shader.attribs[4], true);
-		This->ext->glVertexAttribPointer(shader->shader.attribs[4],2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].dests);
+		glUtil_EnableArray(This->util, shader->shader.attribs[4], TRUE);
+		This->ext->glVertexAttribPointer(shader->shader.attribs[4],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].dests);
 	}
-	This->util->SetCull(D3DCULL_NONE);
-	This->util->SetPolyMode(D3DFILL_SOLID);
+	glUtil_SetCull(This->util, D3DCULL_NONE);
+	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	This->util->SetFBO((FBO*)NULL);
+	glUtil_SetFBO(This->util, NULL);
 	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
@@ -1552,11 +1552,11 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 		This->backx = x;
 		This->backy = y;
 	}
-	This->util->SetFBO(&This->fbo,This->backbuffer,0,false);
+	glUtil_SetFBOTextures(This->util,&This->fbo,This->backbuffer,0,FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)x;
 	view[3] = (GLfloat)y;
-	This->util->SetViewport(0,0,x,y);
+	glUtil_SetViewport(This->util,0,0,x,y);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	TextureManager_SetTexture(This->texman,0,*texture);
 	*texture = This->backbuffer;
@@ -1567,14 +1567,14 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 	This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
 	This->bltvertices[0].x = This->bltvertices[2].x = (float)x;
 	This->bltvertices[2].y = This->bltvertices[3].y = (float)y;
-	This->util->EnableArray(This->shaders->shaders[progtype].pos,true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
-	This->util->EnableArray(This->shaders->shaders[progtype].texcoord,true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
-	This->util->SetCull(D3DCULL_NONE);
-	This->util->SetPolyMode(D3DFILL_SOLID);
+	glUtil_EnableArray(This->util,This->shaders->shaders[progtype].pos,TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
+	glUtil_EnableArray(This->util,This->shaders->shaders[progtype].texcoord,TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);
+	glUtil_SetCull(This->util,D3DCULL_NONE);
+	glUtil_SetPolyMode(This->util,D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	This->util->SetFBO((FBO*)NULL);
+	glUtil_SetFBO(This->util, NULL);
 }
 
 void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT srcrect, int progtype)
@@ -1606,14 +1606,14 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 		This->backx = x;
 		This->backy = y;
 	}
-	This->util->SetFBO(&This->fbo, This->backbuffer, 0, false);
+	glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffer, 0, FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)This->backx;
 	view[3] = (GLfloat)This->backy;
-	This->util->SetViewport(0, 0, This->backx, This->backy);
-	This->util->SetScissor(true, 0, 0, This->backx, This->backy);
+	glUtil_SetViewport(This->util, 0, 0, This->backx, This->backy);
+	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backx, This->backy);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	This->util->SetScissor(false, 0, 0, 0, 0);
+	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
 	TextureManager_SetTexture(This->texman, 0, texture);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
 	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->width;
@@ -1624,21 +1624,21 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 	This->bltvertices[0].x = This->bltvertices[2].x = (float)x;
 	This->bltvertices[0].y = This->bltvertices[1].y = 0.;
 	This->bltvertices[2].y = This->bltvertices[3].y = (float)y;
-	This->util->EnableArray(This->shaders->shaders[progtype].pos, true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos, 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].x);
-	This->util->EnableArray(This->shaders->shaders[progtype].texcoord, true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord, 2, GL_FLOAT, false, sizeof(BltVertex), &This->bltvertices[0].s);
-	This->util->SetCull(D3DCULL_NONE);
-	This->util->SetPolyMode(D3DFILL_SOLID);
+	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].pos, TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].x);
+	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].texcoord, TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].s);
+	glUtil_SetCull(This->util, D3DCULL_NONE);
+	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP, 0, 3, 4, GL_UNSIGNED_SHORT, bltindices);
-	This->util->SetFBO((FBO*)NULL);
+	glUtil_SetFBO(This->util, NULL);
 }
 
 void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
 {
 	int progtype;
 	RECT r,r2;
-	This->util->BlendEnable(false);
+	glUtil_BlendEnable(This->util, FALSE);
 	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(This->hWnd,&r);
@@ -1646,7 +1646,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		if(memcmp(&r2,&r,sizeof(RECT)))
 		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
-	This->util->DepthTest(false);
+	glUtil_DepthTest(This->util, FALSE);
 	RECT *viewrect = &r2;
 	glRenderer__SetSwap(This,vsync);
 	LONG sizes[6];
@@ -1693,7 +1693,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		view[2] = 0;
 		view[3] = (GLfloat)dest->fakey;
 	}
-	This->util->SetFBO((FBO*)NULL);
+	glUtil_SetFBO(This->util, NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(This->ddInterface->GetBPP() == 8)
 	{
@@ -1729,7 +1729,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
 	else if(This->ext->GLEXT_ARB_sampler_objects)
 		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
-	This->util->SetViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+	glUtil_SetViewport(This->util,viewport[0],viewport[1],viewport[2],viewport[3]);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(This->ddInterface->GetFullscreen())
 	{
@@ -1745,12 +1745,12 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 	}
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
-	This->util->EnableArray(This->shaders->shaders[progtype].pos,true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].x);
-	This->util->EnableArray(This->shaders->shaders[progtype].texcoord,true);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,false,sizeof(BltVertex),&This->bltvertices[0].s);
-	This->util->SetCull(D3DCULL_NONE);
-	This->util->SetPolyMode(D3DFILL_SOLID);
+	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].pos, TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
+	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].texcoord, TRUE);
+	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);
+	glUtil_SetCull(This->util, D3DCULL_NONE);
+	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glFlush();
 	if(This->hWnd) SwapBuffers(This->hDC);
@@ -1895,17 +1895,17 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 	SetEvent(This->busy);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
 	GLfloat ambient[] = {0.0,0.0,0.0,0.0};
-	if(zbuffer) This->util->DepthTest(true);
-	This->util->SetDepthComp(GL_LEQUAL);
+	if (zbuffer) glUtil_DepthTest(This->util, TRUE);
+	glUtil_SetDepthComp(This->util, GL_LEQUAL);
 	GLfloat identity[16];
 	__gluMakeIdentityf(identity);
-	This->util->SetMatrix(GL_MODELVIEW,identity,identity,NULL);
-	This->util->SetMatrix(GL_PROJECTION,identity,NULL,NULL);
+	glUtil_SetMatrix(This->util, GL_MODELVIEW, identity, identity, NULL);
+	glUtil_SetMatrix(This->util, GL_PROJECTION, identity, NULL, NULL);
 	for (int i = 0; i < 24; i++)
 		memcpy(&This->transform[i], identity, sizeof(D3DMATRIX));
 	GLfloat one[4] = {1,1,1,1};
 	GLfloat zero[4] = {0,0,0,1};
-	This->util->SetMaterial(one,one,zero,zero,0);
+	glUtil_SetMaterial(This->util, one, one, zero, zero, 0);
 	ZeroMemory(&This->material, sizeof(D3DMATERIAL7));
 	ZeroMemory(&This->lights, 8 * sizeof(D3DLIGHT7));
 	memcpy(&This->renderstate, &renderstate_default, 153 * sizeof(DWORD));
@@ -1928,10 +1928,10 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	dwordto4float(dwColor,color);
 	do
 	{
-		if (This->util->SetFBO(target) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (glUtil_SetFBOSurface(This->util, target) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!target->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty, target->miplevel);
-		This->util->SetFBO((FBO*)NULL);
+		glUtil_SetFBO(This->util, NULL);
 		target->fbo.fbcolor = NULL;
 		target->fbo.fbz = NULL;
 	} while (1);
@@ -1939,27 +1939,27 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	if(dwFlags & D3DCLEAR_TARGET)
 	{
 		clearbits |= GL_COLOR_BUFFER_BIT;
-		This->util->ClearColor(color[0],color[1],color[2],color[3]);
+		glUtil_ClearColor(This->util, color[0], color[1], color[2], color[3]);
 	}
 	if(dwFlags & D3DCLEAR_ZBUFFER)
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
-		This->util->ClearDepth(dvZ);
-		This->util->DepthWrite(true);
+		glUtil_ClearDepth(This->util, dvZ);
+		glUtil_DepthWrite(This->util, TRUE);
 	}
 	if(dwFlags & D3DCLEAR_STENCIL)
 	{
 		clearbits |= GL_STENCIL_BUFFER_BIT;
-		This->util->ClearStencil(dwStencil);
+		glUtil_ClearStencil(This->util, dwStencil);
 	}
 	if(dwCount)
 	{
 		for(DWORD i = 0; i < dwCount; i++)
 		{
-			This->util->SetScissor(true,lpRects[i].x1,lpRects[i].y1,lpRects[i].x2,lpRects[i].y2);
+			glUtil_SetScissor(This->util, TRUE, lpRects[i].x1, lpRects[i].y1, lpRects[i].x2, lpRects[i].y2);
 			glClear(clearbits);
 		}
-		This->util->SetScissor(false,0,0,0,0);
+		glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
 	}
 	else glClear(clearbits);
 	if(target->zbuffer) target->zbuffer->dirty |= 2;
@@ -2009,7 +2009,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		DXGLTimer_Init(&This->timer);
 		DXGLTimer_Calibrate(&This->timer, height, frequency);
 		glRenderer__SetSwap(This,0);
-		This->util->SetViewport(0,0,width,height);
+		glUtil_SetViewport(This->util, 0, 0, width, height);
 	}
 
 	SetEvent(This->busy);
@@ -2114,7 +2114,7 @@ void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
 		gldest = GL_SRC_ALPHA;
 		break;
 	}
-	This->util->BlendFunc(glsrc,gldest);
+	glUtil_BlendFunc(This->util, glsrc, gldest);
 }
 
 void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
@@ -2154,19 +2154,19 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if (vertices[7].data) This->shaderstate3d.stateid |= (1i64 << 37);
 	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,2);
 	glRenderer__SetDepthComp(This);
-	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) This->util->DepthTest(true);
-	else This->util->DepthTest(false);
-	if(This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) This->util->DepthWrite(true);
-	else This->util->DepthWrite(false);
+	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) glUtil_DepthTest(This->util, TRUE);
+	else glUtil_DepthTest(This->util, FALSE);
+	if (This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) glUtil_DepthWrite(This->util, TRUE);
+	else glUtil_DepthWrite(This->util, FALSE);
 	_GENSHADER *prog = &This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
-	This->util->EnableArray(prog->attribs[0],true);
-	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,false,vertices[0].stride,vertices[0].data);
+	glUtil_EnableArray(This->util, prog->attribs[0], TRUE);
+	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,GL_FALSE,vertices[0].stride,vertices[0].data);
 	if(transformed)
 	{
 		if(prog->attribs[1] != -1)
 		{
-			This->util->EnableArray(prog->attribs[1],true);
-			This->ext->glVertexAttribPointer(prog->attribs[1],4,GL_FLOAT,false,vertices[1].stride,vertices[1].data);
+			glUtil_EnableArray(This->util, prog->attribs[1], TRUE);
+			This->ext->glVertexAttribPointer(prog->attribs[1],4,GL_FLOAT,GL_FALSE,vertices[1].stride,vertices[1].data);
 		}
 	}
 	for(i = 0; i < 5; i++)
@@ -2175,8 +2175,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		{
 			if(prog->attribs[i+2] != -1)
 			{
-				This->util->EnableArray(prog->attribs[i+2],true);
-				This->ext->glVertexAttribPointer(prog->attribs[i+2],1,GL_FLOAT,false,vertices[i+2].stride,vertices[i+2].data);
+				glUtil_EnableArray(This->util, prog->attribs[i + 2], TRUE);
+				This->ext->glVertexAttribPointer(prog->attribs[i+2],1,GL_FLOAT,GL_FALSE,vertices[i+2].stride,vertices[i+2].data);
 			}
 		}
 	}
@@ -2184,8 +2184,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	{
 		if(prog->attribs[7] != -1)
 		{
-			This->util->EnableArray(prog->attribs[7],true);
-			This->ext->glVertexAttribPointer(prog->attribs[7],3,GL_FLOAT,false,vertices[7].stride,vertices[7].data);
+			glUtil_EnableArray(This->util, prog->attribs[7], TRUE);
+			This->ext->glVertexAttribPointer(prog->attribs[7],3,GL_FLOAT,GL_FALSE,vertices[7].stride,vertices[7].data);
 		}
 	}
 	for(i = 0; i < 2; i++)
@@ -2194,8 +2194,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		{
 			if(prog->attribs[8+i] != -1)
 			{
-				This->util->EnableArray(prog->attribs[8+i],true);
-				This->ext->glVertexAttribPointer(prog->attribs[8+i],4,GL_UNSIGNED_BYTE,true,vertices[i+8].stride,vertices[i+8].data);
+				glUtil_EnableArray(This->util, prog->attribs[8 + i], TRUE);
+				This->ext->glVertexAttribPointer(prog->attribs[8+i],4,GL_UNSIGNED_BYTE,GL_TRUE,vertices[i+8].stride,vertices[i+8].data);
 			}
 		}
 	}
@@ -2209,28 +2209,28 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 			case 1: // s
 				if (prog->attribs[i + 10] != -1)
 				{
-					This->util->EnableArray(prog->attribs[i + 10], true);
-					This->ext->glVertexAttribPointer(prog->attribs[i + 10], 1, GL_FLOAT, false, vertices[i + 10].stride, vertices[i + 10].data);
+					glUtil_EnableArray(This->util, prog->attribs[i + 10], TRUE);
+					This->ext->glVertexAttribPointer(prog->attribs[i + 10], 1, GL_FLOAT, GL_FALSE, vertices[i + 10].stride, vertices[i + 10].data);
 				}
 				break;
 			case 2: // st
 				if(prog->attribs[i+18] != -1)
 				{
-					This->util->EnableArray(prog->attribs[i+18],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+18],2,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					glUtil_EnableArray(This->util, prog->attribs[i + 18], TRUE);
+					This->ext->glVertexAttribPointer(prog->attribs[i+18],2,GL_FLOAT,GL_FALSE,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 3: // str
 				if(prog->attribs[i+26] != -1)
 				{
-					This->util->EnableArray(prog->attribs[i+26],true);
-					This->ext->glVertexAttribPointer(prog->attribs[i+26],3,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
+					glUtil_EnableArray(This->util, prog->attribs[i + 26], TRUE);
+					This->ext->glVertexAttribPointer(prog->attribs[i+26],3,GL_FLOAT,GL_FALSE,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
 			case 4: // strq
 				if(prog->attribs[i+34] != -1)
 				{
-					This->util->EnableArray(prog->attribs[i+34],true);
+					glUtil_EnableArray(This->util, prog->attribs[i + 34], TRUE);
 					This->ext->glVertexAttribPointer(prog->attribs[i+34],4,GL_FLOAT,false,vertices[i+10].stride,vertices[i+10].data);
 				}
 				break;
@@ -2238,12 +2238,12 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 
 		}
 	}
-	This->util->SetMatrix(GL_MODELVIEW, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_VIEW], 
+	glUtil_SetMatrix(This->util, GL_MODELVIEW, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_VIEW],
 		(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD],NULL);
-	This->util->SetMatrix(GL_PROJECTION, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_PROJECTION], NULL, NULL);
+	glUtil_SetMatrix(This->util, GL_PROJECTION, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_PROJECTION], NULL, NULL);
 
-	This->util->SetMaterial((GLfloat*)&This->material.ambient,(GLfloat*)&This->material.diffuse,(GLfloat*)&This->material.specular,
-		(GLfloat*)&This->material.emissive,This->material.power);
+	glUtil_SetMaterial(This->util, (GLfloat*)&This->material.ambient, (GLfloat*)&This->material.diffuse, (GLfloat*)&This->material.specular,
+		(GLfloat*)&This->material.emissive, This->material.power);
 
 	int lightindex = 0;
 	char lightname[] = "lightX.xxxxxxxxxxxxxxxx";
@@ -2307,8 +2307,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 			if(This->texstages[i].texture)
 				This->texstages[i].texture->SetFilter(i,This->texstages[i].glmagfilter,This->texstages[i].glminfilter,This->ext,This->texman);
 			TextureManager_SetTexture(This->texman,i,This->texstages[i].texture->texture);
-			This->util->SetWrap(i,0,This->texstages[i].addressu,This->texman);
-			This->util->SetWrap(i,1,This->texstages[i].addressv,This->texman);
+			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu, This->texman);
+			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv, This->texman);
 		}
 		TextureManager_SetTexture(This->texman,i,0);
 		This->ext->glUniform1i(prog->uniforms[128+i],i);
@@ -2334,29 +2334,29 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
 	do
 	{
-		if (This->util->SetFBO(device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (glUtil_SetFBOSurface(This->util, device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!device->glDDS7->texture->internalformats[1]) break;
 		TextureManager_FixTexture(This->texman, device->glDDS7->texture,
 			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty, device->glDDS7->miplevel);
-		This->util->SetFBO((FBO*)NULL);
+		glUtil_SetFBO(This->util, NULL);
 		device->glDDS7->fbo.fbcolor = NULL;
 		device->glDDS7->fbo.fbz = NULL;
 	} while (1);
-	This->util->SetViewport((int)((float)This->viewport.dwX*device->glDDS7->mulx),
+	glUtil_SetViewport(This->util, (int)((float)This->viewport.dwX*device->glDDS7->mulx),
 		(int)((float)This->viewport.dwY*device->glDDS7->muly),
 		(int)((float)This->viewport.dwWidth*device->glDDS7->mulx),
 		(int)((float)This->viewport.dwHeight*device->glDDS7->muly));
-	This->util->SetDepthRange(This->viewport.dvMinZ,This->viewport.dvMaxZ);
-	if(This->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) This->util->BlendEnable(true);
-	else This->util->BlendEnable(false);
+	glUtil_SetDepthRange(This->util, This->viewport.dvMinZ, This->viewport.dvMaxZ);
+	if (This->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) glUtil_BlendEnable(This->util, TRUE);
+	else glUtil_BlendEnable(This->util, FALSE);
 	glRenderer__SetBlend(This,This->renderstate[D3DRENDERSTATE_SRCBLEND],This->renderstate[D3DRENDERSTATE_DESTBLEND]);
-	This->util->SetCull((D3DCULL)This->renderstate[D3DRENDERSTATE_CULLMODE]);
+	glUtil_SetCull(This->util, (D3DCULL)This->renderstate[D3DRENDERSTATE_CULLMODE]);
 	glRenderer__SetFogColor(This,This->renderstate[D3DRENDERSTATE_FOGCOLOR]);
 	glRenderer__SetFogStart(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGSTART]));
 	glRenderer__SetFogEnd(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGEND]));
 	glRenderer__SetFogDensity(This,*(GLfloat*)(&This->renderstate[D3DRENDERSTATE_FOGDENSITY]));
-	This->util->SetPolyMode((D3DFILLMODE)This->renderstate[D3DRENDERSTATE_FILLMODE]);
-	This->util->SetShadeMode((D3DSHADEMODE)This->renderstate[D3DRENDERSTATE_SHADEMODE]);
+	glUtil_SetPolyMode(This->util, (D3DFILLMODE)This->renderstate[D3DRENDERSTATE_FILLMODE]);
+	glUtil_SetShadeMode(This->util, (D3DSHADEMODE)This->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
 	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
@@ -2369,7 +2369,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 {
-	This->util->DeleteFBO(fbo);
+	glUtil_DeleteFBO(This->util, fbo);
 	SetEvent(This->busy);
 }
 
@@ -2394,22 +2394,22 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 		(surface->ddsd.dwHeight != surface->stencil->height))
 		TextureManager__UploadTexture(This->texman, surface->stencil, 0, NULL,
 			surface->ddsd.dwWidth, surface->ddsd.dwHeight, FALSE, TRUE);
-	This->util->SetFBO(&surface->stencilfbo, surface->stencil, 0, false);
+	glUtil_SetFBOTextures(This->util, &surface->stencilfbo, surface->stencil, 0, FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)surface->ddsd.dwWidth;
 	view[3] = (GLfloat)surface->ddsd.dwHeight;
-	This->util->SetViewport(0,0,surface->ddsd.dwWidth,surface->ddsd.dwHeight);
+	glUtil_SetViewport(This->util, 0, 0, surface->ddsd.dwWidth, surface->ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ShaderManager_SetShader(This->shaders,PROG_CLIPSTENCIL,NULL,0);
 	This->ext->glUniform4f(This->shaders->shaders[PROG_CLIPSTENCIL].view,view[0],view[1],view[2],view[3]);
-	This->util->EnableArray(This->shaders->shaders[PROG_CLIPSTENCIL].pos,true);
+	glUtil_EnableArray(This->util, This->shaders->shaders[PROG_CLIPSTENCIL].pos, TRUE);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[PROG_CLIPSTENCIL].pos,
 		2,GL_FLOAT,false,sizeof(BltVertex),&surface->clipper->vertices[0].x);
-	This->util->SetCull(D3DCULL_NONE);
-	This->util->SetPolyMode(D3DFILL_SOLID);
+	glUtil_SetCull(This->util, D3DCULL_NONE);
+	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
 		6 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
-	This->util->SetFBO((FBO*)NULL);
+	glUtil_SetFBO(This->util, NULL);
 	SetEvent(This->busy);
 }
 
@@ -2431,12 +2431,12 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 	{
 		do
 		{
-			if (This->util->SetFBO(dest->attachparent) == GL_FRAMEBUFFER_COMPLETE) break;
+			if (glUtil_SetFBOSurface(This->util, dest->attachparent) == GL_FRAMEBUFFER_COMPLETE) break;
 			if (!dest->attachparent->texture->internalformats[1]) break;
 			TextureManager_FixTexture(This->texman, dest->attachparent->texture, 
 				(dest->attachparent->bigbuffer ? dest->attachparent->bigbuffer : dest->attachparent->buffer),
 				&dest->attachparent->dirty, dest->attachparent->miplevel);
-			This->util->SetFBO((FBO*)NULL);
+			glUtil_SetFBO(This->util, NULL);
 			dest->attachparent->fbo.fbcolor = NULL;
 			dest->attachparent->fbo.fbz = NULL;
 		} while (1);
@@ -2461,15 +2461,15 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 			(dest->ddsd.dwHeight != dest->dummycolor->height))
 			TextureManager__UploadTexture(This->texman, dest->dummycolor, 0, NULL,
 			dest->ddsd.dwWidth, dest->ddsd.dwHeight, FALSE, TRUE);
-		This->util->SetFBO(&dest->zfbo, dest->dummycolor, dest->texture, false);
+		glUtil_SetFBOTextures(This->util, &dest->zfbo, dest->dummycolor, dest->texture, FALSE);
 	}
-	This->util->SetViewport(0, 0, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
-	if (lpDestRect) This->util->SetScissor(true, lpDestRect->left, lpDestRect->top,
+	glUtil_SetViewport(This->util, 0, 0, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
+	if (lpDestRect) glUtil_SetScissor(This->util, TRUE, lpDestRect->left, lpDestRect->top,
 		lpDestRect->right, lpDestRect->bottom);
-	This->util->DepthWrite(true);
-	This->util->ClearDepth(lpDDBltFx->dwFillDepth / (double)0xFFFF);
+	glUtil_DepthWrite(This->util, TRUE);
+	glUtil_ClearDepth(This->util, lpDDBltFx->dwFillDepth / (double)0xFFFF); // FIXME:  SOTE depth workaround
 	glClear(GL_DEPTH_BUFFER_BIT);
-	if (lpDestRect)This->util->SetScissor(false, 0, 0, 0, 0);
+	if (lpDestRect)glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -2877,29 +2877,29 @@ void glRenderer__SetDepthComp(glRenderer *This)
 	switch (This->renderstate[D3DRENDERSTATE_ZFUNC])
 	{
 	case D3DCMP_NEVER:
-		This->util->SetDepthComp(GL_NEVER);
+		glUtil_SetDepthComp(This->util, GL_NEVER);
 		break;
 	case D3DCMP_LESS:
-		This->util->SetDepthComp(GL_LESS);
+		glUtil_SetDepthComp(This->util, GL_LESS);
 		break;
 	case D3DCMP_EQUAL:
-		This->util->SetDepthComp(GL_EQUAL);
+		glUtil_SetDepthComp(This->util, GL_EQUAL);
 		break;
 	case D3DCMP_LESSEQUAL:
-		This->util->SetDepthComp(GL_LEQUAL);
+		glUtil_SetDepthComp(This->util, GL_LEQUAL);
 		break;
 	case D3DCMP_GREATER:
-		This->util->SetDepthComp(GL_GREATER);
+		glUtil_SetDepthComp(This->util, GL_GREATER);
 		break;
 	case D3DCMP_NOTEQUAL:
-		This->util->SetDepthComp(GL_NOTEQUAL);
+		glUtil_SetDepthComp(This->util, GL_NOTEQUAL);
 		break;
 	case D3DCMP_GREATEREQUAL:
-		This->util->SetDepthComp(GL_GEQUAL);
+		glUtil_SetDepthComp(This->util, GL_GEQUAL);
 		break;
 	case D3DCMP_ALWAYS:
 	default:
-		This->util->SetDepthComp(GL_ALWAYS);
+		glUtil_SetDepthComp(This->util, GL_ALWAYS);
 		break;
 	}
 }

@@ -21,11 +21,9 @@
 
 #ifdef __cplusplus
 extern "C" {
-class glUtil;
-#else
-typedef int glUtil;
 #endif
 
+struct glUtil;
 
 typedef struct BufferObject
 {
@@ -38,10 +36,10 @@ typedef struct BufferObject
 	BOOL bound;
 	BOOL target;
 	glExtensions *ext;
-	glUtil *util;
+	struct glUtil *util;
 } BufferObject;
 
-void BufferObject_Create(BufferObject **out, glExtensions *ext, glUtil *util);
+void BufferObject_Create(BufferObject **out, glExtensions *ext, struct glUtil *util);
 void BufferObject_AddRef(BufferObject *This);
 void BufferObject_Release(BufferObject *This);
 void BufferObject_SetData(BufferObject *This, GLenum target, GLsizeiptr size, GLvoid *data, GLenum usage);

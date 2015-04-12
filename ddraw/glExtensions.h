@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-typedef struct
+typedef struct glExtensions
 {
 	GLuint(APIENTRY *glCreateShader) (GLenum type);
 	void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);

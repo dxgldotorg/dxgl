@@ -26,7 +26,7 @@ typedef struct
 } GLCAPS;
 typedef struct
 {
-	bool enabled;
+	BOOL enabled;
 	int width;
 	int height;
 	int pitch;

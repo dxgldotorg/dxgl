@@ -21,197 +21,217 @@
 #include "BufferObject.h"
 #include "glDirectDrawSurface.h"
 
-glUtil::glUtil(glExtensions *glext)
+extern "C" {
+
+void glUtil_Create(glExtensions *glext, glUtil **out)
 {
-	ext = glext;
-	depthwrite = true;
-	depthtest = false;
-	depthcomp = 0;
-	alphacomp = 0;
-	currentfbo = NULL;
-	scissorx = 0;
-	scissory = 0;
-	scissorwidth = 0;
-	scissorheight = 0;
-	viewportx = 0;
-	viewporty = 0;
-	viewportwidth = 0;
-	viewportheight = 0;
-	depthnear = 0.0;
-	depthfar = 1.0;
-	matrixmode = GL_MODELVIEW;
-	ZeroMemory(materialambient, 4 * sizeof(GLfloat));
-	ZeroMemory(materialdiffuse, 4 * sizeof(GLfloat));
-	ZeroMemory(materialspecular, 4 * sizeof(GLfloat));
-	ZeroMemory(materialemission, 4 * sizeof(GLfloat));
-	materialshininess = 0;
-	scissorenabled = false;
-	texwrap[16];
-	clearr = 0.0;
-	clearg = 0.0;
-	clearb = 0.0;
-	cleara = 0.0;
-	cleardepth = 1.0;
-	clearstencil = 0;
-	blendsrc = GL_ONE;
-	blenddest = GL_ZERO;
-	blendenabled = false;
-	arrays[42];
-	cullmode = D3DCULL_NONE;
-	cullenabled = false;
-	polymode = D3DFILL_SOLID;
-	shademode = D3DSHADE_GOURAUD;
-	pboPackBinding = pboUnpackBinding = vboArrayBinding =
-		vboElementArrayBinding = uboUniformBufferBinding = LastBoundBuffer = NULL;
+	glUtil *util;
+	util = (glUtil *)malloc(sizeof(glUtil));
+	if (!util) return;
+	ZeroMemory(util, sizeof(glUtil));
+	util->ext = glext;
+	util->depthwrite = TRUE;
+	util->depthtest = FALSE;
+	util->depthcomp = 0;
+	util->alphacomp = 0;
+	util->currentfbo = NULL;
+	util->scissorx = 0;
+	util->scissory = 0;
+	util->scissorwidth = 0;
+	util->scissorheight = 0;
+	util->viewportx = 0;
+	util->viewporty = 0;
+	util->viewportwidth = 0;
+	util->viewportheight = 0;
+	util->depthnear = 0.0;
+	util->depthfar = 1.0;
+	util->matrixmode = GL_MODELVIEW;
+	ZeroMemory(util->materialambient, 4 * sizeof(GLfloat));
+	ZeroMemory(util->materialdiffuse, 4 * sizeof(GLfloat));
+	ZeroMemory(util->materialspecular, 4 * sizeof(GLfloat));
+	ZeroMemory(util->materialemission, 4 * sizeof(GLfloat));
+	util->materialshininess = 0;
+	util->scissorenabled = FALSE;
+	util->texwrap[16];
+	util->clearr = 0.0;
+	util->clearg = 0.0;
+	util->clearb = 0.0;
+	util->cleara = 0.0;
+	util->cleardepth = 1.0;
+	util->clearstencil = 0;
+	util->blendsrc = GL_ONE;
+	util->blenddest = GL_ZERO;
+	util->blendenabled = FALSE;
+	util->arrays[42];
+	util->cullmode = D3DCULL_NONE;
+	util->cullenabled = FALSE;
+	util->polymode = D3DFILL_SOLID;
+	util->shademode = D3DSHADE_GOURAUD;
+	util->pboPackBinding = util->pboUnpackBinding = util->vboArrayBinding =
+		util->vboElementArrayBinding = util->uboUniformBufferBinding = util->LastBoundBuffer = NULL;
+	util->refcount = 1;
+	*out = util;
 }
-void glUtil::InitFBO(FBO *fbo)
+
+void glUtil_AddRef(glUtil *This)
+{
+	InterlockedIncrement(&This->refcount);
+}
+
+void glUtil_Release(glUtil *This)
+{
+	InterlockedDecrement(&This->refcount);
+	if (!This->refcount) free(This);
+}
+
+void glUtil_InitFBO(glUtil *This, FBO *fbo)
 {
 	if(!fbo->fbo)
 	{
 		ZeroMemory(fbo,sizeof(FBO));
-		if(ext->GLEXT_ARB_framebuffer_object) ext->glGenFramebuffers(1,&fbo->fbo);
-		else if(ext->GLEXT_EXT_framebuffer_object) ext->glGenFramebuffersEXT(1,&fbo->fbo);
+		if(This->ext->GLEXT_ARB_framebuffer_object) This->ext->glGenFramebuffers(1,&fbo->fbo);
+		else if(This->ext->GLEXT_EXT_framebuffer_object) This->ext->glGenFramebuffersEXT(1,&fbo->fbo);
 	}
 }
 
-void glUtil::DeleteFBO(FBO *fbo)
+void glUtil_DeleteFBO(glUtil *This, FBO *fbo)
 {
 	if(fbo->fbo)
 	{
-		if(ext->GLEXT_ARB_framebuffer_object)
+		if(This->ext->GLEXT_ARB_framebuffer_object)
 		{
-			if(currentfbo == fbo) ext->glBindFramebuffer(GL_FRAMEBUFFER,0);
-			ext->glDeleteFramebuffers(1,&fbo->fbo);
+			if(This->currentfbo == fbo) This->ext->glBindFramebuffer(GL_FRAMEBUFFER,0);
+			This->ext->glDeleteFramebuffers(1,&fbo->fbo);
 			ZeroMemory(fbo,sizeof(FBO));
 		}
-		else if(ext->GLEXT_EXT_framebuffer_object)
+		else if(This->ext->GLEXT_EXT_framebuffer_object)
 		{
-			if(currentfbo == fbo) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-			ext->glDeleteFramebuffersEXT(1,&fbo->fbo);
+			if(This->currentfbo == fbo) This->ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+			This->ext->glDeleteFramebuffersEXT(1,&fbo->fbo);
 			ZeroMemory(fbo,sizeof(FBO));
 		}
 	}
 }
 
-void glUtil::SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil)
 {
 	if(!color) return;
 	if(!fbo->fbo) return;
-	if(ext->GLEXT_ARB_framebuffer_object)
+	if(This->ext->GLEXT_ARB_framebuffer_object)
 	{
-		if(currentfbo != fbo) ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
-		currentfbo = fbo;
-		ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
+		if(This->currentfbo != fbo) This->ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
+		This->currentfbo = fbo;
+		This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,0);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
-			if(!fbo->stencil) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(!fbo->stencil) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(z)This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
-			if(fbo->stencil) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z) ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
-			else ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(fbo->stencil) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
+			if(z) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,0);
+			else This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		fbo->stencil = stencil;
 		fbo->fbz = z;
-		fbo->status = ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		fbo->status = This->ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	}
-	else if(ext->GLEXT_EXT_framebuffer_object)
+	else if(This->ext->GLEXT_EXT_framebuffer_object)
 	{
-		if(currentfbo != fbo) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fbo->fbo);
-		currentfbo = fbo;
-		ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_TEXTURE_2D,color->id,0);
+		if (This->currentfbo != fbo) This->ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+		This->currentfbo = fbo;
+		This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color->id, 0);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
 			if(z)
 			{
-				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
-				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, 0);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, 0);
 			}
 			else
 			{
-				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
-				ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 			}
 		}
 		else
 		{
-			ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_STENCIL_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
-			if(z)ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,z->id,0);
-			else ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,0,0);
+			This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
+			if (z)This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, 0);
+			else This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 		}
 		fbo->stencil = stencil;
 		fbo->fbz = z;
-		fbo->status = ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		fbo->status = This->ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	}
 }
 
-GLenum glUtil::SetFBO(glDirectDrawSurface7 *surface)
+GLenum glUtil_SetFBOSurface(glUtil *This, glDirectDrawSurface7 *surface)
 {
-	if(!surface) return SetFBO((FBO*)NULL);
-	if(surface->zbuffer) return SetFBO(&surface->fbo,surface->texture,surface->zbuffer->texture,surface->zbuffer->hasstencil);
-	else return SetFBO(&surface->fbo,surface->texture,NULL,false);
+	if (!surface) return glUtil_SetFBO(This, (FBO*)NULL);
+	if (surface->zbuffer) return glUtil_SetFBOTextures(This, &surface->fbo, surface->texture, surface->zbuffer->texture, surface->zbuffer->hasstencil);
+	else return glUtil_SetFBOTextures(This, &surface->fbo, surface->texture, NULL, FALSE);
 }
 
-GLenum glUtil::SetFBO(FBO *fbo)
+GLenum glUtil_SetFBO(glUtil *This, FBO *fbo)
 {
-	if (fbo == currentfbo)
+	if (fbo == This->currentfbo)
 	{
 		if (fbo) return fbo->status;
 		else return GL_FRAMEBUFFER_COMPLETE;
 	}
 	if(!fbo)
 	{
-		if (ext->GLEXT_ARB_framebuffer_object) ext->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		else if(ext->GLEXT_EXT_framebuffer_object) ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+		if (This->ext->GLEXT_ARB_framebuffer_object) This->ext->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		else if (This->ext->GLEXT_EXT_framebuffer_object) This->ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 	else
 	{
-		if (ext->GLEXT_ARB_framebuffer_object)
+		if (This->ext->GLEXT_ARB_framebuffer_object)
 		{
-			ext->glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
-			fbo->status = ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			This->ext->glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
+			fbo->status = This->ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		}
-		else if (ext->GLEXT_EXT_framebuffer_object)
+		else if (This->ext->GLEXT_EXT_framebuffer_object)
 		{
-			ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
-			fbo->status = ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+			This->ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+			fbo->status = This->ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 		}
 	}
-	currentfbo = fbo;
+	This->currentfbo = fbo;
 	if (fbo) return fbo->status;
 	else
 	{
-		if (ext->GLEXT_ARB_framebuffer_object) return ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		else if (ext->GLEXT_EXT_framebuffer_object) return ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if (This->ext->GLEXT_ARB_framebuffer_object) return This->ext->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		else if (This->ext->GLEXT_EXT_framebuffer_object) return This->ext->glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 		else return 0;
 	}
 }
 
-GLenum glUtil::SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil)
+GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil)
 {
 	if(!fbo)
 	{
-		return SetFBO((FBO*)NULL);
+		return glUtil_SetFBO(This, (FBO*)NULL);
 	}
-	if(!fbo->fbo) InitFBO(fbo);
+	if(!fbo->fbo) glUtil_InitFBO(This, fbo);
 	if (!color) return GL_INVALID_ENUM;
 	if((color != fbo->fbcolor) || (z != fbo->fbz) || (stencil != fbo->stencil))
-		SetFBOTexture(fbo,color,z,stencil);
-	if(fbo != currentfbo) return SetFBO(fbo);
+		glUtil_SetFBOTexture(This, fbo,color,z,stencil);
+	if(fbo != This->currentfbo) return glUtil_SetFBO(This, fbo);
 	else return fbo->status;
 }
 
-void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texman)
+void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, TextureManager *texman)
 {
 	if(level == -1)
 	{
 		for(int i = 0; i < 16; i++)
-			texwrap[i] = GL_REPEAT;
+			This->texwrap[i] = GL_REPEAT;
 	}
 	if(coord > 1) return;
 	if(level > 7) return;
@@ -237,15 +257,15 @@ void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texm
 	//if(texwrap[level*2+coord] == wrapmode) return;
 	//else
 	{
-		texwrap[level*2+coord] = wrapmode;
+		This->texwrap[level * 2 + coord] = wrapmode;
 		//int currtexture = texlevel;
-		if(ext->GLEXT_ARB_sampler_objects)
+		if (This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if(coord)
 			{
 				if(texman->samplers[level].wrapt != wrapmode)
 				{
-					ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_WRAP_T,wrapmode);
+					This->ext->glSamplerParameteri(texman->samplers[level].id, GL_TEXTURE_WRAP_T, wrapmode);
 					texman->samplers[level].wrapt = wrapmode;
 				}
 			}
@@ -253,7 +273,7 @@ void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texm
 			{
 				if(texman->samplers[level].wraps != wrapmode)
 				{
-					ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_WRAP_S,wrapmode);
+					This->ext->glSamplerParameteri(texman->samplers[level].id, GL_TEXTURE_WRAP_S, wrapmode);
 					texman->samplers[level].wraps = wrapmode;
 				}
 			}
@@ -264,233 +284,236 @@ void glUtil::SetWrap(int level, DWORD coord, DWORD address, TextureManager *texm
 			if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 			else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
 		}
-		//SetActiveTexture(currtexture);
+		//TextureManager_SetActiveTexture(texman,currtexture);
 	}
 }
 
-void glUtil::DepthWrite(bool enabled)
+void glUtil_DepthWrite(glUtil *This, BOOL enabled)
 {
-	if(enabled != depthwrite)
+	if (enabled != This->depthwrite)
 	{
-		depthwrite = enabled;
-		if(depthwrite) glDepthMask(GL_TRUE);
+		This->depthwrite = enabled;
+		if (This->depthwrite) glDepthMask(GL_TRUE);
 		else glDepthMask(GL_FALSE);
 	}
 }
-void glUtil::DepthTest(bool enabled)
+void glUtil_DepthTest(glUtil *This, BOOL enabled)
 {
-	if(enabled != depthtest)
+	if (enabled != This->depthtest)
 	{
-		depthtest = enabled;
-		if(depthtest) glEnable(GL_DEPTH_TEST);
+		This->depthtest = enabled;
+		if (This->depthtest) glEnable(GL_DEPTH_TEST);
 		else glDisable(GL_DEPTH_TEST);
 	}
 }
-void glUtil::SetDepthComp(GLenum comp)
+void glUtil_SetDepthComp(glUtil *This, GLenum comp)
 {
-	if(comp != depthcomp)
+	if (comp != This->depthcomp)
 	{
-		depthcomp = comp;
+		This->depthcomp = comp;
 		glDepthFunc(comp);
 	}
 }
 
-void glUtil::SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height)
+void glUtil_SetScissor(glUtil *This, BOOL enabled, GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	if(enabled != scissorenabled)
+	if (enabled != This->scissorenabled)
 	{
-		scissorenabled = enabled;
+		This->scissorenabled = enabled;
 		if(enabled) glEnable(GL_SCISSOR_TEST);
 		else glDisable(GL_SCISSOR_TEST);
 	}
-	if((x != scissorx) || (y != scissory) || (width != scissorwidth) || (height != scissorheight))
+	if ((x != This->scissorx) || (y != This->scissory) ||
+		(width != This->scissorwidth) || (height != This->scissorheight))
 	{
-		scissorx = x;
-		scissory = y;
-		scissorwidth = width;
-		scissorheight = height;
+		This->scissorx = x;
+		This->scissory = y;
+		This->scissorwidth = width;
+		This->scissorheight = height;
 		glScissor(x,y,width,height);
 	}
 }
 
-void glUtil::MatrixMode(GLenum mode)
+void glUtil_MatrixMode(glUtil *This, GLenum mode)
 {
-	if(mode != matrixmode)
+	if (mode != This->matrixmode)
 	{
-		matrixmode = mode;
+		This->matrixmode = mode;
 		glMatrixMode(mode);
 	}
 }
 
-void glUtil::SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty)
+void glUtil_SetMatrix(glUtil *This, GLenum mode, GLfloat *mat1, GLfloat *mat2, BOOL *dirty)
 {
-	if(ext->GLEXT_EXT_direct_state_access)
+	if(This->ext->GLEXT_EXT_direct_state_access)
 	{
-		ext->glMatrixLoadfEXT(mode,mat1);
-		if(mode == GL_MODELVIEW) ext->glMatrixMultfEXT(mode,mat2);
+		This->ext->glMatrixLoadfEXT(mode, mat1);
+		if (mode == GL_MODELVIEW) This->ext->glMatrixMultfEXT(mode, mat2);
 	}
 	else
 	{
-		MatrixMode(mode);
+		glUtil_MatrixMode(This, mode);
 		glLoadMatrixf(mat1);
 		if(mode == GL_MODELVIEW) glMultMatrixf(mat2);
 	}
-	if(dirty) *dirty = false;
+	if(dirty) *dirty = FALSE;
 }
 
-void glUtil::SetMaterial(GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
+void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
 {
-	if(memcmp(ambient,materialambient,4*sizeof(GLfloat)))
+	if(memcmp(ambient,This->materialambient,4*sizeof(GLfloat)))
 	{
-		memcpy(materialambient,ambient,4*sizeof(GLfloat));
+		memcpy(This->materialambient, ambient, 4 * sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
 	}
-	if(memcmp(diffuse,materialdiffuse,4*sizeof(GLfloat)))
+	if (memcmp(diffuse, This->materialdiffuse, 4 * sizeof(GLfloat)))
 	{
-		memcpy(materialdiffuse,diffuse,4*sizeof(GLfloat));
+		memcpy(This->materialdiffuse, diffuse, 4 * sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 	}
-	if(memcmp(specular,materialspecular,4*sizeof(GLfloat)))
+	if (memcmp(specular, This->materialspecular, 4 * sizeof(GLfloat)))
 	{
-		memcpy(materialspecular,specular,4*sizeof(GLfloat));
+		memcpy(This->materialspecular, specular, 4 * sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
 	}
-	if(memcmp(emission,materialemission,4*sizeof(GLfloat)))
+	if (memcmp(emission, This->materialemission, 4 * sizeof(GLfloat)))
 	{
-		memcpy(materialemission,emission,4*sizeof(GLfloat));
+		memcpy(This->materialemission, emission, 4 * sizeof(GLfloat));
 		glMaterialfv(GL_FRONT,GL_EMISSION,emission);
 	}
-	if(shininess != materialshininess)
+	if (shininess != This->materialshininess)
 	{
-		materialshininess = shininess;
+		This->materialshininess = shininess;
 		glMaterialf(GL_FRONT,GL_SHININESS,shininess);
 	}
 }
 
-void glUtil::SetViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+void glUtil_SetViewport(glUtil *This, GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	if((x != viewportx) || (y != viewporty) || (width != viewportwidth) || (height != viewportheight))
+	if ((x != This->viewportx) || (y != This->viewporty) ||
+		(width != This->viewportwidth) || (height != This->viewportheight))
 	{
-		viewportx = x;
-		viewporty = y;
-		viewportwidth = width;
-		viewportheight = height;
+		This->viewportx = x;
+		This->viewporty = y;
+		This->viewportwidth = width;
+		This->viewportheight = height;
 		glViewport(x,y,width,height);
 	}
 }
 
-void glUtil::SetDepthRange(GLclampd rangenear, GLclampd rangefar)
+void glUtil_SetDepthRange(glUtil *This, GLclampd rangenear, GLclampd rangefar)
 {
-	if((rangenear != depthnear) || (rangefar != depthfar))
+	if ((rangenear != This->depthnear) || (rangefar != This->depthfar))
 	{
-		depthnear = rangenear;
-		depthfar = rangefar;
+		This->depthnear = rangenear;
+		This->depthfar = rangefar;
 		glDepthRange(rangenear,rangefar);
 	}
 }
 
-void glUtil::ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
+void glUtil_ClearColor(glUtil *This, GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
-	if((clearr != r) || (clearg != g) || (clearb != b) || (cleara != a))
+	if ((This->clearr != r) || (This->clearg != g) ||
+		(This->clearb != b) || (This->cleara != a))
 	{
-		clearr = r;
-		clearg = g;
-		clearb = b;
-		cleara = a;
+		This->clearr = r;
+		This->clearg = g;
+		This->clearb = b;
+		This->cleara = a;
 		glClearColor(r,g,b,a);
 	}
 }
 
-void glUtil::ClearDepth(GLclampd depth)
+void glUtil_ClearDepth(glUtil *This, GLclampd depth)
 {
-	if(cleardepth != depth)
+	if (This->cleardepth != depth)
 	{
-		cleardepth = depth;
+		This->cleardepth = depth;
 		glClearDepth(depth);
 	}
 }
 
-void glUtil::ClearStencil(GLint stencil)
+void glUtil_ClearStencil(glUtil *This, GLint stencil)
 {
-	if(clearstencil != stencil)
+	if (This->clearstencil != stencil)
 	{
-		clearstencil = stencil;
+		This->clearstencil = stencil;
 		glClearStencil(stencil);
 	}
 }
 
-void glUtil::EnableArray(int index, bool enabled)
+void glUtil_EnableArray(glUtil *This, int index, BOOL enabled)
 {
 	if(index == -1)
 	{
 		for(int i = 0; i < 42; i++)
-			arrays[i] = false;
+			This->arrays[i] = FALSE;
 		return;
 	}
 	if(index >= 42) return;
-	if(arrays[index] != enabled)
+	if (This->arrays[index] != enabled)
 	{
-		arrays[index] = enabled;
-		if(enabled) ext->glEnableVertexAttribArray(index);
-		else ext->glDisableVertexAttribArray(index);
+		This->arrays[index] = enabled;
+		if (enabled) This->ext->glEnableVertexAttribArray(index);
+		else This->ext->glDisableVertexAttribArray(index);
 	}
 }
 
-void glUtil::BlendFunc(GLenum src, GLenum dest)
+void glUtil_BlendFunc(glUtil *This, GLenum src, GLenum dest)
 {
-	if((blendsrc != src) || (blenddest != dest))
+	if ((This->blendsrc != src) || (This->blenddest != dest))
 	{
-		blendsrc = src;
-		blenddest = dest;
+		This->blendsrc = src;
+		This->blenddest = dest;
 		glBlendFunc(src,dest);
 	}
 }
 
-void glUtil::BlendEnable(bool enabled)
+void glUtil_BlendEnable(glUtil *This, BOOL enabled)
 {
-	if(enabled != blendenabled)
+	if(enabled != This->blendenabled)
 	{
-		blendenabled = enabled;
+		This->blendenabled = enabled;
 		if(enabled) glEnable(GL_BLEND);
 		else glDisable(GL_BLEND);
 	}
 }
 
-void glUtil::EnableCull(bool enabled)
+void glUtil_EnableCull(glUtil *This, BOOL enabled)
 {
-	if(cullenabled != enabled)
+	if (This->cullenabled != enabled)
 	{
-		cullenabled = enabled;
+		This->cullenabled = enabled;
 		if(enabled) glEnable(GL_CULL_FACE);
 		else glDisable(GL_CULL_FACE);
 	}
 }
-void glUtil::SetCull(D3DCULL mode)
+void glUtil_SetCull(glUtil *This, D3DCULL mode)
 {
-	if(cullmode != mode)
+	if (This->cullmode != mode)
 	{
-		cullmode = mode;
+		This->cullmode = mode;
 		switch(mode)
 		{
 		case D3DCULL_CCW:
-			EnableCull(true);
+			glUtil_EnableCull(This, TRUE);
 			glFrontFace(GL_CCW);
 			break;
 		case D3DCULL_CW:
-			EnableCull(true);
+			glUtil_EnableCull(This, TRUE);
 			glFrontFace(GL_CW);
 			break;
 		case D3DCULL_NONE:
-			EnableCull(false);
+			glUtil_EnableCull(This, FALSE);
 			break;
 		}
 	}
 }
-void glUtil::SetPolyMode(D3DFILLMODE mode)
+void glUtil_SetPolyMode(glUtil *This, D3DFILLMODE mode)
 {
-	if(polymode != mode)
+	if (This->polymode != mode)
 	{
-		polymode = mode;
+		This->polymode = mode;
 		switch(mode)
 		{
 		case D3DFILL_POINT:
@@ -507,11 +530,11 @@ void glUtil::SetPolyMode(D3DFILLMODE mode)
 	}
 }
 
-void glUtil::SetShadeMode(D3DSHADEMODE mode)
+void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode)
 {
-	if(shademode != mode)
+	if (This->shademode != mode)
 	{
-		shademode = mode;
+		This->shademode = mode;
 		switch(mode)
 		{
 		case D3DSHADE_FLAT:
@@ -527,40 +550,42 @@ void glUtil::SetShadeMode(D3DSHADEMODE mode)
 	}
 }
 
-void glUtil::BindBuffer(BufferObject *buffer, GLenum target)
+void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target)
 {
 	switch (target)
 	{
 	case GL_PIXEL_PACK_BUFFER:
-		LastBoundBuffer = pboPackBinding;
-		pboPackBinding = buffer;
+		This->LastBoundBuffer = This->pboPackBinding;
+		This->pboPackBinding = buffer;
 		break;
 	case GL_PIXEL_UNPACK_BUFFER:
-		LastBoundBuffer = pboUnpackBinding;
-		pboUnpackBinding = buffer;
+		This->LastBoundBuffer = This->pboUnpackBinding;
+		This->pboUnpackBinding = buffer;
 		break;
 	case GL_ARRAY_BUFFER:
-		LastBoundBuffer = vboArrayBinding;
-		vboArrayBinding = buffer;
+		This->LastBoundBuffer = This->vboArrayBinding;
+		This->vboArrayBinding = buffer;
 		break;
 	case GL_ELEMENT_ARRAY_BUFFER:
-		LastBoundBuffer = vboElementArrayBinding;
-		vboElementArrayBinding = buffer;
+		This->LastBoundBuffer = This->vboElementArrayBinding;
+		This->vboElementArrayBinding = buffer;
 		break;
 	case GL_UNIFORM_BUFFER:
-		LastBoundBuffer = uboUniformBufferBinding;
-		uboUniformBufferBinding = buffer;
+		This->LastBoundBuffer = This->uboUniformBufferBinding;
+		This->uboUniformBufferBinding = buffer;
 		break;
 	default:
-		LastBoundBuffer = NULL;
+		This->LastBoundBuffer = NULL;
 	}
-	if(buffer) ext->glBindBuffer(target, buffer->buffer);
-	else ext->glBindBuffer(target, 0);
+	if (buffer) This->ext->glBindBuffer(target, buffer->buffer);
+	else This->ext->glBindBuffer(target, 0);
 }
 
-void glUtil::UndoBindBuffer(GLenum target)
+void glUtil_UndoBindBuffer(glUtil *This, GLenum target)
 {
-	if (LastBoundBuffer) ext->glBindBuffer(target, LastBoundBuffer->buffer);
-	else ext->glBindBuffer(target, 0);
-	LastBoundBuffer = NULL;
+	if (This->LastBoundBuffer) This->ext->glBindBuffer(target, This->LastBoundBuffer->buffer);
+	else This->ext->glBindBuffer(target, 0);
+	This->LastBoundBuffer = NULL;
 }
+
+};

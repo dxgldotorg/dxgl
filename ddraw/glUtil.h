@@ -19,6 +19,13 @@
 #ifndef _GLUTIL_H
 #define _GLUTIL_H
 
+#ifdef __cplusplus
+class glDirectDrawSurface7;
+extern "C" {
+#else
+typedef int glDirectDrawSurface7;
+#endif
+
 struct TEXTURE;
 struct BufferObject;
 struct TextureManager;
@@ -28,7 +35,7 @@ typedef struct
 	GLuint fbo;
 	TEXTURE *fbcolor;
 	TEXTURE *fbz;
-	bool stencil;
+	BOOL stencil;
 	GLenum status;
 } FBO;
 
@@ -40,50 +47,18 @@ typedef struct
 	GLfloat stencils, stencilt;
 } BltVertex;
 
-class glDirectDrawSurface7;
-
-class glUtil
+typedef struct glUtil
 {
-public:
-	glUtil(glExtensions *glext);
-	void InitFBO(FBO *fbo);
-	void DeleteFBO(FBO *fbo);
-	void SetFBOTexture(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
-	void SetWrap(int level, DWORD coord, DWORD address, TextureManager *texman);
-	GLenum SetFBO(glDirectDrawSurface7 *surface);
-	GLenum SetFBO(FBO *fbo);
-	GLenum SetFBO(FBO *fbo, TEXTURE *color, TEXTURE *z, bool stencil);
-	void SetDepthComp(GLenum comp);
-	void DepthWrite(bool enabled);
-	void DepthTest(bool enabled);
-	void SetScissor(bool enabled, GLint x, GLint y, GLsizei width, GLsizei height);
-	void SetMatrix(GLenum mode, GLfloat *mat1, GLfloat *mat2, bool *dirty);
-	void MatrixMode(GLenum mode);
-	void SetMaterial(GLfloat ambient[4], GLfloat diffuse[4], GLfloat specular[4], GLfloat emission[4], GLfloat shininess);
-	void SetViewport(GLint x, GLint y, GLsizei width, GLsizei height);
-	void SetDepthRange(GLclampd rangenear, GLclampd rangefar);
-	void ClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
-	void ClearDepth(GLclampd depth);
-	void ClearStencil(GLint stencil);
-	void EnableArray(int index, bool enabled);
-	void BlendFunc(GLenum src, GLenum dest);
-	void BlendEnable(bool enabled);
-	void EnableCull(bool enabled);
-	void SetCull(D3DCULL mode);
-	void SetPolyMode(D3DFILLMODE mode);
-	void SetShadeMode(D3DSHADEMODE mode);
-	void BindBuffer(BufferObject *buffer, GLenum target);
-	void UndoBindBuffer(GLenum target);
+	ULONG refcount;
 	FBO *currentfbo;
 	BufferObject *pboPackBinding;
 	BufferObject *pboUnpackBinding;
 	BufferObject *vboArrayBinding;
 	BufferObject *vboElementArrayBinding;
 	BufferObject *uboUniformBufferBinding;
-private:
 	glExtensions *ext;
-	bool depthwrite;
-	bool depthtest;
+	BOOL depthwrite;
+	BOOL depthtest;
 	GLuint depthcomp;
 	GLuint alphacomp;
 	GLint scissorx;
@@ -102,7 +77,7 @@ private:
 	GLfloat materialspecular[4];
 	GLfloat materialemission[4];
 	GLfloat materialshininess;
-	bool scissorenabled;
+	BOOL scissorenabled;
 	GLint texwrap[16];
 	GLclampf clearr;
 	GLclampf clearg;
@@ -112,13 +87,49 @@ private:
 	GLint clearstencil;
 	GLenum blendsrc;
 	GLenum blenddest;
-	bool blendenabled;
-	bool arrays[42];
+	BOOL blendenabled;
+	BOOL arrays[42];
 	D3DCULL cullmode;
-	bool cullenabled;
+	BOOL cullenabled;
 	D3DFILLMODE polymode;
 	D3DSHADEMODE shademode;
 	BufferObject *LastBoundBuffer;
-};
+} glUtil;
+
+void glUtil_Create(glExtensions *glext, glUtil **out);
+void glUtil_AddRef(glUtil *This);
+void glUtil_Release(glUtil *This);
+void glUtil_InitFBO(glUtil *This, FBO *fbo);
+void glUtil_DeleteFBO(glUtil *This, FBO *fbo);
+void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
+void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, TextureManager *texman);
+GLenum glUtil_SetFBOSurface(glUtil *This, glDirectDrawSurface7 *surface);
+GLenum glUtil_SetFBO(glUtil *This, FBO *fbo);
+GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
+void glUtil_SetDepthComp(glUtil *This, GLenum comp);
+void glUtil_DepthWrite(glUtil *This, BOOL enabled);
+void glUtil_DepthTest(glUtil *This, BOOL enabled);
+void glUtil_SetScissor(glUtil *This, BOOL enabled, GLint x, GLint y, GLsizei width, GLsizei height);
+void glUtil_SetMatrix(glUtil *This, GLenum mode, GLfloat *mat1, GLfloat *mat2, BOOL *dirty);
+void glUtil_MatrixMode(glUtil *This, GLenum mode);
+void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4], GLfloat diffuse[4], GLfloat specular[4], GLfloat emission[4], GLfloat shininess);
+void glUtil_SetViewport(glUtil *This, GLint x, GLint y, GLsizei width, GLsizei height);
+void glUtil_SetDepthRange(glUtil *This, GLclampd rangenear, GLclampd rangefar);
+void glUtil_ClearColor(glUtil *This, GLclampf r, GLclampf g, GLclampf b, GLclampf a);
+void glUtil_ClearDepth(glUtil *This, GLclampd depth);
+void glUtil_ClearStencil(glUtil *This, GLint stencil);
+void glUtil_EnableArray(glUtil *This, int index, BOOL enabled);
+void glUtil_BlendFunc(glUtil *This, GLenum src, GLenum dest);
+void glUtil_BlendEnable(glUtil *This, BOOL enabled);
+void glUtil_EnableCull(glUtil *This, BOOL enabled);
+void glUtil_SetCull(glUtil *This, D3DCULL mode);
+void glUtil_SetPolyMode(glUtil *This, D3DFILLMODE mode);
+void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode);
+void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
+void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLUTIL_H

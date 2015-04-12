@@ -21,7 +21,7 @@
 
 extern "C" {
 
-void BufferObject_Create(BufferObject **out, glExtensions *ext, glUtil *util)
+void BufferObject_Create(BufferObject **out, glExtensions *ext, struct glUtil *util)
 {
 	BufferObject *buffer = (BufferObject*)malloc(sizeof(BufferObject));
 	if (!buffer)
@@ -30,8 +30,10 @@ void BufferObject_Create(BufferObject **out, glExtensions *ext, glUtil *util)
 		return;
 	}
 	ZeroMemory(buffer, sizeof(BufferObject));
+	buffer->refcount = 1;
 	buffer->ext = ext;
 	buffer->util = util;
+	glUtil_AddRef(util);
 	ext->glGenBuffers(1, &buffer->buffer);
 	*out = buffer;
 }
@@ -47,6 +49,7 @@ void BufferObject_Release(BufferObject *This)
 	if (!This->refcount)
 	{
 		This->ext->glDeleteBuffers(1, &This->buffer);
+		glUtil_Release(This->util);
 		free(This);
 	}
 }
@@ -63,19 +66,19 @@ void BufferObject_SetData(BufferObject *This, GLenum target, GLsizeiptr size, GL
 	}
 	else
 	{
-		This->util->BindBuffer(This, target);
+		glUtil_BindBuffer(This->util, This, target);
 		This->ext->glBufferData(target, size, data, usage);
-		This->util->UndoBindBuffer(target);
+		glUtil_UndoBindBuffer(This->util, target);
 	}
 }
 
 void BufferObject_Bind(BufferObject *This, GLenum target)
 {
-	This->util->BindBuffer(This, target);
+	glUtil_BindBuffer(This->util, This, target);
 }
 void BufferObject_Unbind(BufferObject *This, GLenum target)
 {
-	This->util->BindBuffer(NULL, target);
+	glUtil_BindBuffer(This->util, NULL, target);
 }
 
 void *BufferObject_Map(BufferObject *This, GLenum target, GLenum access)
@@ -91,9 +94,9 @@ void *BufferObject_Map(BufferObject *This, GLenum target, GLenum access)
 	}
 	else
 	{
-		This->util->BindBuffer(This, target);
+		glUtil_BindBuffer(This->util, This, target);
 		ptr = This->ext->glMapBuffer(target, access);
-		This->util->UndoBindBuffer(target);
+		glUtil_UndoBindBuffer(This->util, target);
 	}
 	return ptr;
 }
@@ -110,9 +113,9 @@ GLboolean BufferObject_Unmap(BufferObject *This, GLenum target)
 	}
 	else
 	{
-		This->util->BindBuffer(This, target);
+		glUtil_BindBuffer(This->util, This, target);
 		ret = This->ext->glUnmapBuffer(target);
-		This->util->UndoBindBuffer(target);
+		glUtil_UndoBindBuffer(This->util, target);
 	}
 	return ret;
 }
