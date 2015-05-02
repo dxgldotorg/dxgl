@@ -27,6 +27,7 @@ struct BufferObject;
 
 typedef struct TEXTURE
 {
+	UINT refcount;
 	GLuint id;
 	GLsizei width;
 	GLsizei height;
@@ -57,21 +58,11 @@ typedef struct TEXTURE
 // 6 - Alpha
 // 7 - Luminance Alpha
 
-typedef struct
-{
-	GLuint id;
-	GLint wraps;
-	GLint wrapt;
-	GLint minfilter;
-	GLint magfilter;
-} SAMPLER;
-
 extern const DDPIXELFORMAT texformats[];
 extern int numtexformats;
 
 typedef struct TextureManager
 {
-	SAMPLER samplers[8];
 	glExtensions *ext;
 	GLint texlevel;
 	GLuint textures[16];
@@ -80,8 +71,6 @@ typedef struct TextureManager
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
 TextureManager *TextureManager_Create(glExtensions *glext);
-void TextureManager_InitSamplers(TextureManager *This);
-void TextureManager_DeleteSamplers(TextureManager *This);
 void TextureManager_SetActiveTexture(TextureManager *This, int level);
 void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE *texture);
 void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height);

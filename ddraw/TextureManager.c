@@ -108,37 +108,6 @@ void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int
 	TextureManager_DownloadTextureClassic(This, texture, level, data);
 }
 
-void TextureManager_InitSamplers(TextureManager *This)
-{
-	int i;
-	if(This->ext->GLEXT_ARB_sampler_objects)
-	{
-		memset(This->samplers,0,8*sizeof(SAMPLER));
-		for(i = 0; i < 8; i++)
-		{
-			This->ext->glGenSamplers(1,&This->samplers[i].id);
-			This->ext->glBindSampler(i,This->samplers[i].id);
-			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			This->ext->glSamplerParameteri(This->samplers[i].id,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		}
-	}
-}
-void TextureManager_DeleteSamplers(TextureManager *This)
-{
-	int i;
-	if(This->ext->GLEXT_ARB_sampler_objects)
-	{
-		for(i = 0; i < 8; i++)
-		{
-			This->ext->glBindSampler(i,0);
-			This->ext->glDeleteSamplers(1,&This->samplers[i].id);
-			This->samplers[i].id = 0;
-		}
-	}
-}
-
 void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height)
 {
 	int texformat = -1;

@@ -888,7 +888,6 @@ DWORD glRenderer__Entry(glRenderer *This)
 					if(This->dib.hdc) DeleteDC(This->dib.hdc);
 					ZeroMemory(&This->dib,sizeof(DIB));
 				}
-				TextureManager_DeleteSamplers(This->texman);
 				glUtil_DeleteFBO(This->util, &This->fbo);
 				if(This->pbo)
 				{
@@ -1151,7 +1150,6 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	}
 	BufferObject_Create(&This->pbo, This->ext, This->util);
 	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
-	TextureManager_InitSamplers(This->texman);
 	TRACE_SYSINFO();
 	return TRUE;
 }
@@ -1486,8 +1484,8 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
-				src->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
-			else src->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
+				src->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util,This->texman);
+			else src->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util,This->texman);
 		}
 	}
 	else TextureManager_SetTexture(This->texman,0,NULL);
@@ -1560,7 +1558,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	TextureManager_SetTexture(This->texman,0,*texture);
 	*texture = This->backbuffer;
-	if(This->ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
+	if(This->ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util,This->texman);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
@@ -1714,8 +1712,8 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		}
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
-			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
+			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util,This->texman);
+			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST,This->ext,This->util,This->texman);
 		}
 	}
 	else
@@ -1726,9 +1724,9 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
 	}
 	if(dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
-		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->texman);
+		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util,This->texman);
 	else if(This->ext->GLEXT_ARB_sampler_objects)
-		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->texman);
+		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util,This->texman);
 	glUtil_SetViewport(This->util,viewport[0],viewport[1],viewport[2],viewport[3]);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(This->ddInterface->GetFullscreen())
@@ -2305,7 +2303,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 				This->texstages[i].texture->dirty &= ~1;
 			}
 			if(This->texstages[i].texture)
-				This->texstages[i].texture->SetFilter(i,This->texstages[i].glmagfilter,This->texstages[i].glminfilter,This->ext,This->texman);
+				This->texstages[i].texture->SetFilter(i,This->texstages[i].glmagfilter,This->texstages[i].glminfilter,This->ext,This->util,This->texman);
 			TextureManager_SetTexture(This->texman,i,This->texstages[i].texture->texture);
 			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu, This->texman);
 			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv, This->texman);

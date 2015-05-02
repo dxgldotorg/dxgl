@@ -30,7 +30,16 @@ struct TEXTURE;
 struct BufferObject;
 struct TextureManager;
 
-typedef struct
+typedef struct SAMPLER
+{
+	GLuint id;
+	GLint wraps;
+	GLint wrapt;
+	GLint minfilter;
+	GLint magfilter;
+} SAMPLER;
+
+typedef struct FBO
 {
 	GLuint fbo;
 	TEXTURE *fbcolor;
@@ -94,6 +103,7 @@ typedef struct glUtil
 	D3DFILLMODE polymode;
 	D3DSHADEMODE shademode;
 	BufferObject *LastBoundBuffer;
+	SAMPLER samplers[8];
 } glUtil;
 
 void glUtil_Create(glExtensions *glext, glUtil **out);

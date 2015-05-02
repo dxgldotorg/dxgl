@@ -1702,7 +1702,7 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock2(LPVOID lpSurfaceData)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_RET(HRESULT,23,Unlock((LPRECT)lpSurfaceData));
 }
-void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min, glExtensions *ext, TextureManager *texman)
+void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util, TextureManager *texman)
 {
 	TRACE_ENTER(4,14,this,11,level,11,mag,11,min);
 	switch(dxglcfg.texfilter)
@@ -1734,8 +1734,8 @@ void glDirectDrawSurface7::SetFilter(int level, GLint mag, GLint min, glExtensio
 	}
 	if(ext->GLEXT_ARB_sampler_objects)
 	{
-		ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_MAG_FILTER,mag);
-		ext->glSamplerParameteri(texman->samplers[level].id,GL_TEXTURE_MIN_FILTER,min);
+		ext->glSamplerParameteri(util->samplers[level].id,GL_TEXTURE_MAG_FILTER,mag);
+		ext->glSamplerParameteri(util->samplers[level].id,GL_TEXTURE_MIN_FILTER,min);
 	}
 	else
 	{

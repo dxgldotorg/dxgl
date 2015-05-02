@@ -71,6 +71,21 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 		util->vboElementArrayBinding = util->uboUniformBufferBinding = util->LastBoundBuffer = NULL;
 	util->refcount = 1;
 	*out = util;
+	int i;
+	if (glext->GLEXT_ARB_sampler_objects)
+	{
+		memset(util->samplers, 0, 8 * sizeof(SAMPLER));
+		for (i = 0; i < 8; i++)
+		{
+			glext->glGenSamplers(1, &util->samplers[i].id);
+			glext->glBindSampler(i, util->samplers[i].id);
+			glext->glSamplerParameteri(util->samplers[i].id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glext->glSamplerParameteri(util->samplers[i].id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glext->glSamplerParameteri(util->samplers[i].id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glext->glSamplerParameteri(util->samplers[i].id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+	}
+
 }
 
 void glUtil_AddRef(glUtil *This)
@@ -81,7 +96,20 @@ void glUtil_AddRef(glUtil *This)
 void glUtil_Release(glUtil *This)
 {
 	InterlockedDecrement(&This->refcount);
-	if (!This->refcount) free(This);
+	if (!This->refcount)
+	{
+		int i;
+		if (This->ext->GLEXT_ARB_sampler_objects)
+		{
+			for (i = 0; i < 8; i++)
+			{
+				This->ext->glBindSampler(i, 0);
+				This->ext->glDeleteSamplers(1, &This->samplers[i].id);
+				This->samplers[i].id = 0;
+			}
+		}
+		free(This);
+	}
 }
 
 void glUtil_InitFBO(glUtil *This, FBO *fbo)
@@ -263,18 +291,18 @@ void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, Texture
 		{
 			if(coord)
 			{
-				if(texman->samplers[level].wrapt != wrapmode)
+				if(This->samplers[level].wrapt != wrapmode)
 				{
-					This->ext->glSamplerParameteri(texman->samplers[level].id, GL_TEXTURE_WRAP_T, wrapmode);
-					texman->samplers[level].wrapt = wrapmode;
+					This->ext->glSamplerParameteri(This->samplers[level].id, GL_TEXTURE_WRAP_T, wrapmode);
+					This->samplers[level].wrapt = wrapmode;
 				}
 			}
 			else
 			{
-				if(texman->samplers[level].wraps != wrapmode)
+				if(This->samplers[level].wraps != wrapmode)
 				{
-					This->ext->glSamplerParameteri(texman->samplers[level].id, GL_TEXTURE_WRAP_S, wrapmode);
-					texman->samplers[level].wraps = wrapmode;
+					This->ext->glSamplerParameteri(This->samplers[level].id, GL_TEXTURE_WRAP_S, wrapmode);
+					This->samplers[level].wraps = wrapmode;
 				}
 			}
 		}
