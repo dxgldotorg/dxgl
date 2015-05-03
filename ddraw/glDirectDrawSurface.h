@@ -110,7 +110,7 @@ public:
 	ULONG WINAPI ReleaseGamma();
 	ULONG WINAPI AddRefColor();
 	ULONG WINAPI ReleaseColor();
-	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util, TextureManager *texman);
+	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
 	TEXTURE *GetTexture(){
 		return texture;
 	}

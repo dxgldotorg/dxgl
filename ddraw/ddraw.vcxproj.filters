@@ -220,9 +220,6 @@
     <ClCompile Include="glDirectDrawPalette.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -251,6 +248,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BufferObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

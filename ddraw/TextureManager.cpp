@@ -18,7 +18,10 @@
 #include "common.h"
 #include "BufferObject.h"
 #include "TextureManager.h"
+#include "glUtil.h"
 #include <math.h>
+
+extern "C" {
 
 // Use EXACTLY one line per entry.  Don't change layout of the list.
 static const int START_TEXFORMATS = __LINE__;
@@ -86,33 +89,31 @@ TextureManager *TextureManager_Create(glExtensions *glext)
 	if (!newtex) return 0;
 	ZeroMemory(newtex, sizeof(TextureManager));
 	newtex->ext = glext;
-	newtex->texlevel = 0;
-	ZeroMemory(newtex->textures, 16 * sizeof(GLuint));
 	return newtex;
 }
 
-void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height)
+void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util)
 {
-	TextureManager_CreateTextureClassic(This, texture, width, height);
+	TextureManager_CreateTextureClassic(This, texture, width, height, util);
 }
 void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture)
 {
 	TextureManager_DeleteTexture(This, texture);
 }
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc)
+void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
 {
-	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror, realloc);
+	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror, realloc, util);
 }
-void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data)
+void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util)
 {
-	TextureManager_DownloadTextureClassic(This, texture, level, data);
+	TextureManager_DownloadTextureClassic(This, texture, level, data, util);
 }
 
-void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height)
+void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util)
 {
 	int texformat = -1;
 	int i;
-	int x, y;
+	DWORD x, y;
 	GLenum error;
 	if (!texture->miplevel) texture->miplevel = 1;
 	texture->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
@@ -424,7 +425,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	texture->width = width;
 	texture->height = height;
 	glGenTextures(1,&texture->id);
-	TextureManager_SetTexture(This,0,texture);
+	glUtil_SetTexture(util,0,texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texture->minfilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texture->magfilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texture->wraps);
@@ -466,7 +467,7 @@ void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 }
 
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc)
+void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
 {
 	GLenum error;
 	texture->width = width;
@@ -484,8 +485,8 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 			}
 			else
 			{
-				TextureManager_SetActiveTexture(This, 0);
-				TextureManager_SetTexture(This, 0, texture);
+				glUtil_SetActiveTexture(util, 0);
+				glUtil_SetTexture(util, 0, texture);
 				if (realloc)glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
 				else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 			}
@@ -513,49 +514,26 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 		}
 		else
 		{
-			TextureManager_SetActiveTexture(This, 0);
-			TextureManager_SetTexture(This, 0, texture);
+			glUtil_SetActiveTexture(util, 0);
+			glUtil_SetTexture(util, 0, texture);
 			if (realloc)glTexImage2D(GL_TEXTURE_2D, level, texture->internalformats[0], width, height, 0, texture->format, texture->type, data);
 			else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, texture->format, texture->type, data);
 		}
 	}
 }
 
-void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data)
+void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util)
 {
 	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
 	{
-		TextureManager_SetActiveTexture(This, 0);
-		TextureManager_SetTexture(This, 0,texture);
+		glUtil_SetActiveTexture(util, 0);
+		glUtil_SetTexture(util, 0,texture);
 		glGetTexImage(GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	}
 }
 
-void TextureManager_SetActiveTexture(TextureManager *This, int level)
-{
-	if(level != This->texlevel)
-	{
-		This->texlevel = level;
-		This->ext->glActiveTexture(GL_TEXTURE0+level);
-	}
-}
-
-
-void TextureManager_SetTexture(TextureManager *This, unsigned int level, TEXTURE *texture)
-{
-	GLuint texname;
-	if (level >= 16) return;
-	if(!texture) texname = 0;
-	else texname=texture->id;
-	if(texname != This->textures[level])
-	{
-		TextureManager_SetActiveTexture(This, level);
-		glBindTexture(GL_TEXTURE_2D,texname);
-	}
-}
-
-BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level)
+BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level, glUtil *util)
 {
 	// data should be null to create uninitialized texture or be pointer to top-level
 	// buffer to retain texture data
@@ -564,14 +542,14 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 	memcpy(&newtexture, texture, sizeof(TEXTURE));
 	if (texture->internalformats[1] == 0) return FALSE;
 	glGenTextures(1, &newtexture.id);
-	TextureManager_SetActiveTexture(This, 0);
+	glUtil_SetActiveTexture(util, 0);
 	if (data)
 	{
-		TextureManager_SetTexture(This, 0, texture);
+		glUtil_SetTexture(util, 0, texture);
 		glGetTexImage(GL_TEXTURE_2D, level, texture->format, texture->type, data);
 		if (dirty) *dirty |= 2;
 	}
-	TextureManager_SetTexture(This, 0, &newtexture);
+	glUtil_SetTexture(util, 0, &newtexture);
 	do
 	{
 		memmove(&newtexture.internalformats[0], &newtexture.internalformats[1], 7 * sizeof(GLint));
@@ -593,4 +571,6 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 	TextureManager__DeleteTexture(This, texture);
 	memcpy(texture, &newtexture, sizeof(TEXTURE));
 	return TRUE;
+}
+
 }

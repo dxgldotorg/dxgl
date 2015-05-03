@@ -104,6 +104,8 @@ typedef struct glUtil
 	D3DSHADEMODE shademode;
 	BufferObject *LastBoundBuffer;
 	SAMPLER samplers[8];
+	GLint texlevel;
+	GLuint textures[16];
 } glUtil;
 
 void glUtil_Create(glExtensions *glext, glUtil **out);
@@ -112,7 +114,7 @@ void glUtil_Release(glUtil *This);
 void glUtil_InitFBO(glUtil *This, FBO *fbo);
 void glUtil_DeleteFBO(glUtil *This, FBO *fbo);
 void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
-void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, TextureManager *texman);
+void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address);
 GLenum glUtil_SetFBOSurface(glUtil *This, glDirectDrawSurface7 *surface);
 GLenum glUtil_SetFBO(glUtil *This, FBO *fbo);
 GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
@@ -137,6 +139,8 @@ void glUtil_SetPolyMode(glUtil *This, D3DFILLMODE mode);
 void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode);
 void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
 void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
+void glUtil_SetActiveTexture(glUtil *This, int level);
+void glUtil_SetTexture(glUtil *This, unsigned int level, TEXTURE *texture);
 
 #ifdef __cplusplus
 }

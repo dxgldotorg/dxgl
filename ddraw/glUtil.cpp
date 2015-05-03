@@ -85,7 +85,8 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 			glext->glSamplerParameteri(util->samplers[i].id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}
 	}
-
+	util->texlevel = 0;
+	ZeroMemory(util->textures, 16 * sizeof(GLuint));
 }
 
 void glUtil_AddRef(glUtil *This)
@@ -254,7 +255,7 @@ GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z,
 	else return fbo->status;
 }
 
-void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, TextureManager *texman)
+void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address)
 {
 	if(level == -1)
 	{
@@ -308,7 +309,7 @@ void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address, Texture
 		}
 		else
 		{
-			TextureManager_SetActiveTexture(texman,level);
+			glUtil_SetActiveTexture(This,level);
 			if(coord) glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrapmode);
 			else glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrapmode);
 		}
@@ -614,6 +615,29 @@ void glUtil_UndoBindBuffer(glUtil *This, GLenum target)
 	if (This->LastBoundBuffer) This->ext->glBindBuffer(target, This->LastBoundBuffer->buffer);
 	else This->ext->glBindBuffer(target, 0);
 	This->LastBoundBuffer = NULL;
+}
+
+void glUtil_SetActiveTexture(glUtil *This, int level)
+{
+	if (level != This->texlevel)
+	{
+		This->texlevel = level;
+		This->ext->glActiveTexture(GL_TEXTURE0 + level);
+	}
+}
+
+
+void glUtil_SetTexture(glUtil *This, unsigned int level, TEXTURE *texture)
+{
+	GLuint texname;
+	if (level >= 16) return;
+	if (!texture) texname = 0;
+	else texname = texture->id;
+	if (texname != This->textures[level])
+	{
+		glUtil_SetActiveTexture(This, level);
+		glBindTexture(GL_TEXTURE_2D, texname);
+	}
 }
 
 };
