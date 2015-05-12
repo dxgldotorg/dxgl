@@ -24,7 +24,7 @@ using namespace std;
 #include "timer.h"
 #include "glDirect3D.h"
 #include "glDirectDraw.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawSurface.h"

@@ -25,7 +25,7 @@ extern "C" {
 
 struct BufferObject;
 
-typedef struct TEXTURE
+typedef struct glTexture
 {
 	UINT refcount;
 	GLuint id;
@@ -46,7 +46,7 @@ typedef struct TEXTURE
 	BufferObject *pboPack;
 	BufferObject *pboUnpack;
 	DDPIXELFORMAT pixelformat;
-} TEXTURE;
+} glTexture;
 
 // Color orders:
 // 0 - ABGR
@@ -71,15 +71,15 @@ typedef struct TextureManager
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
 TextureManager *TextureManager_Create(glExtensions *glext);
-void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util);
-void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture);
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util);
-void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util);
-void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture);
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util);
-BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level, glUtil *util);
+void TextureManager__CreateTexture(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
+void TextureManager__DeleteTexture(TextureManager *This, glTexture *texture);
+void TextureManager__UploadTexture(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
+void TextureManager__DownloadTexture(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
+void TextureManager_CreateTextureClassic(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
+void TextureManager_DeleteTexture(TextureManager *This, glTexture *texture);
+void TextureManager_UploadTextureClassic(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
+void TextureManager_DownloadTextureClassic(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
+BOOL TextureManager_FixTexture(TextureManager *This, glTexture *texture, void *data, DWORD *dirty, GLint level, glUtil *util);
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "BufferObject.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include <math.h>
 
@@ -92,24 +92,24 @@ TextureManager *TextureManager_Create(glExtensions *glext)
 	return newtex;
 }
 
-void TextureManager__CreateTexture(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util)
+void TextureManager__CreateTexture(TextureManager *This, glTexture *texture, int width, int height, glUtil *util)
 {
 	TextureManager_CreateTextureClassic(This, texture, width, height, util);
 }
-void TextureManager__DeleteTexture(TextureManager *This, TEXTURE *texture)
+void TextureManager__DeleteTexture(TextureManager *This, glTexture *texture)
 {
 	TextureManager_DeleteTexture(This, texture);
 }
-void TextureManager__UploadTexture(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
+void TextureManager__UploadTexture(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
 {
 	TextureManager_UploadTextureClassic(This, texture, level, data, width, height, checkerror, realloc, util);
 }
-void TextureManager__DownloadTexture(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util)
+void TextureManager__DownloadTexture(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util)
 {
 	TextureManager_DownloadTextureClassic(This, texture, level, data, util);
 }
 
-void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture, int width, int height, glUtil *util)
+void TextureManager_CreateTextureClassic(TextureManager *This, glTexture *texture, int width, int height, glUtil *util)
 {
 	int texformat = -1;
 	int i;
@@ -456,7 +456,7 @@ void TextureManager_CreateTextureClassic(TextureManager *This, TEXTURE *texture,
 	}
 }
 
-void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
+void TextureManager_DeleteTexture(TextureManager *This, glTexture *texture)
 {
 	glDeleteTextures(1,&texture->id);
 	texture->bordercolor = texture->format = texture->type = texture->width =
@@ -467,7 +467,7 @@ void TextureManager_DeleteTexture(TextureManager *This, TEXTURE *texture)
 	ZeroMemory(texture->internalformats, 8 * sizeof(GLint));
 }
 
-void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
+void TextureManager_UploadTextureClassic(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
 {
 	GLenum error;
 	texture->width = width;
@@ -522,7 +522,7 @@ void TextureManager_UploadTextureClassic(TextureManager *This, TEXTURE *texture,
 	}
 }
 
-void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *texture, int level, void *data, glUtil *util)
+void TextureManager_DownloadTextureClassic(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util)
 {
 	if(This->ext->GLEXT_EXT_direct_state_access) This->ext->glGetTextureImageEXT(texture->id,GL_TEXTURE_2D,level,texture->format,texture->type,data);
 	else
@@ -533,13 +533,13 @@ void TextureManager_DownloadTextureClassic(TextureManager *This, TEXTURE *textur
 	}
 }
 
-BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *data, DWORD *dirty, GLint level, glUtil *util)
+BOOL TextureManager_FixTexture(TextureManager *This, glTexture *texture, void *data, DWORD *dirty, GLint level, glUtil *util)
 {
 	// data should be null to create uninitialized texture or be pointer to top-level
 	// buffer to retain texture data
-	TEXTURE newtexture;
+	glTexture newtexture;
 	GLenum error;
-	memcpy(&newtexture, texture, sizeof(TEXTURE));
+	memcpy(&newtexture, texture, sizeof(glTexture));
 	if (texture->internalformats[1] == 0) return FALSE;
 	glGenTextures(1, &newtexture.id);
 	glUtil_SetActiveTexture(util, 0);
@@ -569,7 +569,7 @@ BOOL TextureManager_FixTexture(TextureManager *This, TEXTURE *texture, void *dat
 		else break;
 	} while (1);
 	TextureManager__DeleteTexture(This, texture);
-	memcpy(texture, &newtexture, sizeof(TEXTURE));
+	memcpy(texture, &newtexture, sizeof(glTexture));
 	return TRUE;
 }
 

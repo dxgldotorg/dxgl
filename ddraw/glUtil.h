@@ -26,7 +26,7 @@ extern "C" {
 typedef int glDirectDrawSurface7;
 #endif
 
-struct TEXTURE;
+struct glTexture;
 struct BufferObject;
 struct TextureManager;
 
@@ -42,8 +42,8 @@ typedef struct SAMPLER
 typedef struct FBO
 {
 	GLuint fbo;
-	TEXTURE *fbcolor;
-	TEXTURE *fbz;
+	glTexture *fbcolor;
+	glTexture *fbz;
 	BOOL stencil;
 	GLenum status;
 } FBO;
@@ -113,11 +113,11 @@ void glUtil_AddRef(glUtil *This);
 void glUtil_Release(glUtil *This);
 void glUtil_InitFBO(glUtil *This, FBO *fbo);
 void glUtil_DeleteFBO(glUtil *This, FBO *fbo);
-void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
+void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil);
 void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address);
 GLenum glUtil_SetFBOSurface(glUtil *This, glDirectDrawSurface7 *surface);
 GLenum glUtil_SetFBO(glUtil *This, FBO *fbo);
-GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil);
+GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil);
 void glUtil_SetDepthComp(glUtil *This, GLenum comp);
 void glUtil_DepthWrite(glUtil *This, BOOL enabled);
 void glUtil_DepthTest(glUtil *This, BOOL enabled);
@@ -140,7 +140,7 @@ void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode);
 void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
 void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
 void glUtil_SetActiveTexture(glUtil *This, int level);
-void glUtil_SetTexture(glUtil *This, unsigned int level, TEXTURE *texture);
+void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,7 @@
 #include "common.h"
 #include "scalers.h"
 #include "ddraw.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"
@@ -38,7 +38,7 @@ using namespace std;
 
 // DDRAW7 routines
 glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error,
-	glDirectDrawPalette *palettein, TEXTURE *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front)
+	glDirectDrawPalette *palettein, glTexture *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front)
 {
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
 	this->version = version;
@@ -132,8 +132,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				palette = palettein;
 				glDirectDrawPalette_AddRef(palette);
 			}
-			paltex = new TEXTURE;
-			ZeroMemory(paltex,sizeof(TEXTURE));
+			paltex = new glTexture;
+			ZeroMemory(paltex,sizeof(glTexture));
 			paltex->minfilter = paltex->magfilter = GL_NEAREST;
 			paltex->wraps = paltex->wrapt = GL_CLAMP_TO_EDGE;
 			paltex->pixelformat.dwFlags = DDPF_RGB;
@@ -221,7 +221,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 	}
 	if (ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL) texture = parenttex;
-	else texture = new TEXTURE;
+	else texture = new glTexture;
 	switch(surfacetype)
 	{
 	case 0:
@@ -828,8 +828,8 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		{
 			if (!stencil)
 			{
-				stencil = (TEXTURE*)malloc(sizeof(TEXTURE));
-				ZeroMemory(stencil, sizeof(TEXTURE));
+				stencil = (glTexture*)malloc(sizeof(glTexture));
+				ZeroMemory(stencil, sizeof(glTexture));
 				stencil->minfilter = stencil->magfilter = GL_NEAREST;
 				stencil->wraps = stencil->wrapt = GL_CLAMP_TO_EDGE;
 				stencil->pixelformat.dwSize = sizeof(DDPIXELFORMAT);
@@ -1012,7 +1012,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)
 	{
 		if(ddsd.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-		TEXTURE **textures = new TEXTURE*[ddsd.dwBackBufferCount+1];
+		glTexture **textures = new glTexture*[ddsd.dwBackBufferCount+1];
 		textures[0] = texture;
 		tmp = this;
 		if(dirty & 1)
@@ -1036,7 +1036,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 			tmp->dirty |= 2;
 			textures[i+1] = tmp->GetTexture();
 		}
-		TEXTURE *tmptex = textures[0];
+		glTexture *tmptex = textures[0];
 		memmove(textures,&textures[1],ddsd.dwBackBufferCount*sizeof(GLuint));
 		textures[ddsd.dwBackBufferCount] = tmptex;
 		tmp = this;
@@ -1579,7 +1579,7 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDrawSurface7::RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface, int vsync)
+void glDirectDrawSurface7::RenderScreen(glTexture *texture, glDirectDrawSurface7 *surface, int vsync)
 {
 	TRACE_ENTER(3,14,this,14,texture,14,surface);
 	glRenderer_DrawScreen(ddInterface->renderer,texture, paltex, this, surface, vsync);

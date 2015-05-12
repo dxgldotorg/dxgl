@@ -41,7 +41,7 @@ class glDirectDrawSurface7 : public IDirectDrawSurface7
 {
 public:
 	glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein,
-		TEXTURE *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front);
+		glTexture *parenttex, DWORD miplevel, int version, glDirectDrawSurface7 *front);
 	virtual ~glDirectDrawSurface7();
 	// ddraw 1+ api
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
@@ -111,16 +111,16 @@ public:
 	ULONG WINAPI AddRefColor();
 	ULONG WINAPI ReleaseColor();
 	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
-	TEXTURE *GetTexture(){
+	glTexture *GetTexture(){
 		return texture;
 	}
 	void Restore2();
 	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags);
 	HRESULT AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface);
-	void SetTexture(TEXTURE *newtexture){ texture = newtexture; };
+	void SetTexture(glTexture *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(TEXTURE *texture, glDirectDrawSurface7 *surface, int vsync);
+	void RenderScreen(glTexture *texture, glDirectDrawSurface7 *surface, int vsync);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
@@ -142,10 +142,10 @@ public:
 	// 1 - Surface was locked
 	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
-	TEXTURE *texture;
-	TEXTURE *paltex;
-	TEXTURE *stencil;
-	TEXTURE *dummycolor;
+	glTexture *texture;
+	glTexture *paltex;
+	glTexture *stencil;
+	glTexture *dummycolor;
 	bool hasstencil;
 	DWORD miplevel;
 	char *buffer;

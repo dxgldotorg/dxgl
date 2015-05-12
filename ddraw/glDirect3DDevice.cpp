@@ -18,7 +18,7 @@
 #include "common.h"
 #include "ddraw.h"
 #include "glDirect3D.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
 #include "glRenderer.h"

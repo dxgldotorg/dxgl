@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "BufferObject.h"
 #include "glDirectDrawSurface.h"
@@ -142,7 +142,7 @@ void glUtil_DeleteFBO(glUtil *This, FBO *fbo)
 	}
 }
 
-void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil)
+void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil)
 {
 	if(!color) return;
 	if(!fbo->fbo) return;
@@ -241,7 +241,7 @@ GLenum glUtil_SetFBO(glUtil *This, FBO *fbo)
 	}
 }
 
-GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, TEXTURE *color, TEXTURE *z, BOOL stencil)
+GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil)
 {
 	if(!fbo)
 	{
@@ -627,7 +627,7 @@ void glUtil_SetActiveTexture(glUtil *This, int level)
 }
 
 
-void glUtil_SetTexture(glUtil *This, unsigned int level, TEXTURE *texture)
+void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
 {
 	GLuint texname;
 	if (level >= 16) return;

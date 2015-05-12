@@ -18,7 +18,7 @@
 #include "common.h"
 #include "glClassFactory.h"
 #include "glDirectDraw.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "glDirectDrawClipper.h"
 

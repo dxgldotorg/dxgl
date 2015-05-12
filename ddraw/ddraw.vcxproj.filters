@@ -119,9 +119,6 @@
     <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="glUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -147,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BufferObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -250,7 +250,7 @@
     <ClCompile Include="BufferObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
+    <ClCompile Include="glTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "BufferObject.h"
-#include "TextureManager.h"
+#include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
 #include "glDirectDraw.h"
@@ -102,7 +102,7 @@ inline void glRenderer__SetSwap(glRenderer *This, int swap)
   * @param miplevel
   *  Mipmap level of texture to write
   */
-void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	if(bpp == 15) bpp = 16;
@@ -156,7 +156,7 @@ void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, 
   * @param miplevel
   *  Mipmap level of texture to read
   */
-void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	if((bigx == x && bigy == y) || !bigbuffer)
@@ -295,7 +295,7 @@ DWORD WINAPI glRenderer_ThreadEntry(void *entry)
   * @return
   *  Number representing the texture created by OpenGL.
   */
-void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
+void glRenderer_MakeTexture(glRenderer *This, glTexture *texture, DWORD width, DWORD height)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
@@ -331,7 +331,7 @@ void glRenderer_MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWO
   * @param miplevel
   *  Mipmap level of texture to write
   */
-void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	EnterCriticalSection(&This->cs);
@@ -376,7 +376,7 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, T
   * @param miplevel
   *  Mipmap level of texture to read
   */
-void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, TEXTURE *texture, int x, int y,
+void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
 	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
 {
 	EnterCriticalSection(&This->cs);
@@ -404,7 +404,7 @@ void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer,
   * @param texture
   *  OpenGL texture to be deleted
   */
-void glRenderer_DeleteTexture(glRenderer *This, TEXTURE * texture)
+void glRenderer_DeleteTexture(glRenderer *This, glTexture * texture)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
@@ -482,7 +482,7 @@ HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7
   * @param vsync
   *  Vertical sync count
   */
-void glRenderer_DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
@@ -924,30 +924,30 @@ DWORD glRenderer__Entry(glRenderer *This)
 				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],(BOOL)This->inputs[6]);
 			break;
 		case OP_CREATE:
-			glRenderer__MakeTexture(This,(TEXTURE*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
+			glRenderer__MakeTexture(This,(glTexture*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
 			SetEvent(This->busy);
 			break;
 		case OP_UPLOAD:
-			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
+			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(glTexture*)This->inputs[2],
 				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
 				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
 			SetEvent(This->busy);
 			break;
 		case OP_DOWNLOAD:
-			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(TEXTURE*)This->inputs[2],
+			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(glTexture*)This->inputs[2],
 				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
 				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
 			SetEvent(This->busy);
 			break;
 		case OP_DELETETEX:
-			glRenderer__DeleteTexture(This,(TEXTURE*)This->inputs[0]);
+			glRenderer__DeleteTexture(This,(glTexture*)This->inputs[0]);
 			break;
 		case OP_BLT:
 			glRenderer__Blt(This,(LPRECT)This->inputs[0],(glDirectDrawSurface7*)This->inputs[1],
 				(glDirectDrawSurface7*)This->inputs[2],(LPRECT)This->inputs[3],(DWORD)This->inputs[4],(LPDDBLTFX)This->inputs[5]);
 			break;
 		case OP_DRAWSCREEN:
-			glRenderer__DrawScreen(This,(TEXTURE*)This->inputs[0],(TEXTURE*)This->inputs[1],
+			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
 				(glDirectDrawSurface7*)This->inputs[2],(glDirectDrawSurface7*)This->inputs[3],(GLint)This->inputs[4],true);
 			break;
 		case OP_INITD3D:
@@ -1520,19 +1520,19 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	SetEvent(This->busy);
 }
 
-void glRenderer__MakeTexture(glRenderer *This, TEXTURE *texture, DWORD width, DWORD height)
+void glRenderer__MakeTexture(glRenderer *This, glTexture *texture, DWORD width, DWORD height)
 {
 	TextureManager__CreateTexture(This->texman,texture,width,height,This->util);
 }
 
-void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int y, int progtype)
+void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype)
 {
 	GLfloat view[4];
 	glUtil_SetActiveTexture(This->util,0);
 	if(!This->backbuffer)
 	{
-		This->backbuffer = (TEXTURE*)malloc(sizeof(TEXTURE));
-		ZeroMemory(This->backbuffer,sizeof(TEXTURE));
+		This->backbuffer = (glTexture*)malloc(sizeof(glTexture));
+		ZeroMemory(This->backbuffer,sizeof(glTexture));
 			This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
 			This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
 			This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
@@ -1575,7 +1575,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, TEXTURE **texture, int x, int 
 	glUtil_SetFBO(This->util, NULL);
 }
 
-void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT srcrect, int progtype)
+void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype)
 {
 	GLfloat view[4];
 	int x = srcrect.right - srcrect.left;
@@ -1583,8 +1583,8 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 	glUtil_SetActiveTexture(This->util, 0);
 	if (!This->backbuffer)
 	{
-		This->backbuffer = (TEXTURE*)malloc(sizeof(TEXTURE));
-		ZeroMemory(This->backbuffer, sizeof(TEXTURE));
+		This->backbuffer = (glTexture*)malloc(sizeof(glTexture));
+		ZeroMemory(This->backbuffer, sizeof(glTexture));
 		This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
 		This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
 		This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
@@ -1632,7 +1632,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, TEXTURE *texture, RECT src
 	glUtil_SetFBO(This->util, NULL);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
 {
 	int progtype;
 	RECT r,r2;
@@ -1788,7 +1788,7 @@ void glRenderer__DrawScreen(glRenderer *This, TEXTURE *texture, TEXTURE *paltex,
 
 }
 
-void glRenderer__DeleteTexture(glRenderer *This, TEXTURE *texture)
+void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture)
 {
 	TextureManager__DeleteTexture(This->texman,texture);
 	SetEvent(This->busy);
@@ -2376,8 +2376,8 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	GLfloat view[4];
 	if (!surface->stencil)
 	{
-		surface->stencil = (TEXTURE*)malloc(sizeof(TEXTURE));
-		ZeroMemory(surface->stencil, sizeof(TEXTURE));
+		surface->stencil = (glTexture*)malloc(sizeof(glTexture));
+		ZeroMemory(surface->stencil, sizeof(glTexture));
 		surface->stencil->minfilter = surface->stencil->magfilter = GL_NEAREST;
 		surface->stencil->wraps = surface->stencil->wrapt = GL_CLAMP_TO_EDGE;
 		surface->stencil->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
@@ -2443,8 +2443,8 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 	{
 		if (!dest->dummycolor)
 		{
-			dest->dummycolor = (TEXTURE*)malloc(sizeof(TEXTURE));
-			ZeroMemory(dest->dummycolor, sizeof(TEXTURE));
+			dest->dummycolor = (glTexture*)malloc(sizeof(glTexture));
+			ZeroMemory(dest->dummycolor, sizeof(glTexture));
 			dest->dummycolor->minfilter = dest->dummycolor->magfilter = GL_NEAREST;
 			dest->dummycolor->wraps = dest->dummycolor->wrapt = GL_CLAMP_TO_EDGE;
 			dest->dummycolor->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
