@@ -47,9 +47,9 @@
 #define IDC_PROGRESS                            1031
 #define IDC_DISPLAYNAME                         1032
 #define IDC_PATHS                               1033
-#define IDC_INTEGERSCALELABEL                   1034
-#define IDC_INTEGERSCALELABELX                  1035
-#define IDC_INTEGERSCALEX                       1036
-#define IDC_INTEGERSCALELABELY                  1037
-#define IDC_INTEGERSCALEY                       1038
-#define IDC_INTEGERSCALESQUARE                  1039
+#define IDC_FIXEDSCALELABEL                     1034
+#define IDC_FIXEDSCALELABELX                    1035
+#define IDC_FIXEDSCALEX                         1036
+#define IDC_FIXEDSCALELABELY                    1037
+#define IDC_FIXEDSCALEY                         1038
+#define IDC_FIXEDSCALESQUARE                    1039
