@@ -23,31 +23,6 @@
 extern "C" {
 #endif
 
-struct BufferObject;
-
-typedef struct glTexture
-{
-	UINT refcount;
-	GLuint id;
-	GLsizei width;
-	GLsizei height;
-	GLint minfilter;
-	GLint magfilter;
-	GLint wraps;
-	GLint wrapt;
-	GLint miplevel;
-	DWORD bordercolor;
-	GLint internalformats[8];
-	DWORD colorsizes[4];
-	DWORD colorbits[4];
-	int colororder;
-	GLenum format;
-	GLenum type;
-	BufferObject *pboPack;
-	BufferObject *pboUnpack;
-	DDPIXELFORMAT pixelformat;
-} glTexture;
-
 // Color orders:
 // 0 - ABGR
 // 1 - ARGB
@@ -60,26 +35,30 @@ typedef struct glTexture
 
 extern const DDPIXELFORMAT texformats[];
 extern int numtexformats;
-
-struct glUtil;
-
-typedef struct TextureManager
-{
-	glExtensions *ext;
-} TextureManager;
-
+struct glRenderer;
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
-TextureManager *TextureManager_Create(glExtensions *glext);
-void TextureManager__CreateTexture(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
-void TextureManager__DeleteTexture(TextureManager *This, glTexture *texture);
-void TextureManager__UploadTexture(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager__DownloadTexture(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
-void TextureManager_CreateTextureClassic(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
-void TextureManager_DeleteTexture(TextureManager *This, glTexture *texture);
-void TextureManager_UploadTextureClassic(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager_DownloadTextureClassic(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
-BOOL TextureManager_FixTexture(TextureManager *This, glTexture *texture, void *data, DWORD *dirty, GLint level, glUtil *util);
+void glTexture_Create(glExtensions *ext, glUtil *util, glTexture **texture, const DDSURFACEDESC2 *ddsd, GLsizei bigx, GLsizei bigy, HGLRC hrc, DWORD screenbpp);
+void glTexture__CreateSimple(glTexture *This);
+void glTexture_AddRef(glTexture *This);
+void glTexture_Release(glTexture *This, BOOL backend, struct glRenderer *renderer);
+void glTexture__Destroy(glTexture *texture);
+void glTexture__SetPixelFormat(glTexture *This);
+void glTexture__Modify(glTexture *texture, const DDSURFACEDESC2 *ddsd, GLsizei bigx, GLsizei bigy, BOOL preservedata);
+BOOL glTexture__Repair(glTexture *This);
+void glTexture__Upload(glTexture *This, int level, BOOL checkerror, BOOL realloc);
+void glTexture__UploadSimple(glTexture *This, int level, BOOL checkerror, BOOL realloc);
+void glTexture__Download(glTexture *This, int level);
+void glTexture__DownloadSimple(glTexture *This, int level);
+void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
+void glTexture__ScaleUpload(glTexture *This, int level);
+void glTexture__ScaleDownload(glTexture *This, int level);
+HRESULT glTexture__Lock(glTexture *This, RECT *r, DDSURFACEDESC2 *ddsd, DWORD flags, int level);
+void glTexture__Unlock(glTexture *This, RECT *r, int level);
+BOOL glTexture__CreateDIB(glTexture *This, int level);
+void glTexture__DeleteDIB(glTexture *This, int level);
+HDC glTexture__GetDC(glTexture *This, struct glRenderer *renderer, int level);
+void glTexture__ReleaseDC(glTexture *This, int level);
 
 #ifdef __cplusplus
 }

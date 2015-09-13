@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -60,31 +60,31 @@ HRESULT WINAPI glDirectDrawGammaControl_QueryInterface(glDirectDrawGammaControl 
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT, 23, This->glDDS7->QueryInterface(riid, ppvObj));
+	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_QueryInterface(This->glDDS7, riid, ppvObj));
 }
 ULONG WINAPI glDirectDrawGammaControl_AddRef(glDirectDrawGammaControl *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	TRACE_RET(ULONG, 8, This->glDDS7->AddRefGamma());
+	TRACE_RET(ULONG, 8, glDirectDrawSurface7_AddRefGamma(This->glDDS7));
 }
 ULONG WINAPI glDirectDrawGammaControl_Release(glDirectDrawGammaControl *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	TRACE_RET(ULONG, 8, This->glDDS7->ReleaseGamma());
+	TRACE_RET(ULONG, 8, glDirectDrawSurface7_ReleaseGamma(This->glDDS7));
 }
 HRESULT WINAPI glDirectDrawGammaControl_GetGammaRamp(glDirectDrawGammaControl *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData)
 {
 	TRACE_ENTER(3, 14, This, 9, dwFlags, 14, lpRampData);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, This->glDDS7->GetGammaRamp(dwFlags, lpRampData));
+	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_GetGammaRamp(This->glDDS7, dwFlags, lpRampData));
 }
 HRESULT WINAPI glDirectDrawGammaControl_SetGammaRamp(glDirectDrawGammaControl *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData)
 {
 	TRACE_ENTER(3, 14, This, 9, dwFlags, 14, lpRampData);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, This->glDDS7->SetGammaRamp(dwFlags, lpRampData));
+	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_SetGammaRamp(This->glDDS7, dwFlags, lpRampData));
 }
 
 }

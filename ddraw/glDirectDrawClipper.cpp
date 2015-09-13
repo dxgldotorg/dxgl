@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,43 @@
 #include "glUtil.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
+#include "glRenderer.h"
+
+static const DDSURFACEDESC2 ddsdclipper =
+{
+	sizeof(DDSURFACEDESC2),
+	DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS | DDSD_PIXELFORMAT,
+	1,
+	256,
+	256 * 4,
+	0,
+	0,
+	0,
+	0,
+	NULL,
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{
+		sizeof(DDPIXELFORMAT),
+		DDPF_RGB|DDPF_ALPHAPIXELS,
+		0,
+		16,
+		0xF00,
+		0xF0,
+		0xF,
+		0xF000,
+	},
+	{
+		DDSCAPS_OFFSCREENPLAIN,
+		0,
+	0,
+	0
+	},
+	0,
+};
+
 
 glDirectDrawClipperVtbl glDirectDrawClipper_iface =
 {
@@ -115,6 +152,7 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->indices) free(This->indices);
 		if (This->glDD7) This->glDD7->DeleteClipper(This);
 		if (This->creator) This->creator->Release();
+		if (This->texture) glTexture_Release(This->texture, FALSE, This->renderer);
 		free(This);
 	};
 	TRACE_EXIT(8,ret);
@@ -351,7 +389,6 @@ HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIREC
 	This->maxsize = This->clipsize = 0;
 	This->refcount = 1;
 	This->initialized = true;
-	This->dirty = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -383,7 +420,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 			if(!This->cliplist) memfail = true;
 			if(!memfail) This->vertices = (BltVertex*)malloc(This->maxsize*4*sizeof(BltVertex));
 			if(!This->vertices) memfail = true;
-			if(!memfail) This->indices = (WORD*)malloc(This->maxsize*6*sizeof(WORD));
+			if(!memfail) This->indices = (GLshort*)malloc(This->maxsize*6*sizeof(GLshort));
 			if(!This->indices) memfail = true;
 			if(memfail)
 			{
@@ -406,14 +443,14 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 			memfail = false;
 			RGNDATA *newcliplist = NULL;
 			BltVertex *newvertices = NULL;
-			WORD *newindices = NULL;
+			GLshort *newindices = NULL;
 			newcliplist = (RGNDATA*)realloc(This->cliplist,sizeof(RGNDATAHEADER)+(lpClipList->rdh.nCount*sizeof(RECT)));
 			if(!newcliplist) memfail = true;
 			else This->cliplist = newcliplist;
 			if(!memfail) newvertices = (BltVertex*)realloc(This->vertices,lpClipList->rdh.nCount*4*sizeof(BltVertex));
 			if(!newvertices) memfail = true;
 			else This->vertices = newvertices;
-			if(!memfail) newindices = (WORD*)realloc(This->indices,lpClipList->rdh.nCount*6*sizeof(WORD));
+			if(!memfail) newindices = (GLshort*)realloc(This->indices,lpClipList->rdh.nCount*6*sizeof(GLshort));
 			if(!newindices) memfail = true;
 			else This->indices = newindices;
 			if(memfail) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
@@ -440,7 +477,6 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		}
 	}
 	else This->clipsize = 0;
-	This->dirty = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -451,4 +487,15 @@ HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFl
 	This->hWnd = hWnd;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
+}
+
+void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *texture, glRenderer *renderer)
+{
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, &ddsdclipper, sizeof(DDSURFACEDESC2));
+	ddsd.dwWidth = texture->ddsd.dwWidth;
+	ddsd.dwHeight = texture->ddsd.dwHeight;
+	glRenderer_MakeTexture(renderer, &This->texture, &ddsd, ddsd.dwWidth, ddsd.dwHeight);
+	This->renderer = renderer;
 }

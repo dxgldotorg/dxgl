@@ -3,7 +3,7 @@ http://www.williamfeely.info/wiki/DXGL
 
 == Introduction ==
 
-DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL 2.x. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
+DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
 
 DXGL is currently in an alpha stage, but several applications and games already work.
 
@@ -11,6 +11,7 @@ DXGL is currently in an alpha stage, but several applications and games already 
 
 * Windows XP, Vista, 7, 8, 8.1, or 10 (May work under recent builds of Wine)
 * OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures
+** OpenGL 3.2 or higher recommended.
 * Visual C++ 2010 x86 runtime, available at http://www.microsoft.com/download/en/details.aspx?id=5555 (will be installed if not present)
 
 == Build Requirements ==

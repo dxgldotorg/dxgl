@@ -50,8 +50,8 @@ int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
 {
 	if (!cmp->hwnd) return 1; // Put blanks at end for cleanup
 	if (key->hwnd < cmp->hwnd) return -1;
-	if (key->hwnd == cmp->hwnd) return 0;
-	if (key->hwnd > cmp->hwnd) return 1;
+	else if (key->hwnd == cmp->hwnd) return 0;
+	else return 1;
 }
 
 void SetHookWndProc(HWND hWnd, WNDPROC wndproc, LPDIRECTDRAW7 lpDD7, BOOL proconly, BOOL delete)

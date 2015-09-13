@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2015 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,7 @@ HRESULT WINAPI glDirect3DTexture2::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glDDS7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDirectDrawSurface7_QueryInterface(glDDS7,riid,ppvObj));
 }
 
 ULONG WINAPI glDirect3DTexture2::AddRef()
@@ -67,7 +67,7 @@ HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice2*)lpDirect3DDevice2)->GetGLD3DDev7();
-	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
+	HRESULT ret = glDirectDrawSurface7_GetHandle(glDDS7,glD3DDev7,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -76,7 +76,7 @@ HRESULT WINAPI glDirect3DTexture2::Load(LPDIRECT3DTEXTURE2 lpD3DTexture2)
 	TRACE_ENTER(2,14,this,14,lpD3DTexture2);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DTexture2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDDS7->Load(((glDirect3DTexture2*)lpD3DTexture2)->GetDDS7()));
+	TRACE_RET(HRESULT,23,glDirectDrawSurface7_Load(glDDS7,((glDirect3DTexture2*)lpD3DTexture2)->GetDDS7()));
 }
 HRESULT WINAPI glDirect3DTexture2::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
@@ -105,7 +105,7 @@ HRESULT WINAPI glDirect3DTexture1::QueryInterface(REFIID riid, void** ppvObj)
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glDDS7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDirectDrawSurface7_QueryInterface(glDDS7,riid,ppvObj));
 }
 ULONG WINAPI glDirect3DTexture1::AddRef()
 {
@@ -126,7 +126,7 @@ HRESULT WINAPI glDirect3DTexture1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, 
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice1*)lpDirect3DDevice)->GetGLD3DDev7();
-	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
+	HRESULT ret = glDirectDrawSurface7_GetHandle(glDDS7,glD3DDev7,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -142,7 +142,7 @@ HRESULT WINAPI glDirect3DTexture1::Load(LPDIRECT3DTEXTURE lpD3DTexture)
 	TRACE_ENTER(2,14,this,14,lpD3DTexture);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDDS7->Load(((glDirect3DTexture1*)lpD3DTexture)->GetDDS7()));
+	TRACE_RET(HRESULT,23,glDirectDrawSurface7_Load(glDDS7,((glDirect3DTexture1*)lpD3DTexture)->GetDDS7()));
 }
 HRESULT WINAPI glDirect3DTexture1::PaletteChanged(DWORD dwStart, DWORD dwCount)
 {
