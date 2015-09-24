@@ -410,7 +410,7 @@ HRESULT glDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSu
 		for (int i = 0; i < backcount + 1; i++)
 		{
 			front->fliplist[i] = surface->texture;
-			if (i < surface->ddsd.dwBackBufferCount) surface = surface->backbuffer;
+			if (i < backcount) surface = surface->backbuffer;
 		}
 	}
 	TRACE_EXIT(23, DD_OK);
