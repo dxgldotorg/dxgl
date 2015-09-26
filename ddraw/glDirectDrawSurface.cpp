@@ -432,7 +432,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	}
 	if(riid == IID_IDirectDrawSurface4)
 	{
-		glDirectDrawSurface7_AddRef(This);
+		glDirectDrawSurface7_AddRef4(This);
 		*ppvObj = This->dds4;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
