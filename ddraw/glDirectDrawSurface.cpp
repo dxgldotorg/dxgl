@@ -1507,8 +1507,9 @@ HRESULT WINAPI glDirectDrawSurface7_SetPalette(glDirectDrawSurface7 *This, LPDIR
 	if (lpDDPalette)
 	{
 		if (!This->palette->texture) glDirectDrawPalette_CreateTexture(This->palette, This->ddInterface->renderer);
+		glRenderer_SetTexturePalette(This->ddInterface->renderer, This->texture, This->palette->texture);
 	}
-	glRenderer_SetTexturePalette(This->ddInterface->renderer, This->texture, This->palette->texture);
+	else glRenderer_SetTexturePalette(This->ddInterface->renderer, This->texture, NULL);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
