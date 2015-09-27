@@ -598,11 +598,12 @@ void glTexture__Modify(glTexture *texture, const DDSURFACEDESC2 *ddsd, GLsizei b
 			if (!(ddsd->dwFlags & DDSD_PITCH))
 			{
 				if (ddsd->dwFlags & DDSD_PIXELFORMAT)
-					texture->ddsd.lPitch = NextMultipleOf4(ddsd->dwWidth *
+					texture->ddsd.lPitch = texture->mipmaps[0].pitch = NextMultipleOf4(ddsd->dwWidth *
 						(NextMultipleOf8(ddsd->ddpfPixelFormat.dwRGBBitCount) / 8));
-				else texture->ddsd.lPitch = NextMultipleOf4(ddsd->dwWidth *
+				else texture->ddsd.lPitch = texture->mipmaps[0].pitch = NextMultipleOf4(ddsd->dwWidth *
 						(NextMultipleOf8(texture->ddsd.ddpfPixelFormat.dwRGBBitCount) / 8));
 			}
+			if(bigx) texture->mipmaps[0].bigx = bigx;
 			resize = TRUE;
 		}
 	}
@@ -619,6 +620,7 @@ void glTexture__Modify(glTexture *texture, const DDSURFACEDESC2 *ddsd, GLsizei b
 		if (ddsd->dwHeight != texture->ddsd.dwHeight)
 		{
 			texture->ddsd.dwHeight = texture->mipmaps[0].height = ddsd->dwHeight;
+			if (bigy) texture->mipmaps[0].bigy = bigy;
 			resize = TRUE;
 		}
 	}

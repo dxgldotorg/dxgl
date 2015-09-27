@@ -1744,6 +1744,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 {
 	DDSURFACEDESC2 ddsd = ddsdBackbuffer;
 	GLfloat view[4];
+	DDSURFACEDESC2 tmpddsd;
 	glUtil_SetActiveTexture(This->util,0);
 	if(!This->backbuffer)
 	{
@@ -1755,7 +1756,12 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	}
 	if((This->backx != x) || (This->backy != y))
 	{
-		glTexture__Upload(This->backbuffer, 0, FALSE, TRUE);
+		tmpddsd = This->backbuffer->ddsd;
+		tmpddsd.dwSize = sizeof(DDSURFACEDESC2);
+		tmpddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT;
+		tmpddsd.dwWidth = x;
+		tmpddsd.dwHeight = y;
+		glTexture__Modify(This->backbuffer, &tmpddsd, x, y, FALSE);
 		This->backx = x;
 		This->backy = y;
 	}
@@ -2633,6 +2639,7 @@ void glRenderer__DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent)
 			(cmd->dest->ddsd.dwHeight != cmd->dest->dummycolor->ddsd.dwHeight))
 		{
 			tmpddsd = cmd->dest->ddsd;
+			tmpddsd.dwSize = sizeof(DDSURFACEDESC2);
 			tmpddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT;
 			tmpddsd.dwWidth = cmd->dest->ddsd.dwWidth;
 			tmpddsd.dwHeight = cmd->dest->ddsd.dwHeight;
