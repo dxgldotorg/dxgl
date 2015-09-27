@@ -270,8 +270,8 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 	{
 		GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
-		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		if(memcmp(&r2,&r,sizeof(RECT)) != 0)
+			SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
 	This->inputs[0] = cmd;
 	This->opcode = OP_BLT;
@@ -2983,7 +2983,7 @@ void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransf
 
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 {
-	memcpy(&This->material, lpMaterial, sizeof(D3DMATERIAL));
+	memcpy(&This->material, lpMaterial, sizeof(D3DMATERIAL7));
 	SetEvent(This->busy);
 }
 

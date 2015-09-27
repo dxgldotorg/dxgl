@@ -104,7 +104,7 @@ void glTexture_Create(glExtensions *ext, glUtil *util, glTexture **texture, cons
 		switch (screenbpp)
 		{
 		case 8:
-			(*texture)->ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB & DDPF_PALETTEINDEXED8;
+			(*texture)->ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
 			(*texture)->ddsd.ddpfPixelFormat.dwRBitMask = 0;
 			(*texture)->ddsd.ddpfPixelFormat.dwGBitMask = 0;
 			(*texture)->ddsd.ddpfPixelFormat.dwBBitMask = 0;
@@ -572,7 +572,7 @@ void glTexture__Destroy(glTexture *texture)
 		if (texture->mipmaps[i].buffer && !texture->clientmem && !i) free(texture->mipmaps[i].buffer);
 		if (texture->mipmaps[i].bigbuffer) free(texture->mipmaps[i].bigbuffer);
 		if (texture->mipmaps[i].gdibuffer) {}
-		if (texture->mipmaps[i].dib.hdc) {}
+		if (texture->mipmaps[i].dib.hdc) glTexture__DeleteDIB(texture, i);
 		if (texture->mipmaps[i].fbo.fbo) glUtil_DeleteFBO(texture->util,&texture->mipmaps[i].fbo);
 	}
 	if (texture->bigid) glDeleteTextures(1, &texture->bigid);
