@@ -3110,15 +3110,16 @@ void glRenderer__FlipTexture(glRenderer *This, glTexture **fliplist, DWORD count
 	int i, j, k;
 	int vsync = 0;
 	GLuint tmp;
-	//MIPMAP tmp2[15];
+	FBO tmp2[15];
 	int mipcount = fliplist[0]->ddsd.dwMipMapCount;
-	//memcpy(&tmp2, &fliplist[0]->mipmaps, mipcount*sizeof(MIPMAP));
 	if (!mipcount) mipcount = 1;
+	glUtil_SetFBO(This->util, NULL);
 	for (k = 0; k < mipcount; k++)
 	{
 		if (fliplist[0]->mipmaps[k].dirty & 1)
 			glTexture__Upload(fliplist[0], k, FALSE, FALSE);
 		fliplist[0]->mipmaps[k].dirty |= 2;
+		tmp2[k] = fliplist[0]->mipmaps[k].fbo;
 	}
 	for (i = 0; i < flips; i++)
 	{
@@ -3130,8 +3131,8 @@ void glRenderer__FlipTexture(glRenderer *This, glTexture **fliplist, DWORD count
 				if (fliplist[j]->mipmaps[k].dirty & 1)
 					glTexture__Upload(fliplist[j], k, FALSE, FALSE);
 				fliplist[j]->mipmaps[k].dirty |= 2;
+				fliplist[j]->mipmaps[k].fbo = fliplist[j + 1]->mipmaps[k].fbo;
 			}
-			//memcpy(&fliplist[j]->mipmaps, &fliplist[j + 1]->mipmaps, mipcount*sizeof(MIPMAP));
 			fliplist[j]->id = fliplist[j + 1]->id;
 		}
 		for (k = 0; k < mipcount; k++)
@@ -3139,9 +3140,9 @@ void glRenderer__FlipTexture(glRenderer *This, glTexture **fliplist, DWORD count
 			if (fliplist[count - 1]->mipmaps[k].dirty & 1)
 				glTexture__Upload(fliplist[count - 1], k, FALSE, FALSE);
 			fliplist[count - 1]->mipmaps[k].dirty |= 2;
+			fliplist[count - 1]->mipmaps[k].fbo = tmp2[k];
 		}
 		fliplist[count - 1]->id = tmp;
-		//memcpy(&fliplist[count - 1]->mipmaps, &tmp2, mipcount*sizeof(MIPMAP));
 	}
 	if (framebuffer)
 	{
