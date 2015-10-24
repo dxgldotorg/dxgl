@@ -1610,7 +1610,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		if (cmd->src->mipmaps[cmd->srclevel].dirty & 1)
 			glTexture__Upload(cmd->src, cmd->srclevel, FALSE, FALSE);
 	}
-	
+	if (cmd->dest->mipmaps[cmd->destlevel].dirty & 1)
+		glTexture__Upload(cmd->dest, cmd->destlevel, FALSE, FALSE);
 	if (!memcmp(&cmd->srcrect, &nullrect, sizeof(RECT)))
 	{
 		srcrect.left = 0;
