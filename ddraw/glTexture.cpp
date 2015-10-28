@@ -750,6 +750,7 @@ void glTexture__DownloadSimple(glTexture *This, int level)
 		glGetTexImage(GL_TEXTURE_2D,level,This->format,This->type,data);
 	}
 	if (resize) glTexture__ScaleDownload(This, level);
+	This->mipmaps[level].dirty &= ~2;
 }
 
 BOOL glTexture__Repair(glTexture *This)
