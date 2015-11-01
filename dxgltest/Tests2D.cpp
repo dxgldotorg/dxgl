@@ -577,6 +577,7 @@ void InitTest2D(int test)
 		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
 		if(palette) palette->Release();
 		DrawGradients(ddsd, (unsigned char *)ddsd.lpSurface, hWnd, palette, 1, 0);
+		DrawDitheredColor(&ddsd, (unsigned char *)ddsd.lpSurface, 0, FALSE);
 		error = sprites[0].surface->Unlock(NULL);
 		sprites[0].width = (float)ddsd.dwWidth;
 		sprites[0].height = (float)ddsd.dwHeight;
@@ -697,6 +698,8 @@ void RunTestTimed2D(int test)
 {
 	if(stoptimer) return;
 	DDSCAPS2 ddscaps;
+	DDBLTFX bltfx;
+	bltfx.dwSize = sizeof(DDBLTFX);
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
 	MultiDirectDrawSurface *temp1 = NULL;
@@ -707,7 +710,12 @@ void RunTestTimed2D(int test)
 	default:
 		if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
 		break;
-	case 4: // FastBlt sprites
+	case 4: // BltFast sprites
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		bltfx.dwFillColor = 0;
+		temp1->Blt(NULL, NULL, NULL, DDBLT_COLORFILL, &bltfx);
+		if (backbuffers) temp1->Release();
 		for(int i = 0; i < 16; i++)
 		{
 			sprites[i].x += sprites[i].xvelocity;

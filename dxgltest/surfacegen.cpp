@@ -281,6 +281,83 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 	}
 }
 
+void DrawDitheredColor(DDSURFACEDESC2 *ddsd, unsigned char *buffer, DWORD color, BOOL invert)
+{
+	DWORD *dwordptr = (DWORD*)buffer;
+	WORD *wordptr = (WORD*)buffer;
+	DWORD ptr;
+	BOOL pixel;
+	DWORD x, y;
+	switch (ddsd->ddpfPixelFormat.dwRGBBitCount)
+	{
+	default:
+	case 8:
+		for (y = 0; y < ddsd->dwHeight; y++)
+		{
+			ptr = ddsd->lPitch * y;
+			if (y & 1) pixel = TRUE;
+			else pixel = FALSE;
+			if (invert) pixel ^= 1;
+			for (x = 0; x < ddsd->dwWidth; x++)
+			{
+				if (pixel) buffer[ptr] = (unsigned char)color;
+				pixel ^= 1;
+				ptr++;
+			}
+		}
+		break;
+	case 15:
+	case 16:
+		for (y = 0; y < ddsd->dwHeight; y++)
+		{
+			ptr = (ddsd->lPitch / 2) * y;
+			if (y & 1) pixel = TRUE;
+			else pixel = FALSE;
+			if (invert) pixel ^= 1;
+			for (x = 0; x < ddsd->dwWidth; x++)
+			{
+				if (pixel) wordptr[ptr] = (WORD)color;
+				pixel ^= 1;
+				ptr++;
+			}
+		}
+		break;
+	case 24:
+		for (y = 0; y < ddsd->dwHeight; y++)
+		{
+			ptr = ddsd->lPitch * y;
+			if (y & 1) pixel = TRUE;
+			else pixel = FALSE;
+			if (invert) pixel ^= 1;
+			for (x = 0; x < ddsd->dwWidth; x++)
+			{
+				if (pixel) buffer[ptr] = (unsigned char)(color & 255);
+				ptr++;
+				if (pixel) buffer[ptr] = (unsigned char)((color >> 8) & 255);
+				ptr++;
+				if (pixel) buffer[ptr] = (unsigned char)((color >> 16) & 255);
+				pixel ^= 1;
+				ptr++;
+			}
+		}
+		break;
+	case 32:
+		for (y = 0; y < ddsd->dwHeight; y++)
+		{
+			ptr = (ddsd->lPitch / 4) * y;
+			if (y & 1) pixel = TRUE;
+			else pixel = FALSE;
+			if (invert) pixel ^= 1;
+			for (x = 0; x < ddsd->dwWidth; x++)
+			{
+				if (pixel) dwordptr[ptr] = (DWORD)color;
+				pixel ^= 1;
+				ptr++;
+			}
+		}
+		break;
+	}
+}
 
 void DrawGradient(HDC hdc, int left, int right, int top, int bottom, DWORD color, bool usegdi)
 {
