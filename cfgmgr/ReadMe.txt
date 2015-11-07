@@ -12,6 +12,15 @@ Valid settings:
 6 - Change display mode, center if matching mode not found
 7 - Crop output to desktop, preserving aspect ratio
 
+Member fullmode
+REG_DWORD HKCU\DXGL\<app>\FullscreenWindowMode
+Determines how to handle fullscreen modes.
+Valid settings:
+0 - Use exclusive fullscreen
+1 - Use non-exclusive fullscreen aka borderless window
+2 - Use a non-resizable window
+3 - Use a resizable window, uses scaler mode, preferably 1, 2, 3, or 7
+
 Member colormode
 REG_DWORD HKCU\DXGL\<app>\ChangeColorDepth
 If nonzero, switches screen color depth if requested by the application.

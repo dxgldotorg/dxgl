@@ -57,6 +57,8 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "DPI scaling mode", IDC_STATIC, 7, 107, 55, 8, SS_LEFT, WS_EX_LEFT
     COMBOBOX        IDC_DPISCALE, 7, 117, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
     AUTOCHECKBOX    "Change display color depth", IDC_COLOR, 114, 118, 100, 10, 0, WS_EX_LEFT
+    LTEXT           "Fullscreen mode", IDC_STATIC, 7, 132, 78, 9, SS_LEFT, WS_EX_LEFT
+    COMBOBOX        IDC_FULLMODE, 8, 143, 101, 30, CBS_DROPDOWN | CBS_HASSTRINGS, WS_EX_LEFT
 }
 
 
@@ -186,8 +188,8 @@ IDI_STAR           ICON           "..\\common\\star.ico"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 1 VERSIONINFO
-    FILEVERSION     0,5,7,609
-    PRODUCTVERSION  0,5,7,609
+    FILEVERSION     DXGLVERNUMBER
+    PRODUCTVERSION  DXGLVERNUMBER
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_APP
     FILESUBTYPE     VFT2_UNKNOWN
@@ -199,12 +201,12 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
         BLOCK "08000352"
         {
             VALUE "FileDescription", "DXGL Configuration Program"
-            VALUE "FileVersion", "0.5.7 r609"
+            VALUE "FileVersion", "DXGLVERSTRING"
             VALUE "InternalName", "DXGL"
             VALUE "LegalCopyright", "Copyright © 2011-2015 William Feely"
             VALUE "OriginalFilename", "dxglcfg.exe"
             VALUE "ProductName", "DXGL"
-            VALUE "ProductVersion", "0.5.7 r609"
+            VALUE "ProductVersion", "DXGLVERSTRING"
         }
     }
     BLOCK "VarFileInfo"

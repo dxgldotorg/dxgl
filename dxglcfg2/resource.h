@@ -54,3 +54,4 @@
 #define IDC_FIXEDSCALEY                         1038
 #define IDC_FIXEDSCALESQUARE                    1039
 #define IDC_LOWCOLORRENDER                      1040
+#define IDC_FULLMODE                            1041

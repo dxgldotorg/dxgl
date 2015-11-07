@@ -30,7 +30,7 @@
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDD_DXGLCFG DIALOG 0, 0, 405, 265
 STYLE DS_3DLOOK | DS_CONTEXTHELP | DS_SETFONT | WS_CAPTION | WS_SYSMENU
-CAPTION "DXGL Config (DEPRECATED)"
+CAPTION "DXGL Config"
 FONT 8, "Ms Shell Dlg 2"
 {
     DEFPUSHBUTTON   "OK", IDOK, 247, 247, 50, 14
@@ -47,8 +47,8 @@ FONT 8, "Ms Shell Dlg 2"
     AUTOCHECKBOX    "Change display color depth", IDC_COLOR, 299, 14, 100, 10
     LTEXT           "Scaling method", IDC_STATIC, 195, 69, 49, 8, SS_LEFT
     COMBOBOX        IDC_SCALE, 195, 79, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    LTEXT           "Vertical sync", IDC_STATIC, 299, 69, 41, 8, SS_LEFT
-    COMBOBOX        IDC_VSYNC, 299, 79, 100, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    LTEXT           "Fullscreen mode", IDC_STATIC, 299, 69, 41, 8, SS_LEFT
+    COMBOBOX        IDC_FULLMODE, 299, 79, 100, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "Post-processing shader", IDC_STATIC, 195, 94, 90, 8, SS_LEFT
     EDITTEXT        IDC_SHADER, 195, 104, 183, 14, ES_AUTOHSCROLL
     PUSHBUTTON      "...", IDC_BROWSESHADER, 379, 104, 20, 14
@@ -110,7 +110,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
     {
         BLOCK "08000352"
         {
-            VALUE "FileDescription", "DXGL Configuration Program (DEPRECATED VERSION)"
+            VALUE "FileDescription", "DXGL Configuration Program"
             VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
             VALUE "LegalCopyright", "Copyright © 2011-2014 William Feely"

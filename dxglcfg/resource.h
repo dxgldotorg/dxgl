@@ -33,7 +33,7 @@
 #define IDC_REMOVE                              1039
 #define IDC_VIDMODE                             1041
 #define IDC_SCALE                               1042
-#define IDC_VSYNC                               1043
+#define IDC_FULLMODE                            1043
 #define IDC_SHADER                              1044
 #define IDC_BROWSESHADER                        1045
 #define IDC_TEXFILTER                           1046

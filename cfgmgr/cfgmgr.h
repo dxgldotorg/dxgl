@@ -26,6 +26,7 @@ extern "C" {
 typedef struct
 {
 	DWORD scaler;
+	DWORD fullmode;
 	BOOL colormode;
 	DWORD scalingfilter;
 	DWORD texfilter;

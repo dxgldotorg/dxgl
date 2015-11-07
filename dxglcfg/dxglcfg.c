@@ -552,6 +552,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Crop to screen (experimental)"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
+		// fullmode
+		_tcscpy(buffer, _T("Exclusive fullscreen"));
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Non-exclusive fullscreen"));
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Non-resizable window"));
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Resizable window"));
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
 		// colormode
 		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,0);
@@ -957,7 +967,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
+					//SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
@@ -980,8 +991,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_SCALE,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_SCALE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_VSYNC,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+/*					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
+						SendDlgItemMessage(hWnd,IDC_VSYNC,CB_FINDSTRING,-1,(LPARAM)strdefault),0);*/
+					SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_DELETESTRING,
+						SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
@@ -1007,7 +1020,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
 				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
 				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
-				SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
+				//SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
+				SetCombo(hWnd,IDC_FULLMODE,cfg->fullmode,cfgmask->fullmode,tristate);
 				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
 				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
 				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
@@ -1038,9 +1052,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
-		case IDC_VSYNC:
+/*		case IDC_VSYNC:
 			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,&cfgmask->vsync);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
+			break;*/
+		case IDC_FULLMODE:
+			cfg->fullmode = GetCombo(hWnd, IDC_FULLMODE, &cfgmask->fullmode);
+			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
 		case IDC_MSAA:
