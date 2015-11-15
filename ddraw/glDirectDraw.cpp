@@ -1365,6 +1365,7 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	devid = devid_default;
+	hWnd = NULL;
 	primarylost = true;
 	renderer = NULL;
 	primary = NULL;
