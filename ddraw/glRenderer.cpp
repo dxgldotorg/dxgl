@@ -145,11 +145,31 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
 	if(fullscreen)
 	{
-		winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
-		winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
-		SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-		SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
-		ShowWindow(This->hWnd,SW_MAXIMIZE);
+		switch (dxglcfg.fullmode)
+		{
+		case 0:
+		case 1:    // Fullscreen
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
+			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			break;
+		case 2:     // Windowed
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX));
+			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			break;
+		case 3:     // Windowed resizable
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle | WS_OVERLAPPEDWINDOW);
+			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			break;
+		}
 	}
 	if(width)
 	{
@@ -392,12 +412,55 @@ void glRenderer_Flush(glRenderer *This)
   */
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
+	RECT wndrect;
+	int screenx, screeny;
+	LONG_PTR winstyle, winstyleex;
 	EnterCriticalSection(&This->cs);
 	if(fullscreen && newwnd)
 	{
-		SetWindowLongPtrA(newwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-		SetWindowLongPtrA(newwnd,GWL_STYLE,WS_OVERLAPPED);
-		ShowWindow(newwnd,SW_MAXIMIZE);
+		switch (dxglcfg.fullmode)
+		{
+		case 0:
+		case 1:    // Fullscreen
+			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
+			ShowWindow(newwnd, SW_MAXIMIZE);
+			break;
+		case 2:     // Windowed
+			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX));
+			ShowWindow(newwnd, SW_NORMAL);
+			screenx = GetSystemMetrics(SM_CXSCREEN);
+			screeny = GetSystemMetrics(SM_CYSCREEN);
+			wndrect.right = width;
+			wndrect.bottom = height;
+			wndrect.left = (screenx / 2) - (width / 2);
+			wndrect.top = (screeny / 2) - (height / 2);
+			AdjustWindowRect(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE);
+			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right,
+				wndrect.bottom, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		case 3:     // Windowed resizable
+			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle | WS_OVERLAPPEDWINDOW);
+			ShowWindow(newwnd, SW_NORMAL);
+			screenx = GetSystemMetrics(SM_CXSCREEN);
+			screeny = GetSystemMetrics(SM_CYSCREEN);
+			wndrect.right = width;
+			wndrect.bottom = height;
+			wndrect.left = (screenx / 2) - (width / 2);
+			wndrect.top = (screeny / 2) - (height / 2);
+			AdjustWindowRect(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE);
+			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right,
+				wndrect.bottom, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		}
 	}
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;

@@ -1626,180 +1626,83 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	currmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	this->currmode.dmSize = 0;
-	switch(dxglcfg.scaler)
+	switch (dxglcfg.fullmode)
 	{
-	case 0: // No scaling, switch mode
-	default:
-		newmode.dmSize = sizeof(DEVMODE);
-		newmode.dmDriverExtra = 0;
-		newmode.dmPelsWidth = dwWidth;
-		newmode.dmPelsHeight = dwHeight;
-		if(dxglcfg.colormode)
-			newmode.dmBitsPerPel = dwBPP;
-		else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
-		newmode.dmDisplayFrequency = dwRefreshRate;
-		if(dwRefreshRate) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-		else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-		flags = 0;
-		if(fullscreen) flags |= CDS_FULLSCREEN;
-		error = ChangeDisplaySettingsEx(NULL,&newmode,NULL,flags,NULL);
-		switch(error)
+	case 0:
+	case 1:
+	default:  // Fullscreen modes and fallback
+		switch (dxglcfg.scaler)
 		{
-		case DISP_CHANGE_SUCCESSFUL:
-			if (fullscreen) this->currmode = newmode;
-			internalx = primaryx = screenx = newmode.dmPelsWidth;
-			internaly = primaryy = screeny = newmode.dmPelsHeight;
-			internalbpp = screenbpp = newmode.dmBitsPerPel;
-			primarybpp = dwBPP;
-			if(dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
-			glRenderer_SetBPP(this->renderer, primarybpp);
-			primarylost = true;
-			TRACE_EXIT(23,DD_OK);
-			return DD_OK;
-		case DISP_CHANGE_BADMODE:
-			TRACE_RET(HRESULT,23,DDERR_INVALIDMODE);
-		case DISP_CHANGE_BADFLAGS:
-			TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		case DISP_CHANGE_BADDUALVIEW:
-			TRACE_RET(HRESULT,23,DDERR_GENERIC);
-		case DISP_CHANGE_BADPARAM:
-			TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		case DISP_CHANGE_FAILED:
-			TRACE_RET(HRESULT,23,DDERR_GENERIC);
-		case DISP_CHANGE_NOTUPDATED:
-			TRACE_RET(HRESULT,23,DDERR_GENERIC);
-		case DISP_CHANGE_RESTART:
-			TRACE_RET(HRESULT,23,DDERR_UNSUPPORTEDMODE);
+		case 0: // No scaling, switch mode
 		default:
-			TRACE_RET(HRESULT,23,DDERR_GENERIC);
-		}
-		TRACE_RET(HRESULT,23,DDERR_GENERIC);
-		break;
-	case 1: // Stretch to screen
-		primaryx = dwWidth;
-		internalx = screenx = currmode.dmPelsWidth;
-		primaryy = dwHeight;
-		internaly = screeny = currmode.dmPelsHeight;
-		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
-		glRenderer_SetBPP(this->renderer, primarybpp);
-		primarylost = true;
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
-		break;
-	case 2: // Scale to screen, aspect corrected
-		primaryx = dwWidth;
-		screenx = currmode.dmPelsWidth;
-		primaryy = dwHeight;
-		screeny = currmode.dmPelsHeight;
-		if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
-		{
-			aspect = (float)dwWidth / (float)dwHeight;
-			xmul = (float)screenx / (float)dwWidth;
-			ymul = (float)screeny / (float)dwHeight;
-			if ((float)dwWidth*(float)ymul > (float)screenx)
+			newmode.dmSize = sizeof(DEVMODE);
+			newmode.dmDriverExtra = 0;
+			newmode.dmPelsWidth = dwWidth;
+			newmode.dmPelsHeight = dwHeight;
+			if (dxglcfg.colormode)
+				newmode.dmBitsPerPel = dwBPP;
+			else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
+			newmode.dmDisplayFrequency = dwRefreshRate;
+			if (dwRefreshRate) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+			flags = 0;
+			if (fullscreen) flags |= CDS_FULLSCREEN;
+			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			switch (error)
 			{
-				internalx = (DWORD)((float)dwWidth * (float)xmul);
-				internaly = (DWORD)((float)dwHeight * (float)xmul);
+			case DISP_CHANGE_SUCCESSFUL:
+				if (fullscreen) this->currmode = newmode;
+				internalx = primaryx = screenx = newmode.dmPelsWidth;
+				internaly = primaryy = screeny = newmode.dmPelsHeight;
+				internalbpp = screenbpp = newmode.dmBitsPerPel;
+				primarybpp = dwBPP;
+				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+				else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+				InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+				glRenderer_SetBPP(this->renderer, primarybpp);
+				primarylost = true;
+				TRACE_EXIT(23, DD_OK);
+				return DD_OK;
+			case DISP_CHANGE_BADMODE:
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDMODE);
+			case DISP_CHANGE_BADFLAGS:
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+			case DISP_CHANGE_BADDUALVIEW:
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			case DISP_CHANGE_BADPARAM:
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+			case DISP_CHANGE_FAILED:
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			case DISP_CHANGE_NOTUPDATED:
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			case DISP_CHANGE_RESTART:
+				TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTEDMODE);
+			default:
+				TRACE_RET(HRESULT, 23, DDERR_GENERIC);
 			}
-			else
-			{
-				internalx = (DWORD)((float)dwWidth * (float)ymul);
-				internaly = (DWORD)((float)dwHeight * (float)ymul);
-			}
-		}
-		else
-		{
-			aspect = dxglcfg.aspect;
-			if (screenx/aspect > screeny)
-			{
-				internalx = (DWORD)((float)screeny * (float)aspect);
-				internaly = screeny;
-			}
-			else
-			{
-				internalx = screenx;
-				internaly = (DWORD)((float)screenx / (float)aspect);
-			}
-		}
-		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
-		glRenderer_SetBPP(this->renderer, primarybpp);
-		primarylost = true;
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
-		break;
-	case 3: // Center image
-		primaryx = internalx = dwWidth;
-		screenx = currmode.dmPelsWidth;
-		primaryy = internaly = dwHeight;
-		screeny = currmode.dmPelsHeight;
-		primarybpp = dwBPP;
-		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-		InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
-		glRenderer_SetBPP(this->renderer, primarybpp);
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
-		break;
-	case 4: // Switch then stretch
-	case 5: // Switch then scale
-	case 6: // Switch then center
-		newmode.dmSize = sizeof(DEVMODE);
-		newmode.dmDriverExtra = 0;
-		newmode.dmPelsWidth = dwWidth;
-		newmode.dmPelsHeight = dwHeight;
-		if(dxglcfg.colormode)
-			newmode.dmBitsPerPel = dwBPP;
-		else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
-		newmode.dmDisplayFrequency = dwRefreshRate;
-		if(dwRefreshRate) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-		else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-		flags = 0;
-		if(fullscreen) flags |= CDS_FULLSCREEN;
-		error = ChangeDisplaySettingsEx(NULL,&newmode,NULL,flags,NULL);
-		if(error != DISP_CHANGE_SUCCESSFUL)
-		{
-			newmode2 = FindClosestMode(newmode);
-			error = ChangeDisplaySettingsEx(NULL,&newmode2,NULL,flags,NULL);
-		}
-		else newmode2 = newmode;
-		if (error == DISP_CHANGE_SUCCESSFUL) this->currmode = newmode2;
-		switch(dxglcfg.scaler)
-		{
-		case 4:
+			TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+			break;
+		case 1: // Stretch to screen
 			primaryx = dwWidth;
-			internalx = screenx = newmode2.dmPelsWidth;
+			internalx = screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
-			internaly = screeny = newmode2.dmPelsHeight;
-			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			internaly = screeny = currmode.dmPelsHeight;
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
 			glRenderer_SetBPP(this->renderer, primarybpp);
 			primarylost = true;
-			TRACE_EXIT(23,DD_OK);
+			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
-		case 5:
+		case 2: // Scale to screen, aspect corrected
 			primaryx = dwWidth;
-			screenx = newmode2.dmPelsWidth;
+			screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
-			screeny = newmode2.dmPelsHeight;
+			screeny = currmode.dmPelsHeight;
 			if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
 			{
 				aspect = (float)dwWidth / (float)dwHeight;
@@ -1831,81 +1734,199 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				}
 			}
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
 			primarybpp = dwBPP;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
 			glRenderer_SetBPP(this->renderer, primarybpp);
 			primarylost = true;
-			TRACE_EXIT(23,DD_OK);
+			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
-		case 6:
-		default:
+		case 3: // Center image
 			primaryx = internalx = dwWidth;
-			screenx = newmode2.dmPelsWidth;
+			screenx = currmode.dmPelsWidth;
 			primaryy = internaly = dwHeight;
-			screeny = newmode2.dmPelsHeight;
+			screeny = currmode.dmPelsHeight;
 			primarybpp = dwBPP;
-			if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-			else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-			else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
-			InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+			glRenderer_SetBPP(this->renderer, primarybpp);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+			break;
+		case 4: // Switch then stretch
+		case 5: // Switch then scale
+		case 6: // Switch then center
+			newmode.dmSize = sizeof(DEVMODE);
+			newmode.dmDriverExtra = 0;
+			newmode.dmPelsWidth = dwWidth;
+			newmode.dmPelsHeight = dwHeight;
+			if (dxglcfg.colormode)
+				newmode.dmBitsPerPel = dwBPP;
+			else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
+			newmode.dmDisplayFrequency = dwRefreshRate;
+			if (dwRefreshRate) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+			flags = 0;
+			if (fullscreen) flags |= CDS_FULLSCREEN;
+			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			if (error != DISP_CHANGE_SUCCESSFUL)
+			{
+				newmode2 = FindClosestMode(newmode);
+				error = ChangeDisplaySettingsEx(NULL, &newmode2, NULL, flags, NULL);
+			}
+			else newmode2 = newmode;
+			if (error == DISP_CHANGE_SUCCESSFUL) this->currmode = newmode2;
+			switch (dxglcfg.scaler)
+			{
+			case 4:
+				primaryx = dwWidth;
+				internalx = screenx = newmode2.dmPelsWidth;
+				primaryy = dwHeight;
+				internaly = screeny = newmode2.dmPelsHeight;
+				if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+				else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+				else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+				primarybpp = dwBPP;
+				InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+				glRenderer_SetBPP(this->renderer, primarybpp);
+				primarylost = true;
+				TRACE_EXIT(23, DD_OK);
+				return DD_OK;
+				break;
+			case 5:
+				primaryx = dwWidth;
+				screenx = newmode2.dmPelsWidth;
+				primaryy = dwHeight;
+				screeny = newmode2.dmPelsHeight;
+				if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
+				{
+					aspect = (float)dwWidth / (float)dwHeight;
+					xmul = (float)screenx / (float)dwWidth;
+					ymul = (float)screeny / (float)dwHeight;
+					if ((float)dwWidth*(float)ymul > (float)screenx)
+					{
+						internalx = (DWORD)((float)dwWidth * (float)xmul);
+						internaly = (DWORD)((float)dwHeight * (float)xmul);
+					}
+					else
+					{
+						internalx = (DWORD)((float)dwWidth * (float)ymul);
+						internaly = (DWORD)((float)dwHeight * (float)ymul);
+					}
+				}
+				else
+				{
+					aspect = dxglcfg.aspect;
+					if (screenx / aspect > screeny)
+					{
+						internalx = (DWORD)((float)screeny * (float)aspect);
+						internaly = screeny;
+					}
+					else
+					{
+						internalx = screenx;
+						internaly = (DWORD)((float)screenx / (float)aspect);
+					}
+				}
+				if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+				else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+				else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+				primarybpp = dwBPP;
+				InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+				glRenderer_SetBPP(this->renderer, primarybpp);
+				primarylost = true;
+				TRACE_EXIT(23, DD_OK);
+				return DD_OK;
+				break;
+			case 6:
+			default:
+				primaryx = internalx = dwWidth;
+				screenx = newmode2.dmPelsWidth;
+				primaryy = internaly = dwHeight;
+				screeny = newmode2.dmPelsHeight;
+				primarybpp = dwBPP;
+				if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+				else internalbpp = screenbpp = newmode2.dmBitsPerPel;
+				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+				else internalrefresh = primaryrefresh = screenrefresh = newmode2.dmDisplayFrequency;
+				InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+				glRenderer_SetBPP(this->renderer, primarybpp);
+				primarylost = true;
+				TRACE_EXIT(23, DD_OK);
+				return DD_OK;
+				break;
+			}
+			break;
+		case 7: // Crop to screen, aspect corrected
+			primaryx = dwWidth;
+			screenx = currmode.dmPelsWidth;
+			primaryy = dwHeight;
+			screeny = currmode.dmPelsHeight;
+			if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
+			{
+				aspect = (float)dwWidth / (float)dwHeight;
+				xmul = (float)screenx / (float)dwWidth;
+				ymul = (float)screeny / (float)dwHeight;
+				if ((float)dwWidth*(float)ymul < (float)screenx)
+				{
+					internalx = (DWORD)((float)dwWidth * (float)xmul);
+					internaly = (DWORD)((float)dwHeight * (float)xmul);
+				}
+				else
+				{
+					internalx = (DWORD)((float)dwWidth * (float)ymul);
+					internaly = (DWORD)((float)dwHeight * (float)ymul);
+				}
+			}
+			else
+			{
+				aspect = dxglcfg.aspect;
+				if (screenx / aspect < screeny)
+				{
+					internalx = (DWORD)((float)screeny * (float)aspect);
+					internaly = screeny;
+				}
+				else
+				{
+					internalx = screenx;
+					internaly = (DWORD)((float)screenx / (float)aspect);
+				}
+			}
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			primarybpp = dwBPP;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
 			glRenderer_SetBPP(this->renderer, primarybpp);
 			primarylost = true;
-			TRACE_EXIT(23,DD_OK);
+			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
 		}
 		break;
-	case 7: // Crop to screen, aspect corrected
-		primaryx = dwWidth;
-		screenx = currmode.dmPelsWidth;
-		primaryy = dwHeight;
-		screeny = currmode.dmPelsHeight;
-		if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
-		{
-			aspect = (float)dwWidth / (float)dwHeight;
-			xmul = (float)screenx / (float)dwWidth;
-			ymul = (float)screeny / (float)dwHeight;
-			if ((float)dwWidth*(float)ymul < (float)screenx)
-			{
-				internalx = (DWORD)((float)dwWidth * (float)xmul);
-				internaly = (DWORD)((float)dwHeight * (float)xmul);
-			}
-			else
-			{
-				internalx = (DWORD)((float)dwWidth * (float)ymul);
-				internaly = (DWORD)((float)dwHeight * (float)ymul);
-			}
-		}
-		else
-		{
-			aspect = dxglcfg.aspect;
-			if (screenx/aspect < screeny)
-			{
-				internalx = (DWORD)((float)screeny * (float)aspect);
-				internaly = screeny;
-			}
-			else
-			{
-				internalx = screenx;
-				internaly = (DWORD)((float)screenx / (float)aspect);
-			}
-		}
-		if(dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
-		else internalbpp = screenbpp = currmode.dmBitsPerPel;
-		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
-		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
-		primarybpp = dwBPP;
-		InitGL(screenx,screeny,screenbpp,true,internalrefresh,hWnd,this,devwnd);
-		glRenderer_SetBPP(this->renderer, primarybpp);
-		primarylost = true;
-		TRACE_EXIT(23,DD_OK);
-		return DD_OK;
-		break;
+		case 2:
+		case 3:  // Forced windowed modes
+			primaryx = internalx = screenx = dwWidth;
+			primaryy = internaly = screeny = dwHeight;
+			internalbpp = screenbpp = dwBPP;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			primarybpp = dwBPP;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+			glRenderer_SetBPP(this->renderer, primarybpp);
+			primarylost = true;
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+			break;
 	}
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
