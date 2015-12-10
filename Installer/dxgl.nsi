@@ -25,7 +25,7 @@ SetCompressor /SOLID lzma
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
 !define PRODUCT_PUBLISHER "William Feely"
-!define PRODUCT_WEB_SITE "https://www.williamfeely.info/wiki/DXGL"
+!define PRODUCT_WEB_SITE "https://www.dxgl.info/"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -195,7 +195,7 @@ SectionEnd
 Section "Download Visual C++ 2013 Redistributable" SEC_VCREDIST
   vcdownloadretry:
   DetailPrint "Downloading Visual C++ 2013 Runtime"
-  NSISdl::download http://www.williamfeely.info/download/runtimes/vc12/vcredist_x86.exe $TEMP\vcredist_x86.exe
+  NSISdl::download http://www.dxgl.info/download/runtimes/vc12/vcredist_x86.exe $TEMP\vcredist_x86.exe
   DetailPrint "Checking Visual C++ 2013 Runtime"
   sha512-nsis::CalculateSha512Sum $TEMP\vcredist_x86.exe ${msvcr120_sha512}
   Pop $0
