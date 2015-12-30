@@ -1,32 +1,32 @@
-DXGL 0.5.7
+# DXGL 0.5.7
 http://www.williamfeely.info/wiki/DXGL
 
-== Introduction ==
+## Introduction
+DXGL is a free replacement for the Windows ddraw.dll library, running on OpenGL. It is designed to overcome driver bugs, particularly in Windows Vista and newer operating systems. It also adds various enhancements to the graphics output such as display scaling and filtering options. DXGL supports the DirectX 7.0 graphics APIs, however it is currently under development and does not work with many programs.
 
-DXGL is a project to create a DirectDraw/Direct3D version 1 to 7 implementation that runs on OpenGL. It is intended to alleviate some of the graphics glitches inherent with using legacy DirectX interfaces on modern video cards. The API will be 100% binary compatible with the system ddraw.dll file.
+## GitHub Notice
+If you downloaded DXGL from GitHub, please note that the version number will not work.
 
-DXGL is currently in an alpha stage, but several applications and games already work.
+## System Requirements
 
-== System Requirements ==
-
-* Windows XP, Vista, 7, 8, 8.1, or 10 (May work under recent builds of Wine)
+* Windows XP SP3, Vista, 7, 8, 8.1, or 10 (May work under recent versions of Wine)
 * OpenGL 2.0 or higher compatible video card, with hardware accelerated non-power-of-two size textures
-** OpenGL 3.2 or higher recommended.
+  * OpenGL 3.2 or higher recommended.
 * Visual C++ 2010 x86 runtime, available at http://www.microsoft.com/download/en/details.aspx?id=5555 (will be installed if not present)
 
-== Build Requirements ==
-* Visual Studio 2010 or Visual C++ 2010 Express
+## Build Requirements
+* Visual Studio 2013, either full version or Express for Windows Desktop might work.
 * The following components are optional.  The build process will ask for these if they do not exist:
-** TortoiseSVN (to fill in revision on SVN builds)
-** HTML Help Workshop (to build help)
-** NSIS (to build installer, requires TortoiseSVN and HTML Help Workshop to succeed)
+  * TortoiseSVN (to fill in revision on SVN builds)
+  * HTML Help Workshop (to build help)
+  * NSIS (to build installer, requires TortoiseSVN and HTML Help Workshop to succeed)
 
-== Build Instructions ==
+## Build Instructions
 These instructions assume that you do not have any of the required software installed. If you already have any or all of this software installed and set up, skip those steps.
-* Install Visual C++ 2010 Express at http://www.microsoft.com/express/downloads/#2010-Visual-CPP .
-* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F7.
+* Install Visual Studio 2013 Community at https://www.visualstudio.com/en-us/news/vs2013-community-vs.aspx
+* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F7 to build.
 
-== Progress ==
+## Progress
 For detailed progress information, please check http://www.williamfeely.info/wiki/DXGL_Features
 What works:
 * DirectDraw object creation and destruction (versions 1 to 7)
@@ -41,35 +41,37 @@ What partially works:
 What doesn't work:
 * Many functions are stubbed out and return an error
 
-== Installation ==
+## Installation
 
 Run the installer.  When the installer completes, open DXGL Config and add your program files to the config program.
 To uninstall, go to the Add/Remove Programs or Programs and Features control panel and uninstall.
 
-== SVN ==
+## SVN
 
 SVN readonly access is available at:
-svn://www.williamfeely.info/dxgl
+https://www.dxgl.info/svn/dxgl/
 
 There is a Mediawiki-based SVN log at:
 http://www.williamfeely.info/wiki/Special:Code/DXGL
 
-== AppDB ==
+## AppDB
 
 An AppDB system (similar to that on winehq.org) is now available at:
 https://www.williamfeely.info/appdb/
 
 This requires a user account separate from the other services.
 
-== Discussion boards ==
+Please note that the AppDB is now deprecated and will be made read-only once the new DXGL Wiki launches.
+
+## Discussion boards
 
 You may discuss DXGL at:
-https://www.williamfeely.info/phpBB3
+https://www.dxgl.info/phpBB3
 
 You must create a forum account to post content.
 
 
-== Bug reports ==
+## Bug reports
 
 Bug reports are managed by a Bugzilla system available at:
 https://www.williamfeely.info/bugzilla
