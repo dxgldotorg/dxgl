@@ -316,7 +316,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			if (oldy < 0) oldy = 0;
 			if (oldx >= sizes[2]) oldx = sizes[2] - 1;
 			if (oldy >= sizes[3]) oldy = sizes[3] - 1;
-			wParam = oldx + (oldy << 16);
+			lParam = oldx + (oldy << 16);
 		}
 		break;
 	}
