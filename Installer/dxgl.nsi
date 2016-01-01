@@ -59,7 +59,7 @@ SetCompressor /SOLID lzma
 ; Finish page
 !define MUI_FINISHPAGE_RUN "$INSTDIR\dxglcfg.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Configure DXGL"
-!define MUI_FINISHPAGE_SHOWREADME "$SYSDIR\notepad.exe $INSTDIR\ReadMe.md"
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\ReadMe.txt"
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -118,7 +118,7 @@ Section "DXGL Components (required)" SEC01
   File "..\${SRCDIR}\dxglcfg.exe"
   CreateShortCut "$SMPROGRAMS\DXGL\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
   File "..\${SRCDIR}\ddraw.dll"
-  File "..\ReadMe.md"
+  File /oname=ReadMe.txt "..\ReadMe.md"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
@@ -318,7 +318,7 @@ Section Uninstall
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\COPYING.txt"
-  Delete "$INSTDIR\ReadMe.md"
+  Delete "$INSTDIR\ReadMe.txt"
   Delete "$INSTDIR\ddraw.dll"
   Delete "$INSTDIR\dxglcfg.exe"
   Delete "$INSTDIR\dxgltest.exe"

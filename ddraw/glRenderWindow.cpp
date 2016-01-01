@@ -27,26 +27,6 @@ bool wndclasscreated = false;
 bool hotkeyregistered = false;
 #endif
 
-void WaitForObjectAndMessages(HANDLE object)
-{
-	MSG Msg;
-	while(1)
-	{
-		switch(MsgWaitForMultipleObjects(1,&object,FALSE,INFINITE,QS_ALLINPUT))
-		{
-		case WAIT_OBJECT_0:
-			return;
-		case WAIT_OBJECT_0+1:
-			while(PeekMessage(&Msg,NULL,0,0,PM_REMOVE))
-			{
-				TranslateMessage(&Msg);
-				DispatchMessage(&Msg);
-			}
-		}
-	}
-
-}
-
 glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7, bool devwnd)
 {
 	ddInterface = glDD7;
@@ -55,24 +35,9 @@ glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND pare
 	this->fullscreen = fullscreen;
 	this->device = devwnd;
 	hParentWnd = parent;
-	ReadyEvent = CreateEvent(NULL,false,false,NULL);
-	hThread = CreateThread(NULL,0,ThreadEntry,this,0,NULL);
-	WaitForObjectAndMessages(ReadyEvent);
-	CloseHandle(ReadyEvent);
-	ReadyEvent = NULL;
-}
-
-DWORD WINAPI glRenderWindow::ThreadEntry(void *entry)
-{
-	return ((glRenderWindow*)entry)->_Entry();
-}
-
-DWORD glRenderWindow::_Entry()
-{
 	char *windowname;
 	if (device) windowname = "DirectDrawDeviceWnd";
 	else windowname = "Renderer";
-    MSG Msg;
 	if(!wndclasscreated)
 	{
 		wndclass.cbSize = sizeof(WNDCLASSEXA);
@@ -92,7 +57,6 @@ DWORD glRenderWindow::_Entry()
 	}
 	RECT rectRender;
 	GetClientRect(hParentWnd,&rectRender);
-	dead = false;
 	if(hParentWnd)
 	{
 		hWnd = CreateWindowA("DirectDrawDeviceWnd",windowname,WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
@@ -115,13 +79,6 @@ DWORD glRenderWindow::_Entry()
 		Beep(120, 1000);
 	}
 	#endif
-	SetEvent(ReadyEvent);
-	while((GetMessage(&Msg, NULL, 0, 0) > 0) && !dead)
-	{
-		TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
-	}
-	return 0;
 }
 
 glRenderWindow::~glRenderWindow()
@@ -129,9 +86,7 @@ glRenderWindow::~glRenderWindow()
 	#ifdef _DEBUG
 	if(hotkeyregistered) UnregisterHotKey(hWnd,1);
 	#endif
-	SendMessage(hWnd,WM_CLOSE,0,0);
-	WaitForSingleObject(hThread,INFINITE);
-	CloseHandle(hThread);
+	DestroyWindow(hWnd);
 }
 
 #ifdef _TRACE
@@ -198,13 +153,11 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 			return SendMessage(hParent,msg,wParam,newpos);
 		}
 		else return SendMessage(hParent,msg,wParam,lParam);
-	case WM_CLOSE:
+/*	case WM_CLOSE:
 		DestroyWindow(hWnd);
-		return 0;
+		return 0;*/
 	case WM_DESTROY:
-		PostQuitMessage(0);
-		dead = true;
-		return 0;
+		return FALSE;
 	#ifdef _DEBUG
 	case WM_HOTKEY:
 		#ifdef _TRACE

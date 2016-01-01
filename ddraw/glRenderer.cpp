@@ -23,7 +23,6 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
-#include "glRenderWindow.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DLight.h"
@@ -170,13 +169,13 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
 		}
+		if (width)
+		{
+			// TODO:  Adjust window rect
+		}
+		SetWindowPos(This->hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	}
-	if(width)
-	{
-		// TODO:  Adjust window rect
-	}
-	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
+	//This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;
 	This->inputs[2] = (void*)bpp;
@@ -200,7 +199,7 @@ void glRenderer_Delete(glRenderer *This)
 	EnterCriticalSection(&This->cs);
 	This->opcode = OP_DELETE;
 	SetEvent(This->start);
-	WaitForObjectAndMessages(This->busy);
+	WaitForSingleObject(This->busy, INFINITE);
 	CloseHandle(This->start);
 	CloseHandle(This->busy);
 	LeaveCriticalSection(&This->cs);
@@ -283,7 +282,7 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 {
 	EnterCriticalSection(&This->cs);
 	RECT r,r2;
-	if(((cmd->dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
+	/*if(((cmd->dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(cmd->dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((cmd->dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(cmd->dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
@@ -292,7 +291,7 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)) != 0)
 			SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
-	}
+	}*/
 	This->inputs[0] = cmd;
 	This->opcode = OP_BLT;
 	SetEvent(This->start);
@@ -470,8 +469,10 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 	This->inputs[5] = (void*)newwnd;
 	This->inputs[6] = (void*)devwnd;
 	This->opcode = OP_SETWND;
+	/*delete This->RenderWnd;
+	This->RenderWnd = new glRenderWindow(width, height, fullscreen, newwnd, This->ddInterface, devwnd);*/
 	SetEvent(This->start);
-	WaitForObjectAndMessages(This->busy);
+	WaitForSingleObject(This->busy, INFINITE);
 	LeaveCriticalSection(&This->cs);
 }
 /**
@@ -1138,10 +1139,11 @@ DWORD glRenderer__Entry(glRenderer *This)
 				wglDeleteContext(This->hRC);
 				This->hRC = NULL;
 			};
-			if(This->hDC) ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+			//if(This->hDC) ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+			if (This->hDC) ReleaseDC(This->hWnd, This->hDC);
 			This->hDC = NULL;
-			delete This->RenderWnd;
-			This->RenderWnd = NULL;
+			/*delete This->RenderWnd;
+			This->RenderWnd = NULL;*/
 			SetEvent(This->busy);
 			return 0;
 			break;
@@ -1302,7 +1304,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
 	InterlockedIncrement(&gllock);
-	This->hDC = GetDC(This->RenderWnd->GetHWnd());
+	//This->hDC = GetDC(This->RenderWnd->GetHWnd());
+	This->hDC = GetDC(hWnd);
 	if(!This->hDC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create hDC\n");
@@ -1333,7 +1336,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 		DEBUG("glRenderer::InitGL: Can not activate GL context\n");
 		wglDeleteContext(This->hRC);
 		This->hRC = NULL;
-		ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+		//ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+		ReleaseDC(hWnd, This->hDC);
 		This->hDC = NULL;
 		InterlockedDecrement(&gllock);
 		LeaveCriticalSection(&dll_cs);
@@ -1911,13 +1915,13 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *src, GLint vsync, BOOL 
 	int progtype;
 	RECT r,r2;
 	glUtil_BlendEnable(This->util, FALSE);
-	if((src->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+	/*if((src->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
-	}
+		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW|SWP_ASYNCWINDOWPOS);
+	}*/
 	glUtil_DepthTest(This->util, FALSE);
 	RECT *viewrect = &r2;
 	glRenderer__SetSwap(This,vsync);
@@ -1947,8 +1951,10 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *src, GLint vsync, BOOL 
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = viewrect->right;
 			viewport[3] = viewrect->bottom;
-			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
-			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
+			/*ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
+			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);*/
+			ClientToScreen(This->hWnd,(LPPOINT)&viewrect->left);
+			ClientToScreen(This->hWnd,(LPPOINT)&viewrect->right);
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
 			view[2] = (GLfloat)src->mipmaps[0].bigy-(GLfloat)viewrect->top;
@@ -2041,18 +2047,23 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *src, GLint vsync, BOOL 
 		BufferObject_Unmap(This->pbo, GL_PIXEL_PACK_BUFFER);
 		BufferObject_Unbind(This->pbo, GL_PIXEL_PACK_BUFFER);
 		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
-		HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->GetHWnd());
+		//HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->GetHWnd());
+		HDC hRenderDC = (HDC)::GetDC(This->hWnd);
 		HGDIOBJ hPrevObj = 0;
 		POINT dest = {0,0};
 		POINT srcpoint = {0,0};
 		SIZE wnd = {This->dib.width,This->dib.height};
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
 		hPrevObj = SelectObject(This->dib.hdc,This->dib.hbitmap);
-		ClientToScreen(This->RenderWnd->GetHWnd(),&dest);
-		UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
-			This->dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
+		//ClientToScreen(This->RenderWnd->GetHWnd(),&dest);
+		ClientToScreen(This->hWnd, &dest);
+		/*UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
+			This->dib.hdc,&srcpoint,0,&func,ULW_ALPHA);*/
+		UpdateLayeredWindow(This->hWnd, hRenderDC, &dest, &wnd,
+			This->dib.hdc, &srcpoint, 0, &func, ULW_ALPHA);
 		SelectObject(This->dib.hdc,hPrevObj);
-		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
+		//ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
+		ReleaseDC(This->hWnd, hRenderDC);
 	}
 	if(setsync) SetEvent(This->busy);
 
@@ -2248,8 +2259,6 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		EnterCriticalSection(&dll_cs);
 		wglMakeCurrent(NULL, NULL);
 		ReleaseDC(This->hWnd,This->hDC);
-		delete This->RenderWnd;
-		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface, devwnd);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
 		InterlockedIncrement(&gllock);
@@ -2260,7 +2269,9 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		pfd.iPixelType = PFD_TYPE_RGBA;
 		pfd.cColorBits = bpp;
 		pfd.iLayerType = PFD_MAIN_PLANE;
-		This->hDC = GetDC(This->RenderWnd->GetHWnd());
+		This->hWnd = newwnd;
+		//This->hDC = GetDC(This->RenderWnd->GetHWnd());
+		This->hDC = GetDC(This->hWnd);
 		if(!This->hDC)
 			DEBUG("glRenderer::SetWnd: Can not create hDC\n");
 		pf = ChoosePixelFormat(This->hDC,&pfd);

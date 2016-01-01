@@ -22,7 +22,6 @@
 LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 class glDirectDraw7;
-void WaitForObjectAndMessages(HANDLE object);
 class glRenderWindow
 {
 public:
@@ -33,15 +32,11 @@ public:
 	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static DWORD WINAPI ThreadEntry(void *entry);
 private:
-	DWORD _Entry();
 	HWND hWnd;
 	HWND hParentWnd;
-	HANDLE hThread;
-	HANDLE ReadyEvent;
 	int width;
 	int height;
 	bool fullscreen;
-	bool dead;
 	bool device;
 	glDirectDraw7 *ddInterface;
 };

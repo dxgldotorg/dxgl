@@ -111,13 +111,11 @@ extern const TEXTURESTAGE texstagedefault1;
 #ifdef __cplusplus
 class glDirectDraw7;
 class glDirect3DDevice7;
-class glRenderWindow;
 struct glDirectDrawClipper;
 extern "C" {
 #else
 typedef int glDirectDraw7;
 typedef int glDirect3DDevice7;
-typedef int glRenderWindow;
 #endif
 
 /** @brief glRenderer struct
@@ -135,7 +133,6 @@ typedef struct glRenderer
 	HANDLE hThread;
 	HDC hDC;
 	HWND hWnd;
-	glRenderWindow *RenderWnd;
 	DIB dib;
 	FBO fbo;
 	BufferObject *pbo;

@@ -1432,6 +1432,11 @@ extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 	}
 	TRACE_EXIT(0, 0);
 }
+extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *glDD7, LONG *sizes)
+{
+	glDD7->GetSizes(sizes);
+}
+
 
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {

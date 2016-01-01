@@ -28,7 +28,7 @@
 #include "hooks.h"
 #include <intrin.h>
 
-DXGLCFG dxglcfg;
+extern "C" {DXGLCFG dxglcfg; }
 DWORD gllock = 0;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;

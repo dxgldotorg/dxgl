@@ -19,7 +19,11 @@
 #include "hooks.h"
 #include <tlhelp32.h>
 #include "../minhook-1.3/include/MinHook.h"
-void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);  // temporary until glDirectDraw is converted to C
+
+// temporary stuff until glDirectDraw is converted to C
+void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
+void glDirectDraw7_GetSizes(LPDIRECTDRAW7 lpDD7);
+extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
 const TCHAR *wndpropdd7 = _T("DXGLWndDD7");
@@ -246,6 +250,11 @@ void UninstallDXGLFullscreenHook(HWND hWnd)
 }
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	int oldx, oldy;
+	float mulx, muly;
+	int translatex, translatey;
+	LPARAM newpos;
+	LONG sizes[6];
 	WNDPROC parentproc;
 	HWND_HOOK *wndhook;
 	LPDIRECTDRAW7 lpDD7;
@@ -273,6 +282,41 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		if (wParam == SC_RESTORE)
 		{
 			if (lpDD7) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
+		}
+		break;
+	case WM_MOUSEMOVE:
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_LBUTTONDBLCLK:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_RBUTTONDBLCLK:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MBUTTONDBLCLK:
+	case WM_MOUSEWHEEL:
+	case WM_XBUTTONDOWN:
+	case WM_XBUTTONUP:
+	case WM_XBUTTONDBLCLK:
+	case WM_MOUSEHWHEEL:
+		if ((dxglcfg.scaler != 0) && lpDD7)
+		{
+			oldx = LOWORD(lParam);
+			oldy = HIWORD(lParam);
+			glDirectDraw7_GetSizes(lpDD7, sizes);
+			mulx = (float)sizes[2] / (float)sizes[0];
+			muly = (float)sizes[3] / (float)sizes[1];
+			translatex = (sizes[4] - sizes[0]) / 2;
+			translatey = (sizes[5] - sizes[1]) / 2;
+			oldx -= translatex;
+			oldy -= translatey;
+			oldx = (int)((float)oldx * mulx);
+			oldy = (int)((float)oldy * muly);
+			if (oldx < 0) oldx = 0;
+			if (oldy < 0) oldy = 0;
+			if (oldx >= sizes[2]) oldx = sizes[2] - 1;
+			if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+			wParam = oldx + (oldy << 16);
 		}
 		break;
 	}

@@ -279,8 +279,8 @@ typedef struct _D3DLVERTEX {
   } DUMMYUNIONNAME7;
 #if defined(__cplusplus) && defined(D3D_OVERLOADS)
 public:
-  _D3DLVERTEX() {}
-  _D3DLVERTEX(const D3DVECTOR& v, DWORD _color, DWORD _specular, float _tu, float _tv) {
+  _D3DLVERTEX() {} //-V730
+  _D3DLVERTEX(const D3DVECTOR& v, DWORD _color, DWORD _specular, float _tu, float _tv) { //-V730
     x  = v.x; y  = v.y; z  = v.z;
     color = _color; specular = _specular;
     tu = _tu; tv = _tv;

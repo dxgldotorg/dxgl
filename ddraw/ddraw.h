@@ -56,7 +56,7 @@ DDRAW_API void WINAPI RegisterSpecialCase();
 DDRAW_API void WINAPI ReleaseDDThreadLock();
 DDRAW_API BOOL IsDXGLDDraw();
 
-extern DXGLCFG dxglcfg;
+extern "C" {extern DXGLCFG dxglcfg; }
 extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
