@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2015 William Feely
+// Copyright (C) 2013-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct DXGLTimer
+{
+	int timertype;
+	unsigned int lines;
+	unsigned int vsync_lines;
+	double monitor_period;
+	double timer_frequency;
+	LARGE_INTEGER timer_base;
+} DXGLTimer;
 
 void DXGLTimer_Init(DXGLTimer *timer);
 void DXGLTimer_Calibrate(DXGLTimer *timer, unsigned int lines, unsigned int frequency);

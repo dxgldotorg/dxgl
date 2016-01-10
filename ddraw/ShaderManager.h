@@ -23,6 +23,22 @@
 extern "C" {
 #endif
 
+typedef struct
+{
+	GLint vs;
+	GLint fs;
+	const char *vsrc;
+	const char *fsrc;
+	GLint prog;
+	GLint pos;
+	GLint texcoord;
+	GLint tex0;
+	GLint tex1;
+	GLint ckey;
+	GLint pal;
+	GLint view;
+} SHADER;
+
 extern const SHADER shader_template[];
 
 #define PROG_TEXTURE 0
@@ -31,6 +47,17 @@ extern const SHADER shader_template[];
 #define PROG_CKEYMASK 3
 #define PROG_2CKEY 4
 #define PROG_CLIPSTENCIL 5
+
+struct TEXTURESTAGE;
+struct ShaderGen3D;
+
+typedef struct ShaderManager
+{
+	SHADER *shaders;
+	ShaderGen3D *gen3d;
+	ShaderGen2D *gen2d;
+	glExtensions *ext;
+} ShaderManager;
 
 void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman);
 void ShaderManager_Delete(ShaderManager *This);

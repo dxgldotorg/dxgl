@@ -25,6 +25,19 @@ extern "C" {
 
 struct glUtil;
 
+typedef struct BufferObject
+{
+	ULONG refcount;
+	ULONG busy;
+	GLuint buffer;
+	GLsizei size;
+	void *pointer;
+	BOOL mapped;
+	BOOL bound;
+	BOOL target;
+	glExtensions *ext;
+	struct glUtil *util;
+} BufferObject;
 
 void BufferObject_Create(BufferObject **out, glExtensions *ext, struct glUtil *util);
 void BufferObject_AddRef(BufferObject *This);

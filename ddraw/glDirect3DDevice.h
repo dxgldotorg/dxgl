@@ -19,7 +19,7 @@
 #ifndef __GLDIRECT3DDEVICE_H
 #define __GLDIRECT3DDEVICE_H
 
-struct glDirectDrawSurface7;
+class glDirectDrawSurface7;
 class glDirect3D7;
 
 struct D3D1MATRIX
@@ -29,6 +29,7 @@ struct D3D1MATRIX
 };
 
 class glDirect3DLight;
+class glDirectDrawSurface7;
 class glDirect3DMaterial3;
 struct glDirect3DViewport3;
 class glDirect3DDevice3;
@@ -152,7 +153,6 @@ public:
 	int gllights[8];
 	glDirectDrawSurface7 *glDDS7;
 	DWORD renderstate[153];
-	glDirectDrawSurface7 *texstagesurfaces[8];
 	TEXTURESTAGE texstages[8];
 	glDirect3D7 *glD3D7;
 	glDirect3DMaterial3 **materials;

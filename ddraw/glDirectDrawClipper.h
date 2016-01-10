@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -33,13 +33,12 @@ typedef struct glDirectDrawClipper
 	HWND hWnd;
 	RGNDATA *cliplist;
 	BltVertex *vertices;
-	GLshort *indices;
-	size_t clipsize;
-	size_t maxsize;
+	WORD *indices;
+	int clipsize;
+	int maxsize;
 	bool hascliplist;
+	bool dirty;
 	IUnknown *creator;
-	glTexture *texture;
-	glRenderer *renderer;
 } glDirectDrawClipper;
 
 typedef struct glDirectDrawClipperVtbl
@@ -68,5 +67,4 @@ HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIREC
 HRESULT WINAPI glDirectDrawClipper_IsClipListChanged(glDirectDrawClipper *This, BOOL FAR *lpbChanged);
 HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags);
 HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFlags, HWND hWnd);
-void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *texture, glRenderer *renderer);
 #endif //_GLDIRECTDRAWCLIPPER_H

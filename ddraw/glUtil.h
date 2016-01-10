@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2014 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,22 +20,104 @@
 #define _GLUTIL_H
 
 #ifdef __cplusplus
+class glDirectDrawSurface7;
 extern "C" {
+#else
+typedef int glDirectDrawSurface7;
 #endif
-struct glDirectDrawSurface7;
 
+struct glTexture;
+struct BufferObject;
+struct TextureManager;
 
+typedef struct SAMPLER
+{
+	GLuint id;
+	GLint wraps;
+	GLint wrapt;
+	GLint minfilter;
+	GLint magfilter;
+} SAMPLER;
+
+typedef struct FBO
+{
+	GLuint fbo;
+	glTexture *fbcolor;
+	glTexture *fbz;
+	BOOL stencil;
+	GLenum status;
+} FBO;
+
+typedef struct
+{
+	GLfloat x, y;
+	GLfloat s, t;
+	GLfloat dests, destt;
+	GLfloat stencils, stencilt;
+} BltVertex;
+
+typedef struct glUtil
+{
+	ULONG refcount;
+	FBO *currentfbo;
+	BufferObject *pboPackBinding;
+	BufferObject *pboUnpackBinding;
+	BufferObject *vboArrayBinding;
+	BufferObject *vboElementArrayBinding;
+	BufferObject *uboUniformBufferBinding;
+	glExtensions *ext;
+	BOOL depthwrite;
+	BOOL depthtest;
+	GLuint depthcomp;
+	GLuint alphacomp;
+	GLint scissorx;
+	GLint scissory;
+	GLsizei scissorwidth;
+	GLsizei scissorheight;
+	GLint viewportx;
+	GLint viewporty;
+	GLsizei viewportwidth;
+	GLsizei viewportheight;
+	GLclampd depthnear;
+	GLclampd depthfar;
+	GLenum matrixmode;
+	GLfloat materialambient[4];
+	GLfloat materialdiffuse[4];
+	GLfloat materialspecular[4];
+	GLfloat materialemission[4];
+	GLfloat materialshininess;
+	BOOL scissorenabled;
+	GLint texwrap[16];
+	GLclampf clearr;
+	GLclampf clearg;
+	GLclampf clearb;
+	GLclampf cleara;
+	GLclampd cleardepth;
+	GLint clearstencil;
+	GLenum blendsrc;
+	GLenum blenddest;
+	BOOL blendenabled;
+	BOOL arrays[42];
+	D3DCULL cullmode;
+	BOOL cullenabled;
+	D3DFILLMODE polymode;
+	D3DSHADEMODE shademode;
+	BufferObject *LastBoundBuffer;
+	SAMPLER samplers[8];
+	GLint texlevel;
+	GLuint textures[16];
+} glUtil;
 
 void glUtil_Create(glExtensions *glext, glUtil **out);
 void glUtil_AddRef(glUtil *This);
 void glUtil_Release(glUtil *This);
 void glUtil_InitFBO(glUtil *This, FBO *fbo);
 void glUtil_DeleteFBO(glUtil *This, FBO *fbo);
-void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, GLint level, GLint zlevel, BOOL stencil);
+void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil);
 void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address);
-GLenum glUtil_SetFBOSurface(glUtil *This, glTexture *surface);
+GLenum glUtil_SetFBOSurface(glUtil *This, glDirectDrawSurface7 *surface);
 GLenum glUtil_SetFBO(glUtil *This, FBO *fbo);
-GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, GLint level, GLint zlevel, BOOL stencil);
+GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, BOOL stencil);
 void glUtil_SetDepthComp(glUtil *This, GLenum comp);
 void glUtil_DepthWrite(glUtil *This, BOOL enabled);
 void glUtil_DepthTest(glUtil *This, BOOL enabled);

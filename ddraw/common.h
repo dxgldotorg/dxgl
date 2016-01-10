@@ -30,8 +30,6 @@
 #include "GL/gl.h"
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
-#include "struct.h"
-#include "const.h"
 #include "glExtensions.h"
 #ifdef __cplusplus
 #include "string.h"

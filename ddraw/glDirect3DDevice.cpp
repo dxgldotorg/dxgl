@@ -324,7 +324,6 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	transform_dirty = true;
 	matrices = NULL;
 	matrixcount = 0;
-	ZeroMemory(&texstagesurfaces, 8 * sizeof(LPDIRECTDRAWSURFACE7));
 	texstages[0] = texstagedefault0;
 	texstages[1] = texstages[2] = texstages[3] = texstages[4] = 
 		texstages[5] = texstages[6] = texstages[7] = texstagedefault1;
@@ -335,11 +334,10 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	this->glD3D7 = glD3D7;
 	glD3D7->AddRef();
 	this->glDDS7 = glDDS7;
-	if(!creator) glDirectDrawSurface7_AddRef(glDDS7);
+	if(!creator) glDDS7->AddRef();
 	renderer = this->glD3D7->glDD7->renderer;
-	glRenderer_SetRenderTarget(renderer, this->glDDS7->texture);
 	ZeroMemory(&viewport,sizeof(D3DVIEWPORT7));
-	if(glDDS7->zbuffer) zbuffer = 1;
+	if(glDDS7->GetZBuffer()) zbuffer = 1;
 	ZeroMemory(&material,sizeof(D3DMATERIAL7));
 	lightsmax = 16;
 	lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
@@ -377,8 +375,8 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	for(int i = 0; i < lightsmax; i++)
 		if(lights[i]) delete lights[i];
 	free(lights);
-	for (int i = 0; i < 8; i++)
-		if (texstages[i].texture) glTexture_Release(texstages[i].texture, FALSE, renderer);
+	for(int i = 0; i < 8; i++)
+		if(texstages[i].texture) texstages[i].texture->Release();
 	for(int i = 0; i < materialcount; i++)
 	{
 		if(materials[i])
@@ -400,7 +398,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	{
 		if(textures[i])
 		{
-			glDirectDrawSurface7_Release(textures[i]);
+			textures[i]->Release();
 		}
 	}
 	free(viewports);
@@ -411,7 +409,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	if (glD3DDev2) delete glD3DDev2;
 	if (glD3DDev1) delete glD3DDev1;
 	glD3D7->Release();
-	if(!creator) glDirectDrawSurface7_Release(glDDS7);
+	if(!creator) glDDS7->Release();
 	TRACE_EXIT(-1,0);
 }
 
@@ -580,7 +578,7 @@ HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD 
 	TRACE_ENTER(7,14,this,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7->texture,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
+	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
 
 // ComputeSphereVisibility based on modified code from the Wine project, subject
@@ -1092,8 +1090,8 @@ HRESULT WINAPI glDirect3DDevice7::GetRenderTarget(LPDIRECTDRAWSURFACE7 *lplpRend
 	TRACE_ENTER(2,14,this,14,lplpRenderTarget);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpRenderTarget) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	glDirectDrawSurface7_AddRef(glDDS7);
-	*lplpRenderTarget = (LPDIRECTDRAWSURFACE7)glDDS7;
+	glDDS7->AddRef();
+	*lplpRenderTarget = glDDS7;
 	TRACE_VAR("*lplpRenderTarger",14,*lplpRenderTarget);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1113,8 +1111,8 @@ HRESULT WINAPI glDirect3DDevice7::GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	if(!lplpTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!texstages[dwStage].texture) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	*lplpTexture = (LPDIRECTDRAWSURFACE7)texstagesurfaces[dwStage];
-	glDirectDrawSurface7_AddRef(texstagesurfaces[dwStage]);
+	*lplpTexture = texstages[dwStage].texture;
+	texstages[dwStage].texture->AddRef();
 	TRACE_VAR("*lplpTexture",14,*lplpTexture);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1361,7 +1359,7 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 		if(dwRenderState)
 		{
 			if(!textures[dwRenderState]) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-			SetTexture(0,(LPDIRECTDRAWSURFACE7)textures[dwRenderState]);
+			SetTexture(0,textures[dwRenderState]);
 		}
 		else SetTexture(0,NULL);
 		break;
@@ -1496,10 +1494,9 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderTarget(LPDIRECTDRAWSURFACE7 lpNewRend
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	lpNewRenderTarget->GetSurfaceDesc(&ddsd);
 	if(!(ddsd.ddsCaps.dwCaps & DDSCAPS_3DDEVICE)) TRACE_RET(HRESULT,23,DDERR_INVALIDSURFACETYPE);
-	if(glDDS7) glDirectDrawSurface7_Release(glDDS7);
+	if(glDDS7) glDDS7->Release();
 	glDDS7 = (glDirectDrawSurface7*)lpNewRenderTarget;
-	glDirectDrawSurface7_AddRef(glDDS7);
-	glRenderer_SetRenderTarget(renderer, glDDS7->texture);
+	glDDS7->AddRef();
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1516,26 +1513,17 @@ HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	TRACE_ENTER(3,14,this,8,dwStage,14,lpTexture);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if (texstages[dwStage].texture)
-	{
-		glDirectDrawSurface7_Release(texstagesurfaces[dwStage]);
-		glTexture_Release(texstages[dwStage].texture, FALSE, renderer);
-	}
-	texstagesurfaces[dwStage] = (glDirectDrawSurface7*)lpTexture;
-	if (lpTexture)
-	{
-		texstages[dwStage].texture = texstagesurfaces[dwStage]->texture;
-		lpTexture->AddRef();
-		glTexture_AddRef(texstages[dwStage].texture);
-	}
+	if(texstages[dwStage].texture) texstages[dwStage].texture->Release();
+	texstages[dwStage].texture = (glDirectDrawSurface7*)lpTexture;
+	if(lpTexture) lpTexture->AddRef();
 	glRenderer_SetTexture(renderer, dwStage, texstages[dwStage].texture);
 	if (renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
-		BOOL noalpha = FALSE;
-		if (!texstages[0].texture) noalpha = TRUE;
+		bool noalpha = false;
+		if (!texstages[0].texture) noalpha = true;
 		if (texstages[0].texture)
 			if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
-				noalpha = TRUE;
+				noalpha = true;
 		if (noalpha) SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
 		else SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
 	}
@@ -1781,7 +1769,7 @@ D3DTEXTUREHANDLE glDirect3DDevice7::AddTexture(glDirectDrawSurface7 *texture)
 {
 	TRACE_ENTER(2,14,this,14,texture);
 	textures[texturecount] = texture;
-	glDirectDrawSurface7_AddRef(texture);
+	texture->AddRef();
 	texturecount++;
 	if(texturecount >= maxtextures)
 	{
@@ -1793,7 +1781,7 @@ D3DTEXTUREHANDLE glDirect3DDevice7::AddTexture(glDirectDrawSurface7 *texture)
 			maxtextures -= 32;
 			texturecount--;
 			textures[texturecount] = NULL;
-			glDirectDrawSurface7_Release(texture);
+			texture->Release();
 			TRACE_EXIT(9,0xFFFFFFFF);
 			return 0xFFFFFFFF;
 		}
@@ -3115,7 +3103,7 @@ HRESULT WINAPI glDirect3DDevice3::SetRenderTarget(LPDIRECTDRAWSURFACE4 lpNewRend
 {
 	TRACE_ENTER(3,14,this,14,lpNewRenderTarget,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->SetRenderTarget((LPDIRECTDRAWSURFACE7)((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+	TRACE_RET(HRESULT,23,glD3DDev7->SetRenderTarget(((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice3::SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture)
@@ -3125,7 +3113,7 @@ HRESULT WINAPI glDirect3DDevice3::SetTexture(DWORD dwStage, LPDIRECT3DTEXTURE2 l
 	glDirectDrawSurface7 *dds7;
 	if(lpTexture) dds7 = ((glDirect3DTexture2*)lpTexture)->GetDDS7();
 	else dds7 = NULL;
-	TRACE_RET(HRESULT,23,glD3DDev7->SetTexture(dwStage,(LPDIRECTDRAWSURFACE7)dds7));
+	TRACE_RET(HRESULT,23,glD3DDev7->SetTexture(dwStage,dds7));
 }
 
 HRESULT WINAPI glDirect3DDevice3::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
@@ -3466,7 +3454,7 @@ HRESULT WINAPI glDirect3DDevice2::SetRenderTarget(LPDIRECTDRAWSURFACE lpNewRende
 {
 	TRACE_ENTER(3,14,this,14,lpNewRenderTarget,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->SetRenderTarget((LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+	TRACE_RET(HRESULT,23,glD3DDev7->SetRenderTarget(((glDirectDrawSurface1*)lpNewRenderTarget)->GetDDS7(),dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice2::SetTransform(D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
