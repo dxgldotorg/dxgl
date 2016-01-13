@@ -234,14 +234,14 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 		case 2:     // Windowed
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
-			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX));
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
 		case 3:     // Windowed resizable
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
-			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle | WS_OVERLAPPEDWINDOW);
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
@@ -621,7 +621,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 		case 2:     // Windowed
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
-			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX));
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
@@ -637,7 +637,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 		case 3:     // Windowed resizable
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
-			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle | WS_OVERLAPPEDWINDOW);
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
