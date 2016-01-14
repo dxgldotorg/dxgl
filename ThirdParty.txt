@@ -60,6 +60,14 @@ This is free and unencumbered software released into the public domain
 
 ------------------------------------------------------------------------------
 
+Installer contains SHA-512 code from waterjuice.org, under the following declaration:
+Original author: Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+Modified by WaterJuice retaining Public Domain license.
+This is free and unencumbered software released into the public domain
+- June 2013 waterjuice.org
+
+------------------------------------------------------------------------------
+
 Contains portions of the Mesa project.c file, under the following license:
 SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
 Copyright (C) 1991-2000 Silicon Graphics, Inc. All Rights Reserved.
@@ -173,3 +181,8 @@ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+------------------------------------------------------------------------------
+
+Installer uses Nullsoft Scriptable Install System; the license for which
+can be viewed at http://nsis.sourceforge.net/License
