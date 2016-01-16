@@ -19,7 +19,10 @@
 #include "hooks.h"
 #include <tlhelp32.h>
 #include "../minhook-1.3/include/MinHook.h"
-void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);  // temporary until glDirectDraw is converted to C
+
+// temporary references to C++ C-linked stuff
+void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
+extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
 const TCHAR *wndpropdd7 = _T("DXGLWndDD7");
@@ -265,14 +268,17 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_ACTIVATEAPP:
 		if (!wParam)
 		{
-			ShowWindow(hWnd, SW_MINIMIZE);
-			if (lpDD7) IDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
+			if (dxglcfg.fullmode < 2)
+			{
+				ShowWindow(hWnd, SW_MINIMIZE);
+				if (lpDD7) IDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
+			}
 		}
 		break;
 	case WM_SYSCOMMAND:
 		if (wParam == SC_RESTORE)
 		{
-			if (lpDD7) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
+			if (lpDD7 && (dxglcfg.fullmode < 2)) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
 		}
 		break;
 	}
