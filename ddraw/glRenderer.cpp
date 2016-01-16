@@ -626,29 +626,29 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
 			screeny = GetSystemMetrics(SM_CYSCREEN);
-			wndrect.right = width;
-			wndrect.bottom = height;
+			wndrect.right = width + (screenx / 2) - (width / 2);
+			wndrect.bottom = height + (screeny / 2) - (height / 2);
 			wndrect.left = (screenx / 2) - (width / 2);
 			wndrect.top = (screeny / 2) - (height / 2);
 			AdjustWindowRect(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE);
-			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right,
-				wndrect.bottom, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			break;
 		case 3:     // Windowed resizable
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
-			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle | WS_OVERLAPPEDWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle | WS_SYSMENU | WS_OVERLAPPEDWINDOW);
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
 			screeny = GetSystemMetrics(SM_CYSCREEN);
-			wndrect.right = width;
-			wndrect.bottom = height;
+			wndrect.right = width + (screenx / 2) - (width / 2);
+			wndrect.bottom = height + (screeny / 2) - (height / 2);
 			wndrect.left = (screenx / 2) - (width / 2);
 			wndrect.top = (screeny / 2) - (height / 2);
 			AdjustWindowRect(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE);
-			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right,
-				wndrect.bottom, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			break;
 		}
 	}
