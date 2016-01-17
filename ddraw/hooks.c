@@ -22,6 +22,7 @@
 
 // temporary references to C++ C-linked stuff
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
+void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);
 extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
@@ -281,6 +282,14 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			if (lpDD7 && (dxglcfg.fullmode < 2)) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
 		}
 		break;
+	case WM_SIZE:
+		if (wParam != SIZE_MINIMIZED)
+		{
+			if (dxglcfg.fullmode == 3)
+			{
+				if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
+			}
+		}
 	}
 	return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 }

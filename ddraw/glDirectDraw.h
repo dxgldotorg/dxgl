@@ -142,6 +142,8 @@ private:
 };
 
 extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
+extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *glDD7, LONG *sizes);
+extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
 
 class glDirectDraw1 : public IDirectDraw
 {

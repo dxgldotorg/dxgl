@@ -47,7 +47,7 @@ FONT 8, "Ms Shell Dlg 2"
     AUTOCHECKBOX    "Change display color depth", IDC_COLOR, 299, 14, 100, 10
     LTEXT           "Scaling method", IDC_STATIC, 195, 69, 49, 8, SS_LEFT
     COMBOBOX        IDC_SCALE, 195, 79, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    LTEXT           "Fullscreen mode", IDC_STATIC, 299, 69, 41, 8, SS_LEFT
+    LTEXT           "Fullscreen window mode", IDC_STATIC, 299, 69, 78, 8, SS_LEFT
     COMBOBOX        IDC_FULLMODE, 299, 79, 100, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "Post-processing shader", IDC_STATIC, 195, 94, 90, 8, SS_LEFT
     EDITTEXT        IDC_SHADER, 195, 104, 183, 14, ES_AUTOHSCROLL

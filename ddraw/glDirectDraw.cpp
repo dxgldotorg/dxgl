@@ -1435,6 +1435,13 @@ extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *glDD7, LONG *sizes)
 {
 	glDD7->GetSizes(sizes);
 }
+extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight)
+{
+	glDD7->internalx = glDD7->screenx = dwWidth;
+	glDD7->internaly = glDD7->screeny = dwHeight;
+	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
+		glDD7->primary->paltex, glDD7->primary, glDD7->primary, 0);
+}
 
 
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
