@@ -23,6 +23,7 @@
 // temporary references to C++ C-linked stuff
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
 void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);
+void glDirectDraw7_GetSizes(LPDIRECTDRAW7 lpDD7, LONG *sizes);
 extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
@@ -252,6 +253,11 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 {
 	WNDPROC parentproc;
 	HWND_HOOK *wndhook;
+	STYLESTRUCT *style;
+	RECT r1, r2;
+	LONG sizes[6];
+	BOOL fixstyle = FALSE;
+	LONG winstyle, exstyle;
 	LPDIRECTDRAW7 lpDD7;
 	wndhook = GetWndHook(hWnd);
 	if (!wndhook)
@@ -276,6 +282,64 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			}
 		}
 		break;
+	case WM_STYLECHANGED:
+		style = lParam;
+		if (style->styleNew == style->styleOld) break;
+		if (wParam == GWL_STYLE)
+		{
+			switch (dxglcfg.fullmode)
+			{
+			case 0:
+				// Fix fullscreen mode
+				if (lpDD7)
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					GetWindowRect(hWnd, &r1);
+					GetClientRect(hWnd, &r2);
+					winstyle = GetWindowLong(hWnd, GWL_STYLE);
+					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+					if (!(winstyle & WS_POPUP)) fixstyle = TRUE;
+					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER)) fixstyle = TRUE;
+					if (winstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+					if (fixstyle)
+					{
+						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+					}
+				}
+				break;
+			case 1:
+				// Fix borderless mode
+				if (lpDD7)
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					GetWindowRect(hWnd, &r1);
+					GetClientRect(hWnd, &r2);
+					winstyle = GetWindowLong(hWnd, GWL_STYLE);
+					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP)) fixstyle = TRUE;
+					if (winstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+					if (fixstyle)
+					{
+						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+						SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+					}
+				}
+				break;
+				break;
+			case 2:
+				// Fix non-resizable window mode
+				break;
+			case 3:
+				// Fix resizable window mode
+				break;
+			}
+		}
+		break;
 	case WM_SYSCOMMAND:
 		if (wParam == SC_RESTORE)
 		{
@@ -290,6 +354,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
 			}
 		}
+		break;
 	}
 	return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 }

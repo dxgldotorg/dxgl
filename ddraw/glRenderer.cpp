@@ -223,12 +223,18 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	{
 		switch (dxglcfg.fullmode)
 		{
-		case 0:
+		case 0:    // Fullscreen
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			break;
 		case 1:    // Fullscreen
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
 		case 2:     // Windowed
@@ -610,12 +616,18 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 	{
 		switch (dxglcfg.fullmode)
 		{
-		case 0:
-		case 1:    // Fullscreen
+		case 0:    // Fullscreen
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_POPUP | WS_SYSMENU) & ~(WS_CAPTION | WS_THICKFRAME));
+			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+			ShowWindow(newwnd, SW_MAXIMIZE);
+			break;
+		case 1:    // Borderless Fullscreen
+			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
 			ShowWindow(newwnd, SW_MAXIMIZE);
 			break;
 		case 2:     // Windowed
