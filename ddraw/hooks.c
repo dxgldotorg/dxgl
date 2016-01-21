@@ -380,7 +380,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_SIZE:
 		if (wParam != SIZE_MINIMIZED)
 		{
-			if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7)
+			if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7 && (dxglcfg.scaler != 0))
 			{
 				glDirectDraw7_GetSizes(lpDD7, sizes);
 				if ((LOWORD(lParam) == sizes[4]) && (HIWORD(lParam) == sizes[5])) break;
