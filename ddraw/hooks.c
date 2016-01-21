@@ -306,7 +306,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					{
 						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
 						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
 					}
 				}
 				break;
@@ -326,7 +326,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					{
 						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
 						SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
 					}
 				}
 				break;
@@ -365,7 +365,6 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					{
 						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
 						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 					}
 				}
 				break;
@@ -381,6 +380,13 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_SIZE:
 		if (wParam != SIZE_MINIMIZED)
 		{
+			if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7)
+			{
+				glDirectDraw7_GetSizes(lpDD7, sizes);
+				if ((LOWORD(lParam) == sizes[4]) && (HIWORD(lParam) == sizes[5])) break;
+				SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
+				glDirectDraw7_SetWindowSize(lpDD7, sizes[4], sizes[5]);
+			}
 			if (dxglcfg.fullmode == 3)
 			{
 				if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
