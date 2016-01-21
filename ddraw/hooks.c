@@ -320,7 +320,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					winstyle = GetWindowLong(hWnd, GWL_STYLE);
 					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
 					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP)) fixstyle = TRUE;
-					if (winstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+					if (exstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
 					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
 					if (fixstyle)
 					{
@@ -330,12 +330,44 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					}
 				}
 				break;
-				break;
 			case 2:
 				// Fix non-resizable window mode
+				if (lpDD7)
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					GetClientRect(hWnd, &r2);
+					winstyle = GetWindowLong(hWnd, GWL_STYLE);
+					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+					if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
+					if (!(winstyle & (WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)))) fixstyle = TRUE;
+					if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
+					if (!((r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+					if (fixstyle)
+					{
+						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
+						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+					}
+				}
 				break;
 			case 3:
 				// Fix resizable window mode
+				if (lpDD7)
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					GetClientRect(hWnd, &r2);
+					winstyle = GetWindowLong(hWnd, GWL_STYLE);
+					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+					if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
+					if (!(winstyle & WS_OVERLAPPEDWINDOW)) fixstyle = TRUE;
+					if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
+					if (fixstyle)
+					{
+						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
+						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+					}
+				}
 				break;
 			}
 		}
