@@ -19,6 +19,7 @@
       <area shape="rect" coords="296,136,448,170" alt="Scaling method" href="#scaler" />
       <area shape="rect" coords="296,233,448,253" alt="Screen aspect ratio" href="#aspect" />
       <area shape="rect" coords="452,233,601,253" alt="DPI scaling mode" href="#dpiscale" />
+      <area shape="rect" coords="452,150,601,170" alt="Fullscreen window mode" href="#fullmode" />
     </map>
     <h1>Configuration</h1>
       Configuration for DXGL can be accessed by opening the &quot;DXGL Config&quot; program in the DXGL program group.  Configuration is as follows:
@@ -84,5 +85,15 @@
     Default setting.  Enables the DPI scaling fix during program initialization.
     <h3>Windows AppCompat</h3>
     Sets a compatibility flag to tell Windows to fix High DPI scaling.  Use if Enabled does not work.
+    <h2><a name="fullmode">Fullscreen window mode</a></h2>
+    Sets the mode to be used when creating a window for fullscreen mode.
+    <h3>Exclusive fullscreen</h3>
+    Sets the display to fullscreen mode.  For Windows Vista and greater, causes the Windows graphics to be temporarily suspended, giving the GPU exclusive control of the screen.  This mode is the default.
+    <h3>Non-exclusive fullscreen</h3>
+    Creates a window that fills the screen but tells the display driver not to take exclusive control of the screen.  This is also known as borderless windowed mode.  Try this mode if the application mixes DirectDraw with GDI and some graphics elements are missing.
+    <h3>Non-resizable window</h3>
+    Forces the fullscreen application to display in a floating window.  Please note that some applications may capture the mouse and thus may cause compatibility issues.
+    <h3>Resizable window</h3>
+    Forces the fullscreen application to display in a floating window that can be resized or maximized.  Please note that some applications may capture the mouse and thus may cause compatibility issues.
   </body>
 </html>

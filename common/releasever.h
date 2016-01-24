@@ -4,7 +4,7 @@
 
 #define DXGLMAJORVER 0
 #define DXGLMINORVER 5
-#define DXGLPOINTVER 7
+#define DXGLPOINTVER 8
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
