@@ -826,6 +826,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	{
 		if (!clipper->hWnd)
 		{
+			if (!clipper->clipsize) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
 			if (!stencil)
 			{
 				stencil = (glTexture*)malloc(sizeof(glTexture));

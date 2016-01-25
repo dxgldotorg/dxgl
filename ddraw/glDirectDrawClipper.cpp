@@ -133,7 +133,7 @@ HRESULT WINAPI glDirectDrawClipper_GetClipList(glDirectDrawClipper *This, LPRECT
 	TRACE_ENTER(4,14,This,26,lpRect,14,lpClipList,14,lpdwSize);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpdwSize) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	if (!This->clipsize)
+	if (!This->clipsize || This->hWnd)
 	{
 		if (!This->hWnd) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
 		hdc = GetDC(This->hWnd);
