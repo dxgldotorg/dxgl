@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -101,6 +101,7 @@ struct TEXTURESTAGE
 #define OP_SETMATERIAL				20
 #define OP_SETLIGHT					21
 #define OP_SETVIEWPORT				22
+#define OP_DXGLBREAK                23
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -191,6 +192,7 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
+void glRenderer_DXGLBreak(glRenderer *This);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
@@ -226,6 +228,7 @@ void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer__SetDepthComp(glRenderer *This);
+void glRenderer__DXGLBreak(glRenderer *This);
 
 #ifdef __cplusplus
 }

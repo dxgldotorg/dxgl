@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -119,6 +119,8 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 	else ext->GLEXT_ARB_sampler_objects = 0;
 	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4")) ext->GLEXT_EXT_gpu_shader4 = 1;
 	else ext->GLEXT_EXT_gpu_shader4 = 0;
+	if(strstr((char*)glextensions,"GL_GREMEDY_frame_terminator")) ext->GLEXT_GREMEDY_frame_terminator = 1;
+	else ext->GLEXT_GREMEDY_frame_terminator = 0;
 	broken_fbo = TRUE;
 	if(ext->GLEXT_ARB_framebuffer_object)
 	{
@@ -180,6 +182,10 @@ Please contact your graphics card manufacturer for an updated driver.  This prog
 		ext->glSamplerParameteri = (PFNGLSAMPLERPARAMETERIPROC)wglGetProcAddress("glSamplerParameteri");
 		ext->glSamplerParameterfv = (PFNGLSAMPLERPARAMETERFVPROC)wglGetProcAddress("glSamplerParameterfv");
 		ext->glSamplerParameteriv = (PFNGLSAMPLERPARAMETERIVPROC)wglGetProcAddress("glSamplerParameteriv");
+	}
+	if (ext->GLEXT_GREMEDY_frame_terminator)
+	{
+		ext->glFrameTerminatorGREMEDY = (PFNGLFRAMETERMINATORGREMEDYPROC)wglGetProcAddress("glFrameTerminatorGREMEDY");
 	}
 	if(broken_fbo)
 	{

@@ -667,6 +667,7 @@ glDirectDraw7::~glDirectDraw7()
 	if (glD3D3) delete glD3D3;
 	if (glD3D2) delete glD3D2;
 	if (glD3D1) delete glD3D1;
+	DeleteDirectDraw();
 	TRACE_EXIT(-1,0);
 }
 

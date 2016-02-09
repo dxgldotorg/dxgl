@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ DDRAW_API void WINAPI RegisterSpecialCase();
 DDRAW_API void WINAPI ReleaseDDThreadLock();
 DDRAW_API BOOL IsDXGLDDraw();
 
+void DeleteDirectDraw();
 extern "C" {extern DXGLCFG dxglcfg; }
 extern DWORD gllock;
 extern const GUID device_template;

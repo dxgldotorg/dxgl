@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -769,16 +769,16 @@ unsigned int glRenderer_GetScanLine(glRenderer *This)
 }
 
 /**
-* Fills a depth surface with a specified value.
-* @param This
-*  Pointer to glRenderer object
-* @param lpDestRect
-*  Pointer to bounding rectangle for depth fill.  If NULL, then fill entire surface
-* @param dest
-*  Destination surface to depth fill
-* @param lpDDBltFx
-*  Pointer to DDBLTFX structure with dwFillDepth defining the depth value.
-*/
+  * Fills a depth surface with a specified value.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param lpDestRect
+  *  Pointer to bounding rectangle for depth fill.  If NULL, then fill entire surface
+  * @param dest
+  *  Destination surface to depth fill
+  * @param lpDDBltFx
+  *  Pointer to DDBLTFX structure with dwFillDepth defining the depth value.
+  */
 HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
 {
 	EnterCriticalSection(&This->cs);
@@ -793,14 +793,14 @@ HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSu
 }
 
 /**
-* Sets a render state within the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param dwRendStateType
-*  Render state to change
-* @param dwRenderState
-*  New render state value
-*/
+  * Sets a render state within the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param dwRendStateType
+  *  Render state to change
+  * @param dwRenderState
+  *  New render state value
+  */
 void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState)
 {
 	EnterCriticalSection(&This->cs);
@@ -813,14 +813,14 @@ void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateT
 }
 
 /**
-* Binds a surface to a texture stage in the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param dwStage
-*  Texture stage to bind
-* @param Texture
-*  Texture to bind to the stage; old texture will be released; NULL to unbind
-*/
+  * Binds a surface to a texture stage in the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param dwStage
+  *  Texture stage to bind
+  * @param Texture
+  *  Texture to bind to the stage; old texture will be released; NULL to unbind
+  */
 void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
 {
 	EnterCriticalSection(&This->cs);
@@ -833,16 +833,16 @@ void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7
 }
 
 /**
-* Sets a texture stage state within the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param dwStage
-*  Texture stage to modify
-* @param dwState
-*  Texture stage state to modify
-* @param dwValue
-*  New value for texture stage state.
-*/
+  * Sets a texture stage state within the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param dwStage
+  *  Texture stage to modify
+  * @param dwState
+  *  Texture stage state to modify
+  * @param dwValue
+  *  New value for texture stage state.
+  */
 void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
 {
 	EnterCriticalSection(&This->cs);
@@ -856,14 +856,14 @@ void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURE
 }
 
 /**
-* Sets a transform matrix in the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param dtstTransformStateType
-*  Transform matrix to replace
-* @param lpD3DMatrix
-*  New transform matrix
-*/
+  * Sets a transform matrix in the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param dtstTransformStateType
+  *  Transform matrix to replace
+  * @param lpD3DMatrix
+  *  New transform matrix
+  */
 void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
 	EnterCriticalSection(&This->cs);
@@ -876,12 +876,12 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 }
 
 /**
-* Sets the material in the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param lpMaterial
-*  New material parameters
-*/
+  * Sets the material in the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param lpMaterial
+  *  New material parameters
+  */
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 {
 	EnterCriticalSection(&This->cs);
@@ -893,16 +893,16 @@ void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 }
 
 /**
-* Sets a light in the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param index
-*  Index of light to set
-* @param light
-*  Pointer to light to change, ignored if remove is TRUE
-* @param remove
-*  TRUE to clear a light from the renderer.
-*/
+  * Sets a light in the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param index
+  *  Index of light to set
+  * @param light
+  *  Pointer to light to change, ignored if remove is TRUE
+  * @param remove
+  *  TRUE to clear a light from the renderer.
+  */
 
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
 {
@@ -917,17 +917,32 @@ void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL 
 }
 
 /**
-* Sets the viewport for the renderer.
-* @param This
-*  Pointer to glRenderer object
-* @param lpViewport
-*  New viewport parameters for renderer.
-*/
+  * Sets the viewport for the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param lpViewport
+  *  New viewport parameters for renderer.
+  */
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = lpViewport;
 	This->opcode = OP_SETVIEWPORT;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+  * Generates a glFrameTerminatorGREMEDY command in OpenGL if the 
+  * glFrameTerminatorGREMEDY command is available (i.e. running under gDebugger).
+  * @param This
+  *  Pointer to glRenderer object
+  */
+void glRenderer_DXGLBreak(glRenderer *This)
+{
+	EnterCriticalSection(&This->cs);
+	This->opcode = OP_DXGLBREAK;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy, INFINITE);
 	LeaveCriticalSection(&This->cs);
@@ -1072,6 +1087,9 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_SETVIEWPORT:
 			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
+			break;
+		case OP_DXGLBREAK:
+			glRenderer__DXGLBreak(This);
 			break;
 		}
 	}
@@ -2975,6 +2993,12 @@ void glRenderer__SetDepthComp(glRenderer *This)
 		glUtil_SetDepthComp(This->util, GL_ALWAYS);
 		break;
 	}
+}
+
+void glRenderer__DXGLBreak(glRenderer *This)
+{
+	if (This->ext->GLEXT_GREMEDY_frame_terminator) This->ext->glFrameTerminatorGREMEDY();
+	SetEvent(This->busy);
 }
 
 }

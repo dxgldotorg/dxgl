@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -137,6 +137,8 @@ typedef struct glExtensions
 	void (APIENTRY *glSamplerParameterfv)(GLuint sampler, GLenum pname, const GLfloat *params);
 	void (APIENTRY *glSamplerParameteriv)(GLuint sampler, GLenum pname, const GLint *params);
 
+	void (APIENTRY *glFrameTerminatorGREMEDY)();
+
 	int GLEXT_ARB_framebuffer_object;
 	int GLEXT_EXT_framebuffer_object;
 	int GLEXT_NV_packed_depth_stencil;
@@ -150,6 +152,7 @@ typedef struct glExtensions
 	int GLEXT_ARB_direct_state_access;
 	int GLEXT_ARB_sampler_objects;
 	int GLEXT_EXT_gpu_shader4;
+	int GLEXT_GREMEDY_frame_terminator;
 	int glver_major;
 	int glver_minor;
 	BOOL atimem;

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,7 @@
 #include <intrin.h>
 
 extern "C" {DXGLCFG dxglcfg; }
+glDirectDraw7 *glDD7 = NULL;
 DWORD gllock = 0;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
@@ -167,9 +168,11 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	HRESULT error;
 	myddraw7 = new glDirectDraw7(lpGUID,pUnkOuter);
 	error = myddraw7->err();
+	glDD7 = myddraw7;
 	if(error != DD_OK)
 	{
 		delete myddraw7;
+		glDD7 = NULL;
 		LeaveCriticalSection(&dll_cs);
 		TRACE_EXIT(23, error);
 		return error;
@@ -561,10 +564,34 @@ DDRAW_API void WINAPI SetAppCompatData()
   *  this function to test whether your program should run or not.  This
   *  function may be changed or removed in case of abuse.
   */
-
 DDRAW_API BOOL IsDXGLDDraw()
 {
 	TRACE_ENTER(0);
 	TRACE_EXIT(0,0);
 	return TRUE;
+}
+
+/**
+  * Deletes the known instance of DirectDraw from the ddraw module.
+  */
+void DeleteDirectDraw()
+{
+	glDD7 = NULL;
+}
+
+/**
+  * Generates a glFrameTerminatorGREMEDY command in OpenGL if the renderer
+  * is active and the glFrameTerminatorGREMEDY command is available (i.e.
+  * running under gDebugger).
+  * Do not link to this entry point.  Use LoadLibrary and GetProcAddress instead.
+  */
+DDRAW_API void DXGLBreak()
+{
+	if (glDD7)
+	{
+		if (glDD7->renderer)
+		{
+			glRenderer_DXGLBreak(glDD7->renderer);
+		}
+	}
 }
