@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -100,7 +100,6 @@ public:
 	DWORD primaryx,primaryy,primaryrefresh,primarybpp;
 	bool GetFullscreen(){return fullscreen;};
 	void DeleteSurface(glDirectDrawSurface7 *surface);
-	void DeleteClipper(glDirectDrawClipper *clipper);
 	HRESULT SetupTempSurface(DWORD width, DWORD height);
 	void DeleteTempSurface();
 	glDirectDrawSurface7 *primary;
@@ -128,8 +127,6 @@ private:
 	LONG_PTR winstyle,winstyleex;
 	glDirectDrawSurface7 **surfaces;
 	int surfacecount, surfacecountmax;
-	glDirectDrawClipper **clippers;
-	int clippercount, clippercountmax;
 	DEVMODE oldmode;
 	bool initialized;
 	glDirect3D7 *glD3D7;

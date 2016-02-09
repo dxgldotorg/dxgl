@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -101,6 +101,7 @@ HRESULT WINAPI glDirect3DViewport3_QueryInterface(glDirect3DViewport3 *This, REF
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
+	*ppvObj = NULL;
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
