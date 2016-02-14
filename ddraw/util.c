@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2014 William Feely
+// Copyright (C) 2013-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,30 @@
 #include "common.h"
 #include "util.h"
 
+#ifdef _MSC_VER
+#pragma optimize("g", off)
+#endif
 /**
-  * Tests if a pointer is valid for reading from.  Compile in Visual C++ with /EHa
-  * enabled Structed Exception Handling in C++ code, to prevent crashes on invalid
-  * pointers.
+  * Tests if a pointer is valid for reading from.  Uses SEH on Visual C++,
+  * non-recommended Windows API on other systems.
   * @param ptr
   *  Pointer to test for validity.
+  * @param size
+  *  Size of block to check
   * @return
-  *  Returns false if the pointer is valid, or true if an error occurs.
+  *  Returns non-zero if the pointer is valid, or zero if an error occurs.
   */
-char IsReadablePointer(void *ptr)
+char IsReadablePointer(void *ptr, LONG_PTR size)
 {
 	char a;
+	char *ptr2 = ptr;
 	if(!ptr) return 0;
 #ifdef _MSC_VER
 	__try
 	{
-		a = *(char*)ptr;
+		a = ptr2[0];
+		if (!a) a++;
+		if (size > 1) a = ptr2[size-1];
 		if (!a) a++;
 		return a;
 	}
@@ -43,7 +50,49 @@ char IsReadablePointer(void *ptr)
 		return 0;
 	}
 #else
-	if(IsBadReadPtr(ptr,1) return 0;
-	else return 1;)
+	if(IsBadReadPtr(ptr,size)) return 0;
+	else return 1;
 #endif
 }
+
+/**
+* Tests if a pointer is valid for writing to.  Uses SEH on Visual C++,
+* non-recommended Windows API on other systems.
+* @param ptr
+*  Pointer to test for validity.
+* @param size
+*  Size of block to check
+* @param preserve
+*  TRUE to preserve the contents of the pointer.
+* @return
+*  Returns false if the pointer is valid, or true if an error occurs.
+*/
+char IsWritablePointer(void *ptr, LONG_PTR size, BOOL preserve)
+{
+	char a;
+	char *ptr2 = ptr;
+	if (!ptr) return 0;
+#ifdef _MSC_VER
+	__try
+	{
+		if (preserve) a = ptr2[0];
+		else a = 1;
+		ptr2[0] = a + 1;
+		if (preserve) ptr2[0] = a;
+		if (size > 1)
+		{
+			if (preserve) a = ptr2[size-1];
+			ptr2[size-1] = a + 1;
+			if (preserve) ptr2[size-1] = a;
+		}
+		return 1;
+	}
+	__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION)
+	{
+		return 0;
+	}
+#else
+	if (IsBadWritePtr(ptr, 1)) return 0;
+	else return 1;
+#endif
+}	

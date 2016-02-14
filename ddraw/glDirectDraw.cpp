@@ -603,7 +603,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 	glD3D3 = new glDirect3D3(glD3D7);
 	glD3D2 = new glDirect3D2(glD3D7);
 	glD3D1 = new glDirect3D1(glD3D7);
-	if (((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID))
+	if (((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID, sizeof(GUID)))
 	{
 		error = DDERR_INVALIDPARAMS ;
 		TRACE_EXIT(-1,0);
@@ -863,7 +863,7 @@ HRESULT glDirectDraw7::CreateClipper2(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lp
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(5, 14, this, 9, dwFlags, 14, lpDDColorArray, 14, lplpDDPalette, 14, pUnkOuter);
-	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(this,sizeof(glDirectDraw7))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (pUnkOuter) TRACE_RET(HRESULT, 23, CLASS_E_NOAGGREGATION);
 	HRESULT ret = CreatePalette2(dwFlags, lpDDColorArray, lplpDDPalette, pUnkOuter);
 	if (ret == DD_OK)
@@ -878,7 +878,7 @@ HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDCo
 HRESULT glDirectDraw7::CreatePalette2(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(5,14,this,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(this, sizeof(glDirectDraw7))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDPalette) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,CLASS_E_NOAGGREGATION);
 	if (!cooplevel) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
@@ -2132,7 +2132,7 @@ HRESULT WINAPI glDirectDraw1::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 HRESULT WINAPI glDirectDraw1::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(5, 14, this, 9, dwFlags, 14, lpDDColorArray, 14, lplpDDPalette, 14, pUnkOuter);
-	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(this, sizeof(glDirectDraw1))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreatePalette2(dwFlags, lpDDColorArray, lplpDDPalette, pUnkOuter);
 	TRACE_EXIT(23, ret);
 	return ret;
@@ -2332,7 +2332,7 @@ HRESULT WINAPI glDirectDraw2::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 HRESULT WINAPI glDirectDraw2::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(5, 14, this, 9, dwFlags, 14, lpDDColorArray, 14, lplpDDPalette, 14, pUnkOuter);
-	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(this, sizeof(glDirectDraw2))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreatePalette2(dwFlags, lpDDColorArray, lplpDDPalette, pUnkOuter);
 	TRACE_EXIT(23, ret);
 	return ret;
@@ -2556,7 +2556,7 @@ HRESULT WINAPI glDirectDraw4::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 HRESULT WINAPI glDirectDraw4::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
 {
 	TRACE_ENTER(5, 14, this, 9, dwFlags, 14, lpDDColorArray, 14, lplpDDPalette, 14, pUnkOuter);
-	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(this, sizeof(glDirectDraw4))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreatePalette2(dwFlags, lpDDColorArray, lplpDDPalette, pUnkOuter);
 	if (ret == DD_OK)
 	{

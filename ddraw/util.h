@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2014 William Feely
+// Copyright (C) 2013-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,8 @@
 extern "C" {
 #endif
 
-char IsReadablePointer(void *ptr);
+char IsReadablePointer(void *ptr, LONG_PTR size);
+char IsWritablePointer(void *ptr, LONG_PTR size, BOOL preserve);
 
 #ifdef __cplusplus
 }

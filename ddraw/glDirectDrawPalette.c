@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "glDirectDrawPalette.h"
+#include "util.h"
 
 
 const unsigned char DefaultPalette[1024] = {
@@ -90,7 +91,7 @@ const unsigned char DefaultPalette[1024] = {
 HRESULT WINAPI glDirectDrawPalette_QueryInterface(glDirectDrawPalette *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!memcmp(riid,&IID_IUnknown,sizeof(GUID)))
 	{
@@ -107,7 +108,7 @@ HRESULT WINAPI glDirectDrawPalette_QueryInterface(glDirectDrawPalette *This, REF
 ULONG WINAPI glDirectDrawPalette_AddRef(glDirectDrawPalette *This)
 {
 	TRACE_ENTER(1,14,This);
-	if(!This) return 0;
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(ULONG, 8, 0);
 	This->refcount++;
 	TRACE_EXIT(8,This->refcount);
 	return This->refcount;
@@ -117,7 +118,7 @@ ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 {
 	ULONG ret;
 	TRACE_ENTER(1, 14, This);
-	if(!This) return 0;
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(ULONG, 8, 0);
 	This->refcount--;
 	ret = This->refcount;
 	if (This->refcount == 0)
@@ -132,7 +133,8 @@ ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 HRESULT WINAPI glDirectDrawPalette_GetCaps(glDirectDrawPalette *This, LPDWORD lpdwCaps)
 {
 	TRACE_ENTER(2,14,This,14,lpdwCaps);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(lpdwCaps, sizeof(LPDWORD))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	*lpdwCaps = This->flags;
 	TRACE_VAR("*lpdwCaps",9,*lpdwCaps);
 	TRACE_EXIT(23,DD_OK);
@@ -144,7 +146,7 @@ HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD d
 	DWORD allentries = 256;
 	DWORD entrysize;
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwBase, 8, dwNumEntries, 14, lpEntries);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
 	if(This->flags & DDPCAPS_2BIT) allentries=4;
 	if(This->flags & DDPCAPS_4BIT) allentries=16;
@@ -159,7 +161,7 @@ HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD d
 HRESULT WINAPI glDirectDrawPalette_Initialize(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable)
 {
 	TRACE_ENTER(4,14,This,14,lpDD,9,dwFlags,14,lpDDColorTable);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
@@ -168,7 +170,7 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 	DWORD allentries = 256;
 	DWORD entrysize;
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwStartingEntry, 8, dwCount, 14, lpEntries);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
 	if(This->flags & DDPCAPS_2BIT) allentries=4;
 	if(This->flags & DDPCAPS_4BIT) allentries=16;
@@ -213,7 +215,8 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 {
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
-	if (!lplpDDPalette) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDPalette, sizeof(LPDIRECTDRAWPALETTE), FALSE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDColorArray && !IsReadablePointer(lpDDColorArray,256*sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (dwFlags & 0xFFFFF000) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDPCAPS_8BIT) && (dwFlags & DDPCAPS_8BITENTRIES)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (((dwFlags & DDPCAPS_1BIT) || (dwFlags & DDPCAPS_2BIT) || (dwFlags & DDPCAPS_4BIT)) && (dwFlags & DDPCAPS_ALLOW256))
