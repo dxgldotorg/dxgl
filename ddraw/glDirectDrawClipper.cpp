@@ -55,6 +55,7 @@ HRESULT glDirectDrawClipper_Create(DWORD dwFlags, glDirectDraw7 *parent, LPDIREC
 	glDirectDrawClipper *newclipper;
 	TRACE_ENTER(3, 9, dwFlags, 14, parent, 14, lplpDDClipper);
 	if (!lplpDDClipper) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	newclipper = (glDirectDrawClipper*)malloc(sizeof(glDirectDrawClipper));
 	if (!newclipper) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	ZeroMemory(newclipper, sizeof(glDirectDrawClipper));
@@ -325,6 +326,7 @@ HRESULT WINAPI glDirectDrawClipper_GetHWnd(glDirectDrawClipper *This, HWND FAR *
 {
 	TRACE_ENTER(2,14,This,14,lphWnd);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lphWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(!This->hWnd) TRACE_RET(HRESULT,23,DDERR_NOHWND);
 	*lphWnd = This->hWnd;
 	TRACE_VAR("*lphWnd",13,*lphWnd);
@@ -335,6 +337,7 @@ HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIREC
 {
 	TRACE_ENTER(3,14,This,14,lpDD,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	This->glDD7 = (glDirectDraw7*)lpDD;
 	if(This->glDD7) This->hasparent = true;
@@ -348,21 +351,33 @@ HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIREC
 	This->refcount = 1;
 	This->initialized = true;
 	This->dirty = true;
+	This->cliplistchanged = TRUE;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper_IsClipListChanged(glDirectDrawClipper *This, BOOL FAR *lpbChanged)
 {
+	WINDOWPLACEMENT newpos;
 	TRACE_ENTER(2,14,This,14,lpbChanged);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("IDirectDrawClipper::IsClipListChanged: stub");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpbChanged) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	newpos.length = sizeof(WINDOWPLACEMENT);
+	if (This->hWnd) GetWindowPlacement(This->hWnd, &newpos);
+	if (memcmp(&This->lastpos, &newpos, sizeof(WINDOWPLACEMENT)))
+	{
+		This->cliplistchanged = TRUE;
+		memcpy(&This->lastpos, &newpos, sizeof(WINDOWPLACEMENT));
+	}
+	*lpbChanged = This->cliplistchanged;
+	This->cliplistchanged = FALSE;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,This,14,lpClipList,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->hWnd) TRACE_RET(HRESULT,23,DDERR_CLIPPERISUSINGHWND);
 	bool memfail;
 	if(lpClipList)
@@ -437,6 +452,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 	}
 	else This->clipsize = 0;
 	This->dirty = true;
+	This->cliplistchanged = TRUE;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -444,7 +460,11 @@ HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFl
 {
 	TRACE_ENTER(3,14,This,9,dwFlags,13,hWnd);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	This->hWnd = hWnd;
+	This->lastpos.length = sizeof(WINDOWPLACEMENT);
+	GetWindowPlacement(hWnd, &This->lastpos);
+	This->cliplistchanged = TRUE;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
