@@ -581,6 +581,7 @@ glDirectDraw7::glDirectDraw7()
 	glD3D3 = new glDirect3D3(glD3D7);
 	glD3D2 = new glDirect3D2(glD3D7);
 	glD3D1 = new glDirect3D1(glD3D7);
+	clippers = NULL;
 	surfaces = NULL;
 	initialized = false;
 	devid.liDriverVersion.QuadPart = DXGLVERQWORD;
@@ -644,6 +645,15 @@ glDirectDraw7::~glDirectDraw7()
 	{
 		if (fullscreen) UninstallDXGLFullscreenHook(hWnd);
 		RestoreDisplayMode();
+		if (clippers)
+		{
+			for (int i = 0; i < clippercount; i++)
+			{
+				if (clippers[i]) glDirectDrawClipper_Release(clippers[i]);
+				clippers[i] = NULL;
+			}
+			free(clippers);
+		}
 		if(surfaces)
 		{
 			for(int i = 0; i < surfacecount; i++)
@@ -849,6 +859,11 @@ HRESULT WINAPI glDirectDraw7::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 	TRACE_ENTER(4, 14, this, 9, dwFlags, 14, lplpDDClipper, 14, pUnkOuter);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	HRESULT ret = CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)*lplpDDClipper)->creator = this;
+	}
 	TRACE_EXIT(23, ret);
 	return ret;
 }
@@ -858,6 +873,16 @@ HRESULT glDirectDraw7::CreateClipper2(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lp
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDDClipper) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	clippercount++;
+	if (clippercount > clippercountmax)
+	{
+		glDirectDrawClipper **clippers2;
+		clippers2 = (glDirectDrawClipper **)realloc(clippers, (clippercountmax + 1024)*sizeof(glDirectDrawClipper *));
+		if (!clippers2)	TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+		clippers = clippers2;
+		ZeroMemory(&clippers[clippercountmax], 1024 * sizeof(glDirectDrawClipper *));
+		clippercountmax += 1024;
+	}
 	TRACE_RET(HRESULT,23,glDirectDrawClipper_Create(dwFlags, this, lplpDDClipper));
 }
 HRESULT WINAPI glDirectDraw7::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
@@ -1360,6 +1385,11 @@ HRESULT WINAPI glDirectDraw7::Initialize(GUID FAR *lpGUID)
 	surfacecount = 0;
 	surfacecountmax = 1024;
 	tmpsurface = NULL;
+	clippers = (glDirectDrawClipper **)malloc(1024 * sizeof(glDirectDrawClipper *));
+	if (!clippers) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	ZeroMemory(clippers, 1024 * sizeof(glDirectDrawClipper *));
+	clippercount = 0;
+	clippercountmax = 1024;
 	bool useguid = false;
 	switch((INT_PTR)lpGUID)
 	{
@@ -2026,6 +2056,14 @@ void glDirectDraw7::DeleteSurface(glDirectDrawSurface7 *surface)
 	TRACE_EXIT(0,0);
 }
 
+void glDirectDraw7::DeleteClipper(glDirectDrawClipper *clipper)
+{
+	TRACE_ENTER(2, 14, this, clipper);
+	for (int i = 0; i < clippercount; i++)
+		if (clippers[i] == clipper) clippers[i] = NULL;
+	TRACE_EXIT(0, 0);
+}
+
 HRESULT glDirectDraw7::SetupTempSurface(DWORD width, DWORD height)
 {
 	DDSURFACEDESC2 ddsd;
@@ -2126,7 +2164,11 @@ HRESULT WINAPI glDirectDraw1::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
-	TRACE_EXIT(23, ret);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)*lplpDDClipper)->creator = this;
+	}	TRACE_EXIT(23, ret);
 	return ret;
 }
 HRESULT WINAPI glDirectDraw1::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter)
@@ -2326,6 +2368,11 @@ HRESULT WINAPI glDirectDraw2::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)*lplpDDClipper)->creator = this;
+	}
 	TRACE_EXIT(23, ret);
 	return ret;
 }
@@ -2550,6 +2597,11 @@ HRESULT WINAPI glDirectDraw4::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER F
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lplpDDClipper,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT ret = glDD7->CreateClipper2(dwFlags, lplpDDClipper, pUnkOuter);
+	if (ret == DD_OK)
+	{
+		this->AddRef();
+		((glDirectDrawClipper*)*lplpDDClipper)->creator = this;
+	}
 	TRACE_EXIT(23, ret);
 	return ret;
 }
