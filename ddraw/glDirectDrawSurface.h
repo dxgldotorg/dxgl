@@ -110,7 +110,7 @@ public:
 	ULONG WINAPI ReleaseGamma();
 	ULONG WINAPI AddRefColor();
 	ULONG WINAPI ReleaseColor();
-	void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
+	//void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
 	glTexture *GetTexture(){
 		return texture;
 	}
@@ -137,20 +137,10 @@ public:
 	DWORD flipcount;
 	DWORD fakex,fakey;
 	float mulx, muly;
-	DWORD dirty;
-	// dirty bits:
-	// 1 - Surface was locked
-	// 2 - Texture was written to by ddraw
 	CKEY colorkey[4];
 	glTexture *texture;
-	glTexture *paltex;
-	glTexture *stencil;
-	glTexture *dummycolor;
 	bool hasstencil;
 	DWORD miplevel;
-	char *buffer;
-	char *bigbuffer;
-	char *gdibuffer;
 	DDSURFACEDESC2 ddsd;
 	glDirectDrawPalette *palette;
 	HGLRC hRC;
@@ -172,13 +162,9 @@ private:
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
 	ULONG refcountgamma, refcountcolor;
 	int locked;
-	HDC hdc;
-	HBITMAP hbitmap;
-	BITMAPINFO *bitmapinfo;
 	glDirectDraw7 *ddInterface;
-	int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
+	//int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
 	int pagelocked;
-	GLint magfilter,minfilter;
 	glDirect3DDevice7 *device1;
 	glDirect3DDevice7 *device;
 	bool overlay;

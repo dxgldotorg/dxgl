@@ -33,12 +33,13 @@ typedef struct glDirectDrawClipper
 	HWND hWnd;
 	RGNDATA *cliplist;
 	BltVertex *vertices;
-	WORD *indices;
-	int clipsize;
-	int maxsize;
+	GLshort *indices;
+	size_t clipsize;
+	size_t maxsize;
 	bool hascliplist;
 	bool dirty;
 	IUnknown *creator;
+	glTexture *texture;
 	BOOL cliplistchanged;
 	WINDOWPLACEMENT lastpos;
 } glDirectDrawClipper;
@@ -69,4 +70,5 @@ HRESULT WINAPI glDirectDrawClipper_Initialize(glDirectDrawClipper *This, LPDIREC
 HRESULT WINAPI glDirectDrawClipper_IsClipListChanged(glDirectDrawClipper *This, BOOL FAR *lpbChanged);
 HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGNDATA lpClipList, DWORD dwFlags);
 HRESULT WINAPI glDirectDrawClipper_SetHWnd(glDirectDrawClipper *This, DWORD dwFlags, HWND hWnd);
+void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *texture, glRenderer *renderer);
 #endif //_GLDIRECTDRAWCLIPPER_H

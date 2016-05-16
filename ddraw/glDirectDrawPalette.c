@@ -16,9 +16,46 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "BufferObject.h"
 #include "glDirectDrawPalette.h"
+#include "glTexture.h"
+#include "glRenderer.h"
 #include "util.h"
 
+static const DDSURFACEDESC2 ddsd256pal =
+{
+	sizeof(DDSURFACEDESC2),
+	DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS | DDSD_PIXELFORMAT,
+	1,
+	256,
+	256 * 4,
+	0,
+	0,
+	0,
+	0,
+	NULL,
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{
+		sizeof(DDPIXELFORMAT),
+		DDPF_RGB,
+	0,
+	32,
+	0xFF,
+	0xFF00,
+	0xFF0000,
+	0
+	},
+	{
+		DDSCAPS_TEXTURE,
+		0,
+	0,
+	0
+	},
+	0,
+};
 
 const unsigned char DefaultPalette[1024] = {
 0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x80,0x80,0x00,0x00,
@@ -109,7 +146,7 @@ ULONG WINAPI glDirectDrawPalette_AddRef(glDirectDrawPalette *This)
 {
 	TRACE_ENTER(1,14,This);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(ULONG, 8, 0);
-	This->refcount++;
+	InterlockedIncrement(&This->refcount);
 	TRACE_EXIT(8,This->refcount);
 	return This->refcount;
 }
@@ -119,11 +156,11 @@ ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 	ULONG ret;
 	TRACE_ENTER(1, 14, This);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(ULONG, 8, 0);
-	This->refcount--;
-	ret = This->refcount;
+	ret = InterlockedDecrement(&This->refcount);
 	if (This->refcount == 0)
 	{
 		if (This->creator) This->creator->lpVtbl->Release(This->creator);
+		if (This->texture) glTexture_Release(This->texture, FALSE);
 		free(This);
 	}
 	TRACE_EXIT(8,ret);
@@ -169,6 +206,7 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 {
 	DWORD allentries = 256;
 	DWORD entrysize;
+	DDSURFACEDESC2 ddsd;
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwStartingEntry, 8, dwCount, 14, lpEntries);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
@@ -183,6 +221,12 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 	{
 		memcpy(&This->palette[0], DefaultPalette, 4);
 		memcpy(&This->palette[255], DefaultPalette + 1020, 4);
+	}
+	if (This->texture)
+	{
+		glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
+		memcpy(ddsd.lpSurface, This->palette, 1024);
+		glTexture_Unlock(This->texture, 0, NULL, FALSE);
 	}
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
@@ -228,6 +272,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	newpal->flags = dwFlags;
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
 	newpal->creator = NULL;
+	newpal->texture = NULL;
 	if (lpDDColorArray == NULL)
 	{
 		if (dwFlags & 0x800) memcpy(newpal->palette, DefaultPalette, 1024);
@@ -257,4 +302,15 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	if(lplpDDPalette) *lplpDDPalette = (LPDIRECTDRAWPALETTE)newpal;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
+}
+
+void glDirectDrawPalette_CreateTexture(glDirectDrawPalette *This, struct glRenderer *renderer)
+{
+	DDSURFACEDESC2 ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+	memcpy(&ddsd, &ddsd256pal, sizeof(DDSURFACEDESC2));
+	glTexture_Create(&ddsd256pal, &This->texture, renderer, 256, 1, FALSE);
+	glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
+	memcpy(ddsd.lpSurface, This->palette, 1024);
+	glTexture_Unlock(This->texture, 0, NULL, FALSE);
 }

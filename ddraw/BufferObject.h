@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015 William Feely
+// Copyright (C) 2015-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -24,20 +24,6 @@ extern "C" {
 #endif
 
 struct glUtil;
-
-typedef struct BufferObject
-{
-	ULONG refcount;
-	ULONG busy;
-	GLuint buffer;
-	GLsizei size;
-	void *pointer;
-	BOOL mapped;
-	BOOL bound;
-	BOOL target;
-	glExtensions *ext;
-	struct glUtil *util;
-} BufferObject;
 
 void BufferObject_Create(BufferObject **out, glExtensions *ext, struct glUtil *util);
 void BufferObject_AddRef(BufferObject *This);

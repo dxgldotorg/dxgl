@@ -29,11 +29,45 @@
 #include "glDirect3DLight.h"
 #include "glDirectDrawClipper.h"
 #include "ddraw.h"
-#include "scalers.h"
 #include "ShaderGen3D.h"
 #include "matrix.h"
 
 extern "C" {
+
+static const DDSURFACEDESC2 ddsdbackbuffer =
+{
+	sizeof(DDSURFACEDESC2),
+	DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS | DDSD_PIXELFORMAT,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	NULL,
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{ 0,0 },
+	{
+		sizeof(DDPIXELFORMAT),
+		DDPF_RGB,
+		0,
+		32,
+		0xFF,
+		0xFF00,
+		0xFF0000,
+		0
+	},
+	{
+		DDSCAPS_TEXTURE,
+		0,
+		0,
+		0
+	},
+	0,
+};
 
 const GLushort bltindices[4] = {0,1,2,3};
 
@@ -68,122 +102,42 @@ inline int _6to8bit(int number)
   * @param swap
   *  Number of vertical retraces to wait per frame, 0 disable vsync
   */
-inline void glRenderer__SetSwap(glRenderer *This, int swap)
+void glRenderer__SetSwap(glRenderer *This, int swap)
 {
 	if(swap != This->oldswap)
 	{
 		This->ext->wglSwapIntervalEXT(swap);
-		This->oldswap = This->ext->wglGetSwapIntervalEXT();
+		This->ext->wglGetSwapIntervalEXT();
 		This->oldswap = swap;
 	}
 }
 
 /**
-  * Internal function for uploading surface content to an OpenGL texture
+  * glRenderer wrapper for glTexture__Upload
   * @param This
   *  Pointer to glRenderer object
-  * @param buffer
-  *  Contains the contents of the surface
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to upload to
-  * @param x,y
-  *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
-  * @param pitch
-  *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
-  * @param miplevel
+  * @param level
   *  Mipmap level of texture to write
   */
-void glRenderer__UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level)
 {
-	if(bpp == 15) bpp = 16;
-	if((x == bigx && y == bigy) || !bigbuffer)
-	{
-		TextureManager__UploadTexture(This->texman, texture, miplevel, buffer, x, y, FALSE, FALSE, This->util);
-	}
-	else
-	{
-		switch(bpp)
-		{
-		case 8:
-			ScaleNearest8(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
-			break;
-		case 16:
-			ScaleNearest16(bigbuffer,buffer,bigx,bigy,x,y,pitch/2,bigpitch/2);
-			break;
-		case 24:
-			ScaleNearest24(bigbuffer,buffer,bigx,bigy,x,y,pitch,bigpitch);
-			break;
-		case 32:
-			ScaleNearest32(bigbuffer,buffer,bigx,bigy,x,y,pitch/4,bigpitch/4);
-			break;
-		break;
-		}
-		TextureManager__UploadTexture(This->texman, texture, miplevel, bigbuffer, bigx, bigy, FALSE, FALSE, This->util);
-	}
+	glTexture__Upload(texture, level);
 }
 
 /**
-  * Internal function for downloading surface content from an OpenGL texture
+  * glRenderer wrapper function for glTexture__Download
   * @param This
   *  Pointer to glRenderer object
-  * @param buffer
-  *  Buffer to receive the surface contents
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to download from
-  * @param x,y
-  *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
-  * @param pitch
-  *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
-  * @param miplevel
+  * @param level
   *  Mipmap level of texture to read
   */
-void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level) 
 {
-	if((bigx == x && bigy == y) || !bigbuffer)
-	{
-		TextureManager__DownloadTexture(This->texman,texture,miplevel,buffer,This->util);
-	}
-	else
-	{
-		TextureManager__DownloadTexture(This->texman,texture,miplevel,bigbuffer,This->util);
-		switch(bpp)
-		{
-		case 8:
-			ScaleNearest8(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 15:
-		case 16:
-			ScaleNearest16(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/2,pitch/2);
-			break;
-		case 24:
-			ScaleNearest24(buffer,bigbuffer,x,y,bigx,bigy,bigpitch,pitch);
-			break;
-		case 32:
-			ScaleNearest32(buffer,bigbuffer,x,y,bigx,bigy,bigpitch/4,pitch/4);
-			break;
-		break;
-		}
-	}
+	glTexture__Download(texture, level);
 }
 
 /**
@@ -202,7 +156,7 @@ void glRenderer__DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer
   * @param devwnd
   *  True if creating window with name "DirectDrawDeviceWnd"
   */
-void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
+void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	LONG_PTR winstyle, winstyleex;
 	This->oldswap = 0;
@@ -214,7 +168,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, bool full
 	This->hDC = NULL;
 	This->hRC = NULL;
 	This->pbo = NULL;
-	This->dib.enabled = false;
+	ZeroMemory(&This->dib, sizeof(DIB));
 	This->hWnd = hwnd;
 	InitializeCriticalSection(&This->cs);
 	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
@@ -291,6 +245,16 @@ void glRenderer_Delete(glRenderer *This)
 }
 
 /**
+  * Gets the BPP of the DirectDraw object that owns the renderer
+  * @param This
+  *  Pointer to glRenderer object
+  */
+DWORD glRenderer_GetBPP(glRenderer *This)
+{
+	return This->ddInterface->GetBPP();
+}
+
+/**
   * Entry point for the renderer thread
   * @param entry
   *  Pointer to the inputs passed by the CreateThread function
@@ -303,30 +267,18 @@ DWORD WINAPI glRenderer_ThreadEntry(void *entry)
 }
 
 /**
-  * Creates an OpenGL texture.  
+  * Finishes creating an OpenGL texture.  
   * @param This
   *  Pointer to glRenderer object
-  * @param min,mag
-  *  Minification and magnification filters for the OpenGL texture
+  * @param texture
+  *  Texture object to finish creating
   * @param wraps,wrapt
   *  OpenGL texture wrap parameters
-  * @param width,height
-  *  Width and height of the texture.
-  * @param texformat
-  *  OpenGL format parameter for glTexImage2D
-  * @param texformat2
-  *  OpenGL type parameter for glTexImage2D
-  * @param texformat3
-  *  OpenGL internalformat parameter for glTexImage2D
-  * @return
-  *  Number representing the texture created by OpenGL.
   */
-void glRenderer_MakeTexture(glRenderer *This, glTexture *texture, DWORD width, DWORD height)
+void glRenderer_MakeTexture(glRenderer *This, glTexture *texture)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
-	This->inputs[1] = (void*)width;
-	This->inputs[2] = (void*)height;
 	This->opcode = OP_CREATE;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -337,41 +289,16 @@ void glRenderer_MakeTexture(glRenderer *This, glTexture *texture, DWORD width, D
   * Uploads the content of a surface to an OpenGL texture.
   * @param This
   *  Pointer to glRenderer object
-  * @param buffer
-  *  Contains the contents of the surface
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to upload to
-  * @param x,y
-  *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
-  * @param pitch
-  *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
-  * @param miplevel
+  * @param level
   *  Mipmap level of texture to write
   */
-void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level) 
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = buffer;
-	This->inputs[1] = bigbuffer;
-	This->inputs[2] = texture;
-	This->inputs[3] = (void*)x;
-	This->inputs[4] = (void*)y;
-	This->inputs[5] = (void*)bigx;
-	This->inputs[6] = (void*)bigy;
-	This->inputs[7] = (void*)pitch;
-	This->inputs[8] = (void*)bigpitch;
-	This->inputs[9] = (void*)bpp;
-	This->inputs[10] = (void*)miplevel;
+	This->inputs[0] = texture;
+	This->inputs[1] = (void*)level;
 	This->opcode = OP_UPLOAD;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -379,44 +306,19 @@ void glRenderer_UploadTexture(glRenderer *This, char *buffer, char *bigbuffer, g
 }
 
 /**
-  * Downloads the contents of an OpenGL texture to a surface buffer.
+  * Downloads the contents of an OpenGL texture to a the texture object's buffer.
   * @param This
   *  Pointer to glRenderer object
-  * @param buffer
-  *  Buffer to receive the surface contents
-  * @param bigbuffer
-  *  Optional buffer to receive the rescaled surface contents, for when primary
-  *  scaling is enabled.
   * @param texture
   *  Texture object to download from
-  * @param x,y
-  *  Width and height of the surface
-  * @param bigx,bigy
-  *  Width and height of the scaled surface buffer
-  * @param pitch
-  *  Bytes from one line of graphics to the next in the surface
-  * @param bigpitch
-  *  Pitch of the scaled surface buffer
-  * @param bpp
-  *  Number of bits per surface pixel
-  * @param miplevel
+  * @param level
   *  Mipmap level of texture to read
   */
-void glRenderer_DownloadTexture(glRenderer *This, char *buffer, char *bigbuffer, glTexture *texture, int x, int y,
-	int bigx, int bigy, int pitch, int bigpitch, int bpp, int miplevel)
+void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint level)
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = buffer;
-	This->inputs[1] = bigbuffer;
-	This->inputs[2] = texture;
-	This->inputs[3] = (void*)x;
-	This->inputs[4] = (void*)y;
-	This->inputs[5] = (void*)bigx;
-	This->inputs[6] = (void*)bigy;
-	This->inputs[7] = (void*)pitch;
-	This->inputs[8] = (void*)bigpitch;
-	This->inputs[9] = (void*)bpp;
-	This->inputs[10] = (void*)miplevel;
+	This->inputs[0] = texture;
+	This->inputs[1] = (void*)level;
 	This->opcode = OP_DOWNLOAD;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -986,8 +888,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 				}
 				if(This->backbuffer)
 				{
-					TextureManager__DeleteTexture(This->texman,This->backbuffer);
-					free(This->backbuffer);
+					glTexture_Release(This->backbuffer, TRUE);
 					This->backbuffer = NULL;
 					This->backx = 0;
 					This->backy = 0;
@@ -995,7 +896,6 @@ DWORD glRenderer__Entry(glRenderer *This)
 				ShaderManager_Delete(This->shaders);
 				glUtil_Release(This->util);
 				free(This->shaders);
-				free(This->texman);
 				free(This->ext);
 				This->ext = NULL;
 				wglMakeCurrent(NULL,NULL);
@@ -1004,6 +904,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 			};
 			if(This->hDC) ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
 			This->hDC = NULL;
+			if (This->dib.info) free(This->dib.info);
+			This->dib.info = NULL;
 			delete This->RenderWnd;
 			This->RenderWnd = NULL;
 			SetEvent(This->busy);
@@ -1014,19 +916,15 @@ DWORD glRenderer__Entry(glRenderer *This)
 				(int)This->inputs[3],(unsigned int)This->inputs[4],(HWND)This->inputs[5],(BOOL)This->inputs[6]);
 			break;
 		case OP_CREATE:
-			glRenderer__MakeTexture(This,(glTexture*)This->inputs[0],(DWORD)This->inputs[1],(DWORD)This->inputs[2]);
+			glRenderer__MakeTexture(This,(glTexture*)This->inputs[0]);
 			SetEvent(This->busy);
 			break;
 		case OP_UPLOAD:
-			glRenderer__UploadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(glTexture*)This->inputs[2],
-				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
+			glRenderer__UploadTexture(This,(glTexture*)This->inputs[0],(GLint)This->inputs[1]);
 			SetEvent(This->busy);
 			break;
 		case OP_DOWNLOAD:
-			glRenderer__DownloadTexture(This,(char*)This->inputs[0],(char*)This->inputs[1],(glTexture*)This->inputs[2],
-				(int)This->inputs[3],(int)This->inputs[4],(int)This->inputs[5],(int)This->inputs[6],
-				(int)This->inputs[7],(int)This->inputs[8],(int)This->inputs[9],(int)This->inputs[10]);
+			glRenderer__DownloadTexture(This,(glTexture*)This->inputs[0],(GLint)This->inputs[1]);
 			SetEvent(This->busy);
 			break;
 		case OP_DELETETEX:
@@ -1215,7 +1113,6 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glUtil_SetCull(This->util,D3DCULL_CCW);
 	glEnable(GL_CULL_FACE);
 	SwapBuffers(This->hDC);
-	This->texman = TextureManager_Create(This->ext);
 	glUtil_SetActiveTexture(This->util,0);
 	glRenderer__SetFogColor(This,0);
 	glRenderer__SetFogStart(This,0);
@@ -1231,14 +1128,16 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 		This->dib.pitch = (((width<<3)+31)&~31) >>3;
 		This->dib.pixels = NULL;
 		This->dib.hdc = CreateCompatibleDC(NULL);
-		ZeroMemory(&This->dib.info,sizeof(BITMAPINFO));
-		This->dib.info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		This->dib.info.bmiHeader.biBitCount = 32;
-		This->dib.info.bmiHeader.biWidth = width;
-		This->dib.info.bmiHeader.biHeight = height;
-		This->dib.info.bmiHeader.biCompression = BI_RGB;
-		This->dib.info.bmiHeader.biPlanes = 1;
-		This->dib.hbitmap = CreateDIBSection(This->dib.hdc,&This->dib.info,
+		if(!This->dib.info)
+			This->dib.info = (BITMAPINFO*)malloc(sizeof(BITMAPINFO));
+		ZeroMemory(This->dib.info,sizeof(BITMAPINFO));
+		This->dib.info->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		This->dib.info->bmiHeader.biBitCount = 32;
+		This->dib.info->bmiHeader.biWidth = width;
+		This->dib.info->bmiHeader.biHeight = height;
+		This->dib.info->bmiHeader.biCompression = BI_RGB;
+		This->dib.info->bmiHeader.biPlanes = 1;
+		This->dib.hbitmap = CreateDIBSection(This->dib.hdc,This->dib.info,
 			DIB_RGB_COLORS,(void**)&This->dib.pixels,NULL,0);
 	}
 	BufferObject_Create(&This->pbo, This->ext, This->util);
@@ -1486,7 +1385,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	{
 		if (glUtil_SetFBOSurface(This->util, dest) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!dest->texture->internalformats[1]) break;
-		TextureManager_FixTexture(This->texman, dest->texture, (dest->bigbuffer ? dest->bigbuffer : dest->buffer), &dest->dirty, dest->miplevel, This->util);
+		glTexture__Repair(dest->texture, TRUE);
 		glUtil_SetFBO(This->util, NULL);
 		dest->fbo.fbcolor = NULL;
 		dest->fbo.fbz = NULL;
@@ -1495,7 +1394,11 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
-	if(src) src->GetSurfaceDesc(&ddsdSrc);
+	if (src)
+	{
+		src->GetSurfaceDesc(&ddsdSrc);
+		if (src->texture->levels[0].dirty & 1) glTexture__Upload(src->texture, 0);
+	}
 	if(!lpSrcRect)
 	{
 		srcrect.left = 0;
@@ -1560,13 +1463,15 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if (usepattern && (shader->shader.uniforms[3] != -1))
 	{
 		glDirectDrawSurface7 *pattern = (glDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
+		if (pattern->texture->levels[0].dirty & 1) glTexture__Upload(pattern->texture, 0);
 		glUtil_SetTexture(This->util, 2, pattern->texture);
 		This->ext->glUniform1i(shader->shader.uniforms[3], 2);
-		This->ext->glUniform2i(shader->shader.uniforms[9], pattern->texture->width, pattern->texture->height);
+		This->ext->glUniform2i(shader->shader.uniforms[9],
+			pattern->texture->levels[0].ddsd.dwWidth, pattern->texture->levels[0].ddsd.dwHeight);
 	}
 	if (dwFlags & 0x10000000)  // Use clipper
 	{
-		glUtil_SetTexture(This->util, 3, dest->stencil);
+		glUtil_SetTexture(This->util, 3, dest->texture->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],3);
 		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
@@ -1577,8 +1482,8 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
-				src->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util);
-			else src->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util);
+				glTexture__SetFilter(src->texture, 0, GL_NEAREST, GL_NEAREST, This);
+			else glTexture__SetFilter(src->texture, 0, GL_LINEAR, GL_LINEAR, This);
 		}
 	}
 	else glUtil_SetTexture(This->util,0,NULL);
@@ -1587,7 +1492,8 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		src->texture->colorsizes[2], src->texture->colorsizes[3]);
 	if(dest) This->ext->glUniform4i(shader->shader.uniforms[11], dest->texture->colorsizes[0], dest->texture->colorsizes[1],
 		dest->texture->colorsizes[2], dest->texture->colorsizes[3]);
-	dest->dirty |= 2;
+	if (dest->texture->levels[dest->miplevel].dirty & 1) glTexture__Upload(dest->texture, dest->miplevel);
+	dest->texture->levels[dest->miplevel].dirty |= 2;
 	glUtil_EnableArray(This->util, shader->shader.attribs[0], TRUE);
 	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
 	if(!(dwFlags & DDBLT_COLORFILL))
@@ -1608,38 +1514,40 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,dest->texture,dest->paltex,dest,dest,0,false);
+		glRenderer__DrawScreen(This,dest->texture,dest->texture->palette,dest,dest,0,false);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
 
-void glRenderer__MakeTexture(glRenderer *This, glTexture *texture, DWORD width, DWORD height)
+void glRenderer__MakeTexture(glRenderer *This, glTexture *texture)
 {
-	TextureManager__CreateTexture(This->texman,texture,width,height,This->util);
+	glTexture__FinishCreate(texture);
 }
 
 void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype)
 {
 	GLfloat view[4];
+	DDSURFACEDESC2 ddsd;
 	glUtil_SetActiveTexture(This->util,0);
 	if(!This->backbuffer)
 	{
-		This->backbuffer = (glTexture*)malloc(sizeof(glTexture));
-		ZeroMemory(This->backbuffer,sizeof(glTexture));
-			This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
-			This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
-			This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
-			This->backbuffer->pixelformat.dwBBitMask = 0xFF;
-			This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
-			This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
-			This->backbuffer->pixelformat.dwRGBBitCount = 32;
-		TextureManager__CreateTexture(This->texman,This->backbuffer,x,y,This->util);
+		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+		memcpy(&ddsd, &ddsdbackbuffer, sizeof(DDSURFACEDESC2));
+		ddsd.dwWidth = x;
+		ddsd.lPitch = x * 4;
+		ddsd.dwHeight = y;
+		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, TRUE);
 		This->backx = x;
 		This->backy = y;
 	}
 	if((This->backx != x) || (This->backy != y))
 	{
-		TextureManager__UploadTexture(This->texman, This->backbuffer, 0, NULL, x, y, FALSE, TRUE, This->util);
+		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwWidth = x;
+		ddsd.dwHeight = y;
+		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+		glTexture__SetSurfaceDesc(This->backbuffer, &ddsd);
 		This->backx = x;
 		This->backy = y;
 	}
@@ -1651,7 +1559,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glUtil_SetTexture(This->util,0,*texture);
 	*texture = This->backbuffer;
-	if(This->ext->GLEXT_ARB_sampler_objects) ((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util);
+	if(This->ext->GLEXT_ARB_sampler_objects) glTexture__SetFilter(NULL,0,GL_LINEAR,GL_LINEAR, This);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
@@ -1671,29 +1579,29 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype)
 {
 	GLfloat view[4];
+	DDSURFACEDESC2 ddsd;
 	int x = srcrect.right - srcrect.left;
 	int y = srcrect.bottom - srcrect.top;
 	glUtil_SetActiveTexture(This->util, 0);
 	if (!This->backbuffer)
 	{
-		This->backbuffer = (glTexture*)malloc(sizeof(glTexture));
-		ZeroMemory(This->backbuffer, sizeof(glTexture));
-		This->backbuffer->minfilter = This->backbuffer->magfilter = GL_LINEAR;
-		This->backbuffer->wraps = This->backbuffer->wrapt = GL_CLAMP_TO_EDGE;
-		This->backbuffer->pixelformat.dwFlags = DDPF_RGB;
-		This->backbuffer->pixelformat.dwBBitMask = 0xFF;
-		This->backbuffer->pixelformat.dwGBitMask = 0xFF00;
-		This->backbuffer->pixelformat.dwRBitMask = 0xFF0000;
-		This->backbuffer->pixelformat.dwRGBBitCount = 32;
-		TextureManager__CreateTexture(This->texman, This->backbuffer, x, y, This->util);
-		This->backx = x;
-		This->backy = y;
+		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+		memcpy(&ddsd, &ddsdbackbuffer, sizeof(DDSURFACEDESC2));
+		ddsd.dwWidth = x;
+		ddsd.lPitch = x * 4;
+		ddsd.dwHeight = y;
+		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, TRUE);
 	}
 	if ((This->backx < x) || (This->backy < y))
 	{
 		if (This->backx > x) x = This->backx;
 		if (This->backx > y) y = This->backx;
-		TextureManager__UploadTexture(This->texman, This->backbuffer, 0, NULL, x, y, FALSE, TRUE, This->util);
+		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwWidth = x;
+		ddsd.dwHeight = y;
+		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+		glTexture__SetSurfaceDesc(This->backbuffer, &ddsd);
 		This->backx = x;
 		This->backy = y;
 	}
@@ -1707,10 +1615,10 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
 	glUtil_SetTexture(This->util, 0, texture);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
-	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->width;
-	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->width;
-	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)texture->height;
-	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)texture->height;
+	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->levels[0].ddsd.dwWidth;
+	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->levels[0].ddsd.dwWidth;
+	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)texture->levels[0].ddsd.dwHeight;
+	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)texture->levels[0].ddsd.dwHeight;
 	This->bltvertices[1].x = This->bltvertices[3].x = 0.;
 	This->bltvertices[0].x = This->bltvertices[2].x = (float)x;
 	This->bltvertices[0].y = This->bltvertices[1].y = 0.;
@@ -1725,7 +1633,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetFBO(This->util, NULL);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, bool setsync)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, BOOL setsync)
 {
 	int progtype;
 	RECT r,r2;
@@ -1743,14 +1651,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
-	if(src->dirty & 1)
-	{
-		glRenderer__UploadTexture(This,src->buffer,src->bigbuffer,texture,src->ddsd.dwWidth,src->ddsd.dwHeight,
-			src->fakex,src->fakey,src->ddsd.lPitch,
-			(NextMultipleOf4((This->ddInterface->GetBPPMultipleOf8()/8)*src->fakex)),
-			src->ddsd.ddpfPixelFormat.dwRGBBitCount,src->miplevel);
-		src->dirty &= ~1;
-	}
+	if(src->texture->levels[src->miplevel].dirty & 1)
+		glTexture__Upload(src->texture, src->miplevel);
 	if(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		if(This->ddInterface->GetFullscreen())
@@ -1790,7 +1692,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	{
 		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,0);
 		progtype = PROG_PAL256;
-		TextureManager__UploadTexture(This->texman,paltex,0,glDirectDrawPalette_GetPalette(dest->palette,NULL),256,1,FALSE,FALSE,This->util);
+		glTexture__Upload(paltex, 0);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,1);
 		glUtil_SetTexture(This->util,0,texture);
@@ -1805,8 +1707,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		}
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util);
-			((glDirectDrawSurface7*)NULL)->SetFilter(1,GL_NEAREST,GL_NEAREST,This->ext,This->util);
+			glTexture__SetFilter(NULL, 0, GL_NEAREST, GL_NEAREST, This);
+			glTexture__SetFilter(NULL, 1, GL_NEAREST, GL_NEAREST, This);
 		}
 	}
 	else
@@ -1816,10 +1718,10 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		glUtil_SetTexture(This->util,0,texture);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
 	}
-	if(dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
-		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_LINEAR,GL_LINEAR,This->ext,This->util);
-	else if(This->ext->GLEXT_ARB_sampler_objects)
-		((glDirectDrawSurface7*)NULL)->SetFilter(0,GL_NEAREST,GL_NEAREST,This->ext,This->util);
+	if (dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
+		glTexture__SetFilter(NULL, 0, GL_LINEAR, GL_LINEAR, This);
+	else if (This->ext->GLEXT_ARB_sampler_objects)
+		glTexture__SetFilter(NULL, 0, GL_NEAREST, GL_NEAREST, This);
 	glUtil_SetViewport(This->util,viewport[0],viewport[1],viewport[2],viewport[3]);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(This->ddInterface->GetFullscreen())
@@ -1883,7 +1785,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture)
 {
-	TextureManager__DeleteTexture(This->texman,texture);
+	glTexture__Destroy(texture);
 	SetEvent(This->busy);
 }
 
@@ -2021,7 +1923,7 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 	{
 		if (glUtil_SetFBOSurface(This->util, target) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!target->texture->internalformats[1]) break;
-		TextureManager_FixTexture(This->texman, target->texture, (target->bigbuffer ? target->bigbuffer : target->buffer), &target->dirty, target->miplevel,This->util);
+		glTexture__Repair(target->texture, TRUE);
 		glUtil_SetFBO(This->util, NULL);
 		target->fbo.fbcolor = NULL;
 		target->fbo.fbz = NULL;
@@ -2053,8 +1955,8 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 		glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
 	}
 	else glClear(clearbits);
-	if(target->zbuffer) target->zbuffer->dirty |= 2;
-	target->dirty |= 2;
+	if(target->zbuffer) target->zbuffer->texture->levels[target->zbuffer->miplevel].dirty |= 2;
+	target->texture->levels[target->miplevel].dirty |= 2;
 	SetEvent(This->busy);
 }
 
@@ -2385,18 +2287,12 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		if(This->texstages[i].colorop == D3DTOP_DISABLE) break;
 		if(This->texstages[i].texture)
 		{
-			if(This->texstages[i].texture->dirty & 1)
+			if(This->texstages[i].texture->texture->levels[0].dirty & 1)
 			{
-				glRenderer__UploadTexture(This,This->texstages[i].texture->buffer,This->texstages[i].texture->bigbuffer,
-					This->texstages[i].texture->texture,This->texstages[i].texture->ddsd.dwWidth,
-					This->texstages[i].texture->ddsd.dwHeight,This->texstages[i].texture->fakex,
-					This->texstages[i].texture->fakey,This->texstages[i].texture->ddsd.lPitch,
-					(This->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount/8*This->texstages[i].texture->fakex),
-					This->texstages[i].texture->ddsd.ddpfPixelFormat.dwRGBBitCount, This->texstages[i].texture->miplevel);
-				This->texstages[i].texture->dirty &= ~1;
+				glTexture__Upload(This->texstages[i].texture->texture, 0);
 			}
-			if(This->texstages[i].texture)
-				This->texstages[i].texture->SetFilter(i,This->texstages[i].glmagfilter,This->texstages[i].glminfilter,This->ext,This->util);
+			if (This->texstages[i].texture)
+				glTexture__SetFilter(This->texstages[i].texture->texture, i, This->texstages[i].glmagfilter, This->texstages[i].glminfilter, This);
 			glUtil_SetTexture(This->util,i,This->texstages[i].texture->texture);
 			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu);
 			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv);
@@ -2427,8 +2323,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	{
 		if (glUtil_SetFBOSurface(This->util, device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!device->glDDS7->texture->internalformats[1]) break;
-		TextureManager_FixTexture(This->texman, device->glDDS7->texture,
-			(device->glDDS7->bigbuffer ? device->glDDS7->bigbuffer : device->glDDS7->buffer), &device->glDDS7->dirty, device->glDDS7->miplevel,This->util);
+		glTexture__Repair(device->glDDS7->texture, TRUE);
 		glUtil_SetFBO(This->util, NULL);
 		device->glDDS7->fbo.fbcolor = NULL;
 		device->glDDS7->fbo.fbz = NULL;
@@ -2450,8 +2345,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	glUtil_SetShadeMode(This->util, (D3DSHADEMODE)This->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
-	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->dirty |= 2;
-	device->glDDS7->dirty |= 2;
+	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->texture->levels[device->glDDS7->miplevel].dirty |= 2;
+	device->glDDS7->texture->levels[device->glDDS7->miplevel].dirty |= 2;
 	if(flags & D3DDP_WAIT) glFlush();
 	This->outputs[0] = (void*)D3D_OK;
 	SetEvent(This->busy);
@@ -2467,25 +2362,18 @@ void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 {
 	GLfloat view[4];
-	if (!surface->stencil)
+	DDSURFACEDESC2 ddsd;
+	if ((surface->ddsd.dwWidth != surface->texture->stencil->levels[0].ddsd.dwWidth) ||
+		(surface->ddsd.dwHeight != surface->texture->stencil->levels[0].ddsd.dwHeight))
 	{
-		surface->stencil = (glTexture*)malloc(sizeof(glTexture));
-		ZeroMemory(surface->stencil, sizeof(glTexture));
-		surface->stencil->minfilter = surface->stencil->magfilter = GL_NEAREST;
-		surface->stencil->wraps = surface->stencil->wrapt = GL_CLAMP_TO_EDGE;
-		surface->stencil->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
-		surface->stencil->pixelformat.dwBBitMask = 0xF;
-		surface->stencil->pixelformat.dwGBitMask = 0xF0;
-		surface->stencil->pixelformat.dwRBitMask = 0xF00;
-		surface->stencil->pixelformat.dwZBitMask = 0xF000;
-		surface->stencil->pixelformat.dwRGBBitCount = 16;
-		TextureManager__CreateTexture(This->texman, surface->stencil, surface->ddsd.dwWidth, surface->ddsd.dwHeight, This->util);
+		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsd.dwWidth = surface->ddsd.dwWidth;
+		ddsd.dwHeight = surface->ddsd.dwHeight;
+		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+		glTexture__SetSurfaceDesc(surface->texture->stencil, &ddsd);
 	}
-	if ((surface->ddsd.dwWidth != surface->stencil->width) ||
-		(surface->ddsd.dwHeight != surface->stencil->height))
-		TextureManager__UploadTexture(This->texman, surface->stencil, 0, NULL,
-			surface->ddsd.dwWidth, surface->ddsd.dwHeight, FALSE, TRUE, This->util);
-	glUtil_SetFBOTextures(This->util, &surface->stencilfbo, surface->stencil, 0, FALSE);
+	glUtil_SetFBOTextures(This->util, &surface->stencilfbo, surface->texture->stencil, 0, FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)surface->ddsd.dwWidth;
 	view[3] = (GLfloat)surface->ddsd.dwHeight;
@@ -2508,6 +2396,7 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 {
 	RECT destrect;
 	DDSURFACEDESC2 ddsd;
+	DDSURFACEDESC2 ddsd2;
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	dest->GetSurfaceDesc(&ddsd);
 	if (!lpDestRect)
@@ -2524,9 +2413,7 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 		{
 			if (glUtil_SetFBOSurface(This->util, dest->attachparent) == GL_FRAMEBUFFER_COMPLETE) break;
 			if (!dest->attachparent->texture->internalformats[1]) break;
-			TextureManager_FixTexture(This->texman, dest->attachparent->texture, 
-				(dest->attachparent->bigbuffer ? dest->attachparent->bigbuffer : dest->attachparent->buffer),
-				&dest->attachparent->dirty, dest->attachparent->miplevel, This->util);
+			glTexture__Repair(dest->attachparent->texture, TRUE);
 			glUtil_SetFBO(This->util, NULL);
 			dest->attachparent->fbo.fbcolor = NULL;
 			dest->attachparent->fbo.fbz = NULL;
@@ -2534,25 +2421,21 @@ void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurf
 	}
 	else
 	{
-		if (!dest->dummycolor)
+		if (!dest->texture->dummycolor)
 		{
-			dest->dummycolor = (glTexture*)malloc(sizeof(glTexture));
-			ZeroMemory(dest->dummycolor, sizeof(glTexture));
-			dest->dummycolor->minfilter = dest->dummycolor->magfilter = GL_NEAREST;
-			dest->dummycolor->wraps = dest->dummycolor->wrapt = GL_CLAMP_TO_EDGE;
-			dest->dummycolor->pixelformat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
-			dest->dummycolor->pixelformat.dwBBitMask = 0xF;
-			dest->dummycolor->pixelformat.dwGBitMask = 0xF0;
-			dest->dummycolor->pixelformat.dwRBitMask = 0xF00;
-			dest->dummycolor->pixelformat.dwZBitMask = 0xF000;
-			dest->dummycolor->pixelformat.dwRGBBitCount = 16;
-			TextureManager__CreateTexture(This->texman, dest->dummycolor, dest->ddsd.dwWidth, dest->ddsd.dwHeight, This->util);
+			glTexture_CreateDummyColor(dest->texture, TRUE);
 		}
-		if ((dest->ddsd.dwWidth != dest->dummycolor->width) ||
-			(dest->ddsd.dwHeight != dest->dummycolor->height))
-			TextureManager__UploadTexture(This->texman, dest->dummycolor, 0, NULL,
-			dest->ddsd.dwWidth, dest->ddsd.dwHeight, FALSE, TRUE, This->util);
-		glUtil_SetFBOTextures(This->util, &dest->zfbo, dest->dummycolor, dest->texture, FALSE);
+		if ((dest->ddsd.dwWidth != dest->texture->dummycolor->levels[0].ddsd.dwWidth) ||
+			(dest->ddsd.dwHeight != dest->texture->dummycolor->levels[0].ddsd.dwHeight))
+		{
+			ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
+			ddsd2.dwSize = sizeof(DDSURFACEDESC2);
+			ddsd2.dwWidth = dest->ddsd.dwWidth;
+			ddsd2.dwHeight = dest->ddsd.dwHeight;
+			ddsd2.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+			glTexture__SetSurfaceDesc(dest->texture->dummycolor, &ddsd2);
+		}			
+		glUtil_SetFBOTextures(This->util, &dest->zfbo, dest->texture->dummycolor, dest->texture, FALSE);
 	}
 	glUtil_SetViewport(This->util, 0, 0, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
 	if (lpDestRect) glUtil_SetScissor(This->util, TRUE, lpDestRect->left, lpDestRect->top,

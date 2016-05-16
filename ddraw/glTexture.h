@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _TEXTUREMANAGER_H
-#define _TEXTUREMANAGER_H
+#ifndef _GLTEXTURE_H
+#define _GLTEXTURE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,64 +25,35 @@ extern "C" {
 
 struct BufferObject;
 
-typedef struct glTexture
-{
-	UINT refcount;
-	GLuint id;
-	GLsizei width;
-	GLsizei height;
-	GLint minfilter;
-	GLint magfilter;
-	GLint wraps;
-	GLint wrapt;
-	GLint miplevel;
-	DWORD bordercolor;
-	GLint internalformats[8];
-	DWORD colorsizes[4];
-	DWORD colorbits[4];
-	int colororder;
-	GLenum format;
-	GLenum type;
-	BufferObject *pboPack;
-	BufferObject *pboUnpack;
-	DDPIXELFORMAT pixelformat;
-} glTexture;
-
-// Color orders:
-// 0 - ABGR
-// 1 - ARGB
-// 2 - BGRA
-// 3 - RGBA
-// 4 - R or Indexed
-// 5 - Luminance
-// 6 - Alpha
-// 7 - Luminance Alpha
-
 extern const DDPIXELFORMAT texformats[];
 extern int numtexformats;
 
 struct glUtil;
 
-typedef struct TextureManager
-{
-	glExtensions *ext;
-} TextureManager;
-
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
-TextureManager *TextureManager_Create(glExtensions *glext);
-void TextureManager__CreateTexture(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
-void TextureManager__DeleteTexture(TextureManager *This, glTexture *texture);
-void TextureManager__UploadTexture(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager__DownloadTexture(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
-void TextureManager_CreateTextureClassic(TextureManager *This, glTexture *texture, int width, int height, glUtil *util);
-void TextureManager_DeleteTexture(TextureManager *This, glTexture *texture);
-void TextureManager_UploadTextureClassic(TextureManager *This, glTexture *texture, int level, const void *data, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
-void TextureManager_DownloadTextureClassic(TextureManager *This, glTexture *texture, int level, void *data, glUtil *util);
-BOOL TextureManager_FixTexture(TextureManager *This, glTexture *texture, void *data, DWORD *dirty, GLint level, glUtil *util);
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL backend);
+ULONG glTexture_AddRef(glTexture *This);
+ULONG glTexture_Release(glTexture *This, BOOL backend);
+HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 ddsd, DWORD flags, BOOL backend);
+HRESULT glTexture_Unlock(glTexture *This, GLint level, LPRECT r, BOOL backend);
+HRESULT glTexture_GetDC(glTexture *This, GLint level, HDC *hdc, glDirectDrawPalette *palette);
+HRESULT glTexture_ReleaseDC(glTexture *This, GLint level, HDC hdc);
+void glTexture_SetPalette(glTexture *This, glTexture *palette, BOOL backend);
+void glTexture_SetStencil(glTexture *This, glTexture *stencil, BOOL backend);
+void glTexture_CreateDummyColor(glTexture *This, BOOL backend);
+void glTexture_DeleteDummyColor(glTexture *This, BOOL backend);
+void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, struct glRenderer *renderer);
+HRESULT glTexture__SetSurfaceDesc(glTexture *This, LPDDSURFACEDESC2 ddsd);
+void glTexture__Download(glTexture *This, GLint level);
+void glTexture__Upload(glTexture *This, GLint level);
+void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
+BOOL glTexture__Repair(glTexture *This, BOOL preserve);
+void glTexture__FinishCreate(glTexture *This);
+void glTexture__Destroy(glTexture *This);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //_TEXTUREMANAGER_H
+#endif //_GLTEXTURE_H

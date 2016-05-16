@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -24,29 +24,6 @@ extern "C" {
 
 struct glDirectDrawPaletteVtbl;
 
-typedef struct glDirectDrawPalette
-{
-	struct glDirectDrawPaletteVtbl *lpVtbl;
-
-	ULONG refcount;
-	PALETTEENTRY palette[256];
-	DWORD flags;
-	IUnknown *creator;
-} glDirectDrawPalette;
-
-typedef struct glDirectDrawPaletteVtbl
-{
-	// DirectDraw (all versions) API
-	HRESULT(WINAPI *QueryInterface)(glDirectDrawPalette *This, REFIID riid, void** ppvObj);
-	ULONG(WINAPI *AddRef)(glDirectDrawPalette *This);
-	ULONG(WINAPI *Release)(glDirectDrawPalette *This);
-
-	HRESULT(WINAPI *GetCaps)(glDirectDrawPalette *This, LPDWORD lpdwCaps);
-	HRESULT(WINAPI *GetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries);
-	HRESULT(WINAPI *Initialize)(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
-	HRESULT(WINAPI *SetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
-} glDirectDrawPaletteVtbl;
-
 HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
 LPPALETTEENTRY glDirectDrawPalette_GetPalette(glDirectDrawPalette *This, DWORD *flags);
 
@@ -58,6 +35,7 @@ HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD d
 HRESULT WINAPI glDirectDrawPalette_Initialize(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
 HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
 LPPALETTEENTRY glDirectDrawPalette_GetPalette(glDirectDrawPalette *This, DWORD *flags);
+void glDirectDrawPalette_CreateTexture(glDirectDrawPalette *This, struct glRenderer *renderer);
 
 
 
