@@ -1148,6 +1148,18 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!hDC) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT error = glTexture_ReleaseDC(this->texture, this->miplevel, hDC);
+	if (((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
+		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
+		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
+			!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+	{
+		if (ddInterface->lastsync)
+		{
+			RenderScreen(texture, this, 1);
+			ddInterface->lastsync = false;
+		}
+		else RenderScreen(texture, this, 0);
+	}
 	TRACE_EXIT(23,error);
 	return error;
 }

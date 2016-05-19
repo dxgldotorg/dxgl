@@ -220,7 +220,7 @@ const int START_2D = __LINE__;
 const TEST_ITEM Tests2D[] =
 { // minver maxver  buffermin max   usesfps		defaultfps		usestexture	usesfsaa	name
 	{1,		7,		0,		4,		true,		1.0,			false,		false,		_T("Color palette and gradient screens (direct surface access)")},
-	{1,		7,		0,		1,		false,		0.0,			false,		false,		_T("Random noise (direct surface access speed test)")},
+	{1,		7,		0,		1,		false,		0.0,			false,		false,		_T("Random noise (continuous surface upload)")},
 	{1,		7,		0,		7,		true,		1.0,			false,		false,		_T("GDI Test patterns (GetDC() test)")},
 	{1,		7,		0,		0,		false,		0.0,			false,		false,		_T("Random GDI patterns (does not clear screen between paints)")},
 	{1,		7,		0,		1,		true,		60.0,			false,		false,		_T("BltFast background and sprites")},
