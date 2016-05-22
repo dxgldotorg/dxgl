@@ -1397,7 +1397,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	if (src)
 	{
 		src->GetSurfaceDesc(&ddsdSrc);
-		if (src->texture->levels[0].dirty & 1) glTexture__Upload(src->texture, 0);
+		if (src->texture->levels[src->miplevel].dirty & 1) glTexture__Upload(src->texture, src->miplevel);
 	}
 	if(!lpSrcRect)
 	{

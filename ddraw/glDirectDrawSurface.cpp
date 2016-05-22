@@ -1052,7 +1052,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 		if (palette) pal = palette;
 		else pal = ddInterface->primary->palette;
 	}
-	error = glTexture_GetDC(this->texture, this->miplevel, lphDC, this->palette);
+	error = glTexture_GetDC(this->texture, this->miplevel, lphDC, pal);
 	if (SUCCEEDED(error)) { TRACE_VAR("*lphDC", 14, *lphDC); }
 	TRACE_EXIT(23,error);
 	return error;
