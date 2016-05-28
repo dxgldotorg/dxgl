@@ -39,7 +39,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,2,2,2,1};
+static int testtypes[] = {0,1,0,1,0,1,2,0,2,1};
 static DWORD counter;
 
 static DDSPRITE sprites[16];
@@ -668,6 +668,7 @@ void InitTest2D(int test)
 		ddcaps.dwSize = sizeof(DDCAPS);
 		ddinterface->GetCaps(&ddcaps, NULL);
 		DrawROPPatterns(ddsrender, sprites, backbuffers, ddver, bpp, ddcaps.dwRops,hWnd,palette);
+		if (palette) palette->Release();
 		break;
 	case 8:
 		ddsrender->GetSurfaceDesc(&ddsd);
