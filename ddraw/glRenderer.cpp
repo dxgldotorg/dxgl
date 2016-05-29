@@ -1407,6 +1407,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		srcrect.bottom = ddsdSrc.dwHeight;
 	}
 	else srcrect = *lpSrcRect;
+	if (dest->texture->levels[dest->miplevel].dirty & 1) glTexture__Upload(dest->texture, dest->miplevel);
 	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
 	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
 	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)dest->fakey-((GLfloat)destrect.top * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
@@ -1478,7 +1479,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	}
 	if(src)
 	{
-		glUtil_SetTexture(This->util,0,src->GetTexture());
+		glUtil_SetTexture(This->util,0,src->texture);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
@@ -1492,11 +1493,10 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		src->texture->colorsizes[2], src->texture->colorsizes[3]);
 	if(dest) This->ext->glUniform4i(shader->shader.uniforms[11], dest->texture->colorsizes[0], dest->texture->colorsizes[1],
 		dest->texture->colorsizes[2], dest->texture->colorsizes[3]);
-	if (dest->texture->levels[dest->miplevel].dirty & 1) glTexture__Upload(dest->texture, dest->miplevel);
 	dest->texture->levels[dest->miplevel].dirty |= 2;
 	glUtil_EnableArray(This->util, shader->shader.attribs[0], TRUE);
 	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
-	if(!(dwFlags & DDBLT_COLORFILL))
+	if((!(dwFlags & DDBLT_COLORFILL)) && (shader->shader.attribs[3] != -1))
 	{
 		glUtil_EnableArray(This->util, shader->shader.attribs[3], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);

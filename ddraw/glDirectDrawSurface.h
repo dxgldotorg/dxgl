@@ -111,9 +111,6 @@ public:
 	ULONG WINAPI AddRefColor();
 	ULONG WINAPI ReleaseColor();
 	//void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
-	glTexture *GetTexture(){
-		return texture;
-	}
 	void Restore2();
 	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags);
 	HRESULT AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface);

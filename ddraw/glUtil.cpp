@@ -637,6 +637,7 @@ void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
 	{
 		glUtil_SetActiveTexture(This, level);
 		glBindTexture(GL_TEXTURE_2D, texname);
+		This->textures[level] = texname;
 	}
 }
 
