@@ -343,51 +343,29 @@ void glRenderer_DeleteTexture(glRenderer *This, glTexture * texture)
 }
 
 /**
-  * Copies the contents of one surface to another.
+  * Copies part or all of the contents of one texture to another.
   * @param This
   *  Pointer to glRenderer object
-  * @param lpDestRect
-  *  Pointer to the coordinates to blit to.  If NULL, blits to the entire surface.
-  * @param src
-  *  Surface to be used as the source.
-  * @param dest
-  *  Surface to blit to.
-  * @param lpSrcRect
-  *  Pointer of the coordinates to blit from on the source surface.  If NULL, the
-  *  entire surface will be used.
-  * @param dwFlags
-  *  Flags to determine the behavior of the blitter.  Certain flags control the
-  *  synchronization of the operation: (not yet implemented)
-  *  - DDBLT_ASYNC:  Adds the command to the queue.  If the queue is full, returns
-  *    DDERR_WASSTILLDRAWING.
-  *  - DDBLT_DONOTWAIT:  Fails and returns DDERR_WASSTILLDRAWING if the queue is full.
-  *  - DDBLT_WAIT:  Waits until the Blt command is processed before returning.
-  * @param lpDDBltFx
-  *  Effect parameters for the Blt operation.
+  * @param cmd
+  *  Pointer to structure contaning all paramaters for a Blt operation.
   * @return
-  *  DD_OK if the call succeeds, or DDERR_WASSTILLDRAWING if busy.
+  *  DD_OK if the call succeeds, or DDERR_WASSTILLDRAWING if queue is full and not waiting.
   */
-HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
-		glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
+HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 {
 	EnterCriticalSection(&This->cs);
 	RECT r,r2;
-	if(((dest->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
-		(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
-		((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+	if(((cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
+		(cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
+		((cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
+		!(cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 	{
 		GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)) != 0)
-		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+			SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
-	This->inputs[0] = lpDestRect;
-	This->inputs[1] = src;
-	This->inputs[2] = dest;
-	This->inputs[3] = lpSrcRect;
-	This->inputs[4] = (void*)dwFlags;
-	This->inputs[5] = lpDDBltFx;
+	This->inputs[0] = cmd;
 	This->opcode = OP_BLT;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -410,14 +388,12 @@ HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7
   * @param vsync
   *  Vertical sync count
   */
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync)
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = paltex;
-	This->inputs[2] = dest;
-	This->inputs[3] = src;
-	This->inputs[4] = (void*)vsync;
+	This->inputs[2] = (void*)vsync;
 	This->opcode = OP_DRAWSCREEN;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -671,22 +647,25 @@ unsigned int glRenderer_GetScanLine(glRenderer *This)
 }
 
 /**
-  * Fills a depth surface with a specified value.
-  * @param This
-  *  Pointer to glRenderer object
-  * @param lpDestRect
-  *  Pointer to bounding rectangle for depth fill.  If NULL, then fill entire surface
-  * @param dest
-  *  Destination surface to depth fill
-  * @param lpDDBltFx
-  *  Pointer to DDBLTFX structure with dwFillDepth defining the depth value.
-  */
-HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
+* Fills a depth surface with a specified value.
+* @param This
+*  Pointer to glRenderer object
+* @param cmd
+*  Pointer to structure contaning all paramaters for a Blt operation, with
+*  appropriate depth fill parameters filled in.
+* @param parent
+*  Texture representing parent surface
+* @param parentlevel
+*  Mipmap level of parent surface
+* @return
+*  DD_OK if the depth fill succeeded.
+*/
+HRESULT glRenderer_DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel)
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = lpDestRect;
-	This->inputs[1] = dest;
-	This->inputs[2] = lpDDBltFx;
+	This->inputs[0] = cmd;
+	This->inputs[1] = parent;
+	This->inputs[2] = (void*)parentlevel;
 	This->opcode = OP_DEPTHFILL;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy, INFINITE);
@@ -836,6 +815,32 @@ void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 }
 
 /**
+* Sets a color key for a texture object.
+* @param This
+*  Pointer to glRenderer object
+* @param texture
+*  Texture to set color key on
+* @param dwFlags
+*  DDraw color key flags to select color key to add or update
+* @param lpDDColorKey
+*  Pointer to a DDraw color key structure to set in the texture
+* @param level
+*  Mip level of color key to set for DirectDraw; Direct3D colorkey operations use level 0
+*/
+void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->inputs[1] = (void*)dwFlags;
+	This->inputs[2] = lpDDColorKey;
+	This->inputs[3] = (void*)level;
+	This->opcode = OP_SETTEXTURECOLORKEY;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
   * Generates a glFrameTerminatorGREMEDY command in OpenGL if the 
   * glFrameTerminatorGREMEDY command is available (i.e. running under gDebugger).
   * @param This
@@ -931,12 +936,11 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__DeleteTexture(This,(glTexture*)This->inputs[0]);
 			break;
 		case OP_BLT:
-			glRenderer__Blt(This,(LPRECT)This->inputs[0],(glDirectDrawSurface7*)This->inputs[1],
-				(glDirectDrawSurface7*)This->inputs[2],(LPRECT)This->inputs[3],(DWORD)This->inputs[4],(LPDDBLTFX)This->inputs[5]);
+			glRenderer__Blt(This, (BltCommand*)This->inputs[0]);
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
-				(glDirectDrawSurface7*)This->inputs[2],(glDirectDrawSurface7*)This->inputs[3],(GLint)This->inputs[4],true);
+				(GLint)This->inputs[2],true);
 			break;
 		case OP_INITD3D:
 			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
@@ -961,8 +965,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__UpdateClipper(This,(glDirectDrawSurface7*)This->inputs[0]);
 			break;
 		case OP_DEPTHFILL:
-			glRenderer__DepthFill(This, (LPRECT)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1],
-				(LPDDBLTFX)This->inputs[2]);
+			glRenderer__DepthFill(This, (BltCommand*)This->inputs[0], (glTexture*)This->inputs[1], (GLint)This->inputs[2]);
 			break;
 		case OP_SETRENDERSTATE:
 			glRenderer__SetRenderState(This, (D3DRENDERSTATETYPE)(DWORD)This->inputs[0], (DWORD)This->inputs[1]);
@@ -985,6 +988,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_SETVIEWPORT:
 			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
+			break;
+		case OP_SETTEXTURECOLORKEY:
+			glRenderer__SetTextureColorKey(This, (glTexture*)This->inputs[0], (DWORD)This->inputs[1],
+				(LPDDCOLORKEY)This->inputs[2], (GLint)This->inputs[3]);
 			break;
 		case OP_DXGLBREAK:
 			glRenderer__DXGLBreak(This);
@@ -1339,8 +1346,7 @@ void RotateBlt90(BltVertex *vertices, int times)
 	}
 }
 
-void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
-	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 {
 	int rotates = 0;
 	BOOL usedest = FALSE;
@@ -1351,28 +1357,27 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	This->ddInterface->GetSizes(sizes);
 	DWORD shaderid;
 	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(DDSURFACEDESC2);
-	dest->GetSurfaceDesc(&ddsd);
-	if (!lpDestRect)
+	ddsd = cmd->dest->levels[cmd->destlevel].ddsd;
+	if (!memcmp(&cmd->destrect, &nullrect, sizeof(RECT)))
 	{
 		destrect.left = 0;
 		destrect.top = 0;
 		destrect.right = ddsd.dwWidth;
 		destrect.bottom = ddsd.dwHeight;
 	}
-	else destrect = *lpDestRect;
-	if ((lpDDBltFx) && (dwFlags & DDBLT_ROP))
+	else destrect = cmd->destrect;
+	if ((cmd->bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->flags & DDBLT_ROP))
 	{
-		shaderid = PackROPBits(lpDDBltFx->dwROP, dwFlags);
-		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
-		if (rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
+		shaderid = PackROPBits(cmd->bltfx.dwROP, cmd->flags);
+		if (rop_texture_usage[(cmd->bltfx.dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
+		if (rop_texture_usage[(cmd->bltfx.dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 	}
-	else shaderid = dwFlags & 0xF2FAADFF;
-	if (dwFlags & DDBLT_KEYDEST) usedest = TRUE;
+	else shaderid = cmd->flags & 0xF2FAADFF;
+	if (cmd->flags & DDBLT_KEYDEST) usedest = TRUE;
 	if (usedest)
 	{
 		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
-		glRenderer__DrawBackbufferRect(This, dest->texture, destrect, PROG_TEXTURE);
+		glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
 		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backx;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.;
@@ -1383,78 +1388,93 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	glUtil_BlendEnable(This->util, FALSE);
 	do
 	{
-		if (glUtil_SetFBOSurface(This->util, dest) == GL_FRAMEBUFFER_COMPLETE) break;
-		if (!dest->texture->internalformats[1]) break;
-		glTexture__Repair(dest->texture, TRUE);
+		if (glUtil_SetFBOSurface(This->util, cmd->dest, NULL, cmd->destlevel, 0, TRUE) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!cmd->dest->internalformats[1]) break;
+		glTexture__Repair(cmd->dest, TRUE);
 		glUtil_SetFBO(This->util, NULL);
-		dest->fbo.fbcolor = NULL;
-		dest->fbo.fbz = NULL;
+		cmd->dest->levels[cmd->destlevel].fbo.fbcolor = NULL;
+		cmd->dest->levels[cmd->destlevel].fbo.fbz = NULL;
 	} while (1);
-	glUtil_SetViewport(This->util,0,0,dest->fakex,dest->fakey);
+	glUtil_SetViewport(This->util,0,0,cmd->dest->bigwidth,cmd->dest->bigheight);
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
-	if (src)
+	if (cmd->src)
 	{
-		src->GetSurfaceDesc(&ddsdSrc);
-		if (src->texture->levels[src->miplevel].dirty & 1) glTexture__Upload(src->texture, src->miplevel);
+		ddsdSrc = cmd->src->levels[cmd->srclevel].ddsd;
+		if (cmd->src->levels[cmd->srclevel].dirty & 1) glTexture__Upload(cmd->src, cmd->srclevel);
 	}
-	if(!lpSrcRect)
+	if (cmd->dest->levels[cmd->destlevel].dirty & 1)
+		glTexture__Upload(cmd->dest, cmd->destlevel);
+	if (!memcmp(&cmd->srcrect, &nullrect, sizeof(RECT)))
 	{
 		srcrect.left = 0;
 		srcrect.top = 0;
 		srcrect.right = ddsdSrc.dwWidth;
 		srcrect.bottom = ddsdSrc.dwHeight;
 	}
-	else srcrect = *lpSrcRect;
-	if (dest->texture->levels[dest->miplevel].dirty & 1) glTexture__Upload(dest->texture, dest->miplevel);
-	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
-	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right * ((GLfloat)dest->fakex/(GLfloat)ddsd.dwWidth);
-	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)dest->fakey-((GLfloat)destrect.top * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
-	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)dest->fakey-((GLfloat)destrect.bottom * ((GLfloat)dest->fakey/(GLfloat)ddsd.dwHeight));
+	else srcrect = cmd->srcrect;
+	if (cmd->destlevel == 0)
+	{
+		This->bltvertices[1].x = This->bltvertices[3].x =
+			(GLfloat)destrect.left * ((GLfloat)cmd->dest->bigwidth / (GLfloat)ddsd.dwWidth);
+		This->bltvertices[0].x = This->bltvertices[2].x =
+			(GLfloat)destrect.right * ((GLfloat)cmd->dest->bigwidth / (GLfloat)ddsd.dwWidth);
+		This->bltvertices[0].y = This->bltvertices[1].y =
+			(GLfloat)cmd->dest->bigheight - ((GLfloat)destrect.top * ((GLfloat)cmd->dest->bigheight / (GLfloat)ddsd.dwHeight));
+		This->bltvertices[2].y = This->bltvertices[3].y =
+			(GLfloat)cmd->dest->bigheight - ((GLfloat)destrect.bottom * ((GLfloat)cmd->dest->bigheight / (GLfloat)ddsd.dwHeight));
+	}
+	else
+	{
+		This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
+		This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
+		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
+		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
+	}
 	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
 	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
-	if ((lpDDBltFx) && (dwFlags & DDBLT_DDFX))
+	if ((cmd->bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->flags & DDBLT_DDFX))
 	{
-		if (lpDDBltFx->dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
+		if (cmd->bltfx.dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
 			BltFlipLR(This->bltvertices);
-		if (lpDDBltFx->dwDDFX & DDBLTFX_MIRRORUPDOWN)
+		if (cmd->bltfx.dwDDFX & DDBLTFX_MIRRORUPDOWN)
 			BltFlipUD(This->bltvertices);
-		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE90) rotates++;
-		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE180) rotates += 2;
-		if (lpDDBltFx->dwDDFX & DDBLTFX_ROTATE270) rotates += 3;
+		if (cmd->bltfx.dwDDFX & DDBLTFX_ROTATE90) rotates++;
+		if (cmd->bltfx.dwDDFX & DDBLTFX_ROTATE180) rotates += 2;
+		if (cmd->bltfx.dwDDFX & DDBLTFX_ROTATE270) rotates += 3;
 		rotates &= 3;
 		if (rotates)
 		{
 			RotateBlt90(This->bltvertices, rotates);
 		}
 	}
-	if (dwFlags & 0x10000000)
-	{ 
-		This->bltvertices[1].stencils = This->bltvertices[3].stencils = This->bltvertices[1].x / (GLfloat)dest->fakex;
-		This->bltvertices[0].stencils = This->bltvertices[2].stencils = This->bltvertices[0].x / (GLfloat)dest->fakex;
-		This->bltvertices[0].stencilt = This->bltvertices[1].stencilt = This->bltvertices[0].y / (GLfloat)dest->fakey;
-		This->bltvertices[2].stencilt = This->bltvertices[3].stencilt = This->bltvertices[2].y / (GLfloat)dest->fakey;
-	}
-	if(dest->zbuffer) glClear(GL_DEPTH_BUFFER_BIT);
-	if (dwFlags & DDBLT_COLORFILL) SetColorFillUniform(lpDDBltFx->dwFillColor, dest->texture->colorsizes,
-		dest->texture->colororder, dest->texture->colorbits, shader->shader.uniforms[12], This->ext);
-	if ((dwFlags & DDBLT_KEYSRC) && (src && src->colorkey[0].enabled) && !(dwFlags & DDBLT_COLORFILL))
+	if (cmd->flags & 0x10000000)
 	{
-		SetColorKeyUniform(src->colorkey[0].key.dwColorSpaceLowValue, src->texture->colorsizes,
-			src->texture->colororder, shader->shader.uniforms[5], src->texture->colorbits, This->ext);
-		if (dwFlags & 0x20000000) SetColorKeyUniform(src->colorkey[0].key.dwColorSpaceHighValue, src->texture->colorsizes,
-			src->texture->colororder, shader->shader.uniforms[7], src->texture->colorbits, This->ext);
+		This->bltvertices[1].stencils = This->bltvertices[3].stencils = This->bltvertices[1].x / (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwWidth;
+		This->bltvertices[0].stencils = This->bltvertices[2].stencils = This->bltvertices[0].x / (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwWidth;
+		This->bltvertices[0].stencilt = This->bltvertices[1].stencilt = This->bltvertices[0].y / (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwHeight;
+		This->bltvertices[2].stencilt = This->bltvertices[3].stencilt = This->bltvertices[2].y / (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwHeight;
 	}
-	if (!(dwFlags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 0);
-	if ((dwFlags & DDBLT_KEYDEST) && (This && dest->colorkey[1].enabled))
+	if (cmd->dest->levels[cmd->destlevel].fbo.fbz) glClear(GL_DEPTH_BUFFER_BIT);
+	if (cmd->flags & DDBLT_COLORFILL) SetColorFillUniform(cmd->bltfx.dwFillColor, cmd->dest->colorsizes,
+		cmd->dest->colororder, cmd->dest->colorbits, shader->shader.uniforms[12], This->ext);
+	if ((cmd->flags & DDBLT_KEYSRC) && (cmd->src && (cmd->src->levels[cmd->srclevel].ddsd.dwFlags & DDSD_CKSRCBLT)) && !(cmd->flags & DDBLT_COLORFILL))
 	{
-		SetColorKeyUniform(dest->colorkey[1].key.dwColorSpaceLowValue, dest->texture->colorsizes,
-			dest->texture->colororder, shader->shader.uniforms[6], dest->texture->colorbits, This->ext);
-		if(dwFlags & 0x40000000) SetColorKeyUniform(dest->colorkey[1].key.dwColorSpaceHighValue, dest->texture->colorsizes,
-			dest->texture->colororder, shader->shader.uniforms[8], dest->texture->colorbits, This->ext);
+		SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue, cmd->src->colorsizes,
+			cmd->src->colororder, shader->shader.uniforms[5], cmd->src->colorbits, This->ext);
+		if (cmd->flags & 0x20000000) SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue, cmd->src->colorsizes,
+			cmd->src->colororder, shader->shader.uniforms[7], cmd->src->colorbits, This->ext);
+	}
+	if (!(cmd->flags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 0);
+	if ((cmd->flags & DDBLT_KEYDEST) && (This && (cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)))
+	{
+		SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceLowValue, cmd->dest->colorsizes,
+			cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
+		if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceHighValue, cmd->dest->colorsizes,
+			cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
 	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
@@ -1463,40 +1483,40 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 	}
 	if (usepattern && (shader->shader.uniforms[3] != -1))
 	{
-		glDirectDrawSurface7 *pattern = (glDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
-		if (pattern->texture->levels[0].dirty & 1) glTexture__Upload(pattern->texture, 0);
-		glUtil_SetTexture(This->util, 2, pattern->texture);
+		if (cmd->pattern->levels[cmd->patternlevel].dirty & 1) glTexture__Upload(cmd->pattern, cmd->patternlevel);
+		glUtil_SetTexture(This->util, 2, cmd->pattern);
 		This->ext->glUniform1i(shader->shader.uniforms[3], 2);
 		This->ext->glUniform2i(shader->shader.uniforms[9],
-			pattern->texture->levels[0].ddsd.dwWidth, pattern->texture->levels[0].ddsd.dwHeight);
+			cmd->pattern->levels[cmd->patternlevel].ddsd.dwWidth, cmd->pattern->levels[cmd->patternlevel].ddsd.dwHeight);
 	}
-	if (dwFlags & 0x10000000)  // Use clipper
+	if (cmd->flags & 0x10000000)  // Use clipper
 	{
-		glUtil_SetTexture(This->util, 3, dest->texture->stencil);
+		glUtil_SetTexture(This->util, 3, cmd->dest->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],3);
 		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
 	}
-	if(src)
+	if (cmd->src)
 	{
-		glUtil_SetTexture(This->util,0,src->texture);
+		glUtil_SetTexture(This->util, 0, cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
-				glTexture__SetFilter(src->texture, 0, GL_NEAREST, GL_NEAREST, This);
-			else glTexture__SetFilter(src->texture, 0, GL_LINEAR, GL_LINEAR, This);
+			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))\
+				glTexture__SetFilter(cmd->src, 0, GL_NEAREST, GL_NEAREST, This);
+			else glTexture__SetFilter(cmd->src, 0, GL_LINEAR, GL_LINEAR, This);
 		}
 	}
 	else glUtil_SetTexture(This->util,0,NULL);
-	This->ext->glUniform4f(shader->shader.uniforms[0],0,(GLfloat)dest->fakex,0,(GLfloat)dest->fakey);
-	if(src) This->ext->glUniform4i(shader->shader.uniforms[10], src->texture->colorsizes[0], src->texture->colorsizes[1],
-		src->texture->colorsizes[2], src->texture->colorsizes[3]);
-	if(dest) This->ext->glUniform4i(shader->shader.uniforms[11], dest->texture->colorsizes[0], dest->texture->colorsizes[1],
-		dest->texture->colorsizes[2], dest->texture->colorsizes[3]);
-	dest->texture->levels[dest->miplevel].dirty |= 2;
+	This->ext->glUniform4f(shader->shader.uniforms[0], 0,
+		(GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwWidth, 0, (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwHeight);
+	if (cmd->src) This->ext->glUniform4i(shader->shader.uniforms[10], cmd->src->colorsizes[0], cmd->src->colorsizes[1],
+		cmd->src->colorsizes[2], cmd->src->colorsizes[3]);
+	if (cmd->dest) This->ext->glUniform4i(shader->shader.uniforms[11], cmd->dest->colorsizes[0], cmd->dest->colorsizes[1],
+		cmd->dest->colorsizes[2], cmd->dest->colorsizes[3]);
+	cmd->dest->levels[cmd->destlevel].dirty |= 2;
 	glUtil_EnableArray(This->util, shader->shader.attribs[0], TRUE);
 	This->ext->glVertexAttribPointer(shader->shader.attribs[0],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
-	if((!(dwFlags & DDBLT_COLORFILL)) && (shader->shader.attribs[3] != -1))
+	if((!(cmd->flags & DDBLT_COLORFILL)) && (shader->shader.attribs[3] != -1))
 	{
 		glUtil_EnableArray(This->util, shader->shader.attribs[3], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[3],2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);
@@ -1514,7 +1534,7 @@ void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,dest->texture,dest->texture->palette,dest,dest,0,false);
+		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,false);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -1536,7 +1556,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.dwWidth = x;
 		ddsd.lPitch = x * 4;
 		ddsd.dwHeight = y;
-		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, TRUE);
+		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, FALSE, TRUE);
 		This->backx = x;
 		This->backy = y;
 	}
@@ -1551,7 +1571,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		This->backx = x;
 		This->backy = y;
 	}
-	glUtil_SetFBOTextures(This->util,&This->fbo,This->backbuffer,0,FALSE);
+	glUtil_SetFBOTextures(This->util,&This->fbo,This->backbuffer,NULL,0,0,FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)x;
 	view[3] = (GLfloat)y;
@@ -1590,7 +1610,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 		ddsd.dwWidth = x;
 		ddsd.lPitch = x * 4;
 		ddsd.dwHeight = y;
-		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, TRUE);
+		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, FALSE, TRUE);
 	}
 	if ((This->backx < x) || (This->backy < y))
 	{
@@ -1605,7 +1625,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 		This->backx = x;
 		This->backy = y;
 	}
-	glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffer, 0, FALSE);
+	glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffer, NULL, 0, 0, FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)This->backx;
 	view[3] = (GLfloat)This->backy;
@@ -1633,12 +1653,12 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetFBO(This->util, NULL);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, BOOL setsync)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, BOOL setsync)
 {
 	int progtype;
 	RECT r,r2;
 	glUtil_BlendEnable(This->util, FALSE);
-	if((dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+	if((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
@@ -1651,9 +1671,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
-	if(src->texture->levels[src->miplevel].dirty & 1)
-		glTexture__Upload(src->texture, src->miplevel);
-	if(dest->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	if(texture->levels[0].dirty & 1) glTexture__Upload(texture, 0);
+	if(texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		if(This->ddInterface->GetFullscreen())
 		{
@@ -1675,16 +1694,16 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
-			view[2] = (GLfloat)dest->fakey-(GLfloat)viewrect->top;
-			view[3] = (GLfloat)dest->fakey-(GLfloat)viewrect->bottom;
+			view[2] = (GLfloat)texture->bigheight-(GLfloat)viewrect->top;
+			view[3] = (GLfloat)texture->bigheight-(GLfloat)viewrect->bottom;
 		}
 	}
 	else
 	{
 		view[0] = 0;
-		view[1] = (GLfloat)dest->fakex;
+		view[1] = (GLfloat)texture->bigwidth;
 		view[2] = 0;
-		view[3] = (GLfloat)dest->fakey;
+		view[3] = (GLfloat)texture->bigheight;
 	}
 	glUtil_SetFBO(This->util, NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -1699,7 +1718,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		glUtil_SetTexture(This->util,1,paltex);
 		if(dxglcfg.scalingfilter)
 		{
-			glRenderer__DrawBackbuffer(This,&texture,dest->fakex,dest->fakey,progtype);
+			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype);
 			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 			progtype = PROG_TEXTURE;
 			glUtil_SetTexture(This->util,0,texture);
@@ -1732,9 +1751,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	else
 	{
-		This->bltvertices[0].x = This->bltvertices[2].x = (float)dest->fakex;
+		This->bltvertices[0].x = This->bltvertices[2].x = (float)texture->bigwidth;
 		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
-		This->bltvertices[2].y = This->bltvertices[3].y = (float)dest->fakey;
+		This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->bigheight;
 	}
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
@@ -1918,15 +1937,23 @@ void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwC
 {
 	This->outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
+	glTexture *ztexture = NULL;
+	GLint zlevel = 0;
+	if (target->zbuffer)
+	{
+		ztexture = target->zbuffer->texture;
+		zlevel = target->zbuffer->miplevel;
+	}
 	dwordto4float(dwColor,color);
 	do
 	{
-		if (glUtil_SetFBOSurface(This->util, target) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (glUtil_SetFBOSurface(This->util, target->texture, ztexture,
+			target->zbuffer->miplevel, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!target->texture->internalformats[1]) break;
 		glTexture__Repair(target->texture, TRUE);
 		glUtil_SetFBO(This->util, NULL);
-		target->fbo.fbcolor = NULL;
-		target->fbo.fbz = NULL;
+		target->texture->levels[target->miplevel].fbo.fbcolor = NULL;
+		target->texture->levels[target->miplevel].fbo.fbz = NULL;
 	} while (1);
 	int clearbits = 0;
 	if(dwFlags & D3DCLEAR_TARGET)
@@ -2119,6 +2146,13 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	char strvar[] = "strX";
 	char strqvar[] = "strqX";
 	int i;
+	glTexture *ztexture = NULL;
+	GLint zlevel = 0;
+	if (device->glDDS7->zbuffer)
+	{
+		ztexture = device->glDDS7->zbuffer->texture;
+		zlevel = device->glDDS7->zbuffer->miplevel;
+	}
 	if(vertices[1].data) transformed = true;
 	else transformed = false;
 	if(!vertices[0].data)
@@ -2321,12 +2355,13 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
 	do
 	{
-		if (glUtil_SetFBOSurface(This->util, device->glDDS7) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (glUtil_SetFBOSurface(This->util, device->glDDS7->texture, ztexture,
+			device->glDDS7->miplevel, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
 		if (!device->glDDS7->texture->internalformats[1]) break;
 		glTexture__Repair(device->glDDS7->texture, TRUE);
 		glUtil_SetFBO(This->util, NULL);
-		device->glDDS7->fbo.fbcolor = NULL;
-		device->glDDS7->fbo.fbz = NULL;
+		device->glDDS7->texture->levels[device->glDDS7->miplevel].fbo.fbcolor = NULL;
+		device->glDDS7->texture->levels[device->glDDS7->miplevel].fbo.fbz = NULL;
 	} while (1);
 	glUtil_SetViewport(This->util, (int)((float)This->viewport.dwX*device->glDDS7->mulx),
 		(int)((float)This->viewport.dwY*device->glDDS7->muly),
@@ -2373,7 +2408,7 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 		glTexture__SetSurfaceDesc(surface->texture->stencil, &ddsd);
 	}
-	glUtil_SetFBOTextures(This->util, &surface->stencilfbo, surface->texture->stencil, 0, FALSE);
+	glUtil_SetFBOTextures(This->util, &surface->texture->stencil->levels[0].fbo, surface->texture->stencil, NULL, 0, 0, FALSE);
 	view[0] = view[2] = 0;
 	view[1] = (GLfloat)surface->ddsd.dwWidth;
 	view[3] = (GLfloat)surface->ddsd.dwHeight;
@@ -2392,58 +2427,64 @@ void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
 	SetEvent(This->busy);
 }
 
-void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx)
+void glRenderer__DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel)
 {
 	RECT destrect;
 	DDSURFACEDESC2 ddsd;
-	DDSURFACEDESC2 ddsd2;
-	ddsd.dwSize = sizeof(DDSURFACEDESC2);
-	dest->GetSurfaceDesc(&ddsd);
-	if (!lpDestRect)
+	DDSURFACEDESC2 tmpddsd;
+	BOOL usedestrect = FALSE;
+	ddsd = cmd->dest->levels[cmd->destlevel].ddsd;
+	if (!memcmp(&cmd->destrect, &nullrect, sizeof(RECT)))
 	{
 		destrect.left = 0;
 		destrect.top = 0;
 		destrect.right = ddsd.dwWidth;
 		destrect.bottom = ddsd.dwHeight;
 	}
-	else destrect = *lpDestRect;
-	if (dest->attachparent)
+	else
+	{
+		destrect = cmd->destrect;
+		usedestrect = TRUE;
+	}
+	if (parent)
 	{
 		do
 		{
-			if (glUtil_SetFBOSurface(This->util, dest->attachparent) == GL_FRAMEBUFFER_COMPLETE) break;
-			if (!dest->attachparent->texture->internalformats[1]) break;
-			glTexture__Repair(dest->attachparent->texture, TRUE);
+			if (glUtil_SetFBOSurface(This->util, parent, NULL, parentlevel, 0, TRUE) == GL_FRAMEBUFFER_COMPLETE) break;
+			if (!parent->internalformats[1]) break;
+			glTexture__Repair(parent, TRUE);
 			glUtil_SetFBO(This->util, NULL);
-			dest->attachparent->fbo.fbcolor = NULL;
-			dest->attachparent->fbo.fbz = NULL;
+			parent->levels[parentlevel].fbo.fbcolor = NULL;
+			parent->levels[parentlevel].fbo.fbz = NULL;
 		} while (1);
 	}
 	else
 	{
-		if (!dest->texture->dummycolor)
+		if (!cmd->dest->dummycolor)
 		{
-			glTexture_CreateDummyColor(dest->texture, TRUE);
+			glTexture_CreateDummyColor(cmd->dest, TRUE);
 		}
-		if ((dest->ddsd.dwWidth != dest->texture->dummycolor->levels[0].ddsd.dwWidth) ||
-			(dest->ddsd.dwHeight != dest->texture->dummycolor->levels[0].ddsd.dwHeight))
+		if ((cmd->dest->levels[cmd->destlevel].ddsd.dwWidth != cmd->dest->dummycolor->levels[0].ddsd.dwWidth) ||
+			(cmd->dest->levels[cmd->destlevel].ddsd.dwHeight != cmd->dest->dummycolor->levels[0].ddsd.dwHeight))
 		{
-			ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
-			ddsd2.dwSize = sizeof(DDSURFACEDESC2);
-			ddsd2.dwWidth = dest->ddsd.dwWidth;
-			ddsd2.dwHeight = dest->ddsd.dwHeight;
-			ddsd2.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
-			glTexture__SetSurfaceDesc(dest->texture->dummycolor, &ddsd2);
+			ZeroMemory(&tmpddsd, sizeof(DDSURFACEDESC2));
+			tmpddsd.dwSize = sizeof(DDSURFACEDESC2);
+			tmpddsd.dwWidth = cmd->dest->levels[cmd->destlevel].ddsd.dwWidth;
+			tmpddsd.dwHeight = cmd->dest->levels[cmd->destlevel].ddsd.dwHeight;
+			tmpddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+			glTexture__SetSurfaceDesc(cmd->dest->dummycolor, &tmpddsd);
 		}			
-		glUtil_SetFBOTextures(This->util, &dest->zfbo, dest->texture->dummycolor, dest->texture, FALSE);
+		glUtil_SetFBOTextures(This->util, &cmd->dest->dummycolor->levels[0].fbo, cmd->dest->dummycolor,
+			cmd->dest, cmd->destlevel, 0, FALSE);
 	}
-	glUtil_SetViewport(This->util, 0, 0, dest->ddsd.dwWidth, dest->ddsd.dwHeight);
-	if (lpDestRect) glUtil_SetScissor(This->util, TRUE, lpDestRect->left, lpDestRect->top,
-		lpDestRect->right, lpDestRect->bottom);
+	glUtil_SetViewport(This->util, 0, 0, cmd->dest->levels[cmd->destlevel].ddsd.dwWidth,
+		cmd->dest->levels[cmd->destlevel].ddsd.dwHeight);
+	if (usedestrect) glUtil_SetScissor(This->util, TRUE, cmd->destrect.left, cmd->destrect.top,
+		cmd->destrect.right, cmd->destrect.bottom);
 	glUtil_DepthWrite(This->util, TRUE);
-	glUtil_ClearDepth(This->util, lpDDBltFx->dwFillDepth / (double)0xFFFF); // FIXME:  SOTE depth workaround
+	glUtil_ClearDepth(This->util, cmd->bltfx.dwFillDepth / (double)0xFFFF); // FIXME:  SOTE depth workaround
 	glClear(GL_DEPTH_BUFFER_BIT);
-	if (lpDestRect)glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
+	if (usedestrect)glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -2876,6 +2917,39 @@ void glRenderer__SetDepthComp(glRenderer *This)
 		glUtil_SetDepthComp(This->util, GL_ALWAYS);
 		break;
 	}
+}
+
+void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level)
+{
+	if (dwFlags & DDCKEY_SRCBLT)
+	{
+		texture->levels[level].ddsd.dwFlags |= DDSD_CKSRCBLT;
+		texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		else texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+	}
+	if (dwFlags & DDCKEY_DESTBLT)
+	{
+		texture->levels[level].ddsd.dwFlags |= DDSD_CKDESTBLT;
+		texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		else texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+	}
+	if (dwFlags & DDCKEY_SRCOVERLAY)
+	{
+		texture->levels[level].ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
+		texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		else texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+	}
+	if (dwFlags & DDCKEY_DESTOVERLAY)
+	{
+		texture->levels[level].ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
+		texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		else texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+	}
+	SetEvent(This->busy);
 }
 
 void glRenderer__DXGLBreak(glRenderer *This)

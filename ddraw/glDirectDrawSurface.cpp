@@ -52,9 +52,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	pagelocked = 0;
 	flipcount = 0;
 	ZeroMemory(colorkey,4*sizeof(CKEY));
-	ZeroMemory(&fbo,sizeof(FBO));
-	ZeroMemory(&zfbo,sizeof(FBO));
-	ZeroMemory(&stencilfbo,sizeof(FBO));
 	palette = NULL;
 	texture = NULL;
 	clipper = NULL;
@@ -197,7 +194,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		texture = parenttex;
 		glTexture_AddRef(texture);
 	}
-	else glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, FALSE);
+	else glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, hasstencil, FALSE);
 	if (!(ddsd.dwFlags & DDSD_PITCH))
 	{
 		ddsd.dwFlags |= DDSD_PITCH;
@@ -305,8 +302,6 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (d3dt2) delete d3dt2;
 	if (gammacontrol) free(gammacontrol);
 	if (texture) glTexture_Release(texture, FALSE);
-	if(fbo.fbo) glRenderer_DeleteFBO(ddInterface->renderer, &fbo);
-	if(stencilfbo.fbo) glRenderer_DeleteFBO(ddInterface->renderer, &stencilfbo);
 	//if(bitmapinfo) free(bitmapinfo);
 	if(palette) glDirectDrawPalette_Release(palette);
 	if(backbuffer) backbuffer->Release();
@@ -628,11 +623,6 @@ HRESULT glDirectDrawSurface7::AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAtta
 	{
 		if (zbuffer)
 		{
-			if (zbuffer->zfbo.fbo)
-			{
-				glRenderer_DeleteFBO(ddInterface->renderer, &zbuffer->zfbo);
-				ZeroMemory(&zbuffer->zfbo, sizeof(FBO));
-			}
 			if (zbuffer->texture->dummycolor)
 			{
 				glTexture_DeleteDummyColor(zbuffer->texture, FALSE);
@@ -660,11 +650,25 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	HRESULT error;
 	RECT tmprect;
 	glDirectDrawSurface7 *pattern;
+	BltCommand cmd;
 	TRACE_ENTER(6,14,this,26,lpDestRect,14,lpDDSrcSurface,26,lpSrcRect,9,dwFlags,14,lpDDBltFx);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT,32,DDERR_INVALIDPARAMS);
-	if((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 32, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ZeroMemory(&cmd, sizeof(BltCommand));
+	cmd.dest = this->texture;
+	cmd.destlevel = this->miplevel;
+	if (lpDestRect) cmd.destrect = *lpDestRect;
+	else cmd.destrect = nullrect;
+	if (lpSrcRect) cmd.srcrect = *lpSrcRect;
+	else cmd.srcrect = nullrect;
+	if (lpDDSrcSurface)
+	{
+		cmd.src = ((glDirectDrawSurface7*)lpDDSrcSurface)->texture;
+		cmd.srclevel = ((glDirectDrawSurface7*)lpDDSrcSurface)->miplevel;
+	}
+	cmd.flags = dwFlags;
 	if (dwFlags & DDBLT_ROP)
 	{
 		if (!lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
@@ -672,16 +676,27 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		{
 			if (!lpDDBltFx->lpDDSPattern) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 			pattern = (glDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
+			cmd.pattern = pattern->texture;
+			cmd.patternlevel = pattern->miplevel;
 		}
 	}
 	if (dwFlags & DDBLT_KEYSRC)
 	{
 		if (!lpDDSrcSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		if (((glDirectDrawSurface7*)lpDDSrcSurface)->colorkey[0].colorspace) dwFlags |= 0x20000000;
+		if (!(((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwFlags & DDSD_CKSRCBLT))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt.dwColorSpaceHighValue !=
+			((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt.dwColorSpaceLowValue)
+			cmd.flags |= 0x20000000;
 	}
-	if ((dwFlags & DDBLT_KEYDEST) && colorkey[1].colorspace) dwFlags |= 0x40000000;
+	if (dwFlags & DDBLT_KEYDEST)
+	{
+		if (!(this->ddsd.dwFlags & DDSD_CKDESTBLT)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (this->ddsd.ddckCKDestBlt.dwColorSpaceHighValue != this->ddsd.ddckCKDestBlt.dwColorSpaceLowValue)
+			cmd.flags |= 0x40000000;
+	}
 	glDirectDrawSurface7 *src = (glDirectDrawSurface7 *)lpDDSrcSurface;
-	if (clipper)
+/*	if (clipper)
 	{
 		if (!clipper->hWnd)
 		{
@@ -693,24 +708,42 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			}
 			dwFlags |= 0x10000000;
 		}
-	}
+	}*/
+	if (this->clipper && !(this->clipper->hWnd)) cmd.flags |= 0x10000000;
+	if (lpDDBltFx) cmd.bltfx = *lpDDBltFx;
 	if (dwFlags & DDBLT_DEPTHFILL)
 	{
-		if (!(ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)) TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
-		TRACE_RET(HRESULT, 23, glRenderer_DepthFill(ddInterface->renderer, lpDestRect, this, lpDDBltFx));
+		if (!(this->ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)) TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
+		if (this->attachparent)
+		{
+			TRACE_RET(HRESULT, 23, glRenderer_DepthFill(this->ddInterface->renderer, &cmd, this->attachparent->texture, this->attachparent->miplevel));
+		}
+		else
+		{
+			TRACE_RET(HRESULT, 23, glRenderer_DepthFill(this->ddInterface->renderer, &cmd, NULL, 0));
+		}
 	}
 	if (this == src)
 	{
 		tmprect.left = tmprect.top = 0;
-		tmprect.right = lpSrcRect->right - lpSrcRect->left;
-		tmprect.bottom = lpSrcRect->bottom - lpSrcRect->top;
-		error = ddInterface->SetupTempSurface(tmprect.right, tmprect.bottom);
-		if (error) TRACE_RET(HRESULT, 23, error);
-		error = ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
-		if (error) TRACE_RET(HRESULT, 23, error);
-		TRACE_RET(HRESULT,23,this->Blt(lpDestRect, ddInterface->tmpsurface, &tmprect, dwFlags, lpDDBltFx));
+		if (lpSrcRect)
+		{
+			tmprect.right = lpSrcRect->right - lpSrcRect->left;
+			tmprect.bottom = lpSrcRect->bottom - lpSrcRect->top;
+		}
+		else
+		{
+			tmprect.right = src->ddsd.dwWidth;
+			tmprect.bottom = src->ddsd.dwHeight;
+		}
+		error = this->ddInterface->SetupTempSurface(tmprect.right, tmprect.bottom);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		error = this->ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		TRACE_RET(HRESULT, 23, this->Blt(lpDestRect, (LPDIRECTDRAWSURFACE7)this->ddInterface->tmpsurface,
+			&tmprect, dwFlags, lpDDBltFx));
 	}
-	else TRACE_RET(HRESULT,23,glRenderer_Blt(ddInterface->renderer,lpDestRect,src,this,lpSrcRect,dwFlags,lpDDBltFx));
+	else TRACE_RET(HRESULT, 23, glRenderer_Blt(this->ddInterface->renderer, &cmd));
 }
 HRESULT WINAPI glDirectDrawSurface7::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
@@ -809,7 +842,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			swapinterval++;
 			ddInterface->lastsync = false;
 		}
-		RenderScreen(texture,this,swapinterval);
+		RenderScreen(texture,swapinterval);
 	}
 	TRACE_EXIT(23,ret);
 	return ret;
@@ -1045,7 +1078,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDC(HDC FAR *lphDC)
 	TRACE_ENTER(2,14,this,14,lphDC);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lphDC) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	glDirectDrawPalette *pal;
+	glDirectDrawPalette *pal = NULL;
 	HRESULT error;
 	if (ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 	{
@@ -1155,10 +1188,10 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	{
 		if (ddInterface->lastsync)
 		{
-			RenderScreen(texture, this, 1);
+			RenderScreen(texture, 1);
 			ddInterface->lastsync = false;
 		}
-		else RenderScreen(texture, this, 0);
+		else RenderScreen(texture, 0);
 	}
 	TRACE_EXIT(23,error);
 	return error;
@@ -1301,6 +1334,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 		ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
 		colorkey[3] = key;
 	}
+	glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1357,10 +1391,10 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 		{
 			if(ddInterface->lastsync)
 			{
-				RenderScreen(texture,this,1);
+				RenderScreen(texture,1);
 				ddInterface->lastsync = false;
 			}
-			else RenderScreen(texture,this,0);
+			else RenderScreen(texture,0);
 		}
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
@@ -1390,10 +1424,10 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDrawSurface7::RenderScreen(glTexture *texture, glDirectDrawSurface7 *surface, int vsync)
+void glDirectDrawSurface7::RenderScreen(glTexture *texture, int vsync)
 {
-	TRACE_ENTER(3,14,this,14,texture,14,surface);
-	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, this, surface, vsync);
+	TRACE_ENTER(3,14,this,14,texture,14,vsync);
+	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, vsync);
 	TRACE_EXIT(0,0);
 }
 // ddraw 2+ api

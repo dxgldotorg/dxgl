@@ -32,7 +32,7 @@ struct glUtil;
 
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
-HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL backend);
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend);
 ULONG glTexture_AddRef(glTexture *This);
 ULONG glTexture_Release(glTexture *This, BOOL backend);
 HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 ddsd, DWORD flags, BOOL backend);

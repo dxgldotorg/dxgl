@@ -122,7 +122,7 @@ void ShrinkMip(DWORD *x, DWORD *y)
 	*y = max(1, (DWORD)floorf((float)*y / 2.0f));
 }
 
-HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL backend)
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend)
 {
 	glTexture *newtexture;
 	if (!texture) return DDERR_INVALIDPARAMS;
@@ -164,6 +164,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFFFF;
 			break;
 		}
+		newtexture->zhasstencil = zhasstencil;
 	}
 
 	if (!(newtexture->levels[0].ddsd.dwFlags & DDSD_PIXELFORMAT))
@@ -386,7 +387,7 @@ void glTexture_CreateDummyColor(glTexture *This, BOOL backend)
 	ddsd.dwWidth = This->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = This->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->dummycolor, This->renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE);
+	glTexture_Create(&ddsd, &This->dummycolor, This->renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, backend);
 }
 void glTexture_DeleteDummyColor(glTexture *This, BOOL backend)
 {

@@ -117,7 +117,7 @@ public:
 	void SetTexture(glTexture *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(glTexture *texture, glDirectDrawSurface7 *surface, int vsync);
+	void RenderScreen(glTexture *texture, int vsync);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
@@ -142,9 +142,6 @@ public:
 	glDirectDrawPalette *palette;
 	HGLRC hRC;
 	D3DMATERIALHANDLE handle;
-	FBO fbo;
-	FBO zfbo;
-	FBO stencilfbo;
 	glDirectDrawClipper *clipper;
 	IUnknown *creator;
 	IUnknown *textureparent;

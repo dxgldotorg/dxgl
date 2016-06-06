@@ -517,5 +517,5 @@ void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *tex
 	ddsd.dwWidth = texture->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = texture->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->texture, renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE);
+	glTexture_Create(&ddsd, &This->texture, renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, FALSE);
 }

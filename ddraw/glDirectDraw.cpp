@@ -470,8 +470,8 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	DEVMODE *tmp;
 	if(!modes) ERR(DDERR_OUTOFMEMORY);
 	DDSURFACEDESC2 ddmode;
-	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC));
-	ddmode.dwSize = sizeof(DDSURFACEDESC);
+	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC2));
+	ddmode.dwSize = sizeof(DDSURFACEDESC2);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
 	while(EnumDisplaySettings(NULL,modenum++,&mode))
 	{
@@ -1442,7 +1442,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	glDD7->internalx = glDD7->screenx = dwWidth;
 	glDD7->internaly = glDD7->screeny = dwHeight;
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
-		glDD7->primary->texture->palette, glDD7->primary, glDD7->primary, 0);
+		glDD7->primary->texture->palette, 0);
 }
 
 
@@ -1952,7 +1952,7 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lastsync) lastsync = true;
-	else if(primary) primary->RenderScreen(primary->texture,primary,1);
+	else if(primary) primary->RenderScreen(primary->texture,1);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

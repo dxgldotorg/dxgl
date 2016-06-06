@@ -104,6 +104,7 @@ typedef struct TEXTURESTAGE
 #define OP_SETLIGHT					21
 #define OP_SETVIEWPORT				22
 #define OP_DXGLBREAK                23
+#define OP_SETTEXTURECOLORKEY		24
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -159,10 +160,9 @@ DWORD glRenderer_GetBPP(glRenderer *This);
 static DWORD WINAPI glRenderer_ThreadEntry(void *entry);
 void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
-HRESULT glRenderer_Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
-	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd);
 void glRenderer_MakeTexture(glRenderer *This, glTexture *texture);
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync);
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync);
 void glRenderer_DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer_Flush(glRenderer *This);
@@ -173,7 +173,7 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
 void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
 unsigned int glRenderer_GetScanLine(glRenderer *This);
-HRESULT glRenderer_DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx);
+HRESULT glRenderer_DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel);
 void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
 void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture);
 void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
@@ -181,16 +181,16 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
+void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer_DXGLBreak(glRenderer *This);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
 void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
-void glRenderer__Blt(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *src,
-	glDirectDrawSurface7 *dest, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd);
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture);
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, glDirectDrawSurface7 *dest, glDirectDrawSurface7 *src, GLint vsync, BOOL setsync);
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, BOOL setsync);
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype);
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype);
@@ -202,7 +202,7 @@ void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
 void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
-void glRenderer__DepthFill(glRenderer *This, LPRECT lpDestRect, glDirectDrawSurface7 *dest, LPDDBLTFX lpDDBltFx);
+void glRenderer__DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel);
 void glRenderer__SetFogColor(glRenderer *This, DWORD color);
 void glRenderer__SetFogStart(glRenderer *This, GLfloat start);
 void glRenderer__SetFogEnd(glRenderer *This, GLfloat end);
@@ -216,6 +216,7 @@ void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransf
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
+void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer__SetDepthComp(glRenderer *This);
 void glRenderer__DXGLBreak(glRenderer *This);
 

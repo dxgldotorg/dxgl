@@ -284,6 +284,7 @@ typedef struct MIPLEVEL
 	// 1 - Surface was locked
 	// 2 - Texture was written to by GPU
 	DWORD locked;
+	FBO fbo;
 } MIPLEVEL;
 
 // Surface texture object
@@ -307,6 +308,7 @@ typedef struct glTexture
 	int colororder;
 	GLenum format;
 	GLenum type;
+	BOOL zhasstencil;
 	struct glTexture *palette;
 	struct glTexture *stencil;
 	struct glTexture *dummycolor;
