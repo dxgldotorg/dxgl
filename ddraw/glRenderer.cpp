@@ -388,12 +388,13 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
   * @param vsync
   *  Vertical sync count
   */
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync)
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = paltex;
 	This->inputs[2] = (void*)vsync;
+	This->inputs[3] = previous;
 	This->opcode = OP_DRAWSCREEN;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -940,7 +941,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
-				(GLint)This->inputs[2],true);
+				(GLint)This->inputs[2],(glTexture*)This->inputs[3],true);
 			break;
 		case OP_INITD3D:
 			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
@@ -1534,7 +1535,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,false);
+		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,false);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -1653,11 +1654,13 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetFBO(This->util, NULL);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, BOOL setsync)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync)
 {
 	int progtype;
-	RECT r,r2;
+	RECT r, r2;
 	glUtil_BlendEnable(This->util, FALSE);
+	if (previous) previous->levels[0].ddsd.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
+	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
 	if((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		GetClientRect(This->hWnd,&r);

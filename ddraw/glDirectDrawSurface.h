@@ -112,12 +112,12 @@ public:
 	ULONG WINAPI ReleaseColor();
 	//void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
 	void Restore2();
-	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags);
+	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags, glTexture **previous);
 	HRESULT AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface);
 	void SetTexture(glTexture *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(glTexture *texture, int vsync);
+	void RenderScreen(glTexture *texture, int vsync, glTexture *previous);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
