@@ -434,6 +434,8 @@ void InitTest2D(int test)
 	MultiDirectDrawSurface *temp1 = NULL;
 	MultiDirectDrawSurface *temp2 = NULL;
 	HRESULT error;
+	DDCOLORKEY ckey;
+	ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = 0;
 	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
 	error = ddsrender->GetSurfaceDesc(&ddsd);
@@ -584,6 +586,10 @@ void InitTest2D(int test)
 		sprites[0].rect.left = sprites[0].rect.top = 0;
 		sprites[0].rect.right = ddsd.dwWidth;
 		sprites[0].rect.bottom = ddsd.dwHeight;
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		temp1->SetColorKey(DDCKEY_DESTBLT, &ckey);
+		if (backbuffers) temp1->Release();
 		for (int i = 1; i < 16; i++)
 		{
 			switch ((i - 1 & 3))
@@ -610,8 +616,6 @@ void InitTest2D(int test)
 			default:
 				break;
 			}
-			DDCOLORKEY ckey;
-			ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = 0;
 			if (i < 5) sprites[i].bltflags = 0;
 			else if (i < 9)
 			{
@@ -619,8 +623,11 @@ void InitTest2D(int test)
 				if (sprites[i].surface) sprites[i].surface->SetColorKey(DDCKEY_SRCBLT, &ckey);
 			}
 			else if (i < 13) sprites[i].bltflags = DDBLTFAST_DESTCOLORKEY;
-			else sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
-			ddsrender->SetColorKey(DDCKEY_DESTBLT, &ckey);
+			else
+			{
+				sprites[i].bltflags = DDBLTFAST_SRCCOLORKEY | DDBLTFAST_DESTCOLORKEY;
+				if (sprites[i].surface) sprites[i].surface->SetColorKey(DDCKEY_SRCBLT, &ckey);
+			}
 			sprites[i].x = randfloat((float)ddsd.dwWidth);
 			sprites[i].y = randfloat((float)ddsd.dwHeight);
 			sprites[i].xvelocity = randfloat(5);
