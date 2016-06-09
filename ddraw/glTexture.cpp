@@ -605,7 +605,7 @@ void glTexture__Upload(glTexture *This, GLint level)
 			break;
 		}
 		glTexture__Upload2(This, level,
-			This->levels[level].ddsd.dwWidth, This->levels[level].ddsd.dwHeight, FALSE, FALSE, This->renderer->util);
+			bigx, bigy, FALSE, FALSE, This->renderer->util);
 	}
 }
 BOOL glTexture__Repair(glTexture *This, BOOL preserve)
@@ -982,8 +982,16 @@ void glTexture__FinishCreate(glTexture *This)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, This->wraps);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, This->wrapt);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, This->miplevel - 1);
-	x = This->levels[0].ddsd.dwWidth;
-	y = This->levels[0].ddsd.dwHeight;
+	if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
+	{
+		x = This->bigwidth;
+		y = This->bigheight;
+	}
+	else
+	{
+		x = This->levels[0].ddsd.dwWidth;
+		y = This->levels[0].ddsd.dwHeight;
+	}
 	for (i = 0; i < This->miplevel; i++)
 	{
 		do
