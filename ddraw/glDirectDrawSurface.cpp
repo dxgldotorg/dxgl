@@ -740,6 +740,15 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 		error = this->ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
 		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		if (dwFlags & DDBLT_KEYSRC)
+		{
+			if (this->ddInterface->tmpsurface->ddsd.ddckCKSrcBlt.dwColorSpaceHighValue !=
+				this->ddInterface->tmpsurface->ddsd.ddckCKSrcBlt.dwColorSpaceLowValue)
+				this->ddInterface->tmpsurface->SetColorKey(DDCKEY_SRCBLT | DDCKEY_COLORSPACE,
+					&((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt);
+			else this->ddInterface->tmpsurface->SetColorKey(DDCKEY_SRCBLT,
+				&((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt);
+		}
 		TRACE_RET(HRESULT, 23, this->Blt(lpDestRect, (LPDIRECTDRAWSURFACE7)this->ddInterface->tmpsurface,
 			&tmprect, dwFlags, lpDDBltFx));
 	}
