@@ -2928,29 +2928,29 @@ void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD 
 	{
 		texture->levels[level].ddsd.dwFlags |= DDSD_CKSRCBLT;
 		texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
-		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
-		else texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		else texture->levels[level].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if (dwFlags & DDCKEY_DESTBLT)
 	{
 		texture->levels[level].ddsd.dwFlags |= DDSD_CKDESTBLT;
 		texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
-		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
-		else texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		else texture->levels[level].ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if (dwFlags & DDCKEY_SRCOVERLAY)
 	{
 		texture->levels[level].ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
 		texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
-		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
-		else texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		else texture->levels[level].ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if (dwFlags & DDCKEY_DESTOVERLAY)
 	{
 		texture->levels[level].ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
 		texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceLowValue = lpDDColorKey->dwColorSpaceLowValue;
-		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
-		else texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
+		else texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	SetEvent(This->busy);
 }

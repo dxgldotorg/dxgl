@@ -371,13 +371,13 @@ void glTexture_SetPalette(glTexture *This, glTexture *palette, BOOL backend)
 {
 	if (This->palette) glTexture_Release(This->palette, backend);
 	This->palette = palette;
-	glTexture_AddRef(palette);
+	if (palette) glTexture_AddRef(palette);
 }
 void glTexture_SetStencil(glTexture *This, glTexture *stencil, BOOL backend)
 {
 	if (This->stencil) glTexture_Release(This->stencil, backend);
 	This->stencil = stencil;
-	glTexture_AddRef(stencil);
+	if (stencil) glTexture_AddRef(stencil);
 }
 void glTexture_CreateDummyColor(glTexture *This, BOOL backend)
 {

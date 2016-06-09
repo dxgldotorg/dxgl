@@ -1320,21 +1320,29 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 	{
 		ddsd.dwFlags |= DDSD_CKSRCBLT;
 		colorkey[0] = key;
+		ddsd.ddckCKSrcBlt = *lpDDColorKey;
+		if (!key.colorspace) ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if(dwFlags & DDCKEY_DESTBLT)
 	{
 		ddsd.dwFlags |= DDSD_CKDESTBLT;
 		colorkey[1] = key;
+		ddsd.ddckCKDestBlt = *lpDDColorKey;
+		if (!key.colorspace) ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if(dwFlags & DDCKEY_SRCOVERLAY)
 	{
 		ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
 		colorkey[2] = key;
+		ddsd.ddckCKSrcOverlay = *lpDDColorKey;
+		if (!key.colorspace) ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	if(dwFlags & DDCKEY_DESTOVERLAY)
 	{
 		ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
 		colorkey[3] = key;
+		ddsd.ddckCKDestOverlay = *lpDDColorKey;
+		if (!key.colorspace) ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
 	glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	TRACE_EXIT(23,DD_OK);
