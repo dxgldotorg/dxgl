@@ -1415,24 +1415,10 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		srcrect.bottom = ddsdSrc.dwHeight;
 	}
 	else srcrect = cmd->srcrect;
-	if (cmd->destlevel == 0)
-	{
-		This->bltvertices[1].x = This->bltvertices[3].x =
-			(GLfloat)destrect.left * ((GLfloat)cmd->dest->bigwidth / (GLfloat)ddsd.dwWidth);
-		This->bltvertices[0].x = This->bltvertices[2].x =
-			(GLfloat)destrect.right * ((GLfloat)cmd->dest->bigwidth / (GLfloat)ddsd.dwWidth);
-		This->bltvertices[0].y = This->bltvertices[1].y =
-			(GLfloat)cmd->dest->bigheight - ((GLfloat)destrect.top * ((GLfloat)cmd->dest->bigheight / (GLfloat)ddsd.dwHeight));
-		This->bltvertices[2].y = This->bltvertices[3].y =
-			(GLfloat)cmd->dest->bigheight - ((GLfloat)destrect.bottom * ((GLfloat)cmd->dest->bigheight / (GLfloat)ddsd.dwHeight));
-	}
-	else
-	{
-		This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
-		This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
-		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
-		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
-	}
+	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
+	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
+	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
+	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
 	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
 	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
