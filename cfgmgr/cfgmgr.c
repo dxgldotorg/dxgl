@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -34,8 +34,23 @@ typedef LONG LSTATUS;
 
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
+TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
 DXGLCFG defaultmask;
+
+/**
+* Gets the hexadecimal digit for a number; the number must be less than 16
+* or 0x10.
+* @param c
+*  Number from 0 to 15 or 0x0 to 0xF
+* @return
+*  A character representing a hexidecimal digit, letters are uppercase.
+*/
+static unsigned char hexdigit(unsigned char c)
+{
+	if (c < 10) return c + '0';
+	else return (c + 'A' - 10);
+}
 
 INT_PTR CALLBACK CompatDialogCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -436,7 +451,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	DXGLCFG *cfgmask;
 	TCHAR path[MAX_PATH+1];
 	LONG error;
-	DWORD regmultisz = REG_MULTI_SZ;
+	DWORD regsz = REG_SZ;
 	DWORD sizeout=4;
 	if (mask) cfgmask = mask;
 	else cfgmask = &defaultmask;
@@ -466,36 +481,14 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
 	if(!global && dll)
 	{
-		LPTSTR paths;
 		sizeout = 0;
 		if(!dir) GetModuleFileName(NULL,path,MAX_PATH);
 		else _tcsncpy(path,dir,MAX_PATH+1);
 		GetDirFromPath(path);
-		error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,NULL,&sizeout);
+		error = RegQueryValueEx(hKey,_T("InstallPath"),NULL,&regsz,NULL,&sizeout);
 		if(error == ERROR_FILE_NOT_FOUND)
-		{
-			sizeout = (_tcslen(path)*2)+4;
-			paths = (LPTSTR)malloc(sizeout*sizeof(TCHAR));
-			if(!paths) return;
-			ZeroMemory(paths,sizeout*sizeof(TCHAR));
-			_tcscpy(paths,path);
-			error = RegSetValueEx(hKey,_T("InstallPaths"),0,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
-			free(paths);
-		}
-		else
-		{
-			paths = (LPTSTR)malloc(sizeout+(MAX_PATH*2)+4);
-			if(!paths) return;
-			ZeroMemory(paths,sizeout+(MAX_PATH*2)+4);
-			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,&regmultisz,(LPBYTE)paths,&sizeout);
-			if(!FindStringInMultiSz(paths,path))
-			{
-				AddStringToMultiSz(paths,path);
-				sizeout += (MAX_PATH*2)+4;
-				error = RegSetValueEx(hKey,_T("InstallPaths"),0,REG_MULTI_SZ,(LPBYTE)paths,sizeout);
-			}
-			free(paths);
-		}
+			RegSetValueEx(hKey, _T("InstallPath"), 0, REG_MULTI_SZ,
+				(LPBYTE)path, _tcslen(path) * sizeof(TCHAR));
 	}
 }
 
@@ -558,94 +551,123 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
 }
 
-TCHAR newregname[MAX_PATH+9];
+TCHAR newregname[MAX_PATH+65];
+
+BOOL CheckProfileExists(LPTSTR path)
+{
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	TCHAR sha256string[65];
+	TCHAR regkey[MAX_PATH + 80];
+	TCHAR filename[MAX_PATH + 1];
+	TCHAR pathlwr[MAX_PATH + 1];
+	HKEY hKey;
+	LONG error;
+	int i;
+	_tcscpy(regkey, regkeybase);
+	_tcscat(regkey, _T("Profiles\\"));
+	_tcscpy(filename, path);
+	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	i++;
+	_tcscat(regkey, &filename[i]);
+	_tcscat(regkey, _T("-"));
+	i--;
+	filename[i] = 0;
+	_tcslwr(filename);
+	Sha256Initialise(&sha_context);
+	Sha256Update(&sha_context, filename, _tcslen(filename));
+	Sha256Finalise(&sha_context, &sha256);
+	for (i = 0; i < (256 / 8); i++)
+	{
+		sha256string[i * 2] = (TCHAR)hexdigit(sha256.bytes[i] >> 4);
+		sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
+	}
+	sha256string[256 / 4] = 0;
+	_tcscat(regkey, sha256string);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
+	if (error = ERROR_SUCCESS)
+	{
+		RegCloseKey(hKey);
+		return TRUE;
+	}
+	else return FALSE;
+}
 
 LPTSTR MakeNewConfig(LPTSTR path)
 {
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	TCHAR sha256string[65];
+	TCHAR pathlwr[MAX_PATH + 1];
 	HKEY hKey;
 	DXGLCFG tmp;
-	TCHAR crcstr[10];
-	unsigned long crc;
-	TCHAR regkey[MAX_PATH + 24];
+	TCHAR regkey[MAX_PATH + 80];
 	int i;
 	TCHAR filename[MAX_PATH + 1];
-	FILE *file = _tfopen(path, _T("rb"));
-	if(file != NULL) Crc32_ComputeFile(file,&crc);
-	else crc = 0;
-	_itot(crc,crcstr,16);
-	if(file) fclose(file);
+	_tcsncpy(pathlwr, path, MAX_PATH);
+	for (i = _tcslen(pathlwr); (i > 0) && (pathlwr[i] != 92) && (pathlwr[i] != 47); i--);
+	pathlwr[i] = 0;
+	_tcslwr(pathlwr);
+	Sha256Initialise(&sha_context);
+	Sha256Update(&sha_context, pathlwr, _tcslen(pathlwr));
+	Sha256Finalise(&sha_context, &sha256);
+	for (i = 0; i < (256 / 8); i++)
+	{
+		sha256string[i * 2] = (TCHAR)hexdigit(sha256.bytes[i] >> 4);
+		sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
+	}
+	sha256string[256 / 4] = 0;
 	_tcscpy(regkey,regkeybase);
 	_tcsncpy(filename,path,MAX_PATH);
 	filename[MAX_PATH] = 0;
 	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
+	_tcscat(regkey, _T("Profiles\\"));
 	_tcscat(regkey,&filename[i]);
 	_tcscat(regkey,_T("-"));
-	_tcscat(regkey,crcstr);
+	_tcscat(regkey,sha256string);
 	_tcscpy(newregname,&filename[i]);
 	_tcscat(newregname,_T("-"));
-	_tcscat(newregname,crcstr);
+	_tcscat(newregname,sha256string);
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	ReadSettings(hKey,&tmp,NULL,FALSE,TRUE,path);
 	RegCloseKey(hKey);
 	return newregname;
 }
 
-BOOL IsInstalledDXGLTest(LPCTSTR path)
-{
-	LRESULT err;
-	TCHAR dir[MAX_PATH+1];
-	TCHAR cmp[MAX_PATH+1];
-	HKEY hKey;
-	DWORD sizeout;
-	_tcsncpy(dir, path, MAX_PATH);
-	GetDirFromPath(dir);
-	sizeout = MAX_PATH*sizeof(TCHAR);
-	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKey) != ERROR_SUCCESS)
-		return FALSE;
-	err = RegQueryValueEx(hKey,_T("InstallDir"),NULL,NULL,(LPBYTE)cmp,&sizeout);
-	if(err != ERROR_SUCCESS)
-	{
-		RegCloseKey(hKey);
-		return FALSE;
-	}
-	RegCloseKey(hKey);
-	if(!_tcsnicmp(dir,cmp,MAX_PATH)) return TRUE;
-	else return FALSE;
-}
-
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 {
 	HKEY hKey;
-	unsigned long crc;
-	TCHAR regkey[MAX_PATH+24];
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	TCHAR sha256string[65];
+	TCHAR regkey[MAX_PATH+80];
 	FILE *file;
 	TCHAR filename[MAX_PATH+1];
-	TCHAR crcstr[10];
 	int i;
 	BOOL DPIAwarePM = FALSE;
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
 	GetModuleFileName(NULL, filename, MAX_PATH);
-	if(IsInstalledDXGLTest(filename))
+	_tcscpy(regkey, regkeybase);
+	_tcscat(regkey, _T("Profiles\\"));
+	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	i++;
+	_tcscat(regkey, &filename[i]);
+	_tcscat(regkey, _T("-"));
+	i--;
+	filename[i] = 0;
+	_tcslwr(filename);
+	Sha256Initialise(&sha_context);
+	Sha256Update(&sha_context, filename, _tcslen(filename));
+	Sha256Finalise(&sha_context, &sha256);
+	for (i = 0; i < (256 / 8); i++)
 	{
-		_tcscpy(regkey,regkeybase);
-		_tcscat(regkey,_T("DXGLTestApp"));
+		sha256string[i * 2] = (TCHAR)hexdigit(sha256.bytes[i] >> 4);
+		sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
 	}
-	else
-	{
-		file = _tfopen(filename,_T("rb"));
-		if(file != NULL) Crc32_ComputeFile(file,&crc);
-		else crc = 0;
-		_itot(crc,crcstr,16);
-		if(file) fclose(file);
-		_tcscpy(regkey, regkeybase);
-		for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
-		i++;
-		_tcscat(regkey,&filename[i]);
-		_tcscat(regkey,_T("-"));
-		_tcscat(regkey,crcstr);
-	}
+	sha256string[256 / 4] = 0;
+	_tcscat(regkey,sha256string);
 	GetGlobalConfig(cfg, initial);
 	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
 	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
@@ -714,8 +736,9 @@ void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 {
 	HKEY hKey;
-	TCHAR regkey[MAX_PATH + 24];
+	TCHAR regkey[MAX_PATH + 80];
 	_tcscpy(regkey,regkeybase);
+	_tcscat(regkey, _T("Profiles\\"));
 	_tcsncat(regkey, name, MAX_PATH);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
@@ -734,10 +757,305 @@ void SetGlobalConfig(const DXGLCFG *cfg)
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 {
 	HKEY hKey;
-	TCHAR regkey[MAX_PATH + 24];
+	TCHAR regkey[MAX_PATH + 80];
 	_tcscpy(regkey, regkeybase);
+	_tcscat(regkey, _T("Profiles\\"));
 	_tcsncat(regkey, name, MAX_PATH);
 	RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	WriteSettings(hKey,cfg,mask,FALSE);
+	RegCloseKey(hKey);
+}
+
+/**
+  * Checks the registry configuration version and if outdated upgrades to
+  * the latest version - currently version 1
+  * Alpha version configuration is assumed to be version 0.
+  */
+void UpgradeConfig()
+{
+	DWORD version = 0;
+	DWORD keyindex;
+	HKEY hKey;
+	HKEY hKeyProfile;
+	HKEY hKeyDest;
+	TCHAR regkey[MAX_PATH + 24];
+	TCHAR subkey[MAX_PATH];
+	TCHAR exepath[(MAX_PATH * 2) + 1];
+	FILE *file;
+	TCHAR crcstr[10];
+	unsigned long crc;
+	DWORD numoldconfig;
+	DWORD numvalue;
+	DWORD oldconfigcount;
+	DWORD olddirsize = 1024;
+	TCHAR *olddir = NULL;
+	DWORD oldvaluesize = 1024;
+	TCHAR *oldvalue = NULL;
+	TCHAR *ptr;
+	size_t length;
+	CFGREG *oldkeys = NULL;
+	DWORD regtype;
+	DWORD sizeout, sizeout2;
+	Sha256Context sha_context;
+	LONG error;
+	LONG error2;
+	int i;
+	// Check configuration version first
+	_tcscpy(regkey, regkeybase);
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (error != ERROR_SUCCESS)
+	{
+		MessageBox(NULL, _T("Could not open registry key to upgrade DXGL"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+		ExitProcess(error);
+	}
+	sizeout = 4;
+	regtype = REG_DWORD;
+	error = RegQueryValueEx(hKey, _T("Configuration Version"), NULL, &regtype, &version, &sizeout);
+	if (error != ERROR_SUCCESS) version = 0;  // Version is 0 if not set (alpha didn't have version)
+	if (regtype != REG_DWORD) version = 0; // Is the key the wrong type?
+	if (version >= 1) return;  // If version is 1 no need to upgrade.
+ver0to1:
+	// Count profiles
+	keyindex = 0;
+	numoldconfig = 0;
+	olddir = malloc(olddirsize);
+	do
+	{
+		sizeout = MAX_PATH;
+		error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+			NULL, NULL, NULL, NULL);
+		keyindex++;
+		if (error == ERROR_SUCCESS)
+		{
+			error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_READ, &hKeyProfile);
+			if (error2 == ERROR_SUCCESS)
+			{
+				regtype = REG_MULTI_SZ;
+				sizeout = olddirsize;
+				error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
+					&regtype, olddir, &sizeout);
+				if (error2 == ERROR_MORE_DATA)
+				{
+					olddirsize = sizeout;
+					olddir = realloc(olddir, olddirsize);
+					if (!olddir)
+					{
+						MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+						ExitProcess(error);
+					}
+					sizeout = olddirsize;
+					error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
+						&regtype, olddir, &sizeout);
+				}
+				if (error2 == ERROR_SUCCESS)
+				{
+					if (regtype == REG_MULTI_SZ)
+					{
+						// Parse MULTI_SZ and count install paths
+						ptr = olddir;
+						do
+						{
+							length = _tcslen(ptr);
+							if (length)
+							{
+								numoldconfig++;
+								ptr += length + 1;
+							}
+						} while (length > 0);
+					}
+				}
+				RegCloseKey(hKeyProfile);
+			}
+		}
+	} while (error == ERROR_SUCCESS);
+	// Read the old profiles into a list
+	// Just need the keys; will transfer the settings later
+	oldkeys = (CFGREG*)malloc(numoldconfig * sizeof(CFGREG));
+	if (!oldkeys)
+	{
+		free(olddir);
+		MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+		ExitProcess(ERROR_NOT_ENOUGH_MEMORY);
+	}
+	ZeroMemory(oldkeys, numoldconfig * sizeof(CFGREG));
+	oldconfigcount = 0;
+	keyindex = 0;
+	do
+	{
+		sizeout = MAX_PATH;
+		error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+			NULL, NULL, NULL, NULL);
+		keyindex++;
+		if (error == ERROR_SUCCESS)
+		{
+			error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_READ, &hKeyProfile);
+			if (error2 == ERROR_SUCCESS)
+			{
+				regtype = REG_MULTI_SZ;
+				sizeout = olddirsize;
+				error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
+					&regtype, olddir, &sizeout);
+				if (error2 == ERROR_MORE_DATA)
+				{
+					olddirsize = sizeout;
+					olddir = realloc(olddir, olddirsize);
+					if (!olddir)
+					{
+						free(olddir);
+						MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+						ExitProcess(error);
+					}
+					sizeout = olddirsize;
+					error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
+						&regtype, olddir, &sizeout);
+				}
+				if (error2 == ERROR_SUCCESS)
+				{
+					if (regtype == REG_MULTI_SZ)
+					{
+						// Parse MULTI_SZ build profiles
+						ptr = olddir;
+						do
+						{
+							length = _tcslen(ptr);
+							if (length)
+							{
+								_tcsncpy(oldkeys[oldconfigcount].InstallPath, ptr, MAX_PATH);
+								_tcsncpy(oldkeys[oldconfigcount].InstallPathLowercase, ptr, MAX_PATH);
+								_tcslwr(oldkeys[oldconfigcount].InstallPathLowercase);
+								_tcsncpy(oldkeys[oldconfigcount].OldKey, subkey, MAX_PATH);
+								if (!_tcscmp(subkey, _T("DXGLTestApp")))
+								{
+									_tcscpy(oldkeys[oldconfigcount].EXEFile, _T("dxgltest.exe-0"));
+									oldkeys[oldconfigcount].nocrc = TRUE;
+								}
+								else
+								{
+									_tcsncpy(oldkeys[oldconfigcount].EXEFile, subkey, MAX_PATH);
+									oldkeys[oldconfigcount].nocrc = FALSE;
+								}
+								if (_tcsrchr(oldkeys[oldconfigcount].EXEFile, _T('-')))
+								{
+									_tcscpy(oldkeys[oldconfigcount].crc32, _tcsrchr(oldkeys[oldconfigcount].EXEFile, _T('-')) + 1);
+									*(_tcsrchr(oldkeys[oldconfigcount].EXEFile, _T('-'))) = 0;
+								}
+								else
+								{
+									_tcscpy(oldkeys[oldconfigcount].crc32, "0");
+								}
+								_tcscpy(exepath, oldkeys[oldconfigcount].InstallPath);
+								_tcscat(exepath, _T("\\"));
+								_tcscat(exepath, oldkeys[oldconfigcount].EXEFile);
+								if (!oldkeys[oldconfigcount].nocrc)
+								{
+									file = _tfopen(exepath, _T("rb"));
+									if (file != NULL) Crc32_ComputeFile(file, &crc);
+									else crc = 0;
+									_itot(crc, crcstr, 16);
+									if (file)
+									{
+										fclose(file);
+										if (!_tcsicmp(crcstr, oldkeys[oldconfigcount].crc32))
+											oldkeys[oldconfigcount].exe_found = TRUE;
+										else oldkeys[oldconfigcount].exe_found = FALSE;
+									}
+									else oldkeys[oldconfigcount].exe_found = FALSE;
+								}
+								else oldkeys[oldconfigcount].exe_found = TRUE;
+								Sha256Initialise(&sha_context);
+								Sha256Update(&sha_context, oldkeys[oldconfigcount].InstallPathLowercase, length);
+								Sha256Finalise(&sha_context, &oldkeys[oldconfigcount].PathHash);
+								for (i = 0; i < (256 / 8); i++)
+								{
+									oldkeys[oldconfigcount].PathHashString[i * 2] = (TCHAR)hexdigit(oldkeys[oldconfigcount].PathHash.bytes[i] >> 4);
+									oldkeys[oldconfigcount].PathHashString[(i * 2) + 1] = (TCHAR)hexdigit(oldkeys[oldconfigcount].PathHash.bytes[i] & 0xF);
+								}
+								oldkeys[oldconfigcount].PathHashString[256 / 4] = 0;
+								oldconfigcount++;
+								if (oldconfigcount > numoldconfig)
+								{
+									free(oldkeys);
+									goto ver0to1;
+								}
+								ptr += length + 1;
+							}
+						} while (length > 0);
+					}
+				}
+				RegCloseKey(hKeyProfile);
+			}
+		}
+	} while (error == ERROR_SUCCESS);
+	// Transfer matching profiles
+	oldvalue = malloc(oldvaluesize);
+	for (int i = 0; i < oldconfigcount; i++)
+	{
+		if (oldkeys[i].exe_found)
+		{
+			error = RegOpenKeyEx(hKey, oldkeys[i].OldKey, 0, KEY_READ, &hKeyProfile);
+			if (error == ERROR_SUCCESS)
+			{
+				_tcscpy(exepath, _T("Profiles\\"));
+				_tcscat(exepath, oldkeys[i].EXEFile);
+				_tcscat(exepath, _T("-"));
+				_tcscat(exepath, oldkeys[i].PathHashString);
+				error = RegCreateKeyEx(hKey, exepath, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKeyDest, NULL);
+				if (error == ERROR_SUCCESS)
+				{
+					numvalue = 0;
+					do
+					{
+						sizeout = olddirsize;
+						sizeout2 = oldvaluesize;
+						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						if (error == ERROR_MORE_DATA)
+						{
+							if (sizeout > olddirsize)
+							{
+								olddirsize = sizeout;
+								olddir = realloc(olddir, olddirsize);
+								if (!olddir)
+								{
+									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+									ExitProcess(error);
+								}
+							}
+							if (sizeout2 > oldvaluesize)
+							{
+								oldvaluesize = sizeout2;
+								oldvalue = realloc(oldvalue, oldvaluesize);
+								if (!oldvalue)
+								{
+									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+									ExitProcess(error);
+								}
+							}
+							sizeout = olddirsize;
+							sizeout2 = oldvaluesize;
+							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						}
+						if (error == ERROR_SUCCESS)
+						{
+							if (_tcsnicmp(olddir, _T("InstallPaths"), sizeout))
+								RegSetValueEx(hKeyDest, olddir, 0, regtype, oldvalue, sizeout2);
+						}
+						numvalue++;
+					} while (error == ERROR_SUCCESS);
+					RegSetValueEx(hKeyDest, _T("InstallPath"), 0, REG_SZ, oldkeys[i].InstallPath,
+						((_tcslen(oldkeys[i].InstallPath) + 1) * sizeof(TCHAR)));
+					RegCloseKey(hKeyDest);
+				}
+				RegCloseKey(hKeyProfile);
+			}
+		}
+	}
+	// Delete old registry keys
+	for (int i = 0; i < oldconfigcount; i++)
+		RegDeleteKey(hKey, oldkeys[i].OldKey);
+	// Clean up and write registry version
+	if(olddir) free(olddir);
+	if(oldvalue) free(oldvalue);
+	sizeout = 1;
+	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
 	RegCloseKey(hKey);
 }

@@ -119,5 +119,6 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 extern CRITICAL_SECTION dll_cs;
 
 #include "trace.h"
+#include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
 #endif //_COMMON_H

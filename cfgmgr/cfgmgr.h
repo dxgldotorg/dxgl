@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,19 @@ typedef struct
 	BOOL Windows8Detected;
 } DXGLCFG;
 
+typedef struct
+{
+	TCHAR InstallPath[MAX_PATH + 1];
+	TCHAR InstallPathLowercase[MAX_PATH + 1];
+	TCHAR EXEFile[MAX_PATH + 1];
+	TCHAR OldKey[MAX_PATH + 1];
+	TCHAR crc32[9];
+	BOOL nocrc;
+	SHA256_HASH PathHash;
+	TCHAR PathHashString[65];
+	BOOL exe_found;
+} CFGREG;
+
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir);
 void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL global);
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial);
@@ -57,6 +70,8 @@ void SetGlobalConfig(const DXGLCFG *cfg);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
 void GetDirFromPath(LPTSTR path);
+void UpgradeConfig();
+BOOL CheckProfileExists(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
 
 #ifdef __cplusplus

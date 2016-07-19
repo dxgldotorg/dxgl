@@ -45,3 +45,5 @@
 #define IDC_TEXUPLOAD                           1059
 #define IDC_ASPECT                              1061
 #define IDC_DPISCALE                            1063
+#define IDC_PATHLABEL                           1064
+#define IDC_PROFILEPATH                         1065

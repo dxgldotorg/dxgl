@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,7 @@
 #include <math.h>
 #include <io.h>
 #include "resource.h"
+#include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
 
@@ -65,6 +66,8 @@ typedef struct
 	BOOL dirty;
 	DXGLCFG cfg;
 	DXGLCFG mask;
+	TCHAR path[MAX_PATH];
+	BOOL builtin;
 } app_setting;
 
 TCHAR exe_filter[] = _T("Program Files\0*.exe\0All Files\0*.*\0\0");
@@ -223,6 +226,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	float fract;
 	TCHAR denominator[5];
 	int i;
+	if (_isnan(f)) f = 0; //Handle NAN condition
 	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
 	{
 		_tcscpy(aspect, _T("1000:1"));
@@ -456,7 +460,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR keyname;
 	LPTSTR regbuffer;
 	DWORD regbuffersize;
-	DWORD regbufferpos;
 	DWORD buffersize;
 	LONG error;
 	TCHAR buffer[64];
@@ -481,6 +484,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regpath;
 	LPTSTR regkey;
 	BOOL failed;
+	LPTSTR installpath;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -491,6 +495,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(apps[0].name,_T("Global"));
 		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
 		_tcscpy(apps[0].regkey,_T("Global"));
+		UpgradeConfig();
 		GetGlobalConfig(&apps[0].cfg, FALSE);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
@@ -499,6 +504,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps[0].dirty = FALSE;
 		apps[0].icon = LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_STAR));
 		apps[0].icon_shared = TRUE;
+		apps[0].path[0] = 0;
 		SetClassLong(hWnd,GCL_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
 		SetClassLong(hWnd,GCL_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
 		// create temporary gl context to get AA and AF settings.
@@ -740,119 +746,139 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Windows AppCompat"));
 		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
+		EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
+		EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
+		// Check install path
+		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
+		if (error == ERROR_SUCCESS)
+		{
+			if (RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
+			{
+				installpath = (LPTSTR)malloc(keysize);
+				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, installpath, &keysize);
+				if (error != ERROR_SUCCESS)
+				{
+					free(installpath);
+					installpath = NULL;
+				}
+			}
+			RegCloseKey(hKey);
+		}
+		hKey = NULL;
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
 		regbuffersize = 1024;
-		regbuffer = (LPTSTR)malloc(regbuffersize*sizeof(TCHAR));
-		RegCreateKeyEx(HKEY_CURRENT_USER,_T("Software\\DXGL"),0,NULL,0,KEY_READ,NULL,&hKeyBase,NULL);
-		RegQueryInfoKey(hKeyBase,NULL,NULL,NULL,NULL,&keysize,NULL,NULL,NULL,NULL,NULL,NULL);
+		regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
+		RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+		RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 		keysize++;
-		keyname = (LPTSTR)malloc(keysize*sizeof(TCHAR));
+		keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
 		keysize2 = keysize;
 		i = 0;
-		while(RegEnumKeyEx(hKeyBase,i,keyname,&keysize2,NULL,NULL,NULL,NULL) == ERROR_SUCCESS)
+		while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
 			keysize2 = keysize;
 			i++;
-			if(!_tcscmp(keyname,_T("Global"))) continue;
 			appcount++;
-			if(appcount > maxapps)
+			if (appcount > maxapps)
 			{
 				maxapps += 128;
-				apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
+				apps = (app_setting *)realloc(apps, maxapps * sizeof(app_setting));
 			}
-			if(!_tcscmp(keyname,_T("DXGLTestApp"))) _tcscpy(subkey,_T("dxgltest.exe-0"));
-			else _tcscpy(subkey,keyname);
+			_tcscpy(subkey, keyname);
 			if (_tcsrchr(subkey, _T('-'))) *(_tcsrchr(subkey, _T('-'))) = 0;
-			error = RegOpenKeyEx(hKeyBase,keyname,0,KEY_READ,&hKey);
+			error = RegOpenKeyEx(hKeyBase, keyname, 0, KEY_READ, &hKey);
 			buffersize = regbuffersize;
-			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
-			if(buffersize > regbuffersize)
+			RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, NULL, &buffersize);
+			if (buffersize > regbuffersize)
 			{
 				regbuffersize = buffersize;
-				regbuffer = (LPTSTR)realloc(regbuffer,regbuffersize);
+				regbuffer = (LPTSTR)realloc(regbuffer, regbuffersize);
 			}
 			buffersize = regbuffersize;
-			regbuffer[0] = regbuffer[1] = 0;
-			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
-			regbufferpos = 0;
-			apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(keyname) + 1)*sizeof(TCHAR));
+			regbuffer[0] = 0;
+			error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+			apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(keyname) + 1) * sizeof(TCHAR));
 			_tcscpy(apps[appcount - 1].regkey, keyname);
-			GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,keyname);
-			apps[appcount-1].dirty = FALSE;
-			while(1)
+			GetConfig(&apps[appcount - 1].cfg, &apps[appcount - 1].mask, keyname);
+			apps[appcount - 1].dirty = FALSE;
+			if ((regbuffer[0] == 0) || error != ERROR_SUCCESS)
 			{
-				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
+				// Default icon
+				apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+				apps[appcount - 1].icon_shared = TRUE;
+				apps[appcount - 1].name = (TCHAR*)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
+				_tcscpy(apps[appcount - 1].name, subkey);
+				break;
+			}
+			path = (LPTSTR)malloc(((_tcslen(regbuffer) + _tcslen(subkey) + 2)) * sizeof(TCHAR));
+			_tcscpy(path, regbuffer);
+			_tcscpy(apps[appcount - 1].path, path);
+			if (installpath)
+			{
+				if (!_tcsicmp(installpath, path)) apps[appcount - 1].builtin = TRUE;
+				else apps[appcount - 1].builtin = FALSE;
+			}
+			_tcscat(path, _T("\\"));
+			_tcscat(path, subkey);
+			if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
+			{
+				// Default icon
+				apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+				apps[appcount - 1].icon_shared = TRUE;
+				apps[appcount - 1].name = (TCHAR*)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
+				_tcscpy(apps[appcount - 1].name, subkey);
+				break;
+			}
+			// Get exe attributes
+			error = SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
+			apps[appcount - 1].icon = fileinfo.hIcon;
+			apps[appcount - 1].icon_shared = FALSE;
+			verinfosize = GetFileVersionInfoSize(path, NULL);
+			verinfo = malloc(verinfosize);
+			hasname = FALSE;
+			if (GetFileVersionInfo(path, 0, verinfosize, verinfo))
+			{
+				if (VerQueryValue(verinfo, _T("\\VarFileInfo\\Translation"), (LPVOID*)&outbuffer, &outlen))
 				{
-					// Default icon
-					apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
-					apps[appcount-1].icon_shared = TRUE;
-					apps[appcount-1].name = (TCHAR*)malloc((_tcslen(subkey)+1)*sizeof(TCHAR));
-					_tcscpy(apps[appcount-1].name,subkey);
-					break;
-				}
-				path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
-					_tcslen(subkey) + 2))*sizeof(TCHAR));
-				_tcscpy(path, (LPTSTR)regbuffer + regbufferpos);
-				_tcscat(path, _T("\\"));
-				_tcscat(path, subkey);
-				if(GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
-				{
-					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
-					free(path);
-					continue;
-				}
-				// Get exe attributes
-				error = SHGetFileInfo(path,0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
-				apps[appcount-1].icon = fileinfo.hIcon;
-				apps[appcount-1].icon_shared = FALSE;
-				verinfosize = GetFileVersionInfoSize(path,NULL);
-				verinfo = malloc(verinfosize);
-				hasname = FALSE;
-				if(GetFileVersionInfo(path,0,verinfosize,verinfo))
-				{
-					if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
+					memcpy(translation, outbuffer, 4);
+					_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\FileDescription"), translation[0], translation[1]);
+					if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 					{
-						memcpy(translation,outbuffer,4);
-						_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
-						if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+						hasname = TRUE;
+						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
+						_tcscpy(apps[appcount - 1].name, outbuffer);
+					}
+					else
+					{
+						_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\ProductName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+						if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 						{
 							hasname = TRUE;
-							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
 							_tcscpy(apps[appcount - 1].name, outbuffer);
 						}
 						else
 						{
-							_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
-							if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+							_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\InternalName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+							if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 							{
 								hasname = TRUE;
-								apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+								apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
 								_tcscpy(apps[appcount - 1].name, outbuffer);
-							}
-							else
-							{
-								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
-								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
-								{
-									hasname = TRUE;
-									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
-									_tcscpy(apps[appcount - 1].name, outbuffer);
-								}
 							}
 						}
 					}
 				}
-				free(path);
-				if (!hasname)
-				{
-					apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(subkey) + 1)*sizeof(TCHAR));
-					_tcscpy(apps[appcount - 1].name, subkey);
-				}
-				free(verinfo);
-				break;
 			}
+			free(path);
+			if (!hasname)
+			{
+				apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
+				_tcscpy(apps[appcount - 1].name, subkey);
+			}
+			free(verinfo);
 			RegCloseKey(hKey);
 		}
 		RegCloseKey(hKeyBase);
@@ -956,10 +982,19 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				dirty = &apps[current_app].dirty;
 				if(current_app)
 				{
-					if(!_tcscmp(apps[current_app].regkey,_T("DXGLTestApp"))) EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),FALSE);
-					else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),TRUE);
+					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), TRUE);
+					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), TRUE);
+					SetDlgItemText(hWnd, IDC_PROFILEPATH, apps[current_app].path);
+					if(apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+					else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
 				}
-				else EnableWindow(GetDlgItem(hWnd,IDC_REMOVE),FALSE);
+				else
+				{
+					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
+					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
+					SetDlgItemText(hWnd, IDC_PROFILEPATH, _T(""));
+					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+				}
 				// Set 3-state status
 				if(current_app && !tristate)
 				{
@@ -1142,99 +1177,107 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_ADD:
 			selectedfile[0] = 0;
-			ZeroMemory(&filename,OPENFILENAME_SIZE_VERSION_400);
+			ZeroMemory(&filename, OPENFILENAME_SIZE_VERSION_400);
 			filename.lStructSize = OPENFILENAME_SIZE_VERSION_400;
 			filename.hwndOwner = hWnd;
 			filename.lpstrFilter = exe_filter;
 			filename.lpstrFile = selectedfile;
-			filename.nMaxFile = MAX_PATH+1;
+			filename.nMaxFile = MAX_PATH + 1;
 			filename.lpstrInitialDir = _T("%ProgramFiles%");
 			filename.lpstrTitle = _T("Select program");
 			filename.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
-			if(GetOpenFileName(&filename))
+			if (GetOpenFileName(&filename))
 			{
-				DWORD err = AddApp(filename.lpstrFile,TRUE,FALSE);
-				if(!err)
+				if (CheckProfileExists(filename.lpstrFile))
+				{
+					MessageBox(hWnd, _T("A profile already exists for this program."),
+						_T("Profile already exists"), MB_OK | MB_ICONWARNING);
+					break;
+				}
+				DWORD err = AddApp(filename.lpstrFile, TRUE, FALSE);
+				if (!err)
 				{
 					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
-					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 15)*sizeof(TCHAR));
-					_tcscpy(newkey2, _T("Software\\DXGL\\"));
-					_tcscat(newkey2,newkey);
+					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 24) * sizeof(TCHAR));
+					_tcscpy(newkey2, _T("Software\\DXGL\\Profiles\\"));
+					_tcscat(newkey2, newkey);
 					appcount++;
-					if(appcount > maxapps)
+					if (appcount > maxapps)
 					{
 						maxapps += 128;
-						apps = (app_setting *)realloc(apps,maxapps*sizeof(app_setting));
+						apps = (app_setting *)realloc(apps, maxapps * sizeof(app_setting));
 					}
-					RegOpenKeyEx(HKEY_CURRENT_USER,newkey2,0,KEY_READ,&hKey);
-					RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
+					RegOpenKeyEx(HKEY_CURRENT_USER, newkey2, 0, KEY_READ, &hKey);
+					RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, NULL, &buffersize);
 					regbuffer = (LPTSTR)malloc(buffersize);
-					regbuffer[0] = regbuffer[1] = 0;
-					error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
-					regbufferpos = 0;
-					apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
+					regbuffer[0] = 0;
+					error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+					apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
 					_tcscpy(apps[appcount - 1].regkey, newkey);
-					GetConfig(&apps[appcount-1].cfg,&apps[appcount-1].mask,newkey);
-					apps[appcount-1].dirty = FALSE;
+					GetConfig(&apps[appcount - 1].cfg, &apps[appcount - 1].mask, newkey);
+					apps[appcount - 1].dirty = FALSE;
 					free(newkey2);
-					while(1)
+					if ((regbuffer[0] == 0) || error != ERROR_SUCCESS)
 					{
-						if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS)
-						{
-							// Default icon
-							apps[appcount-1].icon = LoadIcon(NULL,IDI_APPLICATION);
-							apps[appcount-1].icon_shared = TRUE;
-							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
-							_tcscpy(apps[appcount - 1].name, newkey);
-							break;
-						}
-						if (_tcsrchr(newkey, _T('-'))) *(_tcsrchr(newkey, _T('-'))) = 0;
-						path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
-							_tcslen(newkey) + 2))*sizeof(TCHAR));
-						_tcscpy(path, (LPTSTR)regbuffer + regbufferpos);
-						_tcscat(path, _T("\\"));
-						_tcscat(path, newkey);
-						if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
-						{
-							regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
-							free(path);
-							continue;
-						}
+						// Default icon
+						apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+						apps[appcount - 1].icon_shared = TRUE;
+						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+						_tcscpy(apps[appcount - 1].name, newkey);
+						break;
+					}
+					if (_tcsrchr(newkey, _T('-'))) *(_tcsrchr(newkey, _T('-'))) = 0;
+					path = (LPTSTR)malloc(((_tcslen(regbuffer) + _tcslen(newkey) + 2)) * sizeof(TCHAR));
+					_tcscpy(path, regbuffer);
+					_tcscpy(apps[appcount - 1].path, path);
+					_tcscat(path, _T("\\"));
+					_tcscat(path, newkey);
+					if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
+					{
+						// Default icon
+						apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+						apps[appcount - 1].icon_shared = TRUE;
+						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+						_tcscpy(apps[appcount - 1].name, newkey);
+						break;
+					}
+					else
+					{
 						// Get exe attributes
-						error = SHGetFileInfo(path,0,&fileinfo,sizeof(SHFILEINFO),SHGFI_ICON|SHGFI_SMALLICON|SHGFI_ADDOVERLAYS);
-						apps[appcount-1].icon = fileinfo.hIcon;
-						apps[appcount-1].icon_shared = FALSE;
-						verinfosize = GetFileVersionInfoSize(path,NULL);
+						error = SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
+						apps[appcount - 1].icon = fileinfo.hIcon;
+						apps[appcount - 1].icon_shared = FALSE;
+						verinfosize = GetFileVersionInfoSize(path, NULL);
 						verinfo = malloc(verinfosize);
 						hasname = FALSE;
-						if(GetFileVersionInfo(path,0,verinfosize,verinfo))
+						if (GetFileVersionInfo(path, 0, verinfosize, verinfo))
 						{
-							if(VerQueryValue(verinfo,_T("\\VarFileInfo\\Translation"),(LPVOID*)&outbuffer,&outlen))
+							if (VerQueryValue(verinfo, _T("\\VarFileInfo\\Translation"), (LPVOID*)&outbuffer, &outlen))
 							{
-								memcpy(translation,outbuffer,4);
-								_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\FileDescription"),translation[0],translation[1]);
-								if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+								memcpy(translation, outbuffer, 4);
+								_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\FileDescription"), translation[0], translation[1]);
+								if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 								{
 									hasname = TRUE;
-									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
 									_tcscpy(apps[appcount - 1].name, outbuffer);
 								}
 								else
 								{
-									_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\ProductName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
-									if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+									_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\ProductName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+									if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 									{
 										hasname = TRUE;
-										apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+										apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
 										_tcscpy(apps[appcount - 1].name, outbuffer);
 									}
 									else
 									{
-										_sntprintf(verpath,64,_T("\\StringFileInfo\\%04x%04x\\InternalName"),((WORD*)outbuffer)[0],((WORD*)outbuffer)[1]);
-										if(VerQueryValue(verinfo,verpath,(LPVOID*)&outbuffer,&outlen))
+										_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\InternalName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+										if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
 										{
 											hasname = TRUE;
-											apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1)*sizeof(TCHAR));
+											apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
 											_tcscpy(apps[appcount - 1].name, outbuffer);
 										}
 									}
@@ -1243,53 +1286,43 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						}
 						if (!hasname)
 						{
-							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1)*sizeof(TCHAR));
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
 							_tcscpy(apps[appcount - 1].name, newkey);
 						}
 						free(verinfo);
 						free(path);
-						break;
 					}
-					SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[appcount-1].name);
+					SendDlgItemMessage(hWnd, IDC_APPS, LB_SETCURSEL,
+						SendDlgItemMessage(hWnd, IDC_APPS, LB_ADDSTRING, 0, (LPARAM)apps[appcount - 1].name), 0);
+					SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
 					RegCloseKey(hKey);
 					free(regbuffer);
 				}
 			}
-
 			break;
 		case IDC_REMOVE:
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
 				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return FALSE;
 			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 15)*sizeof(TCHAR));
-			_tcscpy(regpath, _T("Software\\DXGL\\"));
+			_tcscpy(regpath, _T("Software\\DXGL\\Profiles\\"));
 			_tcscat(regpath, apps[current_app].regkey);
 			regkey = (LPTSTR)malloc(_tcslen(apps[current_app].regkey));
 			_tcscpy(regkey, apps[current_app].regkey);
 			RegOpenKeyEx(HKEY_CURRENT_USER,regpath,0,KEY_READ,&hKey);
-			RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,NULL,&buffersize);
+			RegQueryValueEx(hKey,_T("InstallPath"),NULL,NULL,NULL,&buffersize);
 			regbuffer = (LPTSTR)malloc(buffersize);
-			regbuffer[0] = regbuffer[1] = 0;
-			error = RegQueryValueEx(hKey,_T("InstallPaths"),NULL,NULL,(LPBYTE)regbuffer,&buffersize);
-			regbufferpos = 0;
+			regbuffer[0] = 0;
 			failed = FALSE;
-			while(1)
+			error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+			path = (LPTSTR)malloc(((_tcslen(regbuffer) + 12)) * sizeof(TCHAR));
+			_tcscpy(path, regbuffer);
+			_tcscat(path, _T("\\ddraw.dll"));
+			if (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
 			{
-				if((regbuffer[regbufferpos] == 0) || error != ERROR_SUCCESS) break;
-				if (_tcsrchr(regkey, _T('-'))) *(_tcsrchr(regkey, _T('-'))) = 0;
-				path = (LPTSTR)malloc(((_tcslen((LPTSTR)regbuffer + regbufferpos) +
-					12))*sizeof(TCHAR));
-				_tcscpy(path, regbuffer + regbufferpos);
-				_tcscat(path, _T("\\ddraw.dll"));
-				if(GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
-				{
-					regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
-					free(path);
-					continue;
-				}
-				if(DelApp(path,FALSE)) failed = TRUE;
-				regbufferpos += (_tcslen(regbuffer+regbufferpos)+1);
-				free(path);
+				if (DelApp(path, FALSE)) failed = TRUE;
 			}
+			free(path);
+			free(regbuffer);
 			RegCloseKey(hKey);
 			if(!failed)
 			{
@@ -1304,6 +1337,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				appcount--;
 			}
 			SendDlgItemMessage(hWnd,IDC_APPS,LB_DELETESTRING,current_app,0);
+			SendDlgItemMessage(hWnd, IDC_APPS, LB_SETCURSEL, 0, 0);
+			SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
 			break;
 		}
 		break;
@@ -1311,7 +1346,194 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	return FALSE;
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
+void UpgradeDXGL()
+{
+	UpgradeConfig();
+	HKEY hKeyBase;
+	HKEY hKey;
+	DWORD keysize, keysize2;
+	int i = 0;
+	LONG error;
+	LPTSTR keyname;
+	DWORD sizeout;
+	DWORD buffersize;
+	DWORD regbuffersize;
+	LPTSTR regbuffer;
+	BOOL installed = FALSE;
+	BOOL dxgl_installdir = FALSE;
+	BOOL old_dxgl = FALSE;
+	HKEY hKeyInstall;
+	TCHAR installpath[MAX_PATH + 1];
+	TCHAR srcpath[MAX_PATH + 1];
+	TCHAR destpath[MAX_PATH + 1];
+	regbuffersize = 1024;
+	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
+	RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
+	keysize++;
+	keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
+	keysize2 = keysize;
+	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
+	if (error == ERROR_SUCCESS)
+	{
+		dxgl_installdir = TRUE;
+		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		if (error == ERROR_SUCCESS) installed = TRUE;
+	}
+	if (hKeyInstall) RegCloseKey(hKeyInstall);
+	if (!installed)
+	{
+		GetModuleFileName(NULL, installpath, MAX_PATH + 1);
+	}
+	if (dxgl_installdir) _tcscat(installpath, _T("\\"));
+	else (_tcsrchr(installpath, _T('\\')))[1] = 0;
+	_tcsncpy(srcpath, installpath, MAX_PATH + 1);
+	_tcscat(srcpath, _T("ddraw.dll"));
+	while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+	{
+		keysize2 = keysize;
+		i++;
+		error = RegOpenKeyEx(hKeyBase, keyname, 0, KEY_READ, &hKey);
+		buffersize = regbuffersize;
+		RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, NULL, &buffersize);
+		if (buffersize > regbuffersize)
+		{
+			regbuffersize = buffersize;
+			regbuffer = (LPTSTR)realloc(regbuffer, regbuffersize);
+		}
+		buffersize = regbuffersize;
+		regbuffer[0] = 0;
+		error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+		if (regbuffer[0] != 0)
+		{
+			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
+			_tcscat(destpath, _T("\\"));
+			_tcscat(destpath, _T("ddraw.dll"));
+			error = CopyFile(srcpath, destpath, TRUE);
+			if (!error)
+			{
+				error = GetLastError();
+				if (error == ERROR_FILE_EXISTS)
+				{
+					old_dxgl = FALSE;
+					HMODULE hmod = LoadLibrary(destpath);
+					if (hmod)
+					{
+						if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;
+						FreeLibrary(hmod);
+					}
+					if (old_dxgl) CopyFile(srcpath, destpath, FALSE);
+				}
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	free(regbuffer);
+	free(keyname);
+	RegCloseKey(hKeyBase);
+}
+
+// '0' for keep, '1' for remove, personal settings
+void UninstallDXGL(TCHAR uninstall)
+{
+	HKEY hKeyBase;
+	HKEY hKey;
+	DWORD keysize, keysize2;
+	LONG error;
+	LPTSTR keyname;
+	DWORD sizeout;
+	DWORD buffersize;
+	DWORD regbuffersize;
+	LPTSTR regbuffer;
+	BOOL installed = FALSE;
+	BOOL dxgl_installdir = FALSE;
+	BOOL old_dxgl = FALSE;
+	HKEY hKeyInstall;
+	TCHAR installpath[MAX_PATH + 1];
+	TCHAR srcpath[MAX_PATH + 1];
+	TCHAR destpath[MAX_PATH + 1];
+	int i = 0;
+	UpgradeConfig();  // Just to make sure the registry format is correct
+	regbuffersize = 1024;
+	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, KEY_ALL_ACCESS, &hKeyBase);
+	if (error != ERROR_SUCCESS) return;
+	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
+	keysize++;
+	keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
+	keysize2 = keysize;
+	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
+	if (error == ERROR_SUCCESS)
+	{
+		dxgl_installdir = TRUE;
+		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		if (error == ERROR_SUCCESS) installed = TRUE;
+	}
+	if (hKeyInstall) RegCloseKey(hKeyInstall);
+	if (!installed)
+	{
+		GetModuleFileName(NULL, installpath, MAX_PATH + 1);
+	}
+	if (dxgl_installdir) _tcscat(installpath, _T("\\"));
+	else (_tcsrchr(installpath, _T('\\')))[1] = 0;
+	_tcsncpy(srcpath, installpath, MAX_PATH + 1);
+	_tcscat(srcpath, _T("ddraw.dll"));
+	while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+	{
+		keysize2 = keysize;
+		i++;
+		error = RegOpenKeyEx(hKeyBase, keyname, 0, KEY_READ, &hKey);
+		buffersize = regbuffersize;
+		if (buffersize > regbuffersize)
+		{
+			regbuffersize = buffersize;
+			regbuffer = (LPTSTR)realloc(regbuffer, regbuffersize);
+		}
+		buffersize = regbuffersize;
+		regbuffer[0] = 0;
+		error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+		if (regbuffer[0] != 0)
+		{
+			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
+			_tcscat(destpath, _T("\\"));
+			_tcscat(destpath, _T("ddraw.dll"));
+			if (GetFileAttributes(destpath) != INVALID_FILE_ATTRIBUTES)
+			{
+				old_dxgl = FALSE;
+				HMODULE hmod = LoadLibrary(destpath);
+				if (hmod)
+				{
+					if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;
+					FreeLibrary(hmod);
+				}
+				if (_tcscmp(srcpath, destpath))
+				{
+					if (old_dxgl) DeleteFile(destpath);
+				}
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	free(regbuffer);
+	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
+	keysize++;
+	if (uninstall == '1')  // Delete user settings
+	{
+		while (RegEnumKeyEx(hKeyBase, 0, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+		{
+			keysize2 = keysize;
+			i++;
+			RegDeleteKey(hKeyBase, keyname);
+		}
+		RegCloseKey(hKeyBase);
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"));
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Global"));
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL"));
+	}
+	else RegCloseKey(hKeyBase);
+}
+
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
@@ -1319,6 +1541,16 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	CoInitialize(NULL);
+	if (!_tcsnicmp(lpCmdLine, _T("upgrade"), 7))
+	{
+		UpgradeDXGL();
+		return 0;
+	}
+	if (!_tcsnicmp(lpCmdLine, _T("uninstall "), 10))
+	{
+		UninstallDXGL(lpCmdLine[10]);
+		return 0;
+	}
 	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
 	{
 		return AddApp(lpCmdLine+8,TRUE,TRUE);
@@ -1337,6 +1569,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
+	// Message for when transitioning to the new config UI
 	/*MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
 		_T("Notice"), MB_OK | MB_ICONWARNING);*/
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);

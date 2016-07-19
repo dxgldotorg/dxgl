@@ -82,7 +82,6 @@ SetCompressor /SOLID lzma
 !define GetVersion       "Kernel32::GetVersion() i"
 !define msvcr120_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
 !addplugindir "..\${SRCDIR}"
-Var SUBKEY
 
 !ifdef _DEBUG
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
@@ -124,72 +123,8 @@ Section "DXGL Components (required)" SEC01
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
-  
-  StrCpy $8 0
-  SetPluginUnload alwaysoff
-  regloop:
-    EnumRegKey $SUBKEY HKCU "Software\DXGL" $8
-    StrCmp $SUBKEY "" regdone
-    StrCpy $SUBKEY "Software\DXGL\$SUBKEY"
-    IntOp $8 $8 + 1
-    ;REG_MULTI_SZ reader based on code at http://nsis.sourceforge.net/REG_MULTI_SZ_Reader
-    StrCpy $0 ""
-    StrCpy $1 ""
-    StrCpy $2 ""
-    StrCpy $3 ""
-    System::Call "${RegOpenKeyEx}(${ROOT_KEY},'$SUBKEY',0, \
-                  ${KEY_QUERY_VALUE}|${KEY_ENUMERATE_SUB_KEYS},.r0) .r3"
-    StrCmp $3 0 readvalue
-    Goto regloop
-    readvalue:
-    System::Call "${RegQueryValueEx}(r0,'${INSTPATH}',0,.r1,0,.r2) .r3"
-    StrCmp $3 0 checksz
-    goto readdone
-    checksz:
-    StrCmp $1 ${REG_MULTI_SZ} checkempty
-    Goto readdone
-    checkempty:
-    StrCmp $2 0 0 multiszalloc
-    Goto readdone
-    multiszalloc:
-    System::Alloc $2
-    Pop $1
-    StrCmp $1 0 0 multiszget
-    Goto readdone
-    multiszget:
-    System::Call "${RegQueryValueEx}(r0, '${INSTPATH}', 0, n, r1, r2) .r3"
-    StrCmp $3 0 multiszprocess
-    System::Free $1
-    Goto readdone
-    multiszprocess:
-    StrCpy $4 $1
-    IntOp $6 $4 + $2
-    !ifdef NSIS_UNICODE
-    IntOp $6 $6 - 2
-    !else
-    IntOp $6 $6 - 1
-    !endif
-    szloop:
-      System::Call "*$4(&t${NSIS_MAX_STRLEN} .r3)"
-      StrLen $5 $3
-      IntOp $5 $5 + 1
-      !ifdef NSIS_UNICODE
-      IntOp $5 $5 + 2
-      !endif
-      IntOp $4 $4 + $5
-      ;copy file here
-      DetailPrint "Installing ddraw.dll to $3"
-      CopyFiles $INSTDIR\ddraw.dll $3
-      IntCmp IntCmp $4 $6 0 szloop
-      System::Free $1
-
-    readdone:
-    StrCmp $0 0 regloop
-    System::Call "${RegCloseKey}(r0)"
-    goto regloop
-  regdone:
-  SetPluginUnload manual
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
+  ExecWait '"$INSTDIR\dxglcfg.exe" upgrade'
   ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
@@ -317,6 +252,13 @@ Function un.onInit
 FunctionEnd
 
 Section Uninstall
+  MessageBox MB_YESNO "Do you want to remove all application profiles?" IDYES wipeprofile IDNO nowipeprofile
+  wipeprofile:
+  ExecWait '"$INSTDIR\dxglcfg.exe" uninstall 1'
+  goto finishuninstall
+  nowipeprofile:
+  ExecWait '"$INSTDIR\dxglcfg.exe" uninstall 0'
+  finishuninstall:
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\COPYING.txt"
@@ -337,71 +279,5 @@ Section Uninstall
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   DeleteRegKey HKLM "Software\DXGL"
-
-  StrCpy $8 0
-  SetPluginUnload alwaysoff
-  regloop:
-    EnumRegKey $SUBKEY HKCU "Software\DXGL" $8
-    StrCmp $SUBKEY "" regdone
-    StrCpy $SUBKEY "Software\DXGL\$SUBKEY"
-    IntOp $8 $8 + 1
-    ;REG_MULTI_SZ reader based on code at http://nsis.sourceforge.net/REG_MULTI_SZ_Reader
-    StrCpy $0 ""
-    StrCpy $1 ""
-    StrCpy $2 ""
-    StrCpy $3 ""
-    System::Call "${RegOpenKeyEx}(${ROOT_KEY},'$SUBKEY',0, \
-                  ${KEY_QUERY_VALUE}|${KEY_ENUMERATE_SUB_KEYS},.r0) .r3"
-    StrCmp $3 0 readvalue
-    Goto regloop
-    readvalue:
-    System::Call "${RegQueryValueEx}(r0,'${INSTPATH}',0,.r1,0,.r2) .r3"
-    StrCmp $3 0 checksz
-    goto readdone
-    checksz:
-    StrCmp $1 ${REG_MULTI_SZ} checkempty
-    Goto readdone
-    checkempty:
-    StrCmp $2 0 0 multiszalloc
-    Goto readdone
-    multiszalloc:
-    System::Alloc $2
-    Pop $1
-    StrCmp $1 0 0 multiszget
-    Goto readdone
-    multiszget:
-    System::Call "${RegQueryValueEx}(r0, '${INSTPATH}', 0, n, r1, r2) .r3"
-    StrCmp $3 0 multiszprocess
-    System::Free $1
-    Goto readdone
-    multiszprocess:
-    StrCpy $4 $1
-    IntOp $6 $4 + $2
-    !ifdef NSIS_UNICODE
-    IntOp $6 $6 - 2
-    !else
-    IntOp $6 $6 - 1
-    !endif
-    szloop:
-      System::Call "*$4(&t${NSIS_MAX_STRLEN} .r3)"
-      StrLen $5 $3
-      IntOp $5 $5 + 1
-      !ifdef NSIS_UNICODE
-      IntOp $5 $5 * 2
-      !endif
-      IntOp $4 $4 + $5
-      ;copy file here
-      DetailPrint "Removing ddraw.dll from $3"
-      Delete $3\ddraw.dll
-      IntCmp IntCmp $4 $6 0 szloop
-      System::Free $1
-
-    readdone:
-    StrCmp $0 0 regloop
-    System::Call "${RegCloseKey}(r0)"
-    goto regloop
-  regdone:
-  SetPluginUnload manual
-
   SetAutoClose true
 SectionEnd
