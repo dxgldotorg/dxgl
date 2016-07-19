@@ -18,7 +18,7 @@
 #include "common.h"
 #include "hooks.h"
 #include <tlhelp32.h>
-#include "../minhook-1.3/include/MinHook.h"
+#include "../minhook/include/MinHook.h"
 
 // temporary references to C++ C-linked stuff
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);

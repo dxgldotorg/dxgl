@@ -56,7 +56,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxglcfg2", "dxglcfg2\dxglcf
 		{55A95F84-E00E-4C65-BB09-41D27C5845AC} = {55A95F84-E00E-4C65-BB09-41D27C5845AC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libMinHook", "minhook-1.3\build\DXGL\libMinHook.vcxproj", "{F142A341-5EE0-442D-A15F-98AE9B48DBAE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libMinHook", "minhook\build\DXGL\libMinHook.vcxproj", "{F142A341-5EE0-442D-A15F-98AE9B48DBAE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sha512-nsis", "sha512-nsis\sha512-nsis.vcxproj", "{F822EDB0-63E2-4EB8-B80D-F72481CDE3E1}"
 EndProject
