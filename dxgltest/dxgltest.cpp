@@ -23,6 +23,7 @@
 HINSTANCE hinstance;
 bool gradientavailable;
 BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
+HRESULT (WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -165,6 +166,7 @@ INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		mod_ddraw = LoadLibrary(_T("ddraw.dll"));
 		IsDXGLDDraw = GetProcAddress(mod_ddraw,"IsDXGLDDraw");
 		if(IsDXGLDDraw)	SetWindowText(GetDlgItem(hWnd,IDC_DDTYPE),_T("DXGL"));
@@ -286,6 +288,7 @@ INT_PTR CALLBACK Test2DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		DestroyWindow(GetDlgItem(hWnd,IDC_FILTERLABEL));
 		DestroyWindow(GetDlgItem(hWnd,IDC_FILTER));
 		DestroyWindow(GetDlgItem(hWnd,IDC_FSAALABEL));
@@ -497,6 +500,7 @@ INT_PTR CALLBACK Test3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,1,0);
 		SetDlgItemText(hWnd,IDC_TESTHEADER,_T("Test 3D graphics functionality in DXGL or Direct3D.  Press ESC to quit any test."));
 		for(i = 0; i < numtests3d; i++)
@@ -833,9 +837,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	if(iccex) iccex(&icc);
 	else InitCommonControls();
 	if(comctl32) FreeLibrary(comctl32);
+	HMODULE uxtheme = LoadLibrary(_T("uxtheme.dll"));
+	if (uxtheme) _EnableThemeDialogTexture = (HRESULT(WINAPI*)(HWND, DWORD))
+		GetProcAddress(uxtheme, "EnableThemeDialogTexture");
     hinstance = hInstance;
     DialogBox(hinstance,MAKEINTRESOURCE(IDD_DXGLTEST),NULL,DXGLTestCallback);
 	if(msimg32) FreeLibrary(msimg32);
+	if (uxtheme) FreeLibrary(uxtheme);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif

@@ -26,6 +26,7 @@
 // Windows Header Files:
 #include <windows.h>
 #include <commctrl.h>
+#include <Uxtheme.h>
 extern bool gradientavailable;
 extern BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode);
 

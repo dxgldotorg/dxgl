@@ -64,6 +64,7 @@ HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
 HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
 HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
 	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
+HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 
 
 typedef struct
@@ -486,6 +487,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 		if (uxtheme) hThemeDisplay = _OpenThemeData(hWnd, L"Button");
 		else hThemeDisplay = NULL;
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	case WM_MEASUREITEM:
 		switch (wParam)
@@ -546,6 +548,7 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	default:
 		return FALSE;
@@ -557,6 +560,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	default:
 		return FALSE;
@@ -568,6 +572,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	default:
 		return FALSE;
@@ -579,6 +584,7 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	default:
 		return FALSE;
@@ -590,6 +596,7 @@ LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
 	default:
 		return FALSE;
@@ -724,7 +731,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			_DrawThemeBackground = 
 				(HRESULT(WINAPI*)(HTHEME, HDC, int, int, const RECT*, const RECT*))
 				GetProcAddress(uxtheme, "DrawThemeBackground");
-			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground))
+			_EnableThemeDialogTexture = (HRESULT(WINAPI*)(HWND, DWORD))
+				GetProcAddress(uxtheme, "EnableThemeDialogTexture");
+			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground && _EnableThemeDialogTexture))
 			{
 				FreeLibrary(uxtheme);
 				uxtheme = NULL;
