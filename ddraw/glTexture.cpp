@@ -480,11 +480,11 @@ void glTexture__Download(glTexture *This, GLint level)
 	This->levels[level].dirty &= ~2;
 }
 
-void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util)
+void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL dorealloc, glUtil *util)
 {
 	GLenum error;
 	void *data;
-	if (realloc)
+	if (dorealloc)
 	{
 		This->levels[level].ddsd.dwWidth = width;
 		This->levels[level].ddsd.dwHeight = height;
@@ -510,7 +510,7 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 			ClearError();
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 			{
-				if (realloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level,
+				if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level,
 					This->internalformats[0], width, height, 0, This->format, This->type, data);
 				else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
 					0, 0, width, height, This->format, This->type, data);
@@ -519,7 +519,7 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 			{
 				glUtil_SetActiveTexture(util, 0);
 				glUtil_SetTexture(util, 0, This);
-				if (realloc) glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+				if (dorealloc) glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
 				else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
 			}
 			error = glGetError();
@@ -540,7 +540,7 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 	{
 		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 		{
-			if (realloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
+			if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
 				width, height, 0, This->format, This->type, data);
 			else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
 				0, 0, width, height, This->format, This->type, data);
@@ -552,7 +552,7 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 		{
 			glUtil_SetActiveTexture(util, 0);
 			glUtil_SetTexture(util, 0, This);
-			if (realloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+			if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
 			else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
 		}
 	}

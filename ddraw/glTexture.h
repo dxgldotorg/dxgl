@@ -47,7 +47,7 @@ void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, stru
 HRESULT glTexture__SetSurfaceDesc(glTexture *This, LPDDSURFACEDESC2 ddsd);
 void glTexture__Download(glTexture *This, GLint level);
 void glTexture__Upload(glTexture *This, GLint level);
-void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL realloc, glUtil *util);
+void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL dorealloc, glUtil *util);
 BOOL glTexture__Repair(glTexture *This, BOOL preserve);
 void glTexture__FinishCreate(glTexture *This);
 void glTexture__Destroy(glTexture *This);
