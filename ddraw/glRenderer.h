@@ -168,7 +168,7 @@ void glRenderer_DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer_Flush(glRenderer *This);
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd);
-HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd);
 HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
@@ -197,7 +197,7 @@ void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype);
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype);
 void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y);
-void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
+void glRenderer__Clear(glRenderer *This, ClearCommand *cmd);
 void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer__Flush(glRenderer *This);

@@ -424,33 +424,15 @@ void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
   * Clears the viewport.
   * @param This
   *  Pointer to glRenderer object
-  * @param target
-  *  Surface to be cleared
-  * @param dwCount
-  *  Number of rects to use to clear the buffer, or 0 to clear the entire buffer.
-  * @param lpRects
-  *  Pointer to rects to clear.
-  * @param dwFlags
-  *  Flags to determine which surfaces to clear.
-  * @param dwColor
-  *  Color value to fill the surface with.
-  * @param dvZ
-  *  Value to fill the Z buffer with.
-  * @param dwStencil
-  *  Value to fill the stencil buffer with.
+  * @param cmd
+  *  Pointer to structure contaning all paramaters for a Clear operation.
   * @return
   *  Returns D3D_OK
   */
-HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd)
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = target;
-	This->inputs[1] = (void*)dwCount;
-	This->inputs[2] = lpRects;
-	This->inputs[3] = (void*)dwFlags;
-	This->inputs[4] = (void*)dwColor;
-	memcpy(&This->inputs[5],&dvZ,4);
-	This->inputs[6] = (void*)dwStencil;
+	This->inputs[0] = cmd;
 	This->opcode = OP_CLEAR;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -460,7 +442,7 @@ HRESULT glRenderer_Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD d
 
 /**
   * Instructs the OpenGL driver to send all queued commands to the GPU.
-  * @param This
+  * @param Thisf
   *  Pointer to glRenderer object
   */
 void glRenderer_Flush(glRenderer *This)
@@ -971,9 +953,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
 			break;
 		case OP_CLEAR:
-			memcpy(&tmpfloats[0],&This->inputs[5],4);
-			glRenderer__Clear(This,(glDirectDrawSurface7*)This->inputs[0],(DWORD)This->inputs[1],
-				(LPD3DRECT)This->inputs[2],(DWORD)This->inputs[3],(DWORD)This->inputs[4],tmpfloats[0],(DWORD)This->inputs[6]);
+			glRenderer__Clear(This,(ClearCommand*)This->inputs[0]);
 			break;
 		case OP_FLUSH:
 			glRenderer__Flush(This);
@@ -1949,57 +1929,77 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 	This->shaderstate3d.stateid = InitShaderState(This, This->renderstate, This->texstages, This->lights);
 }
 
-void glRenderer__Clear(glRenderer *This, glDirectDrawSurface7 *target, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
+void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 {
 	This->outputs[0] = (void*)D3D_OK;
 	GLfloat color[4];
 	glTexture *ztexture = NULL;
 	GLint zlevel = 0;
-	if (target->zbuffer)
+	GLfloat mulx, muly;
+	if (cmd->zbuffer)
 	{
-		ztexture = target->zbuffer->texture;
-		zlevel = target->zbuffer->miplevel;
+		ztexture = cmd->zbuffer;
+		zlevel = cmd->zlevel;
 	}
-	dwordto4float(dwColor,color);
+	dwordto4float(cmd->dwColor,color);
 	do
 	{
-		if (glUtil_SetFBOSurface(This->util, target->texture, ztexture,
-			target->zbuffer->miplevel, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
-		if (!target->texture->internalformats[1]) break;
-		glTexture__Repair(target->texture, TRUE);
+		if (glUtil_SetFBOSurface(This->util, cmd->target, ztexture,
+			cmd->targetlevel, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!cmd->target->internalformats[1]) break;
+		glTexture__Repair(cmd->target, TRUE);
 		glUtil_SetFBO(This->util, NULL);
-		target->texture->levels[target->miplevel].fbo.fbcolor = NULL;
-		target->texture->levels[target->miplevel].fbo.fbz = NULL;
+		cmd->target->levels[cmd->targetlevel].fbo.fbcolor = NULL;
+		cmd->target->levels[cmd->targetlevel].fbo.fbz = NULL;
 	} while (1);
 	int clearbits = 0;
-	if(dwFlags & D3DCLEAR_TARGET)
+	if(cmd->dwFlags & D3DCLEAR_TARGET)
 	{
 		clearbits |= GL_COLOR_BUFFER_BIT;
 		glUtil_ClearColor(This->util, color[0], color[1], color[2], color[3]);
 	}
-	if(dwFlags & D3DCLEAR_ZBUFFER)
+	if(cmd->dwFlags & D3DCLEAR_ZBUFFER)
 	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
-		glUtil_ClearDepth(This->util, dvZ);
+		glUtil_ClearDepth(This->util, cmd->dvZ);
 		glUtil_DepthWrite(This->util, TRUE);
 	}
-	if(dwFlags & D3DCLEAR_STENCIL)
+	if(cmd->dwFlags & D3DCLEAR_STENCIL)
 	{
 		clearbits |= GL_STENCIL_BUFFER_BIT;
-		glUtil_ClearStencil(This->util, dwStencil);
+		glUtil_ClearStencil(This->util, cmd->dwStencil);
 	}
-	if(dwCount)
+	if(cmd->dwCount)
 	{
-		for(DWORD i = 0; i < dwCount; i++)
+		if (cmd->targetlevel == 0 && (cmd->target->levels[0].ddsd.dwWidth != cmd->target->bigwidth) ||
+			(cmd->target->levels[0].ddsd.dwHeight != cmd->target->bigheight))
 		{
-			glUtil_SetScissor(This->util, TRUE, lpRects[i].x1, lpRects[i].y1, lpRects[i].x2, lpRects[i].y2);
-			glClear(clearbits);
+			mulx = cmd->target->bigwidth / cmd->target->levels[0].ddsd.dwWidth;
+			muly = cmd->target->bigheight / cmd->target->levels[0].ddsd.dwHeight;
+			for (DWORD i = 0; i < cmd->dwCount; i++)
+			{
+				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1*mulx,
+					(cmd->target->bigheight - (GLsizei)((GLfloat)cmd->lpRects[i].y1*muly)),
+					cmd->lpRects[i].x2*mulx, (cmd->target->bigheight - ((GLfloat)cmd->lpRects[i].y2*muly)));
+				glClear(clearbits);
+			}
+		}
+		else
+		{
+			for (DWORD i = 0; i < cmd->dwCount; i++)
+			{
+				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1,
+					cmd->target->levels[cmd->targetlevel].ddsd.dwHeight - cmd->lpRects[i].y1,
+					cmd->lpRects[i].x2,
+					cmd->target->levels[cmd->targetlevel].ddsd.dwHeight - cmd->lpRects[i].y2);
+				glClear(clearbits);
+			}
 		}
 		glUtil_SetScissor(This->util, false, 0, 0, 0, 0);
 	}
 	else glClear(clearbits);
-	if(target->zbuffer) target->zbuffer->texture->levels[target->zbuffer->miplevel].dirty |= 2;
-	target->texture->levels[target->miplevel].dirty |= 2;
+	if(cmd->zbuffer) cmd->zbuffer->levels[zlevel].dirty |= 2;
+	cmd->target->levels[cmd->targetlevel].dirty |= 2;
 	SetEvent(This->busy);
 }
 

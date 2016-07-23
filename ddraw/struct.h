@@ -376,6 +376,20 @@ typedef struct BltCommand
 	GLint patternlevel;
 }BltCommand;
 
+typedef struct ClearCommand
+{
+	DWORD dwCount;
+	LPD3DRECT lpRects;
+	DWORD dwFlags;
+	DWORD dwColor;
+	D3DVALUE dvZ;
+	DWORD dwStencil;
+	glTexture *target;
+	glTexture *zbuffer;
+	GLint targetlevel;
+	GLint zlevel;
+}ClearCommand;
+
 struct glDirectDrawPaletteVtbl;
 
 // Structure for glDirectDrawPalette, emulates IDirectDrawPalette

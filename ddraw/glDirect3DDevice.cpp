@@ -575,10 +575,29 @@ HRESULT WINAPI glDirect3DDevice7::CreateStateBlock(D3DSTATEBLOCKTYPE d3dsbtype, 
 }
 HRESULT WINAPI glDirect3DDevice7::Clear(DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
+	ClearCommand cmd;
 	TRACE_ENTER(7,14,this,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,glDDS7,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
+	cmd.dwCount = dwCount;
+	cmd.lpRects = lpRects;
+	cmd.dwFlags = dwFlags;
+	cmd.dwColor = dwColor;
+	cmd.dvZ = dvZ;
+	cmd.dwStencil = dwStencil;
+	cmd.target = glDDS7->texture;
+	cmd.targetlevel = glDDS7->miplevel;
+	if (glDDS7->zbuffer)
+	{
+		cmd.zbuffer = glDDS7->zbuffer->texture;
+		cmd.zlevel = glDDS7->zbuffer->miplevel;
+	}
+	else
+	{
+		cmd.zbuffer = NULL;
+		cmd.zlevel = 0;
+	}
+	TRACE_RET(HRESULT,23,glRenderer_Clear(renderer,&cmd));
 }
 
 // ComputeSphereVisibility based on modified code from the Wine project, subject
