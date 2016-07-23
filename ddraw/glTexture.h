@@ -49,6 +49,7 @@ void glTexture__Download(glTexture *This, GLint level);
 void glTexture__Upload(glTexture *This, GLint level);
 void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL dorealloc, glUtil *util);
 BOOL glTexture__Repair(glTexture *This, BOOL preserve);
+void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling);
 void glTexture__FinishCreate(glTexture *This);
 void glTexture__Destroy(glTexture *This);
 

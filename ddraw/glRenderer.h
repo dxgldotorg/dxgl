@@ -105,6 +105,7 @@ typedef struct TEXTURESTAGE
 #define OP_SETVIEWPORT				22
 #define OP_DXGLBREAK                23
 #define OP_SETTEXTURECOLORKEY		24
+#define OP_MAKETEXTUREPRIMARY       25
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -182,6 +183,7 @@ void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
+void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer_DXGLBreak(glRenderer *This);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
@@ -217,6 +219,7 @@ void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
+void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer__SetDepthComp(glRenderer *This);
 void glRenderer__DXGLBreak(glRenderer *This);
 

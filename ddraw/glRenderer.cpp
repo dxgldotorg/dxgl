@@ -842,8 +842,32 @@ void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD d
 }
 
 /**
+* Sets whether a texure has primary scaling
+* @param This
+*  Pointer to glRenderer object
+* @param texture
+*  Texture to set primary scaling
+* @param parent
+*  Parent texture this one is attached to, needed only if primary is TRUE
+* @param primary
+*  TRUE if texture should have primary scaling, FALSE to remove scaling
+*/
+void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->inputs[1] = parent;
+	This->inputs[2] = (void*)primary;
+	This->opcode = OP_MAKETEXTUREPRIMARY;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
   * Generates a glFrameTerminatorGREMEDY command in OpenGL if the 
-  * glFrameTerminatorGREMEDY command is available (i.e. running under gDebugger).
+  * glFrameTerminatorGREMEDY command is available
+  * (i.e. running under gDebugger or CodeXL).
   * @param This
   *  Pointer to glRenderer object
   */
@@ -993,6 +1017,9 @@ DWORD glRenderer__Entry(glRenderer *This)
 		case OP_SETTEXTURECOLORKEY:
 			glRenderer__SetTextureColorKey(This, (glTexture*)This->inputs[0], (DWORD)This->inputs[1],
 				(LPDDCOLORKEY)This->inputs[2], (GLint)This->inputs[3]);
+			break;
+		case OP_MAKETEXTUREPRIMARY:
+			glRenderer__MakeTexturePrimary(This, (glTexture*)This->inputs[0], (glTexture*)This->inputs[1], (DWORD)This->inputs[2]);
 			break;
 		case OP_DXGLBREAK:
 			glRenderer__DXGLBreak(This);
@@ -2938,6 +2965,17 @@ void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD 
 		if (DDCKEY_COLORSPACE) texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceHighValue;
 		else texture->levels[level].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 	}
+	SetEvent(This->busy);
+}
+
+void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary)
+{
+	if (primary)
+	{
+		if (!parent) return;
+		glTexture__SetPrimaryScale(texture, parent->bigwidth, parent->bigheight, TRUE);
+	}
+	else glTexture__SetPrimaryScale(texture, 0, 0, FALSE);
 	SetEvent(This->busy);
 }
 

@@ -632,6 +632,8 @@ HRESULT glDirectDrawSurface7::AddAttachedSurface2(LPDIRECTDRAWSURFACE7 lpDDSAtta
 		zbuffer_iface = iface;
 		if (!zbuffer->attachcount) zbuffer->attachparent = this;
 		zbuffer->attachcount++;
+		if (zbuffer && dxglcfg.primaryscale && (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+			glRenderer_MakeTexturePrimary(ddInterface->renderer, zbuffer->texture, this->texture, TRUE);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -795,6 +797,8 @@ HRESULT WINAPI glDirectDrawSurface7::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(lpDDSAttachedSurface == (LPDIRECTDRAWSURFACE7)zbuffer)
 	{
+		if (zbuffer && dxglcfg.primaryscale && (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+			glRenderer_MakeTexturePrimary(ddInterface->renderer, zbuffer->texture, NULL, FALSE);
 		if (zbuffer->attachparent == this) zbuffer->attachparent = NULL;
 		if (zbuffer->attachcount) zbuffer->attachcount--;
 		if (!zbuffer->attachcount) zbuffer->attachparent = NULL;

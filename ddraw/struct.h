@@ -281,7 +281,7 @@ typedef struct MIPLEVEL
 	BufferObject *pboUnpack;
 	DWORD dirty;
 	// dirty bits:
-	// 1 - Surface was locked
+	// 1 - Surface buffer was locked and may have been written to by CPU
 	// 2 - Texture was written to by GPU
 	DWORD locked;
 	FBO fbo;

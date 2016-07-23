@@ -654,6 +654,34 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 	if (repairfail) return FALSE;
 	return TRUE;
 }
+
+void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling)
+{
+	if (This->miplevel > 1) return;  // Function is not for mipmapped texture, primary and attachment only
+	if (This->levels[0].dirty & 2) glTexture__Download(This, 0);
+	if (This->levels[0].bigbuffer)
+	{
+		free(This->levels[0].bigbuffer);
+		This->levels[0].bigbuffer = NULL;
+	}
+	if (scaling)
+	{
+
+		This->bigwidth = bigwidth;
+		This->bigheight = bigheight;
+		This->levels[0].bigbuffer = (char *)malloc(NextMultipleOf4((This->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount *
+			This->bigwidth) / 8) * This->bigheight);
+		glTexture__Upload2(This, 0, bigwidth, bigheight, FALSE, TRUE, This->renderer->util);
+	}
+	else
+	{
+		This->bigwidth = This->levels[0].ddsd.dwWidth;
+		This->bigheight = This->levels[0].ddsd.dwHeight;
+		glTexture__Upload2(This, 0, This->levels[0].ddsd.dwWidth, This->levels[0].ddsd.dwHeight,
+			FALSE, TRUE, This->renderer->util);
+	}
+}
+
 void glTexture__FinishCreate(glTexture *This)
 {
 	int texformat = -1;
