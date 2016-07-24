@@ -1936,6 +1936,7 @@ void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 	glTexture *ztexture = NULL;
 	GLint zlevel = 0;
 	GLfloat mulx, muly;
+	GLsizei x1, y1, x2, y2;
 	if (cmd->zbuffer)
 	{
 		ztexture = cmd->zbuffer;
@@ -1974,13 +1975,15 @@ void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 		if (cmd->targetlevel == 0 && (cmd->target->levels[0].ddsd.dwWidth != cmd->target->bigwidth) ||
 			(cmd->target->levels[0].ddsd.dwHeight != cmd->target->bigheight))
 		{
-			mulx = cmd->target->bigwidth / cmd->target->levels[0].ddsd.dwWidth;
-			muly = cmd->target->bigheight / cmd->target->levels[0].ddsd.dwHeight;
+			mulx = (GLfloat)cmd->target->bigwidth / (GLfloat)cmd->target->levels[0].ddsd.dwWidth;
+			muly = (GLfloat)cmd->target->bigheight / (GLfloat)cmd->target->levels[0].ddsd.dwHeight;
 			for (DWORD i = 0; i < cmd->dwCount; i++)
 			{
-				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1*mulx,
-					(cmd->target->bigheight - (GLsizei)((GLfloat)cmd->lpRects[i].y1*muly)),
-					cmd->lpRects[i].x2*mulx, (cmd->target->bigheight - ((GLfloat)cmd->lpRects[i].y2*muly)));
+				x1 = (GLsizei)((GLfloat)cmd->lpRects[i].x1) * mulx;
+				x2 = ((GLsizei)((GLfloat)cmd->lpRects[i].x2) * mulx) - x1;
+				y1 = (GLsizei)((GLfloat)cmd->lpRects[i].y1) * muly;
+				y2 = ((GLsizei)((GLfloat)cmd->lpRects[i].y2) * muly) - y1;
+				glUtil_SetScissor(This->util, TRUE, x1, y1, x2, y2);
 				glClear(clearbits);
 			}
 		}
@@ -1988,10 +1991,8 @@ void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 		{
 			for (DWORD i = 0; i < cmd->dwCount; i++)
 			{
-				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1,
-					cmd->target->levels[cmd->targetlevel].ddsd.dwHeight - cmd->lpRects[i].y1,
-					cmd->lpRects[i].x2,
-					cmd->target->levels[cmd->targetlevel].ddsd.dwHeight - cmd->lpRects[i].y2);
+				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1, cmd->lpRects[i].y1,
+					(cmd->lpRects[i].x2 - cmd->lpRects[i].x1), cmd->lpRects[i].y2 - cmd->lpRects[i].y1);
 				glClear(clearbits);
 			}
 		}
