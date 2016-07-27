@@ -75,7 +75,10 @@ typedef struct TEXTURESTAGE
 	D3DVALUE bumpenvlscale;
 	D3DVALUE bumpenvloffset;
 	D3DTEXTURETRANSFORMFLAGS textransform;
-	glDirectDrawSurface7 *texture;
+	union {
+		glTexture *texture;
+		glDirectDrawSurface7 *surface;
+	} DUMMYUNIONNAME1;
 	GLint glmagfilter;
 	GLint glminfilter;
 } TEXTURESTAGE;
@@ -177,7 +180,7 @@ void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *in
 unsigned int glRenderer_GetScanLine(glRenderer *This);
 HRESULT glRenderer_DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel);
 void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
-void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture);
+void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture);
 void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
 void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
@@ -214,7 +217,8 @@ void glRenderer__SetFogDensity(glRenderer *This, GLfloat density);
 void glRenderer__SetSwap(glRenderer *This, int swap);
 void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest);
 void glRenderer__SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
-void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture);
+void glRenderer__RemoveTextureFromD3D(glRenderer *This, glTexture *texture);
+void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture);
 void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
 void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);

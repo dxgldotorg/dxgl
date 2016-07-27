@@ -696,9 +696,9 @@ void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateT
   * @param dwStage
   *  Texture stage to bind
   * @param Texture
-  *  Texture to bind to the stage; old texture will be released; NULL to unbind
+  *  Texture to bind to the stage; NULL to unbind
   */
-void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
+void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = (void*)dwStage;
@@ -990,7 +990,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__SetRenderState(This, (D3DRENDERSTATETYPE)(DWORD)This->inputs[0], (DWORD)This->inputs[1]);
 			break;
 		case OP_SETTEXTURE:
-			glRenderer__SetTexture(This, (DWORD)This->inputs[0], (glDirectDrawSurface7*)This->inputs[1]);
+			glRenderer__SetTexture(This, (DWORD)This->inputs[0], (glTexture*)This->inputs[1]);
 			break;
 		case OP_SETTEXTURESTAGESTATE:
 			glRenderer__SetTextureStageState(This, (DWORD)This->inputs[0], (D3DTEXTURESTAGESTATETYPE)(DWORD)This->inputs[1],
@@ -1871,7 +1871,7 @@ __int64 InitShaderState(glRenderer *renderer, DWORD *renderstate, TEXTURESTAGE *
 		bool noalpha = false;;
 		if (!texstages[0].texture) noalpha = true;
 		if (texstages[0].texture)
-			if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+			if (!(texstages[0].texture->levels[0].ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
 				noalpha = true;
 		if (noalpha) texstages[0].alphaop = D3DTOP_SELECTARG2;
 		else texstages[0].alphaop = D3DTOP_MODULATE;
@@ -1906,7 +1906,7 @@ __int64 InitShaderState(glRenderer *renderer, DWORD *renderstate, TEXTURESTAGE *
 		if (texstages[i].texture)
 		{
 			renderer->shaderstate3d.texstageid[i] |= 1i64 << 59;
-			if (texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT) renderer->shaderstate3d.texstageid[i] |= 1i64 << 60;
+			if (texstages[i].texture->levels[0].ddsd.dwFlags & DDSD_CKSRCBLT) renderer->shaderstate3d.texstageid[i] |= 1i64 << 60;
 		}
 	}
 	return shader;
@@ -2352,13 +2352,13 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		if(This->texstages[i].colorop == D3DTOP_DISABLE) break;
 		if(This->texstages[i].texture)
 		{
-			if(This->texstages[i].texture->texture->levels[0].dirty & 1)
+			if(This->texstages[i].texture->levels[0].dirty & 1)
 			{
-				glTexture__Upload(This->texstages[i].texture->texture, 0);
+				glTexture__Upload(This->texstages[i].texture, 0);
 			}
 			if (This->texstages[i].texture)
-				glTexture__SetFilter(This->texstages[i].texture->texture, i, This->texstages[i].glmagfilter, This->texstages[i].glminfilter, This);
-			glUtil_SetTexture(This->util,i,This->texstages[i].texture->texture);
+				glTexture__SetFilter(This->texstages[i].texture, i, This->texstages[i].glmagfilter, This->texstages[i].glminfilter, This);
+			glUtil_SetTexture(This->util,i,This->texstages[i].texture);
 			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu);
 			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv);
 		}
@@ -2366,15 +2366,15 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 		This->ext->glUniform1i(prog->uniforms[128+i],i);
 		if(This->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && This->texstages[i].texture && (prog->uniforms[142+i] != -1))
 		{
-			if(This->texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT)
+			if(This->texstages[i].texture->levels[0].ddsd.dwFlags & DDSD_CKSRCBLT)
 			{
-				SetColorKeyUniform(This->texstages[i].texture->colorkey[0].key.dwColorSpaceLowValue,
-					This->texstages[i].texture->texture->colorsizes, This->texstages[i].texture->texture->colororder,
-					prog->uniforms[142 + i], This->texstages[i].texture->texture->colorbits, This->ext);
-				This->ext->glUniform4i(prog->uniforms[153+i], This->texstages[i].texture->texture->colorsizes[0], 
-					This->texstages[i].texture->texture->colorsizes[1],
-					This->texstages[i].texture->texture->colorsizes[2],
-					This->texstages[i].texture->texture->colorsizes[3]);
+				SetColorKeyUniform(This->texstages[i].texture->levels[0].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue,
+					This->texstages[i].texture->colorsizes, This->texstages[i].texture->colororder,
+					prog->uniforms[142 + i], This->texstages[i].texture->colorbits, This->ext);
+				This->ext->glUniform4i(prog->uniforms[153+i], This->texstages[i].texture->colorsizes[0], 
+					This->texstages[i].texture->colorsizes[1],
+					This->texstages[i].texture->colorsizes[2],
+					This->texstages[i].texture->colorsizes[3]);
 			}
 		}
 	}
@@ -2623,7 +2623,20 @@ void glRenderer__SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendState
 	}
 }
 
-void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface7 *Texture)
+void glRenderer__RemoveTextureFromD3D(glRenderer *This, glTexture *texture)
+{
+	int i;
+	for (i = 0; i < 8; i++)
+	{
+		if (This->texstages[i].texture == texture)
+		{
+			This->texstages[i].texture = NULL;
+			This->shaderstate3d.texstageid[i] &= 0xE7FFFFFFFFFFFFFFi64;
+		}
+	}
+}
+
+void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture)
 {
 	if (This->texstages[dwStage].texture == Texture)
 	{
@@ -2634,7 +2647,7 @@ void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glDirectDrawSurface
 	if (Texture)
 	{
 		This->shaderstate3d.texstageid[dwStage] |= 1i64 << 59;
-		if (Texture->ddsd.dwFlags & DDSD_CKSRCBLT) This->shaderstate3d.texstageid[dwStage] |= 1i64 << 60;
+		if (Texture->levels[0].ddsd.dwFlags & DDSD_CKSRCBLT) This->shaderstate3d.texstageid[dwStage] |= 1i64 << 60;
 		else This->shaderstate3d.texstageid[dwStage] &= 0xEFFFFFFFFFFFFFFFi64;
 	}
 	else This->shaderstate3d.texstageid[dwStage] &= 0xE7FFFFFFFFFFFFFFi64;

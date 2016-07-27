@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -376,7 +376,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 		if(lights[i]) delete lights[i];
 	free(lights);
 	for(int i = 0; i < 8; i++)
-		if(texstages[i].texture) texstages[i].texture->Release();
+		if(texstages[i].surface) texstages[i].surface->Release();
 	for(int i = 0; i < materialcount; i++)
 	{
 		if(materials[i])
@@ -784,9 +784,9 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 	if(renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
 		bool noalpha = false;
-		if(!texstages[0].texture) noalpha = true;
-		if(texstages[0].texture)
-			if(!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+		if(!texstages[0].surface) noalpha = true;
+		if(texstages[0].surface)
+			if(!(texstages[0].surface->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
 				noalpha = true;
 		if(noalpha) texstages[0].alphaop = D3DTOP_SELECTARG2;
 		else texstages[0].alphaop = D3DTOP_MODULATE;
@@ -819,10 +819,10 @@ void glDirect3DDevice7::SetArraySize(DWORD size, DWORD vertex, DWORD texcoord)
 		if(texstages[i].textransform & D3DTTFF_PROJECTED) texstages[i].shaderid |= 1i64 << 53;
 		texstages[i].shaderid |= (__int64)(texstages[i].texcoordindex&7) << 54;
 		texstages[i].shaderid |= (__int64)((texstages[i].texcoordindex>>16)&3) << 57;
-		if(texstages[i].texture)
+		if(texstages[i].surface)
 		{
 			texstages[i].shaderid |= 1i64 << 59;
-			if(texstages[i].texture->ddsd.dwFlags & DDSD_CKSRCBLT) texstages[i].shaderid |= 1i64 << 60;
+			if(texstages[i].surface->ddsd.dwFlags & DDSD_CKSRCBLT) texstages[i].shaderid |= 1i64 << 60;
 		}
 	}
 	TRACE_EXIT(10,&shader);
@@ -1129,9 +1129,9 @@ HRESULT WINAPI glDirect3DDevice7::GetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(!texstages[dwStage].texture) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	*lplpTexture = texstages[dwStage].texture;
-	texstages[dwStage].texture->AddRef();
+	if(!texstages[dwStage].surface) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	*lplpTexture = texstages[dwStage].surface;
+	texstages[dwStage].surface->AddRef();
 	TRACE_VAR("*lplpTexture",14,*lplpTexture);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1460,9 +1460,9 @@ HRESULT WINAPI glDirect3DDevice7::SetRenderState(D3DRENDERSTATETYPE dwRendStateT
 			SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
 			SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_CURRENT);
 			SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_MODULATE);
-			if (!texstages[0].texture) noalpha = TRUE;
-			if (texstages[0].texture)
-				if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+			if (!texstages[0].surface) noalpha = TRUE;
+			if (texstages[0].surface)
+				if (!(texstages[0].surface->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
 					noalpha = TRUE;
 			if (noalpha) SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG2);
 			else SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
@@ -1532,16 +1532,17 @@ HRESULT WINAPI glDirect3DDevice7::SetTexture(DWORD dwStage, LPDIRECTDRAWSURFACE7
 	TRACE_ENTER(3,14,this,8,dwStage,14,lpTexture);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(texstages[dwStage].texture) texstages[dwStage].texture->Release();
-	texstages[dwStage].texture = (glDirectDrawSurface7*)lpTexture;
+	if(texstages[dwStage].surface) texstages[dwStage].surface->Release();
+	texstages[dwStage].surface = (glDirectDrawSurface7*)lpTexture;
 	if(lpTexture) lpTexture->AddRef();
-	glRenderer_SetTexture(renderer, dwStage, texstages[dwStage].texture);
+	if(texstages[dwStage].surface) glRenderer_SetTexture(renderer, dwStage, texstages[dwStage].surface->texture);
+	else glRenderer_SetTexture(renderer, dwStage, NULL);
 	if (renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
 		bool noalpha = false;
-		if (!texstages[0].texture) noalpha = true;
-		if (texstages[0].texture)
-			if (!(texstages[0].texture->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
+		if (!texstages[0].surface) noalpha = true;
+		if (texstages[0].surface)
+			if (!(texstages[0].surface->ddsd.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS))
 				noalpha = true;
 		if (noalpha) SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
 		else SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);

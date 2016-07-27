@@ -1050,6 +1050,7 @@ void glTexture__FinishCreate(glTexture *This)
 }
 void glTexture__Destroy(glTexture *This)
 {
+	glRenderer__RemoveTextureFromD3D(This->renderer, This);
 	glDeleteTextures(1, &This->id);
 	free(This);
 }
