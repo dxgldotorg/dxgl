@@ -698,19 +698,20 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			cmd.flags |= 0x40000000;
 	}
 	glDirectDrawSurface7 *src = (glDirectDrawSurface7 *)lpDDSrcSurface;
-/*	if (clipper)
+	if (clipper)
 	{
 		if (!clipper->hWnd)
 		{
 			if (!clipper->clipsize) TRACE_RET(HRESULT, 23, DDERR_NOCLIPLIST);
 			if (clipper->dirty)
 			{
-				glRenderer_UpdateClipper(ddInterface->renderer, this);
+				glRenderer_UpdateClipper(ddInterface->renderer, this->clipper->texture, this->clipper->indices,
+					this->clipper->vertices,this->clipper->clipsize, this->ddsd.dwWidth, this->ddsd.dwHeight);
 				clipper->dirty = false;
 			}
 			dwFlags |= 0x10000000;
 		}
-	}*/
+	}
 	if (this->clipper && !(this->clipper->hWnd)) cmd.flags |= 0x10000000;
 	if (lpDDBltFx) cmd.bltfx = *lpDDBltFx;
 	if (dwFlags & DDBLT_DEPTHFILL)

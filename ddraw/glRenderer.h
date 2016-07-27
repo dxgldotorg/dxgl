@@ -172,7 +172,8 @@ HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd);
 HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo);
-void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
+void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
+	GLsizei count, GLsizei width, GLsizei height);
 unsigned int glRenderer_GetScanLine(glRenderer *This);
 HRESULT glRenderer_DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel);
 void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateType, DWORD dwRenderState);
@@ -203,7 +204,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);
 void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo);
-void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface);
+void glRenderer__UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
+	GLsizei count, GLsizei width, GLsizei height);
 void glRenderer__DepthFill(glRenderer *This, BltCommand *cmd, glTexture *parent, GLint parentlevel);
 void glRenderer__SetFogColor(glRenderer *This, DWORD color);
 void glRenderer__SetFogStart(glRenderer *This, GLfloat start);

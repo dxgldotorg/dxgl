@@ -434,7 +434,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 			if(!This->cliplist) memfail = true;
 			if(!memfail) This->vertices = (BltVertex*)malloc(This->maxsize*4*sizeof(BltVertex));
 			if(!This->vertices) memfail = true;
-			if(!memfail) This->indices = (GLshort*)malloc(This->maxsize*6*sizeof(GLshort));
+			if(!memfail) This->indices = (GLushort*)malloc(This->maxsize*6*sizeof(GLushort));
 			if(!This->indices) memfail = true;
 			if(memfail)
 			{
@@ -457,14 +457,14 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 			memfail = false;
 			RGNDATA *newcliplist = NULL;
 			BltVertex *newvertices = NULL;
-			GLshort *newindices = NULL;
+			GLushort *newindices = NULL;
 			newcliplist = (RGNDATA*)realloc(This->cliplist,sizeof(RGNDATAHEADER)+(lpClipList->rdh.nCount*sizeof(RECT)));
 			if(!newcliplist) memfail = true;
 			else This->cliplist = newcliplist;
 			if(!memfail) newvertices = (BltVertex*)realloc(This->vertices,lpClipList->rdh.nCount*4*sizeof(BltVertex));
 			if(!newvertices) memfail = true;
 			else This->vertices = newvertices;
-			if(!memfail) newindices = (GLshort*)realloc(This->indices,lpClipList->rdh.nCount*6*sizeof(GLshort));
+			if(!memfail) newindices = (GLushort*)realloc(This->indices,lpClipList->rdh.nCount*6*sizeof(GLushort));
 			if(!newindices) memfail = true;
 			else This->indices = newindices;
 			if(memfail) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);

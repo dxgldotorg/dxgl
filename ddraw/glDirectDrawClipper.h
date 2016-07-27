@@ -33,7 +33,7 @@ typedef struct glDirectDrawClipper
 	HWND hWnd;
 	RGNDATA *cliplist;
 	BltVertex *vertices;
-	GLshort *indices;
+	GLushort *indices;
 	size_t clipsize;
 	size_t maxsize;
 	bool hascliplist;

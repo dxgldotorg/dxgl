@@ -22,12 +22,9 @@
 #include "timer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawSurface.h"
-#include "glDirectDrawPalette.h"
 #include "glRenderWindow.h"
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
-#include "glDirect3DLight.h"
-#include "glDirectDrawClipper.h"
 #include "ddraw.h"
 #include "ShaderGen3D.h"
 #include "matrix.h"
@@ -602,16 +599,32 @@ void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
 }
 
 /**
-  * Updates the clipper stencil for a surface.
+  * Updates a clipping stencil.
   * @param This
   *  Pointer to glRenderer object
-  * @param surface
-  *  Surface to update clipper stencil on
+  * @param stencil
+  *  Stencil texture to update
+  * @param indices
+  *  Pointer to array of indices representing the clip list
+  * @param vertices
+  *  Pointer to array of vertices representing the clip list
+  * @param count
+  *  Number of entries in the clip list
+  * @param width
+  *  Width of surface the stencil is attached to
+  * @param height
+  *  Height of surface the stencil is attached to
   */
-void glRenderer_UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
+void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
+	GLsizei count, GLsizei width, GLsizei height)
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = surface;
+	This->inputs[0] = stencil;
+	This->inputs[1] = indices;
+	This->inputs[2] = vertices;
+	This->inputs[3] = (void*)count;
+	This->inputs[4] = (void*)width;
+	This->inputs[5] = (void*)height;
 	This->opcode = OP_UPDATECLIPPER;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -967,7 +980,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__DeleteFBO(This,(FBO*)This->inputs[0]);
 			break;
 		case OP_UPDATECLIPPER:
-			glRenderer__UpdateClipper(This,(glDirectDrawSurface7*)This->inputs[0]);
+			glRenderer__UpdateClipper(This,(glTexture*)This->inputs[0], (GLushort*)This->inputs[1],
+				(BltVertex*)This->inputs[2], (GLsizei)This->inputs[3], (GLsizei)This->inputs[4], (GLsizei)This->inputs[5]);
 			break;
 		case OP_DEPTHFILL:
 			glRenderer__DepthFill(This, (BltCommand*)This->inputs[0], (glTexture*)This->inputs[1], (GLint)This->inputs[2]);
@@ -2411,35 +2425,35 @@ void glRenderer__DeleteFBO(glRenderer *This, FBO *fbo)
 	SetEvent(This->busy);
 }
 
-void glRenderer__UpdateClipper(glRenderer *This, glDirectDrawSurface7 *surface)
+void glRenderer__UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
+	GLsizei count, GLsizei width, GLsizei height)
 {
 	GLfloat view[4];
 	DDSURFACEDESC2 ddsd;
-	if ((surface->ddsd.dwWidth != surface->texture->stencil->levels[0].ddsd.dwWidth) ||
-		(surface->ddsd.dwHeight != surface->texture->stencil->levels[0].ddsd.dwHeight))
+	if ((width != stencil->levels[0].ddsd.dwWidth) || (height != stencil->levels[0].ddsd.dwHeight))
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
-		ddsd.dwWidth = surface->ddsd.dwWidth;
-		ddsd.dwHeight = surface->ddsd.dwHeight;
+		ddsd.dwWidth = width;
+		ddsd.dwHeight = height;
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
-		glTexture__SetSurfaceDesc(surface->texture->stencil, &ddsd);
+		glTexture__SetSurfaceDesc(stencil, &ddsd);
 	}
-	glUtil_SetFBOTextures(This->util, &surface->texture->stencil->levels[0].fbo, surface->texture->stencil, NULL, 0, 0, FALSE);
+	glUtil_SetFBOTextures(This->util, &stencil->levels[0].fbo, stencil, NULL, 0, 0, FALSE);
 	view[0] = view[2] = 0;
-	view[1] = (GLfloat)surface->ddsd.dwWidth;
-	view[3] = (GLfloat)surface->ddsd.dwHeight;
-	glUtil_SetViewport(This->util, 0, 0, surface->ddsd.dwWidth, surface->ddsd.dwHeight);
+	view[1] = width;
+	view[3] = height;
+	glUtil_SetViewport(This->util, 0, 0, width, height);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ShaderManager_SetShader(This->shaders,PROG_CLIPSTENCIL,NULL,0);
 	This->ext->glUniform4f(This->shaders->shaders[PROG_CLIPSTENCIL].view,view[0],view[1],view[2],view[3]);
 	glUtil_EnableArray(This->util, This->shaders->shaders[PROG_CLIPSTENCIL].pos, TRUE);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[PROG_CLIPSTENCIL].pos,
-		2,GL_FLOAT,false,sizeof(BltVertex),&surface->clipper->vertices[0].x);
+		2,GL_FLOAT,false,sizeof(BltVertex),&vertices[0].x);
 	glUtil_SetCull(This->util, D3DCULL_NONE);
 	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
-	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * surface->clipper->clipsize) - 1,
-		6 * surface->clipper->clipsize, GL_UNSIGNED_SHORT, surface->clipper->indices);
+	This->ext->glDrawRangeElements(GL_TRIANGLES, 0, (6 * count) - 1,
+		6 * count, GL_UNSIGNED_SHORT, indices);
 	glUtil_SetFBO(This->util, NULL);
 	SetEvent(This->busy);
 }
