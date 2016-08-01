@@ -997,6 +997,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		//EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
 		//EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
 		// Check install path
+		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
 		if (error == ERROR_SUCCESS)
 		{
@@ -1193,7 +1194,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemAction | ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
+			if((drawitem->itemAction & ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
 				!(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
@@ -1635,6 +1636,7 @@ void UpgradeDXGL()
 	if (error == ERROR_SUCCESS)
 	{
 		dxgl_installdir = TRUE;
+		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
 		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}
@@ -1724,6 +1726,7 @@ void UninstallDXGL(TCHAR uninstall)
 	if (error == ERROR_SUCCESS)
 	{
 		dxgl_installdir = TRUE;
+		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
 		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}

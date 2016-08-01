@@ -17,6 +17,10 @@
 
 
 SetCompressor /SOLID lzma
+!ifdef NSIS_PACKEDVERSION
+  ManifestSupportedOS all
+  ManifestDPIAware true
+!endif
 
 !include 'WinVer.nsh'
 !include 'LogicLib.nsh'

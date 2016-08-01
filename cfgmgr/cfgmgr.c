@@ -901,7 +901,6 @@ ver0to1:
 					olddir = realloc(olddir, olddirsize);
 					if (!olddir)
 					{
-						free(olddir);
 						MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
 						ExitProcess(error);
 					}

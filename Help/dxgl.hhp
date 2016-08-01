@@ -15,6 +15,7 @@ DXGL Help=,"toc.hhc",,"introduction.htm",,,,,,0x22520,,0x3006,[0,0,922,684],0x31
 [FILES]
 introduction.htm
 configuration.htm
+troubleshooting.htm
 dxgl.css
 dxglcfg.png
 
