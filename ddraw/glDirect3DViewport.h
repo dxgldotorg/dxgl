@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,7 @@ typedef struct glDirect3DViewport3
 	D3DVIEWPORT2 viewport;
 	int viewportver;
 	bool current;
-};
+} glDirect3DViewport3;
 
 typedef struct glDirect3DViewport3Vtbl
 {
@@ -69,7 +69,7 @@ typedef struct glDirect3DViewport3Vtbl
 	HRESULT(WINAPI *SetBackgroundDepth2)(glDirect3DViewport3 *This, LPDIRECTDRAWSURFACE4 lpDDS);
 	HRESULT(WINAPI *GetBackgroundDepth2)(glDirect3DViewport3 *This, LPDIRECTDRAWSURFACE4* lplpDDS, LPBOOL lpValid);
 	HRESULT(WINAPI *Clear2)(glDirect3DViewport3 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil);
-};
+} glDirect3DViewport3Vtbl;
 
 HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport);
 void glDirect3DViewport3_SetCurrent(glDirect3DViewport3 *This, bool current);

@@ -352,6 +352,17 @@ typedef struct ShaderManager
 	glExtensions *ext;
 } ShaderManager;
 
+typedef struct SetWndCommand
+{
+	int width;
+	int height;
+	int bpp;
+	int fullscreen;
+	unsigned int frequency;
+	HWND newwnd;
+	BOOL devwnd;
+} SetWndCommand;
+
 typedef struct BltCommand
 {
 	//DWORD opcode;
@@ -417,5 +428,28 @@ typedef struct glDirectDrawPaletteVtbl
 	HRESULT(WINAPI *Initialize)(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
 	HRESULT(WINAPI *SetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
 } glDirectDrawPaletteVtbl;
+
+typedef struct CommandBuffer
+{
+	BYTE *cmdbuffer;
+	size_t cmdsize;
+	BYTE *uploadbuffer;
+	size_t uploadsize;
+	BufferObject *vertices;
+	BufferObject *indices;
+	size_t write_ptr_cmd;
+	size_t read_ptr_cmd;
+	size_t write_ptr_upload;
+	size_t read_ptr_upload;
+	size_t write_ptr_vertex;
+	size_t read_ptr_vertex;
+	size_t write_ptr_index;
+	size_t read_ptr_index;
+} CommandBuffer;
+
+typedef struct RenderState
+{
+	CommandBuffer *cmd;
+} RenderState;
 
 #endif //__STRUCT_H

@@ -32,6 +32,7 @@
 #include "include/GL/wglext.h"
 #include "struct.h"
 #include "const.h"
+#include "struct_command.h"
 #include "glExtensions.h"
 #ifdef __cplusplus
 #include "string.h"
@@ -90,6 +91,7 @@ extern const GUID device_template;
 #define ERR(error) return error;
 #endif
 
+static INLINE int NextMultipleOf1024(int number){return ((number + 1023) & (~1023));}
 static INLINE int NextMultipleOf8(int number){return ((number+7) & (~7));}
 static INLINE int NextMultipleOf4(int number){return ((number+3) & (~3));}
 static INLINE int NextMultipleOf2(int number){return ((number+1) & (~1));}

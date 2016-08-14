@@ -909,14 +909,6 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 		glTexture **textures = new glTexture*[ddsd.dwBackBufferCount+1];
 		textures[0] = texture;
 		tmp = this;
-		/*if(dirty & 1)
-		{
-			glRenderer_UploadTexture(ddInterface->renderer,buffer,bigbuffer,texture,ddsd.dwWidth,ddsd.dwHeight,
-				fakex,fakey,ddsd.lPitch,(NextMultipleOf4((ddInterface->GetBPPMultipleOf8()/8)*fakex)),
-				ddsd.ddpfPixelFormat.dwRGBBitCount,miplevel);
-			dirty &= ~1;
-		}
-		this->dirty |= 2;*/
 		for(i = 0; i < ddsd.dwBackBufferCount; i++)
 		{
 			tmp = tmp->GetBackbuffer();

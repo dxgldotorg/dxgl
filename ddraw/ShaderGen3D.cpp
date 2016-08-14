@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -133,9 +133,37 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
 	}
 	if(This->genshaders) free(This->genshaders);
 	This->genshaders = NULL;
-	This->current_genshader = -1;
+	This->current_genshader = NULL;
 	This->shadercount = 0;
 	This->genindex = 0;
+}
+
+/**
+  * Sort 2D shaders callback, for qsort and bsearch functions
+  * @param elem1
+  *  First item to compare
+  * @param elem2
+  *  Second item to compare
+  * @return
+  *  negative if elem1 is less than elem2, positive if greater, zero if same
+  */
+int __cdecl compshader2D(const GenShader2D *elem1, const  GenShader2D *elem2)
+{
+	return elem1->id - elem2->id;
+}
+
+/**
+* Sort 2D shaders callback, for qsort and bsearch functions
+* @param elem1
+*  First item to compare
+* @param elem2
+*  Second item to compare
+* @return
+*  negative if elem1 is less than elem2, positive if greater, zero if same
+*/
+int __cdecl compshader3D(const GenShader *elem1, const  GenShader *elem2)
+{
+	return memcmp(&elem1->id, &elem2->id, 9 * sizeof(__int64));
 }
 
 /**
@@ -156,7 +184,7 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
   */
 void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int type, ShaderGen2D *gen2d)
 {
-	int shaderindex = -1;
+	//int shaderindex = -1;
 	switch(type)
 	{
 	case 0:  // Static built-in shader
@@ -164,24 +192,20 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->ext->glUseProgram(This->shaders->shaders[id].prog);
 		This->current_shader = This->shaders->shaders[id].prog;
 		This->current_shadertype = 0;
-		This->current_genshader = -1;
+		This->current_genshader = NULL;
 		break;
 	case 1:  // 2D generated shader
 		if ((This->current_shadertype == 1) && (id == This->current_shader)) return;
 		This->current_shader = id;
 		This->current_shadertype = 1;
-		for (int i = 0; i < gen2d->shadercount; i++)
-		{
-			if (This->shaders->gen2d->genshaders2D[i].id == id)
-			{
-				shaderindex = i;
-				break;
-			}
-		}
-		if (shaderindex == -1)
+		GenShader2D key2d;
+		GenShader2D *shader2d;
+		key2d.id = id;
+		shader2d = (GenShader2D*)bsearch(&key2d, gen2d->genshaders2D, gen2d->genindex, sizeof(GenShader2D),
+			(int(__cdecl *) (const void *, const void *))compshader2D);
+		if (!shader2d)
 		{
 			gen2d->shadercount++;
-			if (gen2d->shadercount > 256) gen2d->shadercount = 256;
 			if (gen2d->genshaders2D[gen2d->genindex].shader.prog)
 			{
 				This->ext->glUseProgram(0);
@@ -193,14 +217,28 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				ZeroMemory(&gen2d->genshaders2D[gen2d->genindex], sizeof(GenShader2D));
 			}
 			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id);
-			shaderindex = gen2d->genindex;
 			gen2d->genindex++;
-			if (gen2d->genindex >= 256) gen2d->genindex = 0;
+			if (gen2d->genindex >= gen2d->maxshaders)
+			{
+				GenShader2D *tmp2dgen = (GenShader2D*)realloc(gen2d->genshaders2D,
+					gen2d->maxshaders * 2 * sizeof(GenShader2D));
+				if (!tmp2dgen) gen2d->genindex = 0;
+				else
+				{
+					ZeroMemory(&tmp2dgen[gen2d->maxshaders], gen2d->maxshaders * sizeof(GenShader2D));
+					gen2d->genshaders2D = tmp2dgen;
+					gen2d->maxshaders *= 2;
+				}
+			}
+			qsort(gen2d->genshaders2D, gen2d->genindex, sizeof(GenShader2D), 
+				(int(__cdecl *) (const void *, const void *))compshader2D);
+			shader2d = (GenShader2D*)bsearch(&key2d, gen2d->genshaders2D, gen2d->genindex, sizeof(GenShader2D),
+				(int(__cdecl *) (const void *, const void *))compshader2D);
 		}
-		gen2d->genshaders2D[shaderindex].id = id;
-		This->ext->glUseProgram(gen2d->genshaders2D[shaderindex].shader.prog);
-		This->current_prog = gen2d->genshaders2D[shaderindex].shader.prog;
-		This->current_genshader = shaderindex;
+		if (!shader2d) return;  // Out of memory condition
+		This->ext->glUseProgram(shader2d->shader.prog);
+		This->current_prog = shader2d->shader.prog;
+		This->current_genshader = (GenShader*)shader2d;
 		break;
 	case 2:  // 3D generated shader
 		if((This->current_shadertype == 2) && (id == This->current_shader))
@@ -209,20 +247,15 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		}
 		This->current_shader = id;
 		This->current_shadertype = 2;
-		for(int i = 0; i < This->shadercount; i++)
-		{
-			if(This->genshaders[i].id == id)
-			{
-				bool texidmatch = true;
-				for(int j = 0; j < 8; j++)
-					if(This->genshaders[i].texids[j] != texstate[j]) texidmatch = false;
-				if(texidmatch) shaderindex = i;
-			}
-		}
-		if(shaderindex == -1)
+		GenShader key3d;
+		GenShader *shader3d;
+		key3d.id = id;
+		memcpy(&key3d.texids, texstate, 8 * sizeof(__int64));
+		shader3d = (GenShader*)bsearch(&key3d, This->genshaders, This->genindex, sizeof(GenShader),
+			(int(__cdecl *) (const void *, const void *))compshader3D);
+		if(!shader3d)
 		{
 			This->shadercount++;
-			if(This->shadercount > 256) This->shadercount = 256;
 			if(This->genshaders[This->genindex].shader.prog)
 			{
 				This->ext->glUseProgram(0);
@@ -234,16 +267,28 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				ZeroMemory(&This->genshaders[This->genindex],sizeof(GenShader));
 			}
 			ShaderGen3D_CreateShader(This, This->genindex,id,texstate);
-			shaderindex = This->genindex;
 			This->genindex++;
-			if(This->genindex >= 256) This->genindex = 0;
+			if (This->genindex >= This->maxshaders)
+			{
+				GenShader *tmp3dgen = (GenShader*)realloc(This->genshaders,
+					This->maxshaders * 2 * sizeof(GenShader));
+				if (!tmp3dgen) This->genindex = 0;
+				else
+				{
+					ZeroMemory(&tmp3dgen[This->maxshaders], This->maxshaders * sizeof(GenShader));
+					This->genshaders = tmp3dgen;
+					This->maxshaders *= 2;
+				}
+			}
+			qsort(This->genshaders, This->genindex, sizeof(GenShader),
+				(int(__cdecl *) (const void *, const void *))compshader3D);
+			shader3d = (GenShader*)bsearch(&key3d, This->genshaders, This->genindex, sizeof(GenShader),
+				(int(__cdecl *) (const void *, const void *))compshader3D);
 		}
-		This->genshaders[shaderindex].id = id;
-		for(int i = 0; i < 8; i++)
-			This->genshaders[shaderindex].texids[i] = texstate[i];
-		This->ext->glUseProgram(This->genshaders[shaderindex].shader.prog);
-		This->current_prog = This->genshaders[shaderindex].shader.prog;
-		This->current_genshader = shaderindex;
+		if (!shader3d) return; // Out of memory condition
+		This->ext->glUseProgram(shader3d->shader.prog);
+		This->current_prog = shader3d->shader.prog;
+		This->current_genshader = shader3d;
 	}
 }
 
@@ -1442,6 +1487,10 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		unifkeybits[7] = i + '0';
 		This->genshaders[index].shader.uniforms[153 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkeybits);
 	}
+
+	This->genshaders[index].id = id;
+	for (int i = 0; i < 8; i++)
+		This->genshaders[index].texids[i] = texstate[i];
 }
 
 }

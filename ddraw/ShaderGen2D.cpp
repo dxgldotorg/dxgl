@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013 William Feely
+// Copyright (C) 2013-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1024,5 +1024,6 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	gen->genshaders2D[index].shader.uniforms[10] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizesrc");
 	gen->genshaders2D[index].shader.uniforms[11] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizedest");
 	gen->genshaders2D[index].shader.uniforms[12] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "fillcolor");
-
+	
+	gen->genshaders2D[index].id = id;
 }

@@ -93,6 +93,182 @@ inline int _6to8bit(int number)
 }
 
 /**
+  * Checks the command buffer and flips it if too full.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param cmdsize
+  *  Requested size for command buffer
+  */
+void CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD vertexsize, DWORD indexsize)
+{
+	BOOL over = FALSE;
+	if (cmdsize)
+	{
+		if ((This->state.cmd->write_ptr_cmd + cmdsize) > This->state.cmd->cmdsize)
+			over = TRUE;
+	}
+	if (uploadsize)
+	{
+		if ((This->state.cmd->write_ptr_upload + uploadsize) > This->state.cmd->uploadsize)
+			over = TRUE;
+	}
+	if (vertexsize)
+	{
+		if ((This->state.cmd->write_ptr_vertex + vertexsize) > This->state.cmd->vertices->size)
+			over = TRUE;
+	}
+	if (indexsize)
+	{
+		if ((This->state.cmd->write_ptr_index + indexsize) > This->state.cmd->indices->size)
+			over = TRUE;
+	}
+	if (over) glRenderer_EndCommand(This, FALSE, TRUE);
+}
+
+/**
+  * Adds a command to the active command buffer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param command
+  *  Formatted command to add to buffer.
+  *  Command format:
+  *  First DWORD:  Command ID, see glRenderer.h
+  *  Second DWORD:  Size of command data, rounded up to nearest DWORD
+  *  Third DWORD and beyond:  command data
+  * @return
+  *  Return value specific to command, DD_OK if succeeded.
+  */
+HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command)
+{
+	DWORD opcode = (DWORD)*command;
+	DWORD cmdsize = (DWORD)*((unsigned char*)command + 4);
+	BYTE *cmddata = command + 8;
+	SetWndCommand *wndcmd = (SetWndCommand*)cmddata;
+	HRESULT error;
+	// Command specific variables
+	RECT wndrect;
+	int screenx, screeny;
+	LONG_PTR winstyle, winstyleex;
+	EnterCriticalSection(&This->cs);
+	switch (opcode)
+	{
+	case OP_NULL:
+		error = DD_OK;  // No need to write to the command buffer
+		break;
+	case OP_SETWND:  // Should be invoked from glRenderer_SetWnd which flushes the
+		             // command buffer then executes the command on its own.
+		error = DDERR_UNSUPPORTED;
+		break;
+	case OP_DELETE:  // Should be executed by itself, flushes command buffer then
+		             // destroys glRenderer object.
+		error = DDERR_UNSUPPORTED;
+		break;
+	case OP_CREATE:  // Creates a texture.  Needs to sync in order to return the
+		             // texture object.
+		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
+		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		error = DD_OK;
+		break;
+	case OP_UPLOAD:  // This one can fill the upload buffer fast; upload buffer is
+		             // initialized to 2x primary for <=128MB, 1.5x for <=256MB, or
+		             // 1.25x for >256MB upload buffer size.
+		((UploadTextureCmd*)command)->texturesize =
+			((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].ddsd.lPitch
+			* ((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].ddsd.dwHeight;
+		((UploadTextureCmd*)command)->content =
+			(BYTE*)((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].buffer;
+		((UploadTextureCmd*)command)->offset = This->state.cmd->write_ptr_upload;
+		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
+		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		memcpy(This->state.cmd->uploadbuffer + This->state.cmd->write_ptr_upload,
+			((UploadTextureCmd*)command)->content, ((UploadTextureCmd*)command)->texturesize);
+		error = DD_OK;
+		break;
+	case OP_DOWNLOAD: // Downloads a texture.  Needs to sync in order to receive the
+		              // texture data.
+		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
+		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		error = DD_OK;
+		break;
+	case OP_DELETETEX: // Deletes a texture.  Non-blocking becuase frontend has
+		               // forgotten the texture.
+		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
+		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		error = DD_OK;
+		break;
+	case OP_BLT:  // Perform a Blt() operation, issuing necessary commands to set it
+		          // up.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_DRAWSCREEN:  // Draws the screen.  Flip command buffer after executing.
+		error = DDERR_UNSUPPORTED;
+		break;
+	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_CLEAR:  // Clears full renderbuffer or one or more rects.
+					// Size should hold number of rects plus each rect, or 0 for screen.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_FLUSH:  // Probably should consider retiring this one.  Flip buffers if called.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_DRAWPRIMITIVES:  // Add primitives to the render buffer, check and adjust buffer
+		                     // state.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_UPDATECLIPPER:  // Add pre-processed vertices to update the clipper.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_DEPTHFILL:  // Performs a depth fill on a depth surface, using a BltCommand structure.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETRENDERSTATE:  // Sets a Direct3D Render State.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETTEXTURE:  // Binds a texture object to a Direct3D texture stage.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETTEXTURESTAGESTATE:  // Sets a state object for a Direct3D texture stage.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETTRANSFORM:  // Sets one of the Direct3D fixed-function matrices.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETMATERIAL:  // Sets the Direct3D fixed-function material.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETLIGHT:  // Sets one of the Direct3D fixed-function light states.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETVIEWPORT:  // Sets the Direct3D viewport.  May be 
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETTEXTURECOLORKEY:  // Sets a color key or colorkey range on a texture object.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_MAKETEXTUREPRIMARY:  // Sets or removes primary scaling on a z-buffer.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_DXGLBREAK:  // Breakpoint command, flip buffers and wait or just add to command stream?
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETMODE2D:  // Set up renderer for 2D DirectDraw commands.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	default:
+		error = DDERR_INVALIDPARAMS;
+		break;
+	}
+	LeaveCriticalSection(&This->cs);
+	return error;
+}
+
+/**
   * Sets the Windows OpenGL swap interval
   * @param This
   *  Pointer to glRenderer object
@@ -274,6 +450,12 @@ DWORD WINAPI glRenderer_ThreadEntry(void *entry)
   */
 void glRenderer_MakeTexture(glRenderer *This, glTexture *texture)
 {
+	/*MakeTextureCmd cmd;
+	cmd.opcode = OP_CREATE;
+	cmd.size = sizeof(glTexture*);
+	cmd.texture = texture;
+	glRenderer_AddCommand(This, (BYTE*)&cmd);
+	glRenderer_EndCommand(This, TRUE, FALSE);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->opcode = OP_CREATE;
@@ -293,6 +475,12 @@ void glRenderer_MakeTexture(glRenderer *This, glTexture *texture)
   */
 void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level) 
 {
+	/*UploadTextureCmd cmd;
+	cmd.opcode = OP_UPLOAD;
+	cmd.size = sizeof(UploadTextureCmd) - 8;
+	cmd.texture = texture;
+	cmd.level = level;
+	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = (void*)level;
@@ -313,6 +501,13 @@ void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level)
   */
 void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint level)
 {
+	/*DownloadTextureCmd cmd;
+	cmd.opcode = OP_DOWNLOAD;
+	cmd.size = sizeof(DownloadTextureCmd) - 8;
+	cmd.texture = texture;
+	cmd.level = level;
+	glRenderer_AddCommand(This, (BYTE*)&cmd);
+	glRenderer_EndCommand(This, TRUE, FALSE);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = (void*)level;
@@ -331,6 +526,11 @@ void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint leve
   */
 void glRenderer_DeleteTexture(glRenderer *This, glTexture * texture)
 {
+	/*DeleteTextureCmd cmd;
+	cmd.opcode = OP_DELETE;
+	cmd.size = sizeof(glTexture*);
+	cmd.texture = texture;
+	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->opcode = OP_DELETETEX;
@@ -579,23 +779,6 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
 	WaitForSingleObject(This->busy,INFINITE);
 	LeaveCriticalSection(&This->cs);
 	return (HRESULT)This->outputs[0];
-}
-
-/**
-  * Deletes a framebuffer object.
-  * @param This
-  *  Pointer to glRenderer object
-  * @param fbo
-  *  FBO Structure containing framebuffer to delete
-  */
-void glRenderer_DeleteFBO(glRenderer *This, FBO *fbo)
-{
-	EnterCriticalSection(&This->cs);
-	This->inputs[0] = fbo;
-	This->opcode = OP_DELETEFBO;
-	SetEvent(This->start);
-	WaitForSingleObject(This->busy,INFINITE);
-	LeaveCriticalSection(&This->cs);
 }
 
 /**
@@ -876,6 +1059,26 @@ void glRenderer_DXGLBreak(glRenderer *This)
 }
 
 /**
+  * Ends a command buffer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param wait
+  *  TRUE to wait for the command buffer to complete
+  * @param in_cs
+  *  If TRUE, do not take the Crtitical Section because it is already taken
+  */
+void glRenderer_EndCommand(glRenderer *This, BOOL wait, BOOL in_cs)
+{
+	if (!in_cs) EnterCriticalSection(&This->cs);
+	if (!This->state.cmd->write_ptr_cmd) return;  // Don't flip buffers if the front one is empty.
+	This->opcode = OP_ENDCOMMAND;
+	This->inputs[0] = (void*)wait;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	if (!in_cs) LeaveCriticalSection(&This->cs);
+}
+
+/**
   * Main loop for glRenderer class
   * @param This
   *  Pointer to glRenderer object
@@ -918,6 +1121,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 					This->backx = 0;
 					This->backy = 0;
 				}
+				glRenderer__DeleteCommandBuffer(&This->cmd1);
+				glRenderer__DeleteCommandBuffer(&This->cmd2);
 				ShaderManager_Delete(This->shaders);
 				glUtil_Release(This->util);
 				free(This->shaders);
@@ -976,9 +1181,6 @@ DWORD glRenderer__Entry(glRenderer *This)
 				(GLVERTEX*)This->inputs[2],(int*)This->inputs[3],(DWORD)This->inputs[4],(LPWORD)This->inputs[5],
 				(DWORD)This->inputs[6],(DWORD)This->inputs[7]);
 			break;
-		case OP_DELETEFBO:
-			glRenderer__DeleteFBO(This,(FBO*)This->inputs[0]);
-			break;
 		case OP_UPDATECLIPPER:
 			glRenderer__UpdateClipper(This,(glTexture*)This->inputs[0], (GLushort*)This->inputs[1],
 				(BltVertex*)This->inputs[2], (GLsizei)This->inputs[3], (GLsizei)This->inputs[4], (GLsizei)This->inputs[5]);
@@ -1017,6 +1219,9 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_DXGLBREAK:
 			glRenderer__DXGLBreak(This);
+			break;
+		case OP_ENDCOMMAND:
+			glRenderer__EndCommand(This, (BOOL)This->inputs[0]);
 			break;
 		}
 	}
@@ -1171,8 +1376,40 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	}
 	BufferObject_Create(&This->pbo, This->ext, This->util);
 	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
+	ZeroMemory(&This->state, sizeof(RenderState));
+	This->state.cmd = &This->cmd1;
+	glRenderer__InitCommandBuffer(This, &This->cmd1, width * height * (NextMultipleOf8(bpp) / 8));
+	glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
+	BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	TRACE_SYSINFO();
 	return TRUE;
+}
+
+void glRenderer__InitCommandBuffer(glRenderer *This, CommandBuffer *cmd, size_t framesize)
+{
+	size_t uploadsize = NextMultipleOf1024(framesize * 2);
+	if (uploadsize > 134217728) // Over 4K resolution
+		uploadsize = NextMultipleOf1024((int)((float)framesize * 1.5f));
+	if (uploadsize > 268435456) // Over 8K resolution
+		uploadsize = NextMultipleOf1024((int)((float)framesize * 1.5f));
+	ZeroMemory(cmd, sizeof(CommandBuffer));
+	cmd->uploadsize = uploadsize;
+	cmd->uploadbuffer = (unsigned char *)malloc(uploadsize);
+	cmd->cmdsize = 1048576;
+	cmd->cmdbuffer = (unsigned char *)malloc(cmd->cmdsize);
+	BufferObject_Create(&cmd->vertices, This->ext, This->util);
+	BufferObject_SetData(cmd->vertices, GL_ARRAY_BUFFER, 4194304, NULL, GL_DYNAMIC_DRAW);
+	BufferObject_Create(&cmd->indices, This->ext, This->util);
+	BufferObject_SetData(cmd->vertices, GL_ELEMENT_ARRAY_BUFFER, 262144, NULL, GL_DYNAMIC_DRAW);
+}
+
+void glRenderer__DeleteCommandBuffer(CommandBuffer *cmd)
+{
+	if (cmd->uploadbuffer) free(cmd->uploadbuffer);
+	if (cmd->cmdbuffer) free(cmd->cmdbuffer);
+	if (cmd->vertices) BufferObject_Release(cmd->vertices);
+	if (cmd->indices) BufferObject_Release(cmd->indices);
 }
 
 void SetColorFillUniform(DWORD color, DWORD *colorsizes, int colororder, DWORD *colorbits, GLint uniform, glExtensions *ext)
@@ -1406,7 +1643,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backy);
 	}
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
-	GenShader2D *shader = &This->shaders->gen2d->genshaders2D[This->shaders->gen3d->current_genshader];
+	GenShader2D *shader = (GenShader2D*)This->shaders->gen3d->current_genshader;
 	glUtil_BlendEnable(This->util, FALSE);
 	do
 	{
@@ -2216,7 +2453,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	else glUtil_DepthTest(This->util, FALSE);
 	if (This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) glUtil_DepthWrite(This->util, TRUE);
 	else glUtil_DepthWrite(This->util, FALSE);
-	_GENSHADER *prog = &This->shaders->gen3d->genshaders[This->shaders->gen3d->current_genshader].shader;
+	_GENSHADER *prog = &This->shaders->gen3d->current_genshader->shader;
 	glUtil_EnableArray(This->util, prog->attribs[0], TRUE);
 	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,GL_FALSE,vertices[0].stride,vertices[0].data);
 	if(transformed)
@@ -3011,6 +3248,14 @@ void glRenderer__DXGLBreak(glRenderer *This)
 {
 	if (This->ext->GLEXT_GREMEDY_frame_terminator) This->ext->glFrameTerminatorGREMEDY();
 	SetEvent(This->busy);
+}
+
+void glRenderer__EndCommand(glRenderer *This, BOOL wait)
+{
+	// Do set-up and flip here
+	if (!wait) SetEvent(This->busy);
+	// Do command execution here
+	if (wait) SetEvent(This->busy);
 }
 
 }

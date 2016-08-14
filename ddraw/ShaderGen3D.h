@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2015 William Feely
+// Copyright (C) 2012-2016 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ struct ShaderGen2D;
 typedef struct ShaderGen3D
 {
 	GenShader *genshaders;
-	int current_genshader;
+	GenShader *current_genshader;
 	__int64 current_shader;
 	__int64 current_texid[8];
 	int current_shadertype;
