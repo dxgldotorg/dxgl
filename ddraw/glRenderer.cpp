@@ -138,7 +138,7 @@ void CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
   * @return
   *  Return value specific to command, DD_OK if succeeded.
   */
-HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command)
+HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 {
 	DWORD opcode = (DWORD)*command;
 	DWORD cmdsize = (DWORD)*((unsigned char*)command + 4);
@@ -149,7 +149,8 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command)
 	RECT wndrect;
 	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
-	EnterCriticalSection(&This->cs);
+	BOOL restart_cmd = FALSE;
+	if (!inner) EnterCriticalSection(&This->cs);
 	switch (opcode)
 	{
 	case OP_NULL:
@@ -202,6 +203,14 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command)
 		break;
 	case OP_BLT:  // Perform a Blt() operation, issuing necessary commands to set it
 		          // up.
+		if (This->state.last_cmd == OP_BLT)
+		{
+			
+		}
+		if(restart_cmd)
+		{
+
+		}
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_DRAWSCREEN:  // Draws the screen.  Flip command buffer after executing.
@@ -264,7 +273,8 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command)
 		error = DDERR_INVALIDPARAMS;
 		break;
 	}
-	LeaveCriticalSection(&This->cs);
+	This->state.last_cmd = opcode;
+	if (!inner) LeaveCriticalSection(&This->cs);
 	return error;
 }
 
@@ -1713,7 +1723,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		if (cmd->flags & 0x20000000) SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue, cmd->src->colorsizes,
 			cmd->src->colororder, shader->shader.uniforms[7], cmd->src->colorbits, This->ext);
 	}
-	if (!(cmd->flags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 0);
+	if (!(cmd->flags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 8);
 	if ((cmd->flags & DDBLT_KEYDEST) && (This && (cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)))
 	{
 		SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceLowValue, cmd->dest->colorsizes,
@@ -1723,27 +1733,27 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
-		glUtil_SetTexture(This->util, 1, This->backbuffer);
-		This->ext->glUniform1i(shader->shader.uniforms[2], 1);
+		glUtil_SetTexture(This->util, 9, This->backbuffer);
+		This->ext->glUniform1i(shader->shader.uniforms[2], 9);
 	}
 	if (usepattern && (shader->shader.uniforms[3] != -1))
 	{
 		if (cmd->pattern->levels[cmd->patternlevel].dirty & 1) glTexture__Upload(cmd->pattern, cmd->patternlevel);
-		glUtil_SetTexture(This->util, 2, cmd->pattern);
-		This->ext->glUniform1i(shader->shader.uniforms[3], 2);
+		glUtil_SetTexture(This->util, 10, cmd->pattern);
+		This->ext->glUniform1i(shader->shader.uniforms[3], 10);
 		This->ext->glUniform2i(shader->shader.uniforms[9],
 			cmd->pattern->levels[cmd->patternlevel].ddsd.dwWidth, cmd->pattern->levels[cmd->patternlevel].ddsd.dwHeight);
 	}
 	if (cmd->flags & 0x10000000)  // Use clipper
 	{
-		glUtil_SetTexture(This->util, 3, cmd->dest->stencil);
-		This->ext->glUniform1i(shader->shader.uniforms[4],3);
+		glUtil_SetTexture(This->util, 11, cmd->dest->stencil);
+		This->ext->glUniform1i(shader->shader.uniforms[4],11);
 		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
 	}
 	if (cmd->src)
 	{
-		glUtil_SetTexture(This->util, 0, cmd->src);
+		glUtil_SetTexture(This->util, 8, cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))\
@@ -1751,7 +1761,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 			else glTexture__SetFilter(cmd->src, 0, GL_LINEAR, GL_LINEAR, This);
 		}
 	}
-	else glUtil_SetTexture(This->util,0,NULL);
+	else glUtil_SetTexture(This->util,8,NULL);
 	This->ext->glUniform4f(shader->shader.uniforms[0], 0,
 		(GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwWidth, 0, (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwHeight);
 	if (cmd->src) This->ext->glUniform4i(shader->shader.uniforms[10], cmd->src->colorsizes[0], cmd->src->colorsizes[1],

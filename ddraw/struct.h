@@ -450,6 +450,9 @@ typedef struct CommandBuffer
 typedef struct RenderState
 {
 	CommandBuffer *cmd;
+	DWORD last_cmd;
+	BYTE *last_cmd_start;
+	BltCommand last_blt;
 } RenderState;
 
 #endif //__STRUCT_H

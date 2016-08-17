@@ -48,10 +48,13 @@ typedef struct DeleteTextureCmd
 	DWORD size;
 	glTexture *texture;
 } DeleteTextureCmd;
-typedef struct BltCmd  // Frontend command structure for Blt command.
+typedef struct BltCmd
 {
 	DWORD opcode;
 	DWORD size;
 	BltCommand cmd;
+	DWORD count;
+	GLsizeiptr vertex_start;
+	GLsizeiptr index_start;
 } BltCmd;
 #endif //__STRUCT_COMMAND_H

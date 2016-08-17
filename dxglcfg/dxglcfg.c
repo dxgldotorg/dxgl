@@ -926,8 +926,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemAction & ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
-				!(drawitem->itemState & ODS_COMBOBOXEDIT))
+			if((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
 				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
@@ -942,6 +941,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
 			SetTextColor(drawitem->hDC,OldTextColor);
 			SetBkColor(drawitem->hDC,OldBackColor);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd,Msg,wParam,lParam);
 			break;
 		default:

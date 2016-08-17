@@ -506,8 +506,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		case IDC_EXTRAMODES:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if ((drawitem->itemAction | ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
-				!(drawitem->itemState & ODS_COMBOBOXEDIT))
+			if ((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
 				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
@@ -527,6 +526,8 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
 		default:
