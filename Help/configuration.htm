@@ -90,11 +90,13 @@
     <h3>Exclusive fullscreen</h3>
     Sets the display to fullscreen mode.  For Windows Vista and greater, causes the Windows graphics to be temporarily suspended, giving the GPU exclusive control of the screen.  This mode is the default and may have the best fullscreen performance.
     <h3>Non-exclusive fullscreen</h3>
-    Creates a window that fills the screen but tells the display driver not to take exclusive control of the screen.  This is also known as borderless windowed mode.  Try this mode if the application mixes DirectDraw with GDI and some graphics elements are missing.
-    In Windows Vista and greater, this mode may have reduced performance, increased lag, or choppy graphics.
+    Creates a window that fills the screen but tells the display driver not to take exclusive control of the screen.  Try this mode if the application mixes DirectDraw with GDI and some graphics elements are missing.
+    In Windows Vista and greater, this mode may have reduced performance, increased lag, or choppy graphics.  In Windows 8 and 8.1, this performance reduction may be significant due to an operating system flaw.
     <h3>Non-resizable window</h3>
     Forces the fullscreen application to display in a floating window.  Please note that some applications may capture the mouse and thus may cause compatibility issues.
     <h3>Resizable window</h3>
     Forces the fullscreen application to display in a floating window that can be resized or maximized.  Please note that some applications may capture the mouse and thus may cause compatibility issues.
+    <h3>Borderless window</h3>
+    Forces the application to display in a borderless pop-up window.  If the application is not running at the same resolution as the display, the window will be the same size as the application's display resolution.
   </body>
 </html>

@@ -290,7 +290,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			switch (dxglcfg.fullmode)
 			{
 			case 0:
-				// Fix fullscreen mode
+				// Fix exclusive fullscreen mode
 				if (lpDD7)
 				{
 					glDirectDraw7_GetSizes(lpDD7, sizes);
@@ -311,7 +311,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				}
 				break;
 			case 1:
-				// Fix borderless mode
+				// Fix non-exclusive fullscreen mode
 				if (lpDD7)
 				{
 					glDirectDraw7_GetSizes(lpDD7, sizes);
@@ -365,6 +365,26 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					{
 						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
 						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
+					}
+				}
+				break;
+			case 4:
+				// Fix borderless window mode
+				if (lpDD7)
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					GetWindowRect(hWnd, &r1);
+					GetClientRect(hWnd, &r2);
+					winstyle = GetWindowLong(hWnd, GWL_STYLE);
+					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP)) fixstyle = TRUE;
+					if (exstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+					if (fixstyle)
+					{
+						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+						SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
 					}
 				}
 				break;

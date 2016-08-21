@@ -17,9 +17,10 @@ REG_DWORD HKCU\DXGL\<app>\FullscreenWindowMode
 Determines how to handle fullscreen modes.
 Valid settings:
 0 - Use exclusive fullscreen
-1 - Use non-exclusive fullscreen aka borderless window
+1 - Use non-exclusive fullscreen, not quite borderless windowed mode
 2 - Use a non-resizable window
 3 - Use a resizable window, uses scaler mode, preferably 1, 2, 3, or 7
+4 - Use a borderless, non-resizable window, called windowed borderless in industry
 
 Member colormode
 REG_DWORD HKCU\DXGL\<app>\ChangeColorDepth

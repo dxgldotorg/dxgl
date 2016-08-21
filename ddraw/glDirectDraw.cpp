@@ -1926,7 +1926,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		}
 		break;
 	case 2:
-	case 3:  // Forced windowed modes
+	case 3:
+	case 4:  // Forced windowed modes
 		primaryx = internalx = screenx = dwWidth;
 		primaryy = internaly = screeny = dwHeight;
 		internalbpp = screenbpp = dwBPP;
