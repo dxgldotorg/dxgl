@@ -395,6 +395,13 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
+		case 5:    // Windowed borderless scaled
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			break;
 		}
 	}
 	if(width)
@@ -698,7 +705,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
 			ShowWindow(newwnd, SW_MAXIMIZE);
 			break;
-		case 1:    // Borderless Fullscreen
+		case 1:    // Non-exclusive Fullscreen
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
@@ -751,6 +758,13 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			wndrect.top = (screeny / 2) - (height / 2);
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		case 5:    // Windowed borderless scaled
+			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(newwnd, SW_MAXIMIZE);
 			break;
 		}
 	}

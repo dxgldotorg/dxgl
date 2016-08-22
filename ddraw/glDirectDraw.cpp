@@ -1642,7 +1642,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	{
 	case 0:
 	case 1:
-	default:  // Fullscreen modes and fallback
+	case 5:
+	default:  // Fullscreen modes, scaled borderless window, and fallback
 		switch (dxglcfg.scaler)
 		{
 		case 0: // No scaling, switch mode

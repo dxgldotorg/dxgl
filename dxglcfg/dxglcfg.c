@@ -569,6 +569,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Borderless window"));
 		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Borderless window (scaled)"));
+		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
 		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
 		// colormode
 		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
