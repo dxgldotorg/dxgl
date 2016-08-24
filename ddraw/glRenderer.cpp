@@ -1404,12 +1404,12 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	}
 	BufferObject_Create(&This->pbo, This->ext, This->util);
 	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
-	ZeroMemory(&This->state, sizeof(RenderState));
+	/*ZeroMemory(&This->state, sizeof(RenderState));
 	This->state.cmd = &This->cmd1;
 	glRenderer__InitCommandBuffer(This, &This->cmd1, width * height * (NextMultipleOf8(bpp) / 8));
 	glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
 	BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);*/
 	TRACE_SYSINFO();
 	return TRUE;
 }
