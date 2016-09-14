@@ -203,20 +203,62 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 		break;
 	case OP_BLT:  // Perform a Blt() operation, issuing necessary commands to set it
 		          // up.
+		// Compare last command minus rotation
 		if (This->state.last_cmd == OP_BLT)
 		{
-			
+			// Generate vertices
+			// Rotate vertices if necessary
+			// Write vertices to VBO
+			// Update command in buffer
 		}
 		if(restart_cmd)
 		{
-
+			// Run backbuffer if using dest
+			// Set Src texture (Unit 8)
+			// Set Dest texture (Unit 9)
+			// Set Pattern texture (Unit 10)
+			// Set clipper texture (Unit 11)
+			// Set shader mode and params
+			// Set render target
+			// Set viewport
+			// Generate vertices
+			// Rotate vertices if necessary
+			// Write vertices to VBO
+			// Write command to buffer
 		}
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_DRAWSCREEN:  // Draws the screen.  Flip command buffer after executing.
+		// If 8 bit scaled linear:
+		//  Set Src texture (Unit 8) to primary
+		//  Set Palette texture (Unit 9) to palette
+		//  Set shader mode and params
+		//  Set render target to backbuffer
+		//  Set viewport to backbuffer
+		//  Generate vertices
+		//  Write vertices to FBO
+		//  Write Palette draw command to buffer
+		//  Set Src texture (Unit 8) to backbuffer
+		//  Set shader mode and params
+		//  Set render target to null
+		//  Set viewport to window buffer
+		//  Generate vertices
+		//  Write vertices to VBO
+		//  Write Draw command to buffer
+		// If 8-bit unscaled or scaled nearest:
+		//  Set Src texture (Unit 8) to primary
+		//  Set Palette texture (Unit 9) to palette
+		//  Set shader mode and params
+		//  Set render target to null
+		//  Set viewport to window buffer
+		//  Generate vertices
+		//  Write vertices to VBO
+		//  Write Palette Draw command to buffer
 		error = DDERR_UNSUPPORTED;
 		break;
 	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
+		// Set initial viewport
+		// Post InitD3D command
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_CLEAR:  // Clears full renderbuffer or one or more rects.
@@ -562,6 +604,11 @@ void glRenderer_DeleteTexture(glRenderer *This, glTexture * texture)
   */
 HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 {
+	/*BltCmd bltcmd;
+	bltcmd.opcode = OP_DELETE;
+	bltcmd.zise = sizeof(BltCmd) - 8;
+	bltcmd.cmd = *cmd;
+	glRenderer_AddCommand(This, (BYTE*)&bltcmd);*/
 	EnterCriticalSection(&This->cs);
 	RECT r,r2;
 	if(((cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
@@ -590,15 +637,21 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
   *  Texture to use as the primary
   * @param paltex
   *  Texture that contains the color palette for 8-bit modes
-  * @param dest
-  *  Destination surface to be updated
-  * @param src
-  *  Source surface to be updated
   * @param vsync
   *  Vertical sync count
+  * @param previous
+  *  Texture previously used as primary before a flip
   */
 void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous)
 {
+	/*DrawScreenCmd cmd;
+	cmd.opcode = OP_DRAWSCREEN;
+	cmd.size = sizeof(DrawScreenCmd)-8;
+	cmd.texture = texture;
+	cmd.paltex =paltex;
+	cmd.vsync = vsync;
+	cmd.previous = previous;
+	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = paltex;
@@ -616,9 +669,21 @@ void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *palt
   *  Pointer to glRenderer object
   * @param zbuffer
   *  Nonzero if a Z buffer is present.
+  * @param x
+  *  Width of the initial viewport
+  * @param y
+  *  Height of the initial viewport
   */
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
+	/*
+	InitD3DCmd cmd;
+	cmd.opcode = OP_INITD3D;
+	cmd.size = sizeof(InitD3DCmd)-8;
+	cmd.zbuffer = zbuffer;
+	cmd.x = x;
+	cmd.y = y;
+	glRenderer_AddCommand(This, (BYTE*)&bltcmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = (void*)zbuffer;
 	This->inputs[1] = (void*)x;
@@ -640,6 +705,12 @@ void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
   */
 HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd)
 {
+	/*
+	ClearCmd cmd;
+	clearcmd.opcode = OP_CLEAR;
+	clearcmd.size = sizeof(ClearCmd) - 8;
+	clearcmd.cmd = *cmd;
+	glRenderer_AddCommand(This, (BYTE*)&clearcmd); */
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = cmd;
 	This->opcode = OP_CLEAR;
@@ -651,7 +722,7 @@ HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd)
 
 /**
   * Instructs the OpenGL driver to send all queued commands to the GPU.
-  * @param Thisf
+  * @param This
   *  Pointer to glRenderer object
   */
 void glRenderer_Flush(glRenderer *This)
@@ -1404,12 +1475,12 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	}
 	BufferObject_Create(&This->pbo, This->ext, This->util);
 	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
-	/*ZeroMemory(&This->state, sizeof(RenderState));
+	ZeroMemory(&This->state, sizeof(RenderState));
 	This->state.cmd = &This->cmd1;
 	glRenderer__InitCommandBuffer(This, &This->cmd1, width * height * (NextMultipleOf8(bpp) / 8));
 	glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
 	BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);*/
+	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	TRACE_SYSINFO();
 	return TRUE;
 }
@@ -1987,10 +2058,10 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,0);
 		progtype = PROG_PAL256;
 		glTexture__Upload(paltex, 0);
-		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
-		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,1);
-		glUtil_SetTexture(This->util,0,texture);
-		glUtil_SetTexture(This->util,1,paltex);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,9);
+		glUtil_SetTexture(This->util,8,texture);
+		glUtil_SetTexture(This->util,9,paltex);
 		if(dxglcfg.scalingfilter)
 		{
 			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype);
@@ -2001,16 +2072,16 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		}
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			glTexture__SetFilter(NULL, 0, GL_NEAREST, GL_NEAREST, This);
-			glTexture__SetFilter(NULL, 1, GL_NEAREST, GL_NEAREST, This);
+			glTexture__SetFilter(NULL, 8, GL_NEAREST, GL_NEAREST, This);
+			glTexture__SetFilter(NULL, 9, GL_NEAREST, GL_NEAREST, This);
 		}
 	}
 	else
 	{
 		ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 		progtype = PROG_TEXTURE;
-		glUtil_SetTexture(This->util,0,texture);
-		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,0);
+		glUtil_SetTexture(This->util,8,texture);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 	}
 	if (dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
 		glTexture__SetFilter(NULL, 0, GL_LINEAR, GL_LINEAR, This);
@@ -2198,7 +2269,8 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 	memcpy(&This->renderstate, &renderstate_default, 153 * sizeof(DWORD));
 	This->texstages[0] = texstagedefault0;
 	This->texstages[1] = This->texstages[2] = This->texstages[3] = This->texstages[4] =
-		This->texstages[5] = This->texstages[6] = This->texstages[7] = texstagedefault1;
+		This->texstages[5] = This->texstages[6] = This->texstages[7] = This->texstages[8] =
+		This->texstages[9] = This->texstages[10] = This->texstages[11] = texstagedefault1;
 	This->viewport.dwX = 0;
 	This->viewport.dwY = 0;
 	This->viewport.dwWidth = x;

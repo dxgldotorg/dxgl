@@ -27,10 +27,7 @@ extern const SHADER shader_template[];
 
 #define PROG_TEXTURE 0
 #define PROG_PAL256 1
-#define PROG_CKEY 2
-#define PROG_CKEYMASK 3
-#define PROG_2CKEY 4
-#define PROG_CLIPSTENCIL 5
+#define PROG_CLIPSTENCIL 2
 
 struct TEXTURESTAGE;
 struct ShaderGen3D;

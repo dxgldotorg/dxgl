@@ -47,49 +47,6 @@ void main() \n\
 	gl_FragColor = texel; \n\
 } ";
 
-const char frag_ColorKey[] = "\
-#version 110\n\
-uniform sampler2D tex0;\n\
-uniform ivec3 ckey;\n\
-void main (void)\n\
-{\n\
- vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec3 comp = ivec3(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
- if (comp == ckey)\n\
-  discard;\n\
- gl_FragColor = value;\n\
-} ";
-
-const char frag_ColorKeyMask[] = "\
-#version 110\n\
-uniform sampler2D tex0;\n\
-uniform ivec4 ckey;\n\
-void main (void)\n\
-{\n\
- vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
- if (comp == ckey)\n\
-  gl_FragColor[0] = 1.0;\n\
- else gl_FragColor[0] = 0.0;\n\
-} ";
-
-const char frag_2ColorKey[] = "\
-#version 110\n\
-uniform sampler2D tex0;\n\
-uniform sampler2D tex1;\n\
-uniform ivec4 ckey;\n\
-void main (void)\n\
-{\n\
- vec4 value = texture2D(tex0, vec2(gl_TexCoord[0]));\n\
- ivec4 comp = ivec4(texture2D(tex0, vec2(gl_TexCoord[0]))*255.5);\n\
- if (comp == ckey)\n\
-  discard;\n\
- ivec4 comp2 = ivec4(texture2D(tex1,vec2(gl_TexCoord[1]))*255.5);\n\
- if(comp2[0] == 0)\n\
-  discard;\n\
- gl_FragColor = value;\n\
-} ";
-
 const char frag_clipstencil[] = "\
 #version 110\n\
 void main (void)\n\
@@ -123,9 +80,6 @@ const SHADER shader_template[] =
 {
 	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_ColorKey,		0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_ColorKeyMask,	0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_2ColorKey,		0,-1,-1,-1},
 	{0,0,	vert_ortho,			frag_clipstencil,	0,-1,-1,-1}
 };
 const int SHADER_END = __LINE__ - 4;

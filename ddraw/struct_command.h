@@ -53,8 +53,28 @@ typedef struct BltCmd
 	DWORD opcode;
 	DWORD size;
 	BltCommand cmd;
-	DWORD count;
-	GLsizeiptr vertex_start;
-	GLsizeiptr index_start;
 } BltCmd;
+typedef struct DrawScreenCmd
+{
+	DWORD opcode;
+	DWORD size;
+	glTexture *texture;
+	glTexture *paltex;
+	GLint vsync;
+	glTexture *previous;
+};
+typedef struct InitD3DCmd
+{
+	DWORD opcode;
+	DWORD size;
+	int zbuffer;
+	int x;
+	int y;
+};
+typedef struct ClearCmd
+{
+	DWORD opcode;
+	DWORD size;
+	ClearCommand cmd;
+};
 #endif //__STRUCT_COMMAND_H

@@ -152,7 +152,7 @@ typedef struct glRenderer
 	ShaderManager *shaders;
 	DWORD renderstate[153];
 	SHADERSTATE shaderstate3d;
-	TEXTURESTAGE texstages[8];
+	TEXTURESTAGE texstages[12];
 	D3DMATERIAL7 material;
 	D3DLIGHT7 lights[8];
 	D3DMATRIX transform[24];
