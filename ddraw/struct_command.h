@@ -62,7 +62,7 @@ typedef struct DrawScreenCmd
 	glTexture *paltex;
 	GLint vsync;
 	glTexture *previous;
-};
+} DrawScreenCmd;
 typedef struct InitD3DCmd
 {
 	DWORD opcode;
@@ -70,11 +70,22 @@ typedef struct InitD3DCmd
 	int zbuffer;
 	int x;
 	int y;
-};
+} InitD3DCmd;
 typedef struct ClearCmd
 {
 	DWORD opcode;
 	DWORD size;
 	ClearCommand cmd;
-};
+} ClearCmd;
+typedef struct FlushCmd
+{
+	DWORD opcode;
+	DWORD size;
+} FlushCmd;
+typedef struct DrawPrimitivesCmd
+{
+	DWORD opcode;
+	DWORD size;
+	// Add params
+} DrawPrimitivesCmd;
 #endif //__STRUCT_COMMAND_H

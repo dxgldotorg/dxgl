@@ -21,10 +21,8 @@
 #include "glUtil.h"
 #include "timer.h"
 #include "glDirectDraw.h"
-#include "glDirectDrawSurface.h"
 #include "glRenderWindow.h"
 #include "glRenderer.h"
-#include "glDirect3DDevice.h"
 #include "ddraw.h"
 #include "ShaderGen3D.h"
 #include "matrix.h"
@@ -254,10 +252,11 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 		//  Generate vertices
 		//  Write vertices to VBO
 		//  Write Palette Draw command to buffer
-		error = DDERR_UNSUPPORTED;
+		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
 		// Set initial viewport
+		// Initialize texture stages 0 through 7
 		// Post InitD3D command
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
@@ -265,7 +264,8 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 					// Size should hold number of rects plus each rect, or 0 for screen.
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
-	case OP_FLUSH:  // Probably should consider retiring this one.  Flip buffers if called.
+	case OP_FLUSH:  // Probably should consider retiring this one.  Flip buffers if called
+					// to ensure the renderer gets flushed.
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_DRAWPRIMITIVES:  // Add primitives to the render buffer, check and adjust buffer
@@ -308,7 +308,10 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 	case OP_DXGLBREAK:  // Breakpoint command, flip buffers and wait or just add to command stream?
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
-	case OP_SETMODE2D:  // Set up renderer for 2D DirectDraw commands.
+	case OP_ENDCOMMAND:  // Not for this section.
+		error = DDERR_INVALIDPARAMS;
+		break;
+	case OP_INITTEXTURESTAGE:  // Initializes a texture stage.
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	default:
@@ -837,8 +840,8 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
   * Draws one or more primitives to the currently selected render target.
   * @param This
   *  Pointer to glRenderer object
-  * @param device
-  *  glDirect3DDevice7 interface to use for drawing
+  * @param target
+  *  Textures and mip levels of the current render target
   * @param mode
   *  OpenGL primitive drawing mode to use
   * @param vertices
@@ -861,11 +864,10 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
   *  D3D_OK if the call succeeds, or D3DERR_INVALIDVERTEXTYPE if the vertex format
   *  has no position coordinates.
   */
-HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+HRESULT glRenderer_DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
 	EnterCriticalSection(&This->cs);
-	This->inputs[0] = device;
 	This->inputs[1] = (void*)mode;
 	This->inputs[2] = vertices;
 	This->inputs[3] = texformats;
@@ -873,6 +875,7 @@ HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, G
 	This->inputs[5] = indices;
 	This->inputs[6] = (void*)indexcount;
 	This->inputs[7] = (void*)flags;
+	memcpy(&This->inputs[8], target, sizeof(RenderTarget));
 	This->opcode = OP_DRAWPRIMITIVES;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -1276,7 +1279,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__Flush(This);
 			break;
 		case OP_DRAWPRIMITIVES:
-			glRenderer__DrawPrimitives(This,(glDirect3DDevice7*)This->inputs[0],(GLenum)This->inputs[1],
+			glRenderer__DrawPrimitives(This,(RenderTarget*)&This->inputs[8],(GLenum)This->inputs[1],
 				(GLVERTEX*)This->inputs[2],(int*)This->inputs[3],(DWORD)This->inputs[4],(LPWORD)This->inputs[5],
 				(DWORD)This->inputs[6],(DWORD)This->inputs[7]);
 			break;
@@ -2505,7 +2508,7 @@ void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
 	glUtil_BlendFunc(This->util, glsrc, gldest);
 }
 
-void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
 	bool transformed;
@@ -2516,10 +2519,10 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	int i;
 	glTexture *ztexture = NULL;
 	GLint zlevel = 0;
-	if (device->glDDS7->zbuffer)
+	if (target->zbuffer)
 	{
-		ztexture = device->glDDS7->zbuffer->texture;
-		zlevel = device->glDDS7->zbuffer->miplevel;
+		ztexture = target->zbuffer;
+		zlevel = target->zlevel;
 	}
 	if(vertices[1].data) transformed = true;
 	else transformed = false;
@@ -2720,21 +2723,21 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	if(prog->uniforms[139]!= -1) This->ext->glUniform1f(prog->uniforms[139],This->viewport.dwX);
 	if(prog->uniforms[140]!= -1) This->ext->glUniform1f(prog->uniforms[140],This->viewport.dwY);
 	if(prog->uniforms[141]!= -1) This->ext->glUniform1i(prog->uniforms[141],This->renderstate[D3DRENDERSTATE_ALPHAREF]);
-	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)device->glDDS7->texture->colorbits);
+	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)target->target->colorbits);
 	do
 	{
-		if (glUtil_SetFBOSurface(This->util, device->glDDS7->texture, ztexture,
-			device->glDDS7->miplevel, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
-		if (!device->glDDS7->texture->internalformats[1]) break;
-		glTexture__Repair(device->glDDS7->texture, TRUE);
+		if (glUtil_SetFBOSurface(This->util, target->target, ztexture,
+			target->level, zlevel, FALSE) == GL_FRAMEBUFFER_COMPLETE) break;
+		if (!target->target->internalformats[1]) break;
+		glTexture__Repair(target->target, TRUE);
 		glUtil_SetFBO(This->util, NULL);
-		device->glDDS7->texture->levels[device->glDDS7->miplevel].fbo.fbcolor = NULL;
-		device->glDDS7->texture->levels[device->glDDS7->miplevel].fbo.fbz = NULL;
+		target->target->levels[target->level].fbo.fbcolor = NULL;
+		target->target->levels[target->level].fbo.fbz = NULL;
 	} while (1);
-	glUtil_SetViewport(This->util, (int)((float)This->viewport.dwX*device->glDDS7->mulx),
-		(int)((float)This->viewport.dwY*device->glDDS7->muly),
-		(int)((float)This->viewport.dwWidth*device->glDDS7->mulx),
-		(int)((float)This->viewport.dwHeight*device->glDDS7->muly));
+	glUtil_SetViewport(This->util, (int)((float)This->viewport.dwX*target->mulx),
+		(int)((float)This->viewport.dwY*target->muly),
+		(int)((float)This->viewport.dwWidth*target->mulx),
+		(int)((float)This->viewport.dwHeight*target->muly));
 	glUtil_SetDepthRange(This->util, This->viewport.dvMinZ, This->viewport.dvMaxZ);
 	if (This->renderstate[D3DRENDERSTATE_ALPHABLENDENABLE]) glUtil_BlendEnable(This->util, TRUE);
 	else glUtil_BlendEnable(This->util, FALSE);
@@ -2748,8 +2751,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLe
 	glUtil_SetShadeMode(This->util, (D3DSHADEMODE)This->renderstate[D3DRENDERSTATE_SHADEMODE]);
 	if(indices) glDrawElements(mode,indexcount,GL_UNSIGNED_SHORT,indices);
 	else glDrawArrays(mode,0,count);
-	if(device->glDDS7->zbuffer) device->glDDS7->zbuffer->texture->levels[device->glDDS7->miplevel].dirty |= 2;
-	device->glDDS7->texture->levels[device->glDDS7->miplevel].dirty |= 2;
+	if(target->zbuffer) target->zbuffer->levels[target->zlevel].dirty |= 2;
+	target->target->levels[target->level].dirty |= 2;
 	if(flags & D3DDP_WAIT) glFlush();
 	This->outputs[0] = (void*)D3D_OK;
 	SetEvent(This->busy);

@@ -109,7 +109,7 @@ typedef struct TEXTURESTAGE
 #define OP_SETTEXTURECOLORKEY		23
 #define OP_MAKETEXTUREPRIMARY       24
 #define OP_ENDCOMMAND				25
-#define OP_SETMODE2D				26
+#define OP_INITTEXTURESTAGE			26
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -158,6 +158,7 @@ typedef struct glRenderer
 	D3DMATRIX transform[24];
 	D3DVIEWPORT7 viewport;
 	CommandBuffer cmd1, cmd2;
+	float mulx, muly;
 	RenderState state;
 	size_t scenesize, scenesizevertex, scenesizeindex;
 } glRenderer;
@@ -177,7 +178,7 @@ void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer_Flush(glRenderer *This);
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd);
 HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd);
-HRESULT glRenderer_DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+HRESULT glRenderer_DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 //void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
 void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
@@ -210,7 +211,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype);
 void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer__Clear(glRenderer *This, ClearCommand *cmd);
-void glRenderer__DrawPrimitives(glRenderer *This, glDirect3DDevice7 *device, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
+void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);

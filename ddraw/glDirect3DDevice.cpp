@@ -920,6 +920,7 @@ HRESULT glDirect3DDevice7::fvftoglvertex(DWORD dwVertexTypeDesc,LPDWORD vertptr)
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
 {
+	RenderTarget target;
 	TRACE_ENTER(8,9,d3dptPrimitiveType,9,dwVertexTypeDesc,14,lpvVertices,8,dwVertexCount,14,lpwIndices,8,dwIndexCount,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!inscene) TRACE_RET(HRESULT,23,D3DERR_SCENE_NOT_IN_SCENE);
@@ -927,7 +928,21 @@ HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPri
 	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&stats);
 	else AddStats(d3dptPrimitiveType,dwVertexCount,&stats);
 	if(err != D3D_OK) TRACE_RET(HRESULT,23,err);
-	TRACE_RET(HRESULT,23,glRenderer_DrawPrimitives(renderer,this,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
+	target.target = glDDS7->texture;
+	target.level = glDDS7->miplevel;
+	target.mulx = glDDS7->mulx;
+	target.muly = glDDS7->muly;
+	if (glDDS7->zbuffer)
+	{
+		target.zbuffer = glDDS7->zbuffer->texture;
+		target.zlevel = glDDS7->zbuffer->miplevel;
+	}
+	else
+	{
+		target.zbuffer = NULL;
+		target.zlevel = 0;
+	}
+	TRACE_RET(HRESULT,23,glRenderer_DrawPrimitives(renderer,&target,setdrawmode(d3dptPrimitiveType),vertdata,texformats,
 		dwVertexCount,lpwIndices,dwIndexCount,dwFlags));
 }
 HRESULT WINAPI glDirect3DDevice7::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,

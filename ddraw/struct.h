@@ -455,4 +455,14 @@ typedef struct RenderState
 	BltCommand last_blt;
 } RenderState;
 
+typedef struct RenderTarget
+{
+	glTexture *target;
+	glTexture *zbuffer;
+	GLint level;
+	GLint zlevel;
+	float mulx;
+	float muly;
+} RenderTarget;
+
 #endif //__STRUCT_H
