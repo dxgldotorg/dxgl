@@ -465,4 +465,23 @@ typedef struct RenderTarget
 	float muly;
 } RenderTarget;
 
+typedef struct GLCAPS
+{
+	float Version;
+	float ShaderVer;
+	GLint TextureMax;
+} GLCAPS;
+
+typedef struct GLVERTEX
+{
+	void *data;
+	int stride;
+} GLVERTEX;
+
+typedef struct SHADERSTATE
+{
+	__int64 stateid;
+	__int64 texstageid[8];
+} SHADERSTATE;
+
 #endif //__STRUCT_H

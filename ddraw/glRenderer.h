@@ -18,25 +18,6 @@
 #ifndef _GLRENDERER_H
 #define _GLRENDERER_H
 
-typedef struct
-{
-	float Version;
-	float ShaderVer;
-	GLint TextureMax;
-} GLCAPS;
-
-typedef struct
-{
-	void *data;
-	int stride;
-} GLVERTEX;
-
-typedef struct
-{
-	__int64 stateid;
-	__int64 texstageid[8];
-} SHADERSTATE;
-
 #ifdef __cplusplus
 class glDirectDraw7;
 class glDirect3DDevice7;
@@ -104,12 +85,13 @@ typedef struct TEXTURESTAGE
 #define OP_SETTRANSFORM				18
 #define OP_SETMATERIAL				19
 #define OP_SETLIGHT					20
-#define OP_SETVIEWPORT				21
-#define OP_DXGLBREAK                22
-#define OP_SETTEXTURECOLORKEY		23
-#define OP_MAKETEXTUREPRIMARY       24
-#define OP_ENDCOMMAND				25
-#define OP_INITTEXTURESTAGE			26
+#define OP_REMOVELIGHT				21
+#define OP_SETVIEWPORT				22
+#define OP_DXGLBREAK                23
+#define OP_SETTEXTURECOLORKEY		24
+#define OP_MAKETEXTUREPRIMARY       25
+#define OP_ENDCOMMAND				26
+#define OP_INITTEXTURESTAGE			27
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -190,7 +172,8 @@ void glRenderer_SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture);
 void glRenderer_SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
 void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
-void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
+void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light);
+void glRenderer_RemoveLight(glRenderer *This, DWORD index);
 void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
@@ -231,7 +214,8 @@ void glRenderer__SetTexture(glRenderer *This, DWORD dwStage, glTexture *Texture)
 void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue);
 void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix);
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
-void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove);
+void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light);
+void glRenderer__RemoveLight(glRenderer *This, DWORD index);
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);

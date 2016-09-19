@@ -1284,7 +1284,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 			{
 				foundlight = true;
 				gllights[i] = dwLightIndex;
-				glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light, FALSE);
+				glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light);
 				break;
 			}
 		}
@@ -1297,7 +1297,7 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 			if(gllights[i] == dwLightIndex)
 			{
 				gllights[i] = -1;
-				glRenderer_SetLight(renderer, i, NULL, TRUE);
+				glRenderer_RemoveLight(renderer, i);
 			}
 		}
 		TRACE_EXIT(23,D3D_OK);
@@ -1363,7 +1363,7 @@ HRESULT WINAPI glDirect3DDevice7::SetLight(DWORD dwLightIndex, LPD3DLIGHT7 lpLig
 	lights[dwLightIndex]->SetLight7(lpLight);
 	for (int i = 0; i < 8; i++)
 	{
-		if (gllights[i] == dwLightIndex) glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light, FALSE);
+		if (gllights[i] == dwLightIndex) glRenderer_SetLight(renderer, i, &lights[gllights[i]]->light);
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

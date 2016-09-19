@@ -979,7 +979,7 @@ void glRenderer_SetRenderState(glRenderer *This, D3DRENDERSTATETYPE dwRendStateT
   * @param This
   *  Pointer to glRenderer object
   * @param dwStage
-  *  Texture stage to bind
+  *  Texture stage to bind (8 through 11 are reserved for 2D drawing)
   * @param Texture
   *  Texture to bind to the stage; NULL to unbind
   */
@@ -1062,17 +1062,31 @@ void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
   *  Index of light to set
   * @param light
   *  Pointer to light to change, ignored if remove is TRUE
-  * @param remove
-  *  TRUE to clear a light from the renderer.
   */
 
-void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
+void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = (void*)index;
 	This->inputs[1] = light;
-	This->inputs[2] = (void*)remove;
 	This->opcode = OP_SETLIGHT;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
+  * Removes a light from the renderer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param index
+  *  Index of light to remove
+  */
+void glRenderer_RemoveLight(glRenderer *This, DWORD index)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = (void*)index;
+	This->opcode = OP_REMOVELIGHT;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy, INFINITE);
 	LeaveCriticalSection(&This->cs);
@@ -1307,7 +1321,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__SetMaterial(This, (LPD3DMATERIAL7)This->inputs[0]);
 			break;
 		case OP_SETLIGHT:
-			glRenderer__SetLight(This, (DWORD)This->inputs[0], (LPD3DLIGHT7)This->inputs[1], (BOOL)This->inputs[2]);
+			glRenderer__SetLight(This, (DWORD)This->inputs[0], (LPD3DLIGHT7)This->inputs[1]);
+			break;
+		case OP_REMOVELIGHT:
+			glRenderer__RemoveLight(This, (DWORD)This->inputs[0]);
 			break;
 		case OP_SETVIEWPORT:
 			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
@@ -3207,12 +3224,11 @@ void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial)
 	SetEvent(This->busy);
 }
 
-void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL remove)
+void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light)
 {
 	int numlights = 0;
 	int lightindex = 0;
-	if(!remove)memcpy(&This->lights[index], light, sizeof(D3DLIGHT7));
-	else ZeroMemory(&This->lights[index], sizeof(D3DLIGHT7));
+	memcpy(&This->lights[index], light, sizeof(D3DLIGHT7));
 	SetEvent(This->busy);
 	for (int i = 0; i < 8; i++)
 		if (This->lights[i].dltType) numlights++;
@@ -3230,6 +3246,29 @@ void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light, BOOL
 		}
 	}
 
+}
+
+void glRenderer__RemoveLight(glRenderer *This, DWORD index)
+{
+	int numlights = 0;
+	int lightindex = 0;
+	ZeroMemory(&This->lights[index], sizeof(D3DLIGHT7));
+	SetEvent(This->busy);
+	for (int i = 0; i < 8; i++)
+		if (This->lights[i].dltType) numlights++;
+	This->shaderstate3d.stateid &= 0xF807C03FFFE3FFFFi64;
+	This->shaderstate3d.stateid |= ((__int64)numlights << 18);
+	for (int i = 0; i < 8; i++)
+	{
+		if (This->lights[i].dltType != 1)
+		{
+			if (This->lights[i].dltType != D3DLIGHT_DIRECTIONAL)
+				This->shaderstate3d.stateid |= (1i64 << (38 + lightindex));
+			if (This->lights[i].dltType == D3DLIGHT_SPOT)
+				This->shaderstate3d.stateid |= (1i64 << (51 + lightindex));
+			lightindex++;
+		}
+	}
 }
 
 void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)

@@ -86,6 +86,88 @@ typedef struct DrawPrimitivesCmd
 {
 	DWORD opcode;
 	DWORD size;
-	// Add params
+	RenderTarget *target;
+	GLenum mode;
+	GLVERTEX *vertices;
+	int *texformats;
+	DWORD count;
+	LPWORD indices;
 } DrawPrimitivesCmd;
+typedef struct UpdateClipperCmd
+{
+	DWORD opcode;
+	DWORD size;
+	glTexture *stencil;
+	GLushort *indices;
+	BltVertex *vertices;
+	GLsizei count;
+	GLsizei width;
+	GLsizei height;
+} UpdateClipperCmd;
+typedef struct DepthFillCmd
+{
+	DWORD opcode;
+	DWORD size;
+	BltCommand cmd;
+	glTexture *parent;
+	GLint parentlevel;
+} DepthFillCmd;
+typedef struct SetRenderStateCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	D3DRENDERSTATETYPE dwRendStateType;
+	DWORD dwRenderState;
+	// For count over 1, use additional pairs to store state changes.
+} SetRenderStateCmd;
+typedef struct SetTextureCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	DWORD stage;
+	glTexture *texture;
+	// For count over 1, use additional pairs to store texture changes.
+} SetTextureCmd;
+typedef struct SetTextureStageStateCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	DWORD dwStage;
+	D3DTEXTURESTAGESTATETYPE dwState;
+	DWORD dwValue;
+	// For count over 1, use additional sets to store texture state changes.
+} SetTextureStageStateCmd;
+typedef struct SetTransformCmd
+{
+	DWORD opcode;
+	DWORD size;
+	D3DTRANSFORMSTATETYPE dtstTransformStateType;
+	D3DMATRIX matrix;
+} SetTransformCmd;
+typedef struct SetMaterialCmd
+{
+	DWORD opcode;
+	DWORD size;
+	D3DMATERIAL7 material;
+} SetMaterialCmd;
+typedef struct SetLightCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	DWORD index;
+	D3DLIGHT7 light;
+	// For count over 1, use additional pairs to store lights
+} SetLightCmd;
+typedef struct RemoveLightCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	DWORD index;
+	// For count over 1, use additional indices
+} RemoveLightCmd;
 #endif //__STRUCT_COMMAND_H
