@@ -86,7 +86,7 @@ typedef struct TEXTURESTAGE
 #define OP_SETMATERIAL				19
 #define OP_SETLIGHT					20
 #define OP_REMOVELIGHT				21
-#define OP_SETVIEWPORT				22
+#define OP_SETD3DVIEWPORT			22
 #define OP_DXGLBREAK                23
 #define OP_SETTEXTURECOLORKEY		24
 #define OP_MAKETEXTUREPRIMARY       25
@@ -174,7 +174,7 @@ void glRenderer_SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransfo
 void glRenderer_SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer_SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light);
 void glRenderer_RemoveLight(glRenderer *This, DWORD index);
-void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
+void glRenderer_SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer_DXGLBreak(glRenderer *This);
@@ -216,7 +216,7 @@ void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransf
 void glRenderer__SetMaterial(glRenderer *This, LPD3DMATERIAL7 lpMaterial);
 void glRenderer__SetLight(glRenderer *This, DWORD index, LPD3DLIGHT7 light);
 void glRenderer__RemoveLight(glRenderer *This, DWORD index);
-void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
+void glRenderer__SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer__SetDepthComp(glRenderer *This);

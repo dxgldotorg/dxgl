@@ -25,7 +25,6 @@
 #include <MMSystem.h>
 #include "include/winedef.h"
 #include "include/ddraw.h"
-#define D3D_OVERLOADS
 #include "include/d3d.h"
 #include "GL/gl.h"
 #include "include/GL/glext.h"

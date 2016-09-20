@@ -296,7 +296,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 	case OP_SETLIGHT:  // Sets one of the Direct3D fixed-function light states.
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
-	case OP_SETVIEWPORT:  // Sets the Direct3D viewport.  May be 
+	case OP_SETD3DVIEWPORT:  // Sets the Direct3D viewport.  May be 
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_SETTEXTURECOLORKEY:  // Sets a color key or colorkey range on a texture object.
@@ -1093,17 +1093,17 @@ void glRenderer_RemoveLight(glRenderer *This, DWORD index)
 }
 
 /**
-  * Sets the viewport for the renderer.
+  * Sets the Direct3D viewport for the renderer.
   * @param This
   *  Pointer to glRenderer object
   * @param lpViewport
   *  New viewport parameters for renderer.
   */
-void glRenderer_SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
+void glRenderer_SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = lpViewport;
-	This->opcode = OP_SETVIEWPORT;
+	This->opcode = OP_SETD3DVIEWPORT;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy, INFINITE);
 	LeaveCriticalSection(&This->cs);
@@ -1186,7 +1186,11 @@ void glRenderer_DXGLBreak(glRenderer *This)
 void glRenderer_EndCommand(glRenderer *This, BOOL wait, BOOL in_cs)
 {
 	if (!in_cs) EnterCriticalSection(&This->cs);
-	if (!This->state.cmd->write_ptr_cmd) return;  // Don't flip buffers if the front one is empty.
+	if (!This->state.cmd->write_ptr_cmd)
+	{
+		if (!in_cs) LeaveCriticalSection(&This->cs);
+		return;  // Don't flip buffers if the front one is empty.
+	}
 	This->opcode = OP_ENDCOMMAND;
 	This->inputs[0] = (void*)wait;
 	SetEvent(This->start);
@@ -1326,8 +1330,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 		case OP_REMOVELIGHT:
 			glRenderer__RemoveLight(This, (DWORD)This->inputs[0]);
 			break;
-		case OP_SETVIEWPORT:
-			glRenderer__SetViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
+		case OP_SETD3DVIEWPORT:
+			glRenderer__SetD3DViewport(This, (LPD3DVIEWPORT7)This->inputs[0]);
 			break;
 		case OP_SETTEXTURECOLORKEY:
 			glRenderer__SetTextureColorKey(This, (glTexture*)This->inputs[0], (DWORD)This->inputs[1],
@@ -3271,7 +3275,7 @@ void glRenderer__RemoveLight(glRenderer *This, DWORD index)
 	}
 }
 
-void glRenderer__SetViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
+void glRenderer__SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport)
 {
 	memcpy(&This->viewport, lpViewport, sizeof(D3DVIEWPORT7));
 	SetEvent(This->busy);

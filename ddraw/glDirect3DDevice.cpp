@@ -1711,7 +1711,7 @@ HRESULT WINAPI glDirect3DDevice7::SetViewport(LPD3DVIEWPORT7 lpViewport)
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	memcpy(&viewport,lpViewport,sizeof(D3DVIEWPORT7));
 	transform_dirty = true;
-	glRenderer_SetViewport(renderer, lpViewport);
+	glRenderer_SetD3DViewport(renderer, lpViewport);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
