@@ -145,7 +145,7 @@ typedef struct glRenderer
 	size_t scenesize, scenesizevertex, scenesizeindex;
 } glRenderer;
 
-HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner);
+HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *command, BOOL inner);
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
 DWORD glRenderer_GetBPP(glRenderer *This);

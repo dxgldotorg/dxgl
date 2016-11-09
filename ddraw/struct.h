@@ -447,14 +447,6 @@ typedef struct CommandBuffer
 	size_t read_ptr_index;
 } CommandBuffer;
 
-typedef struct RenderState
-{
-	CommandBuffer *cmd;
-	DWORD last_cmd;
-	BYTE *last_cmd_start;
-	BltCommand last_blt;
-} RenderState;
-
 typedef struct RenderTarget
 {
 	glTexture *target;

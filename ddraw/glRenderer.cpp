@@ -26,6 +26,7 @@
 #include "ddraw.h"
 #include "ShaderGen3D.h"
 #include "matrix.h"
+#include "util.h"
 
 extern "C" {
 
@@ -96,8 +97,10 @@ inline int _6to8bit(int number)
   *  Pointer to glRenderer object
   * @param cmdsize
   *  Requested size for command buffer
+  * @return
+  *  TRUE if ending command, FALSE otherwise
   */
-void CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD vertexsize, DWORD indexsize)
+BOOL CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD vertexsize, DWORD indexsize)
 {
 	BOOL over = FALSE;
 	if (cmdsize)
@@ -120,7 +123,12 @@ void CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
 		if ((This->state.cmd->write_ptr_index + indexsize) > This->state.cmd->indices->size)
 			over = TRUE;
 	}
-	if (over) glRenderer_EndCommand(This, FALSE, TRUE);
+	if (over)
+	{
+		glRenderer_EndCommand(This, FALSE, TRUE);
+		return TRUE;
+	}
+	else return FALSE;
 }
 
 /**
@@ -136,12 +144,8 @@ void CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
   * @return
   *  Return value specific to command, DD_OK if succeeded.
   */
-HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
+HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner)
 {
-	DWORD opcode = (DWORD)*command;
-	DWORD cmdsize = (DWORD)*((unsigned char*)command + 4);
-	BYTE *cmddata = command + 8;
-	SetWndCommand *wndcmd = (SetWndCommand*)cmddata;
 	HRESULT error;
 	// Command specific variables
 	RECT wndrect;
@@ -149,7 +153,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 	LONG_PTR winstyle, winstyleex;
 	BOOL restart_cmd = FALSE;
 	if (!inner) EnterCriticalSection(&This->cs);
-	switch (opcode)
+	switch (cmd->Generic.opcode)
 	{
 	case OP_NULL:
 		error = DD_OK;  // No need to write to the command buffer
@@ -164,54 +168,74 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 		break;
 	case OP_CREATE:  // Creates a texture.  Needs to sync in order to return the
 		             // texture object.
-		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
-		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
-		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		CheckCmdBuffer(This, cmd->MakeTexture.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->MakeTexture.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->MakeTexture.size + 8);
 		error = DD_OK;
 		break;
 	case OP_UPLOAD:  // This one can fill the upload buffer fast; upload buffer is
 		             // initialized to 2x primary for <=128MB, 1.5x for <=256MB, or
 		             // 1.25x for >256MB upload buffer size.
-		((UploadTextureCmd*)command)->texturesize =
-			((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].ddsd.lPitch
-			* ((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].ddsd.dwHeight;
-		((UploadTextureCmd*)command)->content =
-			(BYTE*)((UploadTextureCmd*)command)->texture->levels[((UploadTextureCmd*)command)->level].buffer;
-		((UploadTextureCmd*)command)->offset = This->state.cmd->write_ptr_upload;
-		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
-		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
-		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		cmd->UploadTexture.texturesize =
+			cmd->UploadTexture.texture->levels[cmd->UploadTexture.level].ddsd.lPitch
+			* cmd->UploadTexture.texture->levels[cmd->UploadTexture.level].ddsd.dwHeight;
+		cmd->UploadTexture.content =
+			(BYTE*)cmd->UploadTexture.texture->levels[cmd->UploadTexture.level].buffer;
+		cmd->UploadTexture.offset = This->state.cmd->write_ptr_upload;
+		CheckCmdBuffer(This, cmd->UploadTexture.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->UploadTexture.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->UploadTexture.size + 8);
 		memcpy(This->state.cmd->uploadbuffer + This->state.cmd->write_ptr_upload,
-			((UploadTextureCmd*)command)->content, ((UploadTextureCmd*)command)->texturesize);
+			cmd->UploadTexture.content, cmd->UploadTexture.texturesize);
 		error = DD_OK;
 		break;
 	case OP_DOWNLOAD: // Downloads a texture.  Needs to sync in order to receive the
 		              // texture data.
-		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
-		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
-		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		CheckCmdBuffer(This, cmd->DownloadTexture.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->DownloadTexture.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->DownloadTexture.size + 8);
 		error = DD_OK;
 		break;
 	case OP_DELETETEX: // Deletes a texture.  Non-blocking becuase frontend has
 		               // forgotten the texture.
-		CheckCmdBuffer(This, cmdsize + 8, 0, 0, 0);
-		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, command, cmdsize + 8);
-		This->state.cmd->write_ptr_cmd += (cmdsize + 8);
+		CheckCmdBuffer(This, cmd->DeleteTexture.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->DeleteTexture.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->DeleteTexture.size + 8);
 		error = DD_OK;
 		break;
 	case OP_BLT:  // Perform a Blt() operation, issuing necessary commands to set it
 		          // up.
-		// Compare last command minus rotation
-		if (This->state.last_cmd == OP_BLT)
+		// Check if last major command is Blt().
+		if (This->state.last_cmd.Generic.opcode == OP_BLT)
 		{
-			// Generate vertices
-			// Rotate vertices if necessary
-			// Write vertices to VBO
-			// Update command in buffer
+			// Compare last command minus rotation
+			if (((cmd->Blt.cmd.flags & 0xBFABFFF) == (This->state.last_cmd.Blt.cmd.flags & 0xBFABFFF)) &&
+				!comp_bltfx(&This->state.last_cmd.Blt.cmd.bltfx, &cmd->Blt.cmd.bltfx, cmd->Blt.cmd.flags))
+				restart_cmd = FALSE;
+			else restart_cmd = TRUE;
+			if(!restart_cmd)
+			{
+				// Generate vertices
+				// Rotate vertices if necessary
+				// Write vertices to VBO
+				// Update command in buffer
+			}
+
 		}
 		if(restart_cmd)
 		{
+			BOOL usedest = FALSE;
+			BOOL usepattern = FALSE;
+			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
+			{
+				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
+				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
+			}
 			// Run backbuffer if using dest
+			if (usedest)
+			{
+
+			}
 			// Set Src texture (Unit 8)
 			// Set Dest texture (Unit 9)
 			// Set Pattern texture (Unit 10)
@@ -318,7 +342,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, BYTE *command, BOOL inner)
 		error = DDERR_INVALIDPARAMS;
 		break;
 	}
-	This->state.last_cmd = opcode;
+	This->state.last_cmd.Generic.opcode = cmd->Generic.opcode;
 	if (!inner) LeaveCriticalSection(&This->cs);
 	return error;
 }

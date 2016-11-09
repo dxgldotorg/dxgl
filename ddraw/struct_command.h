@@ -19,6 +19,11 @@
 #ifndef __STRUCT_COMMAND_H
 #define __STRUCT_COMMAND_H
 
+typedef struct GenericCmd
+{
+	DWORD opcode;
+	DWORD size;
+} GenericCmd;
 typedef struct MakeTextureCmd
 {
 	DWORD opcode;
@@ -226,6 +231,7 @@ typedef struct MIN_STORAGE_Cmd
 
 typedef union QueueCmd
 {
+	GenericCmd Generic;
 	MakeTextureCmd MakeTexture;
 	UploadTextureCmd UploadTexture;
 	DownloadTextureCmd DownloadTexture;
@@ -252,5 +258,12 @@ typedef union QueueCmd
 	InitTextureStageCmd InitTextureStage;
 	MIN_STORAGE_CMD MIN_STORAGE;
 } QueueCmd;
+
+typedef struct RenderState
+{
+	CommandBuffer *cmd;
+	QueueCmd last_cmd;
+	BYTE *last_cmd_start;
+} RenderState;
 
 #endif //__STRUCT_COMMAND_H

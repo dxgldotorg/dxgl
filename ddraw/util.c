@@ -15,12 +15,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Note:  Requires a SSE2 and AVX compatible compiler.
+
 #include "common.h"
 #include "util.h"
+#include "const.h"
 
 #ifdef _MSC_VER
 #pragma optimize("g", off)
 #endif
+extern DXGLCFG dxglcfg;
 /**
   * Tests if a pointer is valid for reading from.  Uses SEH on Visual C++,
   * non-recommended Windows API on other systems.
@@ -96,3 +100,62 @@ char IsWritablePointer(void *ptr, LONG_PTR size, BOOL preserve)
 	else return 1;
 #endif
 }	
+
+void AndMem(void *dest, const void *a, const void *b, size_t size)
+{
+	// Buffer must be multiple of 4 and should be DWORD aligned
+	size_t i;
+	for (i = 0; i < size>>2; i++)
+	{
+		((DWORD*)dest)[i] = ((DWORD*)a)[i] & ((DWORD*)b)[i];
+	}
+}
+
+const DDBLTFX cmp_fx =
+{
+	0xFFFFFFFF, // dwSize
+	0x00000180, // dwDDFX & (DDBLTFX_ZBUFFERBASEDEST | DDBLTFX_ZBUFFERRANGE)
+	0xFFFFFFFF, // dwROP
+	0xFFFFFFFF, // dwDDROP
+	0x00000000, // dwRotationAngle
+	0xFFFFFFFF, // dwZBufferOpCode
+	0x00000000, // dwZBufferLow
+	0x00000000, // dwZBufferHigh
+	0x00000000, // dwZBufferBaseDest
+	0xFFFFFFFF, // dwZDestConstBitDepth
+	(LPDIRECTDRAWSURFACE)0x00000000, // dwZDestConst and lpDDSZBufferDest
+	0xFFFFFFFF, // dwZSrcConstBitDepth
+	(LPDIRECTDRAWSURFACE)0x00000000, // dwZSrcConst and lpDDSZBufferSrc
+	0xFFFFFFFF, // dwAlphaEdgeBlendBitDepth
+	0x00000000, // dwAlphaEdgeBlend
+	0x00000000, // dwReserved
+	0xFFFFFFFF, // dwAlphaDestConstBitDepth
+	(LPDIRECTDRAWSURFACE)0x00000000, // dwAlphaDestConst and lpDDSAlphaDest
+	0xFFFFFFFF, // dwAlphaSrcConstBitDepth
+	(LPDIRECTDRAWSURFACE)0x00000000, // dwAlphaSrcConst and lpDDSAlphaSrc
+	0x00000000, // dwFillColor, dwFillDepth, dwFillPixel, and lpDDSPattern
+	{0,0},      // ddckDestColorkey
+	{0,0}       // ddckSrcColorkey
+};
+BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags)
+{
+	DDBLTFX comp_mask;
+	DDBLTFX comp_a;
+	DDBLTFX comp_b;
+	if (!a && !b) return FALSE;  // If both have no BLTFX
+	if ((!a && b) || (a && !b)) return TRUE;  // One has BLTFX but not other
+	memcpy(&comp_mask, &cmp_fx, sizeof(DDBLTFX));
+	if(flags & DDBLT_ROP)
+	{
+		if (rop_texture_usage[(a->dwROP >> 16) & 0xFF] & 4)
+			comp_mask.lpDDSPattern = _PTR_MASK;
+	}
+	if (flags & DDBLT_ZBUFFERDESTOVERRIDE) comp_mask.lpDDSZBufferDest = _PTR_MASK;
+	if (flags & DDBLT_ZBUFFERSRCOVERRIDE) comp_mask.lpDDSZBufferSrc = _PTR_MASK;
+	if (flags & DDBLT_ALPHADESTSURFACEOVERRIDE) comp_mask.lpDDSAlphaDest = _PTR_MASK;
+	if (flags & DDBLT_ALPHASRCSURFACEOVERRIDE) comp_mask.lpDDSAlphaSrc = _PTR_MASK;
+	AndMem(&comp_a, a, &comp_mask, sizeof(DDBLTFX));
+	AndMem(&comp_b, b, &comp_mask, sizeof(DDBLTFX));
+	if (!memcmp(&comp_a, &comp_b, sizeof(DDBLTFX))) return FALSE;
+	else return TRUE;
+}

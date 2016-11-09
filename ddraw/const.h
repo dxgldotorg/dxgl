@@ -24,7 +24,16 @@ extern "C" {
 #endif
 
 	extern const RECT nullrect;
+	extern const DWORD valid_rop_codes[256];
+	extern const DWORD rop_texture_usage[256];
+	extern const DWORD supported_rops[8];
+	extern const DWORD supported_rops_gl2[8];
 
+#ifdef _M_X64
+#define _PTR_MASK 0xFFFFFFFFFFFFFFFFui64
+#else
+#define _PTR_MASK 0xFFFFFFFF
+#endif
 #ifdef __cplusplus
 }
 #endif

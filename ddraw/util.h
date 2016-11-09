@@ -25,6 +25,8 @@ extern "C" {
 
 char IsReadablePointer(void *ptr, LONG_PTR size);
 char IsWritablePointer(void *ptr, LONG_PTR size, BOOL preserve);
+void AndMem(void *dest, const void *a, const void *b, size_t size);
+BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags);
 
 #ifdef __cplusplus
 }
