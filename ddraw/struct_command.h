@@ -223,6 +223,28 @@ typedef struct InitTextureStageCmd
 	DWORD count;
 	DWORD stage[1];
 } InitTextureStageCmd;
+typedef struct SetTextureSurfaceDescCmd
+{
+	DWORD opcode;
+	DWORD size;
+	GLint level;
+	DDSURFACEDESC2 desc;
+} SetTextureSurfaceDescCmd;
+typedef struct SetShader2DCmd
+{
+	DWORD opcode;
+	DWORD size;
+	int type; // 0 for builtin, 1 for 2D, 2 for 3D (INVALID, use full command)
+	__int64 id;
+};
+typedef struct SetShaderCmd
+{
+	DWORD opcode;
+	DWORD size;
+	int type; // 0 for builtin, 1 for 2D, 2 for 3D
+	__int64 id;
+	__int64 texstate[8];
+};
 
 typedef struct MIN_STORAGE_Cmd
 {
@@ -256,6 +278,9 @@ typedef union QueueCmd
 	MakeTexturePrimaryCmd MakeTexturePrimary;
 	DXGLBreakCmd DXGLBreak;
 	InitTextureStageCmd InitTextureStage;
+	SetTextureSurfaceDescCmd SetTextureSurfaceDesc;
+	SetShader2DCmd SetShader2D;
+	SetShaderCmd SetShader;
 	MIN_STORAGE_CMD MIN_STORAGE;
 } QueueCmd;
 

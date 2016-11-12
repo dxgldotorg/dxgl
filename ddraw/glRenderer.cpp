@@ -141,12 +141,19 @@ BOOL CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
   *  First DWORD:  Command ID, see glRenderer.h
   *  Second DWORD:  Size of command data, rounded up to nearest DWORD
   *  Third DWORD and beyond:  command data
+  * @param inner
+  *  TRUE if called from within this function.
+  * @param wait
+  *  TRUE to force the queue to wait until completion
   * @return
   *  Return value specific to command, DD_OK if succeeded.
   */
-HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner)
+HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait)
 {
 	HRESULT error;
+	QueueCmd tmp_cmd;
+	RECT r1, r2;
+	int i;
 	// Command specific variables
 	RECT wndrect;
 	int screenx, screeny;
@@ -213,6 +220,10 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner)
 				!comp_bltfx(&This->state.last_cmd.Blt.cmd.bltfx, &cmd->Blt.cmd.bltfx, cmd->Blt.cmd.flags))
 				restart_cmd = FALSE;
 			else restart_cmd = TRUE;
+			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
+			{
+				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) restart_cmd = TRUE;
+			}
 			if(!restart_cmd)
 			{
 				// Generate vertices
@@ -234,13 +245,78 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner)
 			// Run backbuffer if using dest
 			if (usedest)
 			{
-
+				r1.left = r1.top = 0;
+				if (memcmp(&cmd->Blt.cmd.destrect, &nullrect, sizeof(RECT)))
+				{
+					r1.right = cmd->Blt.cmd.destrect.right - cmd->Blt.cmd.destrect.left;
+					r1.bottom = cmd->Blt.cmd.destrect.bottom - cmd->Blt.cmd.destrect.top;
+				}
+				else
+				{
+					r1.right = cmd->Blt.cmd.dest->levels[0].ddsd.dwWidth;
+					r1.bottom = cmd->Blt.cmd.dest->levels[0].ddsd.dwHeight;
+				}
+				// Check backbuffer size and resize
+				if((This->backbuffer->levels[0].ddsd.dwWidth < r1.right) ||
+					(This->backbuffer->levels[0].ddsd.dwHeight < r1.bottom))
+				{
+					DDSURFACEDESC2 newdesc = This->backbuffer->levels[0].ddsd;
+					if (newdesc.dwWidth < r1.right) newdesc.dwWidth = r1.right;
+					if (newdesc.dwHeight < r1.bottom) newdesc.dwHeight = r1.bottom;
+					tmp_cmd.SetTextureSurfaceDesc.opcode = OP_SETTEXTURESURFACEDESC;
+					tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd);
+					tmp_cmd.SetTextureSurfaceDesc.level = 0;
+					tmp_cmd.SetTextureSurfaceDesc.desc = newdesc;
+					glRenderer_AddCommand(This, &tmp_cmd, TRUE, TRUE);
+				}
+				tmp_cmd.Blt.opcode = OP_BLT;
+				tmp_cmd.Blt.size = sizeof(BltCmd);
+				tmp_cmd.Blt.cmd.flags = 0;
+				tmp_cmd.Blt.cmd.destrect = r1;
+				tmp_cmd.Blt.cmd.srcrect = cmd->Blt.cmd.destrect;
+				tmp_cmd.Blt.cmd.src = cmd->Blt.cmd.dest;
+				tmp_cmd.Blt.cmd.dest = This->backbuffer;
+				tmp_cmd.Blt.cmd.srclevel = cmd->Blt.cmd.srclevel;
+				tmp_cmd.Blt.cmd.destlevel = 0;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			}
+			i = 0;
+			tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
+			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd);
 			// Set Src texture (Unit 8)
+			if (cmd->Blt.cmd.src)
+			{
+				tmp_cmd.SetTexture.texstage[i].stage = 8;
+				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.src;
+				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				i++;
+			}
 			// Set Dest texture (Unit 9)
+			tmp_cmd.SetTexture.texstage[i].stage = 9;
+			tmp_cmd.SetTexture.texstage[i].texture = tmp_cmd.Blt.cmd.dest;
 			// Set Pattern texture (Unit 10)
+			if (usepattern)
+			{
+				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				tmp_cmd.SetTexture.texstage[i].stage = 10;
+				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.pattern;
+			}
 			// Set clipper texture (Unit 11)
+			if (cmd->Blt.cmd.dest->stencil)
+			{
+				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				tmp_cmd.SetTexture.texstage[i].stage = 11;
+				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.dest->stencil;
+			}
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			// Set shader mode and params
+			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
+			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd);
+			tmp_cmd.SetShader2D.type = 1;
+			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
+				tmp_cmd.SetShader2D.id = PackROPBits(cmd->Blt.cmd.bltfx.dwROP, cmd->Blt.cmd.flags);
+			else tmp_cmd.SetShader2D.id = cmd->Blt.cmd.flags & 0xF2FAADFF;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			// Set render target
 			// Set viewport
 			// Generate vertices
@@ -336,6 +412,15 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner)
 		error = DDERR_INVALIDPARAMS;
 		break;
 	case OP_INITTEXTURESTAGE:  // Initializes a texture stage.
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETTEXTURESURFACEDESC:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETSHADER2D:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETSHADER:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	default:

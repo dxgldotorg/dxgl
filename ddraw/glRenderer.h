@@ -92,6 +92,9 @@ typedef struct TEXTURESTAGE
 #define OP_MAKETEXTUREPRIMARY       25
 #define OP_ENDCOMMAND				26
 #define OP_INITTEXTURESTAGE			27
+#define OP_SETTEXTURESURFACEDESC    28
+#define OP_SETSHADER2D				29
+#define OP_SETSHADER				30
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -145,7 +148,7 @@ typedef struct glRenderer
 	size_t scenesize, scenesizevertex, scenesizeindex;
 } glRenderer;
 
-HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *command, BOOL inner);
+HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *command, BOOL inner, BOOL wait);
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
 DWORD glRenderer_GetBPP(glRenderer *This);
