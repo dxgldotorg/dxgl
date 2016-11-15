@@ -95,6 +95,8 @@ typedef struct TEXTURESTAGE
 #define OP_SETTEXTURESURFACEDESC    28
 #define OP_SETSHADER2D				29
 #define OP_SETSHADER				30
+#define OP_SETRENDERTARGET			31
+#define OP_SETVIEWPORT				32
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -125,8 +127,6 @@ typedef struct glRenderer
 	unsigned int frequency;
 	DXGLTimer timer;
 	glTexture *backbuffer;
-	int backx;
-	int backy;
 	DWORD fogcolor;
 	GLfloat fogstart;
 	GLfloat fogend;

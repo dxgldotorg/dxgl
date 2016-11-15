@@ -453,8 +453,8 @@ typedef struct RenderTarget
 	glTexture *zbuffer;
 	GLint level;
 	GLint zlevel;
-	float mulx;
-	float muly;
+	GLfloat mulx;
+	GLfloat muly;
 } RenderTarget;
 
 typedef struct GLCAPS
@@ -475,5 +475,13 @@ typedef struct SHADERSTATE
 	__int64 stateid;
 	__int64 texstageid[8];
 } SHADERSTATE;
+
+typedef struct VIEWPORT
+{
+	GLint x;
+	GLint y;
+	GLsizei width;
+	GLsizei hieght;
+} VIEWPORT;
 
 #endif //__STRUCT_H

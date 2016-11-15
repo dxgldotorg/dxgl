@@ -237,6 +237,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		{
 			BOOL usedest = FALSE;
 			BOOL usepattern = FALSE;
+			BOOL usetexture = FALSE;
 			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
 			{
 				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
@@ -280,24 +281,33 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				tmp_cmd.Blt.cmd.destlevel = 0;
 				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			}
-			i = 0;
-			tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
-			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd);
 			// Set Src texture (Unit 8)
+			i = -1;
+			tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
+			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd) - (sizeof(DWORD) + sizeof(glTexture*));
 			if (cmd->Blt.cmd.src)
 			{
-				tmp_cmd.SetTexture.texstage[i].stage = 8;
-				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.src;
 				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
 				i++;
+				usetexture = TRUE;
+				tmp_cmd.SetTexture.texstage[i].stage = 8;
+				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.src;
 			}
-			// Set Dest texture (Unit 9)
-			tmp_cmd.SetTexture.texstage[i].stage = 9;
-			tmp_cmd.SetTexture.texstage[i].texture = tmp_cmd.Blt.cmd.dest;
+			// Set Dest texture (Unit 9) - reads from temporary buffer
+			if (usedest)
+			{
+				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				i++;
+				usetexture = TRUE;
+				tmp_cmd.SetTexture.texstage[i].stage = 9;
+				tmp_cmd.SetTexture.texstage[i].texture = This->backbuffer;
+			}
 			// Set Pattern texture (Unit 10)
 			if (usepattern)
 			{
 				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				i++;
+				usetexture = TRUE;
 				tmp_cmd.SetTexture.texstage[i].stage = 10;
 				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.pattern;
 			}
@@ -305,10 +315,12 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			if (cmd->Blt.cmd.dest->stencil)
 			{
 				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+				i++;
+				usetexture = TRUE;
 				tmp_cmd.SetTexture.texstage[i].stage = 11;
 				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.dest->stencil;
 			}
-			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			if(usetexture) glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			// Set shader mode and params
 			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
 			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd);
@@ -318,8 +330,58 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			else tmp_cmd.SetShader2D.id = cmd->Blt.cmd.flags & 0xF2FAADFF;
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			// Set render target
+			if ((This->state.target.target != cmd->Blt.cmd.dest)
+				|| (This->state.target.level != cmd->Blt.cmd.destlevel))
+			{
+				tmp_cmd.SetRenderTarget.opcode = OP_SETRENDERTARGET;
+				tmp_cmd.SetRenderTarget.size = sizeof(SetRenderTargetCmd);
+				tmp_cmd.SetRenderTarget.target.target = cmd->Blt.cmd.dest;
+				tmp_cmd.SetRenderTarget.target.level = cmd->Blt.cmd.destlevel;
+				tmp_cmd.SetRenderTarget.target.zbuffer = NULL;
+				tmp_cmd.SetRenderTarget.target.zlevel = 0;
+				if (cmd->Blt.cmd.destlevel == 0 && (cmd->Blt.cmd.dest->levels[0].ddsd.dwWidth != cmd->Blt.cmd.dest->bigwidth) ||
+					(cmd->Blt.cmd.dest->levels[0].ddsd.dwHeight != cmd->Blt.cmd.dest->bigheight))
+				{
+					tmp_cmd.SetRenderTarget.target.mulx = (GLfloat)cmd->Blt.cmd.dest->bigwidth / (GLfloat)cmd->Blt.cmd.dest->levels[0].ddsd.dwWidth;
+					tmp_cmd.SetRenderTarget.target.muly = (GLfloat)cmd->Blt.cmd.dest->bigheight / (GLfloat)cmd->Blt.cmd.dest->levels[0].ddsd.dwHeight;
+				}
+				else tmp_cmd.SetRenderTarget.target.mulx = tmp_cmd.SetRenderTarget.target.muly = 1.0f;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
 			// Set viewport
+			if (!cmd->Blt.cmd.destlevel)
+			{
+				r2.right = cmd->Blt.cmd.dest->bigwidth;
+				r2.bottom = cmd->Blt.cmd.dest->bigheight;
+			}
+			else
+			{
+				r2.right = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+				r2.bottom = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+			}
+			if (This->state.viewport.x || This->state.viewport.y ||
+				(This->state.viewport.width != r2.right) || (This->state.viewport.hieght != r2.bottom))
+			{
+				tmp_cmd.SetViewport.opcode = OP_SETVIEWPORT;
+				tmp_cmd.SetViewport.size = sizeof(SetViewportCmd);
+				tmp_cmd.SetViewport.viewport.x = tmp_cmd.SetViewport.viewport.y = 0;
+				tmp_cmd.SetViewport.viewport.width = r2.right;
+				tmp_cmd.SetViewport.viewport.hieght = r2.bottom;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
 			// Generate vertices
+			/*tmp_cmd.BltVertex_STORAGE.vertex*/
+			if (usedest)
+			{
+				tmp_cmd.BltVertex_STORAGE.vertex[1].dests =
+					tmp_cmd.BltVertex_STORAGE.vertex[3].dests = 0.;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].dests =
+					tmp_cmd.BltVertex_STORAGE.vertex[2].dests = (GLfloat)(r1.right - r1.left) / (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].destt =
+					tmp_cmd.BltVertex_STORAGE.vertex[1].destt = 1.;
+				tmp_cmd.BltVertex_STORAGE.vertex[2].destt =
+					tmp_cmd.BltVertex_STORAGE.vertex[3].destt = 1.0 - ((GLfloat)(r1.bottom - r1.top) / (GLfloat)This->backbuffer->levels[0].ddsd.dwHeight);
+			}
 			// Rotate vertices if necessary
 			// Write vertices to VBO
 			// Write command to buffer
@@ -421,6 +483,12 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_SETSHADER:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETRENDERTARGET:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETVIEWPORT:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	default:
@@ -1347,8 +1415,6 @@ DWORD glRenderer__Entry(glRenderer *This)
 				{
 					glTexture_Release(This->backbuffer, TRUE);
 					This->backbuffer = NULL;
-					This->backx = 0;
-					This->backy = 0;
 				}
 				glRenderer__DeleteCommandBuffer(&This->cmd1);
 				glRenderer__DeleteCommandBuffer(&This->cmd2);
@@ -1870,9 +1936,9 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 		glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
-		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backx;
+		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.;
-		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backy);
+		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0-((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backbuffer->levels[0].ddsd.dwHeight);
 	}
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = (GenShader2D*)This->shaders->gen3d->current_genshader;
@@ -2034,10 +2100,8 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.lPitch = x * 4;
 		ddsd.dwHeight = y;
 		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, FALSE, TRUE);
-		This->backx = x;
-		This->backy = y;
 	}
-	if((This->backx != x) || (This->backy != y))
+	if((This->backbuffer->levels[0].ddsd.dwWidth != x) || (This->backbuffer->levels[0].ddsd.dwHeight != y))
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
@@ -2045,8 +2109,6 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.dwHeight = y;
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 		glTexture__SetSurfaceDesc(This->backbuffer, &ddsd);
-		This->backx = x;
-		This->backy = y;
 	}
 	glUtil_SetFBOTextures(This->util,&This->fbo,This->backbuffer,NULL,0,0,FALSE);
 	view[0] = view[2] = 0;
@@ -2089,25 +2151,23 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 		ddsd.dwHeight = y;
 		glTexture_Create(&ddsd, &This->backbuffer, This, x, y, FALSE, TRUE);
 	}
-	if ((This->backx < x) || (This->backy < y))
+	if ((This->backbuffer->levels[0].ddsd.dwWidth < x) || (This->backbuffer->levels[0].ddsd.dwHeight < y))
 	{
-		if (This->backx > x) x = This->backx;
-		if (This->backx > y) y = This->backx;
+		if (This->backbuffer->levels[0].ddsd.dwWidth > x) x = This->backbuffer->levels[0].ddsd.dwWidth;
+		if (This->backbuffer->levels[0].ddsd.dwHeight > y) y = This->backbuffer->levels[0].ddsd.dwHeight;
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		ddsd.dwWidth = x;
 		ddsd.dwHeight = y;
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 		glTexture__SetSurfaceDesc(This->backbuffer, &ddsd);
-		This->backx = x;
-		This->backy = y;
 	}
 	glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffer, NULL, 0, 0, FALSE);
 	view[0] = view[2] = 0;
-	view[1] = (GLfloat)This->backx;
-	view[3] = (GLfloat)This->backy;
-	glUtil_SetViewport(This->util, 0, 0, This->backx, This->backy);
-	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backx, This->backy);
+	view[1] = (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
+	view[3] = (GLfloat)This->backbuffer->levels[0].ddsd.dwHeight;
+	glUtil_SetViewport(This->util, 0, 0, This->backbuffer->levels[0].ddsd.dwWidth, This->backbuffer->levels[0].ddsd.dwHeight);
+	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backbuffer->levels[0].ddsd.dwWidth, This->backbuffer->levels[0].ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
 	glUtil_SetTexture(This->util, 0, texture);

@@ -236,7 +236,7 @@ typedef struct SetShader2DCmd
 	DWORD size;
 	int type; // 0 for builtin, 1 for 2D, 2 for 3D (INVALID, use full command)
 	__int64 id;
-};
+} SetShader2DCmd;
 typedef struct SetShaderCmd
 {
 	DWORD opcode;
@@ -244,8 +244,25 @@ typedef struct SetShaderCmd
 	int type; // 0 for builtin, 1 for 2D, 2 for 3D
 	__int64 id;
 	__int64 texstate[8];
-};
+} SetShaderCmd;
+typedef struct SetRenderTargetCmd
+{
+	DWORD opcode;
+	DWORD size;
+	RenderTarget target;
+} SetRenderTargetCmd;
+typedef struct SetViewportCmd
+{
+	DWORD opcode;
+	DWORD size;
+	VIEWPORT viewport;
+} SetViewportCmd;
 
+typedef struct BltVertex_STORAGE_Cmd // Store vertices in stack for Blt()
+{
+	BltVertex vertex[4];
+	WORD index[64];
+} BltVertex_STORAGE_Cmd;
 typedef struct MIN_STORAGE_Cmd
 {
 	BYTE data[256];
@@ -281,6 +298,9 @@ typedef union QueueCmd
 	SetTextureSurfaceDescCmd SetTextureSurfaceDesc;
 	SetShader2DCmd SetShader2D;
 	SetShaderCmd SetShader;
+	SetRenderTargetCmd SetRenderTarget;
+	SetViewportCmd SetViewport;
+	BltVertex_STORAGE_Cmd BltVertex_STORAGE;
 	MIN_STORAGE_CMD MIN_STORAGE;
 } QueueCmd;
 
@@ -289,6 +309,8 @@ typedef struct RenderState
 	CommandBuffer *cmd;
 	QueueCmd last_cmd;
 	BYTE *last_cmd_start;
+	RenderTarget target;
+	VIEWPORT viewport;
 } RenderState;
 
 #endif //__STRUCT_COMMAND_H
