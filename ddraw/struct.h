@@ -181,7 +181,7 @@ typedef struct BufferObject
 	ULONG busy;
 	GLuint buffer;
 	GLsizei size;
-	void *pointer;
+	GLbyte *pointer;
 	BOOL mapped;
 	BOOL bound;
 	BOOL target;
@@ -438,6 +438,7 @@ typedef struct CommandBuffer
 	BufferObject *vertices;
 	BufferObject *indices;
 	size_t write_ptr_cmd;
+	size_t write_ptr_cmd_modify;
 	size_t read_ptr_cmd;
 	size_t write_ptr_upload;
 	size_t read_ptr_upload;

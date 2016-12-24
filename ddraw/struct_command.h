@@ -257,11 +257,108 @@ typedef struct SetViewportCmd
 	DWORD size;
 	VIEWPORT viewport;
 } SetViewportCmd;
+typedef struct Vertex2DCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	DWORD indexcount;
+	DWORD flags;
+	size_t offset;
+	size_t indexoffset;
+} Vertex2DCmd;
+typedef struct SetDepthTestCmd
+{
+	DWORD opcode;
+	DWORD size;
+	BOOL enabled;
+} SetDepthTestCmd;
+typedef struct SetFrontBufferBitsCmd
+{
+	DWORD opcode;
+	DWORD size;
+	glTexture *front;
+	glTexture *back;
+} SetFrontBufferBitsCmd;
+typedef struct SetSwapCmd
+{
+	DWORD opcode;
+	DWORD size;
+	GLint interval;
+} SetSwapCmd;
+typedef struct SwapBuffersCmd
+{
+	DWORD opcode;
+	DWORD size;
+} SwapBuffersCmd;
+typedef struct SetUniformCmdData
+{
+	size_t size;
+	GLint uniform;
+	DWORD type;
+	// Types:
+	// bits 0-1 number of fields - 1 (0-3 for 1-4 fields)
+	// bit 2 floating point if 1, int if 0
+	// bit 3 unsigned if 1/double if float
+	// bit 4 pointer
+	// bit 5 square matrix
+	// Special types, processed client side, converted to above types
+	// 256 - Color key, count is the color order, first data is key,
+	//       second data is pointer to color sizes,
+	//       third data is pointer to color bits
+	// 257 - Color fill, count is the color order, first data is fill color,
+	//       second data is pointer to color sizes,
+	//       third data is pointer to color bits
+	GLsizei count; // ignored if not pointer or matrix
+	BOOL transpose; // for matrices only
+	GLint data[1];
+} SetUniformCmdData;
+typedef struct SetUniformCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	BYTE *tmp_ptr;  // For the append command, ignored in the command buffer
+	SetUniformCmdData data;
+} SetUniformCmd;
+typedef struct SetUniformCmdBase // For getting size of SetUniformCmd before adding data
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	BYTE *tmp_ptr;  // For the append command, ignored in the command buffer
+} SetUniformCmdBase;
+typedef struct SetAttribCmdData
+{
+	GLuint index;
+	GLint size;
+	GLint type;
+	BOOL normalized;
+	GLsizei stride;
+	const GLvoid *ptr;
+} SetAttribCmdData;
+typedef struct SetAttribCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+	SetAttribCmdData attrib[1];
+} SetAttribCmd;
+typedef struct SetAttribCmdBase
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD count;
+} SetAttribCmdBase;
 
 typedef struct BltVertex_STORAGE_Cmd // Store vertices in stack for Blt()
+// Also for variables for DrawScreen
 {
 	BltVertex vertex[4];
-	WORD index[64];
+	WORD index[6];
+	LONG sizes[6];
+	GLfloat view[4];
+	GLint viewport[4];
 } BltVertex_STORAGE_Cmd;
 typedef struct MIN_STORAGE_Cmd
 {
@@ -300,6 +397,13 @@ typedef union QueueCmd
 	SetShaderCmd SetShader;
 	SetRenderTargetCmd SetRenderTarget;
 	SetViewportCmd SetViewport;
+	Vertex2DCmd Vertex2D;
+	SetDepthTestCmd SetDepthTest;
+	SetFrontBufferBitsCmd SetFrontBufferBits;
+	SetSwapCmd SetSwap;
+	SwapBuffersCmd SwapBuffers;
+	SetUniformCmd SetUniform;
+	SetAttribCmd SetAttrib;
 	BltVertex_STORAGE_Cmd BltVertex_STORAGE;
 	MIN_STORAGE_CMD MIN_STORAGE;
 } QueueCmd;
@@ -311,6 +415,7 @@ typedef struct RenderState
 	BYTE *last_cmd_start;
 	RenderTarget target;
 	VIEWPORT viewport;
+	BOOL depthtest;
 } RenderState;
 
 #endif //__STRUCT_COMMAND_H

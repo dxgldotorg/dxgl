@@ -97,6 +97,13 @@ typedef struct TEXTURESTAGE
 #define OP_SETSHADER				30
 #define OP_SETRENDERTARGET			31
 #define OP_SETVIEWPORT				32
+#define OP_VERTEX2D					33
+#define OP_SETDEPTHTEST				34
+#define OP_SETFRONTBUFFERBITS       35
+#define OP_SETSWAP                  36
+#define OP_SWAPBUFFERS				37
+#define OP_SETUNIFORM				38
+#define OP_SETATTRIB				39
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;
@@ -148,7 +155,7 @@ typedef struct glRenderer
 	size_t scenesize, scenesizevertex, scenesizeindex;
 } glRenderer;
 
-HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *command, BOOL inner, BOOL wait);
+HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait);
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
 DWORD glRenderer_GetBPP(glRenderer *This);
@@ -225,6 +232,10 @@ void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glText
 void glRenderer__SetDepthComp(glRenderer *This);
 void glRenderer__DXGLBreak(glRenderer *This);
 void glRenderer__EndCommand(glRenderer *This, BOOL wait);
+
+void BltFlipLR(BltVertex *vertices);
+void BltFlipUD(BltVertex *vertices);
+void RotateBlt90(BltVertex *vertices, int times);
 
 #ifdef __cplusplus
 }

@@ -27,6 +27,7 @@
 #include "ShaderGen3D.h"
 #include "matrix.h"
 #include "util.h"
+#include <stdarg.h>
 
 extern "C" {
 
@@ -132,6 +133,445 @@ BOOL CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
 }
 
 /**
+  * Check buffer for SetUniformCmd command and post it if it would overflow
+  * @param This
+  *  Pointer to glRenderer object
+  * @param cmd
+  *  Command to check, will be reinitialized if posted
+  * @param ptr
+  *  Address of SetUniformCmdData pointer, will be updated if command is posted
+  * @param buffer_size
+  *  Size of buffer holding command
+  * @param request_size
+  *  Size of buffer to be requested
+  * @param inner
+  *  Inner parameter for glRenderer_AddCommand if command is posted
+  * @return
+  *  TRUE if command gets posted and reinitialized
+  */
+BOOL check_uniform_cmd_buffer(glRenderer *This, SetUniformCmd *cmd, SetUniformCmdData **ptr, DWORD buffer_size, DWORD request_size, BOOL inner)
+{
+	if (request_size > buffer_size)
+	{
+		glRenderer_AddCommand(This, (QueueCmd*)cmd, inner, FALSE);
+		cmd->size = sizeof(SetUniformCmdBase) - 8;
+		cmd->tmp_ptr = (BYTE*)&cmd->data;
+		cmd->count = 0;
+		*ptr = (SetUniformCmdData*)cmd->tmp_ptr;
+		return TRUE;
+	}
+	else return FALSE;
+}
+
+/**
+* Check buffer for SetAttribCmd command and post it if it would overflow
+* @param This
+*  Pointer to glRenderer object
+* @param cmd
+*  Command to check, will be reinitialized if posted
+* @param ptr
+*  Address of SetUniformCmdData pointer, will be updated if command is posted
+* @param buffer_size
+*  Size of buffer holding command
+* @param request_size
+*  Size of buffer to be requested
+* @param inner
+*  Inner parameter for glRenderer_AddCommand if command is posted
+* @return
+*  TRUE if command gets posted and reinitialized
+*/
+BOOL check_attrib_cmd_buffer(glRenderer *This, SetAttribCmd *cmd, DWORD buffer_size, DWORD request_size, BOOL inner)
+{
+	if (request_size > buffer_size)
+	{
+		glRenderer_AddCommand(This, (QueueCmd*)cmd, inner, FALSE);
+		cmd->size = sizeof(SetAttribCmdBase) - 8;
+		cmd->count = 0;
+		return TRUE;
+	}
+	else return FALSE;
+}
+
+
+/**
+  * Appends data to a SetUniformCmd command.
+  * The size, count, and tmp_ptr fields must be initialized before the first
+  * call to this function.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param cmd
+  *  Pointer to SetUniformCmd command
+  * @param uniform
+  *  GLSL uniform to modify
+  *  For builtin shaders, this is the actual GLSL uniform.
+  *  For generated shaders, this is the array offset of the generated structure for the uniform.
+  * @param type
+  *  Encoded type for uniform, see struct_command.h for more info
+  * @param count
+  *  Count for certain types of uniforms, color order for colorkey
+  * @param transpose
+  *  Transpose parameter for matrix uniforms
+  * @param inner
+  *  Inner parameter for glRenderer_AddCommand if buffer overflows
+  * @param buffer_size
+  *  Size of the buffer containing the SetUniformCmd command
+  * @param data
+  *  First value to pass to glUniform function
+  * @param ...
+  *  Additional commands for certain glUniform functions
+  */
+void append_uniform_cmd(glRenderer *This, SetUniformCmd *cmd, GLint uniform, DWORD type, GLsizei count, BOOL transpose, BOOL inner, size_t buffer_size, DWORD_PTR data, ...)
+{
+	DWORD r, g, b, a;
+	DWORD *colorsizes;
+	DWORD *colorbits;
+	size_t size;
+	size_t multiplier;
+	SetUniformCmdData *uniform_ptr = (SetUniformCmdData*)cmd->tmp_ptr;
+	va_list va;
+	va_start(va, data);
+	switch (type)
+	{
+	case 0: // glUniform1i()
+	default:
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData);
+		uniform_ptr->type = type;
+		uniform_ptr->data[0] = (GLint)data;
+		break;
+	case 1: // glUniform2i()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) + sizeof(GLint), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) + sizeof(GLint);
+		uniform_ptr->type = type;
+		uniform_ptr->data[0] = (GLint)data;
+		uniform_ptr->data[1] = va_arg(va, GLint);
+		break;
+	case 2: // glUniform3i()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) + (2 * sizeof(GLint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) + (2 * sizeof(GLint));
+		uniform_ptr->type = type;
+		uniform_ptr->data[0] = (GLint)data;
+		uniform_ptr->data[1] = va_arg(va, GLint);
+		uniform_ptr->data[2] = va_arg(va, GLint);
+		break;
+	case 3: // glUniform4i()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) + (3 * sizeof(GLint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) + (3 * sizeof(GLint));
+		uniform_ptr->type = type;
+		uniform_ptr->data[0] = (GLint)data;
+		uniform_ptr->data[1] = va_arg(va, GLint);
+		uniform_ptr->data[2] = va_arg(va, GLint);
+		uniform_ptr->data[3] = va_arg(va, GLint);
+		break;
+	case 4: // glUniform1f()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + sizeof(GLfloat), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + sizeof(GLfloat);
+		uniform_ptr->type = type;
+		*((GLfloat*)&uniform_ptr->data[0]) = (GLfloat)data;
+		break;
+	case 5: // glUniform2f()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (2 * sizeof(GLfloat)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (2 * sizeof(GLfloat));
+		uniform_ptr->type = type;
+		*((GLfloat*)&uniform_ptr->data[0]) = (GLfloat)data;
+		*((GLfloat*)&uniform_ptr->data[1]) = va_arg(va, GLfloat);
+		break;
+	case 6: // glUniform3f()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (3 * sizeof(GLfloat)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (3 * sizeof(GLfloat));
+		uniform_ptr->type = type;
+		*((GLfloat*)&uniform_ptr->data[0]) = (GLfloat)data;
+		*((GLfloat*)&uniform_ptr->data[1]) = va_arg(va, GLfloat);
+		*((GLfloat*)&uniform_ptr->data[2]) = va_arg(va, GLfloat);
+		break;
+	case 7: // glUniform4f()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (4 * sizeof(GLfloat)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (4 * sizeof(GLfloat));
+		uniform_ptr->type = type;
+		*((GLfloat*)&uniform_ptr->data[0]) = (GLfloat)data;
+		*((GLfloat*)&uniform_ptr->data[1]) = va_arg(va, GLfloat);
+		*((GLfloat*)&uniform_ptr->data[2]) = va_arg(va, GLfloat);
+		*((GLfloat*)&uniform_ptr->data[3]) = va_arg(va, GLfloat);
+		break;
+	case 8: // glUniform1ui()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			uniform_ptr->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + sizeof(GLuint), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + sizeof(GLuint);
+		uniform_ptr->type = type;
+		*((GLuint*)&uniform_ptr->data[0]) = (GLuint)data;
+		break;
+	case 9: // glUniform2ui()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (2 * sizeof(GLuint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (2 * sizeof(GLuint));
+		uniform_ptr->type = type;
+		*((GLuint*)&uniform_ptr->data[0]) = (GLuint)data;
+		*((GLuint*)&uniform_ptr->data[1]) = va_arg(va, GLuint);
+		break;
+	case 10: // glUniform3ui()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (3 * sizeof(GLuint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (3 * sizeof(GLuint));
+		uniform_ptr->type = type;
+		*((GLuint*)&uniform_ptr->data[0]) = (GLuint)data;
+		*((GLuint*)&uniform_ptr->data[1]) = va_arg(va, GLuint);
+		*((GLuint*)&uniform_ptr->data[2]) = va_arg(va, GLuint);
+		break;
+	case 11: // glUniform4ui()
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) + (4 * sizeof(GLuint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) + (4 * sizeof(GLuint));
+		uniform_ptr->type = type;
+		*((GLuint*)&uniform_ptr->data[0]) = (GLuint)data;
+		*((GLuint*)&uniform_ptr->data[1]) = va_arg(va, GLuint);
+		*((GLuint*)&uniform_ptr->data[2]) = va_arg(va, GLuint);
+		*((GLuint*)&uniform_ptr->data[3]) = va_arg(va, GLuint);
+		break;
+	case 16: // glUniform1iv()
+	case 17: // glUniform12v()
+	case 18: // glUniform13v()
+	case 19: // glUniform14v()
+		multiplier = (type & 3) - 1;
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLint));
+		uniform_ptr->type = type;
+		uniform_ptr->count = count;
+		memcpy(uniform_ptr->data, (GLint*)data, (multiplier * count * sizeof(GLint)));
+		break;
+	case 20: // glUniform1fv()
+	case 21: // glUniform2fv()
+	case 22: // glUniform3fv()
+	case 23: // glUniform4fv()
+		multiplier = (type & 3) - 1;
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLfloat)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLfloat));
+		uniform_ptr->type = type;
+		uniform_ptr->count = count;
+		memcpy(uniform_ptr->data, (GLfloat*)data, (multiplier * count * sizeof(GLfloat)));
+		break;
+	case 24: // glUniform1uiv()
+	case 25: // glUniform2uiv()
+	case 26: // glUniform3uiv()
+	case 27: // glUniform4uiv()
+		multiplier = (type & 3) - 1;
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLint)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLint));
+		uniform_ptr->type = type;
+		uniform_ptr->count = count;
+		memcpy(uniform_ptr->data, (GLint*)data, (multiplier * count * sizeof(GLint)));
+		break;
+	case 33: // glUniformMatrix2fv()
+	case 34: // glUniformMatrix3fv()
+	case 35: // glUniformMatrix4fv()
+		if (type == 33) multiplier = 4;
+		else if (type == 34) multiplier = 9;
+		else if (type == 35) multiplier = 16;
+		check_uniform_cmd_buffer(This, cmd, &uniform_ptr, buffer_size,
+			cmd->size + 8 + sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLfloat)), inner);
+		uniform_ptr->size = sizeof(SetUniformCmdData) - sizeof(GLint) +
+			(multiplier * count * sizeof(GLfloat));
+		uniform_ptr->type = type;
+		uniform_ptr->count = count;
+		uniform_ptr->transpose = transpose;
+		memcpy(uniform_ptr->data, (GLfloat*)data, (multiplier * count * sizeof(GLfloat)));
+		break;
+	case 256: // Color key, uses glUniform3i() or glUniform4i()
+		colorsizes = va_arg(va, DWORD*);
+		colorbits = va_arg(va, DWORD*);
+		switch (count)
+		{
+		case 0:
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			b = data & colorsizes[2];
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, g, b);
+			break;
+		case 1:
+			b = data & colorsizes[2];
+			data >>= colorbits[2];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, g, b);
+			break;
+		case 2:
+			a = data & colorsizes[3];
+			data >>= colorbits[3];
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			b = data & colorsizes[2];
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, g, b);
+			break;
+		case 3:
+			a = data & colorsizes[3];
+			data >>= colorbits[3];
+			b = data & colorsizes[2];
+			data >>= colorbits[2];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, g, b);
+			break;
+		case 4:
+			r = data & colorsizes[0];
+			if (This->ext->glver_major >= 3)
+				append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, 0, 0);
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, r, r);
+			break;
+		case 5:
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 2, 0, FALSE, inner, buffer_size, r, r, r);
+			break;
+		case 6:
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, 0, 0, 0, a);
+			break;
+		case 7:
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, r, r, a);
+			break;
+		}
+		va_end(va);
+		return;
+	case 257:
+		colorsizes = va_arg(va, DWORD*);
+		colorbits = va_arg(va, DWORD*);
+		switch (count)
+		{
+		case 0:
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			b = data & colorsizes[2];
+			data >>= colorbits[2];
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, g, b, a);
+			break;
+		case 1:
+			b = data & colorsizes[2];
+			data >>= colorbits[2];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, g, b, a);
+			break;
+		case 2:
+			a = data & colorsizes[3];
+			data >>= colorbits[3];
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			b = data & colorsizes[2];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, g, b, a);
+			break;
+		case 3:
+			a = data & colorsizes[3];
+			data >>= colorbits[3];
+			b = data & colorsizes[2];
+			data >>= colorbits[2];
+			g = data & colorsizes[1];
+			data >>= colorbits[1];
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, g, b, a);
+			break;
+		case 4:
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, r, r, r);
+			break;
+		case 5:
+			r = data & colorsizes[0];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, r, r, r);
+			break;
+		case 6:
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, a, a, a, a);
+			break;
+		case 7:
+			r = data & colorsizes[0];
+			data >>= colorbits[0];
+			a = data & colorsizes[3];
+			append_uniform_cmd(This, cmd, uniform, 3, 0, FALSE, inner, buffer_size, r, r, r, a);
+			break;
+		}
+		va_end(va);
+		return;
+	}
+	cmd->size += uniform_ptr->size;
+	cmd->tmp_ptr += uniform_ptr->size;
+	cmd->count++;
+	va_end(va);
+}
+
+
+/**
+  * Appends data to a SetAttribCmd command.
+  * The size, count, and tmp_ptr fields must be initialized before the first
+  * call to this function.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param cmd
+  *  Pointer to SetAttribCmd command
+  * @param attrib
+  *  GLSL attribute to set up
+  *  For builtin shaders, this is the actual GLSL attribute.
+  *  For generated shaders, this is the array offset of the generated structure for the attribute.
+  * @param size
+  *  Number of components per attribute, or GL_BGRA
+  * @param type
+  *  Type of components in the attribute
+  * @param normalized
+  *  Whether or not integer types are normalized to -1 to 1 for signed, 0 to 1 for unsinged.
+  * @param stride
+  *  Number of bytes between the beginning of one attribute element and the beginning of the next.
+  * @param inner
+  *  Inner parameter for glRenderer_AddCommand if buffer overflows
+  * @param buffer_size
+  *  Size of the buffer containing the SetAttribCmd command
+  */
+void append_attrib_cmd(glRenderer *This, SetAttribCmd *cmd, GLuint attrib, GLint size,
+	GLint type, GLboolean normalized, GLsizei stride, const GLvoid *pointer, BOOL inner, size_t buffer_size)
+{
+	check_attrib_cmd_buffer(This, cmd, buffer_size, cmd->size + sizeof(SetAttribCmdBase), inner);
+	cmd->attrib[cmd->count].index = attrib;
+	cmd->attrib[cmd->count].size = size;
+	cmd->attrib[cmd->count].type = type;
+	cmd->attrib[cmd->count].normalized = normalized;
+	cmd->attrib[cmd->count].stride = stride;
+	cmd->attrib[cmd->count].ptr = pointer;
+	cmd->size += sizeof(SetAttribCmdBase);
+	cmd->count++;
+}
+
+const WORD indexbase[6] = { 0,1,2,2,3,0 };
+/**
   * Adds a command to the active command buffer.
   * @param This
   *  Pointer to glRenderer object
@@ -159,6 +599,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
 	BOOL restart_cmd = FALSE;
+	__int64 shaderid;
 	if (!inner) EnterCriticalSection(&This->cs);
 	switch (cmd->Generic.opcode)
 	{
@@ -224,12 +665,87 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			{
 				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) restart_cmd = TRUE;
 			}
+			// Check if buffer can accomodate command
+			if(!restart_cmd) restart_cmd = CheckCmdBuffer(This, 0, 0, 4 * sizeof(BltVertex), 6 * sizeof(WORD));
 			if(!restart_cmd)
 			{
+				Vertex2DCmd *lastcmd = (Vertex2DCmd*)((BYTE*)(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd));
+				int rotates = 0;
+				// cmdout.flags & 1 = usedest
 				// Generate vertices
+				if (!memcmp(&cmd->Blt.cmd.srcrect, &nullrect, sizeof(RECT)))
+				{
+					r1.left = r1.top = 0;
+					if (cmd->Blt.cmd.src)
+					{
+						r1.right = cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+						r1.bottom = cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
+					}
+					else r1.right = r1.bottom = 0;
+				}
+				else r1 = cmd->Blt.cmd.srcrect;
+				if (!memcmp(&cmd->Blt.cmd.destrect, &nullrect, sizeof(RECT)))
+				{
+					r2.left = r2.top = 0;
+					r2.right = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+					r2.bottom = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+				}
+				else r2 = cmd->Blt.cmd.destrect;
+				tmp_cmd.BltVertex_STORAGE.vertex[1].x = tmp_cmd.BltVertex_STORAGE.vertex[3].x = (GLfloat)r2.left;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].x = tmp_cmd.BltVertex_STORAGE.vertex[2].x = (GLfloat)r2.right;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].y = tmp_cmd.BltVertex_STORAGE.vertex[1].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.top;
+				tmp_cmd.BltVertex_STORAGE.vertex[2].y = tmp_cmd.BltVertex_STORAGE.vertex[3].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.bottom;
+				tmp_cmd.BltVertex_STORAGE.vertex[1].s = tmp_cmd.BltVertex_STORAGE.vertex[3].s = (GLfloat)r1.left / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].s = tmp_cmd.BltVertex_STORAGE.vertex[2].s = (GLfloat)r1.right / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].t = tmp_cmd.BltVertex_STORAGE.vertex[1].t = (GLfloat)r1.top / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
+				tmp_cmd.BltVertex_STORAGE.vertex[2].t = tmp_cmd.BltVertex_STORAGE.vertex[3].t = (GLfloat)r1.bottom / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
+				if (lastcmd->flags & 1)
+				{
+					tmp_cmd.BltVertex_STORAGE.vertex[1].dests =
+						tmp_cmd.BltVertex_STORAGE.vertex[3].dests = 0.;
+					tmp_cmd.BltVertex_STORAGE.vertex[0].dests =
+						tmp_cmd.BltVertex_STORAGE.vertex[2].dests = (GLfloat)(r1.right - r1.left) / (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
+					tmp_cmd.BltVertex_STORAGE.vertex[0].destt =
+						tmp_cmd.BltVertex_STORAGE.vertex[1].destt = 1.;
+					tmp_cmd.BltVertex_STORAGE.vertex[2].destt =
+						tmp_cmd.BltVertex_STORAGE.vertex[3].destt = 1.0 - ((GLfloat)(r1.bottom - r1.top) / (GLfloat)This->backbuffer->levels[0].ddsd.dwHeight);
+				}
+				if (cmd->Blt.cmd.flags & 0x10000000)
+				{
+					tmp_cmd.BltVertex_STORAGE.vertex[1].stencils = tmp_cmd.BltVertex_STORAGE.vertex[3].stencils = tmp_cmd.BltVertex_STORAGE.vertex[1].x / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+					tmp_cmd.BltVertex_STORAGE.vertex[0].stencils = tmp_cmd.BltVertex_STORAGE.vertex[2].stencils = tmp_cmd.BltVertex_STORAGE.vertex[0].x / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+					tmp_cmd.BltVertex_STORAGE.vertex[0].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[1].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[0].y / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+					tmp_cmd.BltVertex_STORAGE.vertex[2].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[3].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[2].y / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+				}
 				// Rotate vertices if necessary
+				if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_DDFX))
+				{
+					if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
+						BltFlipLR(tmp_cmd.BltVertex_STORAGE.vertex);
+					if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_MIRRORUPDOWN)
+						BltFlipUD(tmp_cmd.BltVertex_STORAGE.vertex);
+					if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE90) rotates++;
+					if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE180) rotates += 2;
+					if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE270) rotates += 3;
+					rotates &= 3;
+					if (rotates)
+					{
+						RotateBlt90(tmp_cmd.BltVertex_STORAGE.vertex, rotates);
+					}
+				}
 				// Write vertices to VBO
+				memcpy(tmp_cmd.BltVertex_STORAGE.index, indexbase, 6 * sizeof(WORD));
+				for (i = 0; i < 6; i++)
+					tmp_cmd.BltVertex_STORAGE.index[i] += lastcmd->count;
+				memcpy(This->state.cmd->vertices->pointer + This->state.cmd->write_ptr_vertex,
+					tmp_cmd.BltVertex_STORAGE.vertex, 4 * sizeof(BltVertex));
+				memcpy(This->state.cmd->indices->pointer + This->state.cmd->write_ptr_index,
+					tmp_cmd.BltVertex_STORAGE.index, 6 * sizeof(WORD));
+				This->state.cmd->write_ptr_vertex += 4 * sizeof(BltVertex);
+				This->state.cmd->write_ptr_index += 6 * sizeof(WORD);
 				// Update command in buffer
+				lastcmd->count += 4;
+				lastcmd->indexcount += 6;
 			}
 
 		}
@@ -238,6 +754,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			BOOL usedest = FALSE;
 			BOOL usepattern = FALSE;
 			BOOL usetexture = FALSE;
+			int rotates = 0;
 			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
 			{
 				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
@@ -265,26 +782,26 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 					if (newdesc.dwWidth < r1.right) newdesc.dwWidth = r1.right;
 					if (newdesc.dwHeight < r1.bottom) newdesc.dwHeight = r1.bottom;
 					tmp_cmd.SetTextureSurfaceDesc.opcode = OP_SETTEXTURESURFACEDESC;
-					tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd);
+					tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd) - 8;
 					tmp_cmd.SetTextureSurfaceDesc.level = 0;
 					tmp_cmd.SetTextureSurfaceDesc.desc = newdesc;
 					glRenderer_AddCommand(This, &tmp_cmd, TRUE, TRUE);
 				}
 				tmp_cmd.Blt.opcode = OP_BLT;
-				tmp_cmd.Blt.size = sizeof(BltCmd);
+				tmp_cmd.Blt.size = sizeof(BltCmd) - 8;
 				tmp_cmd.Blt.cmd.flags = 0;
 				tmp_cmd.Blt.cmd.destrect = r1;
 				tmp_cmd.Blt.cmd.srcrect = cmd->Blt.cmd.destrect;
 				tmp_cmd.Blt.cmd.src = cmd->Blt.cmd.dest;
 				tmp_cmd.Blt.cmd.dest = This->backbuffer;
-				tmp_cmd.Blt.cmd.srclevel = cmd->Blt.cmd.srclevel;
+				tmp_cmd.Blt.cmd.srclevel = cmd->Blt.cmd.destlevel;
 				tmp_cmd.Blt.cmd.destlevel = 0;
 				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			}
 			// Set Src texture (Unit 8)
 			i = -1;
 			tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
-			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd) - (sizeof(DWORD) + sizeof(glTexture*));
+			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd) - (sizeof(DWORD) + sizeof(glTexture*)) - 8;
 			if (cmd->Blt.cmd.src)
 			{
 				tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
@@ -320,21 +837,95 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				tmp_cmd.SetTexture.texstage[i].stage = 11;
 				tmp_cmd.SetTexture.texstage[i].texture = cmd->Blt.cmd.dest->stencil;
 			}
+			tmp_cmd.SetTexture.count = i + 1;
 			if(usetexture) glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
-			// Set shader mode and params
+			// Set shader
 			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
-			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd);
+			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd) - 8;
 			tmp_cmd.SetShader2D.type = 1;
 			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_ROP))
 				tmp_cmd.SetShader2D.id = PackROPBits(cmd->Blt.cmd.bltfx.dwROP, cmd->Blt.cmd.flags);
 			else tmp_cmd.SetShader2D.id = cmd->Blt.cmd.flags & 0xF2FAADFF;
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			// Set shader uniforms
+			tmp_cmd.SetUniform.opcode = OP_SETUNIFORM;
+			tmp_cmd.SetUniform.size = 0;
+			SetUniformCmdData *uniform_ptr = &tmp_cmd.SetUniform.data;
+			tmp_cmd.SetUniform.size = sizeof(SetUniformCmdBase) - 8;
+			tmp_cmd.SetUniform.tmp_ptr = (BYTE*)&tmp_cmd.SetUniform.data;
+			tmp_cmd.SetUniform.count = 0;
+			append_uniform_cmd(This, &tmp_cmd.SetUniform, 0, 7, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD),
+				0.0f, (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth,
+				0.0f, (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight);
+			if (!(cmd->Blt.cmd.flags & DDBLT_COLORFILL))
+			{
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 1, 0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 8);
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 10, 19, 1, FALSE, TRUE, sizeof(MIN_STORAGE_CMD),
+					(DWORD_PTR)&cmd->Blt.cmd.src->colorsizes[0]);
+			}
+			if (usedest)
+			{
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 2, 0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 9);
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 11, 19, 1, FALSE, TRUE, sizeof(MIN_STORAGE_CMD),
+					(DWORD_PTR)&cmd->Blt.cmd.dest->colorsizes[0]);
+			}
+			if (usepattern)
+			{
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 3, 0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 10);
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 9, 1, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD),
+					cmd->Blt.cmd.pattern->levels[cmd->Blt.cmd.patternlevel].ddsd.dwWidth,
+					cmd->Blt.cmd.pattern->levels[cmd->Blt.cmd.patternlevel].ddsd.dwHeight);
+			}
+			if (cmd->Blt.cmd.dest->stencil)
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 4, 0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 11);
+			if ((cmd->Blt.cmd.flags & DDBLT_KEYSRC) && (cmd->Blt.cmd.src &&
+				(cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwFlags & DDSD_CKSRCBLT))
+				&& !(cmd->Blt.cmd.flags & DDBLT_COLORFILL))
+			{
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 5, 256, cmd->Blt.cmd.src->colororder, FALSE, TRUE,
+					sizeof(MIN_STORAGE_CMD), cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue,
+					cmd->Blt.cmd.src->colorsizes, cmd->Blt.cmd.src->colorbits);
+				if(cmd->Blt.cmd.flags & 0x20000000)
+					append_uniform_cmd(This, &tmp_cmd.SetUniform, 7, 256, cmd->Blt.cmd.src->colororder, FALSE, TRUE,
+						sizeof(MIN_STORAGE_CMD), cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue,
+						cmd->Blt.cmd.src->colorsizes, cmd->Blt.cmd.src->colorbits);
+			}
+			if ((cmd->Blt.cmd.flags & DDBLT_KEYDEST) && (This && (cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)))
+			{
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 6, 256, cmd->Blt.cmd.dest->colororder, FALSE, TRUE,
+					sizeof(MIN_STORAGE_CMD), cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue,
+					cmd->Blt.cmd.dest->colorsizes, cmd->Blt.cmd.dest->colorbits);
+				if (cmd->Blt.cmd.flags & 0x40000000)
+					append_uniform_cmd(This, &tmp_cmd.SetUniform, 8, 256, cmd->Blt.cmd.dest->colororder, FALSE, TRUE,
+						sizeof(MIN_STORAGE_CMD), cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue,
+						cmd->Blt.cmd.dest->colorsizes, cmd->Blt.cmd.dest->colorbits);
+			}
+			if (cmd->Blt.cmd.flags & DDBLT_COLORFILL)
+				append_uniform_cmd(This, &tmp_cmd.SetUniform, 12, 257, cmd->Blt.cmd.src->colororder, FALSE, TRUE,
+					sizeof(MIN_STORAGE_CMD), cmd->Blt.cmd.bltfx.dwFillColor,
+					cmd->Blt.cmd.src->colorsizes, cmd->Blt.cmd.src->colorbits);
+			//  Set shader attributes
+			tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
+			tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
+			tmp_cmd.SetAttrib.count = 0;
+			BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+			append_attrib_cmd(This, &tmp_cmd.SetAttrib, 0, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &vertex->x,
+				TRUE, sizeof(MIN_STORAGE_CMD));
+			if (!(cmd->Blt.cmd.flags & DDBLT_COLORFILL))
+				append_attrib_cmd(This, &tmp_cmd.SetAttrib, 3, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &vertex->s,
+					TRUE, sizeof(MIN_STORAGE_CMD));
+			if(usedest)
+				append_attrib_cmd(This, &tmp_cmd.SetAttrib, 4, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &vertex->dests,
+					TRUE, sizeof(MIN_STORAGE_CMD));
+			if (cmd->Blt.cmd.flags & 0x10000000)  // Use clipper
+				append_attrib_cmd(This, &tmp_cmd.SetAttrib, 5, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &vertex->stencils,
+					TRUE, sizeof(MIN_STORAGE_CMD));
 			// Set render target
 			if ((This->state.target.target != cmd->Blt.cmd.dest)
 				|| (This->state.target.level != cmd->Blt.cmd.destlevel))
 			{
 				tmp_cmd.SetRenderTarget.opcode = OP_SETRENDERTARGET;
-				tmp_cmd.SetRenderTarget.size = sizeof(SetRenderTargetCmd);
+				tmp_cmd.SetRenderTarget.size = sizeof(SetRenderTargetCmd) - 8;
 				tmp_cmd.SetRenderTarget.target.target = cmd->Blt.cmd.dest;
 				tmp_cmd.SetRenderTarget.target.level = cmd->Blt.cmd.destlevel;
 				tmp_cmd.SetRenderTarget.target.zbuffer = NULL;
@@ -363,14 +954,47 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				(This->state.viewport.width != r2.right) || (This->state.viewport.hieght != r2.bottom))
 			{
 				tmp_cmd.SetViewport.opcode = OP_SETVIEWPORT;
-				tmp_cmd.SetViewport.size = sizeof(SetViewportCmd);
+				tmp_cmd.SetViewport.size = sizeof(SetViewportCmd) - 8;
 				tmp_cmd.SetViewport.viewport.x = tmp_cmd.SetViewport.viewport.y = 0;
 				tmp_cmd.SetViewport.viewport.width = r2.right;
 				tmp_cmd.SetViewport.viewport.hieght = r2.bottom;
 				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			}
+			// Disable depth test
+			if (This->state.depthtest)
+			{
+				tmp_cmd.SetDepthTest.opcode = OP_SETDEPTHTEST;
+				tmp_cmd.SetDepthTest.size = sizeof(SetDepthTestCmd);
+				tmp_cmd.SetDepthTest.enabled = FALSE;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
 			// Generate vertices
-			/*tmp_cmd.BltVertex_STORAGE.vertex*/
+			if (!memcmp(&cmd->Blt.cmd.srcrect, &nullrect, sizeof(RECT)))
+			{
+				r1.left = r1.top = 0;
+				if (cmd->Blt.cmd.src)
+				{
+					r1.right = cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+					r1.bottom = cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
+				}
+				else r1.right = r1.bottom = 0;
+			}
+			else r1 = cmd->Blt.cmd.srcrect;
+			if (!memcmp(&cmd->Blt.cmd.destrect, &nullrect, sizeof(RECT)))
+			{
+				r2.left = r2.top = 0;
+				r2.right = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+				r2.bottom = cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+			}
+			else r2 = cmd->Blt.cmd.destrect;
+			tmp_cmd.BltVertex_STORAGE.vertex[1].x = tmp_cmd.BltVertex_STORAGE.vertex[3].x = (GLfloat)r2.left;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].x = tmp_cmd.BltVertex_STORAGE.vertex[2].x = (GLfloat)r2.right;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].y = tmp_cmd.BltVertex_STORAGE.vertex[1].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.top;
+			tmp_cmd.BltVertex_STORAGE.vertex[2].y = tmp_cmd.BltVertex_STORAGE.vertex[3].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.bottom;
+			tmp_cmd.BltVertex_STORAGE.vertex[1].s = tmp_cmd.BltVertex_STORAGE.vertex[3].s = (GLfloat)r1.left / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].s = tmp_cmd.BltVertex_STORAGE.vertex[2].s = (GLfloat)r1.right / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwWidth;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].t = tmp_cmd.BltVertex_STORAGE.vertex[1].t = (GLfloat)r1.top / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
+			tmp_cmd.BltVertex_STORAGE.vertex[2].t = tmp_cmd.BltVertex_STORAGE.vertex[3].t = (GLfloat)r1.bottom / (GLfloat)cmd->Blt.cmd.src->levels[cmd->Blt.cmd.srclevel].ddsd.dwHeight;
 			if (usedest)
 			{
 				tmp_cmd.BltVertex_STORAGE.vertex[1].dests =
@@ -382,38 +1006,351 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				tmp_cmd.BltVertex_STORAGE.vertex[2].destt =
 					tmp_cmd.BltVertex_STORAGE.vertex[3].destt = 1.0 - ((GLfloat)(r1.bottom - r1.top) / (GLfloat)This->backbuffer->levels[0].ddsd.dwHeight);
 			}
+			if (cmd->Blt.cmd.flags & 0x10000000)
+			{
+				tmp_cmd.BltVertex_STORAGE.vertex[1].stencils = tmp_cmd.BltVertex_STORAGE.vertex[3].stencils = tmp_cmd.BltVertex_STORAGE.vertex[1].x / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].stencils = tmp_cmd.BltVertex_STORAGE.vertex[2].stencils = tmp_cmd.BltVertex_STORAGE.vertex[0].x / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwWidth;
+				tmp_cmd.BltVertex_STORAGE.vertex[0].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[1].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[0].y / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+				tmp_cmd.BltVertex_STORAGE.vertex[2].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[3].stencilt = tmp_cmd.BltVertex_STORAGE.vertex[2].y / (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight;
+			}
 			// Rotate vertices if necessary
+			if ((cmd->Blt.cmd.bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->Blt.cmd.flags & DDBLT_DDFX))
+			{
+				if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
+					BltFlipLR(tmp_cmd.BltVertex_STORAGE.vertex);
+				if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_MIRRORUPDOWN)
+					BltFlipUD(tmp_cmd.BltVertex_STORAGE.vertex);
+				if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE90) rotates++;
+				if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE180) rotates += 2;
+				if (cmd->Blt.cmd.bltfx.dwDDFX & DDBLTFX_ROTATE270) rotates += 3;
+				rotates &= 3;
+				if (rotates)
+				{
+					RotateBlt90(tmp_cmd.BltVertex_STORAGE.vertex, rotates);
+				}
+			}
+			// Create command and check buffers
+			Vertex2DCmd cmdout;
+			cmdout.opcode = OP_VERTEX2D;
+			cmdout.size = sizeof(Vertex2DCmd) - 8;
+			cmdout.count = 4;
+			cmdout.indexcount = 6;
+			if (usedest) cmdout.flags = 1;
+			else cmdout.flags = 0;
+			CheckCmdBuffer(This, cmdout.size + 8, 0, 4*sizeof(BltVertex), 6*sizeof(WORD));
 			// Write vertices to VBO
+			cmdout.offset = This->state.cmd->write_ptr_vertex;
+			cmdout.indexoffset = This->state.cmd->write_ptr_index;
+			memcpy(This->state.cmd->vertices->pointer + This->state.cmd->write_ptr_vertex,
+				tmp_cmd.BltVertex_STORAGE.vertex, 4 * sizeof(BltVertex));
+			memcpy(This->state.cmd->indices->pointer + This->state.cmd->write_ptr_index,
+				indexbase, 6 * sizeof(WORD));
+			This->state.cmd->write_ptr_vertex += 4 * sizeof(BltVertex);
+			This->state.cmd->write_ptr_index += 6 * sizeof(WORD);
 			// Write command to buffer
+			memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, &cmdout, cmdout.size + 8);
+			This->state.cmd->write_ptr_cmd_modify = This->state.cmd->write_ptr_cmd;
+			This->state.cmd->write_ptr_cmd += (cmdout.size + 8);
 		}
-		error = DDERR_CURRENTLYNOTAVAIL;
+		error = DD_OK;
 		break;
 	case OP_DRAWSCREEN:  // Draws the screen.  Flip command buffer after executing.
+		// First get window dimensions and adjust renderer window if necessary
+		if (cmd->DrawScreen.texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			GetClientRect(This->hWnd, &r1);
+			GetClientRect(This->RenderWnd->GetHWnd(), &r2);
+			if (memcmp(&r2, &r1, sizeof(RECT)))
+				SetWindowPos(This->RenderWnd->GetHWnd(), NULL, 0, 0, r1.right, r1.bottom, SWP_SHOWWINDOW);
+		}
+		LONG sizes[6];
+		GLfloat view[4];
+		GLint viewport[4];
+		This->ddInterface->GetSizes(sizes);
+		if (cmd->DrawScreen.texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			if (This->ddInterface->GetFullscreen())
+			{
+				viewport[0] = viewport[1] = 0;
+				viewport[2] = sizes[4];
+				viewport[3] = sizes[5];
+				view[0] = (GLfloat)-(sizes[4] - sizes[0]) / 2;
+				view[1] = (GLfloat)(sizes[4] - sizes[0]) / 2 + sizes[0];
+				view[2] = (GLfloat)(sizes[5] - sizes[1]) / 2 + sizes[1];
+				view[3] = (GLfloat)-(sizes[5] - sizes[1]) / 2;
+			}
+			else
+			{
+				viewport[0] = viewport[1] = 0;
+				viewport[2] = r2.right;
+				viewport[3] = r2.bottom;
+				ClientToScreen(This->RenderWnd->GetHWnd(), (LPPOINT)&r2.left);
+				ClientToScreen(This->RenderWnd->GetHWnd(), (LPPOINT)&r2.right);
+				view[0] = (GLfloat)r2.left;
+				view[1] = (GLfloat)r2.right;
+				view[2] = (GLfloat)cmd->DrawScreen.texture->bigheight - (GLfloat)r2.top;
+				view[3] = (GLfloat)cmd->DrawScreen.texture->bigheight - (GLfloat)r2.bottom;
+			}
+		}
+		else
+		{
+			view[0] = 0;
+			view[1] = (GLfloat)cmd->DrawScreen.texture->bigwidth;
+			view[2] = 0;
+			view[3] = (GLfloat)cmd->DrawScreen.texture->bigheight;
+		}
+		//  Mark primary as front buffer and clear frontbuffer bit on previous
+		tmp_cmd.SetFrontBufferBits.opcode = OP_SETFRONTBUFFERBITS;
+		tmp_cmd.SetFrontBufferBits.size = sizeof(SetFrontBufferBitsCmd) - 8;
+		tmp_cmd.SetFrontBufferBits.front = cmd->DrawScreen.texture;
+		tmp_cmd.SetFrontBufferBits.back = cmd->DrawScreen.previous;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		//  Set Src texture (Unit 8) to primary
+		i = 0;
+		tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
+		tmp_cmd.SetTexture.size = sizeof(SetTextureCmd);
+		tmp_cmd.SetTexture.texstage[0].stage = 8;
+		tmp_cmd.SetTexture.texstage[0].texture = cmd->DrawScreen.texture;
+		//  Set Palette texture (Unit 9) to palette if 8-bit
+		if (This->ddInterface->GetBPP() == 8)
+		{
+			i++;
+			tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
+			tmp_cmd.SetTexture.texstage[1].stage = 9;
+			tmp_cmd.SetTexture.texstage[1].texture = cmd->DrawScreen.paltex;
+		}
+		tmp_cmd.SetTexture.count = i + 1;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		//  Disable depth test
+		tmp_cmd.SetDepthTest.opcode = OP_SETDEPTHTEST;
+		tmp_cmd.SetDepthTest.size = sizeof(SetDepthTestCmd) - 8;
+		tmp_cmd.SetDepthTest.enabled = FALSE;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		// If 8 bit scaled linear:
-		//  Set Src texture (Unit 8) to primary
-		//  Set Palette texture (Unit 9) to palette
-		//  Set shader mode and params
-		//  Set render target to backbuffer
-		//  Set viewport to backbuffer
-		//  Generate vertices
-		//  Write vertices to FBO
-		//  Write Palette draw command to buffer
-		//  Set Src texture (Unit 8) to backbuffer
-		//  Set shader mode and params
+		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
+			((cmd->DrawScreen.texture->bigwidth != (view[1]-view[0])) ||
+			(cmd->DrawScreen.texture->bigheight != (view[3]-view[2]))))
+		{
+			// Check backbuffer size and resize
+			if ((This->backbuffer->levels[0].ddsd.dwWidth < cmd->DrawScreen.texture->bigwidth) ||
+				(This->backbuffer->levels[0].ddsd.dwHeight < cmd->DrawScreen.texture->bigheight))
+			{
+				DDSURFACEDESC2 newdesc = This->backbuffer->levels[0].ddsd;
+				if (newdesc.dwWidth < cmd->DrawScreen.texture->bigwidth)
+					newdesc.dwWidth = cmd->DrawScreen.texture->bigwidth;
+				if (newdesc.dwHeight < cmd->DrawScreen.texture->bigheight)
+					newdesc.dwHeight = cmd->DrawScreen.texture->bigheight;
+				tmp_cmd.SetTextureSurfaceDesc.opcode = OP_SETTEXTURESURFACEDESC;
+				tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd) - 8;
+				tmp_cmd.SetTextureSurfaceDesc.level = 0;
+				tmp_cmd.SetTextureSurfaceDesc.desc = newdesc;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, TRUE);
+			}
+			//  Set shader to 256-color palette
+			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
+			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd) - 8;
+			tmp_cmd.SetShader2D.type = 0;
+			tmp_cmd.SetShader2D.id = PROG_PAL256;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			//  Set shader uniforms
+			tmp_cmd.SetUniform.opcode = OP_SETUNIFORM;
+			tmp_cmd.SetUniform.size = sizeof(SetUniformCmdBase) - 8;
+			tmp_cmd.SetUniform.tmp_ptr = (BYTE*)&tmp_cmd.SetUniform.data;
+			tmp_cmd.SetUniform.count = 0;
+			append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[PROG_PAL256].tex0,
+				0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 8);
+			append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[PROG_PAL256].pal,
+				0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 9);
+			append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[PROG_PAL256].view,
+				7, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), view[0], view[1], view[2], view[3]);
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			//  Set shader attributes
+			tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
+			tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
+			tmp_cmd.SetAttrib.count = 0;
+			BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+			append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[PROG_PAL256].pos, 2, GL_FLOAT, GL_FALSE,
+				sizeof(BltVertex), &vertex->x, TRUE, sizeof(MIN_STORAGE_CMD));
+			append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[PROG_PAL256].texcoord, 2, GL_FLOAT, GL_FALSE,
+				sizeof(BltVertex), &vertex->s, TRUE, sizeof(MIN_STORAGE_CMD));
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			//  Set render target to backbuffer
+			if ((This->state.target.target != This->backbuffer) || (This->state.target.target != 0))
+			{
+				tmp_cmd.SetRenderTarget.opcode = OP_SETRENDERTARGET;
+				tmp_cmd.SetRenderTarget.size = sizeof(SetRenderTargetCmd) - 8;
+				tmp_cmd.SetRenderTarget.target.target = This->backbuffer;
+				tmp_cmd.SetRenderTarget.target.level = 0;
+				tmp_cmd.SetRenderTarget.target.zbuffer = NULL;
+				tmp_cmd.SetRenderTarget.target.zlevel = 0;
+				tmp_cmd.SetRenderTarget.target.mulx = tmp_cmd.SetRenderTarget.target.muly = 1.0f;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
+			//  Set viewport to backbuffer
+			r2.right = This->backbuffer->levels[0].ddsd.dwWidth;
+			r2.bottom = This->backbuffer->levels[0].ddsd.dwHeight;
+			if (This->state.viewport.x || This->state.viewport.y ||
+				(This->state.viewport.width != r2.right) || (This->state.viewport.hieght != r2.bottom))
+			{
+				tmp_cmd.SetViewport.opcode = OP_SETVIEWPORT;
+				tmp_cmd.SetViewport.size = sizeof(SetViewportCmd) - 8;
+				tmp_cmd.SetViewport.viewport.x = tmp_cmd.SetViewport.viewport.y = 0;
+				tmp_cmd.SetViewport.viewport.width = r2.right;
+				tmp_cmd.SetViewport.viewport.hieght = r2.bottom;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
+			//  Generate vertices
+			r2.left = r2.top = 0;
+			r2.right = cmd->DrawScreen.texture->bigwidth;
+			r2.bottom = cmd->DrawScreen.texture->bigheight;
+			tmp_cmd.BltVertex_STORAGE.vertex[1].x = tmp_cmd.BltVertex_STORAGE.vertex[3].x = (GLfloat)r2.left;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].x = tmp_cmd.BltVertex_STORAGE.vertex[2].x = (GLfloat)r2.right;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].y = tmp_cmd.BltVertex_STORAGE.vertex[1].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.top;
+			tmp_cmd.BltVertex_STORAGE.vertex[2].y = tmp_cmd.BltVertex_STORAGE.vertex[3].y = (GLfloat)cmd->Blt.cmd.dest->levels[cmd->Blt.cmd.destlevel].ddsd.dwHeight - (GLfloat)r2.bottom;
+			tmp_cmd.BltVertex_STORAGE.vertex[1].s = tmp_cmd.BltVertex_STORAGE.vertex[3].s =
+				tmp_cmd.BltVertex_STORAGE.vertex[0].t = tmp_cmd.BltVertex_STORAGE.vertex[1].t = 0.0f;
+			tmp_cmd.BltVertex_STORAGE.vertex[0].s = tmp_cmd.BltVertex_STORAGE.vertex[2].s =
+				tmp_cmd.BltVertex_STORAGE.vertex[2].t = tmp_cmd.BltVertex_STORAGE.vertex[3].t = 1.0f;
+			//  Create Palette draw command and check buffers
+			Vertex2DCmd cmdout;
+			cmdout.opcode = sizeof(Vertex2DCmd) - 8;
+			cmdout.count = 4;
+			cmdout.indexcount = 6;
+			cmdout.flags = 0;
+			CheckCmdBuffer(This, cmdout.size + 8, 0, 4 * sizeof(BltVertex), 6 * sizeof(WORD));
+			//  Write vertices to VBO
+			cmdout.offset = This->state.cmd->write_ptr_vertex;
+			cmdout.indexoffset = This->state.cmd->write_ptr_index;
+			memcpy(This->state.cmd->vertices->pointer + This->state.cmd->write_ptr_vertex,
+				tmp_cmd.BltVertex_STORAGE.vertex, 4 * sizeof(BltVertex));
+			memcpy(This->state.cmd->indices->pointer + This->state.cmd->write_ptr_index,
+				indexbase, 6 * sizeof(WORD));
+			This->state.cmd->write_ptr_vertex += 4 * sizeof(BltVertex);
+			This->state.cmd->write_ptr_index += 6 * sizeof(WORD);
+			// Write command to buffer
+			memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, &cmdout, cmdout.size + 8);
+			This->state.cmd->write_ptr_cmd_modify = This->state.cmd->write_ptr_cmd;
+			This->state.cmd->write_ptr_cmd += (cmdout.size + 8);
+			//  Set Src texture (Unit 8) to backbuffer
+			tmp_cmd.SetTexture.opcode = OP_SETTEXTURE;
+			tmp_cmd.SetTexture.size = sizeof(SetTextureCmd) + sizeof(DWORD) + sizeof(glTexture*);
+			tmp_cmd.SetTexture.texstage[0].stage = 8;
+			tmp_cmd.SetTexture.texstage[0].texture = This->backbuffer;
+			tmp_cmd.SetTexture.count = 1;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
+		//  Set shader and texture filter
+		if ((This->ddInterface->GetBPP() == 8) && (!dxglcfg.scalingfilter ||
+			((cmd->DrawScreen.texture->bigwidth == (view[1] - view[0])) &&
+			(cmd->DrawScreen.texture->bigheight == (view[3] - view[2])))))
+		{
+			// 256 color, unscaled or scaled nearest
+			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
+			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd) - 8;
+			tmp_cmd.SetShader2D.type = 0;
+			tmp_cmd.SetShader2D.id = PROG_PAL256;
+			shaderid = PROG_PAL256;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			tmp_cmd.SetTextureStageState.opcode = OP_SETTEXTURESTAGESTATE;
+			tmp_cmd.SetTextureStageState.size = sizeof(SetTextureStageStateCmd) - 8 + sizeof(DWORD)
+				+ sizeof(D3DTEXTURESTAGESTATETYPE);
+			tmp_cmd.SetTextureStageState.dwStage = 8;
+			tmp_cmd.SetTextureStageState.count = 2;
+			tmp_cmd.SetTextureStageState.state[0].dwState = D3DTSS_MAGFILTER;
+			tmp_cmd.SetTextureStageState.state[0].dwValue = D3DTFG_POINT;
+			tmp_cmd.SetTextureStageState.state[1].dwState = D3DTSS_MINFILTER;
+			tmp_cmd.SetTextureStageState.state[1].dwValue = D3DTFN_POINT;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
+		else
+		{
+			// Full-color mode or 256-color scaled linear
+			tmp_cmd.SetShader2D.opcode = OP_SETSHADER2D;
+			tmp_cmd.SetShader2D.size = sizeof(SetShader2DCmd) - 8;
+			tmp_cmd.SetShader2D.type = 0;
+			tmp_cmd.SetShader2D.id = PROG_TEXTURE;
+			shaderid = PROG_TEXTURE;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			tmp_cmd.SetTextureStageState.opcode = OP_SETTEXTURESTAGESTATE;
+			tmp_cmd.SetTextureStageState.size = sizeof(SetTextureStageStateCmd) - 8 + sizeof(DWORD)
+				+ sizeof(D3DTEXTURESTAGESTATETYPE);
+			tmp_cmd.SetTextureStageState.dwStage = 8;
+			tmp_cmd.SetTextureStageState.count = 2;
+			tmp_cmd.SetTextureStageState.state[0].dwState = D3DTSS_MAGFILTER;
+			if(dxglcfg.scalingfilter)
+				tmp_cmd.SetTextureStageState.state[0].dwValue = D3DTFG_LINEAR;
+			else tmp_cmd.SetTextureStageState.state[0].dwValue = D3DTFG_POINT;
+			tmp_cmd.SetTextureStageState.state[1].dwState = D3DTSS_MINFILTER;
+			if (dxglcfg.scalingfilter)
+				tmp_cmd.SetTextureStageState.state[1].dwValue = D3DTFG_LINEAR;
+			else tmp_cmd.SetTextureStageState.state[1].dwValue = D3DTFN_POINT;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
+		//  Set shader uniforms
+		tmp_cmd.SetUniform.opcode = OP_SETUNIFORM;
+		tmp_cmd.SetUniform.size = sizeof(SetUniformCmdBase) - 8;
+		tmp_cmd.SetUniform.tmp_ptr = (BYTE*)&tmp_cmd.SetUniform.data;
+		tmp_cmd.SetUniform.count = 0;
+		append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[shaderid].tex0,
+			0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 8);
+		if (shaderid == PROG_PAL256)
+			append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[shaderid].pal,
+				0, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), 9);
+		append_uniform_cmd(This, &tmp_cmd.SetUniform, This->shaders->shaders[shaderid].view,
+			7, 0, FALSE, TRUE, sizeof(MIN_STORAGE_CMD), view[0], view[1], view[2], view[3]);
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		//  Set shader attributes
+		tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
+		tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
+		tmp_cmd.SetAttrib.count = 0;
+		BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+		append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[shaderid].pos, 2, GL_FLOAT, GL_FALSE,
+			sizeof(BltVertex), &vertex->x, TRUE, sizeof(MIN_STORAGE_CMD));
+		append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[shaderid].pos, 2, GL_FLOAT, GL_FALSE,
+			sizeof(BltVertex), &vertex->s, TRUE, sizeof(MIN_STORAGE_CMD));
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		//  Set render target to null
+		if (This->state.target.target)
+		{
+			tmp_cmd.SetRenderTarget.opcode = OP_SETRENDERTARGET;
+			tmp_cmd.SetRenderTarget.size = sizeof(SetRenderTargetCmd) - 8;
+			tmp_cmd.SetRenderTarget.target.target = NULL;
+			tmp_cmd.SetRenderTarget.target.level = 0;
+			tmp_cmd.SetRenderTarget.target.zbuffer = NULL;
+			tmp_cmd.SetRenderTarget.target.zlevel = 0;
+			tmp_cmd.SetRenderTarget.target.mulx = tmp_cmd.SetRenderTarget.target.muly = 1.0f;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
 		//  Set viewport to window buffer
+		#error do viewport
 		//  Generate vertices
+		if (This->ddInterface->GetFullscreen())
+		{
+			This->bltvertices[0].x = This->bltvertices[2].x = (float)sizes[0];
+			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+			This->bltvertices[2].y = This->bltvertices[3].y = (float)sizes[1];
+		}
+		else
+		{
+			This->bltvertices[0].x = This->bltvertices[2].x = (float)texture->bigwidth;
+			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+			This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->bigheight;
+		}
+		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
+			((cmd->DrawScreen.texture->bigwidth != (view[1] - view[0])) ||
+			(cmd->DrawScreen.texture->bigheight != (view[3] - view[2]))))
+		{
+			#error do texcoord for backbuffer
+		}
+		else
+		{
+			This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
+			This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+		}
+		//  Write 2D Vertex command and check buffers
 		//  Write vertices to VBO
-		//  Write Draw command to buffer
-		// If 8-bit unscaled or scaled nearest:
-		//  Set Src texture (Unit 8) to primary
-		//  Set Palette texture (Unit 9) to palette
-		//  Set shader mode and params
-		//  Set render target to null
-		//  Set viewport to window buffer
-		//  Generate vertices
-		//  Write vertices to VBO
-		//  Write Palette Draw command to buffer
+		//  Set swap interval
+		//  Swap buffers
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
@@ -489,6 +1426,27 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_SETVIEWPORT:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_VERTEX2D:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETDEPTHTEST:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETFRONTBUFFERBITS:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETSWAP:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SWAPBUFFERS:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETUNIFORM:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETATTRIB:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	default:

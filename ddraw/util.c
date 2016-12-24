@@ -123,16 +123,16 @@ const DDBLTFX cmp_fx =
 	0x00000000, // dwZBufferHigh
 	0x00000000, // dwZBufferBaseDest
 	0xFFFFFFFF, // dwZDestConstBitDepth
-	(LPDIRECTDRAWSURFACE)0x00000000, // dwZDestConst and lpDDSZBufferDest
+	0x00000000, // dwZDestConst and lpDDSZBufferDest
 	0xFFFFFFFF, // dwZSrcConstBitDepth
-	(LPDIRECTDRAWSURFACE)0x00000000, // dwZSrcConst and lpDDSZBufferSrc
+	0x00000000, // dwZSrcConst and lpDDSZBufferSrc
 	0xFFFFFFFF, // dwAlphaEdgeBlendBitDepth
 	0x00000000, // dwAlphaEdgeBlend
 	0x00000000, // dwReserved
 	0xFFFFFFFF, // dwAlphaDestConstBitDepth
-	(LPDIRECTDRAWSURFACE)0x00000000, // dwAlphaDestConst and lpDDSAlphaDest
+	0x00000000, // dwAlphaDestConst and lpDDSAlphaDest
 	0xFFFFFFFF, // dwAlphaSrcConstBitDepth
-	(LPDIRECTDRAWSURFACE)0x00000000, // dwAlphaSrcConst and lpDDSAlphaSrc
+	0x00000000, // dwAlphaSrcConst and lpDDSAlphaSrc
 	0x00000000, // dwFillColor, dwFillDepth, dwFillPixel, and lpDDSPattern
 	{0,0},      // ddckDestColorkey
 	{0,0}       // ddckSrcColorkey
@@ -148,12 +148,12 @@ BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags)
 	if(flags & DDBLT_ROP)
 	{
 		if (rop_texture_usage[(a->dwROP >> 16) & 0xFF] & 4)
-			comp_mask.lpDDSPattern = _PTR_MASK;
+			comp_mask.lpDDSPattern = (LPDIRECTDRAWSURFACE)_PTR_MASK;
 	}
-	if (flags & DDBLT_ZBUFFERDESTOVERRIDE) comp_mask.lpDDSZBufferDest = _PTR_MASK;
-	if (flags & DDBLT_ZBUFFERSRCOVERRIDE) comp_mask.lpDDSZBufferSrc = _PTR_MASK;
-	if (flags & DDBLT_ALPHADESTSURFACEOVERRIDE) comp_mask.lpDDSAlphaDest = _PTR_MASK;
-	if (flags & DDBLT_ALPHASRCSURFACEOVERRIDE) comp_mask.lpDDSAlphaSrc = _PTR_MASK;
+	if (flags & DDBLT_ZBUFFERDESTOVERRIDE) comp_mask.lpDDSZBufferDest = (LPDIRECTDRAWSURFACE)_PTR_MASK;
+	if (flags & DDBLT_ZBUFFERSRCOVERRIDE) comp_mask.lpDDSZBufferSrc = (LPDIRECTDRAWSURFACE)_PTR_MASK;
+	if (flags & DDBLT_ALPHADESTSURFACEOVERRIDE) comp_mask.lpDDSAlphaDest = (LPDIRECTDRAWSURFACE)_PTR_MASK;
+	if (flags & DDBLT_ALPHASRCSURFACEOVERRIDE) comp_mask.lpDDSAlphaSrc = (LPDIRECTDRAWSURFACE)_PTR_MASK;
 	AndMem(&comp_a, a, &comp_mask, sizeof(DDBLTFX));
 	AndMem(&comp_b, b, &comp_mask, sizeof(DDBLTFX));
 	if (!memcmp(&comp_a, &comp_b, sizeof(DDBLTFX))) return FALSE;
