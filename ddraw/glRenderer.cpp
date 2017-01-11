@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -600,6 +600,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 	LONG_PTR winstyle, winstyleex;
 	BOOL restart_cmd = FALSE;
 	__int64 shaderid;
+	BltVertex *vertex;
 	if (!inner) EnterCriticalSection(&This->cs);
 	switch (cmd->Generic.opcode)
 	{
@@ -908,7 +909,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
 			tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
 			tmp_cmd.SetAttrib.count = 0;
-			BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+			vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
 			append_attrib_cmd(This, &tmp_cmd.SetAttrib, 0, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &vertex->x,
 				TRUE, sizeof(MIN_STORAGE_CMD));
 			if (!(cmd->Blt.cmd.flags & DDBLT_COLORFILL))
@@ -1168,7 +1169,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
 			tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
 			tmp_cmd.SetAttrib.count = 0;
-			BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+			vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
 			append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[PROG_PAL256].pos, 2, GL_FLOAT, GL_FALSE,
 				sizeof(BltVertex), &vertex->x, TRUE, sizeof(MIN_STORAGE_CMD));
 			append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[PROG_PAL256].texcoord, 2, GL_FLOAT, GL_FALSE,
@@ -1303,7 +1304,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		tmp_cmd.SetAttrib.opcode = OP_SETATTRIB;
 		tmp_cmd.SetAttrib.size = sizeof(SetAttribCmdBase) - 8;
 		tmp_cmd.SetAttrib.count = 0;
-		BltVertex *vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
+		vertex = (BltVertex*)This->state.cmd->write_ptr_vertex;
 		append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[shaderid].pos, 2, GL_FLOAT, GL_FALSE,
 			sizeof(BltVertex), &vertex->x, TRUE, sizeof(MIN_STORAGE_CMD));
 		append_attrib_cmd(This, &tmp_cmd.SetAttrib, This->shaders->shaders[shaderid].pos, 2, GL_FLOAT, GL_FALSE,
@@ -1322,36 +1323,77 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		}
 		//  Set viewport to window buffer
-		#error do viewport
+		glUtil_SetViewport(This->util, viewport[0], viewport[1], viewport[2], viewport[3]);
+		if (This->state.viewport.x != viewport[0] || This->state.viewport.y != viewport[1] ||
+			(This->state.viewport.width != viewport[2]) || (This->state.viewport.hieght != viewport[3]))
+		{
+			tmp_cmd.SetViewport.opcode = OP_SETVIEWPORT;
+			tmp_cmd.SetViewport.size = sizeof(SetViewportCmd) - 8;
+			tmp_cmd.SetViewport.viewport.x = viewport[0];
+			tmp_cmd.SetViewport.viewport.y = viewport[1];
+			tmp_cmd.SetViewport.viewport.width = viewport[2];
+			tmp_cmd.SetViewport.viewport.hieght = viewport[3];
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
 		//  Generate vertices
 		if (This->ddInterface->GetFullscreen())
 		{
-			This->bltvertices[0].x = This->bltvertices[2].x = (float)sizes[0];
+			This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)sizes[0];
 			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
-			This->bltvertices[2].y = This->bltvertices[3].y = (float)sizes[1];
+			This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)sizes[1];
 		}
 		else
 		{
-			This->bltvertices[0].x = This->bltvertices[2].x = (float)texture->bigwidth;
+			This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)cmd->DrawScreen.texture->bigwidth;
 			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
-			This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->bigheight;
+			This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)cmd->DrawScreen.texture->bigheight;
 		}
 		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
 			((cmd->DrawScreen.texture->bigwidth != (view[1] - view[0])) ||
 			(cmd->DrawScreen.texture->bigheight != (view[3] - view[2]))))
 		{
-			#error do texcoord for backbuffer
+			This->bltvertices[0].s = This->bltvertices[2].s = 
+				(GLfloat)cmd->DrawScreen.texture->bigwidth / (GLfloat)This->backbuffer->bigwidth;
+			This->bltvertices[0].t = This->bltvertices[1].t =
+				(GLfloat)cmd->DrawScreen.texture->bigheight / (GLfloat)This->backbuffer->bigheight;
+			This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.0f;
 		}
 		else
 		{
-			This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
-			This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+			This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.0f;
+			This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.0f;
 		}
-		//  Write 2D Vertex command and check buffers
+		//  Create command and check buffers
+		Vertex2DCmd cmdout;
+		cmdout.opcode = OP_VERTEX2D;
+		cmdout.size = sizeof(Vertex2DCmd) - 8;
+		cmdout.count = 4;
+		cmdout.indexcount = 6;
+		cmdout.flags = 0;
+		CheckCmdBuffer(This, cmdout.size + 8, 0, 4 * sizeof(BltVertex), 6 * sizeof(WORD));
 		//  Write vertices to VBO
+		cmdout.offset = This->state.cmd->write_ptr_vertex;
+		cmdout.indexoffset = This->state.cmd->write_ptr_index;
+		memcpy(This->state.cmd->vertices->pointer + This->state.cmd->write_ptr_vertex,
+			tmp_cmd.BltVertex_STORAGE.vertex, 4 * sizeof(BltVertex));
+		memcpy(This->state.cmd->indices->pointer + This->state.cmd->write_ptr_index,
+			indexbase, 6 * sizeof(WORD));
+		This->state.cmd->write_ptr_vertex += 4 * sizeof(BltVertex);
+		This->state.cmd->write_ptr_index += 6 * sizeof(WORD);
+		// Write command to buffer
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, &cmdout, cmdout.size + 8);
+		This->state.cmd->write_ptr_cmd_modify = This->state.cmd->write_ptr_cmd;
+		This->state.cmd->write_ptr_cmd += (cmdout.size + 8);
 		//  Set swap interval
+		tmp_cmd.SetSwap.opcode = OP_SETSWAP;
+		tmp_cmd.SetSwap.size = sizeof(GLint);
+		tmp_cmd.SetSwap.interval = cmd->DrawScreen.vsync;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		//  Swap buffers
-		error = DDERR_CURRENTLYNOTAVAIL;
+		tmp_cmd.SwapBuffers.opcode = OP_SWAPBUFFERS;
+		tmp_cmd.SwapBuffers.size = 0;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, TRUE);
+		error = DD_OK;
 		break;
 	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
 		// Set initial viewport
