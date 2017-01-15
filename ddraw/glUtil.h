@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -40,8 +40,8 @@ GLenum glUtil_SetFBOSurface(glUtil *This, glTexture *surface, glTexture *zbuffer
 GLenum glUtil_SetFBO(glUtil *This, FBO *fbo);
 GLenum glUtil_SetFBOTextures(glUtil *This, FBO *fbo, glTexture *color, glTexture *z, GLint level, GLint zlevel, BOOL stencil);
 void glUtil_SetDepthComp(glUtil *This, GLenum comp);
-void glUtil_DepthWrite(glUtil *This, BOOL enabled);
-void glUtil_DepthTest(glUtil *This, BOOL enabled);
+void glUtil_DepthWrite(glUtil *This, DWORD enabled);
+void glUtil_DepthTest(glUtil *This, DWORD enabled);
 void glUtil_SetScissor(glUtil *This, BOOL enabled, GLint x, GLint y, GLsizei width, GLsizei height);
 void glUtil_SetMatrix(glUtil *This, GLenum mode, GLfloat *mat1, GLfloat *mat2, BOOL *dirty);
 void glUtil_MatrixMode(glUtil *This, GLenum mode);

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -98,12 +98,13 @@ typedef struct TEXTURESTAGE
 #define OP_SETRENDERTARGET			31
 #define OP_SETVIEWPORT				32
 #define OP_VERTEX2D					33
-#define OP_SETDEPTHTEST				34
-#define OP_SETFRONTBUFFERBITS       35
-#define OP_SETSWAP                  36
-#define OP_SWAPBUFFERS				37
-#define OP_SETUNIFORM				38
-#define OP_SETATTRIB				39
+#define OP_SETD3DDEPTHMODE			34
+#define OP_SETDEPTHTEST				35
+#define OP_SETFRONTBUFFERBITS       36
+#define OP_SETSWAP                  37
+#define OP_SWAPBUFFERS				38
+#define OP_SETUNIFORM				39
+#define OP_SETATTRIB				40
 
 extern const DWORD renderstate_default[153];
 extern const TEXTURESTAGE texstagedefault0;

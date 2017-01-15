@@ -601,6 +601,9 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 	BOOL restart_cmd = FALSE;
 	__int64 shaderid;
 	BltVertex *vertex;
+	BOOL flip;
+	if (wait) flip = TRUE;
+	else flip = FALSE;
 	if (!inner) EnterCriticalSection(&This->cs);
 	switch (cmd->Generic.opcode)
 	{
@@ -1397,20 +1400,64 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		break;
 	case OP_INITD3D:  // Initialize renderer for Direct3D rendering.
 		// Set initial viewport
+		tmp_cmd.SetD3DViewport.opcode = OP_SETD3DVIEWPORT;
+		tmp_cmd.SetD3DViewport.size = sizeof(SetD3DViewportCmd) - 8;
+		tmp_cmd.SetD3DViewport.viewport.dwX = 0;
+		tmp_cmd.SetD3DViewport.viewport.dwY = 0;
+		tmp_cmd.SetD3DViewport.viewport.dwWidth = cmd->InitD3D.x;
+		tmp_cmd.SetD3DViewport.viewport.dwHeight = cmd->InitD3D.y;
+		tmp_cmd.SetD3DViewport.viewport.dvMinZ = 0.0f;
+		tmp_cmd.SetD3DViewport.viewport.dvMaxZ = 1.0f;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		// Initialize texture stages 0 through 7
+		tmp_cmd.InitTextureStage.opcode = OP_INITTEXTURESTAGE;
+		tmp_cmd.InitTextureStage.size = sizeof(InitTextureStageCmd) - 8 + (7 * sizeof(DWORD));
+		tmp_cmd.InitTextureStage.count = 8;
+		for (i = 0; i < 8; i++)
+			tmp_cmd.InitTextureStage.stage[i] = i;
+		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		// Post InitD3D command
-		error = DDERR_CURRENTLYNOTAVAIL;
+		CheckCmdBuffer(This, cmd->InitD3D.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->InitD3D.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->InitD3D.size + 8);
+		error = DD_OK;
 		break;
 	case OP_CLEAR:  // Clears full renderbuffer or one or more rects.
 					// Size should hold number of rects plus each rect, or 0 for screen.
-		error = DDERR_CURRENTLYNOTAVAIL;
+		CheckCmdBuffer(This, cmd->Clear.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->Clear.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->Clear.size + 8);
+		error = DD_OK;
 		break;
 	case OP_FLUSH:  // Probably should consider retiring this one.  Flip buffers if called
 					// to ensure the renderer gets flushed.
+		CheckCmdBuffer(This, cmd->Flush.size + 8, 0, 0, 0);
+		memcpy(This->state.cmd->cmdbuffer + This->state.cmd->write_ptr_cmd, cmd, cmd->Flush.size + 8);
+		This->state.cmd->write_ptr_cmd += (cmd->Flush.size + 8);
 		error = DDERR_CURRENTLYNOTAVAIL;
+		flip = TRUE;
 		break;
 	case OP_DRAWPRIMITIVES:  // Add primitives to the render buffer, check and adjust buffer
 		                     // state.
+
+		/*Description of old DrawPrimitives:
+		check for zbuffer on target
+		check if transformed
+		if no vertex positions fail
+		AND shaderstate with 0xFFFA3FF87FFFFFFFi64
+		AND all texstage ids with 0xFFE7FFFFFFFFFFFFi64
+		Set bit 51 of texture id for each texture stage in vertices
+		add number of textures to shaderstate bits 31-33
+		If more than 0 textures used set bit 34 of shaderstate
+		Set bits 46-48 of shaderstate to number of blendweights
+		Set bit 50 of shaderstate if vertices are pre-transformed
+		Set bit 35 of shaderstate if diffuse color is in vertices
+		Set bit 36 of shaderstate if specular color is in vertices
+		Set bit 37 of shaderstate if vertices have normals
+		Set shader program
+		Tell renderer to set depth compare mode, depth test, and depth write
+
+		*/
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_UPDATECLIPPER:  // Add pre-processed vertices to update the clipper.
@@ -1471,6 +1518,9 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_VERTEX2D:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
+	case OP_SETD3DDEPTHMODE:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_SETDEPTHTEST:
@@ -3742,10 +3792,8 @@ void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum m
 	if (vertices[7].data) This->shaderstate3d.stateid |= (1i64 << 37);
 	ShaderManager_SetShader(This->shaders,This->shaderstate3d.stateid,This->shaderstate3d.texstageid,2);
 	glRenderer__SetDepthComp(This);
-	if(This->renderstate[D3DRENDERSTATE_ZENABLE]) glUtil_DepthTest(This->util, TRUE);
-	else glUtil_DepthTest(This->util, FALSE);
-	if (This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]) glUtil_DepthWrite(This->util, TRUE);
-	else glUtil_DepthWrite(This->util, FALSE);
+	glUtil_DepthTest(This->util, This->renderstate[D3DRENDERSTATE_ZENABLE]);
+	glUtil_DepthWrite(This->util, This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]);
 	_GENSHADER *prog = &This->shaders->gen3d->current_genshader->shader;
 	glUtil_EnableArray(This->util, prog->attribs[0], TRUE);
 	This->ext->glVertexAttribPointer(prog->attribs[0],3,GL_FLOAT,GL_FALSE,vertices[0].stride,vertices[0].data);

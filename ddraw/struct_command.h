@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2016 William Feely
+// Copyright (C) 2016-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -267,6 +267,11 @@ typedef struct Vertex2DCmd
 	size_t offset;
 	size_t indexoffset;
 } Vertex2DCmd;
+typedef struct SetD3DDepthModeCmd
+{
+	DWORD opcode;
+	DWORD size;
+} SetD3DDepthModeCmd;
 typedef struct SetDepthTestCmd
 {
 	DWORD opcode;
@@ -398,6 +403,7 @@ typedef union QueueCmd
 	SetRenderTargetCmd SetRenderTarget;
 	SetViewportCmd SetViewport;
 	Vertex2DCmd Vertex2D;
+	SetD3DDepthModeCmd SetD3DDepthMode;
 	SetDepthTestCmd SetDepthTest;
 	SetFrontBufferBitsCmd SetFrontBufferBits;
 	SetSwapCmd SetSwap;

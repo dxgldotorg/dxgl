@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -329,20 +329,26 @@ void glUtil_SetWrap(glUtil *This, int level, DWORD coord, DWORD address)
 	}
 }
 
-void glUtil_DepthWrite(glUtil *This, BOOL enabled)
+void glUtil_DepthWrite(glUtil *This, DWORD enabled)
 {
-	if (enabled != This->depthwrite)
+	BOOL enabled_bool;
+	if (enabled) enabled_bool = TRUE;
+	else enabled_bool = FALSE;
+	if (enabled_bool != This->depthwrite)
 	{
-		This->depthwrite = enabled;
+		This->depthwrite = enabled_bool;
 		if (This->depthwrite) glDepthMask(GL_TRUE);
 		else glDepthMask(GL_FALSE);
 	}
 }
-void glUtil_DepthTest(glUtil *This, BOOL enabled)
+void glUtil_DepthTest(glUtil *This, DWORD enabled)
 {
-	if (enabled != This->depthtest)
+	BOOL enabled_bool;
+	if (enabled) enabled_bool = TRUE;
+	else enabled_bool = FALSE;
+	if (enabled_bool != This->depthtest)
 	{
-		This->depthtest = enabled;
+		This->depthtest = enabled_bool;
 		if (This->depthtest) glEnable(GL_DEPTH_TEST);
 		else glDisable(GL_DEPTH_TEST);
 	}
