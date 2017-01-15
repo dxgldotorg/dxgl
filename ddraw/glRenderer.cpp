@@ -1456,6 +1456,18 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		Set bit 37 of shaderstate if vertices have normals
 		Set shader program
 		Tell renderer to set depth compare mode, depth test, and depth write
+		Set shader attributes
+		Set modelview matrix
+		Set projection matrix
+		Set material
+		Set lights
+		Set ambient color uniform
+		For each texture stage:
+			Skip if colorop is disable
+			Upload texture if dirty
+			Set texure filter
+			Bind texture to texture unit
+			Set texture wrap
 
 		*/
 		error = DDERR_CURRENTLYNOTAVAIL;
@@ -3940,7 +3952,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum m
 			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu);
 			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv);
 		}
-		glUtil_SetTexture(This->util,i,0);
+		else glUtil_SetTexture(This->util,i,0);
 		This->ext->glUniform1i(prog->uniforms[128+i],i);
 		if(This->renderstate[D3DRENDERSTATE_COLORKEYENABLE] && This->texstages[i].texture && (prog->uniforms[142+i] != -1))
 		{
