@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2013 William Feely
+// Copyright (C) 2012-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -188,7 +188,7 @@ int ProcessHeaders(char *path)
 	while(fgets(buffer,1024,filein))
 	{
 		findptr = strstr(buffer,"$PRODUCTVERSTRING");
-		if(findptr) strncpy(findptr,"\"" DXGLSTRVER "\"\n",15);
+		if (findptr) strncpy(findptr, "\"" DXGLSTRVER "\"\n", 15);
 		findptr = strstr(buffer,"$PRODUCTREVISION");
 		if(findptr)
 		{
@@ -201,6 +201,19 @@ int ProcessHeaders(char *path)
 				strncpy(findptr,verbuffer,17);
 			}
 			else strncpy(findptr,"\"\"\n",17);
+		}
+		findptr = strstr(buffer, "$COMPILERTYPE");
+		if(findptr)
+		{
+			#ifdef _MSC_VER
+			#if (_MSC_VER == 1600)
+			strncpy(findptr, "\"VC2010\"\n", 13);
+			#elif (_MSC_VER == 1800)
+			strncpy(findptr, "\"VC2013\"\n", 13);
+			#else
+			strncpy(findptr, "\"UNKNOWN\"\n", 13);
+			#endif
+			#endif
 		}
 #ifdef _DEBUG
 		if(strstr(buffer,";!define _DEBUG")) strcpy(buffer,"!define _DEBUG");

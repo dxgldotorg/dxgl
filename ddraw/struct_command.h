@@ -272,6 +272,12 @@ typedef struct SetD3DDepthModeCmd
 	DWORD opcode;
 	DWORD size;
 } SetD3DDepthModeCmd;
+typedef struct BlendEnableCmd
+{
+	DWORD opcode;
+	DWORD size;
+	BOOL enabled;
+} BlendEnableCmd;
 typedef struct SetDepthTestCmd
 {
 	DWORD opcode;
@@ -355,6 +361,12 @@ typedef struct SetAttribCmdBase
 	DWORD size;
 	DWORD count;
 } SetAttribCmdBase;
+typedef struct SetMode3DCmd
+{
+	DWORD opcode;
+	DWORD size;
+	DWORD enable;
+} SetMode3DCmd;
 
 typedef struct BltVertex_STORAGE_Cmd // Store vertices in stack for Blt()
 // Also for variables for DrawScreen
@@ -404,12 +416,14 @@ typedef union QueueCmd
 	SetViewportCmd SetViewport;
 	Vertex2DCmd Vertex2D;
 	SetD3DDepthModeCmd SetD3DDepthMode;
+	BlendEnableCmd BlendEnable;
 	SetDepthTestCmd SetDepthTest;
 	SetFrontBufferBitsCmd SetFrontBufferBits;
 	SetSwapCmd SetSwap;
 	SwapBuffersCmd SwapBuffers;
 	SetUniformCmd SetUniform;
 	SetAttribCmd SetAttrib;
+	SetMode3DCmd SetMode3D;
 	BltVertex_STORAGE_Cmd BltVertex_STORAGE;
 	MIN_STORAGE_CMD MIN_STORAGE;
 } QueueCmd;
@@ -421,7 +435,8 @@ typedef struct RenderState
 	BYTE *last_cmd_start;
 	RenderTarget target;
 	VIEWPORT viewport;
-	BOOL depthtest;
+	DWORD d3drenderstate[RENDERSTATE_COUNT];
+	BOOL mode_3d;
 } RenderState;
 
 #endif //__STRUCT_COMMAND_H

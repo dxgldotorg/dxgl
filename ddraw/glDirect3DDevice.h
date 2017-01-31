@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -152,7 +152,7 @@ public:
 	glDirect3DLight **lights;
 	int gllights[8];
 	glDirectDrawSurface7 *glDDS7;
-	DWORD renderstate[153];
+	DWORD renderstate[RENDERSTATE_COUNT];
 	TEXTURESTAGE texstages[8];
 	glDirect3D7 *glD3D7;
 	glDirect3DMaterial3 **materials;

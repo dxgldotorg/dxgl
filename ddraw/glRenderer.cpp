@@ -764,6 +764,14 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 2) usedest = TRUE;
 				if (rop_texture_usage[(cmd->Blt.cmd.bltfx.dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 			}
+			// Set render mode to 2D
+			if (This->state.mode_3d)
+			{
+				tmp_cmd.SetMode3D.opcode = OP_SETMODE3D;
+				tmp_cmd.SetMode3D.size = sizeof(SetMode3DCmd) - 8;
+				tmp_cmd.SetMode3D.enable = FALSE;
+				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+			}
 			// Run backbuffer if using dest
 			if (usedest)
 			{
@@ -964,14 +972,6 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				tmp_cmd.SetViewport.viewport.hieght = r2.bottom;
 				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 			}
-			// Disable depth test
-			if (This->state.depthtest)
-			{
-				tmp_cmd.SetDepthTest.opcode = OP_SETDEPTHTEST;
-				tmp_cmd.SetDepthTest.size = sizeof(SetDepthTestCmd);
-				tmp_cmd.SetDepthTest.enabled = FALSE;
-				glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
-			}
 			// Generate vertices
 			if (!memcmp(&cmd->Blt.cmd.srcrect, &nullrect, sizeof(RECT)))
 			{
@@ -1103,6 +1103,14 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			view[2] = 0;
 			view[3] = (GLfloat)cmd->DrawScreen.texture->bigheight;
 		}
+		//  Set render mode to 2D
+		if (This->state.mode_3d)
+		{
+			tmp_cmd.SetMode3D.opcode = OP_SETMODE3D;
+			tmp_cmd.SetMode3D.size = sizeof(SetMode3DCmd) - 8;
+			tmp_cmd.SetMode3D.enable = FALSE;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
 		//  Mark primary as front buffer and clear frontbuffer bit on previous
 		tmp_cmd.SetFrontBufferBits.opcode = OP_SETFRONTBUFFERBITS;
 		tmp_cmd.SetFrontBufferBits.size = sizeof(SetFrontBufferBitsCmd) - 8;
@@ -1124,11 +1132,6 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			tmp_cmd.SetTexture.texstage[1].texture = cmd->DrawScreen.paltex;
 		}
 		tmp_cmd.SetTexture.count = i + 1;
-		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
-		//  Disable depth test
-		tmp_cmd.SetDepthTest.opcode = OP_SETDEPTHTEST;
-		tmp_cmd.SetDepthTest.size = sizeof(SetDepthTestCmd) - 8;
-		tmp_cmd.SetDepthTest.enabled = FALSE;
 		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		// If 8 bit scaled linear:
 		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
@@ -1439,37 +1442,58 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		break;
 	case OP_DRAWPRIMITIVES:  // Add primitives to the render buffer, check and adjust buffer
 		                     // state.
-
-		/*Description of old DrawPrimitives:
-		check for zbuffer on target
-		check if transformed
-		if no vertex positions fail
-		AND shaderstate with 0xFFFA3FF87FFFFFFFi64
-		AND all texstage ids with 0xFFE7FFFFFFFFFFFFi64
-		Set bit 51 of texture id for each texture stage in vertices
-		add number of textures to shaderstate bits 31-33
-		If more than 0 textures used set bit 34 of shaderstate
-		Set bits 46-48 of shaderstate to number of blendweights
-		Set bit 50 of shaderstate if vertices are pre-transformed
-		Set bit 35 of shaderstate if diffuse color is in vertices
-		Set bit 36 of shaderstate if specular color is in vertices
-		Set bit 37 of shaderstate if vertices have normals
-		Set shader program
-		Tell renderer to set depth compare mode, depth test, and depth write
-		Set shader attributes
-		Set modelview matrix
-		Set projection matrix
-		Set material
-		Set lights
-		Set ambient color uniform
-		For each texture stage:
-			Skip if colorop is disable
-			Upload texture if dirty
-			Set texure filter
-			Bind texture to texture unit
-			Set texture wrap
-
-		*/
+		// Set render mode to 3D
+		if (!This->state.mode_3d)
+		{
+			tmp_cmd.SetMode3D.opcode = OP_SETMODE3D;
+			tmp_cmd.SetMode3D.size = sizeof(SetMode3DCmd) - 8;
+			tmp_cmd.SetMode3D.enable = TRUE;
+			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
+		}
+		// check for zbuffer on target
+		// check if transformed
+		// if no vertex positions fail
+		// AND shaderstate with 0xFFFA3FF87FFFFFFFi64
+		// AND all texstage ids with 0xFFE7FFFFFFFFFFFFi64
+		// Set bit 51 of texture id for each texture stage in vertices
+		// add number of textures to shaderstate bits 31-33
+		// If more than 0 textures used set bit 34 of shaderstate
+		// Set bits 46-48 of shaderstate to number of blendweights
+		// Set bit 50 of shaderstate if vertices are pre-transformed
+		// Set bit 35 of shaderstate if diffuse color is in vertices
+		// Set bit 36 of shaderstate if specular color is in vertices
+		// Set bit 37 of shaderstate if vertices have normals
+		// Set shader program
+		// Tell renderer to set depth compare mode, depth test, and depth write
+		// Set shader attributes
+		// Set modelview matrix
+		// Set projection matrix
+		// Set material
+		// Set lights
+		// Set ambient color uniform
+		// For each texture stage:
+		// 	Skip if colorop is disable
+		// 	Upload texture if dirty
+		// 	Set texure filter
+		// 	Bind texture to texture unit
+		// 	Set texture wrap
+		// 	Set shader uniform texture unit
+		// 	Set color key
+		// Set viewport uniforms
+		// Set alpha reference
+		// Set color bits uniform
+		// Set rendertarget to D3D target
+		// Set viewport to D3D viewport
+		// Set depth range
+		// Set blend enable mode
+		// Set blend mode
+		// Set cull mode
+		// Set fog color, start, end, density
+		// Set polygon mode
+		// Set shade mode
+		// Create command and check buffers
+		// Write vertices to VBO
+		// Write command to buffer
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
 	case OP_UPDATECLIPPER:  // Add pre-processed vertices to update the clipper.
@@ -1535,6 +1559,9 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 	case OP_SETD3DDEPTHMODE:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
+	case OP_BLENDENABLE:
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
 	case OP_SETDEPTHTEST:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
@@ -1553,7 +1580,15 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 	case OP_SETATTRIB:
 		error = DDERR_CURRENTLYNOTAVAIL;
 		break;
+	case OP_SETMODE3D:
+		//  Disable depth test
+		// Disable blending
+		// Disable polygon culling
+		// Set fill mode to solid
+		error = DDERR_CURRENTLYNOTAVAIL;
+		break;
 	default:
+		FIXME("Unknown opcode detected.");
 		error = DDERR_INVALIDPARAMS;
 		break;
 	}
@@ -3521,7 +3556,7 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 	glUtil_SetMaterial(This->util, one, one, zero, zero, 0);
 	ZeroMemory(&This->material, sizeof(D3DMATERIAL7));
 	ZeroMemory(&This->lights, 8 * sizeof(D3DLIGHT7));
-	memcpy(&This->renderstate, &renderstate_default, 153 * sizeof(DWORD));
+	memcpy(&This->renderstate, &renderstate_default, RENDERSTATE_COUNT * sizeof(DWORD));
 	This->texstages[0] = texstagedefault0;
 	This->texstages[1] = This->texstages[2] = This->texstages[3] = This->texstages[4] =
 		This->texstages[5] = This->texstages[6] = This->texstages[7] = This->texstages[8] =

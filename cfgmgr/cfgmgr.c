@@ -987,7 +987,7 @@ ver0to1:
 	} while (error == ERROR_SUCCESS);
 	// Transfer matching profiles
 	oldvalue = malloc(oldvaluesize);
-	for (int i = 0; i < oldconfigcount; i++)
+	for (i = 0; i < oldconfigcount; i++)
 	{
 		if (oldkeys[i].exe_found)
 		{
@@ -1049,7 +1049,7 @@ ver0to1:
 		}
 	}
 	// Delete old registry keys
-	for (int i = 0; i < oldconfigcount; i++)
+	for (i = 0; i < oldconfigcount; i++)
 		RegDeleteKey(hKey, oldkeys[i].OldKey);
 	// Clean up and write registry version
 	if(olddir) free(olddir);

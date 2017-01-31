@@ -74,7 +74,7 @@ typedef struct _D3DDeviceDesc2 {
         DWORD           dwMinStippleHeight,dwMaxStippleHeight;
 } D3DDEVICEDESC2,*LPD3DDEVICEDESC2;
 
-const DWORD renderstate_default[153] = {0, // 0
+const DWORD renderstate_default[RENDERSTATE_COUNT] = {0, // 0
 	NULL, //texturehandle
 	D3DANTIALIAS_NONE, //antialias
 	D3DTADDRESS_WRAP, //textureaddress
@@ -317,7 +317,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	outbuffer = NULL;
 	outbuffersize = 0;
 	ZeroMemory(texcoords,8*sizeof(GLfloat*));
-	memcpy(renderstate,renderstate_default,153*sizeof(DWORD));
+	memcpy(renderstate,renderstate_default,RENDERSTATE_COUNT*sizeof(DWORD));
 	__gluMakeIdentityf(matWorld);
 	__gluMakeIdentityf(matView);
 	__gluMakeIdentityf(matProjection);

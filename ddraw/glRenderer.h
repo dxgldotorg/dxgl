@@ -99,14 +99,16 @@ typedef struct TEXTURESTAGE
 #define OP_SETVIEWPORT				32
 #define OP_VERTEX2D					33
 #define OP_SETD3DDEPTHMODE			34
-#define OP_SETDEPTHTEST				35
-#define OP_SETFRONTBUFFERBITS       36
-#define OP_SETSWAP                  37
-#define OP_SWAPBUFFERS				38
-#define OP_SETUNIFORM				39
-#define OP_SETATTRIB				40
+#define OP_BLENDENABLE				35
+#define OP_SETDEPTHTEST				36
+#define OP_SETFRONTBUFFERBITS       37
+#define OP_SETSWAP                  38
+#define OP_SWAPBUFFERS				39
+#define OP_SETUNIFORM				40
+#define OP_SETATTRIB				41
+#define OP_SETMODE3D				42
 
-extern const DWORD renderstate_default[153];
+extern const DWORD renderstate_default[RENDERSTATE_COUNT];
 extern const TEXTURESTAGE texstagedefault0;
 extern const TEXTURESTAGE texstagedefault1;
 
@@ -143,7 +145,7 @@ typedef struct glRenderer
 	int oldswap;
 	glUtil *util;
 	ShaderManager *shaders;
-	DWORD renderstate[153];
+	DWORD renderstate[RENDERSTATE_COUNT];
 	SHADERSTATE shaderstate3d;
 	TEXTURESTAGE texstages[12];
 	D3DMATERIAL7 material;

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <tchar.h>
 #include <stdio.h>
+#include <float.h>
 #include <math.h>
 #include <io.h>
 #include <Uxtheme.h>
@@ -666,6 +667,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regkey;
 	BOOL failed;
 	LPTSTR installpath;
+	DWORD err;
 	RECT r;
 	NMHDR *nm;
 	int newtab;
@@ -1454,7 +1456,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						_T("Profile already exists"), MB_OK | MB_ICONWARNING);
 					break;
 				}
-				DWORD err = AddApp(filename.lpstrFile, TRUE, FALSE);
+				err = AddApp(filename.lpstrFile, TRUE, FALSE);
 				if (!err)
 				{
 					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
@@ -1608,7 +1610,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 
 void UpgradeDXGL()
 {
-	UpgradeConfig();
 	HKEY hKeyBase;
 	HKEY hKey;
 	DWORD keysize, keysize2;
@@ -1626,6 +1627,8 @@ void UpgradeDXGL()
 	TCHAR installpath[MAX_PATH + 1];
 	TCHAR srcpath[MAX_PATH + 1];
 	TCHAR destpath[MAX_PATH + 1];
+	HMODULE hmod;
+	UpgradeConfig();
 	regbuffersize = 1024;
 	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
 	RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
@@ -1677,7 +1680,7 @@ void UpgradeDXGL()
 				if (error == ERROR_FILE_EXISTS)
 				{
 					old_dxgl = FALSE;
-					HMODULE hmod = LoadLibrary(destpath);
+					hmod = LoadLibrary(destpath);
 					if (hmod)
 					{
 						if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;
@@ -1713,6 +1716,7 @@ void UninstallDXGL(TCHAR uninstall)
 	TCHAR installpath[MAX_PATH + 1];
 	TCHAR srcpath[MAX_PATH + 1];
 	TCHAR destpath[MAX_PATH + 1];
+	HMODULE hmod;
 	int i = 0;
 	UpgradeConfig();  // Just to make sure the registry format is correct
 	regbuffersize = 1024;
@@ -1762,7 +1766,7 @@ void UninstallDXGL(TCHAR uninstall)
 			if (GetFileAttributes(destpath) != INVALID_FILE_ATTRIBUTES)
 			{
 				old_dxgl = FALSE;
-				HMODULE hmod = LoadLibrary(destpath);
+				hmod = LoadLibrary(destpath);
 				if (hmod)
 				{
 					if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;

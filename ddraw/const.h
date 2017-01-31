@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2016 William Feely
+// Copyright (C) 2016-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,11 +23,13 @@
 extern "C" {
 #endif
 
-	extern const RECT nullrect;
-	extern const DWORD valid_rop_codes[256];
-	extern const DWORD rop_texture_usage[256];
-	extern const DWORD supported_rops[8];
-	extern const DWORD supported_rops_gl2[8];
+#define RENDERSTATE_COUNT 153
+
+extern const RECT nullrect;
+extern const DWORD valid_rop_codes[256];
+extern const DWORD rop_texture_usage[256];
+extern const DWORD supported_rops[8];
+extern const DWORD supported_rops_gl2[8];
 
 #ifdef _M_X64
 #define _PTR_MASK 0xFFFFFFFFFFFFFFFFui64

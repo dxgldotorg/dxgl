@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2015 William Feely
+; Copyright (C) 2011-2017 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -84,7 +84,27 @@ SetCompressor /SOLID lzma
 !define KEY_ENUMERATE_SUB_KEYS   0x0008
 !define ROOT_KEY         ${HKEY_CURRENT_USER}
 !define GetVersion       "Kernel32::GetVersion() i"
-!define msvcr120_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
+
+!if ${COMPILER} == "VC2010"
+!define download_runtime 1
+!define runtime_url "http://www.dxgl.info/download/runtimes/vc10/vcredist_x86.exe"
+!define runtime_name "Visual C++ 2010"
+!define runtime_filename "vcredist_x86.exe"
+!define runtime_sha512 "D2D99E06D49A5990B449CF31D82A33104A6B45164E76FBEB34C43D10BCD25C3622AF52E59A2D4B7F5F45F83C3BA4D23CF1A5FC0C03B3606F42426988E63A9770"
+!define runtime_regkey SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86
+!define runtime_regvalue Installed
+!else if ${COMPILER} == "VC2013"
+!define download_runtime 1
+!define runtime_url "http://www.dxgl.info/download/runtimes/vc12/vcredist_x86.exe"
+!define runtime_name "Visual C++ 2013"
+!define runtime_filename "vcredist_x86.exe"
+!define runtime_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
+!define runtime_regvalue Install
+!else
+!define download_runtime 0
+!endif
+
 !addplugindir "..\${SRCDIR}"
 
 !ifdef _DEBUG
@@ -128,40 +148,45 @@ Section "DXGL Components (required)" SEC01
   File "..\Help\dxgl.chm"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
-  ExecWait '"$INSTDIR\dxglcfg.exe" upgrade'
-  ExecWait '"$INSTDIR\dxgltest.exe" install'
 SectionEnd
 
 !ifndef _DEBUG
-Section "Download Visual C++ 2013 Redistributable" SEC_VCREDIST
+!if ${download_runtime} >= 1
+Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
   vcdownloadretry:
-  DetailPrint "Downloading Visual C++ 2013 Runtime"
-  NSISdl::download http://www.dxgl.info/download/runtimes/vc12/vcredist_x86.exe $TEMP\vcredist_x86.exe
-  DetailPrint "Checking Visual C++ 2013 Runtime"
-  sha512-nsis::CalculateSha512Sum $TEMP\vcredist_x86.exe ${msvcr120_sha512}
+  DetailPrint "Downloading ${runtime_name} Runtime"
+  NSISdl::download ${runtime_url} $TEMP\${runtime_filename}
+  DetailPrint "Checking ${runtime_name} Runtime"
+  sha512-nsis::CalculateSha512Sum $TEMP\${runtime_filename} ${runtime_sha512}
   Pop $0
   ${If} $0 == "0"
-    MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download Visual C++ 2013 Redistributable.  Would you like to retry?" IDYES vcdownloadretry
+    MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download ${runtime_name} Redistributable.  Would you like to retry?" IDYES vcdownloadretry
     Delete $TEMP\vcredist_x86.exe
   ${Else}
-    DetailPrint "Installing Visual C++ 2013 Runtime"
-    ExecWait '"$TEMP\vcredist_x86.exe" /q /norestart' $0
+    DetailPrint "Installing ${runtime_name} Runtime"
+    ExecWait '"$TEMP\${runtime_filename}" /q /norestart' $0
 	${If} $0 != "0"
 	  ${If} $0 == "3010"
 	  SetRebootFlag true
 	  goto vcinstallcomplete
 	  ${Else}
-	  MessageBox MB_OK|MB_ICONSTOP "Failed to install Visual C++ 2013 Redistributable.  Click OK to attempt manual installation."
+	  MessageBox MB_OK|MB_ICONSTOP "Failed to install ${runtime_name} Redistributable.  Click OK to attempt manual installation."
 	  ${EndIf}
     ${Else}
 	goto vcinstallcomplete
 	${EndIf}
-	ExecWait '"$TEMP\vcredist_x86.exe"'
+	ExecWait '"$TEMP\${runtime_filename}"'
 	vcinstallcomplete:
-    Delete $TEMP\vcredist_x86.exe
+    Delete $TEMP\${runtime_filename}
   ${EndIf}
 SectionEnd
 !endif
+!endif
+
+Section -PostInstall
+  ExecWait '"$INSTDIR\dxglcfg.exe" upgrade'
+  ExecWait '"$INSTDIR\dxgltest.exe" install'
+SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
@@ -220,13 +245,15 @@ Function .onInit
   in debug mode.  For more information please visit https://msdn.microsoft.com/en-us/library/aa985618.aspx$\r\
   If you downloaded this file, please immediately report this to admin@www.williamfeely.info"
   !else
-  ReadRegDWORD $0 HKLM SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum Install
+  !if ${download_runtime} >= 1
+  ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
   StrCmp $0 1 skipvcredist
   goto vcinstall
   skipvcredist:
   SectionSetFlags ${SEC_VCREDIST} 0
   SectionSetText ${SEC_VCREDIST} ""
   vcinstall:
+  !endif
   !endif
   
   System::Call "${GetVersion} () .r0"
