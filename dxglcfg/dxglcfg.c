@@ -734,8 +734,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// extra modes
 		if(cfg->AddModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
-		// shader path
-		SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
 		// texture format
 		_tcscpy(buffer,_T("Automatic"));
 		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -1075,7 +1073,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
-				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
@@ -1159,14 +1156,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,&cfgmask->DPIScale);
 			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 			*dirty = TRUE;
-			break;
-		case IDC_SHADER:
-			if(HIWORD(wParam) == EN_CHANGE)
-			{
-				GetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile);
-				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-				*dirty = TRUE;
-			}
 			break;
 		case IDC_ASPECT:
 			if (HIWORD(wParam) == CBN_KILLFOCUS)

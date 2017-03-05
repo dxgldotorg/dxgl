@@ -156,6 +156,8 @@ typedef struct glRenderer
 	float mulx, muly;
 	RenderState state;
 	size_t scenesize, scenesizevertex, scenesizeindex;
+	DWORD last_fvf;
+	BOOL mode_3d;
 } glRenderer;
 
 HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait);
@@ -207,7 +209,10 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype);
 void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer__Clear(glRenderer *This, ClearCommand *cmd);
-void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
+void glRenderer__UpdateFVF(glRenderer *This, DWORD fvf);
+void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, DWORD fvf,
+	void *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags);
+void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer__Flush(glRenderer *This);
 void glRenderer__SetWnd(glRenderer *This, int width, int height, int fullscreen, int bpp, unsigned int frequency, HWND newwnd, BOOL devwnd);
@@ -235,6 +240,7 @@ void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glText
 void glRenderer__SetDepthComp(glRenderer *This);
 void glRenderer__DXGLBreak(glRenderer *This);
 void glRenderer__EndCommand(glRenderer *This, BOOL wait);
+void glRenderer__SetMode3D(glRenderer *This, BOOL enabled);
 
 void BltFlipLR(BltVertex *vertices);
 void BltFlipUD(BltVertex *vertices);

@@ -1450,6 +1450,11 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			tmp_cmd.SetMode3D.enable = TRUE;
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		}
+		if((This->state.last_cmd.DrawPrimitives.opcode == OP_DRAWPRIMITIVES) &&
+			(cmd->DrawPrimitives.mode == This->state.last_cmd.DrawPrimitives.mode) &&
+			(cmd->DrawPrimitives.target == This->state.last_cmd.DrawPrimitives.target) &&
+			!memcmp(cmd->DrawPrimitives.texformats, This->state.last_cmd.DrawPrimitives.texformats, 8 * sizeof(int)))
+		{}
 		// check for zbuffer on target
 		// check if transformed
 		// if no vertex positions fail
@@ -1670,6 +1675,8 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->hDC = NULL;
 	This->hRC = NULL;
 	This->pbo = NULL;
+	This->last_fvf = 0xFFFFFFFF; // Bogus value to force initial FVF change
+	This->mode_3d = FALSE;
 	ZeroMemory(&This->dib, sizeof(DIB));
 	This->hWnd = hwnd;
 	InitializeCriticalSection(&This->cs);
@@ -2513,8 +2520,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 					glTexture_Release(This->backbuffer, TRUE);
 					This->backbuffer = NULL;
 				}
-				glRenderer__DeleteCommandBuffer(&This->cmd1);
-				glRenderer__DeleteCommandBuffer(&This->cmd2);
+				//glRenderer__DeleteCommandBuffer(&This->cmd1);
+				//glRenderer__DeleteCommandBuffer(&This->cmd2);
 				ShaderManager_Delete(This->shaders);
 				glUtil_Release(This->util);
 				free(This->shaders);
@@ -2569,7 +2576,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__Flush(This);
 			break;
 		case OP_DRAWPRIMITIVES:
-			glRenderer__DrawPrimitives(This,(RenderTarget*)&This->inputs[8],(GLenum)This->inputs[1],
+			glRenderer__DrawPrimitivesOld(This,(RenderTarget*)&This->inputs[8],(GLenum)This->inputs[1],
 				(GLVERTEX*)This->inputs[2],(int*)This->inputs[3],(DWORD)This->inputs[4],(LPWORD)This->inputs[5],
 				(DWORD)This->inputs[6],(DWORD)This->inputs[7]);
 			break;
@@ -2773,10 +2780,10 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	BufferObject_SetData(This->pbo, GL_PIXEL_PACK_BUFFER, width*height * 4, NULL, GL_STREAM_READ);
 	ZeroMemory(&This->state, sizeof(RenderState));
 	This->state.cmd = &This->cmd1;
-	glRenderer__InitCommandBuffer(This, &This->cmd1, width * height * (NextMultipleOf8(bpp) / 8));
-	glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
-	BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	//glRenderer__InitCommandBuffer(This, &This->cmd1, width * height * (NextMultipleOf8(bpp) / 8));
+	//glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
+	//BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	//BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	TRACE_SYSINFO();
 	return TRUE;
 }
@@ -3795,14 +3802,31 @@ void glRenderer__SetBlend(glRenderer *This, DWORD src, DWORD dest)
 	glUtil_BlendFunc(This->util, glsrc, gldest);
 }
 
-void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
+void glRenderer__UpdateFVF(glRenderer *This, DWORD fvf)
+{
+}
+
+void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, DWORD fvf,
+	void *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags)
+{
+	BOOL transformed;
+	int i;
+	glTexture *ztexture = NULL;
+	GLint zleve = 0;
+	if (!vertices)
+	{
+		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		SetEvent(This->busy);
+		return;
+	}
+	if (fvf != This->last_fvf) glRenderer__UpdateFVF(This, fvf);
+
+}
+
+void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
 	bool transformed;
-	char svar[] = "sX";
-	char stvar[] = "stX";
-	char strvar[] = "strX";
-	char strqvar[] = "strqX";
 	int i;
 	glTexture *ztexture = NULL;
 	GLint zlevel = 0;
@@ -4666,6 +4690,11 @@ void glRenderer__EndCommand(glRenderer *This, BOOL wait)
 	if (!wait) SetEvent(This->busy);
 	// Do command execution here
 	if (wait) SetEvent(This->busy);
+}
+
+void glRenderer__SetMode3D(glRenderer *This, BOOL enabled)
+{
+// TODO:  Set 3D mode
 }
 
 }

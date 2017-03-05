@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -34,8 +34,8 @@
 #define IDC_VIDMODE                             1041
 #define IDC_SCALE                               1042
 #define IDC_FULLMODE                            1043
-#define IDC_SHADER                              1044
-#define IDC_BROWSESHADER                        1045
+#define IDC_PRESCALESIZE                        1044
+#define IDC_PRESCALE                            1045
 #define IDC_TEXFILTER                           1046
 #define IDC_ANISO                               1047
 #define IDC_MSAA                                1048
