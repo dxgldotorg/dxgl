@@ -157,6 +157,7 @@ typedef struct glRenderer
 	RenderState state;
 	size_t scenesize, scenesizevertex, scenesizeindex;
 	DWORD last_fvf;
+	GLsizei fvf_stride;
 	BOOL mode_3d;
 } glRenderer;
 
@@ -211,7 +212,7 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer__Clear(glRenderer *This, ClearCommand *cmd);
 void glRenderer__UpdateFVF(glRenderer *This, DWORD fvf);
 void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, DWORD fvf,
-	void *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags);
+	BYTE *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags);
 void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texcormats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
 void glRenderer__Flush(glRenderer *This);

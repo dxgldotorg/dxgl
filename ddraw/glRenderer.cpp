@@ -3813,12 +3813,12 @@ void glRenderer__UpdateFVF(glRenderer *This, DWORD fvf)
 }
 
 void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, DWORD fvf,
-	void *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags)
+	BYTE *vertices, BOOL strided, DWORD count, LPWORD indices, DWORD indexcount, DWORD flags)
 {
 	BOOL transformed;
 	int i;
 	glTexture *ztexture = NULL;
-	GLint zleve = 0;
+	GLint zlevel = 0;
 	if (!vertices)
 	{
 		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
@@ -3826,7 +3826,40 @@ void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum m
 		return;
 	}
 	if (fvf != This->last_fvf) glRenderer__UpdateFVF(This, fvf);
-
+	glRenderer__SetDepthComp(This);
+	glUtil_DepthTest(This->util, This->renderstate[D3DRENDERSTATE_ZENABLE]);
+	glUtil_DepthWrite(This->util, This->renderstate[D3DRENDERSTATE_ZWRITEENABLE]);
+	_GENSHADER *prog = &This->shaders->gen3d->current_genshader->shader;
+	switch (fvf & D3DFVF_POSITION_MASK)
+	{
+	case 0: // Missing vertex position
+		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		SetEvent(This->busy);
+		return;
+	case D3DFVF_XYZ:
+		glUtil_EnableArray(This->util, prog->attribs[0], TRUE);
+		This->ext->glVertexAttribPointer(prog->attribs[0], 3, GL_FLOAT, GL_FALSE, This->fvf_stride, vertices);
+		break;
+	case D3DFVF_XYZRHW:
+		glUtil_EnableArray(This->util, prog->attribs[0], TRUE);
+		This->ext->glVertexAttribPointer(prog->attribs[0], 3, GL_FLOAT, GL_FALSE, This->fvf_stride, vertices);
+		if (prog->attribs[1] != -1)
+		{
+			glUtil_EnableArray(This->util, prog->attribs[1], TRUE);
+			This->ext->glVertexAttribPointer(prog->attribs[1], 1, GL_FLOAT, GL_FALSE, This->fvf_stride, vertices+(3*sizeof(float)));
+		}
+		break;
+	case D3DFVF_XYZB1:
+	case D3DFVF_XYZB2:
+	case D3DFVF_XYZB3:
+	case D3DFVF_XYZB4:
+	case D3DFVF_XYZB5:
+		FIXME("glRenderer__DrawPrimitives: Blend weights not yet supported");
+		This->outputs[0] = (void*)DDERR_INVALIDPARAMS;
+		SetEvent(This->busy);
+		return;
+		break;
+	}
 }
 
 void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
@@ -3879,7 +3912,7 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 		if(prog->attribs[1] != -1)
 		{
 			glUtil_EnableArray(This->util, prog->attribs[1], TRUE);
-			This->ext->glVertexAttribPointer(prog->attribs[1],4,GL_FLOAT,GL_FALSE,vertices[1].stride,vertices[1].data);
+			This->ext->glVertexAttribPointer(prog->attribs[1],1,GL_FLOAT,GL_FALSE,vertices[1].stride,vertices[1].data);
 		}
 	}
 	for(i = 0; i < 5; i++)
