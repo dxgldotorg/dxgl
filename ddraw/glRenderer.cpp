@@ -2042,18 +2042,24 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 		switch (dxglcfg.fullmode)
 		{
 		case 0:    // Fullscreen
-			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			/*winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+			ShowWindow(newwnd, SW_MAXIMIZE);*/  //This seems to cause a black screen in some cases
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_STYLE, WS_OVERLAPPED|WS_POPUP);
 			ShowWindow(newwnd, SW_MAXIMIZE);
 			break;
 		case 1:    // Non-exclusive Fullscreen
 		case 5:    // Windowed borderless scaled
-			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
+			/*winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
 			SetWindowLongPtrA(newwnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(newwnd, SW_MAXIMIZE);*/  //This seems to cause a black screen in some cases
+			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+			SetWindowLongPtrA(newwnd, GWL_STYLE, WS_OVERLAPPED);
 			ShowWindow(newwnd, SW_MAXIMIZE);
 			break;
 		case 2:     // Windowed
