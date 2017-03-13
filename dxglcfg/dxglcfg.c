@@ -222,8 +222,8 @@ void SaveChanges(HWND hWnd)
 
 void FloatToAspect(float f, LPTSTR aspect)
 {
-	float integer;
-	float dummy;
+	double integer;
+	double dummy;
 	float fract;
 	TCHAR denominator[5];
 	int i;
@@ -542,7 +542,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		ReleaseDC(hGLWnd,dc);
 		DestroyWindow(hGLWnd);
 		// Load global settings.
-		// scaler
+		// video mode
 		_tcscpy(buffer,_T("Change desktop resolution"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch to screen"));
@@ -560,7 +560,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Crop to screen (experimental)"));
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
 		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
-		// fullmode
+		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
 		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Non-exclusive fullscreen"));
@@ -577,7 +577,26 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// colormode
 		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,0);
-		// scalingfilter
+		// first scaling filter
+		_tcscpy(buffer, _T("Nearest"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->scalingfilter, 0);
+		// first scaling sizes
+		_tcscpy(buffer, _T("Auto"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1x"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1x2"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x"));
+		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));

@@ -270,8 +270,8 @@ void SaveChanges(HWND hWnd)
 
 void FloatToAspect(float f, LPTSTR aspect)
 {
-	float integer;
-	float dummy;
+	double integer;
+	double dummy;
 	float fract;
 	TCHAR denominator[5];
 	int i;
@@ -774,7 +774,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		tabopen = 0;
 
 		// Load global settings.
-		// scaler
+		// video mode
 		_tcscpy(buffer,_T("Change desktop resolution"));
 		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch to screen"));
@@ -792,10 +792,43 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Crop to screen (experimental)"));
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
+		// fullscreen window mode
+		_tcscpy(buffer, _T("Exclusive fullscreen"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Non-exclusive fullscreen"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Non-resizable window"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Resizable window"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Borderless window"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Borderless window (scaled)"));
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
 		// colormode
 		if (cfg->colormode) SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
-		// scalingfilter
+		// first scaling filter
+		_tcscpy(buffer, _T("Nearest"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALE, CB_SETCURSEL, cfg->scalingfilter, 0);
+		// first scaling sizes
+		_tcscpy(buffer, _T("Auto"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1x"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1x2"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x"));
+		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
