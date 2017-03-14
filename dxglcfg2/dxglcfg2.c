@@ -820,7 +820,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("1x"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("1x2"));
+		_tcscpy(buffer, _T("2x1"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
