@@ -1,6 +1,6 @@
 Struct DXGLCFG
 Member scaler
-REG_DWORD HKCU\DXGL\<app>\ScalingMode
+REG_DWORD HKCU\DXGL\Profiles\<app>\ScalingMode
 Determines the method of scaling full screen modes.
 Valid settings:
 0 - Change display mode to match requested mode.
@@ -13,7 +13,7 @@ Valid settings:
 7 - Crop output to desktop, preserving aspect ratio
 
 Member fullmode
-REG_DWORD HKCU\DXGL\<app>\FullscreenWindowMode
+REG_DWORD HKCU\DXGL\Profiles\<app>\FullscreenWindowMode
 Determines how to handle fullscreen modes.
 Valid settings:
 0 - Use exclusive fullscreen
@@ -23,19 +23,40 @@ Valid settings:
 4 - Use a borderless, non-resizable window, called windowed borderless in industry
 
 Member colormode
-REG_DWORD HKCU\DXGL\<app>\ChangeColorDepth
+REG_DWORD HKCU\DXGL\Profiles\<app>\ChangeColorDepth
 If nonzero, switches screen color depth if requested by the application.
 Recommended setting is off.  DXGL handles color depth conversion internally.
 
+Member firstscalefilter
+REG_DWORD HKCU\DXGL\Profiles\<app>\FirstScaleFilter
+Filter to use for the optional first pass display scaling.
+Valid settings:
+0 - Nearest-neighbor stretching
+1 - Bilinear interpolation
+
+Member firstscalex
+REG_DWORD HKCU\DXGL\Profiles\<app>\FirstScaleX
+Amount to stretch the display in the X direction for the first pass.
+If either X or Y is set to 0 or less than 0.25, automatically choose
+2x or 2x1 scaling for certain low resolutions.
+Stored as a 32-bit float encoded as a DWORD.
+
+Member firstscaley
+REG_DWORD HKCU\DXGL\Profiles\<app>\FirstScaley
+Amount to stretch the display in the Y direction for the first pass.
+If either X or Y is set to 0 or less than 0.25, automatically choose
+2x or 2x1 scaling for certain low resolutions.
+Stored as a 32-bit float encoded as a DWORD.
+
 Member scalingfilter
-REG_DWORD HKCU\DXGL\<app>\ScalingFilter
-Filter to use for stretched 2D blits.
+REG_DWORD HKCU\DXGL\Profiles\<app>\ScalingFilter
+Filter to use for stretched 2D blits and the final display scaling.
 Valid settings:
 0 - Nearest-neighbor stretching
 1 - Bilinear interpolation
 
 Member primaryscale
-REG_DWORD HKCU\DXGL\<app>\AdjustPrimaryResolution
+REG_DWORD HKCU\DXGL\Profiles\<app>\AdjustPrimaryResolution
 Changes primary resolution to match desktop resolution.
 May cause glitches
 Valid settings:
@@ -50,19 +71,19 @@ Valid settings:
 8 - Use custom scale.
 
 Member primaryscalex
-REG_DWORD HKCU\DXGL\<app>\PrimaryScaleX
+REG_DWORD HKCU\DXGL\Profiles\<app>\PrimaryScaleX
 Custom X scale for primary scaling.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, set to 1.
 
 Member primaryscaley
-REG_DWORD HKCU\DXGL\<app>\PrimaryScaleY
+REG_DWORD HKCU\DXGL\Profiles\<app>\PrimaryScaleY
 Custom X scale for primary scaling.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, set to 1.
 
 Member texfilter
-REG_DWORD HKCU\DXGL\<app>\TextureFilter
+REG_DWORD HKCU\DXGL\Profiles\<app>\TextureFilter
 Filter for 3D textured polygons
 Valid settings:
 0 - Use application settings
@@ -74,7 +95,7 @@ Valid settings:
 6 - GL_LINEAR_MIPMAP_LINEAR (Trilinear filtering)
 
 Member anisotropic
-REG_DWORD HKCU\DXGL\<app>\AnisotropicFiltering
+REG_DWORD HKCU\DXGL\Profiles\<app>\AnisotropicFiltering
 Anisotropic filter level, may decrese performance on slower GPUs.
 Valid settings:
 0 - Application default
@@ -82,7 +103,7 @@ Valid settings:
 Larger numbers enable anisotropic filtering, maximum determined by GPU driver.
 
 member msaa
-REG_DWORD HKCU\DXGL\<app>\Antialiasing
+REG_DWORD HKCU\DXGL\Profiles\<app>\Antialiasing
 Level of Full Screen Antialiasing.  May considerably decrease performance on
 slower GPUs.
 Valid settings:
@@ -94,7 +115,7 @@ Coverage sample count + 4096 × Color sample count
 Example:  16 coverage, 8 color = 0x8010
 
 Member aspect3d
-REG_DWORD HKCU\DXGL\<app>\AdjustAspectRatio
+REG_DWORD HKCU\DXGL\Profiles\<app>\AdjustAspectRatio
 If the scaler is 1 or 4, adjust 3D projection to correct aspect ratio.  Does
 not affect 2D blits or similar operations.
 Valid settings:
@@ -103,15 +124,15 @@ Valid settings:
 2 - Crop to viewable area. May cause graphics to get cut off.
 
 Member EnableShader
-REG_DWORD HKCU\DXGL\<app>\EnableShader
+REG_DWORD HKCU\DXGL\Profiles\<app>\EnableShader
 If nonzero, enables post-process shaders.
 
 Member shaderfile
-REG_SZ HKCU\DXGL\<app>\ShaderFile
+REG_SZ HKCU\DXGL\Profiles\<app>\ShaderFile
 Full path to file containing a post-process shader script.
 
 Member SortModes
-REG_DWORD HKCU\DXGL\<app>\SortModes
+REG_DWORD HKCU\DXGL\Profiles\<app>\SortModes
 Sort display modes
 Valid settings:
 0 - As reported by system
@@ -119,14 +140,14 @@ Valid settings:
 2 - Group by resolution
 
 Member AllColorDepths
-REG_DWORD HKCU\DXGL\<app>\AllColorDepths
+REG_DWORD HKCU\DXGL\Profiles\<app>\AllColorDepths
 [DEPRECATED]Enable all color depths, even if unsupported by the system
 Valid settings:
 0 - Off
 1 - On
 
 Member AddColorDepths
-REG_DWORD HKCU\DXGL\<app>\AddColorDepths
+REG_DWORD HKCU\DXGL\Profiles\<app>\AddColorDepths
 Adds color depths, even if unsupported by the system
 Bit-mapped variable
 Valid settings, OR'ed to combine settings:
@@ -138,14 +159,14 @@ Valid settings, OR'ed to combine settings:
 16 - Add 32-bit modes
 
 Member ExtraModes
-REG_DWORD HKCU\DXGL\<app>\ExtraModes
+REG_DWORD HKCU\DXGL\Profiles\<app>\ExtraModes
 [DEPRECATED]Enable extra video modes, even if unsupported by the system
 Valid settings:
 0 - Off
 1 - On
 
 member AddModes
-REG_DWORD HKCU\DXGL\<app>\AddModes
+REG_DWORD HKCU\DXGL\Profiles\<app>\AddModes
 Adds additional video modes, even if unsupported by the system
 Bit-mapped variable
 Valid settings, OR'ed to combine settings:
@@ -155,26 +176,26 @@ Valid settings, OR'ed to combine settings:
 4 - Add higher resolution modes
 
 Member vsync
-REG_DWORD HKCU\DXGL\<app>\VSync
+REG_DWORD HKCU\DXGL\Profiles\<app>\VSync
 Vertical retrace control
 Valid settings:
 0 - Determined by application
 
 Member TextureFormat
-REG_DWORD HKCU\DXGL\<app>\TextureFormat
+REG_DWORD HKCU\DXGL\Profiles\<app>\TextureFormat
 Texture format
 Valid settings:
 0 - Automatic
 
 Member TexUpload
-REG_DWORD HKCU\DXGL\<app>\TexUpload
+REG_DWORD HKCU\DXGL\Profiles\<app>\TexUpload
 Method used to upload textures
 Valid settings:
 0 - Automatic
 1 - OpenGL Standard
 
 Member DPIScale
-REG_DWORD HKCU\DXGL\<app>\DPIScale
+REG_DWORD HKCU\DXGL\Profiles\<app>\DPIScale
 Enable DPI scaling fix
 The program may be restarted if the Windows AppCompat method is enabled or
 disabled.
@@ -184,7 +205,7 @@ Valid settings:
 2 - Use Windows AppCompat
 
 Member aspect
-REG_DWORD HKCU\DXGL\<app>\ScreenAspect
+REG_DWORD HKCU\DXGL\Profiles\<app>\ScreenAspect
 Screen aspect ratio to simulate, if the scaler is 1 or 5.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, use automatic ratio based on square pixels.

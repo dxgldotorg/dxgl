@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -227,7 +227,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	float fract;
 	TCHAR denominator[5];
 	int i;
-	if (_isnan(f)) f = 0; //Handle NAN condition
+	if (_isnan(f)) f = 0.0f; //Handle NAN condition
 	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
 	{
 		_tcscpy(aspect, _T("1000:1"));
@@ -285,11 +285,42 @@ void FloatToAspect(float f, LPTSTR aspect)
 	}
 	// Cannot find a reasonable fractional aspect, so display as decimal.
 #ifdef _UNICODE
-	swprintf(aspect, 31, L"%.6f", f);
+	swprintf(aspect, 31, L"%.6g", f);
 #else
-	sprintf(aspect,"%.6f", f);
+	sprintf(aspect,"%.6g", f);
 #endif
+}
 
+void FloatToScale(float x, float y, LPTSTR scale)
+{
+	TCHAR numberx[8];
+	TCHAR numbery[8];
+	if (_isnan(x)) x = 0.0f; //Handle NAN condition
+	if (_isnan(y)) y = 0.0f;
+	// Too low number, round to "Auto"
+	if (x < 0.25f) x = 0.0f;
+	if (y < 0.25f) y = 0.0f;
+	// Too high number, round to 16
+	if (x > 16.0f) x = 16.0f;
+	if (y > 16.0f) y = 16.0f;
+	// Test if either scale is zero
+	if ((x == 0) || (y == 0))
+	{
+		_tcscpy(scale, _T("Auto"));
+		return;
+	}
+	// Write numbers
+#ifdef _UNICODE
+	swprintf(numberx, 7, L"%.4g", x);
+	swprintf(numbery, 7, L"%.4g", y);
+#else
+	sprintf(numberx, ".4g", x);
+	sprintf(numbery, ".4g", y);
+#endif
+	// Fill out string
+	_tcscpy(scale, numberx);
+	_tcscat(scale, _T("x"));
+	if (x != y) _tcscat(scale, numbery);
 }
 
 void SetCheck(HWND hWnd, int DlgItem, BOOL value, BOOL mask, BOOL tristate)
@@ -325,7 +356,21 @@ void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, BOOL trista
 			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
 		SetDlgItemText(hWnd, DlgItem, buffer);
 	}
+}
 
+void Set1stScaleCombo(HWND hWnd, int DlgItem, float x, float y, DWORD maskx, DWORD masky, BOOL tristate)
+{
+	TCHAR buffer[32];
+	if (tristate && !maskx && !masky)
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+	{
+		FloatToScale(x, y, buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
+		SetDlgItemText(hWnd, DlgItem, buffer);
+	}
 }
 
 void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, BOOL tristate)
@@ -386,21 +431,72 @@ DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 	}
 }
 
+void Get1stScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx, float *masky)
+{
+	TCHAR buffer[32];
+	TCHAR *ptr;
+	GetDlgItemText(hWnd, DlgItem, buffer, 31);
+	buffer[31] = 0;
+	if (!_tcscmp(buffer, strdefault))
+	{
+		*maskx = 0.0f;
+		*masky = 0.0f;
+		*x = 0.0f;
+		*y = 0.0f;
+		return;
+	}
+	else
+	{
+		*maskx = 1.0f;
+		*masky = 1.0f;
+		// Check for Auto
+		if (!_tcsicmp(buffer, _T("Auto)")))
+		{
+			*x = 0.0f;
+			*y = 0.0f;
+			return;
+		}
+		else
+		{
+			// Check for certain characters
+			ptr = _tcsstr(buffer, _T("x"));
+			if (!ptr) ptr = _tcsstr(buffer, _T("X"));
+			if (!ptr) ptr = _tcsstr(buffer, _T(","));
+			if (!ptr) ptr = _tcsstr(buffer, _T("-"));
+			if (!ptr) ptr = _tcsstr(buffer, _T(":"));
+			if (ptr)
+			{
+				*ptr = 0;
+				*x = _ttof(buffer);
+				*y = _ttof(ptr + 1);
+				return;
+			}
+			else
+			{
+				*x = _ttof(buffer);
+				*y = _ttof(buffer);
+				return;
+			}
+		}
+	}
+}
+
 float GetAspectCombo(HWND hWnd, int DlgItem, float *mask)
 {
 	TCHAR buffer[32];
 	TCHAR *ptr;
 	float numerator, denominator;
 	GetDlgItemText(hWnd, DlgItem, buffer, 31);
+	buffer[31] = 0;
 	if (!_tcscmp(buffer, strdefault))
 	{
 		*mask = 0.0f;
-		return 0;
+		return 0.0f;
 	}
 	else
 	{
 		*mask = 1.0f;
-		if (!_tcscmp(buffer, _T("Default"))) return 0.0f;
+		if (!_tcsicmp(buffer, _T("Default"))) return 0.0f;
 		else
 		{
 			// Check for colon
@@ -582,7 +678,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->scalingfilter, 0);
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->firstscalefilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -596,6 +692,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
+			cfgmask->firstscalex, cfgmask->firstscaley, tristate);
 		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -613,8 +711,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-		
+		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);		
 		// highres
 		if(cfg->primaryscale) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
@@ -1026,6 +1123,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					tristate = TRUE;
 					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
 					//SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
@@ -1049,6 +1148,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_DELETESTRING,
+						SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hWnd,IDC_SCALE,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_SCALE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 /*					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
@@ -1079,6 +1182,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
 				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
+				SetCombo(hWnd,IDC_PRESCALE,cfg->firstscalefilter,cfgmask->firstscalefilter,tristate);
 				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
 				//SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
 				SetCombo(hWnd,IDC_FULLMODE,cfg->fullmode,cfgmask->fullmode,tristate);
@@ -1093,6 +1197,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
+				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
+					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
 			break;
@@ -1103,6 +1209,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_SORTMODES:
 			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,&cfgmask->SortModes);
+			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_PRESCALE:
+			cfg->firstscalefilter = GetCombo(hWnd,IDC_PRESCALE,&cfgmask->firstscalefilter);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
@@ -1175,6 +1286,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,&cfgmask->DPIScale);
 			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			break;
+		case IDC_PRESCALESIZE:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
+					&cfgmask->firstscalex, &cfgmask->firstscaley);
+				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
+					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
+					&cfgmask->firstscalex, &cfgmask->firstscaley);
+				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
 			break;
 		case IDC_ASPECT:
 			if (HIWORD(wParam) == CBN_KILLFOCUS)

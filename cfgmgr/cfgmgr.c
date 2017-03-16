@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -458,6 +458,9 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->scaler = ReadDWORD(hKey, cfg->scaler, &cfgmask->scaler, _T("ScalingMode"));
 	cfg->fullmode = ReadDWORD(hKey, cfg->fullmode, &cfgmask->fullmode, _T("FullscreenWindowMode"));
 	cfg->colormode = ReadBool(hKey,cfg->colormode,&cfgmask->colormode,_T("ChangeColorDepth"));
+	cfg->firstscalefilter = ReadDWORD(hKey, cfg->firstscalefilter, &cfgmask->firstscalefilter, _T("FirstScaleFilter"));
+	cfg->firstscalex = ReadFloat(hKey, cfg->firstscalex, &cfgmask->firstscalex, _T("FirstScaleX"));
+	cfg->firstscaley = ReadFloat(hKey, cfg->firstscaley, &cfgmask->firstscaley, _T("FirstScaleY"));
 	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,&cfgmask->scalingfilter,_T("ScalingFilter"));
 	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,&cfgmask->texfilter,_T("TextureFilter"));
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
@@ -530,6 +533,9 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
+	WriteDWORD(hKey, cfg->firstscalefilter, cfgmask->firstscalefilter, _T("FirstScaleFilter"));
+	WriteFloat(hKey, cfg->firstscalex, cfgmask->firstscalex, _T("FirstScaleX"));
+	WriteFloat(hKey, cfg->firstscalex, cfgmask->firstscalex, _T("FirstScaleY"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
