@@ -530,6 +530,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	else cfgmask = &defaultmask;
 	memset(&defaultmask,1,sizeof(DXGLCFG));
 	defaultmask.aspect = 1.0f;
+	defaultmask.firstscalex = 1.0f;
+	defaultmask.firstscaley = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));

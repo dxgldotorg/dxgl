@@ -1627,7 +1627,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
-	float aspect,xmul,ymul;
+	float aspect,xmul,ymul,xscale,yscale;
 	LONG error;
 	DWORD flags;
 	if(!oldmode.dmSize)
@@ -1638,6 +1638,19 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	currmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	this->currmode.dmSize = 0;
+	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+	{
+		if (dwWidth <= 400) xscale = 2;
+		else xscale = 1;
+		if (dwHeight <= 240) yscale = 2;
+		else yscale = 1;
+	}
+	else
+	{
+		xscale = dxglcfg.firstscalex;
+		yscale = dxglcfg.firstscaley;
+	}
 	switch (dxglcfg.fullmode)
 	{
 	case 0:
@@ -1650,8 +1663,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		default:
 			newmode.dmSize = sizeof(DEVMODE);
 			newmode.dmDriverExtra = 0;
-			newmode.dmPelsWidth = dwWidth;
-			newmode.dmPelsHeight = dwHeight;
+			newmode.dmPelsWidth = dwWidth * xscale;
+			newmode.dmPelsHeight = dwHeight * yscale;
 			if (dxglcfg.colormode)
 				newmode.dmBitsPerPel = dwBPP;
 			else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
@@ -1665,8 +1678,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			{
 			case DISP_CHANGE_SUCCESSFUL:
 				if (fullscreen) this->currmode = newmode;
-				internalx = primaryx = screenx = newmode.dmPelsWidth;
-				internaly = primaryy = screeny = newmode.dmPelsHeight;
+				primaryx = screenx = newmode.dmPelsWidth;
+				primaryy = screeny = newmode.dmPelsHeight;
+				internalx = newmode.dmPelsWidth * xscale;
+				internaly = newmode.dmPelsHeight * yscale;
 				internalbpp = screenbpp = newmode.dmBitsPerPel;
 				primarybpp = dwBPP;
 				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;

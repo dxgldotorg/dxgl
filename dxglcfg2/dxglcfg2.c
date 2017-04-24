@@ -523,6 +523,7 @@ void Get1stScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx, 
 				*ptr = 0;
 				*x = _ttof(buffer);
 				*y = _ttof(ptr + 1);
+				if ((*x >= 0.25f) && (*y < 0.25f)) *y = *x;
 				return;
 			}
 			else
