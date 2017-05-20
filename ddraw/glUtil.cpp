@@ -74,8 +74,8 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 	int i;
 	if (glext->GLEXT_ARB_sampler_objects)
 	{
-		memset(util->samplers, 0, 8 * sizeof(SAMPLER));
-		for (i = 0; i < 8; i++)
+		memset(util->samplers, 0, 12 * sizeof(SAMPLER));
+		for (i = 0; i < 12; i++)
 		{
 			glext->glGenSamplers(1, &util->samplers[i].id);
 			glext->glBindSampler(i, util->samplers[i].id);
@@ -102,7 +102,7 @@ void glUtil_Release(glUtil *This)
 		int i;
 		if (This->ext->GLEXT_ARB_sampler_objects)
 		{
-			for (i = 0; i < 8; i++)
+			for (i = 0; i < 12; i++)
 			{
 				This->ext->glBindSampler(i, 0);
 				This->ext->glDeleteSamplers(1, &This->samplers[i].id);

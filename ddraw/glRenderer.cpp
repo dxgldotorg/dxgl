@@ -3210,14 +3210,14 @@ void glRenderer__MakeTexture(glRenderer *This, glTexture *texture)
 	glTexture__FinishCreate(texture);
 }
 
-void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype, BOOL paletted)
+void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype, BOOL paletted, BOOL firstpass)
 {
 	GLfloat view[4];
 	DDSURFACEDESC2 ddsd;
 	DWORD x2, y2;
 	x2 = x * This->firstscalex;
 	y2 = y * This->firstscaley;
-	glUtil_SetActiveTexture(This->util,0);
+	glUtil_SetActiveTexture(This->util,8);
 	if(!This->backbuffer)
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
@@ -3242,12 +3242,11 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	view[3] = (GLfloat)y2;
 	glUtil_SetViewport(This->util,0,0,x2,y2);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glUtil_SetTexture(This->util,0,*texture);
+	glUtil_SetTexture(This->util,8,*texture);
 	*texture = This->backbuffer;
-	if (!paletted && dxglcfg.firstscalefilter == 1)
-		glTexture__SetFilter(*texture, 0, GL_LINEAR, GL_LINEAR, This);
-	else glTexture__SetFilter(*texture, 0, GL_NEAREST, GL_NEAREST, This);
-	if(This->ext->GLEXT_ARB_sampler_objects) glTexture__SetFilter(NULL,0,GL_LINEAR,GL_LINEAR, This);
+	if (!paletted && firstpass && (dxglcfg.firstscalefilter == 1))
+		glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
+	else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
@@ -3386,25 +3385,20 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		glUtil_SetTexture(This->util,9,paltex);
 		if(dxglcfg.scalingfilter || (This->firstscalex != 1.0f) || (This->firstscaley != 1.0f))
 		{
-			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype,TRUE);
+			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype,TRUE,TRUE);
 			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 			progtype = PROG_TEXTURE;
 			glUtil_SetTexture(This->util,8,texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
-		}
-		if(This->ext->GLEXT_ARB_sampler_objects)
-		{
-			glTexture__SetFilter(NULL, 8, GL_NEAREST, GL_NEAREST, This);
-			glTexture__SetFilter(NULL, 9, GL_NEAREST, GL_NEAREST, This);
 		}
 	}
 	else
 	{
 		if ((This->firstscalex != 1.0f) || (This->firstscaley != 1.0f))
 		{
-			glRenderer__DrawBackbuffer(This, &texture, texture->bigwidth, texture->bigheight, progtype, FALSE);
-			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 			progtype = PROG_TEXTURE;
+			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
+			glRenderer__DrawBackbuffer(This, &texture, texture->bigwidth, texture->bigheight, progtype, FALSE, TRUE);
 			glUtil_SetTexture(This->util, 8, texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 0);
 		}
@@ -3413,10 +3407,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		glUtil_SetTexture(This->util,8,texture);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 	}
-	if (dxglcfg.scalingfilter && This->ext->GLEXT_ARB_sampler_objects)
-		glTexture__SetFilter(NULL, 0, GL_LINEAR, GL_LINEAR, This);
-	else if (This->ext->GLEXT_ARB_sampler_objects)
-		glTexture__SetFilter(NULL, 0, GL_NEAREST, GL_NEAREST, This);
+	if (dxglcfg.scalingfilter) glTexture__SetFilter(texture, 8, GL_LINEAR, GL_LINEAR, This);
+	else glTexture__SetFilter(texture, 8, GL_NEAREST, GL_NEAREST, This);
 	glUtil_SetViewport(This->util,viewport[0],viewport[1],viewport[2],viewport[3]);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	if(This->ddInterface->GetFullscreen())

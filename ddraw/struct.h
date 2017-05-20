@@ -249,7 +249,7 @@ typedef struct glUtil
 	D3DFILLMODE polymode;
 	D3DSHADEMODE shademode;
 	BufferObject *LastBoundBuffer;
-	SAMPLER samplers[8];
+	SAMPLER samplers[16];
 	GLint texlevel;
 	GLuint textures[16];
 } glUtil;

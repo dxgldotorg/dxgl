@@ -207,7 +207,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd);
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync);
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
-void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype, BOOL paletted);
+void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype, BOOL paletted, BOOL firstpass);
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, int progtype);
 void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer__Clear(glRenderer *This, ClearCommand *cmd);
