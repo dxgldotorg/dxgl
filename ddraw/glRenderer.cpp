@@ -2793,10 +2793,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
 		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
 	{
-		if (width <= 400) This->firstscalex = 2.0f;
-		else This->firstscaley = 1.0f;
-		if (height <= 240) This->firstscaley = 2;
-		else This->firstscaley = 1;
+		This->firstscalex = 1.0f;
+		This->firstscaley = 1.0f;
 	}
 	else
 	{
@@ -3351,6 +3349,19 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			view[1] = (GLfloat)(sizes[4]-sizes[0])/2+sizes[0];
 			view[2] = (GLfloat)(sizes[5]-sizes[1])/2+sizes[1];
 			view[3] = (GLfloat)-(sizes[5]-sizes[1])/2;
+			if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+				(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+			{
+				if (sizes[2] <= 400) This->firstscalex = 2.0f;
+				else This->firstscalex = 1.0f;
+				if (sizes[3] <= 240) This->firstscaley = 2.0f;
+				else This->firstscaley = 1.0f;
+			}
+			else
+			{
+				This->firstscalex = dxglcfg.firstscalex;
+				This->firstscaley = dxglcfg.firstscaley;
+			}
 		}
 		else
 		{

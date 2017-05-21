@@ -235,6 +235,11 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 	*count += newcount;
 }
 
+void AddDoubledResolutions(DEVMODE **array, DWORD *count)
+{
+//#error Add doubled resolutions
+}
+
 void AddExtraColorModes(DEVMODE **array, DWORD *count)
 {
 	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(7*(*count)));
@@ -253,7 +258,7 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			break;
-/*		case 16:
+/*		case 16:  //FIXME:  Temporarily removed for compatibility.
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 15;
 			if(!ScanModeList(*array,compmode,*count))
@@ -287,7 +292,7 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			compmode = (*array)[i];
-/*			compmode.dmBitsPerPel = 15;
+/*			compmode.dmBitsPerPel = 15;  // FIXME:  Temporarily removed for compatibility.
 			if(!ScanModeList(*array,compmode,*count))
 			{
 				array2[count2] = compmode;
@@ -381,6 +386,9 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
+	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+		AddDoubledResolutions(&modes, &modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
