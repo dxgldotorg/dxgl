@@ -353,7 +353,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 {
 	if(!lpEnumModesCallback) return DDERR_INVALIDPARAMS;
 	if (dwFlags & 0xFFFFFFFC) return DDERR_INVALIDPARAMS;
-	bool match;
+	BOOL match;
+	BOOL scalemodes;
 	DWORD modenum = 0;
 	DWORD modemax = 128;
 	DEVMODE mode;
@@ -367,8 +368,19 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	ddmode.dwSize = sizeof(DDSURFACEDESC);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
 	ddmode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+	if (!_isnan(dxglcfg.firstscalex) && !_isnan(dxglcfg.firstscaley) &&
+		(dxglcfg.firstscalex > 0.25f) && (dxglcfg.firstscaley > 0.25f) &&
+		(dxglcfg.firstscalex != 1.0f) && (dxglcfg.firstscaley != 1.0f) &&
+		((dxglcfg.scaler == 0) || ((dxglcfg.scaler >= 4) && (dxglcfg.scaler <= 6))))
+		scalemodes = TRUE;
+	else scalemodes = FALSE;
 	while(EnumDisplaySettings(NULL,modenum++,&mode))
 	{
+		if (scalemodes)
+		{
+			mode.dmPelsWidth /= dxglcfg.firstscalex;
+			mode.dmPelsHeight /= dxglcfg.firstscaley;
+		}
 		modes[modenum-1] = mode;
 		if(modenum >= modemax)
 		{
@@ -404,7 +416,7 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	}
 	for(DWORD i = 0; i < modenum; i++)
 	{
-		match = true;
+		match = TRUE;
 		if(dwFlags & DDEDM_REFRESHRATES) ddmode.dwRefreshRate = modes[i].dmDisplayFrequency;
 		else
 		{
@@ -412,18 +424,18 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 			for(DWORD x = 0; x < i; x++)
 				if((modes[x].dmBitsPerPel == modes[i].dmBitsPerPel) &&
 					(modes[x].dmPelsWidth == modes[i].dmPelsWidth) &&
-					(modes[x].dmPelsHeight == modes[i].dmPelsHeight)) match = false;
+					(modes[x].dmPelsHeight == modes[i].dmPelsHeight)) match = FALSE;
 		}
 		if(lpDDSurfaceDesc)
 		{
 			if(lpDDSurfaceDesc->dwFlags & DDSD_WIDTH)
-				if(lpDDSurfaceDesc->dwWidth != modes[i].dmPelsWidth) match = false;
+				if(lpDDSurfaceDesc->dwWidth != modes[i].dmPelsWidth) match = FALSE;
 			if(lpDDSurfaceDesc->dwFlags & DDSD_HEIGHT)
-				if(lpDDSurfaceDesc->dwHeight != modes[i].dmPelsHeight) match = false;
+				if(lpDDSurfaceDesc->dwHeight != modes[i].dmPelsHeight) match = FALSE;
 			if(lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT)
-				if(lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount != modes[i].dmBitsPerPel) match = false;
+				if(lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount != modes[i].dmBitsPerPel) match = FALSE;
 			if(lpDDSurfaceDesc->dwFlags & DDSD_REFRESHRATE)
-				if(lpDDSurfaceDesc->dwRefreshRate != modes[i].dmDisplayFrequency) match = false;
+				if(lpDDSurfaceDesc->dwRefreshRate != modes[i].dmDisplayFrequency) match = FALSE;
 		}
 		if(match)
 		{
@@ -942,7 +954,7 @@ HRESULT WINAPI glDirectDraw7::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc2, L
 HRESULT glDirectDraw7::CreateSurface2(LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface, int version)
 {
 	HRESULT error;
-	int mipcount;
+	DWORD mipcount;
 	TRACE_ENTER(5, 14, this, 14, lpDDSurfaceDesc2, 14, lplpDDSurface, 14, pUnkOuter, 22, RecordSurface);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc2) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
@@ -1686,10 +1698,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			{
 			case DISP_CHANGE_SUCCESSFUL:
 				if (fullscreen) this->currmode = newmode;
-				primaryx = screenx = newmode.dmPelsWidth;
-				primaryy = screeny = newmode.dmPelsHeight;
-				internalx = newmode.dmPelsWidth * xscale;
-				internaly = newmode.dmPelsHeight * yscale;
+				primaryx = screenx = newmode.dmPelsWidth / xscale;
+				primaryy = screeny = newmode.dmPelsHeight / yscale;
+				internalx = newmode.dmPelsWidth;
+				internaly = newmode.dmPelsHeight;
 				internalbpp = screenbpp = newmode.dmBitsPerPel;
 				primarybpp = dwBPP;
 				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
