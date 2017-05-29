@@ -1698,8 +1698,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			{
 			case DISP_CHANGE_SUCCESSFUL:
 				if (fullscreen) this->currmode = newmode;
-				primaryx = screenx = newmode.dmPelsWidth / xscale;
-				primaryy = screeny = newmode.dmPelsHeight / yscale;
+				primaryx = newmode.dmPelsWidth / xscale;
+				screenx = newmode.dmPelsWidth;
+				primaryy = newmode.dmPelsHeight / yscale;
+				screeny = newmode.dmPelsHeight;
 				internalx = newmode.dmPelsWidth;
 				internaly = newmode.dmPelsHeight;
 				internalbpp = screenbpp = newmode.dmBitsPerPel;

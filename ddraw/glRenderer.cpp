@@ -3356,12 +3356,12 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 				This->firstscaley = dxglcfg.firstscaley;
 			}
 			viewport[0] = viewport[1] = 0;
-			viewport[2] = sizes[4]*This->firstscalex;
-			viewport[3] = sizes[5]*This->firstscaley;
-			view[0] = (GLfloat)-((sizes[4]*This->firstscalex)-sizes[0])/2;
-			view[1] = (GLfloat)((sizes[4]*This->firstscalex)-sizes[0])/2+sizes[0];
-			view[2] = (GLfloat)((sizes[5]*This->firstscaley)-sizes[1])/2+sizes[1];
-			view[3] = (GLfloat)-((sizes[5]*This->firstscaley)-sizes[1])/2;
+			viewport[2] = sizes[4];
+			viewport[3] = sizes[5];
+			view[0] = (GLfloat)-(sizes[4]-sizes[0])/2;
+			view[1] = (GLfloat)(sizes[4]-sizes[0])/2+sizes[0];
+			view[2] = (GLfloat)(sizes[5]-sizes[1])/2+sizes[1];
+			view[3] = (GLfloat)-(sizes[5]-sizes[1])/2;
 		}
 		else
 		{
