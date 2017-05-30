@@ -537,7 +537,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
 	WriteDWORD(hKey, cfg->firstscalefilter, cfgmask->firstscalefilter, _T("FirstScaleFilter"));
 	WriteFloat(hKey, cfg->firstscalex, cfgmask->firstscalex, _T("FirstScaleX"));
-	WriteFloat(hKey, cfg->firstscalex, cfgmask->firstscalex, _T("FirstScaleY"));
+	WriteFloat(hKey, cfg->firstscaley, cfgmask->firstscaley, _T("FirstScaleY"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
