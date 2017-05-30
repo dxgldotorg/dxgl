@@ -723,6 +723,7 @@ void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 	HKEY hKey;
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
+	cfg->AddModes = 1;
 	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, KEY_READ, &hKey);
 	else RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	if (hKey)

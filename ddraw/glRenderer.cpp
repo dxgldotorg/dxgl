@@ -3347,7 +3347,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			{
 				if (sizes[2] <= 400) This->firstscalex = 2.0f;
 				else This->firstscalex = 1.0f;
-				if (sizes[3] <= 240) This->firstscaley = 2.0f;
+				if (sizes[3] <= 300) This->firstscaley = 2.0f;
 				else This->firstscaley = 1.0f;
 			}
 			else
@@ -3737,8 +3737,8 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 	{
 		if (width <= 400) This->firstscalex = 2.0f;
 		else This->firstscaley = 1.0f;
-		if (height <= 240) This->firstscaley = 2;
-		else This->firstscaley = 1;
+		if (height <= 300) This->firstscaley = 2.0f;
+		else This->firstscaley = 1.0f;
 	}
 	else
 	{

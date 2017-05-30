@@ -38,14 +38,14 @@ Member firstscalex
 REG_DWORD HKCU\DXGL\Profiles\<app>\FirstScaleX
 Amount to stretch the display in the X direction for the first pass.
 If either X or Y is set to 0 or less than 0.25, automatically choose
-2x or 2x1 scaling for certain low resolutions.
+2x, 2x1, or 1x2 scaling for certain low resolutions.
 Stored as a 32-bit float encoded as a DWORD.
 
 Member firstscaley
 REG_DWORD HKCU\DXGL\Profiles\<app>\FirstScaley
 Amount to stretch the display in the Y direction for the first pass.
 If either X or Y is set to 0 or less than 0.25, automatically choose
-2x or 2x1 scaling for certain low resolutions.
+2x, 2x1, or 1x2 scaling for certain low resolutions.
 Stored as a 32-bit float encoded as a DWORD.
 
 Member scalingfilter

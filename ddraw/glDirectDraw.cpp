@@ -95,7 +95,9 @@ bool ScanModeList(DEVMODE *array, DEVMODE comp, DWORD count)
 	return false;
 }
 
-const int ExtraModes[30] [3] = {
+const int START_EXTRAMODESCOUNT = __LINE__;
+const int ExtraModes[] [3] =
+{
 	{320,175,70},
 	{320,200,70},
 	{320,240,60},
@@ -109,6 +111,7 @@ const int ExtraModes[30] [3] = {
 	{416,312,75},
 	{512,384,60},
 	{576,432,60},
+	{640,200,70},
 	{640,350,70},
 	{640,400,70},
 	{640,512,60},
@@ -127,6 +130,26 @@ const int ExtraModes[30] [3] = {
 	{960,600,60},
 	{960,720,60}
 };
+const int END_EXTRAMODESCOUNT = __LINE__ - 4;
+const int numextramodes = END_EXTRAMODESCOUNT - START_EXTRAMODESCOUNT;
+
+const int START_DOUBLEDMODESCOUNT = __LINE__;
+const int DoubledModes[] [5] = 
+{
+	{320,175,70,640,350},
+	{320,200,70,640,400},
+	{320,240,60,640,480},
+	{320,400,70,640,400},
+	{320,480,60,640,480},
+	{640,200,70,640,400},
+	{360,200,70,720,400},
+	{360,240,60,720,480},
+	{360,400,70,720,400},
+	{360,480,60,720,480},
+	{400,300,60,800,600}
+};
+const int END_DOUBLEDMODESCOUNT = __LINE__ - 4;
+const int numdoubledmodes = END_DOUBLEDMODESCOUNT - START_DOUBLEDMODESCOUNT;
 
 bool ScanColorMode(DEVMODE *array, DWORD count, int bpp)
 {
@@ -150,14 +173,14 @@ bool ScanModeListNoRefresh(DEVMODE *array, DEVMODE comp, DWORD count)
 
 void AddExtraResolutions(DEVMODE **array, DWORD *count)
 {
-	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*5*30);
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*5*numextramodes);
 	DEVMODE compmode = *array[0];
 	DWORD newcount = 0;
 	int i;
 	if(ScanColorMode(*array,*count,8))
 	{
 		compmode.dmBitsPerPel = 8;
-		for(i = 0; i < 30; i++)
+		for(i = 0; i < numextramodes; i++)
 		{
 			compmode.dmPelsWidth = ExtraModes[i][0];
 			compmode.dmPelsHeight = ExtraModes[i][1];
@@ -172,7 +195,7 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 	if(ScanColorMode(*array,*count,15))
 	{
 		compmode.dmBitsPerPel = 15;
-		for(i = 0; i < 30; i++)
+		for(i = 0; i < numextramodes; i++)
 		{
 			compmode.dmPelsWidth = ExtraModes[i][0];
 			compmode.dmPelsHeight = ExtraModes[i][1];
@@ -187,7 +210,7 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 	if(ScanColorMode(*array,*count,16))
 	{
 		compmode.dmBitsPerPel = 16;
-		for(i = 0; i < 30; i++)
+		for(i = 0; i < numextramodes; i++)
 		{
 			compmode.dmPelsWidth = ExtraModes[i][0];
 			compmode.dmPelsHeight = ExtraModes[i][1];
@@ -202,7 +225,7 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 	if(ScanColorMode(*array,*count,24))
 	{
 		compmode.dmBitsPerPel = 24;
-		for(i = 0; i < 30; i++)
+		for(i = 0; i < numextramodes; i++)
 		{
 			compmode.dmPelsWidth = ExtraModes[i][0];
 			compmode.dmPelsHeight = ExtraModes[i][1];
@@ -217,7 +240,7 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 	if(ScanColorMode(*array,*count,32))
 	{
 		compmode.dmBitsPerPel = 32;
-		for(i = 0; i < 30; i++)
+		for(i = 0; i < numextramodes; i++)
 		{
 			compmode.dmPelsWidth = ExtraModes[i][0];
 			compmode.dmPelsHeight = ExtraModes[i][1];
@@ -237,7 +260,99 @@ void AddExtraResolutions(DEVMODE **array, DWORD *count)
 
 void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 {
-//#error Add doubled resolutions
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE) * 5 * numdoubledmodes);
+	DEVMODE compmode = *array[0];
+	DWORD newcount = 0;
+	int i;
+	if (ScanColorMode(*array, *count, 8));
+	{
+		compmode.dmBitsPerPel = 8;
+		for (i = 0; i < numdoubledmodes; i++)
+		{
+			compmode.dmPelsWidth = DoubledModes[i][3];
+			compmode.dmPelsHeight = DoubledModes[i][4];
+			compmode.dmDisplayFrequency = DoubledModes[i][2];
+			if (ScanModeListNoRefresh(*array, compmode, *count))
+			{
+				compmode.dmPelsWidth = DoubledModes[i][0];
+				compmode.dmPelsHeight = DoubledModes[i][1];
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if (ScanColorMode(*array, *count, 15));
+	{
+		compmode.dmBitsPerPel = 15;
+		for (i = 0; i < numdoubledmodes; i++)
+		{
+			compmode.dmPelsWidth = DoubledModes[i][3];
+			compmode.dmPelsHeight = DoubledModes[i][4];
+			compmode.dmDisplayFrequency = DoubledModes[i][2];
+			if (ScanModeListNoRefresh(*array, compmode, *count))
+			{
+				compmode.dmPelsWidth = DoubledModes[i][0];
+				compmode.dmPelsHeight = DoubledModes[i][1];
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if (ScanColorMode(*array, *count, 16));
+	{
+		compmode.dmBitsPerPel = 16;
+		for (i = 0; i < numdoubledmodes; i++)
+		{
+			compmode.dmPelsWidth = DoubledModes[i][3];
+			compmode.dmPelsHeight = DoubledModes[i][4];
+			compmode.dmDisplayFrequency = DoubledModes[i][2];
+			if (ScanModeListNoRefresh(*array, compmode, *count))
+			{
+				compmode.dmPelsWidth = DoubledModes[i][0];
+				compmode.dmPelsHeight = DoubledModes[i][1];
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if (ScanColorMode(*array, *count, 24));
+	{
+		compmode.dmBitsPerPel = 24;
+		for (i = 0; i < numdoubledmodes; i++)
+		{
+			compmode.dmPelsWidth = DoubledModes[i][3];
+			compmode.dmPelsHeight = DoubledModes[i][4];
+			compmode.dmDisplayFrequency = DoubledModes[i][2];
+			if (ScanModeListNoRefresh(*array, compmode, *count))
+			{
+				compmode.dmPelsWidth = DoubledModes[i][0];
+				compmode.dmPelsHeight = DoubledModes[i][1];
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	if (ScanColorMode(*array, *count, 32));
+	{
+		compmode.dmBitsPerPel = 32;
+		for (i = 0; i < numdoubledmodes; i++)
+		{
+			compmode.dmPelsWidth = DoubledModes[i][3];
+			compmode.dmPelsHeight = DoubledModes[i][4];
+			compmode.dmDisplayFrequency = DoubledModes[i][2];
+			if (ScanModeListNoRefresh(*array, compmode, *count))
+			{
+				compmode.dmPelsWidth = DoubledModes[i][0];
+				compmode.dmPelsHeight = DoubledModes[i][1];
+				array2[newcount] = compmode;
+				newcount++;
+			}
+		}
+	}
+	*array = (DEVMODE *)realloc(*array, (*count + newcount) * sizeof(DEVMODE));
+	memcpy(&(*array)[*count - 1], array2, newcount * sizeof(DEVMODE));
+	free(array2);
+	*count += newcount;
 }
 
 void AddExtraColorModes(DEVMODE **array, DWORD *count)
@@ -398,8 +513,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
-	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+	if (dxglcfg.AddModes && (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f)))
 		AddDoubledResolutions(&modes, &modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
@@ -1663,7 +1778,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	{
 		if (dwWidth <= 400) xscale = 2;
 		else xscale = 1;
-		if (dwHeight <= 240) yscale = 2;
+		if (dwHeight <= 300) yscale = 2;
 		else yscale = 1;
 	}
 	else
