@@ -1968,6 +1968,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
+	HANDLE hMutex;
+	HWND hWnd;
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	CoInitialize(NULL);
@@ -1999,7 +2001,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
+	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex"));
+	if (GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		// Find DXGL Config window
+		hWnd = FindWindow(NULL, _T("DXGL Config (Experimental)"));
+		// Focus DXGL Config window
+		if (hWnd) SetForegroundWindow(hWnd);
+		return 0;
+	}
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	ReleaseMutex(hMutex);
+	CloseHandle(hMutex);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif

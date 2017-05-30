@@ -1688,6 +1688,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
+	HANDLE hMutex;
+	HWND hWnd;
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	CoInitialize(NULL);
@@ -1722,7 +1724,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	// Message for when transitioning to the new config UI
 	/*MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
 		_T("Notice"), MB_OK | MB_ICONWARNING);*/
+	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex"));
+	if (GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		// Find DXGL Config window
+		hWnd = FindWindow(NULL, _T("DXGL Config"));
+		// Focus DXGL Config window
+		if (hWnd) SetForegroundWindow(hWnd);
+		return 0;
+	}
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	ReleaseMutex(hMutex);
+	CloseHandle(hMutex);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif
