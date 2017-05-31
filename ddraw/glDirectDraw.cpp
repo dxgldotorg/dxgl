@@ -1744,6 +1744,16 @@ DEVMODE FindClosestMode(const DEVMODE in)
 	return newmode;
 }
 
+int IsStretchedMode(DWORD width, DWORD height)
+{
+	if ((width == 320) || (width == 360))
+	{
+		if ((height == 400) || (height == 480)) return 1;
+	}
+	else if ((width == 640) && (height == 200)) return 2;
+	else return 0;
+}
+
 HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
 	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
@@ -1765,6 +1775,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	float aspect,xmul,ymul,xscale,yscale;
 	LONG error;
 	DWORD flags;
+	int stretchmode;
 	if(!oldmode.dmSize)
 	{
 		oldmode.dmSize = sizeof(DEVMODE);
@@ -1871,17 +1882,44 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
 			{
 				aspect = (float)dwWidth / (float)dwHeight;
-				xmul = (float)screenx / (float)dwWidth;
-				ymul = (float)screeny / (float)dwHeight;
-				if ((float)dwWidth*(float)ymul > (float)screenx)
+				switch (stretchmode = IsStretchedMode(dwWidth, dwHeight))
 				{
-					internalx = (DWORD)((float)dwWidth * (float)xmul);
-					internaly = (DWORD)((float)dwHeight * (float)xmul);
+				case 1:
+					aspect *= 2.0f;
+					break;
+				case 2:
+					aspect /= 2.0f;
+					break;
+				default:
+					break;
+				}
+				if (stretchmode)
+				{
+					if (screenx / aspect > screeny)
+					{
+						internalx = (DWORD)((float)screeny * (float)aspect);
+						internaly = screeny;
+					}
+					else
+					{
+						internalx = screenx;
+						internaly = (DWORD)((float)screenx / (float)aspect);
+					}
 				}
 				else
 				{
-					internalx = (DWORD)((float)dwWidth * (float)ymul);
-					internaly = (DWORD)((float)dwHeight * (float)ymul);
+					xmul = (float)screenx / (float)dwWidth;
+					ymul = (float)screeny / (float)dwHeight;
+					if ((float)dwWidth*(float)ymul > (float)screenx)
+					{
+						internalx = (DWORD)((float)dwWidth * (float)xmul);
+						internaly = (DWORD)((float)dwHeight * (float)xmul);
+					}
+					else
+					{
+						internalx = (DWORD)((float)dwWidth * (float)ymul);
+						internaly = (DWORD)((float)dwHeight * (float)ymul);
+					}
 				}
 			}
 			else
@@ -1973,17 +2011,44 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
 				{
 					aspect = (float)dwWidth / (float)dwHeight;
-					xmul = (float)screenx / (float)dwWidth;
-					ymul = (float)screeny / (float)dwHeight;
-					if ((float)dwWidth*(float)ymul > (float)screenx)
+					switch (stretchmode = IsStretchedMode(dwWidth, dwHeight))
 					{
-						internalx = (DWORD)((float)dwWidth * (float)xmul);
-						internaly = (DWORD)((float)dwHeight * (float)xmul);
+					case 1:
+						aspect *= 2.0f;
+						break;
+					case 2:
+						aspect /= 2.0f;
+						break;
+					default:
+						break;
+					}
+					if (stretchmode)
+					{
+						if (screenx / aspect > screeny)
+						{
+							internalx = (DWORD)((float)screeny * (float)aspect);
+							internaly = screeny;
+						}
+						else
+						{
+							internalx = screenx;
+							internaly = (DWORD)((float)screenx / (float)aspect);
+						}
 					}
 					else
 					{
-						internalx = (DWORD)((float)dwWidth * (float)ymul);
-						internaly = (DWORD)((float)dwHeight * (float)ymul);
+						xmul = (float)screenx / (float)dwWidth;
+						ymul = (float)screeny / (float)dwHeight;
+						if ((float)dwWidth*(float)ymul > (float)screenx)
+						{
+							internalx = (DWORD)((float)dwWidth * (float)xmul);
+							internaly = (DWORD)((float)dwHeight * (float)xmul);
+						}
+						else
+						{
+							internalx = (DWORD)((float)dwWidth * (float)ymul);
+							internaly = (DWORD)((float)dwHeight * (float)ymul);
+						}
 					}
 				}
 				else
@@ -2038,17 +2103,44 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if (_isnan(dxglcfg.aspect) || dxglcfg.aspect <= 0)
 			{
 				aspect = (float)dwWidth / (float)dwHeight;
-				xmul = (float)screenx / (float)dwWidth;
-				ymul = (float)screeny / (float)dwHeight;
-				if ((float)dwWidth*(float)ymul < (float)screenx)
+				switch (stretchmode = IsStretchedMode(dwWidth, dwHeight))
 				{
-					internalx = (DWORD)((float)dwWidth * (float)xmul);
-					internaly = (DWORD)((float)dwHeight * (float)xmul);
+				case 1:
+					aspect *= 2.0f;
+					break;
+				case 2:
+					aspect /= 2.0f;
+					break;
+				default:
+					break;
+				}
+				if (stretchmode)
+				{
+					if (screenx / aspect < screeny)
+					{
+						internalx = (DWORD)((float)screeny * (float)aspect);
+						internaly = screeny;
+					}
+					else
+					{
+						internalx = screenx;
+						internaly = (DWORD)((float)screenx / (float)aspect);
+					}
 				}
 				else
 				{
-					internalx = (DWORD)((float)dwWidth * (float)ymul);
-					internaly = (DWORD)((float)dwHeight * (float)ymul);
+					xmul = (float)screenx / (float)dwWidth;
+					ymul = (float)screeny / (float)dwHeight;
+					if ((float)dwWidth*(float)ymul < (float)screenx)
+					{
+						internalx = (DWORD)((float)dwWidth * (float)xmul);
+						internaly = (DWORD)((float)dwHeight * (float)xmul);
+					}
+					else
+					{
+						internalx = (DWORD)((float)dwWidth * (float)ymul);
+						internaly = (DWORD)((float)dwHeight * (float)ymul);
+					}
 				}
 			}
 			else
