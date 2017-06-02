@@ -2175,8 +2175,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	case 2:
 	case 3:
 	case 4:  // Forced windowed modes
-		primaryx = internalx = screenx = dwWidth;
-		primaryy = internaly = screeny = dwHeight;
+		primaryx = dwWidth;
+		internalx = screenx = dwWidth * xscale;
+		primaryy = dwHeight;
+		internaly = screeny = dwHeight * yscale;
 		internalbpp = screenbpp = dwBPP;
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
