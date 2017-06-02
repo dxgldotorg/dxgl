@@ -264,7 +264,7 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 	DEVMODE compmode = *array[0];
 	DWORD newcount = 0;
 	int i;
-	if (ScanColorMode(*array, *count, 8));
+	if (ScanColorMode(*array, *count, 8))
 	{
 		compmode.dmBitsPerPel = 8;
 		for (i = 0; i < numdoubledmodes; i++)
@@ -281,7 +281,7 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 			}
 		}
 	}
-	if (ScanColorMode(*array, *count, 15));
+	if (ScanColorMode(*array, *count, 15))
 	{
 		compmode.dmBitsPerPel = 15;
 		for (i = 0; i < numdoubledmodes; i++)
@@ -298,7 +298,7 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 			}
 		}
 	}
-	if (ScanColorMode(*array, *count, 16));
+	if (ScanColorMode(*array, *count, 16))
 	{
 		compmode.dmBitsPerPel = 16;
 		for (i = 0; i < numdoubledmodes; i++)
@@ -315,7 +315,7 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 			}
 		}
 	}
-	if (ScanColorMode(*array, *count, 24));
+	if (ScanColorMode(*array, *count, 24))
 	{
 		compmode.dmBitsPerPel = 24;
 		for (i = 0; i < numdoubledmodes; i++)
@@ -332,7 +332,7 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 			}
 		}
 	}
-	if (ScanColorMode(*array, *count, 32));
+	if (ScanColorMode(*array, *count, 32))
 	{
 		compmode.dmBitsPerPel = 32;
 		for (i = 0; i < numdoubledmodes; i++)
@@ -1787,10 +1787,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
 		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
 	{
-		if (dwWidth <= 400) xscale = 2;
-		else xscale = 1;
-		if (dwHeight <= 300) yscale = 2;
-		else yscale = 1;
+		if (dwWidth <= 400) xscale = 2.0f;
+		else xscale = 1.0f;
+		if (dwHeight <= 300) yscale = 2.0f;
+		else yscale = 1.0f;
 	}
 	else
 	{
@@ -1948,9 +1948,11 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			return DD_OK;
 			break;
 		case 3: // Center image
-			primaryx = internalx = dwWidth;
+			primaryx = dwWidth;
+			internalx = dwWidth * xscale;
 			screenx = currmode.dmPelsWidth;
-			primaryy = internaly = dwHeight;
+			primaryy = dwHeight;
+			internaly = dwHeight * yscale;
 			screeny = currmode.dmPelsHeight;
 			primarybpp = dwBPP;
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
