@@ -72,6 +72,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	ddsd = *lpDDSurfaceDesc2;
 	miptexture = NULL;
 	LONG sizes[6];
+	float xscale, yscale;
 	ddInterface->GetSizes(sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
@@ -89,10 +90,23 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			{
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
-				if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
+				if(dxglcfg.primaryscale)
 				{
-					fakex = sizes[0];
-					fakey = sizes[1];
+					if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+						(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+					{
+						if (ddsd.dwWidth <= 400) xscale = 2.0f;
+						else xscale = 1.0f;
+						if (ddsd.dwHeight <= 300) yscale = 2.0f;
+						else yscale = 1.0f;
+					}
+					else
+					{
+						xscale = dxglcfg.firstscalex;
+						yscale = dxglcfg.firstscaley;
+					}
+					fakex = (DWORD)((float)sizes[0] / xscale);
+					fakey = (DWORD)((float)sizes[1] / yscale);
 				}
 				else
 				{
@@ -1208,6 +1222,7 @@ void glDirectDrawSurface7::Restore2()
 {
 	TRACE_ENTER(1,14,this);
 	/*LONG sizes[6];
+	float xscale, yscale;
 	if(hRC != ddInterface->renderer->hRC)
 	{
 		ddInterface->GetSizes(sizes);
@@ -1215,10 +1230,23 @@ void glDirectDrawSurface7::Restore2()
 		{
 			ddsd.dwWidth = sizes[2];
 			ddsd.dwHeight = sizes[3];
-			if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
+			if(dxglcfg.primaryscale)
 			{
-				fakex = sizes[0];
-				fakey = sizes[1];
+				if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+					(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+				{
+					if (ddsd.dwWidth <= 400) xscale = 2.0f;
+					else xscale = 1.0f;
+					if (ddsd.dwHeight <= 300) yscale = 2.0f;
+					else yscale = 1.0f;
+				}
+				else
+				{
+					xscale = dxglcfg.firstscalex;
+					yscale = dxglcfg.firstscaley;
+				}
+				fakex = (DWORD)((float)sizes[0] / xscale);
+				fakey = (DWORD)((float)sizes[1] / yscale);
 			}
 			else
 			{
@@ -1245,6 +1273,7 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	LONG sizes[6];
+	//float xscale, yscale;
 	if(!ddInterface->renderer) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	/*if(hRC != ddInterface->renderer->hRC)
 	{
@@ -1255,10 +1284,23 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 			{
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
-				if(dxglcfg.primaryscale)  // FIXME:  Support new scaling modes
+				if(dxglcfg.primaryscale)
 				{
-					fakex = sizes[0];
-					fakey = sizes[1];
+					if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+						(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+					{
+						if (ddsd.dwWidth <= 400) xscale = 2.0f;
+						else xscale = 1.0f;
+						if (ddsd.dwHeight <= 300) yscale = 2.0f;
+						else yscale = 1.0f;
+					}
+					else
+					{
+						xscale = dxglcfg.firstscalex;
+						yscale = dxglcfg.firstscaley;
+					}
+					fakex = (DWORD)((float)sizes[0] / xscale);
+					fakey = (DWORD)((float)sizes[1] / yscale);
 				}
 				else
 				{
