@@ -401,13 +401,8 @@ void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int bac
 	else if(!fullscreen)
 		hWnd = CreateWindowEx(WS_EX_APPWINDOW,wndclassname3d,_T("D3D Test Window"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
 			CW_USEDEFAULT,CW_USEDEFAULT,width,height,NULL,NULL,hinstance,NULL);
-#ifdef _DEBUG
 	else hWnd = CreateWindowEx(0,wndclassname3d,_T("DDraw Test Window"),WS_POPUP,0,0,
 		GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),NULL,NULL,hinstance,NULL);
-#else
-	else hWnd = CreateWindowEx(WS_EX_TOPMOST,wndclassname3d,_T("DDraw Test Window"),WS_POPUP,0,0,
-		GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),NULL,NULL,hinstance,NULL);
-#endif
 	DWORD err = GetLastError();
 	ShowWindow(hWnd,SW_SHOWNORMAL);
 	UpdateWindow(hWnd);
