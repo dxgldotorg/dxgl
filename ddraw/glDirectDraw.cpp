@@ -486,7 +486,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if (!_isnan(dxglcfg.firstscalex) && !_isnan(dxglcfg.firstscaley) &&
 		(dxglcfg.firstscalex > 0.25f) && (dxglcfg.firstscaley > 0.25f) &&
 		(dxglcfg.firstscalex != 1.0f) && (dxglcfg.firstscaley != 1.0f) &&
-		((dxglcfg.scaler == 0) || ((dxglcfg.scaler >= 4) && (dxglcfg.scaler <= 6))))
+		((dxglcfg.scaler == 0) || ((dxglcfg.scaler >= 4) && (dxglcfg.scaler <= 6))) &&
+		(!dxglcfg.primaryscale))
 		scalemodes = TRUE;
 	else scalemodes = FALSE;
 	while(EnumDisplaySettings(NULL,modenum++,&mode))
@@ -1809,8 +1810,17 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		default:
 			newmode.dmSize = sizeof(DEVMODE);
 			newmode.dmDriverExtra = 0;
-			newmode.dmPelsWidth = dwWidth * xscale;
-			newmode.dmPelsHeight = dwHeight * yscale;
+			if (!dxglcfg.primaryscale || (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
+				(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f)))
+			{
+				newmode.dmPelsWidth = dwWidth * xscale;
+				newmode.dmPelsHeight = dwHeight * yscale;
+			}
+			else
+			{
+				newmode.dmPelsWidth = dwWidth;
+				newmode.dmPelsHeight = dwHeight;
+			}
 			if (dxglcfg.colormode)
 				newmode.dmBitsPerPel = dwBPP;
 			else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
@@ -1824,9 +1834,17 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			{
 			case DISP_CHANGE_SUCCESSFUL:
 				if (fullscreen) this->currmode = newmode;
-				primaryx = newmode.dmPelsWidth / xscale;
+				if (dxglcfg.primaryscale)
+				{
+					primaryx = newmode.dmPelsWidth;
+					primaryy = newmode.dmPelsHeight;
+				}
+				else
+				{
+					primaryx = newmode.dmPelsWidth / xscale;
+					primaryy = newmode.dmPelsHeight / yscale;
+				}
 				screenx = newmode.dmPelsWidth;
-				primaryy = newmode.dmPelsHeight / yscale;
 				screeny = newmode.dmPelsHeight;
 				internalx = newmode.dmPelsWidth;
 				internaly = newmode.dmPelsHeight;
