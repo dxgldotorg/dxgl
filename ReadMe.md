@@ -1,4 +1,4 @@
-# DXGL 0.5.10
+# DXGL 0.5.11
 https://www.dxgl.info
 
 ## Introduction

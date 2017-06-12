@@ -79,7 +79,8 @@
     Uses bilinear scaling.  8-bit display modes will always use nearest scaling for this pass.
     <h2><a name="scalerfirstsize" />1st pass scale size</h2>
     Selects the amount to scale the display on the first pass.  There is an Auto preset as well as presets for fixed 1x, 2x1, 2x, 3x, and 4x ratios.  In addition, a ratio can manually be set anywhere from 0.25x0.25 to 16x16.  The Auto preset will automatically double pixels horizontally if the horizontal resolution is 400 pixels or less, and will double pixels vertically if the vertical resolution is 300 or less.
-    In addition, if Video mode is set to Change desktop resolution and Add extra display modes is enabled, a subset of low resolution pixel doubled modes will be added.
+    In addition, if Video mode is set to Change desktop resolution and Add extra display modes is enabled, a subset of low resolution pixel doubled modes will be added.<br />
+    If "Adjust primary resolution" is checked, typing 0.5 in the box will enable 2x2 supersampling for Direct3D applications.  This will also modify the behavior of "Change desktop resolution."
     <h2><a name="scalerfinal" />Scaling method (final pass)</h2>
     Selects the filter to use for scaling the output when the resolution is different than the desktop resolution, or when the optional 1st pass scaling is in effect, the scaled resolution is different from the desktop resolution, 
     as well as for blitting operations.  The following methods are available:
