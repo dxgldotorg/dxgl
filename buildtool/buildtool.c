@@ -99,7 +99,7 @@ int ProcessHeaders(char *path)
 	char pathin[FILENAME_MAX+1];
 	char pathout[FILENAME_MAX+1];
 	char buffer[1024];
-	char verbuffer[20];
+	char verbuffer[36];
 	char numstring[16];
 	char *findptr;
 	FILE *filein;
@@ -152,10 +152,15 @@ int ProcessHeaders(char *path)
 				strcat(verbuffer," r");
 				_itoa(revision,numstring,10);
 				strcat(verbuffer,numstring);
+				if (DXGLBETA) strcat(verbuffer, " Prerelease");
 				strcat(verbuffer,"\"");
-				strncpy(findptr,verbuffer,22);
+				strncpy(findptr,verbuffer,38);
 			}
 			else strncpy(findptr,"\"" DXGLSTRVER "\"\n",15);
+		}
+		if (DXGLBETA)
+		{
+			if (strstr(buffer, "//#define DXGLBETA")) strcpy(buffer, "#define DXGLBETA");
 		}
 		fputs(buffer,fileout);
 	}
@@ -215,8 +220,12 @@ int ProcessHeaders(char *path)
 			#endif
 			#endif
 		}
+		if (DXGLBETA)
+		{
+			if(strstr(buffer,";!define _BETA")) strcpy(buffer,"!define _BETA\n");
+		}
 #ifdef _DEBUG
-		if(strstr(buffer,";!define _DEBUG")) strcpy(buffer,"!define _DEBUG");
+		if(strstr(buffer,";!define _DEBUG")) strcpy(buffer,"!define _DEBUG\n");
 #endif
 		fputs(buffer,fileout);
 	}

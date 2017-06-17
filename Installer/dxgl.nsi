@@ -112,10 +112,18 @@ Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
 !else
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 !endif
+!ifdef _BETA
+!ifdef _DEBUG
+OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32-Debug.exe"
+!else
+OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32.exe"
+!endif
+!else
 !ifdef _DEBUG
 OutFile "DXGL-${PRODUCT_VERSION}-win32-Debug.exe"
 !else
 OutFile "DXGL-${PRODUCT_VERSION}-win32.exe"
+!endif
 !endif
 InstallDir "$PROGRAMFILES\DXGL"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
