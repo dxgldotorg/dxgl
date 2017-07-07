@@ -911,7 +911,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->firstscalefilter, 0);
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->postfilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -925,8 +925,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
 		SendDlgItemMessage(hTabs[0], IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
-			cfgmask->firstscalex, cfgmask->firstscaley, tristate);
+		Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->postsizex, cfg->postsizey,
+			cfgmask->postsizex, cfgmask->postsizey, tristate);
 		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);

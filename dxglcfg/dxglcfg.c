@@ -679,7 +679,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->firstscalefilter, 0);
+		SendDlgItemMessage(hWnd, IDC_PRESCALE, CB_SETCURSEL, cfg->postfilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -693,8 +693,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
 		SendDlgItemMessage(hWnd, IDC_PRESCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
-			cfgmask->firstscalex, cfgmask->firstscaley, tristate);
+		Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->postsizex, cfg->postsizey,
+			cfgmask->postsizex, cfgmask->postsizey, tristate);
 		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -1183,7 +1183,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				// Read settings into controls
 				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
 				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
-				SetCombo(hWnd,IDC_PRESCALE,cfg->firstscalefilter,cfgmask->firstscalefilter,tristate);
+				SetCombo(hWnd,IDC_PRESCALE,cfg->postfilter,cfgmask->postfilter,tristate);
 				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
 				//SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
 				SetCombo(hWnd,IDC_FULLMODE,cfg->fullmode,cfgmask->fullmode,tristate);
@@ -1198,8 +1198,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
-				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
-					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
+				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex, cfgmask->postsizey, tristate);
 				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 			}
 			break;
@@ -1214,7 +1214,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			*dirty = TRUE;
 			break;
 		case IDC_PRESCALE:
-			cfg->firstscalefilter = GetCombo(hWnd,IDC_PRESCALE,&cfgmask->firstscalefilter);
+			cfg->postfilter = GetCombo(hWnd,IDC_PRESCALE,&cfgmask->postfilter);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
@@ -1291,17 +1291,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_PRESCALESIZE:
 			if (HIWORD(wParam) == CBN_KILLFOCUS)
 			{
-				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
-					&cfgmask->firstscalex, &cfgmask->firstscaley);
-				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->firstscalex, cfg->firstscaley,
-					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
+				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
+				Set1stScaleCombo(hWnd, IDC_PRESCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex, cfgmask->postsizey, tristate);
 				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}
 			else if (HIWORD(wParam) == CBN_SELCHANGE)
 			{
-				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
-					&cfgmask->firstscalex, &cfgmask->firstscaley);
+				Get1stScaleCombo(hWnd, IDC_PRESCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
 				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}

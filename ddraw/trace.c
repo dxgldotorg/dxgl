@@ -1082,6 +1082,7 @@ void trace_enter(const char *function, int paramcount, ...)
 	}
 	WriteFile(outfile,");\r\n",4,&byteswritten,NULL);
 	trace_depth++;
+	va_end(args);
 	LeaveCriticalSection(&trace_cs);
 }
 void trace_exit(const char *function, int argtype, void *arg)

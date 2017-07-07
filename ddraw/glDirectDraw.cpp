@@ -483,9 +483,9 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	ddmode.dwSize = sizeof(DDSURFACEDESC);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
 	ddmode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-	if (!_isnan(dxglcfg.firstscalex) && !_isnan(dxglcfg.firstscaley) &&
-		(dxglcfg.firstscalex > 0.25f) && (dxglcfg.firstscaley > 0.25f) &&
-		(dxglcfg.firstscalex != 1.0f) && (dxglcfg.firstscaley != 1.0f) &&
+	if (!_isnan(dxglcfg.postsizex) && !_isnan(dxglcfg.postsizey) &&
+		(dxglcfg.postsizex > 0.25f) && (dxglcfg.postsizey > 0.25f) &&
+		(dxglcfg.postsizex != 1.0f) && (dxglcfg.postsizey != 1.0f) &&
 		((dxglcfg.scaler == 0) || ((dxglcfg.scaler >= 4) && (dxglcfg.scaler <= 6))) &&
 		(!dxglcfg.primaryscale))
 		scalemodes = TRUE;
@@ -494,8 +494,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	{
 		if (scalemodes)
 		{
-			mode.dmPelsWidth /= dxglcfg.firstscalex;
-			mode.dmPelsHeight /= dxglcfg.firstscaley;
+			mode.dmPelsWidth /= dxglcfg.postsizex;
+			mode.dmPelsHeight /= dxglcfg.postsizey;
 		}
 		modes[modenum-1] = mode;
 		if(modenum >= modemax)
@@ -514,8 +514,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
-	if (dxglcfg.AddModes && (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f)))
+	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 		AddDoubledResolutions(&modes, &modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
@@ -1785,8 +1785,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	currmode.dmSize = sizeof(DEVMODE);
 	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&currmode);
 	this->currmode.dmSize = 0;
-	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+	if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 	{
 		if (dwWidth <= 400) xscale = 2.0f;
 		else xscale = 1.0f;
@@ -1795,8 +1795,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	}
 	else
 	{
-		xscale = dxglcfg.firstscalex;
-		yscale = dxglcfg.firstscaley;
+		xscale = dxglcfg.postsizex;
+		yscale = dxglcfg.postsizey;
 	}
 	switch (dxglcfg.fullmode)
 	{
@@ -1810,8 +1810,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		default:
 			newmode.dmSize = sizeof(DEVMODE);
 			newmode.dmDriverExtra = 0;
-			if (!dxglcfg.primaryscale || (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-				(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f)))
+			if (!dxglcfg.primaryscale || (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+				(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 			{
 				newmode.dmPelsWidth = dwWidth * xscale;
 				newmode.dmPelsHeight = dwHeight * yscale;

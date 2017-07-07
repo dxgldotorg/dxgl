@@ -28,9 +28,9 @@ typedef struct
 	DWORD scaler;
 	DWORD fullmode;
 	BOOL colormode;
-	DWORD firstscalefilter;
-	float firstscalex;
-	float firstscaley;
+	DWORD postfilter;
+	float postsizex;
+	float postsizey;
 	DWORD scalingfilter;
 	DWORD texfilter;
 	DWORD anisotropic;

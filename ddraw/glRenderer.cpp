@@ -2790,16 +2790,16 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	//glRenderer__InitCommandBuffer(This, &This->cmd2, width * height * (NextMultipleOf8(bpp) / 8));
 	//BufferObject_Map(This->cmd1.vertices, GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	//BufferObject_Map(This->cmd1.indices, GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+	if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 	{
-		This->firstscalex = 1.0f;
-		This->firstscaley = 1.0f;
+		This->postsizex = 1.0f;
+		This->postsizey = 1.0f;
 	}
 	else
 	{
-		This->firstscalex = dxglcfg.firstscalex;
-		This->firstscaley = dxglcfg.firstscaley;
+		This->postsizex = dxglcfg.postsizex;
+		This->postsizey = dxglcfg.postsizey;
 	}
 	TRACE_SYSINFO();
 	return TRUE;
@@ -3213,8 +3213,8 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	GLfloat view[4];
 	DDSURFACEDESC2 ddsd;
 	DWORD x2, y2;
-	x2 = x * This->firstscalex;
-	y2 = y * This->firstscaley;
+	x2 = x * This->postsizex;
+	y2 = y * This->postsizey;
 	glUtil_SetActiveTexture(This->util,8);
 	if(!This->backbuffer)
 	{
@@ -3242,7 +3242,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glUtil_SetTexture(This->util,8,*texture);
 	*texture = This->backbuffer;
-	if (!paletted && firstpass && (dxglcfg.firstscalefilter == 1))
+	if (!paletted && firstpass && (dxglcfg.postfilter == 1))
 		glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
 	else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
@@ -3342,18 +3342,18 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		if(This->ddInterface->GetFullscreen())
 		{
 			This->ddInterface->GetSizes(sizes);
-			if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-				(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+			if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+				(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 			{
-				if (sizes[2] <= 400) This->firstscalex = 2.0f;
-				else This->firstscalex = 1.0f;
-				if (sizes[3] <= 300) This->firstscaley = 2.0f;
-				else This->firstscaley = 1.0f;
+				if (sizes[2] <= 400) This->postsizex = 2.0f;
+				else This->postsizex = 1.0f;
+				if (sizes[3] <= 300) This->postsizey = 2.0f;
+				else This->postsizey = 1.0f;
 			}
 			else
 			{
-				This->firstscalex = dxglcfg.firstscalex;
-				This->firstscaley = dxglcfg.firstscaley;
+				This->postsizex = dxglcfg.postsizex;
+				This->postsizey = dxglcfg.postsizey;
 			}
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = sizes[4];
@@ -3394,7 +3394,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,9);
 		glUtil_SetTexture(This->util,8,texture);
 		glUtil_SetTexture(This->util,9,paltex);
-		if(dxglcfg.scalingfilter || (This->firstscalex != 1.0f) || (This->firstscaley != 1.0f))
+		if(dxglcfg.scalingfilter || (This->postsizex != 1.0f) || (This->postsizey != 1.0f))
 		{
 			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype,TRUE,TRUE);
 			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
@@ -3405,7 +3405,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	else
 	{
-		if ((This->firstscalex != 1.0f) || (This->firstscaley != 1.0f))
+		if ((This->postsizex != 1.0f) || (This->postsizey != 1.0f))
 		{
 			progtype = PROG_TEXTURE;
 			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
@@ -3732,18 +3732,18 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		glRenderer__SetSwap(This,0);
 		glUtil_SetViewport(This->util, 0, 0, width, height);
 	}
-	if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-		(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+	if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 	{
-		if (width <= 400) This->firstscalex = 2.0f;
-		else This->firstscaley = 1.0f;
-		if (height <= 300) This->firstscaley = 2.0f;
-		else This->firstscaley = 1.0f;
+		if (width <= 400) This->postsizex = 2.0f;
+		else This->postsizex = 1.0f;
+		if (height <= 300) This->postsizey = 2.0f;
+		else This->postsizey = 1.0f;
 	}
 	else
 	{
-		This->firstscalex = dxglcfg.firstscalex;
-		This->firstscaley = dxglcfg.firstscaley;
+		This->postsizex = dxglcfg.postsizex;
+		This->postsizey = dxglcfg.postsizey;
 	}
 	SetEvent(This->busy);
 }

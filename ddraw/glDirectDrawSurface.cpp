@@ -92,8 +92,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsd.dwHeight = sizes[3];
 				if(dxglcfg.primaryscale)
 				{
-					if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-						(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+					if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+						(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 					{
 						if (ddsd.dwWidth <= 400) xscale = 2.0f;
 						else xscale = 1.0f;
@@ -102,8 +102,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 					}
 					else
 					{
-						xscale = dxglcfg.firstscalex;
-						yscale = dxglcfg.firstscaley;
+						xscale = dxglcfg.postsizex;
+						yscale = dxglcfg.postsizey;
 					}
 					fakex = (DWORD)((float)sizes[0] / xscale);
 					fakey = (DWORD)((float)sizes[1] / yscale);
@@ -1232,8 +1232,8 @@ void glDirectDrawSurface7::Restore2()
 			ddsd.dwHeight = sizes[3];
 			if(dxglcfg.primaryscale)
 			{
-				if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-					(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+				if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+					(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 				{
 					if (ddsd.dwWidth <= 400) xscale = 2.0f;
 					else xscale = 1.0f;
@@ -1242,8 +1242,8 @@ void glDirectDrawSurface7::Restore2()
 				}
 				else
 				{
-					xscale = dxglcfg.firstscalex;
-					yscale = dxglcfg.firstscaley;
+					xscale = dxglcfg.postsizex;
+					yscale = dxglcfg.postsizey;
 				}
 				fakex = (DWORD)((float)sizes[0] / xscale);
 				fakey = (DWORD)((float)sizes[1] / yscale);
@@ -1286,8 +1286,8 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 				ddsd.dwHeight = sizes[3];
 				if(dxglcfg.primaryscale)
 				{
-					if (_isnan(dxglcfg.firstscalex) || _isnan(dxglcfg.firstscaley) ||
-						(dxglcfg.firstscalex < 0.25f) || (dxglcfg.firstscaley < 0.25f))
+					if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+						(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 					{
 						if (ddsd.dwWidth <= 400) xscale = 2.0f;
 						else xscale = 1.0f;
@@ -1296,8 +1296,8 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 					}
 					else
 					{
-						xscale = dxglcfg.firstscalex;
-						yscale = dxglcfg.firstscaley;
+						xscale = dxglcfg.postsizex;
+						yscale = dxglcfg.postsizey;
 					}
 					fakex = (DWORD)((float)sizes[0] / xscale);
 					fakey = (DWORD)((float)sizes[1] / yscale);

@@ -31,6 +31,7 @@ typedef LONG LSTATUS;
 #include "../ddraw/resource.h"
 #include <tchar.h>
 #include <math.h>
+#include <stdarg.h>
 
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
@@ -397,6 +398,42 @@ DWORD ReadDeprecatedBool(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value, 
 	}
 }
 
+DWORD ReadDWORDWithObsolete(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value,
+	unsigned int obsolete_count, ...) // obsolete items are LPCTSTRs
+{
+	LPCTSTR obsolete;
+	va_list va;
+	int i;
+	DWORD dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error = RegQueryValueEx(hKey, value, NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		*mask = 1;
+		return dwOut;
+	}
+	else
+	{
+		va_start(va, obsolete_count);
+		for (i = 0; i < obsolete_count; i++)
+		{
+			regdword = REG_DWORD;
+			obsolete = va_arg(va, LPCTSTR);
+			error = RegQueryValueEx(hKey, obsolete, NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+			if (error == ERROR_SUCCESS)
+			{
+				*mask = 1;
+				va_end(va);
+				return dwOut;
+			}
+		}
+		*mask = 0;
+		va_end(va);
+		return original;
+	}
+}
+
 DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 {
 	DWORD dwOut;
@@ -411,6 +448,42 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 	else
 	{
 		*mask = 0;
+		return original;
+	}
+}
+
+float ReadFloatWithObsolete(HKEY hKey, float original, float *mask, LPCTSTR value,
+	unsigned int obsolete_count, ...) // obsolete items are LPCTSTRs
+{
+	LPCTSTR obsolete;
+	va_list va;
+	int i;
+	float dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error = RegQueryValueEx(hKey, value, NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		*mask = 1.0f;
+		return dwOut;
+	}
+	else
+	{
+		va_start(va, obsolete_count);
+		for (i = 0; i < obsolete_count; i++)
+		{
+			regdword = REG_DWORD;
+			obsolete = va_arg(va, LPCTSTR);
+			error = RegQueryValueEx(hKey, obsolete, NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+			if (error == ERROR_SUCCESS)
+			{
+				*mask = 1.0f;
+				va_end(va);
+				return dwOut;
+			}
+		}
+		*mask = 0.0f;
+		va_end(va);
 		return original;
 	}
 }
@@ -458,9 +531,12 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->scaler = ReadDWORD(hKey, cfg->scaler, &cfgmask->scaler, _T("ScalingMode"));
 	cfg->fullmode = ReadDWORD(hKey, cfg->fullmode, &cfgmask->fullmode, _T("FullscreenWindowMode"));
 	cfg->colormode = ReadBool(hKey,cfg->colormode,&cfgmask->colormode,_T("ChangeColorDepth"));
-	cfg->firstscalefilter = ReadDWORD(hKey, cfg->firstscalefilter, &cfgmask->firstscalefilter, _T("FirstScaleFilter"));
-	cfg->firstscalex = ReadFloat(hKey, cfg->firstscalex, &cfgmask->firstscalex, _T("FirstScaleX"));
-	cfg->firstscaley = ReadFloat(hKey, cfg->firstscaley, &cfgmask->firstscaley, _T("FirstScaleY"));
+	cfg->postfilter = ReadDWORDWithObsolete(hKey, cfg->postfilter, &cfgmask->postfilter, _T("PostprocessFilter"),
+		1, _T("FirstScaleFilter"));
+	cfg->postsizex = ReadFloatWithObsolete(hKey, cfg->postsizex, &cfgmask->postsizex, _T("PostprocessScaleX"),
+		1, _T("FirstScaleX"));
+	cfg->postsizey = ReadFloatWithObsolete(hKey, cfg->postsizey, &cfgmask->postsizey, _T("PostprocessScaleY"),
+		1, _T("FirstScaleY"));
 	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,&cfgmask->scalingfilter,_T("ScalingFilter"));
 	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,&cfgmask->texfilter,_T("TextureFilter"));
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
@@ -507,6 +583,23 @@ void WriteBool(HKEY hKey, BOOL value, BOOL mask, LPCTSTR name)
 	else RegDeleteValue(hKey,name);
 }
 
+void WriteDWORDDeleteObsolete(HKEY hKey, DWORD value, DWORD mask, LPCTSTR name,
+	unsigned int obsolete_count, ...) // obsolete items are LPCTSTRs
+{
+	LPCTSTR obsolete;
+	va_list va;
+	int i;
+	va_start(va, obsolete_count);
+	for (i = 0; i < obsolete_count; i++)
+	{
+		obsolete = va_arg(va, LPCTSTR);
+		RegDeleteValue(hKey, obsolete);
+	}
+	va_end(va);
+	if (mask) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
+	else RegDeleteValue(hKey, name);
+}
+
 void WriteDWORD(HKEY hKey, DWORD value, DWORD mask, LPCTSTR name)
 {
 	if(mask) RegSetValueEx(hKey,name,0,REG_DWORD,(BYTE*)&value,4);
@@ -516,6 +609,23 @@ void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPCTSTR name)
 {
 	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcslen(path)+1)*sizeof(TCHAR));
 	else RegDeleteValue(hKey,name);
+}
+
+void WriteFloatDeleteObsolete(HKEY hKey, float value, float mask, LPCTSTR name,
+	unsigned int obsolete_count, ...) // obsolete items are LPCTSTRs
+{
+	LPCTSTR obsolete;
+	va_list va;
+	int i;
+	va_start(va, obsolete_count);
+	for (i = 0; i < obsolete_count; i++)
+	{
+		obsolete = va_arg(va, LPCTSTR);
+		RegDeleteValue(hKey, obsolete);
+	}
+	va_end(va);
+	if (fabsf(mask) > 0.5f) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
+	else RegDeleteValue(hKey, name);
 }
 void WriteFloat(HKEY hKey, float value, float mask, LPCTSTR name)
 {
@@ -530,14 +640,17 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	else cfgmask = &defaultmask;
 	memset(&defaultmask,1,sizeof(DXGLCFG));
 	defaultmask.aspect = 1.0f;
-	defaultmask.firstscalex = 1.0f;
-	defaultmask.firstscaley = 1.0f;
+	defaultmask.postsizex = 1.0f;
+	defaultmask.postsizey = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
-	WriteDWORD(hKey, cfg->firstscalefilter, cfgmask->firstscalefilter, _T("FirstScaleFilter"));
-	WriteFloat(hKey, cfg->firstscalex, cfgmask->firstscalex, _T("FirstScaleX"));
-	WriteFloat(hKey, cfg->firstscaley, cfgmask->firstscaley, _T("FirstScaleY"));
+	WriteDWORDDeleteObsolete(hKey, cfg->postfilter, cfgmask->postfilter, _T("PostprocessFilter"),
+		1, _T("FirstScaleFilter"));
+	WriteFloatDeleteObsolete(hKey, cfg->postsizex, cfgmask->postsizex, _T("PostprocessScaleX"),
+		1, _T("FirstScaleX"));
+	WriteFloatDeleteObsolete(hKey, cfg->postsizey, cfgmask->postsizey, _T("PostprocessScaleY"),
+		1, _T("FirstScaleY"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
