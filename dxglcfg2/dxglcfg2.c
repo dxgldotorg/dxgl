@@ -852,15 +852,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
 		tab.pszText = _T("Debug");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
-		tab.pszText = _T("Paths");
-		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
 		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
 		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
-		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_PATHS), hTab, PathsTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);
@@ -908,24 +905,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
 		// first scaling filter
 		_tcscpy(buffer, _T("Nearest"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("1x"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x1"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("3x"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
-		SendDlgItemMessage(hTabs[0], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetPostScaleCombo(hTabs[2], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 			cfgmask->postsizex, cfgmask->postsizey, tristate);
 		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
