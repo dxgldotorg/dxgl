@@ -34,8 +34,8 @@
 #define IDC_VIDMODE                             1041
 #define IDC_SCALE                               1042
 #define IDC_FULLMODE                            1043
-#define IDC_PRESCALESIZE                        1044
-#define IDC_PRESCALE                            1045
+#define IDC_POSTSCALESIZE                       1044
+#define IDC_POSTSCALE                           1045
 #define IDC_TEXFILTER                           1046
 #define IDC_ANISO                               1047
 #define IDC_MSAA                                1048

@@ -72,5 +72,5 @@
 #define IDC_FIXEDSCALESQUARE                    1039
 #define IDC_LOWCOLORRENDER                      1040
 #define IDC_FULLMODE                            1041
-#define IDC_PRESCALE                            1042
-#define IDC_PRESCALESIZE                        1043
+#define IDC_POSTSCALE                           1042
+#define IDC_POSTSCALESIZE                       1043
