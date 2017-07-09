@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\inih">
+      <UniqueIdentifier>{52f34bb7-dc10-4142-b67d-6720e9be7d4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\inih">
+      <UniqueIdentifier>{e547f87f-ed45-4367-8baf-ad2ddbbd5100}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -27,6 +33,9 @@
     <ClInclude Include="LibSha256.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inih\ini.h">
+      <Filter>Header Files\inih</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crc32.c">
@@ -37,6 +46,9 @@
     </ClCompile>
     <ClCompile Include="LibSha256.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inih\ini.c">
+      <Filter>Source Files\inih</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

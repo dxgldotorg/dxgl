@@ -149,11 +149,13 @@
   <ItemGroup>
     <ClInclude Include="cfgmgr.h" />
     <ClInclude Include="crc32.h" />
+    <ClInclude Include="inih\ini.h" />
     <ClInclude Include="LibSha256.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cfgmgr.c" />
     <ClCompile Include="crc32.c" />
+    <ClCompile Include="inih\ini.c" />
     <ClCompile Include="LibSha256.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

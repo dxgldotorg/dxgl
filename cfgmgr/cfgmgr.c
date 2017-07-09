@@ -32,6 +32,7 @@ typedef LONG LSTATUS;
 #include <tchar.h>
 #include <math.h>
 #include <stdarg.h>
+#include "inih/ini.h"
 
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
@@ -756,6 +757,36 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	return newregname;
 }
 
+void GetDefaultConfig(DXGLCFG *cfg)
+{
+	ZeroMemory(cfg, sizeof(DXGLCFG));
+	cfg->DPIScale = 1;
+	cfg->AddModes = 1;
+}
+
+void ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
+	const char *value)
+{
+	// Macro based on example from the inih README.md
+	#define MATCH(s, n) stricmp(section, s) == 0 && stricmp(name, n) == 0
+	return;
+}
+
+#ifdef UNICODE
+#define INIPARSE ini_parse_unicode
+#else
+#define INIPARSE ini_parse
+#endif
+
+void ReadINI(DXGLCFG *cfg, BOOL retry)
+{
+	TCHAR inipath[MAX_PATH + 10];
+	GetModuleFileName(NULL, inipath, MAX_PATH);
+	GetDirFromPath(inipath);
+	_tcscat(inipath, _T("\\dxgl.ini"));
+	INIPARSE(inipath, ReadINICallback, cfg);
+}
+
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 {
 	HKEY hKey;
@@ -790,6 +821,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	sha256string[256 / 4] = 0;
 	_tcscat(regkey,sha256string);
 	GetGlobalConfig(cfg, initial);
+	ReadINI(cfg, FALSE);
 	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
 	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
 	if (hKey)
