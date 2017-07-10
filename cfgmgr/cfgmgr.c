@@ -759,32 +759,54 @@ LPTSTR MakeNewConfig(LPTSTR path)
 
 void GetDefaultConfig(DXGLCFG *cfg)
 {
+	BOOL Windows8Detected = FALSE;
 	ZeroMemory(cfg, sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
 	cfg->AddModes = 1;
+	if (!cfg->Windows8Detected)
+	{
+		OSVERSIONINFO osver;
+		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		GetVersionEx(&osver);
+		if (osver.dwMajorVersion > 6) Windows8Detected = TRUE;
+		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) Windows8Detected = TRUE;
+		if (Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
+	}
 }
 
-void ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
+DWORD INIBoolValue(const char *value)
+{
+	DWORD ret = 1;
+	if (value[0] == 'F') ret = 0;
+	if (value[0] == 'f') ret = 0;
+	if (value[0] == '0') ret = 0;
+	return ret;
+}
+
+int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	const char *value)
 {
-	// Macro based on example from the inih README.md
-	#define MATCH(s, n) stricmp(section, s) == 0 && stricmp(name, n) == 0
-	return;
+	if (!stricmp(section, "system"))
+	{
+		if (!stricmp(name, "NoWriteRegistry")) cfg->NoWriteRegistry = INIBoolValue(value);
+		if (!stricmp(name, "OverrideDefaults"))cfg->OverrideDefaults = INIBoolValue(value);
+	}
+	if (!stricmp(section, "display"))
+	{
+
+	}
+	return 1;
 }
 
-#ifdef UNICODE
-#define INIPARSE ini_parse_unicode
-#else
-#define INIPARSE ini_parse
-#endif
-
-void ReadINI(DXGLCFG *cfg, BOOL retry)
+void ReadINI(DXGLCFG *cfg)
 {
+	FILE *file;
 	TCHAR inipath[MAX_PATH + 10];
 	GetModuleFileName(NULL, inipath, MAX_PATH);
 	GetDirFromPath(inipath);
 	_tcscat(inipath, _T("\\dxgl.ini"));
-	INIPARSE(inipath, ReadINICallback, cfg);
+	file = _tfopen(inipath, _T("r"));
+	if (file) ini_parse_file(file, ReadINICallback, cfg);
 }
 
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
@@ -821,9 +843,28 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	sha256string[256 / 4] = 0;
 	_tcscat(regkey,sha256string);
 	GetGlobalConfig(cfg, initial);
-	ReadINI(cfg, FALSE);
+	ReadINI(cfg);
+	if (cfg->OverrideDefaults)
+	{
+		GetDefaultConfig(cfg);
+		ReadINI(cfg);
+	}
+	if (!cfg->Windows8Detected)
+	{
+		OSVERSIONINFO osver;
+		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		GetVersionEx(&osver);
+		if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
+		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
+		if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
+	}
 	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
-	else RegCreateKeyEx(HKEY_CURRENT_USER,regkey,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
+	else
+	{
+		RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+		if (hKey) RegCloseKey(hKey);
+		RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	}
 	if (hKey)
 	{
 		ReadSettings(hKey, cfg, NULL, FALSE, TRUE, NULL);
@@ -865,24 +906,12 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 }
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {
-	HKEY hKey;
-	ZeroMemory(cfg,sizeof(DXGLCFG));
-	cfg->DPIScale = 1;
-	cfg->AddModes = 1;
-	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, KEY_READ, &hKey);
-	else RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	HKEY hKey = NULL;
+	GetDefaultConfig(cfg);
+	RegOpenKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, KEY_READ, &hKey);
 	if (hKey)
 	{
 		ReadSettings(hKey, cfg, NULL, TRUE, FALSE, NULL);
-		if (!cfg->Windows8Detected)
-		{
-			OSVERSIONINFO osver;
-			osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			GetVersionEx(&osver);
-			if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
-			if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
-			if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
-		}
 		RegCloseKey(hKey);
 	}
 }

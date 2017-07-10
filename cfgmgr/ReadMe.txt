@@ -1,5 +1,17 @@
 Struct DXGLCFG
 
+member NoWriteRegistry
+INI Entry NoWriteRegistry
+INI Group system
+Does not have a registry value.
+If nonzero, DXGL will not write a profile to the registry.
+
+member OverrideDefaults
+INI Entry OverrideDefaults
+INI Group system
+Does not have a registry value.
+If nonzero, ignores registry settings from Global section of registry.
+
 Member scaler
 INI Entry ScalingMode
 INI Group display
@@ -34,7 +46,9 @@ REG_DWORD HKCU\DXGL\Profiles\<app>\ChangeColorDepth
 If nonzero, switches screen color depth if requested by the application.
 Recommended setting is off.  DXGL handles color depth conversion internally.
 
-Member AllColorDepths
+Member AddColorDepths
+INI Entry AllColorDepths
+INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\AllColorDepths
 [DEPRECATED FOR DXGLCFG2]Enable all color depths, even if unsupported by the system
 Valid settings:
@@ -42,6 +56,8 @@ Valid settings:
 1 - On
 
 Member AddColorDepths
+INI Entry AddColorDepths
+INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\AddColorDepths
 Adds color depths, even if unsupported by the system
 Bit-mapped variable
@@ -53,7 +69,9 @@ Valid settings, OR'ed to combine settings:
 8 - Add 24-bit modes
 16 - Add 32-bit modes
 
-Member ExtraModes
+Member AddModes
+INI Entry ExtraModes
+INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\ExtraModes
 [DEPRECATED FOR DXGLCFG2]Enable extra video modes, even if unsupported by the system
 Valid settings:

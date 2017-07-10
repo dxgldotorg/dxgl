@@ -25,30 +25,39 @@ extern "C" {
 
 typedef struct
 {
+	// [system]
+	DWORD NoWriteRegistry;
+	DWORD OverrideDefaults;
+	// [display]
 	DWORD scaler;
 	DWORD fullmode;
 	BOOL colormode;
+	DWORD AddColorDepths;
+	DWORD AddModes;
+	DWORD SortModes;
+	// [scaling]
+	DWORD scalingfilter;
+	DWORD primaryscale;
+	float primaryscalex;
+	float primaryscaley;
+	float aspect;
+	DWORD DPIScale;
+	// [postprocess]
 	DWORD postfilter;
 	float postsizex;
 	float postsizey;
-	DWORD scalingfilter;
+	BOOL EnableShader;
+	TCHAR shaderfile[MAX_PATH + 1];
+	// [d3d]
 	DWORD texfilter;
 	DWORD anisotropic;
 	DWORD msaa;
 	DWORD aspect3d;
-	DWORD primaryscale;
-	float primaryscalex;
-	float primaryscaley;
+	// [advanced]
 	DWORD vsync;
-	BOOL EnableShader;
-	TCHAR shaderfile[MAX_PATH+1];
-	DWORD SortModes;
-	DWORD AddColorDepths;
-	DWORD AddModes;
 	DWORD TextureFormat;
 	DWORD TexUpload;
-	DWORD DPIScale;
-	float aspect;
+	// internal
 	BOOL Windows8Detected;
 } DXGLCFG;
 
