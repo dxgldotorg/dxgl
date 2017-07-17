@@ -776,11 +776,45 @@ void GetDefaultConfig(DXGLCFG *cfg)
 
 DWORD INIBoolValue(const char *value)
 {
-	DWORD ret = 1;
-	if (value[0] == 'F') ret = 0;
-	if (value[0] == 'f') ret = 0;
-	if (value[0] == '0') ret = 0;
-	return ret;
+	if (value[0] == 'F') return 0;
+	if (value[0] == 'f') return 0;
+	if (!atoi(value)) return 0;
+	return 1;
+}
+
+DWORD INIIntValue(const char *value)
+{
+	return atoi(value);
+}
+
+DWORD INIHexValue(const char *value)
+{
+	return (DWORD)strtoul(value, NULL, 0);
+}
+
+float INIAspectValue(const char *value)
+{
+	char *ptr;
+	float numerator, denominator;
+	if (!strcmp(value, "Default")) return 0.0f;
+	else
+	{
+		// Check for colon
+		ptr = strstr(value, ":");
+		if (ptr)
+		{
+			*ptr = 0;
+			numerator = atof(value);
+			denominator = atof(ptr + 1);
+			return numerator / denominator;
+		}
+		else return atof(value);
+	}
+}
+
+float INIFloatValue(const char *value)
+{
+	return (float)atof(value);
 }
 
 int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
@@ -789,11 +823,83 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	if (!stricmp(section, "system"))
 	{
 		if (!stricmp(name, "NoWriteRegistry")) cfg->NoWriteRegistry = INIBoolValue(value);
-		if (!stricmp(name, "OverrideDefaults"))cfg->OverrideDefaults = INIBoolValue(value);
+		if (!stricmp(name, "OverrideDefaults")) cfg->OverrideDefaults = INIBoolValue(value);
 	}
 	if (!stricmp(section, "display"))
 	{
-
+		if (!stricmp(name, "ScalingMode")) cfg->scaler = INIIntValue(value);
+		if (!stricmp(name, "FullscreenWindowMode")) cfg->fullmode = INIIntValue(value);
+		if (!stricmp(name, "ChangeColorDepth")) cfg->colormode = INIBoolValue(value);
+		if (!stricmp(name, "AllColorDepths"))
+		{
+			if (!cfg->ParsedAddColorDepths)
+			{
+				if (INIBoolValue(value)) cfg->AddColorDepths = 1 | 4 | 16;
+				else cfg->AddColorDepths = 0;
+			}
+		}
+		if (!stricmp(name, "AddColorDepths"))
+		{
+			cfg->ParsedAddColorDepths = TRUE;
+			cfg->AddColorDepths = INIIntValue(value);
+		}
+		if (!stricmp(name, "ExtraModes"))
+		{
+			if (!cfg->ParsedAddModes)
+			{
+				if (INIBoolValue(value)) cfg->AddModes = 7;
+				else cfg->AddModes = 0;
+			}
+		}
+		if (!stricmp(name, "AddModes"))
+		{
+			cfg->ParsedAddModes = TRUE;
+			cfg->AddModes = INIIntValue(value);
+		}
+		if (!stricmp(name, "SortModes")) cfg->SortModes = INIIntValue(value);
+	}
+	if (!stricmp(section, "scaling"))
+	{
+		if (!stricmp(name, "ScalingFilter")) cfg->scalingfilter = INIIntValue(value);
+		if (!stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
+		if (!stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
+		if (!stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
+		if (!stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
+		if (!stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
+	}
+	if (!stricmp(section, "postprocess"))
+	{
+		if (!stricmp(name, "PostprocessFilter")) cfg->postfilter = INIIntValue(value);
+		if (!stricmp(name, "PostprocessScaleX")) cfg->postsizex = INIFloatValue(value);
+		if (!stricmp(name, "PostprocessScaleY")) cfg->postsizex = INIFloatValue(value);
+		if (!stricmp(name, "EnableShader")) cfg->EnableShader = INIBoolValue(value);
+		if (!stricmp(name, "ShaderFile")) strncpy(cfg->shaderfile, value, MAX_PATH);
+	}
+	if (!stricmp(section, "d3d"))
+	{
+		if (!stricmp(name, "TextureFilter")) cfg->texfilter = INIIntValue(value);
+		if (!stricmp(name, "AnisotropicFiltering")) cfg->anisotropic = INIIntValue(value);
+		if (!stricmp(name, "Antialiasing")) cfg->msaa = INIHexValue(value);
+		if (!stricmp(name, "D3DAspect")) cfg->aspect3d = INIIntValue(value);
+	}
+	if (!stricmp(section, "advanced"))
+	{
+		if (!stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
+		if (!stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
+		if (!stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
+	}
+	if (!stricmp(section, "debug"))
+	{
+		if (!stricmp(name, "DebugNoExtFramebuffer")) cfg->DebugNoExtFramebuffer = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoArbFramebuffer")) cfg->DebugNoArbFramebuffer = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoES2Compatibility")) cfg->DebugNoES2Compatibility = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoExtDirectStateAccess")) cfg->DebugNoExtDirectStateAccess = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoArbDirectStateAccess")) cfg->DebugNoArbDirectStateAccess = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoSamplerObjects")) cfg->DebugNoSamplerObjects = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoGpuShader4")) cfg->DebugNoGpuShader4 = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoGLSL130")) cfg->DebugNoGLSL130 = INIBoolValue(value);
+		if (!stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
+		if (!stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
 	}
 	return 1;
 }
@@ -806,7 +912,11 @@ void ReadINI(DXGLCFG *cfg)
 	GetDirFromPath(inipath);
 	_tcscat(inipath, _T("\\dxgl.ini"));
 	file = _tfopen(inipath, _T("r"));
-	if (file) ini_parse_file(file, ReadINICallback, cfg);
+	if (file)
+	{
+		ini_parse_file(file, ReadINICallback, cfg);
+		fclose(file);
+	}
 }
 
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)

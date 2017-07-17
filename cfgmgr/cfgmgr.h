@@ -57,8 +57,21 @@ typedef struct
 	DWORD vsync;
 	DWORD TextureFormat;
 	DWORD TexUpload;
+	// [debug]
+	BOOL DebugNoExtFramebuffer;
+	BOOL DebugNoArbFramebuffer;
+	BOOL DebugNoES2Compatibility;
+	BOOL DebugNoExtDirectStateAccess;
+	BOOL DebugNoArbDirectStateAccess;
+	BOOL DebugNoSamplerObjects;
+	BOOL DebugNoGpuShader4;
+	BOOL DebugNoGLSL130;
+	DWORD DebugMaxGLVersionMajor;
+	DWORD DebugMaxGLVersionMinor;
 	// internal
 	BOOL Windows8Detected;
+	BOOL ParsedAddColorDepths;
+	BOOL ParsedAddModes;
 } DXGLCFG;
 
 typedef struct

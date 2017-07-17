@@ -282,6 +282,85 @@ Method used to upload textures
 Valid settings:
 0 - Automatic
 
+Default for all Debug variables is 0 or FALSE.
+
+Member DebugNoExtFramebuffer
+INI Entry DebugNoExtFramebuffer
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoExtFramebuffer
+If nonzero, disables use of the EXT_framebuffer_object OpenGL extension.
+If both EXT_framebuffer_object and ARB_framebuffer_object are disabled or
+unavailable DXGL will fail to initialize.
+
+Member DebugNoArbFramebuffer
+INI Entry DebugNoArbFramebuffer
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoArbFramebuffer
+If nonzero, disables use of the ARB_framebuffer_object OpenGL extension.
+If both EXT_framebuffer_object and ARB_framebuffer_object are disabled or
+unavailable DXGL will fail to initialize.
+
+Member DebugNoES2Compatibility
+INI Entry DebugNoES2Compatibility
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoES2Compatibility
+If nonzero, disables use of the ARB_ES2_compatibility OpenGL extension.
+This will disable use of the 16-bit GL_RGB565 texture format which is part
+of OpenGL ES2 but not the desktop OpenGL standard.
+
+Member DebugNoExtDirectStateAccess
+INI Entry DebugNoExtDirectStateAccess
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoExtDirectStateAccess
+If nonzero, disables use of the EXT_direct_state_access OpenGL extension which
+simplifies manipulation of certain types of OpenGL objects.
+
+Member DebugNoArbDirectStateAccess
+INI Entry DebugNoArbDirectStateAccess
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoArbDirectStateAccess
+If nonzero, disables use of the ARB_direct_state_access OpenGL extension which
+simplifies manipulation of certain types of OpenGL objects.
+
+Member DebugNoSamplerObjects
+INI Entry DebugNoSamplerObjects
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoSamplerObjects
+If nonzero, disables use of sampler objects, either via GL_ARB_sampler_objects
+or OpenGL version 3.3+.  Disabling sampler objects reduces the accuracy of
+Direct3D content in some situations.
+
+Member DebugNoGpuShader4
+INI Entry DebugNoGpuShader4
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoGpuShader4
+If nonzero, disables use of the EXT_gpu_shader4 extension on OpenGL 2.x cards.
+This will disable most raster operations in DirectDraw.  This has no effect on
+OpenGL 3.0 or higher because the functionality is in core, unless DebugNoGLSL130
+is also enabled.
+
+Member DebugNoGLSL130
+INI Entry DebugNoGLSL130
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoGLSL130
+If nonzero, disables use of GLSL version 1.30.  When combined with
+DebugNoGpuShader4 this will disable raster operations in DirectDraw.
+
+Member DebugMaxGLVersionMajor
+INI Entry DebugMaxGLVersionMajor
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugMaxGLVersionMajor
+If nonzero, sets the maximum OpenGL major version that DXGL will use,
+and uses the value from DebugMaxGLVersionMinor.
+
+Member DebugMaxGLVersionMinor
+INI Entry DebugMaxGLVersionMinor
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugMaxGLVersionMinor
+If DebugMaxGLVersionMajor is nonzero, sets the maximum OpenGL minor version
+that DXGL will use, unless the actual major version is less than
+DebugMaxGLVersionMajor.
+
 Member Windows8Detected
 Not in INI file
 REG_DWORD HKCU\DXGL\Global\Windows8Detected
@@ -290,3 +369,18 @@ If zero or undefined and Windows 8 (or later) is detected, AllColorDepths in
 Global key is set to 1 and Windows8Detected is also set to 1.
 If nonzero, AllColorDepths is not affected.
 
+Member PasrsedAddColorDepths
+Not in INI file
+Not in registry
+Nonzero if the INI parser has read the AddColorDepths entry.
+This prevents the AddColorDepths variable from being overridden by
+AllColorDepths.  If zero, the AllColorDepths INI entry will overwrite the
+AddColorDepths configuration variable.
+
+Member ParsedAddModes
+Not in INI file
+Not in registry
+Nonzero if the INI parser has read the AddModes entry.
+This prevents the AddModes variable from being overridden by ExtraModes.
+If zero, the ExtraModes INI entry will overwrite the AddModes configuration
+variable.
