@@ -559,6 +559,16 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
 	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
+	cfg->DebugNoExtFramebuffer = ReadBool(hKey, cfg->DebugNoExtFramebuffer, &cfgmask->DebugNoExtFramebuffer, _T("DebugNoExtFramebuffer"));
+	cfg->DebugNoArbFramebuffer = ReadBool(hKey, cfg->DebugNoArbFramebuffer, &cfgmask->DebugNoArbFramebuffer, _T("DebugNoArbFramebuffer"));
+	cfg->DebugNoES2Compatibility = ReadBool(hKey, cfg->DebugNoES2Compatibility, &cfgmask->DebugNoES2Compatibility, _T("DebugNoES2Compatibility"));
+	cfg->DebugNoExtDirectStateAccess = ReadBool(hKey, cfg->DebugNoExtDirectStateAccess, &cfgmask->DebugNoExtDirectStateAccess, _T("DebugNoExtDirectStateAccess"));
+	cfg->DebugNoArbDirectStateAccess = ReadBool(hKey, cfg->DebugNoArbDirectStateAccess, &cfgmask->DebugNoArbDirectStateAccess, _T("DebugNoArbDirectStateAccess"));
+	cfg->DebugNoSamplerObjects = ReadBool(hKey, cfg->DebugNoSamplerObjects, &cfgmask->DebugNoSamplerObjects, _T("DebugNoSamplerObjects"));
+	cfg->DebugNoGpuShader4 = ReadBool(hKey, cfg->DebugNoGpuShader4, &cfgmask->DebugNoGpuShader4, _T("DebugNoGpuShader4"));
+	cfg->DebugNoGLSL130 = ReadBool(hKey, cfg->DebugNoGLSL130, &cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
+	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
+	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	if(!global && dll)
 	{
 		sizeout = 0;
@@ -671,6 +681,16 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
+	WriteBool(hKey, cfg->DebugNoExtFramebuffer, cfgmask->DebugNoExtFramebuffer, _T("DebugNoExtFramebuffer"));
+	WriteBool(hKey, cfg->DebugNoArbFramebuffer, cfgmask->DebugNoArbFramebuffer, _T("DebugNoArbFramebuffer"));
+	WriteBool(hKey, cfg->DebugNoES2Compatibility, cfgmask->DebugNoES2Compatibility, _T("DebugNoES2Compatibility"));
+	WriteBool(hKey, cfg->DebugNoExtDirectStateAccess, cfgmask->DebugNoExtDirectStateAccess, _T("DebugNoExtDirectStateAccess"));
+	WriteBool(hKey, cfg->DebugNoArbDirectStateAccess, cfgmask->DebugNoArbDirectStateAccess, _T("DebugNoArbDirectStateAccess"));
+	WriteBool(hKey, cfg->DebugNoSamplerObjects, cfgmask->DebugNoSamplerObjects, _T("DebugNoSamplerObjects"));
+	WriteBool(hKey, cfg->DebugNoGpuShader4, cfgmask->DebugNoGpuShader4, _T("DebugNoGpuShader4"));
+	WriteBool(hKey, cfg->DebugNoGLSL130, cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
+	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
+	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 }
 
 TCHAR newregname[MAX_PATH+65];
