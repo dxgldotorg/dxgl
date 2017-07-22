@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "glExtensions.h"
-
+extern DXGLCFG dxglcfg;
 
 void glExtensions_Init(glExtensions *ext)
 {
@@ -29,6 +29,19 @@ void glExtensions_Init(glExtensions *ext)
 	glversion = glGetString(GL_VERSION);
 	ext->glver_minor = 0;
 	if(!sscanf((char*)glversion,"%d.%d",&ext->glver_major,&ext->glver_minor)) ext->glver_major = 0;
+	if (dxglcfg.DebugMaxGLVersionMajor)
+	{
+		if (dxglcfg.DebugMaxGLVersionMajor < ext->glver_major)
+		{
+			ext->glver_major = dxglcfg.DebugMaxGLVersionMajor;
+			ext->glver_minor = dxglcfg.DebugMaxGLVersionMinor;
+		}
+		else if (dxglcfg.DebugMaxGLVersionMajor == ext->glver_major)
+		{
+			if (dxglcfg.DebugMaxGLVersionMinor < ext->glver_minor)
+				ext->glver_minor = dxglcfg.DebugMaxGLVersionMinor;
+		}
+	}
 	if((ext->glver_major >= 2) || ((ext->glver_major >= 1) && (ext->glver_minor >= 2)))
 		ext->glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC)wglGetProcAddress("glDrawRangeElements");
 	if((ext->glver_major >= 2) || ((ext->glver_major >= 1) && (ext->glver_minor >= 3)))
@@ -83,9 +96,20 @@ void glExtensions_Init(glExtensions *ext)
 	}
 	else
 	{
-		MessageBox(NULL,_T("DXGL requires an OpenGL 2.0 or higher compatible graphics card to function.  \
-Please contact your graphics card manufacturer for an updated driver.  This program will now exit."),_T("Fatal error"),
-			MB_OK|MB_ICONERROR);
+		if (dxglcfg.DebugMaxGLVersionMajor && (dxglcfg.DebugMaxGLVersionMajor < 2))
+			MessageBox(NULL, _T("An invalid debug setting has been detected.  DXGL requires at least OpenGL 2.0 and the \
+debug settings prohibit OpenGL 2.0 support.\r\n\r\nPlease edit the DebugMaxGLVersionMajor setting to at least 2 and restart \
+this program.\r\n\r\nThis program will now exit."), _T("Fatal error"), MB_OK | MB_ICONERROR);
+		else
+		{
+			if(GetSystemMetrics(SM_REMOTESESSION))
+				MessageBox(NULL, _T("This program appears to be running in a remote desktop session.  Since this session \
+does not support OpenGL 2.0 or greater, DXGL will not work.\r\n\r\nTry starting this program from a non-remote session.\r\n\r\n\
+This program will now exit."), _T("Fatal error"), MB_OK | MB_ICONERROR);
+			else MessageBox(NULL, _T("DXGL requires an OpenGL 2.0 or higher compatible graphics card to function.  \
+Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThis program will now exit."), _T("Fatal error"),
+				MB_OK | MB_ICONERROR);
+		}
 		ExitProcess(-1);
 	}
 	glextensions = glGetString(GL_EXTENSIONS);

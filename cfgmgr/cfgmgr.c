@@ -798,6 +798,8 @@ DWORD INIBoolValue(const char *value)
 {
 	if (value[0] == 'F') return 0;
 	if (value[0] == 'f') return 0;
+	if (value[0] == 'T') return 1;
+	if (value[0] == 't') return 1;
 	if (!atoi(value)) return 0;
 	return 1;
 }
