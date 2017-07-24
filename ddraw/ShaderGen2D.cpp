@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2016 William Feely
+// Copyright (C) 2013-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 #include "glExtensions.h"
 #include "ShaderGen2d.h"
 #include "../common/version.h"
+extern "C" {extern DXGLCFG dxglcfg; }
 
 
 /* Bits in 2D shader ID:
@@ -724,7 +725,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	if (id & DDBLT_ROP)
 	{
 		rop = UnpackROPBits(id);
-		if (gen->ext->glver_major >= 3)
+		if ((gen->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130)
 		{
 			String_Append(vsrc, version_130);
 			intproc = TRUE;
@@ -797,7 +798,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	String_Append(fsrc, revheader);
 	if (id & DDBLT_ROP)
 	{
-		if (gen->ext->glver_major >= 3)
+		if ((gen->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130)
 		{
 			String_Append(fsrc, version_130);
 			intproc = true;

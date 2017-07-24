@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1302,14 +1302,14 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
 		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
-		if (tmprenderer->ext->glver_major >= 3) fullrop = TRUE;
+		if ((tmprenderer->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130) fullrop = TRUE;
 		if (tmprenderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
 		glRenderer_Delete(tmprenderer);
 		free(tmprenderer);
 	}
 	else
 	{
-		if (renderer->ext->glver_major >= 3) fullrop = TRUE;
+		if ((renderer->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130) fullrop = TRUE;
 		if (renderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
 	}
 	if (fullrop)
