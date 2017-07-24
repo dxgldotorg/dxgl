@@ -135,10 +135,12 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	if(strstr((char*)glextensions,"GL_ARB_ES2_compatibility") || (ext->glver_major >= 5)
 		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) ext->GLEXT_ARB_ES2_compatibility = 1;
 	else ext->GLEXT_ARB_ES2_compatibility = 0;
-	if(strstr((char*)glextensions,"GL_EXT_direct_state_access")) ext->GLEXT_EXT_direct_state_access = 1;
+	if(strstr((char*)glextensions,"GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
+		ext->GLEXT_EXT_direct_state_access = 1;
 	else ext->GLEXT_EXT_direct_state_access = 0;
-	if (strstr((char*)glextensions, "GL_ARB_direct_state_access") || (ext->glver_major >= 5)
-		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) ext->GLEXT_ARB_direct_state_access = 1;
+	if ((strstr((char*)glextensions, "GL_ARB_direct_state_access") || (ext->glver_major >= 5)
+		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) && !dxglcfg.DebugNoArbDirectStateAccess)
+		ext->GLEXT_ARB_direct_state_access = 1;
 	else ext->GLEXT_ARB_direct_state_access = 0;
 	if (strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
 		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) ext->GLEXT_ARB_sampler_objects = 1;
