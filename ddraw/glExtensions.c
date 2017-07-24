@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -113,9 +113,11 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		ExitProcess(-1);
 	}
 	glextensions = glGetString(GL_EXTENSIONS);
-	if(strstr((char*)glextensions,"GL_ARB_framebuffer_object") || (ext->glver_major >= 3)) ext->GLEXT_ARB_framebuffer_object = 1;
+	if((strstr((char*)glextensions,"GL_ARB_framebuffer_object") || (ext->glver_major >= 3))
+		&& !dxglcfg.DebugNoArbFramebuffer) ext->GLEXT_ARB_framebuffer_object = 1;
 	else ext->GLEXT_ARB_framebuffer_object = 0;
-	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object")) ext->GLEXT_EXT_framebuffer_object = 1;
+	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
+		ext->GLEXT_EXT_framebuffer_object = 1;
 	else ext->GLEXT_EXT_framebuffer_object = 0;
 	if(strstr((char*)glextensions,"GL_NV_packed_depth_stencil")) ext->GLEXT_NV_packed_depth_stencil = 1;
 	else ext->GLEXT_NV_packed_depth_stencil = 0;
@@ -213,8 +215,12 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	}
 	if(broken_fbo)
 	{
-		MessageBox(NULL,_T("DXGL requires support for OpenGL Framebuffer Objects to function.  \
-Please contact your graphics card manufacturer for an updated driver.  This program will now exit."),_T("Fatal error"),
+		if(dxglcfg.DebugNoArbFramebuffer || dxglcfg.DebugNoExtFramebuffer)
+			MessageBox(NULL, _T("An invalid debug setting has been detected.  DXGL requires framebuffer support and the only \
+available framebuffer extension(s) have been disabled.\r\n\r\nPlease disable DebugNoArbFramebuffer and/or DebugNoExtFramebuffer \
+and restart this program.\r\n\r\nThis program will now exit."), _T("Fatal error"), MB_OK | MB_ICONERROR);
+		else MessageBox(NULL,_T("DXGL requires support for OpenGL Framebuffer Objects to function.\n\n\
+Please contact your graphics card manufacturer for an updated driver.\n\nThis program will now exit."),_T("Fatal error"),
 			MB_OK|MB_ICONERROR);
 		ExitProcess(-1);
 	}
