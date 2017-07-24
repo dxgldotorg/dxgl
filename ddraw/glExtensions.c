@@ -132,8 +132,9 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	else ext->GLEXT_NVX_gpu_memory_info = 0;
 	if(strstr((char*)glextensions,"GL_ATI_meminfo")) ext->GLEXT_ATI_meminfo = 1;
 	else ext->GLEXT_ATI_meminfo = 0;
-	if(strstr((char*)glextensions,"GL_ARB_ES2_compatibility") || (ext->glver_major >= 5)
-		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) ext->GLEXT_ARB_ES2_compatibility = 1;
+	if((strstr((char*)glextensions,"GL_ARB_ES2_compatibility") || (ext->glver_major >= 5)
+		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) && !dxglcfg.DebugNoES2Compatibility)
+		ext->GLEXT_ARB_ES2_compatibility = 1;
 	else ext->GLEXT_ARB_ES2_compatibility = 0;
 	if(strstr((char*)glextensions,"GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
 		ext->GLEXT_EXT_direct_state_access = 1;
@@ -142,8 +143,9 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) && !dxglcfg.DebugNoArbDirectStateAccess)
 		ext->GLEXT_ARB_direct_state_access = 1;
 	else ext->GLEXT_ARB_direct_state_access = 0;
-	if (strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
-		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) ext->GLEXT_ARB_sampler_objects = 1;
+	if ((strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
+		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
+		ext->GLEXT_ARB_sampler_objects = 1;
 	else ext->GLEXT_ARB_sampler_objects = 0;
 	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4")) ext->GLEXT_EXT_gpu_shader4 = 1;
 	else ext->GLEXT_EXT_gpu_shader4 = 0;
