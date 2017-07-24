@@ -147,7 +147,8 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
 		ext->GLEXT_ARB_sampler_objects = 1;
 	else ext->GLEXT_ARB_sampler_objects = 0;
-	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4")) ext->GLEXT_EXT_gpu_shader4 = 1;
+	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
+		ext->GLEXT_EXT_gpu_shader4 = 1;
 	else ext->GLEXT_EXT_gpu_shader4 = 0;
 	if(strstr((char*)glextensions,"GL_GREMEDY_frame_terminator")) ext->GLEXT_GREMEDY_frame_terminator = 1;
 	else ext->GLEXT_GREMEDY_frame_terminator = 0;
