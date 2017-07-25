@@ -3365,6 +3365,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		}
 		else
 		{
+			This->postsizex = 1.0f;
+			This->postsizey = 1.0f;
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = viewrect->right;
 			viewport[3] = viewrect->bottom;
