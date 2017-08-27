@@ -76,6 +76,14 @@ typedef struct
 
 typedef struct
 {
+	BOOL NoOverwrite;
+	char sha256[65];
+	char sha256comp[65];
+	BOOL NoUninstall;
+} app_ini_options;
+
+typedef struct
+{
 	TCHAR InstallPath[MAX_PATH + 1];
 	TCHAR InstallPathLowercase[MAX_PATH + 1];
 	TCHAR EXEFile[MAX_PATH + 1];
@@ -96,6 +104,7 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
 void GetDirFromPath(LPTSTR path);
 void UpgradeConfig();
+void ReadAppINIOptions(LPCTSTR path, app_ini_options *options);
 BOOL CheckProfileExists(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
 

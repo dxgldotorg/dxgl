@@ -1373,3 +1373,79 @@ ver0to1:
 	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
 	RegCloseKey(hKey);
 }
+
+int ReadINIOptionsCallback(app_ini_options *options, const char *section, const char *name,
+	const char *value)
+{
+	if (!stricmp(section, "system"))
+	{
+		if (!stricmp(name, "NoOverwrite")) options->NoOverwrite = INIBoolValue(value);
+		if (!stricmp(name, "BundledDDrawSHA256"))
+		{
+			strncpy(options->sha256comp, value, 65);
+			options->sha256comp[64] = 0;
+			if (options->sha256comp[63] == 0) options->sha256comp[0] = 0;
+		}
+		if (!stricmp(name, "NoUninstall")) options->NoUninstall = INIBoolValue(value);
+	}
+	return 1;
+}
+
+void ReadAppINIOptions(LPCTSTR path, app_ini_options *options)
+{
+	int i;
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	TCHAR sha256string[65];
+	FILE *file;
+	HANDLE file2;
+	char buffer[512];
+	DWORD bytesread;
+	TCHAR path2[MAX_PATH + 1];
+	ZeroMemory(options->sha256, 65*sizeof(char));
+	ZeroMemory(options->sha256comp, 65*sizeof(char));
+	_tcsncpy(path2, path, MAX_PATH + 1);
+	_tcscat(path2, _T("dxgl.ini"));
+	// Check for INI file and read it.
+	file = _tfopen(path2, _T("r"));
+	if (file)
+	{
+		ini_parse_file(file, ReadINIOptionsCallback, options);
+		fclose(file);
+	}
+	else
+	{
+		options->NoOverwrite = FALSE;
+		options->NoUninstall = FALSE;
+	}
+	// Check for existing ddraw.dll and get SHA256 sum
+	if ((options->sha256comp[0] != 0) && !options->NoOverwrite)
+	{
+		_tcsncpy(path2, path, MAX_PATH + 1);
+		_tcscat(path2, _T("ddraw.dll"));
+		Sha256Initialise(&sha_context);
+		file2 = CreateFile(path2, GENERIC_READ, FILE_SHARE_READ, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if(!file2)
+		{ 
+			options->sha256[0] = 0;
+		}
+		else
+		{
+			while (1)
+			{
+				ReadFile(file, buffer, 512, &bytesread, NULL);
+				if (!bytesread) break;
+				Sha256Update(&sha_context, buffer, bytesread);
+				if (bytesread < 512) break;
+			}
+			Sha256Finalise(&sha_context, &sha256);
+			CloseHandle(file2);
+			for (i = 0; i < (256 / 8); i++)
+			{
+				options->sha256[i * 2] = hexdigit(sha256.bytes[i] >> 4);
+				options->sha256[(i * 2) + 1] = hexdigit(sha256.bytes[i] & 0xF);
+			}
+		}
+	}
+}

@@ -128,62 +128,126 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15/16/24/32-bit")
 };
 
-DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
+DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 {
 	BOOL installed = FALSE;
 	BOOL dxgl_installdir = FALSE;
-	BOOL old_dxgl = FALSE;
-	TCHAR command[MAX_PATH+32];
+	BOOL old_dxgl = TRUE;
+	TCHAR command[MAX_PATH + 37];
 	SHELLEXECUTEINFO shex;
 	DWORD exitcode;
+	app_ini_options inioptions;
 	if (copyfile)
 	{
-		DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
-		TCHAR installpath[MAX_PATH+1];
-		TCHAR srcpath[MAX_PATH+1];
-		TCHAR destpath[MAX_PATH+1];
+		DWORD sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
+		TCHAR installpath[MAX_PATH + 1];
+		TCHAR srcpath[MAX_PATH + 1];
+		TCHAR inipath[MAX_PATH + 1];
+		TCHAR backuppath[MAX_PATH + 1];
+		TCHAR destpath[MAX_PATH + 1];
 		HKEY hKeyInstall;
-		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("Software\\DXGL"),0,KEY_READ,&hKeyInstall);
-		if(error == ERROR_SUCCESS)
+		LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
+		if (error == ERROR_SUCCESS)
 		{
 			dxgl_installdir = TRUE;
-			error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
-			if(error == ERROR_SUCCESS) installed = TRUE;
+			error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+			if (error == ERROR_SUCCESS) installed = TRUE;
 		}
-		if(hKeyInstall) RegCloseKey(hKeyInstall);
-		if(!installed)
+		if (hKeyInstall) RegCloseKey(hKeyInstall);
+		if (!installed)
 		{
-			GetModuleFileName(NULL,installpath,MAX_PATH+1);
+			GetModuleFileName(NULL, installpath, MAX_PATH + 1);
 		}
-		if(dxgl_installdir) _tcscat(installpath,_T("\\"));
-		else (_tcsrchr(installpath,_T('\\')))[1] = 0;
-		_tcsncpy(srcpath,installpath,MAX_PATH+1);
-		_tcscat(srcpath,_T("ddraw.dll"));
-		_tcsncpy(destpath,path,MAX_PATH+1);
-		(_tcsrchr(destpath,_T('\\')))[1] = 0;
-		_tcscat(destpath,_T("ddraw.dll"));
-		error = CopyFile(srcpath,destpath,TRUE);
-		error_loop:
-		if(!error)
+		if (dxgl_installdir) _tcscat(installpath, _T("\\"));
+		else (_tcsrchr(installpath, _T('\\')))[1] = 0;
+		_tcsncpy(srcpath, installpath, MAX_PATH + 1);
+		_tcscat(srcpath, _T("ddraw.dll"));
+		_tcsncpy(destpath, path, MAX_PATH + 1);
+		(_tcsrchr(destpath, _T('\\')))[1] = 0;
+		_tcscat(destpath, _T("ddraw.dll"));
+		_tcsncpy(backuppath, path, MAX_PATH + 1);
+		(_tcsrchr(backuppath, _T('\\')))[1] = 0;
+		_tcscat(backuppath, _T("ddraw.dll.dxgl-backup"));
+		_tcsncpy(inipath, path, MAX_PATH + 1);
+		(_tcsrchr(inipath, _T('\\')))[1] = 0;
+		// Check for DXGL ini file and existing ddraw.dll
+		ReadAppINIOptions(inipath, &inioptions);
+		error = CopyFile(srcpath, destpath, TRUE);
+	error_loop:
+		if (!error)
 		{
 			error = GetLastError();
-			if(error == ERROR_FILE_EXISTS)
+			if (error == ERROR_FILE_EXISTS)
 			{
+				if (inioptions.NoOverwrite)
+				{
+					MessageBox(hwnd, _T("Cannot install DXGL.  An INI file has \
+been placed in your game folder prohibiting overwriting the existing DirectDraw \
+library.\r\n\r\nIf you want to install DXGL, edit the dxgl.ini file in your game \
+folder and set the NoOverwite value to false.\r\n\r\n\
+A profile will still be created for your game but may not be compatible with the \
+DirectDraw library in your game folder."), _T("Error"), MB_OK | MB_ICONERROR);
+					return 0; // Continue to install registry key anyway
+				}
+				if (!memcmp(inioptions.sha256, inioptions.sha256comp, 64))
+					// Detected original ddraw matches INI hash
+				{
+					error = CopyFile(srcpath, backuppath, FALSE);
+					if (!error)
+					{
+						error = GetLastError();
+						if ((error == ERROR_ACCESS_DENIED) && !admin)
+						{
+							_tcscpy(command, _T(" install "));
+							_tcscat(command, path);
+							ZeroMemory(&shex, sizeof(SHELLEXECUTEINFO));
+							shex.cbSize = sizeof(SHELLEXECUTEINFO);
+							shex.lpVerb = _T("runas");
+							shex.fMask = SEE_MASK_NOCLOSEPROCESS;
+							_tcscat(installpath, _T("\\dxglcfg.exe"));
+							shex.lpFile = installpath;
+							shex.lpParameters = command;
+							ShellExecuteEx(&shex);
+							WaitForSingleObject(shex.hProcess, INFINITE);
+							GetExitCodeProcess(shex.hProcess, &exitcode);
+							return exitcode;
+						}
+					}
+				}
 				HMODULE hmod = LoadLibrary(destpath);
 				if(hmod)
 				{
-					if(GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = TRUE;
+					if(GetProcAddress(hmod,"IsDXGLDDraw") || force) old_dxgl = TRUE;
+					else old_dxgl = FALSE;
 					FreeLibrary(hmod);
+				}
+				else
+				{
+					if (force) old_dxgl = TRUE;
+					else old_dxgl = FALSE;
 				}
 				if(old_dxgl)
 				{
 					error = CopyFile(srcpath,destpath,FALSE);
 					goto error_loop;
 				}
+				else
+				{
+					// Prompt to overwrite
+					if (MessageBox(hwnd, _T("A custom DirectDraw library has been detected in \
+your game folder.  Would you like to replace it with DXGL?\r\n\r\n\
+Warning:  Installing DXGL will remove any customizations that the existing custom DirectDraw \
+library may have."), _T("DXGL Config"), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
+					{
+						error = CopyFile(srcpath, destpath, FALSE);
+						goto error_loop;
+					}
+				}
 			}
 			if((error == ERROR_ACCESS_DENIED) && !admin)
 			{
-				_tcscpy(command,_T(" install "));
+				if(old_dxgl) _tcscpy(command,_T(" install "));
+				else _tcscpy(command, _T(" forceinstall "));
 				_tcscat(command,path);
 				ZeroMemory(&shex,sizeof(SHELLEXECUTEINFO));
 				shex.cbSize = sizeof(SHELLEXECUTEINFO);
@@ -203,17 +267,21 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin)
 	return 0;
 }
 
-DWORD DelApp(LPCTSTR path, BOOL admin)
+DWORD DelApp(LPCTSTR path, BOOL admin, HWND hwnd)
 {
 	BOOL installed = FALSE;
 	TCHAR command[MAX_PATH + 32];
 	BOOL old_dxgl = TRUE;
 	DWORD sizeout = (MAX_PATH+1)*sizeof(TCHAR);
 	TCHAR installpath[MAX_PATH+1];
+	TCHAR inipath[MAX_PATH + 1];
+	TCHAR backuppath[MAX_PATH + 1];
 	HKEY hKeyInstall;
 	HMODULE hmod;
 	SHELLEXECUTEINFO shex;
 	DWORD exitcode;
+	HANDLE exists;
+	app_ini_options inioptions;
 	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if(error == ERROR_SUCCESS)
 	{
@@ -225,17 +293,35 @@ DWORD DelApp(LPCTSTR path, BOOL admin)
 	{
 		GetModuleFileName(NULL,installpath,MAX_PATH+1);
 	}
+	_tcsncpy(inipath, path, MAX_PATH + 1);
+	(_tcsrchr(inipath, _T('\\')))[1] = 0;
+	_tcsncpy(backuppath, path, MAX_PATH + 1);
+	(_tcsrchr(backuppath, _T('\\')))[1] = 0;
+	_tcscat(backuppath, _T("ddraw.dll.dxgl-backup"));
+	// Check for DXGL ini file and existing ddraw.dll
+	ReadAppINIOptions(inipath, &inioptions);
+	if (inioptions.NoOverwrite || inioptions.NoUninstall)
+	{
+		MessageBox(hwnd,_T("DXGL has not been removed from your game folder.  \
+An INI file has been found in your game folder prohibiting the DirectDraw \
+library in your game folder from being deleted.\r\n\r\n\
+If this is in error, you will have to manually delete ddraw.dll from your \
+game folder.  If your game was distributed by Steam or a similar service \
+please verify your game files after removing the file, in case the game \
+shipped with a custom DirectDraw library."), _T("Warning"), MB_OK | MB_ICONWARNING);
+		return 0;  // Continue to delete registry profile.
+	}
 	hmod = LoadLibrary(path);
 	if(hmod)
 	{
 		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = FALSE;
 		FreeLibrary(hmod);
 	}
+	else old_dxgl = FALSE;
 	if(!old_dxgl) return 0;
 	if(!DeleteFile(path))
 	{
 		error = GetLastError();
-		if(error == ERROR_FILE_NOT_FOUND) return 0;
 		if((error == ERROR_ACCESS_DENIED) && !admin)
 		{
 			_tcscpy(command,_T(" remove "));
@@ -252,7 +338,36 @@ DWORD DelApp(LPCTSTR path, BOOL admin)
 			GetExitCodeProcess(shex.hProcess,&exitcode);
 			return exitcode;
 		}
-		return error;
+		else if (error != ERROR_FILE_NOT_FOUND) return error;
+	}
+	exists = CreateFile(backuppath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (exists == INVALID_HANDLE_VALUE) return 0;
+	else
+	{
+		CloseHandle(exists);
+		error = MoveFile(backuppath, path);
+		if (!error)
+		{
+			error = GetLastError();
+			if ((error == ERROR_ACCESS_DENIED) && !admin)
+			{
+				_tcscpy(command, _T(" remove "));
+				_tcscat(command, path);
+				ZeroMemory(&shex, sizeof(SHELLEXECUTEINFO));
+				shex.cbSize = sizeof(SHELLEXECUTEINFO);
+				shex.lpVerb = _T("runas");
+				shex.fMask = SEE_MASK_NOCLOSEPROCESS;
+				_tcscat(installpath, _T("\\dxglcfg.exe"));
+				shex.lpFile = installpath;
+				shex.lpParameters = command;
+				ShellExecuteEx(&shex);
+				WaitForSingleObject(shex.hProcess, INFINITE);
+				GetExitCodeProcess(shex.hProcess, &exitcode);
+				return exitcode;
+			}
+			else return error;
+		}
 	}
 	return 0;
 }
@@ -1617,7 +1732,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						_T("Profile already exists"), MB_OK | MB_ICONWARNING);
 					break;
 				}
-				err = AddApp(filename.lpstrFile, TRUE, FALSE);
+				err = AddApp(filename.lpstrFile, TRUE, FALSE, FALSE, hWnd);
 				if (!err)
 				{
 					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
@@ -1742,7 +1857,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			_tcscat(path, _T("\\ddraw.dll"));
 			if (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
 			{
-				if (DelApp(path, FALSE)) failed = TRUE;
+				if (DelApp(path, FALSE, hWnd)) failed = TRUE;
 			}
 			free(path);
 			free(regbuffer);
@@ -1877,6 +1992,10 @@ void UninstallDXGL(TCHAR uninstall)
 	TCHAR installpath[MAX_PATH + 1];
 	TCHAR srcpath[MAX_PATH + 1];
 	TCHAR destpath[MAX_PATH + 1];
+	TCHAR inipath[MAX_PATH + 1];
+	TCHAR backuppath[MAX_PATH + 1];
+	HANDLE exists;
+	app_ini_options inioptions;
 	HMODULE hmod;
 	int i = 0;
 	UpgradeConfig();  // Just to make sure the registry format is correct
@@ -1922,8 +2041,13 @@ void UninstallDXGL(TCHAR uninstall)
 		if (regbuffer[0] != 0)
 		{
 			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
-			_tcscat(destpath, _T("\\"));
-			_tcscat(destpath, _T("ddraw.dll"));
+			_tcscat(destpath, _T("\\ddraw.dll"));
+			_tcsncpy(inipath, regbuffer, MAX_PATH + 1);
+			_tcscat(inipath, _T("\\dxgl.ini"));
+			_tcsncpy(backuppath, regbuffer, MAX_PATH + 1);
+			_tcscat(backuppath, _T("\\ddraw.dll.dxgl-backup"));
+			ReadAppINIOptions(inipath, &inioptions);
+			if (inioptions.NoOverwrite || inioptions.NoUninstall) continue;
 			if (GetFileAttributes(destpath) != INVALID_FILE_ATTRIBUTES)
 			{
 				old_dxgl = FALSE;
@@ -1935,7 +2059,18 @@ void UninstallDXGL(TCHAR uninstall)
 				}
 				if (_tcscmp(srcpath, destpath))
 				{
-					if (old_dxgl) DeleteFile(destpath);
+					if (old_dxgl)
+					{
+						DeleteFile(destpath);
+						exists = CreateFile(backuppath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+							NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+						if (exists == INVALID_HANDLE_VALUE) continue;
+						else
+						{
+							CloseHandle(exists);
+							MoveFile(backuppath, destpath);
+						}
+					}
 				}
 			}
 		}
@@ -1982,11 +2117,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
 	{
-		return AddApp(lpCmdLine+8,TRUE,TRUE);
+		return AddApp(lpCmdLine+8,TRUE,TRUE,FALSE,NULL);
+	}
+	if(!_tcsnicmp(lpCmdLine,_T("forceinstall "),13))
+	{
+		return AddApp(lpCmdLine+8,TRUE,TRUE,TRUE,NULL);
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("remove "),7))
 	{
-		return DelApp(lpCmdLine+7,TRUE);
+		return DelApp(lpCmdLine+7,TRUE,NULL);
 	}
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
