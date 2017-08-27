@@ -137,6 +137,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 	SHELLEXECUTEINFO shex;
 	DWORD exitcode;
 	app_ini_options inioptions;
+	HMODULE hmod;
 	if (copyfile)
 	{
 		DWORD sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
@@ -214,7 +215,7 @@ DirectDraw library in your game folder."), _T("Error"), MB_OK | MB_ICONERROR);
 						}
 					}
 				}
-				HMODULE hmod = LoadLibrary(destpath);
+				hmod = LoadLibrary(destpath);
 				if(hmod)
 				{
 					if(GetProcAddress(hmod,"IsDXGLDDraw") || force) old_dxgl = TRUE;
