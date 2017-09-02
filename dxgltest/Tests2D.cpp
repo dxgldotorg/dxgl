@@ -127,13 +127,16 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		RunTestMouse2D(testnum,Msg,wParam,lParam);
 		if(!fullscreen)
 		{
-			p.x = 0;
-			p.y = 0;
-			ClientToScreen(hWnd,&p);
-			GetClientRect(hWnd,&destrect);
-			OffsetRect(&destrect,p.x,p.y);
-			SetRect(&srcrect,0,0,width,height);
-			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
+			if ((testnum != 4) && (testnum != 10))
+			{
+				p.x = 0;
+				p.y = 0;
+				ClientToScreen(hWnd, &p);
+				GetClientRect(hWnd, &destrect);
+				OffsetRect(&destrect, p.x, p.y);
+				SetRect(&srcrect, 0, 0, width, height);
+				if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
+			}
 		}
 		break;
 	default:
@@ -694,14 +697,59 @@ void InitTest2D(int test)
 		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
 		counter = 0;
 		break;
+	case 10:
+		ddsrender->GetSurfaceDesc(&ddsd);
+		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (ddver > 3) sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else sprites[0].ddsd.dwSize = sizeof(DDSURFACEDESC);
+		switch (bpp)
+		{
+		case 8:
+			sprites[0].width = sprites[0].height = 16;
+			break;
+		case 15:
+			sprites[0].width = 32;
+			sprites[0].height = 7;
+			break;
+		case 16:
+			sprites[0].width = 64;
+			sprites[0].height = 7;
+			break;
+		case 24:
+		case 32:
+		default:
+			sprites[0].width = 256;
+			sprites[0].height = 7;
+			break;
+		}
+		sprites[0].ddsd.dwWidth = sprites[0].width;
+		sprites[0].ddsd.dwHeight = sprites[0].height;
+		memcpy(&sprites[1], &sprites[0], sizeof(DDSPRITE));
+		memcpy(&sprites[2], &sprites[0], sizeof(DDSPRITE));
+		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
+		ddinterface->CreateSurface(&sprites[1].ddsd, &sprites[1].surface, NULL);
+		ddinterface->CreateSurface(&sprites[2].ddsd, &sprites[2].surface, NULL);
+		sprites[1].surface->Lock(NULL, &sprites[1].ddsd, DDLOCK_WAIT, NULL);
+		DrawColorKeyCompPatterns(sprites[1].ddsd, (unsigned char*)sprites[1].ddsd.lpSurface, bpp, 0);
+		sprites[1].surface->Unlock(NULL);
+		sprites[2].surface->Lock(NULL, &sprites[2].ddsd, DDLOCK_WAIT, NULL);
+		DrawColorKeyCompPatterns(sprites[2].ddsd, (unsigned char*)sprites[2].ddsd.lpSurface, bpp, 1);
+		sprites[2].surface->Unlock(NULL);
+		counter = 0;
 	}
 }
 
 void RunTestTimed2D(int test)
 {
 	if(stoptimer) return;
+	DDSURFACEDESC2 ddsd;
 	DDSCAPS2 ddscaps;
 	DDBLTFX bltfx;
+	HDC hDCdest, hDCsrc;
+	RECT r1, r2;
+	POINT p;
+	TCHAR message[256];
 	bltfx.dwSize = sizeof(DDBLTFX);
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
@@ -710,6 +758,7 @@ void RunTestTimed2D(int test)
 	{
 	case 0: // Palette and gradients
 	case 2: // GDI patterns
+	case 7: // ROP patterns
 	default:
 		if(fullscreen)	ddsurface->Flip(NULL,DDFLIP_WAIT);
 		break;
@@ -737,7 +786,188 @@ void RunTestTimed2D(int test)
 				if(backbuffers) temp1->Release();
 			}
 		}
-		if(backbuffers && ddsrender) ddsrender->Flip(NULL,DDFLIP_WAIT);
+		if (fullscreen)
+		{
+			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);
+		}
+		else
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &r1);
+			OffsetRect(&r1, p.x, p.y);
+			SetRect(&r2, 0, 0, width, height);
+			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
+		}
+		break;
+	case 10: // Source Key Override test
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+
+		sprites[0].surface->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
+		bltfx.dwSize = sizeof(DDBLTFX);
+		switch (bpp)
+		{
+		case 8:
+			bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue = counter;
+			counter++;
+			if (counter > 255) counter = 0;
+			r1.left = r1.top = 0;
+			r1.right = r1.bottom = 16;
+			break;
+		case 15:
+			switch (counter >> 5)
+			{
+			case 0:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31) << 10;
+				break;
+			case 1:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31) << 5;
+				break;
+			case 2:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31);
+				break;
+			case 3:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31) + ((counter & 31) << 5);
+				break;
+			case 4:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31) + ((counter & 31) << 10);
+				break;
+			case 5:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 31) << 5) + ((counter & 31) << 10);
+				break;
+			case 6:
+			default:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 31) + ((counter & 31) << 5) + ((counter & 31) << 10);
+				break;
+			}
+			counter++;
+			if (counter > 223) counter = 0;
+			r1.left = r1.top = 0;
+			r1.right = 32;
+			r1.bottom = 7;
+			break;
+		case 16:
+			switch (counter >> 6)
+			{
+			case 0:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 63) >> 1) << 11;
+				break;
+			case 1:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 63) << 5;
+				break;
+			case 2:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 63) >> 1;
+				break;
+			case 3:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 63) >> 1) + ((counter & 63) << 5);
+				break;
+			case 4:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 63) >> 1) + (((counter & 63) >> 1) << 11);
+				break;
+			case 5:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 63) << 5) + (((counter & 63) >> 1) << 11);
+				break;
+			case 6:
+			default:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 63) >> 1) + ((counter & 63) << 5) + (((counter & 63) >> 1) << 11);
+				break;
+			}
+			counter++;
+			if (counter > 447) counter = 0;
+			r1.left = r1.top = 0;
+			r1.right = 64;
+			r1.bottom = 7;
+			break;
+		case 24:
+		case 32:
+		default:
+			switch (counter >> 8)
+			{
+			case 0:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 255) << 16;
+				break;
+			case 1:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 255) << 8;
+				break;
+			case 2:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					counter & 255;
+				break;
+			case 3:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 255) + ((counter & 255) << 8);
+				break;
+			case 4:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 255) + ((counter & 255) << 16);
+				break;
+			case 5:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					((counter & 255) << 8) + ((counter & 255) << 16);
+				break;
+			case 6:
+			default:
+				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					(counter & 255) + ((counter & 255) << 8) + ((counter & 255) << 16);
+				break;
+			}
+			counter++;
+			if (counter > 1791) counter = 0;
+			r1.left = r1.top = 0;
+			r1.right = 256;
+			r1.bottom = 7;
+			break;
+		}
+		//sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT|DDBLT_KEYSRCOVERRIDE, &bltfx);
+		sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT, NULL);
+		temp1->GetDC(&hDCdest);
+		sprites[0].surface->GetDC(&hDCsrc);
+		if (ddver > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		else ddsd.dwSize = sizeof(DDSURFACEDESC);
+		temp1->GetSurfaceDesc(&ddsd);
+		StretchBlt(hDCdest, ((ddsd.dwWidth / 2) - 128), ((ddsd.dwHeight / 2) - 128), 256, 256,
+			hDCsrc, 0, 0, r1.right, r1.bottom, SRCCOPY);
+		sprites[0].surface->ReleaseDC(hDCsrc);
+		SetBkColor(hDCdest, RGB(0, 0, 255));
+		SetTextColor(hDCdest, RGB(255, 255, 255));
+		_tcscpy(message, _T("Source Color Key Override Test"));
+		TextOut(hDCdest, 0, 0, message, _tcslen(message));
+		_stprintf(message, _T("Color:  0x%08X"), bltfx.ddckSrcColorkey.dwColorSpaceHighValue);
+		TextOut(hDCdest, 0, 16, message, _tcslen(message));
+		temp1->ReleaseDC(hDCdest);
+		if (backbuffers) temp1->Release();
+		if (fullscreen)
+		{
+			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);
+		}
+		else
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &r1);
+			OffsetRect(&r1, p.x, p.y);
+			SetRect(&r2, 0, 0, width, height);
+			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
+		}
 		break;
 	}
 }

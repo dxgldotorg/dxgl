@@ -1202,83 +1202,405 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 
 void DrawRotatedBlt(MultiDirectDrawSurface *primary, DDSPRITE *sprites)
 {
-	HDC hdc;
-	DDBLTFX bltfx;
-	ZeroMemory(&bltfx, sizeof(DDBLTFX));
-	bltfx.dwSize = sizeof(DDBLTFX);
-	sprites[0].surface->GetDC(&hdc);
-	DrawBitmap(hdc, 0, 0, 64, 64, MAKEINTRESOURCE(IDB_DXGLINV64), SRCCOPY);
-	sprites[0].surface->ReleaseDC(hdc);
-	RECT r;
-	r.left = 0;
-	r.right = 64;
-	r.top = 0;
-	r.bottom = 64;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 64;
-	r.right = 128;
-	bltfx.dwDDFX = DDBLTFX_MIRRORLEFTRIGHT;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 128;
-	r.right = 192;
-	bltfx.dwDDFX = DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 192;
-	r.right = 256;
-	bltfx.dwDDFX = DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.top = 64;
-	r.bottom = 128;
-	r.left = 0;
-	r.right = 64;
-	bltfx.dwDDFX = DDBLTFX_ROTATE90;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 64;
-	r.right = 128;
-	bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORLEFTRIGHT;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 128;
-	r.right = 192;
-	bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 192;
-	r.right = 256;
-	bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.top = 128;
-	r.bottom = 192;
-	r.left = 0;
-	r.right = 64;
-	bltfx.dwDDFX = DDBLTFX_ROTATE180;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 64;
-	r.right = 128;
-	bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORLEFTRIGHT;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 128;
-	r.right = 192;
-	bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 192;
-	r.right = 256;
-	bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.top = 192;
-	r.bottom = 256;
-	r.left = 0;
-	r.right = 64;
-	bltfx.dwDDFX = DDBLTFX_ROTATE270;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 64;
-	r.right = 128;
-	bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORLEFTRIGHT;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 128;
-	r.right = 192;
-	bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
-	r.left = 192;
-	r.right = 256;
-	bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
-	primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+HDC hdc;
+DDBLTFX bltfx;
+ZeroMemory(&bltfx, sizeof(DDBLTFX));
+bltfx.dwSize = sizeof(DDBLTFX);
+sprites[0].surface->GetDC(&hdc);
+DrawBitmap(hdc, 0, 0, 64, 64, MAKEINTRESOURCE(IDB_DXGLINV64), SRCCOPY);
+sprites[0].surface->ReleaseDC(hdc);
+RECT r;
+r.left = 0;
+r.right = 64;
+r.top = 0;
+r.bottom = 64;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 64;
+r.right = 128;
+bltfx.dwDDFX = DDBLTFX_MIRRORLEFTRIGHT;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 128;
+r.right = 192;
+bltfx.dwDDFX = DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 192;
+r.right = 256;
+bltfx.dwDDFX = DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.top = 64;
+r.bottom = 128;
+r.left = 0;
+r.right = 64;
+bltfx.dwDDFX = DDBLTFX_ROTATE90;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 64;
+r.right = 128;
+bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORLEFTRIGHT;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 128;
+r.right = 192;
+bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 192;
+r.right = 256;
+bltfx.dwDDFX = DDBLTFX_ROTATE90 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.top = 128;
+r.bottom = 192;
+r.left = 0;
+r.right = 64;
+bltfx.dwDDFX = DDBLTFX_ROTATE180;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 64;
+r.right = 128;
+bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORLEFTRIGHT;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 128;
+r.right = 192;
+bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 192;
+r.right = 256;
+bltfx.dwDDFX = DDBLTFX_ROTATE180 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.top = 192;
+r.bottom = 256;
+r.left = 0;
+r.right = 64;
+bltfx.dwDDFX = DDBLTFX_ROTATE270;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 64;
+r.right = 128;
+bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORLEFTRIGHT;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 128;
+r.right = 192;
+bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+r.left = 192;
+r.right = 256;
+bltfx.dwDDFX = DDBLTFX_ROTATE270 | DDBLTFX_MIRRORLEFTRIGHT | DDBLTFX_MIRRORUPDOWN;
+primary->Blt(&r, sprites[0].surface, NULL, DDBLT_DDFX, &bltfx);
+}
+
+void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bpp, int index)
+{
+	int x, y;
+	DWORD i;
+	if (!index)
+	{
+		switch (bpp)
+		{
+		case 8:
+			for (int y = 0; y < 16; y++)
+			{
+				for (int x = 0; x < 16; x++)
+				{
+					i = x + (y << 4);
+					buffer[x + (ddsd.lPitch*y)] = i;
+				}
+			}
+			break;
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 32; x++)
+				{
+					switch (y)
+					{
+					case 1:
+						i = x << 10;
+						break;
+					case 2:
+						i = x << 5;
+						break;
+					case 3:
+						i = x;
+						break;
+					case 4:
+						i = x + (x << 5);
+						break;
+					case 5:
+						i = x + (x << 10);
+						break;
+					case 6:
+						i = (x << 5) + (x << 10);
+						break;
+					case 7:
+					default:
+						i = x + (x << 5) + (x << 10);
+						break;
+					}
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+				}
+			}
+			break;
+		case 16:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					switch (y)
+					{
+					case 1:
+						i = (x >> 1) << 11;
+						break;
+					case 2:
+						i = x << 5;
+						break;
+					case 3:
+						i = x >> 1;
+						break;
+					case 4:
+						i = (x >> 1) + (x << 5);
+						break;
+					case 5:
+						i = (x >> 1) + ((x >> 1) << 11);
+						break;
+					case 6:
+						i = (x << 5) + ((x >> 1) << 11);
+						break;
+					case 7:
+					default:
+						i = (x >> 1) + (x << 5) + ((x >> 1) << 11);
+						break;
+					}
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+				}
+			}
+			break;
+		case 24:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 256; x++)
+				{
+					switch (y)
+					{
+					case 1:
+						i = x << 16;
+						break;
+					case 2:
+						i = x << 8;
+						break;
+					case 3:
+						i = x;
+						break;
+					case 4:
+						i = x + (x << 8);
+						break;
+					case 5:
+						i = x + (x << 16);
+						break;
+					case 6:
+						i = (x << 8) + (x << 16);
+						break;
+					case 7:
+					default:
+						i = x + (x << 8) + (x << 16);
+						break;
+					}
+					buffer[(x * 3) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+				}
+			}
+			break;
+		case 32:
+		default:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 256; x++)
+				{
+					switch (y)
+					{
+					case 1:
+						i = x << 16;
+						break;
+					case 2:
+						i = x << 8;
+						break;
+					case 3:
+						i = x;
+						break;
+					case 4:
+						i = x + (x << 8);
+						break;
+					case 5:
+						i = x + (x << 16);
+						break;
+					case 6:
+						i = (x << 8) + (x << 16);
+						break;
+					case 7:
+					default:
+						i = x + (x << 8) + (x << 16);
+						break;
+					}
+					buffer[(x * 4) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 3] = 0;
+				}
+			}
+			break;
+		}
+	}
+	else
+	{
+		switch (bpp)
+		{
+		case 8:
+			for (int y = 0; y < 16; y++)
+			{
+				for (int x = 0; x < 16; x++)
+				{
+					i = ((x + (y << 4)) + 128) & 255;
+					buffer[x + (ddsd.lPitch*y)] = i;
+				}
+			}
+			break;
+		case 15:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 32; x++)
+				{
+					switch (y)
+					{
+					case 7:
+						i = (32 - x) << 10;
+						break;
+					case 6:
+						i = (32 - x) << 5;
+						break;
+					case 5:
+						i = (32 - x);
+						break;
+					case 4:
+						i = x + ((32 - x) << 5);
+						break;
+					case 3:
+						i = x + ((32 - x) << 10);
+						break;
+					case 2:
+						i = ((32 - x) << 5) + ((32 - x) << 10);
+						break;
+					case 1:
+					default:
+						i = (32 - x) + ((32 - x) << 5) + ((32 - x) << 10);
+						break;
+					}
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+				}
+			}
+			break;
+		case 16:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					switch (y)
+					{
+					case 7:
+						i = ((64 - x) >> 1) << 11;
+						break;
+					case 6:
+						i = (64 - x) << 5;
+						break;
+					case 5:
+						i = (64 - x) >> 1;
+						break;
+					case 4:
+						i = ((64 - x) >> 1) + ((64 - x) << 5);
+						break;
+					case 3:
+						i = ((64 - x) >> 1) + (((64 - x) >> 1) << 11);
+						break;
+					case 2:
+						i = ((64 - x) << 5) + (((64 - x) >> 1) << 11);
+						break;
+					case 1:
+					default:
+						i = ((64 - x) >> 1) + ((64 - x) << 5) + (((64 - x) >> 1) << 11);
+						break;
+					}
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+				}
+			}
+			break;
+		case 24:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 256; x++)
+				{
+					switch (y)
+					{
+					case 7:
+						i = (256 - x) << 16;
+						break;
+					case 6:
+						i = (256 - x) << 8;
+						break;
+					case 5:
+						i = (256 - x);
+						break;
+					case 4:
+						i = (256 - x) + ((256 - x) << 8);
+						break;
+					case 3:
+						i = (256 - x) + ((256 - x) << 16);
+						break;
+					case 2:
+						i = ((256 - x) << 8) + ((256 - x) << 16);
+						break;
+					case 1:
+					default:
+						i = (256 - x) + ((256 - x) << 8) + ((256 - x) << 16);
+						break;
+					}
+					buffer[(x * 3) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+				}
+			}
+			break;
+		case 32:
+		default:
+			for (int y = 1; y < 8; y++)
+			{
+				for (int x = 0; x < 256; x++)
+				{
+					switch (y)
+					{
+					case 7:
+						i = (256 - x) << 16;
+						break;
+					case 6:
+						i = (256 - x) << 8;
+						break;
+					case 5:
+						i = (256 - x);
+						break;
+					case 4:
+						i = (256 - x) + ((256 - x) << 8);
+						break;
+					case 3:
+						i = (256 - x) + ((256 - x) << 16);
+						break;
+					case 2:
+						i = ((256 - x) << 8) + ((256 - x) << 16);
+						break;
+					case 1:
+					default:
+						i = (256 - x) + ((256 - x) << 8) + ((256 - x) << 16);
+						break;
+					}
+					buffer[(x * 4) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 3] = 0;
+				}
+			}
+			break;
+		}
+	}
 }

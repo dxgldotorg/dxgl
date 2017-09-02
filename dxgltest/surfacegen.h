@@ -26,5 +26,6 @@ void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type); // GDI pattern tes
 void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int backbuffers, int ddver, int bpp, DWORD *ropcaps,
 	HWND hwnd, LPDIRECTDRAWPALETTE palette); // ROP pattern test
 void DrawRotatedBlt(MultiDirectDrawSurface *primary, DDSPRITE *sprites);
+void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bpp, int index);
 
 #endif //_SURFACEGEN_H
