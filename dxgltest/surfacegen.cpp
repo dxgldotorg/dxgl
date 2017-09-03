@@ -1287,7 +1287,7 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 {
 	int x, y;
 	DWORD i;
-	if (!index)
+	if (index)
 	{
 		switch (bpp)
 		{
@@ -1296,41 +1296,43 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					i = x + (y << 4);
+					i = x + ((15 - y) << 4);
 					buffer[x + (ddsd.lPitch*y)] = i;
 				}
 			}
 			break;
+		case 15:
 			for (int y = 1; y < 8; y++)
 			{
 				for (int x = 0; x < 32; x++)
 				{
 					switch (y)
 					{
-					case 1:
+					case 7:
 						i = x << 10;
 						break;
-					case 2:
+					case 6:	
 						i = x << 5;
 						break;
-					case 3:
+					case 5:
 						i = x;
 						break;
 					case 4:
 						i = x + (x << 5);
 						break;
-					case 5:
+					case 3:
 						i = x + (x << 10);
 						break;
-					case 6:
+					case 2:
 						i = (x << 5) + (x << 10);
 						break;
-					case 7:
+					case 1:
 					default:
 						i = x + (x << 5) + (x << 10);
 						break;
 					}
-					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
 				}
 			}
 			break;
@@ -1341,31 +1343,31 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 1:
+					case 7:
 						i = (x >> 1) << 11;
 						break;
-					case 2:
+					case 6:
 						i = x << 5;
 						break;
-					case 3:
+					case 5:
 						i = x >> 1;
 						break;
 					case 4:
 						i = (x >> 1) + (x << 5);
 						break;
-					case 5:
+					case 3:
 						i = (x >> 1) + ((x >> 1) << 11);
 						break;
-					case 6:
+					case 2:
 						i = (x << 5) + ((x >> 1) << 11);
 						break;
-					case 7:
+					case 1:
 					default:
 						i = (x >> 1) + (x << 5) + ((x >> 1) << 11);
 						break;
 					}
 					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = (char)i;
-					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
+					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
 				}
 			}
 			break;
@@ -1376,32 +1378,32 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 1:
+					case 7:
 						i = x << 16;
 						break;
-					case 2:
+					case 6:
 						i = x << 8;
 						break;
-					case 3:
+					case 5:
 						i = x;
 						break;
 					case 4:
 						i = x + (x << 8);
 						break;
-					case 5:
+					case 3:
 						i = x + (x << 16);
 						break;
-					case 6:
+					case 2:
 						i = (x << 8) + (x << 16);
 						break;
-					case 7:
+					case 1:
 					default:
 						i = x + (x << 8) + (x << 16);
 						break;
 					}
 					buffer[(x * 3) + (ddsd.lPitch*(y - 1))] = (char)i;
-					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
-					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)(i >> 16);
 				}
 			}
 			break;
@@ -1413,32 +1415,32 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 1:
+					case 7:
 						i = x << 16;
 						break;
-					case 2:
+					case 6:
 						i = x << 8;
 						break;
-					case 3:
+					case 5:
 						i = x;
 						break;
 					case 4:
 						i = x + (x << 8);
 						break;
-					case 5:
+					case 3:
 						i = x + (x << 16);
 						break;
-					case 6:
+					case 2:
 						i = (x << 8) + (x << 16);
 						break;
-					case 7:
+					case 1:
 					default:
 						i = x + (x << 8) + (x << 16);
 						break;
 					}
 					buffer[(x * 4) + (ddsd.lPitch*(y - 1))] = (char)i;
-					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
-					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)(i >> 16);
 					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 3] = 0;
 				}
 			}
@@ -1454,7 +1456,7 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					i = ((x + (y << 4)) + 128) & 255;
+					i = ((x + ((15 - y) << 4)) + 128) & 255;
 					buffer[x + (ddsd.lPitch*y)] = i;
 				}
 			}
@@ -1466,30 +1468,31 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 7:
-						i = (32 - x) << 10;
-						break;
-					case 6:
-						i = (32 - x) << 5;
-						break;
-					case 5:
-						i = (32 - x);
-						break;
-					case 4:
-						i = x + ((32 - x) << 5);
-						break;
-					case 3:
-						i = x + ((32 - x) << 10);
+					case 1:
+						i = (31 - x) << 10;
 						break;
 					case 2:
-						i = ((32 - x) << 5) + ((32 - x) << 10);
+						i = (31 - x) << 5;
 						break;
-					case 1:
+					case 3:
+						i = (31 - x);
+						break;
+					case 5:
+						i = (31 - x) + ((31 - x) << 5);
+						break;
+					case 4:
+						i = (31 - x) + ((31 - x) << 10);
+						break;
+					case 6:
+						i = ((31 - x) << 5) + ((31 - x) << 10);
+						break;
+					case 7:
 					default:
-						i = (32 - x) + ((32 - x) << 5) + ((32 - x) << 10);
+						i = (31 - x) + ((31 - x) << 5) + ((31 - x) << 10);
 						break;
 					}
-					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
 				}
 			}
 			break;
@@ -1500,30 +1503,31 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 7:
-						i = ((64 - x) >> 1) << 11;
-						break;
-					case 6:
-						i = (64 - x) << 5;
-						break;
-					case 5:
-						i = (64 - x) >> 1;
-						break;
-					case 4:
-						i = ((64 - x) >> 1) + ((64 - x) << 5);
-						break;
-					case 3:
-						i = ((64 - x) >> 1) + (((64 - x) >> 1) << 11);
+					case 1:
+						i = ((63 - x) >> 1) << 11;
 						break;
 					case 2:
-						i = ((64 - x) << 5) + (((64 - x) >> 1) << 11);
+						i = (63 - x) << 5;
 						break;
-					case 1:
+					case 3:
+						i = (63 - x) >> 1;
+						break;
+					case 5:
+						i = ((63 - x) >> 1) + ((63 - x) << 5);
+						break;
+					case 4:
+						i = ((63 - x) >> 1) + (((63 - x) >> 1) << 11);
+						break;
+					case 6:
+						i = ((63 - x) << 5) + (((63 - x) >> 1) << 11);
+						break;
+					case 7:
 					default:
-						i = ((64 - x) >> 1) + ((64 - x) << 5) + (((64 - x) >> 1) << 11);
+						i = ((63 - x) >> 1) + ((63 - x) << 5) + (((63 - x) >> 1) << 11);
 						break;
 					}
-					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = i;
+					buffer[(x * 2) + (ddsd.lPitch*(y - 1))] = (char)i;
+					buffer[((x * 2) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
 				}
 			}
 			break;
@@ -1534,32 +1538,32 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 7:
-						i = (256 - x) << 16;
-						break;
-					case 6:
-						i = (256 - x) << 8;
-						break;
-					case 5:
-						i = (256 - x);
-						break;
-					case 4:
-						i = (256 - x) + ((256 - x) << 8);
-						break;
-					case 3:
-						i = (256 - x) + ((256 - x) << 16);
+					case 1:
+						i = (255 - x) << 16;
 						break;
 					case 2:
-						i = ((256 - x) << 8) + ((256 - x) << 16);
+						i = (255 - x) << 8;
 						break;
-					case 1:
+					case 3:
+						i = (255 - x);
+						break;
+					case 5:
+						i = (255 - x) + ((255 - x) << 8);
+						break;
+					case 4:
+						i = (255 - x) + ((255 - x) << 16);
+						break;
+					case 6:
+						i = ((255 - x) << 8) + ((255 - x) << 16);
+						break;
+					case 7:
 					default:
-						i = (256 - x) + ((256 - x) << 8) + ((256 - x) << 16);
+						i = (255 - x) + ((255 - x) << 8) + ((255 - x) << 16);
 						break;
 					}
 					buffer[(x * 3) + (ddsd.lPitch*(y - 1))] = (char)i;
-					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
-					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
+					buffer[((x * 3) + (ddsd.lPitch*(y - 1))) + 2] = (char)(i >> 16);
 				}
 			}
 			break;
@@ -1571,32 +1575,32 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 				{
 					switch (y)
 					{
-					case 7:
-						i = (256 - x) << 16;
-						break;
-					case 6:
-						i = (256 - x) << 8;
-						break;
-					case 5:
-						i = (256 - x);
-						break;
-					case 4:
-						i = (256 - x) + ((256 - x) << 8);
-						break;
-					case 3:
-						i = (256 - x) + ((256 - x) << 16);
+					case 1:
+						i = (255 - x) << 16;
 						break;
 					case 2:
-						i = ((256 - x) << 8) + ((256 - x) << 16);
+						i = (255 - x) << 8;
 						break;
-					case 1:
+					case 3:
+						i = (255 - x);
+						break;
+					case 5:
+						i = (255 - x) + ((255 - x) << 8);
+						break;
+					case 4:
+						i = (255 - x) + ((255 - x) << 16);
+						break;
+					case 6:
+						i = ((255 - x) << 8) + ((255 - x) << 16);
+						break;
+					case 7:
 					default:
-						i = (256 - x) + ((256 - x) << 8) + ((256 - x) << 16);
+						i = (255 - x) + ((255 - x) << 8) + ((255 - x) << 16);
 						break;
 					}
 					buffer[(x * 4) + (ddsd.lPitch*(y - 1))] = (char)i;
-					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)i >> 8;
-					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)i >> 16;
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 1] = (char)(i >> 8);
+					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 2] = (char)(i >> 16);
 					buffer[((x * 4) + (ddsd.lPitch*(y - 1))) + 3] = 0;
 				}
 			}

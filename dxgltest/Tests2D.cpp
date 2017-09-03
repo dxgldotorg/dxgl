@@ -936,21 +936,20 @@ void RunTestTimed2D(int test)
 			r1.bottom = 7;
 			break;
 		}
-		//sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT|DDBLT_KEYSRCOVERRIDE, &bltfx);
-		sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT, NULL);
+		sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT|DDBLT_KEYSRCOVERRIDE, &bltfx);
 		temp1->GetDC(&hDCdest);
 		sprites[0].surface->GetDC(&hDCsrc);
 		if (ddver > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		else ddsd.dwSize = sizeof(DDSURFACEDESC);
 		temp1->GetSurfaceDesc(&ddsd);
-		StretchBlt(hDCdest, ((ddsd.dwWidth / 2) - 128), ((ddsd.dwHeight / 2) - 128), 256, 256,
+		StretchBlt(hDCdest, ((ddsd.dwWidth / 2) - 128), ((ddsd.dwHeight / 2) + 128), 256, -256,
 			hDCsrc, 0, 0, r1.right, r1.bottom, SRCCOPY);
 		sprites[0].surface->ReleaseDC(hDCsrc);
 		SetBkColor(hDCdest, RGB(0, 0, 255));
 		SetTextColor(hDCdest, RGB(255, 255, 255));
 		_tcscpy(message, _T("Source Color Key Override Test"));
 		TextOut(hDCdest, 0, 0, message, _tcslen(message));
-		_stprintf(message, _T("Color:  0x%08X"), bltfx.ddckSrcColorkey.dwColorSpaceHighValue);
+		_stprintf(message, _T("Color:  0x%08X    "), bltfx.ddckSrcColorkey.dwColorSpaceHighValue);
 		TextOut(hDCdest, 0, 16, message, _tcslen(message));
 		temp1->ReleaseDC(hDCdest);
 		if (backbuffers) temp1->Release();
