@@ -127,7 +127,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		RunTestMouse2D(testnum,Msg,wParam,lParam);
 		if(!fullscreen)
 		{
-			if ((testnum != 4) && (testnum != 10))
+			if ((testnum != 4) && (testnum != 10) && (testnum != 11))
 			{
 				p.x = 0;
 				p.y = 0;
@@ -698,6 +698,7 @@ void InitTest2D(int test)
 		counter = 0;
 		break;
 	case 10:
+	case 11:
 		ddsrender->GetSurfaceDesc(&ddsd);
 		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -802,6 +803,7 @@ void RunTestTimed2D(int test)
 		}
 		break;
 	case 10: // Source Key Override test
+	case 11: // Destination Key Override Test
 		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
 		else temp1 = ddsrender;
 
@@ -810,7 +812,8 @@ void RunTestTimed2D(int test)
 		switch (bpp)
 		{
 		case 8:
-			bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue = counter;
+			bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+				bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue = counter;
 			counter++;
 			if (counter > 255) counter = 0;
 			r1.left = r1.top = 0;
@@ -821,31 +824,38 @@ void RunTestTimed2D(int test)
 			{
 			case 0:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31) << 10;
 				break;
 			case 1:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31) << 5;
 				break;
 			case 2:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31);
 				break;
 			case 3:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31) + ((counter & 31) << 5);
 				break;
 			case 4:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31) + ((counter & 31) << 10);
 				break;
 			case 5:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 31) << 5) + ((counter & 31) << 10);
 				break;
 			case 6:
 			default:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 31) + ((counter & 31) << 5) + ((counter & 31) << 10);
 				break;
 			}
@@ -860,31 +870,38 @@ void RunTestTimed2D(int test)
 			{
 			case 0:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 63) >> 1) << 11;
 				break;
 			case 1:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 63) << 5;
 				break;
 			case 2:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 63) >> 1;
 				break;
 			case 3:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 63) >> 1) + ((counter & 63) << 5);
 				break;
 			case 4:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 63) >> 1) + (((counter & 63) >> 1) << 11);
 				break;
 			case 5:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 63) << 5) + (((counter & 63) >> 1) << 11);
 				break;
 			case 6:
 			default:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 63) >> 1) + ((counter & 63) << 5) + (((counter & 63) >> 1) << 11);
 				break;
 			}
@@ -901,31 +918,38 @@ void RunTestTimed2D(int test)
 			{
 			case 0:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 255) << 16;
 				break;
 			case 1:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 255) << 8;
 				break;
 			case 2:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					counter & 255;
 				break;
 			case 3:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 255) + ((counter & 255) << 8);
 				break;
 			case 4:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 255) + ((counter & 255) << 16);
 				break;
 			case 5:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					((counter & 255) << 8) + ((counter & 255) << 16);
 				break;
 			case 6:
 			default:
 				bltfx.ddckSrcColorkey.dwColorSpaceHighValue = bltfx.ddckSrcColorkey.dwColorSpaceLowValue =
+					bltfx.ddckDestColorkey.dwColorSpaceHighValue = bltfx.ddckDestColorkey.dwColorSpaceLowValue =
 					(counter & 255) + ((counter & 255) << 8) + ((counter & 255) << 16);
 				break;
 			}
@@ -936,7 +960,10 @@ void RunTestTimed2D(int test)
 			r1.bottom = 7;
 			break;
 		}
-		sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT|DDBLT_KEYSRCOVERRIDE, &bltfx);
+		if (test == 10)
+			sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT | DDBLT_KEYSRCOVERRIDE, &bltfx);
+		else
+			sprites[0].surface->Blt(NULL, sprites[2].surface, NULL, DDBLT_WAIT | DDBLT_KEYDESTOVERRIDE, &bltfx);
 		temp1->GetDC(&hDCdest);
 		sprites[0].surface->GetDC(&hDCsrc);
 		if (ddver > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
@@ -947,7 +974,10 @@ void RunTestTimed2D(int test)
 		sprites[0].surface->ReleaseDC(hDCsrc);
 		SetBkColor(hDCdest, RGB(0, 0, 255));
 		SetTextColor(hDCdest, RGB(255, 255, 255));
-		_tcscpy(message, _T("Source Color Key Override Test"));
+		if(test == 10)
+			_tcscpy(message, _T("Source Color Key Override Test"));
+		else
+			_tcscpy(message, _T("Destination Color Key Override Test"));
 		TextOut(hDCdest, 0, 0, message, _tcslen(message));
 		_stprintf(message, _T("Color:  0x%08X    "), bltfx.ddckSrcColorkey.dwColorSpaceHighValue);
 		TextOut(hDCdest, 0, 16, message, _tcslen(message));
