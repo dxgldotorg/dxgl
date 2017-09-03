@@ -373,7 +373,8 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			break;
-/*		case 16:  //FIXME:  Temporarily removed for compatibility.
+#ifdef _DEBUG //FIXME:  Temporarily removed in release builds for compatibility.
+		case 16:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 15;
 			if(!ScanModeList(*array,compmode,*count))
@@ -381,7 +382,8 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				array2[count2] = compmode;
 				count2++;
 			}
-			break;*/
+			break;
+#endif
 		case 24:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 32;
@@ -407,13 +409,15 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 				count2++;
 			}
 			compmode = (*array)[i];
-/*			compmode.dmBitsPerPel = 15;  // FIXME:  Temporarily removed for compatibility.
+#ifdef _DEBUG //FIXME:  Temporarily removed in release builds for compatibility.
+			compmode.dmBitsPerPel = 15;
 			if(!ScanModeList(*array,compmode,*count))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
-			compmode = (*array)[i];*/
+			compmode = (*array)[i];
+#endif
 			compmode.dmBitsPerPel = 8;
 			if(!ScanModeList(*array,compmode,*count))
 			{
