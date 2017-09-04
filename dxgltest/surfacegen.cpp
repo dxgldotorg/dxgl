@@ -1456,7 +1456,7 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					i = ((x + ((15 - y) << 4)) + 128) & 255;
+					i = 255 - (x + ((15 - y) << 4));
 					buffer[x + (ddsd.lPitch*y)] = i;
 				}
 			}

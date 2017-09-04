@@ -385,6 +385,8 @@ typedef struct BltCommand
 	GLint alphadestlevel;
 	GLint alphasrclevel;
 	GLint patternlevel;
+	DDCOLORKEY srckey;
+	DDCOLORKEY destkey;
 }BltCommand;
 
 typedef struct ClearCommand

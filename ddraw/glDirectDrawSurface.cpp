@@ -699,12 +699,12 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	if (dwFlags & DDBLT_KEYSRCOVERRIDE)
 	{
 		if(!lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		if(dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if(dwFlags & DDBLT_KEYSRC) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
 	if (dwFlags & DDBLT_KEYDESTOVERRIDE)
 	{
 		if (!lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (dwFlags & DDBLT_KEYDEST) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
 	if (dwFlags & DDBLT_KEYSRC)
 	{
@@ -714,14 +714,26 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 		if (((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt.dwColorSpaceHighValue !=
 			((glDirectDrawSurface7*)lpDDSrcSurface)->ddsd.ddckCKSrcBlt.dwColorSpaceLowValue)
 			cmd.flags |= 0x20000000;
-		if(dwFlags & DDBLT_KEYSRCOVERRIDE) cmd.flags |= 0x20000000;
+	}
+	if (dwFlags & DDBLT_KEYSRCOVERRIDE)
+	{
+		if (lpDDBltFx->ddckSrcColorkey.dwColorSpaceHighValue !=
+			lpDDBltFx->ddckSrcColorkey.dwColorSpaceLowValue) cmd.flags |= 0x20000000;
+		cmd.flags |= DDBLT_KEYSRC;
+		memcpy(&cmd.srckey, &lpDDBltFx->ddckSrcColorkey, sizeof(DDCOLORKEY));
 	}
 	if (dwFlags & DDBLT_KEYDEST)
 	{
 		if (!(this->ddsd.dwFlags & DDSD_CKDESTBLT)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		if (this->ddsd.ddckCKDestBlt.dwColorSpaceHighValue != this->ddsd.ddckCKDestBlt.dwColorSpaceLowValue)
 			cmd.flags |= 0x40000000;
-		if(dwFlags & DDBLT_KEYDESTOVERRIDE) cmd.flags |= 0x40000000;
+	}
+	if (dwFlags & DDBLT_KEYDESTOVERRIDE)
+	{
+		if (lpDDBltFx->ddckDestColorkey.dwColorSpaceHighValue !=
+			lpDDBltFx->ddckDestColorkey.dwColorSpaceLowValue) cmd.flags |= 0x40000000;
+		cmd.flags |= DDBLT_KEYDEST;
+		memcpy(&cmd.destkey, &lpDDBltFx->ddckDestColorkey, sizeof(DDCOLORKEY));
 	}
 	glDirectDrawSurface7 *src = (glDirectDrawSurface7 *)lpDDSrcSurface;
 	if (clipper)

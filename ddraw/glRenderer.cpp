@@ -3125,20 +3125,42 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	if (cmd->dest->levels[cmd->destlevel].fbo.fbz) glClear(GL_DEPTH_BUFFER_BIT);
 	if (cmd->flags & DDBLT_COLORFILL) SetColorFillUniform(cmd->bltfx.dwFillColor, cmd->dest->colorsizes,
 		cmd->dest->colororder, cmd->dest->colorbits, shader->shader.uniforms[12], This->ext);
-	if ((cmd->flags & DDBLT_KEYSRC) && (cmd->src && (cmd->src->levels[cmd->srclevel].ddsd.dwFlags & DDSD_CKSRCBLT)) && !(cmd->flags & DDBLT_COLORFILL))
+	if ((cmd->flags & DDBLT_KEYSRC) && (cmd->src && ((cmd->src->levels[cmd->srclevel].ddsd.dwFlags & DDSD_CKSRCBLT))
+		|| (cmd->flags & DDBLT_KEYSRCOVERRIDE)) && !(cmd->flags & DDBLT_COLORFILL))
 	{
-		SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue, cmd->src->colorsizes,
-			cmd->src->colororder, shader->shader.uniforms[5], cmd->src->colorbits, This->ext);
-		if (cmd->flags & 0x20000000) SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue, cmd->src->colorsizes,
-			cmd->src->colororder, shader->shader.uniforms[7], cmd->src->colorbits, This->ext);
+		if (cmd->flags & DDBLT_KEYSRCOVERRIDE)
+		{
+			SetColorKeyUniform(cmd->bltfx.ddckSrcColorkey.dwColorSpaceLowValue, cmd->src->colorsizes,
+				cmd->src->colororder, shader->shader.uniforms[5], cmd->src->colorbits, This->ext);
+			if (cmd->flags & 0x20000000) SetColorKeyUniform(cmd->bltfx.ddckSrcColorkey.dwColorSpaceHighValue, cmd->src->colorsizes,
+				cmd->src->colororder, shader->shader.uniforms[7], cmd->src->colorbits, This->ext);
+		}
+		else
+		{
+			SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceLowValue, cmd->src->colorsizes,
+				cmd->src->colororder, shader->shader.uniforms[5], cmd->src->colorbits, This->ext);
+			if (cmd->flags & 0x20000000) SetColorKeyUniform(cmd->src->levels[cmd->srclevel].ddsd.ddckCKSrcBlt.dwColorSpaceHighValue, cmd->src->colorsizes,
+				cmd->src->colororder, shader->shader.uniforms[7], cmd->src->colorbits, This->ext);
+		}
 	}
 	if (!(cmd->flags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 8);
-	if ((cmd->flags & DDBLT_KEYDEST) && (This && (cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)))
+	if ((cmd->flags & DDBLT_KEYDEST) && (This && ((cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)
+		|| (cmd->flags & DDBLT_KEYDESTOVERRIDE))))
 	{
-		SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceLowValue, cmd->dest->colorsizes,
-			cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
-		if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceHighValue, cmd->dest->colorsizes,
-			cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
+		if (cmd->flags & DDBLT_KEYDESTOVERRIDE)
+		{
+			SetColorKeyUniform(cmd->bltfx.ddckDestColorkey.dwColorSpaceLowValue, cmd->dest->colorsizes,
+				cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
+			if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->bltfx.ddckDestColorkey.dwColorSpaceHighValue, cmd->dest->colorsizes,
+				cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
+		}
+		else
+		{
+			SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceLowValue, cmd->dest->colorsizes,
+				cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
+			if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestBlt.dwColorSpaceHighValue, cmd->dest->colorsizes,
+				cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
+		}
 	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
