@@ -990,7 +990,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
 		if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
 	}
-	if (initial) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
+	if (initial || cfg->NoWriteRegistry) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
 	else
 	{
 		RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
