@@ -1402,6 +1402,8 @@ void ReadAppINIOptions(LPCTSTR path, app_ini_options *options)
 	char buffer[512];
 	DWORD bytesread;
 	TCHAR path2[MAX_PATH + 1];
+	options->NoOverwrite = FALSE;
+	options->NoUninstall = FALSE;
 	ZeroMemory(options->sha256, 65*sizeof(char));
 	ZeroMemory(options->sha256comp, 65*sizeof(char));
 	_tcsncpy(path2, path, MAX_PATH + 1);
@@ -1412,11 +1414,6 @@ void ReadAppINIOptions(LPCTSTR path, app_ini_options *options)
 	{
 		ini_parse_file(file, ReadINIOptionsCallback, options);
 		fclose(file);
-	}
-	else
-	{
-		options->NoOverwrite = FALSE;
-		options->NoUninstall = FALSE;
 	}
 	// Check for existing ddraw.dll and get SHA256 sum
 	if ((options->sha256comp[0] != 0) && !options->NoOverwrite)
@@ -1434,7 +1431,7 @@ void ReadAppINIOptions(LPCTSTR path, app_ini_options *options)
 		{
 			while (1)
 			{
-				ReadFile(file, buffer, 512, &bytesread, NULL);
+				ReadFile(file2, buffer, 512, &bytesread, NULL);
 				if (!bytesread) break;
 				Sha256Update(&sha_context, buffer, bytesread);
 				if (bytesread < 512) break;

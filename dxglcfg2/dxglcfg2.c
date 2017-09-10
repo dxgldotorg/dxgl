@@ -133,6 +133,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 	BOOL installed = FALSE;
 	BOOL dxgl_installdir = FALSE;
 	BOOL old_dxgl = TRUE;
+	BOOL backupped = FALSE;
 	TCHAR command[MAX_PATH + 37];
 	SHELLEXECUTEINFO shex;
 	DWORD exitcode;
@@ -190,10 +191,10 @@ A profile will still be created for your game but may not be compatible with the
 DirectDraw library in your game folder."), _T("Error"), MB_OK | MB_ICONERROR);
 					return 0; // Continue to install registry key anyway
 				}
-				if (!memcmp(inioptions.sha256, inioptions.sha256comp, 64))
+				if ((inioptions.sha256[0] != 0) && !memcmp(inioptions.sha256, inioptions.sha256comp, 64))
 					// Detected original ddraw matches INI hash
 				{
-					error = CopyFile(srcpath, backuppath, FALSE);
+					error = CopyFile(destpath, backuppath, FALSE);
 					if (!error)
 					{
 						error = GetLastError();
@@ -214,8 +215,12 @@ DirectDraw library in your game folder."), _T("Error"), MB_OK | MB_ICONERROR);
 							return exitcode;
 						}
 					}
+					else backupped = TRUE;
 				}
+				error = SetErrorMode(SEM_FAILCRITICALERRORS);
+				SetErrorMode(error | SEM_FAILCRITICALERRORS);
 				hmod = LoadLibrary(destpath);
+				SetErrorMode(error);
 				if(hmod)
 				{
 					if(GetProcAddress(hmod,"IsDXGLDDraw") || force) old_dxgl = TRUE;
@@ -242,6 +247,10 @@ library may have."), _T("DXGL Config"), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTO
 					{
 						error = CopyFile(srcpath, destpath, FALSE);
 						goto error_loop;
+					}
+					else
+					{
+						if (backupped) DeleteFile(backuppath);
 					}
 				}
 			}
@@ -312,7 +321,10 @@ please verify your game files after removing the file, in case the game \
 shipped with a custom DirectDraw library."), _T("Warning"), MB_OK | MB_ICONWARNING);
 		return 0;  // Continue to delete registry profile.
 	}
+	error = SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetErrorMode(error | SEM_FAILCRITICALERRORS);
 	hmod = LoadLibrary(path);
+	SetErrorMode(error);
 	if(hmod)
 	{
 		if(!GetProcAddress(hmod,"IsDXGLDDraw")) old_dxgl = FALSE;
@@ -1904,6 +1916,9 @@ void UpgradeDXGL()
 	TCHAR installpath[MAX_PATH + 1];
 	TCHAR srcpath[MAX_PATH + 1];
 	TCHAR destpath[MAX_PATH + 1];
+	TCHAR inipath[MAX_PATH + 1];
+	TCHAR backuppath[MAX_PATH + 1];
+	app_ini_options inioptions;
 	HMODULE hmod;
 	UpgradeConfig();
 	regbuffersize = 1024;
@@ -1948,16 +1963,27 @@ void UpgradeDXGL()
 		if (regbuffer[0] != 0)
 		{
 			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
-			_tcscat(destpath, _T("\\"));
-			_tcscat(destpath, _T("ddraw.dll"));
+			_tcscat(destpath, _T("\\ddraw.dll"));
+			_tcsncpy(inipath, regbuffer, MAX_PATH + 1);
+			_tcscat(inipath, _T("\\dxgl.ini"));
+			_tcsncpy(backuppath, regbuffer, MAX_PATH + 1);
+			_tcscat(backuppath, _T("\\ddraw.dll.dxgl-backup"));
+			ReadAppINIOptions(inipath, &inioptions);
 			error = CopyFile(srcpath, destpath, TRUE);
 			if (!error)
 			{
 				error = GetLastError();
 				if (error == ERROR_FILE_EXISTS)
 				{
+					if (inioptions.NoOverwrite) continue;
+					if ((inioptions.sha256[0] != 0) && !memcmp(inioptions.sha256, inioptions.sha256comp, 64))
+						// Detected original ddraw matches INI hash
+						CopyFile(srcpath, backuppath, FALSE);
 					old_dxgl = FALSE;
+					error = SetErrorMode(SEM_FAILCRITICALERRORS);
+					SetErrorMode(error | SEM_FAILCRITICALERRORS);
 					hmod = LoadLibrary(destpath);
+					SetErrorMode(error);
 					if (hmod)
 					{
 						if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;
@@ -2052,7 +2078,10 @@ void UninstallDXGL(TCHAR uninstall)
 			if (GetFileAttributes(destpath) != INVALID_FILE_ATTRIBUTES)
 			{
 				old_dxgl = FALSE;
+				error = SetErrorMode(SEM_FAILCRITICALERRORS);
+				SetErrorMode(error | SEM_FAILCRITICALERRORS);
 				hmod = LoadLibrary(destpath);
+				SetErrorMode(error);
 				if (hmod)
 				{
 					if (GetProcAddress(hmod, "IsDXGLDDraw")) old_dxgl = TRUE;
