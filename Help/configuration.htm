@@ -16,12 +16,12 @@
       <area shape="rect" coords="452,66,589,79" alt="Adjust primary resolution" href="#adjustprimary" />
       <area shape="rect" coords="452,87,587,100" alt="Add Extra Display Modes" href="#extramodes" />
       <area shape="rect" coords="452,108,582,121" alt="Support All Color Depths" href="#alldepths" />
-      <area shape="rect" coords="296,130,449,167" alt="Scaling method (first pass)" href="#scalerfirst" />
-      <area shape="rect" coords="452,130,602,167" alt="1st pass scale size" href="#scalerfirstsize" />
-      <area shape="rect" coords="296,170,449,207" alt="Scaling method (final pass)" href="#scalerfinal" />
+      <area shape="rect" coords="296,170,449,207" alt="Postprocess scaler" href="#postscale" />
+      <area shape="rect" coords="452,170,602,207" alt="Postprocess input multiplier" href="#postscalesize" />
+      <area shape="rect" coords="296,130,449,167" alt="Scaling method" href="#scaler" />
       <area shape="rect" coords="296,210,449,248" alt="Screen aspect ratio" href="#aspect" />
       <area shape="rect" coords="452,210,602,248" alt="DPI scaling mode" href="#dpiscale" />
-      <area shape="rect" coords="452,170,602,207" alt="Fullscreen window mode" href="#fullmode" />
+      <area shape="rect" coords="452,130,602,167" alt="Fullscreen window mode" href="#fullmode" />
     </map>
     <h1>Configuration</h1>
       Configuration for DXGL can be accessed by opening the &quot;DXGL Config&quot; program in the DXGL program group.  Configuration is as follows:
@@ -70,19 +70,20 @@
     &quot;Video mode&quot; is not set to &quot;Change desktop resolution.&quot;
     <h2><a name="alldepths" />Support All Color Depths</h2>
     If checked, adds 8, 16, 24, and 32-bit color modes if not listed by the system.  Under Windows 8 or above, this will be enabled by default.
-    <h2><a name="scalerfirst" />Scaling method (1st pass)</h2>
+    <h2><a name="postscale" />Postprocess scaler</h2>
     Scaling method for an optional image scaling pass.  This can be used to create a pixelated effect while still preserving the ability to have filtered display scaling.
+    In addition, it can be used to set the scaling filter for a postprocess pass, to be implemented in the future.
     The following methods are available:
     <h3>Nearest</h3>
     Uses nearest-neighbor scaling.
     <h3>Bilinear</h3>
     Uses bilinear scaling.  8-bit display modes will always use nearest scaling for this pass.
-    <h2><a name="scalerfirstsize" />1st pass scale size</h2>
+    <h2><a name="postscalesize" />Postprocess input multiplier</h2>
     Selects the amount to scale the display on the first pass.  There is an Auto preset as well as presets for fixed 1x, 2x1, 2x, 3x, and 4x ratios.  In addition, a ratio can manually be set anywhere from 0.25x0.25 to 16x16.  The Auto preset will automatically double pixels horizontally if the horizontal resolution is 400 pixels or less, and will double pixels vertically if the vertical resolution is 300 or less.
     In addition, if Video mode is set to Change desktop resolution and Add extra display modes is enabled, a subset of low resolution pixel doubled modes will be added.<br />
     If "Adjust primary resolution" is checked, typing 0.5 in the box will enable 2x2 supersampling for Direct3D applications.  This will also modify the behavior of "Change desktop resolution."
-    <h2><a name="scalerfinal" />Scaling method (final pass)</h2>
-    Selects the filter to use for scaling the output when the resolution is different than the desktop resolution, or when the optional 1st pass scaling is in effect, the scaled resolution is different from the desktop resolution, 
+    <h2><a name="scaler" />Scaling method</h2>
+    Selects the filter to use for scaling the output when the resolution is different than the desktop resolution, or when the optional postprocess scaling is in effect, the scaled resolution is different from the desktop resolution, 
     as well as for blitting operations.  The following methods are available:
     <h3>Nearest</h3>
     Uses nearest-neighbor scaling.
