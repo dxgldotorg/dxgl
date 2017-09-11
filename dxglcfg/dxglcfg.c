@@ -1688,7 +1688,7 @@ void UpgradeDXGL()
 			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
 			_tcscat(destpath, _T("\\ddraw.dll"));
 			_tcsncpy(inipath, regbuffer, MAX_PATH + 1);
-			_tcscat(inipath, _T("\\dxgl.ini"));
+			_tcscat(inipath, _T("\\"));
 			_tcsncpy(backuppath, regbuffer, MAX_PATH + 1);
 			_tcscat(backuppath, _T("\\ddraw.dll.dxgl-backup"));
 			ReadAppINIOptions(inipath, &inioptions);
@@ -1793,7 +1793,7 @@ void UninstallDXGL(TCHAR uninstall)
 			_tcsncpy(destpath, regbuffer, MAX_PATH + 1);
 			_tcscat(destpath, _T("\\ddraw.dll"));
 			_tcsncpy(inipath, regbuffer, MAX_PATH + 1);
-			_tcscat(inipath, _T("\\dxgl.ini"));
+			_tcscat(inipath, _T("\\"));
 			_tcsncpy(backuppath, regbuffer, MAX_PATH + 1);
 			_tcscat(backuppath, _T("\\ddraw.dll.dxgl-backup"));
 			ReadAppINIOptions(inipath, &inioptions);
