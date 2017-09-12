@@ -520,7 +520,10 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
 	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
+	{
 		AddDoubledResolutions(&modes, &modenum);
+		DiscardDuplicateModes(&modes, &modenum);
+	}
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
