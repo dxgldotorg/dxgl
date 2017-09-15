@@ -282,6 +282,12 @@ Method used to upload textures
 Valid settings:
 0 - Automatic
 
+Member SingleBufferDevice
+INI Entry SingleBufferDevice
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\SingleBufferDevice
+If true, do not use double buffering in OpenGL.
+
 Default for all Debug variables is 0 or FALSE.
 
 Member DebugNoExtFramebuffer

@@ -556,6 +556,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
+	cfg->SingleBufferDevice = ReadBool(hKey,cfg->SingleBufferDevice,&cfgmask->SingleBufferDevice,_T("SingleBufferDevice"));
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
 	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
@@ -678,6 +679,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
+	WriteBool(hKey,cfg->SingleBufferDevice,cfgmask->SingleBufferDevice,_T("SingleBufferDevice"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
@@ -909,6 +911,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
 		if (!stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
 		if (!stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
+		if (!stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
 	}
 	if (!stricmp(section, "debug"))
 	{

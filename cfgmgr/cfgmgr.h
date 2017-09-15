@@ -57,6 +57,7 @@ typedef struct
 	DWORD vsync;
 	DWORD TextureFormat;
 	DWORD TexUpload;
+	BOOL SingleBufferDevice;
 	// [debug]
 	BOOL DebugNoExtFramebuffer;
 	BOOL DebugNoArbFramebuffer;
