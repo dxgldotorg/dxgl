@@ -115,7 +115,7 @@ static const TCHAR *colormodes[32] = {
 	_T("15/32-bit"),
 	_T("8/15/32-bit"),
 	_T("16/32-bit"),
-	_T("8/16/32-bit"),
+	_T("8/16/32-bit (recommended)"),
 	_T("8/15/32-bit"),
 	_T("8/15/16/32-bit"),
 	_T("24/32-bit"),
@@ -1230,8 +1230,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Uncommon low resolutions"));
 		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 1, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Higher resolutions"));
+		_tcscpy(buffer, _T("Uncommon SD resolutions"));
 		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 2, (LPARAM)buffer);
+		_tcscpy(buffer, _T("High Definition resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 3, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Ultra-HD resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 4, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Ultra-HD above 4k"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 5, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Very uncommon resolutions"));
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 6, (LPARAM)buffer);
 		//FIXME:  Populate extra resolution combobox
 		// Enable shader
 		if (cfg->colormode) SendDlgItemMessage(hTabs[2], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);

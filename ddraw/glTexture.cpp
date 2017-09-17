@@ -145,6 +145,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	if (newtexture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
 	{
 		newtexture->levels[0].ddsd.dwFlags |= DDSD_PIXELFORMAT;
+		newtexture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 		newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_ZBUFFER;
 		if (!newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth)
 			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth = newtexture->levels[0].ddsd.dwRefreshRate;
