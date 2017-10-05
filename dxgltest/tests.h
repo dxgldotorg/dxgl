@@ -33,10 +33,7 @@ typedef struct
 	RECT rect;
 } DDSPRITE;
 
-void RunTest2D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	double fps, bool fullscreen, bool resizable);
-
-void RunTest3D(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	int filter,	int msaa, double fps, bool fullscreen, bool resizable);
+void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
+	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d);
 
 #endif //_TESTS_H

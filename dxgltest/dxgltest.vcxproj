@@ -213,7 +213,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MultiDD.cpp" />
-    <ClCompile Include="Tests2D.cpp" />
+    <ClCompile Include="tests.cpp" />
     <ClCompile Include="dxgltest.cpp" />
     <ClCompile Include="palette.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -224,7 +224,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="surfacegen.cpp" />
-    <ClCompile Include="Tests3D.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
