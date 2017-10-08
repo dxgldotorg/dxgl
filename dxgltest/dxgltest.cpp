@@ -135,26 +135,10 @@ void TranslateResolutionString(LPCTSTR str, int &width, int &height, int &bpp, i
 
 const TCHAR *dllnames[] = {
 	_T("ddraw.dll"),
-	_T("ddrawex.dll"),
-	_T("d3dim.dll"),
-	_T("d3dim700.dll"),
-	_T("d3dref.dll"),
-	_T("d3dramp.dll"),
-	_T("d3drm.dll"),
-	_T("d3dxof.dll"),
-	_T("d3dpmesh.dll")
 };
 
 int dllboxes[] = {
 	IDC_DDVER,
-	IDC_DDEXVER,
-	IDC_D3DVER,
-	IDC_D3D7VER,
-	IDC_D3DREFVER,
-	IDC_D3DRAMPVER,
-	IDC_D3DRMVER,
-	IDC_D3DXOFVER,
-	IDC_D3DPMESHVER
 };
 
 INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -176,7 +160,7 @@ INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		SetWindowText(GetDlgItem(hWnd,dllboxes[0]),ver.c_str());
 		if(!IsDXGLDDraw)
 		{
-			for(i = 1; i < 9; i++)
+			for(i = 1; i < 1; i++)
 			{
 				GetFileVersion(ver,dllnames[i]);
 				SetWindowText(GetDlgItem(hWnd,dllboxes[i]),ver.c_str());
@@ -184,7 +168,7 @@ INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		}
 		else
 		{
-			for(i = 1; i < 9; i++)
+			for(i = 1; i < 1; i++)
 				SetWindowText(GetDlgItem(hWnd,dllboxes[i]),_T("N/A"));
 		}
 		break;
@@ -553,6 +537,7 @@ INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
         switch(LOWORD(wParam))
         {
             case IDOK:
+			case IDCANCEL:
                 EndDialog(hWnd,IDOK);
                 break;
         }

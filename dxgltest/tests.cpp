@@ -2574,6 +2574,9 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				d3d7dev->SetRenderState(D3DRENDERSTATE_FOGDENSITY, *((LPDWORD)(&f)));
 			}
 			break;
+		case IDCANCEL:
+			SendMessage(hWnd, WM_CLOSE, 0, 0);
+			break;
 		default:
 			return FALSE;
 		}
@@ -3094,6 +3097,9 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				lights[vertexshaderstate.currentlight].dvRange = (float)_ttof(tmpstring);
 				d3d7dev->SetLight(vertexshaderstate.currentlight, &lights[vertexshaderstate.currentlight]);
 			}
+			break;
+		case IDCANCEL:
+			SendMessage(hWnd, WM_CLOSE, 0, 0);
 			break;
 		default:
 			return FALSE;

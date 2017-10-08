@@ -76,15 +76,7 @@
 #define IDC_FSAALABEL                           1029
 #define IDC_TEST                                1031
 #define IDC_DDVER                               1032
-#define IDC_DDEXVER                             1041
-#define IDC_D3DVER                              1042
-#define IDC_D3D7VER                             1043
-#define IDC_D3DREFVER                           1044
-#define IDC_D3DRAMPVER                          1045
-#define IDC_D3DRMVER                            1046
-#define IDC_D3DXOFVER                           1047
 #define IDC_FILLSTIPPLELLLABEL                  1047
-#define IDC_D3DPMESHVER                         1048
 #define IDC_FILLSTIPPLETYPE                     1052
 #define IDC_FILLSTIPPLEFILE                     1053
 #define IDC_FILLSTIPPLEBROWSE                   1054
