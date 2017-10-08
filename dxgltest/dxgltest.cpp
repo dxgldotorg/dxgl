@@ -256,7 +256,6 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,1,0);
-		SetDlgItemText(hWnd,IDC_TESTHEADER,_T("Test graphics functionality in DXGL or DirectDraw.  Press ESC to quit any test."));
 		for(i = 0; i < numtests; i++)
 			SendDlgItemMessage(hWnd,IDC_TESTLIST,LB_ADDSTRING,0,(LPARAM)Tests[i].name);
 		error = DirectDrawCreate(NULL,&lpdd,NULL);
@@ -302,7 +301,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						EnableWindow(GetDlgItem(hWnd,IDC_WINDOWED),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),TRUE);
-						EnableWindow(GetDlgItem(hWnd,IDC_VSYNC),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_TESTVSYNC),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),TRUE);
 					}
 					else
@@ -314,7 +313,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						EnableWindow(GetDlgItem(hWnd,IDC_WINDOWED),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),FALSE);
-						EnableWindow(GetDlgItem(hWnd,IDC_VSYNC),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_TESTVSYNC),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),FALSE);
 						SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,BST_CHECKED,0);
 						SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,BST_UNCHECKED,0);

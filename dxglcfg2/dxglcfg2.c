@@ -972,9 +972,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		tab.mask = TCIF_TEXT;
 		tab.pszText = _T("Display");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 0, (LPARAM)&tab);
-		tab.pszText = _T("3D Graphics");
-		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 1, (LPARAM)&tab);
 		tab.pszText = _T("Effects");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 1, (LPARAM)&tab);
+		tab.pszText = _T("3D Graphics");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 2, (LPARAM)&tab);
 		tab.pszText = _T("Advanced");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
@@ -982,8 +982,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
-		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
-		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
+		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
+		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
@@ -1092,69 +1092,69 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SetPrimaryScaleCombo(hTabs[2], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, nearest mipmap"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, linear mipmap"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, nearest mipmap"));
-		SendDlgItemMessage(hTabs[1], IDC_TEXFILTER, CB_ADDSTRING, 5, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, linear mipmap"));
-		SendDlgItemMessage(hTabs[1],IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hTabs[1],IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
+		SendDlgItemMessage(hTabs[2],IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2],IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
 		// anisotropic
 		if (anisotropic < 2)
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
-			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_SETCURSEL, 0, 0);
-			EnableWindow(GetDlgItem(hTabs[1], IDC_ANISO), FALSE);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[2], IDC_ANISO), FALSE);
 			cfg->anisotropic = 0;
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 1, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(anisotropic >= 2)
 			{
 				_tcscpy(buffer,_T("2x"));
-				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 2, (LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 2, (LPARAM)buffer);
 			}
 			if(anisotropic >= 4)
 			{
 				_tcscpy(buffer,_T("4x"));
-				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
 			if(anisotropic >= 8)
 			{
 				_tcscpy(buffer,_T("8x"));
-				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 8, (LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 8, (LPARAM)buffer);
 			}
 			if(anisotropic >= 16)
 			{
 				_tcscpy(buffer,_T("16x"));
-				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 16, (LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 16, (LPARAM)buffer);
 			}
 			if(anisotropic >= 32)
 			{
 				_tcscpy(buffer,_T("32x"));
-				SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
-			SendDlgItemMessage(hTabs[1], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
 		}
 		// msaa
 		if(msaa)
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 1, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(maxcoverage)
 			{
 				for(i = 0; i < maxcoverage; i++)
@@ -1162,7 +1162,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					if((msaamodes[i] & 0xfff) <= 4)
 						_sntprintf(buffer,64,_T("%dx"),msaamodes[i] & 0xfff);
 					else _sntprintf(buffer,64,_T("%dx coverage, %dx color"),(msaamodes[i] & 0xfff), (msaamodes[i] >> 12));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, msaamodes[i], (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, msaamodes[i], (LPARAM)buffer);
 				}
 			}
 			else
@@ -1170,47 +1170,47 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(maxsamples >= 2)
 				{
 					_tcscpy(buffer,_T("2x"));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 2, (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 2, (LPARAM)buffer);
 				}
 				if(maxsamples >= 4)
 				{
 					_tcscpy(buffer,_T("4x"));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 4, (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 4, (LPARAM)buffer);
 				}
 				if(maxsamples >= 8)
 				{
 					_tcscpy(buffer,_T("8x"));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 8, (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 8, (LPARAM)buffer);
 				}
 				if(maxsamples >= 16)
 				{
 					_tcscpy(buffer,_T("16x"));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 16, (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 16, (LPARAM)buffer);
 				}
 				if(maxsamples >= 32)
 				{
 					_tcscpy(buffer,_T("32x"));
-					SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 32, (LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 32, (LPARAM)buffer);
 				}
 			}
-			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_SETCURSEL, cfg->msaa, 0);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_SETCURSEL, cfg->msaa, 0);
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
-			SendDlgItemMessage(hTabs[1], IDC_MSAA, CB_SETCURSEL, 0, 0);
-			EnableWindow(GetDlgItem(hTabs[1], IDC_MSAA), FALSE);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[2], IDC_MSAA), FALSE);
 			cfg->msaa = 0;
 		}
 		// aspect3d
 		_tcscpy(buffer,_T("Stretch to display"));
-		SendDlgItemMessage(hTabs[1], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Expand viewable area"));
-		SendDlgItemMessage(hTabs[1], IDC_ASPECT3D, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
-		SendDlgItemMessage(hTabs[1],IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hTabs[1],IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
+		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -1242,10 +1242,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 6, (LPARAM)buffer);
 		//FIXME:  Populate extra resolution combobox
 		// Enable shader
-		if (cfg->colormode) SendDlgItemMessage(hTabs[2], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);
-		else SendDlgItemMessage(hTabs[2], IDC_USESHADER, BM_SETCHECK, BST_UNCHECKED, 0);
+		if (cfg->colormode) SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_UNCHECKED, 0);
 		// shader path
-		SetText(hTabs[2],IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
+		SetText(hTabs[1],IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
 		// texture format
 		_tcscpy(buffer,_T("Automatic"));
 		SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
