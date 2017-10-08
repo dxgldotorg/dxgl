@@ -345,6 +345,19 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hWnd,IDC_FRAMERATE,WM_SETTEXT,0,(LPARAM)frameratestring);
 				}
 			}
+			else if (HIWORD(wParam) == LBN_DBLCLK)
+			{
+				if (SendDlgItemMessage(hWnd, IDC_RESIZABLE, BM_GETCHECK, 0, 0)) resizable = true;
+				else resizable = false;
+				if (buffer < minbuffer) buffer = minbuffer;
+				if (buffer > maxbuffer) buffer = maxbuffer;
+				i = SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETCURSEL, 0, 0);
+				SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETTEXT, i, (LPARAM)tmpstring);
+				TranslateResolutionString(tmpstring, width, height, bpp, refresh);
+				RunDXGLTest(currenttest, width, height, bpp, refresh, buffer, api,
+					filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d);
+				break;
+			}
 			break;
 		case IDC_FRAMERATE:
 			if(HIWORD(wParam) == EN_CHANGE)

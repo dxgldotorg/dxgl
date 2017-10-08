@@ -2173,7 +2173,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		DDSCAPS2 caps;
 		DDSURFACEDESC2 ddsd;
 		DDPIXELFORMAT ddpfz;
-		testnum = 2;
+		testnum = 14;
 		ddinterface = new MultiDirectDraw(7, &error, NULL);
 		hDisplay = GetDlgItem(hWnd, IDC_DISPLAY);
 		::hWnd = hDisplay;
@@ -2579,6 +2579,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_CLOSE:
+		StopTimer();
 		if (d3d7dev)
 		{
 			d3d7dev->Release();
@@ -2662,7 +2663,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		DDSCAPS2 caps;
 		DDSURFACEDESC2 ddsd;
 		DDPIXELFORMAT ddpfz;
-		testnum = 3;
+		testnum = 15;
 		ddinterface = new MultiDirectDraw(7, &error, NULL);
 		hDisplay = GetDlgItem(hWnd, IDC_DISPLAY);
 		::hWnd = hDisplay;
@@ -3099,6 +3100,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		}
 		break;
 	case WM_CLOSE:
+		StopTimer();
 		if (d3d7dev)
 		{
 			d3d7dev->Release();
