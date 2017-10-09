@@ -66,6 +66,8 @@ HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
 HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
 	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
 HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
+static BOOL ExtraModes_Dropdown = FALSE;
+static HWND hDialog = NULL;
 
 
 typedef struct
@@ -126,6 +128,16 @@ static const TCHAR *colormodes[32] = {
 	_T("8/16/24/32-bit"),
 	_T("8/15/24/32-bit"),
 	_T("8/15/16/24/32-bit")
+};
+
+static const TCHAR *extramodes[7] = {
+	_T("Common low resolutions"),
+	_T("Uncommon low resolutions"),
+	_T("Uncommon SD resolutions"),
+	_T("High Definition resolutions"),
+	_T("Ultra-HD resolutions"),
+	_T("Ultra-HD above 4k"),
+	_T("Very uncommon resolutions")
 };
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
@@ -708,6 +720,8 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	COLORREF OldTextColor, OldBackColor;
 	RECT r;
 	TCHAR combotext[64];
+	DWORD cursel;
+	int i;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -740,19 +754,83 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			}
 			else ExtTextOut(drawitem->hDC, 0, 0, ETO_OPAQUE, &drawitem->rcItem, NULL, 0, NULL);
 			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
-			r.left = r.left + 2;
-			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
-			if (hThemeDisplay) _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX,
-				CBS_CHECKEDNORMAL, &r, NULL);
-			else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
-			drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				r.left = r.left + 2;
+				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				if ((cfg->AddModes >> drawitem->itemID) & 1)
+				{
+					if (hThemeDisplay)
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX,	CBS_CHECKEDHOT, &r, NULL);
+						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, &r, NULL);
+					}
+					else
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
+						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
+					}
+				}
+				else
+				{
+					if (hThemeDisplay)
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, &r, NULL);
+						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, &r, NULL);
+					}
+					else
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
+						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK);
+					}
+				}
+				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			}
 			combotext[0] = 0;
-			SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
-			DrawText(drawitem->hDC, combotext,	_tcslen(combotext), &drawitem->rcItem,
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
+			else
+			{
+				switch (cfg->AddModes)
+				{
+				case 0:
+					_tcscpy(combotext, _T("None"));
+					break;
+				case 1:
+					_tcscpy(combotext, extramodes[0]);
+					break;
+				case 2:
+					_tcscpy(combotext, extramodes[1]);
+					break;
+				case 4:
+					_tcscpy(combotext, extramodes[2]);
+					break;
+				case 8:
+					_tcscpy(combotext, extramodes[3]);
+					break;
+				case 16:
+					_tcscpy(combotext, extramodes[4]);
+					break;
+				case 32:
+					_tcscpy(combotext, extramodes[5]);
+					break;
+				case 64:
+					_tcscpy(combotext, extramodes[6]);
+					break;
+				default:
+					_tcscpy(combotext, _T("Multiple selections"));
+				}
+			}
+			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
-			drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
@@ -765,6 +843,36 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			if (hThemeDisplay) _CloseThemeData(hThemeDisplay);
 			_OpenThemeData(hWnd, L"Button");
 		}
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case IDC_EXTRAMODES:
+			if (HIWORD(wParam) == CBN_SELENDOK)
+			{
+				if (ExtraModes_Dropdown)
+				{
+					cursel = SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
+					i = ((cfg->AddModes >> cursel) & 1);
+					if (i) cfg->AddModes &= ~(1 << cursel);
+					else cfg->AddModes |= 1 << cursel;
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == CBN_DROPDOWN)
+			{
+				ExtraModes_Dropdown = TRUE;
+			}
+			if (HIWORD(wParam) == CBN_CLOSEUP)
+			{
+				ExtraModes_Dropdown = FALSE;
+			}
+			/*cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,&cfgmask->ExtraModes);
+			*/
+			break;
+		}
+	}
 	default:
 		return FALSE;
 	}
@@ -900,6 +1008,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		hDialog = hWnd;
 		tristate = FALSE;
 		maxapps = 128;
 		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));
@@ -1226,21 +1335,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
 		}
 		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
-		_tcscpy(buffer, _T("Common low resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Uncommon low resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 1, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Uncommon SD resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 2, (LPARAM)buffer);
-		_tcscpy(buffer, _T("High Definition resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 3, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Ultra-HD resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 4, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Ultra-HD above 4k"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 5, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Very uncommon resolutions"));
-		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 6, (LPARAM)buffer);
-		//FIXME:  Populate extra resolution combobox
+		for (i = 0; i < 7; i++)
+		{
+			_tcscpy(buffer, extramodes[i]);
+			SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, i, (LPARAM)buffer);
+		}
 		// Enable shader
 		if (cfg->colormode) SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -1462,20 +1561,26 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemAction & ODA_SELECT) && (drawitem->itemState & ODS_SELECTED) &&
-				!(drawitem->itemState & ODS_COMBOBOXEDIT))
+			if((drawitem->itemState & ODS_SELECTED))
 			{
 				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
 				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
 				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
 			}
-			else ExtTextOut(drawitem->hDC,0,0,ETO_OPAQUE,&drawitem->rcItem,NULL,0,NULL);
+			else
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+			}
 			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
 				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
 			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
 			DrawText(drawitem->hDC,apps[drawitem->itemID].name,
 				_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC,OldTextColor);
 			SetBkColor(drawitem->hDC,OldBackColor);
 			DefWindowProc(hWnd,Msg,wParam,lParam);
@@ -1670,11 +1775,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_UNCOMMONCOLOR:
 			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,&cfgmask->AllColorDepths);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_EXTRAMODES:
-			cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,&cfgmask->ExtraModes);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
