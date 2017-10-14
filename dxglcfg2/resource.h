@@ -87,7 +87,9 @@
 #define IDC_TEXUPLOAD                           2302
 #define IDC_DISPLAYNAME                         2303
 #define IDC_LOWCOLORRENDER                      2304
-#define IDC_WRITEINI                            2305
+#define IDC_PATHLABEL                           2305
+#define IDC_PROFILEPATH                         2306
+#define IDC_WRITEINI                            2307
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401

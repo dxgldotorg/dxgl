@@ -67,6 +67,7 @@ HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
 	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
 HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 static BOOL ExtraModes_Dropdown = FALSE;
+static BOOL ColorDepth_Dropdown = FALSE;
 static HWND hDialog = NULL;
 
 
@@ -117,7 +118,7 @@ static const TCHAR *colormodes[32] = {
 	_T("15/32-bit"),
 	_T("8/15/32-bit"),
 	_T("16/32-bit"),
-	_T("8/16/32-bit (recommended)"),
+	_T("8/16/32-bit"),
 	_T("8/15/32-bit"),
 	_T("8/15/16/32-bit"),
 	_T("24/32-bit"),
@@ -128,6 +129,14 @@ static const TCHAR *colormodes[32] = {
 	_T("8/16/24/32-bit"),
 	_T("8/15/24/32-bit"),
 	_T("8/15/16/24/32-bit")
+};
+
+static const TCHAR *colormodedropdown[5] = {
+	_T("8-bit"),
+	_T("15-bit"),
+	_T("16-bit"),
+	_T("24-bit"),
+	_T("32-bit")
 };
 
 static const TCHAR *extramodes[7] = {
@@ -732,6 +741,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
+		case IDC_COLORDEPTH:
 		case IDC_EXTRAMODES:
 			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
@@ -743,6 +753,66 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		drawitem = (DRAWITEMSTRUCT*)lParam;
 		switch (wParam)
 		{
+		case IDC_COLORDEPTH:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if ((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+			}
+			else ExtTextOut(drawitem->hDC, 0, 0, ETO_OPAQUE, &drawitem->rcItem, NULL, 0, NULL);
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				r.left = r.left + 2;
+				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				if ((cfg->AddColorDepths >> drawitem->itemID) & 1)
+				{
+					if (hThemeDisplay)
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, &r, NULL);
+						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, &r, NULL);
+					}
+					else
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
+						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
+					}
+				}
+				else
+				{
+					if (hThemeDisplay)
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, &r, NULL);
+						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, &r, NULL);
+					}
+					else
+					{
+						if (drawitem->itemState & ODS_SELECTED)
+							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
+						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK);
+					}
+				}
+				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			}
+			combotext[0] = 0;
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETLBTEXT, drawitem->itemID, combotext);
+			else _tcscpy(combotext, colormodes[cfg->AddColorDepths & 31]);
+			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			SetTextColor(drawitem->hDC, OldTextColor);
+			SetBkColor(drawitem->hDC, OldBackColor);
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			DefWindowProc(hWnd, Msg, wParam, lParam);
+			break;
 		case IDC_EXTRAMODES:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
@@ -847,6 +917,28 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	{
 		switch (LOWORD(wParam))
 		{
+		case IDC_COLORDEPTH:
+			if (HIWORD(wParam) == CBN_SELENDOK)
+			{
+				if (ColorDepth_Dropdown)
+				{
+					cursel = SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETCURSEL, 0, 0);
+					i = ((cfg->AddColorDepths >> cursel) & 1);
+					if (i) cfg->AddColorDepths &= ~(1 << cursel);
+					else cfg->AddColorDepths |= 1 << cursel;
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == CBN_DROPDOWN)
+			{
+				ColorDepth_Dropdown = TRUE;
+			}
+			if (HIWORD(wParam) == CBN_CLOSEUP)
+			{
+				ColorDepth_Dropdown = FALSE;
+			}
+			break;
 		case IDC_EXTRAMODES:
 			if (HIWORD(wParam) == CBN_SELENDOK)
 			{
@@ -868,8 +960,56 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				ExtraModes_Dropdown = FALSE;
 			}
-			/*cfg->ExtraModes = GetCheck(hWnd,IDC_EXTRAMODES,&cfgmask->ExtraModes);
-			*/
+			break;
+		case IDC_VIDMODE:
+			cfg->scaler = GetCombo(hWnd, IDC_VIDMODE, &cfgmask->scaler);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_SCALE:
+			cfg->scalingfilter = GetCombo(hWnd, IDC_SCALE, &cfgmask->scalingfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ASPECT:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		case IDC_SORTMODES:
+			cfg->SortModes = GetCombo(hWnd, IDC_SORTMODES, &cfgmask->SortModes);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_DPISCALE:
+			cfg->DPIScale = GetCombo(hWnd, IDC_DPISCALE, &cfgmask->DPIScale);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_VSYNC:
+			cfg->vsync = GetCombo(hWnd, IDC_VSYNC, &cfgmask->vsync);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_FULLMODE:
+			cfg->fullmode = GetCombo(hWnd, IDC_FULLMODE, &cfgmask->fullmode);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_COLOR:
+			cfg->colormode = GetCheck(hWnd, IDC_COLOR, &cfgmask->colormode);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
 			break;
 		}
 	}
@@ -1329,9 +1469,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
 		// color depths
-		for (i = 0; i < 32; i++)
+		for (i = 0; i < 5; i++)
 		{
-			_tcscpy(buffer, colormodes[i]);
+			_tcscpy(buffer, colormodedropdown[i]);
 			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
 		}
 		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
@@ -1361,8 +1501,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Windows AppCompat"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
-		//EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
-		//EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
 		// Check install path
 		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
@@ -1614,9 +1754,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SaveChanges(hWnd);
 			return TRUE;
 		case IDC_APPS:
-			if(HIWORD(wParam) == LBN_SELCHANGE)
+			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
-				cursel = SendDlgItemMessage(hWnd,IDC_APPS,LB_GETCURSEL,0,0);
+				cursel = SendDlgItemMessage(hWnd,IDC_APPS,CB_GETCURSEL,0,0);
 				if(cursel == current_app) break;
 				current_app = cursel;
 				cfg = &apps[current_app].cfg;
@@ -1624,56 +1764,74 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				dirty = &apps[current_app].dirty;
 				if (current_app)
 				{
-//					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), TRUE);
-//					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), TRUE);
-//					SetDlgItemText(hWnd, IDC_PROFILEPATH, apps[current_app].path);
-					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), TRUE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), TRUE);
+					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, apps[current_app].path);
+					if (apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+					else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
 				}
 				else
 				{
-//					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
-//					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
-//					SetDlgItemText(hWnd, IDC_PROFILEPATH, _T(""));
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, _T(""));
 					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
 				}
-				/*				// Set 3-state status
+				// Set 3-state status
 				if(current_app && !tristate)
 				{
 					tristate = TRUE;
-					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
+					// Display tab
+					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+					/*
 					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[0], IDC_HIGHRES, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					*/
 				}
 				else if(!current_app && tristate)
 				{
 					tristate = FALSE;
-					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					// Display tab
+					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+					/*
 					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_DELETESTRING,
 						SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_DELETESTRING,
 						SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd,IDC_SCALE,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_SCALE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_VSYNC,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
@@ -1682,64 +1840,44 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+				*/
 				}
 				// Read settings into controls
-				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
-				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
+				// Display tab
+				SetCombo(hTabs[0], IDC_VIDMODE, cfg->scaler, cfgmask->scaler, tristate);
+				SetCombo(hTabs[0], IDC_COLORDEPTH, 0, 0, tristate);
+				SetCombo(hTabs[0], IDC_SCALE, cfg->scalingfilter, cfgmask->scalingfilter, tristate);
+				SetCombo(hTabs[0], IDC_EXTRAMODES, 0, 0, tristate);
+				SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetCombo(hTabs[0], IDC_SORTMODES, cfg->SortModes, cfgmask->SortModes, tristate);
+				SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
+				SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
+				SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
+				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
+				/*
 				SetCombo(hWnd,IDC_POSTSCALE,cfg->firstscalefilter,cfgmask->firstscalefilter,tristate);
-				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
-				SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
 				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
 				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
 				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
 				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
-				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
 				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
 				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
 				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
-				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->firstscalex, cfg->firstscaley,
 					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);*/
+				*/
 			}
-			break;
-/*		case IDC_VIDMODE:
-			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,&cfgmask->scaler);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_SORTMODES:
-			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,&cfgmask->SortModes);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
+			break;/*
 		case IDC_POSTSCALE:
 			cfg->firstscalefilter = GetCombo(hWnd,IDC_POSTSCALE,&cfgmask->firstscalefilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_SCALE:
-			cfg->scalingfilter = GetCombo(hWnd,IDC_SCALE,&cfgmask->scalingfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_VSYNC:
-			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,&cfgmask->vsync);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
@@ -1763,11 +1901,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
-		case IDC_COLOR:
-			cfg->colormode = GetCheck(hWnd,IDC_COLOR,&cfgmask->colormode);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
 		case IDC_HIGHRES:
 			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->highres);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
@@ -1786,11 +1919,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_TEXUPLOAD:
 			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,&cfgmask->TexUpload);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_DPISCALE:
-			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,&cfgmask->DPIScale);
-			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
 		case IDC_POSTSCALESIZE:
@@ -1819,21 +1947,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				*dirty = TRUE;
 			}
 			break;
-		case IDC_ASPECT:
-			if (HIWORD(wParam) == CBN_KILLFOCUS)
-			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			else if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			break;*/
+*/
 		case IDC_ADD:
 			selectedfile[0] = 0;
 			ZeroMemory(&filename, OPENFILENAME_SIZE_VERSION_400);
