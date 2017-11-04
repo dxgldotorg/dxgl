@@ -103,7 +103,7 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15-bit"),
 	_T("16-bit"),
 	_T("8/16-bit"),
-	_T("8/15-bit"),
+	_T("15/16-bit"),
 	_T("8/15/16-bit"),
 	_T("24-bit"),
 	_T("8/24-bit"),
@@ -111,7 +111,7 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15/24-bit"),
 	_T("16/24-bit"),
 	_T("8/16/24-bit"),
-	_T("8/15/24-bit"),
+	_T("15/16/24-bit"),
 	_T("8/15/16/24-bit"),
 	_T("32-bit"),
 	_T("8/32-bit"),
@@ -119,7 +119,7 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15/32-bit"),
 	_T("16/32-bit"),
 	_T("8/16/32-bit"),
-	_T("8/15/32-bit"),
+	_T("15/16/32-bit"),
 	_T("8/15/16/32-bit"),
 	_T("24/32-bit"),
 	_T("8/24/32-bit"),
@@ -127,7 +127,7 @@ static const TCHAR *colormodes[32] = {
 	_T("8/15/24/32-bit"),
 	_T("16/24/32-bit"),
 	_T("8/16/24/32-bit"),
-	_T("8/15/24/32-bit"),
+	_T("15/16/24/32-bit"),
 	_T("8/15/16/24/32-bit")
 };
 
@@ -723,6 +723,77 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 	if(str[0] == 0) mask[0] = 0;
 	else mask[0] = 0xff;
 }
+
+void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, RECT *r)
+{
+	if (grayed)
+	{
+		if (checked)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE);
+			}
+		}
+		else
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_INACTIVE);
+			}
+		}
+	}
+	else
+	{
+		if (checked)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
+			}
+		}
+		else
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK);
+			}
+		}
+	}
+}
+
 LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	DRAWITEMSTRUCT* drawitem;
@@ -730,6 +801,9 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	RECT r;
 	TCHAR combotext[64];
 	DWORD cursel;
+	HDC hdc;
+	HFONT font1, font2;
+	SIZE size;
 	int i;
 	switch (Msg)
 	{
@@ -743,8 +817,21 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		{
 		case IDC_COLORDEPTH:
 		case IDC_EXTRAMODES:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
-			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			if (((LPMEASUREITEMSTRUCT)lParam)->itemID == -1)
+			{
+				hdc = GetDC(hWnd);
+				font1 = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+				font2 = SelectObject(hdc, font1);
+				GetTextExtentPoint(hdc, _T(" "), 1, &size);
+				SelectObject(hdc, font2);
+				ReleaseDC(hWnd, hdc);
+				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = size.cy + 2;
+			}
+			else
+			{
+				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+				((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			}
 			break;
 		default:
 			break;
@@ -768,42 +855,28 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				r.left = r.left + 2;
 				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
-				if ((cfg->AddColorDepths >> drawitem->itemID) & 1)
+				if (drawitem->itemID == 5)
 				{
-					if (hThemeDisplay)
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, &r, NULL);
-						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, &r, NULL);
-					}
-					else
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
-						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
-					}
+					if(!cfgmask->AddColorDepths)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, &r);
 				}
 				else
 				{
-					if (hThemeDisplay)
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, &r, NULL);
-						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, &r, NULL);
-					}
-					else
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
-						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK);
-					}
+					if ((cfg->AddColorDepths >> drawitem->itemID) & 1)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddColorDepths, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddColorDepths, &r);
 				}
 				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
 			}
 			combotext[0] = 0;
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
 				SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETLBTEXT, drawitem->itemID, combotext);
-			else _tcscpy(combotext, colormodes[cfg->AddColorDepths & 31]);
+			else
+			{
+				if(!cfgmask->AddColorDepths) _tcscpy(combotext, strdefault);
+				else _tcscpy(combotext, colormodes[cfg->AddColorDepths & 31]);
+			}
 			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			SetTextColor(drawitem->hDC, OldTextColor);
@@ -828,35 +901,17 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				r.left = r.left + 2;
 				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
-				if ((cfg->AddModes >> drawitem->itemID) & 1)
+				if (drawitem->itemID == 7)
 				{
-					if (hThemeDisplay)
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX,	CBS_CHECKEDHOT, &r, NULL);
-						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, &r, NULL);
-					}
-					else
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
-						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
-					}
+					if (!cfgmask->AddModes)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, &r);
 				}
 				else
 				{
-					if (hThemeDisplay)
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							_DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, &r, NULL);
-						else _DrawThemeBackground(hThemeDisplay, drawitem->hDC, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, &r, NULL);
-					}
-					else
-					{
-						if (drawitem->itemState & ODS_SELECTED)
-							DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
-						else DrawFrameControl(drawitem->hDC, &r, DFC_BUTTON, DFCS_BUTTONCHECK);
-					}
+					if ((cfg->AddModes >> drawitem->itemID) & 1)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddModes, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddModes, &r);
 				}
 				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
 			}
@@ -865,34 +920,38 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
 			else
 			{
-				switch (cfg->AddModes)
+				if (!cfgmask->AddModes) _tcscpy(combotext, strdefault);
+				else
 				{
-				case 0:
-					_tcscpy(combotext, _T("None"));
-					break;
-				case 1:
-					_tcscpy(combotext, extramodes[0]);
-					break;
-				case 2:
-					_tcscpy(combotext, extramodes[1]);
-					break;
-				case 4:
-					_tcscpy(combotext, extramodes[2]);
-					break;
-				case 8:
-					_tcscpy(combotext, extramodes[3]);
-					break;
-				case 16:
-					_tcscpy(combotext, extramodes[4]);
-					break;
-				case 32:
-					_tcscpy(combotext, extramodes[5]);
-					break;
-				case 64:
-					_tcscpy(combotext, extramodes[6]);
-					break;
-				default:
-					_tcscpy(combotext, _T("Multiple selections"));
+					switch (cfg->AddModes)
+					{
+					case 0:
+						_tcscpy(combotext, _T("None"));
+						break;
+					case 1:
+						_tcscpy(combotext, extramodes[0]);
+						break;
+					case 2:
+						_tcscpy(combotext, extramodes[1]);
+						break;
+					case 4:
+						_tcscpy(combotext, extramodes[2]);
+						break;
+					case 8:
+						_tcscpy(combotext, extramodes[3]);
+						break;
+					case 16:
+						_tcscpy(combotext, extramodes[4]);
+						break;
+					case 32:
+						_tcscpy(combotext, extramodes[5]);
+						break;
+					case 64:
+						_tcscpy(combotext, extramodes[6]);
+						break;
+					default:
+						_tcscpy(combotext, _T("Multiple selections"));
+					}
 				}
 			}
 			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
@@ -923,9 +982,18 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if (ColorDepth_Dropdown)
 				{
 					cursel = SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETCURSEL, 0, 0);
-					i = ((cfg->AddColorDepths >> cursel) & 1);
-					if (i) cfg->AddColorDepths &= ~(1 << cursel);
-					else cfg->AddColorDepths |= 1 << cursel;
+					if (cursel == 5)
+					{
+						if (cfgmask->AddColorDepths) cfgmask->AddColorDepths = 0;
+						else cfgmask->AddColorDepths = 1;
+					}
+					else
+					{
+						if (!cfgmask->AddColorDepths) cfgmask->AddColorDepths = 1;
+						i = ((cfg->AddColorDepths >> cursel) & 1);
+						if (i) cfg->AddColorDepths &= ~(1 << cursel);
+						else cfg->AddColorDepths |= 1 << cursel;
+					}
 					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 					*dirty = TRUE;
 				}
@@ -945,9 +1013,18 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if (ExtraModes_Dropdown)
 				{
 					cursel = SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
-					i = ((cfg->AddModes >> cursel) & 1);
-					if (i) cfg->AddModes &= ~(1 << cursel);
-					else cfg->AddModes |= 1 << cursel;
+					if (cursel == 7)
+					{
+						if (cfgmask->AddModes) cfgmask->AddModes = 0;
+						else cfgmask->AddModes = 1;
+					}
+					else
+					{
+						if (!cfgmask->AddModes) cfgmask->AddModes = 1;
+						i = ((cfg->AddModes >> cursel) & 1);
+						if (i) cfg->AddModes &= ~(1 << cursel);
+						else cfg->AddModes |= 1 << cursel;
+					}
 					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 					*dirty = TRUE;
 				}

@@ -35,6 +35,7 @@ typedef LONG LSTATUS;
 #include "inih/ini.h"
 
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
+TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");
 TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
@@ -674,8 +675,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteBool(hKey, cfg->EnableShader, cfgmask->EnableShader, _T("EnableShader"));
 	WritePath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
-	WriteBool(hKey,cfg->AddColorDepths,cfgmask->AddColorDepths,_T("AddColorDepths"));
-	WriteBool(hKey,cfg->AddModes,cfgmask->AddModes,_T("AddModes"));
+	WriteDWORD(hKey,cfg->AddColorDepths,cfgmask->AddColorDepths,_T("AddColorDepths"));
+	WriteDWORD(hKey,cfg->AddModes,cfgmask->AddModes,_T("AddModes"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
@@ -1131,8 +1132,9 @@ void UpgradeConfig()
 	error = RegQueryValueEx(hKey, _T("Configuration Version"), NULL, &regtype, &version, &sizeout);
 	if (error != ERROR_SUCCESS) version = 0;  // Version is 0 if not set (alpha didn't have version)
 	if (regtype != REG_DWORD) version = 0; // Is the key the wrong type?
-	if (version >= 1) return;  // If version is 1 no need to upgrade.
+	if (version >= 1) goto ver1to2;  // If version is 1 check for version 2.
 ver0to1:
+	// Version 0 to 1:  Convert old EXE checksum profiles to directory based profiles.
 	// Count profiles
 	keyindex = 0;
 	numoldconfig = 0;
@@ -1374,7 +1376,67 @@ ver0to1:
 	if(oldvalue) free(oldvalue);
 	sizeout = 1;
 	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
+ver1to2:
 	RegCloseKey(hKey);
+	// Version 1 to 2:  Fix an incorrectly written AddColorDepths value
+	if (version >= 2) return; // If version is 2 no need to upgrade.
+	// Fix up the global Add color depths
+	_tcscpy(regkey, regkeyglobal);
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	sizeout = 4;
+	regtype = REG_DWORD;
+	error = RegQueryValueEx(hKey,_T("AddColorDepths"),NULL,
+		&regtype, &numvalue, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		if (numvalue == 1)
+		{
+			numvalue = 1 | 4 | 16;
+			RegSetValueEx(hKey, _T("AddColorDepths"), 0, REG_DWORD, &numvalue, 4);
+		}
+	}
+	RegCloseKey(hKey);
+	// Enumerate profiles and fix up Add color depths
+	_tcscpy(regkey, regkeyprofiles);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_ALL_ACCESS, &hKey);
+	if (error == ERROR_SUCCESS)
+	{
+		keyindex = 0;
+		do
+		{
+			sizeout = MAX_PATH;
+			error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+				NULL, NULL, NULL, NULL);
+			keyindex++;
+			if (error == ERROR_SUCCESS)
+			{
+				error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_ALL_ACCESS, &hKeyProfile);
+				if (error2 == ERROR_SUCCESS)
+				{
+					error2 = RegQueryValueEx(hKeyProfile, _T("AddColorDepths"), NULL,
+						&regtype, &numvalue, &sizeout);
+					if (error2 == ERROR_SUCCESS)
+					{
+						if (numvalue == 1)
+						{
+							numvalue = 1 | 4 | 16;
+							RegSetValueEx(hKeyProfile, _T("AddColorDepths"), 0, REG_DWORD, &numvalue, 4);
+						}
+					}
+					RegCloseKey(hKeyProfile);
+				}
+			}
+		} while (error == ERROR_SUCCESS);
+		RegCloseKey(hKey);
+	}
+	_tcscpy(regkey, regkeybase);
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		sizeout = 2;
+		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
+		RegCloseKey(hKey);
+	}
 }
 
 int ReadINIOptionsCallback(app_ini_options *options, const char *section, const char *name,
