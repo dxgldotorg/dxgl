@@ -62,6 +62,7 @@
 #define IDC_FIXEDSCALEY                         2014
 #define IDC_FIXEDSCALESQUARE                    2015
 #define IDC_COLOR                               2016
+#define IDC_SINGLEBUFFER                        2017
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101
@@ -81,6 +82,7 @@
 #define IDC_ANISO                               2202
 #define IDC_MSAA                                2203
 #define IDC_ASPECT3D                            2204
+#define IDC_DITHERING                           2205
 
 // Controls - Advanced Tab
 #define IDC_TEXTUREFORMAT                       2301
@@ -93,3 +95,4 @@
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401
+
