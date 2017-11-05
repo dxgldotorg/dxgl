@@ -1161,6 +1161,30 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_TEXFILTER:
+			cfg->texfilter = GetCombo(hWnd, IDC_TEXFILTER, &cfgmask->texfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ANISO:
+			cfg->anisotropic = GetCombo(hWnd, IDC_ANISO, &cfgmask->anisotropic);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_MSAA:
+			cfg->msaa = GetCombo(hWnd, IDC_MSAA, &cfgmask->msaa);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ASPECT3D:
+			cfg->aspect3d = GetCombo(hWnd, IDC_ASPECT3D, &cfgmask->aspect3d);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		}
 	default:
 		return FALSE;
 	}
@@ -1935,11 +1959,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					/*
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 					*/
@@ -1974,15 +1998,15 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					/*
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ANISO,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
@@ -2006,39 +2030,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
 				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
+				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
+				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
+				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
+				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
+				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
 				/*
-				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
-				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
-				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
-				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
-				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
 				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
-				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
-				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
 				*/
 			}
 			break;/*
-		case IDC_MSAA:
-			cfg->msaa = GetCombo(hWnd,IDC_MSAA,&cfgmask->msaa);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_ANISO:
-			cfg->anisotropic = GetCombo(hWnd,IDC_ANISO,&cfgmask->anisotropic);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_TEXFILTER:
-			cfg->texfilter = GetCombo(hWnd,IDC_TEXFILTER,&cfgmask->texfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_ASPECT3D:
-			cfg->aspect3d = GetCombo(hWnd,IDC_ASPECT3D,&cfgmask->aspect3d);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
 		case IDC_TEXTUREFORMAT:
 			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,&cfgmask->TextureFormat);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
