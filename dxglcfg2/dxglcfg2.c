@@ -1095,6 +1095,60 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	}
 	return TRUE;
 }
+
+LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_POSTSCALE:
+			cfg->postfilter = GetCombo(hWnd, IDC_POSTSCALE, &cfgmask->postfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_POSTSCALESIZE:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
+				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex, cfgmask->postsizey, tristate);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		case IDC_PRIMARYSCALE:
+			cfg->primaryscale = GetCombo(hWnd, IDC_PRIMARYSCALE, &cfgmask->primaryscale);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_SHADER:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				GetText(hWnd, IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
 LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -1107,18 +1161,7 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 	}
 	return TRUE;
 }
-LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (Msg)
-	{
-	case WM_INITDIALOG:
-		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
-		return TRUE;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
+
 LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -1131,6 +1174,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	}
 	return TRUE;
 }
+
 LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -1143,6 +1187,7 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	}
 	return TRUE;
 }
+
 LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -1155,6 +1200,7 @@ LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	}
 	return TRUE;
 }
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -1359,26 +1405,54 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
 		// first scaling filter
 		_tcscpy(buffer, _T("Nearest"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("1x"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x1"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("3x"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
-		SendDlgItemMessage(hTabs[2], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		SetPostScaleCombo(hTabs[2], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 			cfgmask->postsizex, cfgmask->postsizey, tristate);
-		// final scaling filter
+		// primary scaling
+		_tcscpy(buffer, _T("1x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Scale to screen"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Maximum integer scaling"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1.5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2.5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("6x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("7x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("8x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_SETCURSEL, cfg->primaryscale, 0);
+		// scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
@@ -1396,26 +1470,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-		// primaryscale
-		_tcscpy(buffer, _T("Auto (Window Size)"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Auto (Multiple of Native)"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		_tcscpy(buffer, _T("1x Native (Recommended)"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 2, (LPARAM)buffer);
-		_tcscpy(buffer, _T("1.5x Native"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 3, (LPARAM)buffer);
-		_tcscpy(buffer, _T("2x Native"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 4, (LPARAM)buffer);
-		_tcscpy(buffer, _T("2.5x Native"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 5, (LPARAM)buffer);
-		_tcscpy(buffer, _T("3x Native"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 6, (LPARAM)buffer);
-		_tcscpy(buffer, _T("4x Native"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 7, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Custom"));
-		SendDlgItemMessage(hTabs[2], IDC_PRIMARYSCALE, CB_ADDSTRING, 8, (LPARAM)buffer);
-		SetPrimaryScaleCombo(hTabs[2], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
 		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -1869,14 +1923,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					/*
-					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_HIGHRES, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 					*/
@@ -1904,11 +1958,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					/*
-					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
@@ -1917,7 +1973,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
 					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
 						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
@@ -1936,28 +1991,23 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
 				SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
 				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
+				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
+				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex , cfgmask->postsizey, tristate);
+				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 				/*
-				SetCombo(hWnd,IDC_POSTSCALE,cfg->firstscalefilter,cfgmask->firstscalefilter,tristate);
 				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
 				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
 				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
 				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
-				SetCheck(hWnd,IDC_HIGHRES,cfg->highres,cfgmask->highres,tristate);
 				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AllColorDepths,cfgmask->AllColorDepths,tristate);
 				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->ExtraModes,cfgmask->ExtraModes,tristate);
 				SetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,tristate);
-				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->firstscalex, cfg->firstscaley,
-					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
 				*/
 			}
 			break;/*
-		case IDC_POSTSCALE:
-			cfg->firstscalefilter = GetCombo(hWnd,IDC_POSTSCALE,&cfgmask->firstscalefilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
 		case IDC_MSAA:
 			cfg->msaa = GetCombo(hWnd,IDC_MSAA,&cfgmask->msaa);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
@@ -1978,16 +2028,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
 			break;
-		case IDC_HIGHRES:
-			cfg->highres = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->highres);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_UNCOMMONCOLOR:
-			cfg->AllColorDepths = GetCheck(hWnd,IDC_UNCOMMONCOLOR,&cfgmask->AllColorDepths);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
 		case IDC_TEXTUREFORMAT:
 			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,&cfgmask->TextureFormat);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
@@ -1997,32 +2037,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,&cfgmask->TexUpload);
 			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
 			*dirty = TRUE;
-			break;
-		case IDC_POSTSCALESIZE:
-			if (HIWORD(wParam) == CBN_KILLFOCUS)
-			{
-				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
-					&cfgmask->firstscalex, &cfgmask->firstscaley);
-				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->firstscalex, cfg->firstscaley,
-					cfgmask->firstscalex, cfgmask->firstscaley, tristate);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			else if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->firstscalex, &cfg->firstscaley,
-					&cfgmask->firstscalex, &cfgmask->firstscaley);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			break;
-		case IDC_SHADER:
-			if(HIWORD(wParam) == EN_CHANGE)
-			{
-				GetText(hWnd,IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile);
-				EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-				*dirty = TRUE;
-			}
 			break;
 */
 		case IDC_ADD:
