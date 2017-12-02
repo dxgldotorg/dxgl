@@ -1457,6 +1457,136 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
+void ReadHacksItem(int item, BOOL *value, BOOL *mask)
+{
+	switch (item)
+	{
+	default:
+		*value = FALSE;
+		*mask = FALSE;
+		break;
+	}
+}
+
+void WriteHacksItem(int item, BOOL value, BOOL mask)
+{
+	switch (item)
+	{
+	default:
+		break;
+	}
+}
+
+LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	TCHAR str[64];
+	RECT r;
+	DRAWITEMSTRUCT* drawitem;
+	COLORREF OldTextColor, OldBackColor;
+	BOOL hackvalue, hackmask;
+	DWORD item;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_MEASUREITEM:
+		switch (wParam)
+		{
+		case IDC_HACKSLIST:
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			break;
+		default:
+			break;
+		}
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_HACKSLIST:
+			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
+			{
+				item = SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
+				ReadHacksItem(item, &hackvalue, &hackmask);
+				if (tristate)
+				{
+					if (hackvalue && hackmask)
+					{
+						hackvalue = FALSE;
+						hackmask = FALSE;
+					}
+					else if (!hackmask)
+					{
+						hackvalue = FALSE;
+						hackmask = TRUE;
+					}
+					else
+					{
+						hackvalue = TRUE;
+						hackmask = TRUE;
+					}
+				}
+				else
+				{
+					if (hackvalue)
+						hackvalue = FALSE;
+					else hackvalue = TRUE;
+				}
+				WriteHacksItem(item, hackvalue, hackmask);
+				RedrawWindow(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		default:
+			break;
+		}
+	case WM_DRAWITEM:
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
+		{
+		case IDC_HACKSLIST:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if ((drawitem->itemState & ODS_SELECTED))
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+			}
+			else
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+			}
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			r.left = r.left + 2;
+			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+			ReadHacksItem(drawitem->itemID, &hackvalue, &hackmask);
+			DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, hackvalue, FALSE, !hackmask, &r);
+			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON) + 5;
+			SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
+			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			SetTextColor(drawitem->hDC, OldTextColor);
+			SetBkColor(drawitem->hDC, OldBackColor);
+			DefWindowProc(hWnd, Msg, wParam, lParam);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
 LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -1621,9 +1751,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
 		tab.pszText = _T("Debug");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
-/*		tab.pszText = _T("Hacks");
+		tab.pszText = _T("Hacks");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
-		tab.pszText = _T("Graphics Tests");
+		/*tab.pszText = _T("Graphics Tests");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 6, (LPARAM)&tab);
 		tab.pszText = _T("About");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);*/
@@ -1633,6 +1763,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
+		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, HacksTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);

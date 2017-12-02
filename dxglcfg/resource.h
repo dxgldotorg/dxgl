@@ -29,6 +29,7 @@
 #define IDD_3DGRAPHICS                          203
 #define IDD_ADVANCED                            204
 #define IDD_DEBUG                               205
+#define IDD_HACKS                               206
 
 // Icons
 #define IDI_DXGL                                301
@@ -97,3 +98,5 @@
 #define IDC_DEBUGLIST                           2401
 #define IDC_GLVERSION                           2402
 
+// Controls - Hacks Tab
+#define IDC_HACKSLIST                           2501
