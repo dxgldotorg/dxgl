@@ -140,7 +140,7 @@ IDD_HACKS DIALOG 0, 0, 340, 169
 STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_VISIBLE | WS_CHILDWINDOW
 FONT 8, "Ms Shell Dlg"
 {
-    LTEXT           "These options should be set only for specific programs; use with other programs may cause malfuncion.", 0, 7, 5, 328, 9, SS_LEFT, WS_EX_LEFT
+    LTEXT           "These options should be set only for specific programs; use with other programs may cause malfuncion.", 0, 7, 5, 332, 9, SS_LEFT, WS_EX_LEFT
     LISTBOX         IDC_HACKSLIST, 7, 16, 269, 148, WS_TABSTOP | WS_VSCROLL | LBS_NOINTEGRALHEIGHT |
 	    LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY, WS_EX_LEFT
 }
@@ -161,9 +161,9 @@ FONT 8, "Ms Shell Dlg"
     PUSHBUTTON      "...", IDC_BROWSESHADER, 256, 42, 20, 14, WS_DISABLED, WS_EX_LEFT
     LTEXT           "Primary buffer scaling", IDC_STATIC, 7, 58, 70, 8, SS_LEFT, WS_EX_LEFT
     COMBOBOX        IDC_PRIMARYSCALE, 7, 68, 102, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
-	LTEXT           "Blt Scaling Filter", IDC_STATIC, 114, 58, 50, 8, SS_LEFT, WS_EX_LEFT
+	LTEXT           "Blt Scaling Filter", IDC_STATIC, 114, 58, 52, 8, SS_LEFT, WS_EX_LEFT
     COMBOBOX        IDC_BLTFILTER, 114, 68, 102, 92, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
-    LTEXT           "Blt Color Key Threshold", 0, 114, 83, 74, 9, SS_LEFT, WS_EX_LEFT
+    LTEXT           "Blt Color Key Threshold", 0, 114, 83, 76, 9, SS_LEFT, WS_EX_LEFT
     CONTROL         "", IDC_BLTTHRESHOLD, TRACKBAR_CLASS, WS_TABSTOP | TBS_BOTH | TBS_NOTICKS, 114, 93, 102, 15, WS_EX_LEFT
     LTEXT           "Custom scale", IDC_CUSTOMSCALELABEL, 7, 83, 44, 8, WS_DISABLED | SS_LEFT, WS_EX_LEFT
     LTEXT           "X", IDC_CUSTOMSCALELABELX, 7, 96, 8, 8, WS_DISABLED | SS_LEFT, WS_EX_LEFT
