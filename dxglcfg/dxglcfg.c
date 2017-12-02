@@ -1891,13 +1891,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
 	// Message for when transitioning to the new config UI
-	/*MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer supported.  Some options may no longer work correctly."),
-		_T("Notice"), MB_OK | MB_ICONWARNING);*/
+	MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer developed or supported.  \
+Some options may no longer work correctly."),
+		_T("Notice"), MB_OK | MB_ICONWARNING);
 	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex"));
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Find DXGL Config window
-		hWnd = FindWindow(NULL, _T("DXGL Config"));
+		hWnd = FindWindow(NULL, _T("DXGL Config (DEPRECATED)"));
 		// Focus DXGL Config window
 		if (hWnd) SetForegroundWindow(hWnd);
 		return 0;

@@ -724,7 +724,7 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 	else mask[0] = 0xff;
 }
 
-void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, RECT *r)
+void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate, RECT *r)
 {
 	if (grayed)
 	{
@@ -741,6 +741,21 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, RECT *r)
 				if (selected)
 					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE | DFCS_HOT);
 				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE);
+			}
+		}
+		else if (tristate)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_INACTIVE);
 			}
 		}
 		else
@@ -774,6 +789,21 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, RECT *r)
 				if (selected)
 					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
 				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
+			}
+		}
+		else if (tristate)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED);
 			}
 		}
 		else
@@ -858,14 +888,14 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if (drawitem->itemID == 5)
 				{
 					if(!cfgmask->AddColorDepths)
-						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, &r);
-					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, &r);
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, FALSE, &r);
 				}
 				else
 				{
 					if ((cfg->AddColorDepths >> drawitem->itemID) & 1)
-						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddColorDepths, &r);
-					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddColorDepths, &r);
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddColorDepths, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddColorDepths, FALSE, &r);
 				}
 				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
 			}
@@ -904,14 +934,14 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if (drawitem->itemID == 7)
 				{
 					if (!cfgmask->AddModes)
-						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, &r);
-					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, &r);
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, FALSE, &r);
 				}
 				else
 				{
 					if ((cfg->AddModes >> drawitem->itemID) & 1)
-						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddModes, &r);
-					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddModes, &r);
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddModes, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddModes, FALSE, &r);
 				}
 				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
 			}
@@ -1093,6 +1123,8 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
+		default:
+			break;
 		}
 	}
 	default:
@@ -1147,6 +1179,8 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				*dirty = TRUE;
 			}
 			break;
+		default:
+			break;
 		}
 	default:
 		return FALSE;
@@ -1184,6 +1218,8 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
+		default:
+			break;
 		}
 	default:
 		return FALSE;
@@ -1198,19 +1234,223 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_TEXTUREFORMAT:
+			cfg->TextureFormat = GetCombo(hWnd, IDC_TEXTUREFORMAT, &cfgmask->TextureFormat);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_TEXUPLOAD:
+			cfg->TexUpload = GetCombo(hWnd, IDC_TEXUPLOAD, &cfgmask->TexUpload);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
+			break;
+		}
 	default:
 		return FALSE;
 	}
 	return TRUE;
 }
 
+void ReadDebugItem(int item, BOOL *value, BOOL *mask)
+{
+	switch (item)
+	{
+	case 0:
+		*value = cfg->DebugNoExtFramebuffer;
+		*mask = cfgmask->DebugNoExtFramebuffer;
+		break;
+	case 1:
+		*value = cfg->DebugNoArbFramebuffer;
+		*mask = cfgmask->DebugNoArbFramebuffer;
+		break;
+	case 2:
+		*value = cfg->DebugNoES2Compatibility;
+		*mask = cfgmask->DebugNoES2Compatibility;
+		break;
+	case 3:
+		*value = cfg->DebugNoExtDirectStateAccess;
+		*mask = cfgmask->DebugNoExtDirectStateAccess;
+		break;
+	case 4:
+		*value = cfg->DebugNoArbDirectStateAccess;
+		*mask = cfgmask->DebugNoArbDirectStateAccess;
+		break;
+	case 5:
+		*value = cfg->DebugNoSamplerObjects;
+		*mask = cfgmask->DebugNoSamplerObjects;
+		break;
+	case 6:
+		*value = cfg->DebugNoGpuShader4;
+		*mask = cfgmask->DebugNoGpuShader4;
+		break;
+	case 7:
+		*value = cfg->DebugNoGLSL130;
+		*mask = cfgmask->DebugNoGLSL130;
+		break;
+	/*case 8:
+		*value = cfg->DebugDisableErrors;
+		*mask = cfgmask->DebugDisableErrors;
+		break;*/
+	default:
+		*value = FALSE;
+		*mask = FALSE;
+		break;
+	}
+}
+
+void WriteDebugItem(int item, BOOL value, BOOL mask)
+{
+	switch (item)
+	{
+	case 0:
+		cfg->DebugNoExtFramebuffer = value;
+		cfgmask->DebugNoExtFramebuffer = mask;
+		break;
+	case 1:
+		cfg->DebugNoArbFramebuffer = value;
+		cfgmask->DebugNoArbFramebuffer = mask;
+		break;
+	case 2:
+		cfg->DebugNoES2Compatibility = value;
+		cfgmask->DebugNoES2Compatibility = mask;
+		break;
+	case 3:
+		cfg->DebugNoExtDirectStateAccess = value;
+		cfgmask->DebugNoExtDirectStateAccess = mask;
+		break;
+	case 4:
+		cfg->DebugNoArbDirectStateAccess = value;
+		cfgmask->DebugNoArbDirectStateAccess = mask;
+		break;
+	case 5:
+		cfg->DebugNoSamplerObjects = value;
+		cfgmask->DebugNoSamplerObjects = mask;
+		break;
+	case 6:
+		cfg->DebugNoGpuShader4 = value;
+		cfgmask->DebugNoGpuShader4 = mask;
+		break;
+	case 7:
+		cfg->DebugNoGLSL130 = value;
+		cfgmask->DebugNoGLSL130 = mask;
+		break;
+		/*case 8:
+		cfg->DebugDisableErrors = value;
+		cfgmask->DebugDisableErrors = mask;
+		break;*/
+	default:
+		break;
+	}
+}
+
 LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	TCHAR str[64];
+	RECT r;
+	DRAWITEMSTRUCT* drawitem;
+	COLORREF OldTextColor, OldBackColor;
+	BOOL debugvalue, debugmask;
+	DWORD item;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_MEASUREITEM:
+		switch (wParam)
+		{
+		case IDC_DEBUGLIST:
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			break;
+		default:
+			break;
+		}
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_DEBUGLIST:
+			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
+			{
+				item = SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETCURSEL, 0, 0);
+				ReadDebugItem(item, &debugvalue, &debugmask);
+				if (tristate)
+				{
+					if (debugvalue && debugmask)
+					{
+						debugvalue = FALSE;
+						debugmask = FALSE;
+					}
+					else if (!debugmask)
+					{
+						debugvalue = FALSE;
+						debugmask = TRUE;
+					}
+					else
+					{
+						debugvalue = TRUE;
+						debugmask = TRUE;
+					}
+				}
+				else
+				{
+					if (debugvalue)
+						debugvalue = FALSE;
+					else debugvalue = TRUE;
+				}
+				WriteDebugItem(item, debugvalue, debugmask);
+				RedrawWindow(GetDlgItem(hWnd, IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		default:
+			break;
+		}
+	case WM_DRAWITEM:
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
+		{
+		case IDC_DEBUGLIST:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if((drawitem->itemState & ODS_SELECTED))
+			{
+				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
+			}
+			else
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+			}
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			r.left = r.left + 2;
+			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+			ReadDebugItem(drawitem->itemID, &debugvalue, &debugmask);
+			DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, debugvalue, FALSE, !debugmask, &r);
+			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
+			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			SetTextColor(drawitem->hDC,OldTextColor);
+			SetBkColor(drawitem->hDC,OldBackColor);
+			DefWindowProc(hWnd,Msg,wParam,lParam);
+			break;
+		default:
+			break;
+		}
+		break;
 	default:
 		return FALSE;
 	}
@@ -1381,6 +1621,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
 		tab.pszText = _T("Debug");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
+/*		tab.pszText = _T("Hacks");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
+		tab.pszText = _T("Graphics Tests");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 6, (LPARAM)&tab);
+		tab.pszText = _T("About");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);*/
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
 		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
@@ -1412,7 +1658,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
 		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 6, (LPARAM)buffer);
-		_tcscpy(buffer,_T("Crop to screen (experimental)"));
+		_tcscpy(buffer,_T("Crop to screen"));
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// fullscreen window mode
@@ -1664,8 +1910,29 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Windows AppCompat"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
+		// Paths
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+		// Debug
+		_tcscpy(buffer, _T("Disable EXT framebuffers"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable ARB framebuffers"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable GLES2 compatibility extension"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable EXT direct state access"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable ARB direct state access"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable sampler objects"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable EXT_gpu_shader4 extension"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable GLSL 1.30 support"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/
+
 		// Check install path
 		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
@@ -1963,10 +2230,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					/*
-					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
-					*/
+					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 				}
 				else if(!current_app && tristate)
 				{
@@ -2006,12 +2271,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					/*
-					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-				*/
+					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 				}
 				// Read settings into controls
 				// Display tab
@@ -2035,23 +2298,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
 				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
 				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
-				/*
-				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
-				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
-				*/
+				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
+				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
+				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
 			}
-			break;/*
-		case IDC_TEXTUREFORMAT:
-			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,&cfgmask->TextureFormat);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
 			break;
-		case IDC_TEXUPLOAD:
-			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,&cfgmask->TexUpload);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-*/
 		case IDC_ADD:
 			selectedfile[0] = 0;
 			ZeroMemory(&filename, OPENFILENAME_SIZE_VERSION_400);
@@ -2497,7 +2748,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Find DXGL Config window
-		hWnd = FindWindow(NULL, _T("DXGL Config (Experimental)"));
+		hWnd = FindWindow(NULL, _T("DXGL Config"));
 		// Focus DXGL Config window
 		if (hWnd) SetForegroundWindow(hWnd);
 		return 0;

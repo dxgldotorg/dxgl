@@ -95,4 +95,5 @@
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401
+#define IDC_GLVERSION                           2402
 
