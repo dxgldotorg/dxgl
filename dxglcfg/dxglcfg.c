@@ -30,6 +30,8 @@
 #include <float.h>
 #include <math.h>
 #include <io.h>
+#include <Uxtheme.h>
+#include <Vsstyle.h>
 #include "resource.h"
 #include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
@@ -57,6 +59,17 @@ BOOL msaa = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
+HMODULE uxtheme = NULL;
+HTHEME hThemeDisplay = NULL;
+HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
+HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
+HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
+	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
+HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
+static BOOL ExtraModes_Dropdown = FALSE;
+static BOOL ColorDepth_Dropdown = FALSE;
+static HWND hDialog = NULL;
+
 
 typedef struct
 {
@@ -79,6 +92,62 @@ int maxapps;
 DWORD current_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
+HWND hTab;
+HWND hTabs[6];
+int tabopen;
+
+static const TCHAR *colormodes[32] = {
+	_T("None"),
+	_T("8-bit"),
+	_T("15-bit"),
+	_T("8/15-bit"),
+	_T("16-bit"),
+	_T("8/16-bit"),
+	_T("15/16-bit"),
+	_T("8/15/16-bit"),
+	_T("24-bit"),
+	_T("8/24-bit"),
+	_T("15/24-bit"),
+	_T("8/15/24-bit"),
+	_T("16/24-bit"),
+	_T("8/16/24-bit"),
+	_T("15/16/24-bit"),
+	_T("8/15/16/24-bit"),
+	_T("32-bit"),
+	_T("8/32-bit"),
+	_T("15/32-bit"),
+	_T("8/15/32-bit"),
+	_T("16/32-bit"),
+	_T("8/16/32-bit"),
+	_T("15/16/32-bit"),
+	_T("8/15/16/32-bit"),
+	_T("24/32-bit"),
+	_T("8/24/32-bit"),
+	_T("15/24/32-bit"),
+	_T("8/15/24/32-bit"),
+	_T("16/24/32-bit"),
+	_T("8/16/24/32-bit"),
+	_T("15/16/24/32-bit"),
+	_T("8/15/16/24/32-bit")
+};
+
+static const TCHAR *colormodedropdown[5] = {
+	_T("8-bit"),
+	_T("15-bit"),
+	_T("16-bit"),
+	_T("24-bit"),
+	_T("32-bit")
+};
+
+static const TCHAR *extramodes[7] = {
+	_T("Common low resolutions"),
+	_T("Uncommon low resolutions"),
+	_T("Uncommon SD resolutions"),
+	_T("High Definition resolutions"),
+	_T("Ultra-HD resolutions"),
+	_T("Ultra-HD above 4k"),
+	_T("Very uncommon resolutions")
+};
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 {
@@ -136,7 +205,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 				if (inioptions.NoOverwrite)
 				{
 					MessageBox(hwnd, _T("Cannot install DXGL.  An INI file has \
-been found in your game folder prohibiting overwriting the existing DirectDraw \
+been placed in your game folder prohibiting overwriting the existing DirectDraw \
 library.\r\n\r\nIf you want to install DXGL, edit the dxgl.ini file in your game \
 folder and set the NoOverwite value to false.\r\n\r\n\
 A profile will still be created for your game but may not be compatible with the \
@@ -471,6 +540,30 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
 }
 
+__inline DWORD EncodePrimaryScale(DWORD scale)
+{
+	switch (scale)
+	{
+	case 0:
+		return 2;
+	case 1:
+		return 0;
+	case 2:
+		return 1;
+	default:
+		return scale;
+	}
+}
+
+void SetPrimaryScaleCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
+{
+	if (tristate && !mask)
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+		SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL, EncodePrimaryScale(value), 0);
+}
+
 void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, BOOL tristate)
 {
 	TCHAR buffer[32];
@@ -523,24 +616,6 @@ BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 	default:
 		*mask = FALSE;
 		return FALSE;
-	}
-}
-
-DWORD GetCheckWithSpecificValue(HWND hWnd, int DlgItem, DWORD *mask, DWORD true_value, DWORD false_value)
-{
-	int check = SendDlgItemMessage(hWnd, DlgItem, BM_GETCHECK, 0, 0);
-	switch (check)
-	{
-	case BST_CHECKED:
-		*mask = 1;
-		return true_value;
-	case BST_UNCHECKED:
-		*mask = 1;
-		return false_value;
-	case BST_INDETERMINATE:
-	default:
-		*mask = 0;
-		return false_value;
 	}
 }
 
@@ -633,11 +708,11 @@ float GetAspectCombo(HWND hWnd, int DlgItem, float *mask)
 			if (ptr)
 			{
 				*ptr = 0;
-				numerator = _ttof(buffer);
-				denominator = _ttof(ptr + 1);
+				numerator = (float)_ttof(buffer);
+				denominator = (float)_ttof(ptr + 1);
 				return numerator / denominator;
 			}
-			else return _ttof(buffer);
+			else return (float)_ttof(buffer);
 		}
 	}
 }
@@ -647,6 +722,752 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 	GetDlgItemText(hWnd,DlgItem,str,MAX_PATH+1);
 	if(str[0] == 0) mask[0] = 0;
 	else mask[0] = 0xff;
+}
+
+void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate, RECT *r)
+{
+	if (grayed)
+	{
+		if (checked)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_INACTIVE);
+			}
+		}
+		else if (tristate)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_INACTIVE);
+			}
+		}
+		else
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDDISABLED, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_INACTIVE | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_INACTIVE);
+			}
+		}
+	}
+	else
+	{
+		if (checked)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_CHECKED);
+			}
+		}
+		else if (tristate)
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTON3STATE | DFCS_CHECKED);
+			}
+		}
+		else
+		{
+			if (hThemeDisplay)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, r, NULL);
+			}
+			else
+			{
+				if (selected)
+					DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_HOT);
+				else DrawFrameControl(hdc, r, DFC_BUTTON, DFCS_BUTTONCHECK);
+			}
+		}
+	}
+}
+
+LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	DRAWITEMSTRUCT* drawitem;
+	COLORREF OldTextColor, OldBackColor;
+	RECT r;
+	TCHAR combotext[64];
+	DWORD cursel;
+	HDC hdc;
+	HFONT font1, font2;
+	SIZE size;
+	int i;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (uxtheme) hThemeDisplay = _OpenThemeData(hWnd, L"Button");
+		else hThemeDisplay = NULL;
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_MEASUREITEM:
+		switch (wParam)
+		{
+		case IDC_COLORDEPTH:
+		case IDC_EXTRAMODES:
+			if (((LPMEASUREITEMSTRUCT)lParam)->itemID == -1)
+			{
+				hdc = GetDC(hWnd);
+				font1 = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+				font2 = SelectObject(hdc, font1);
+				GetTextExtentPoint(hdc, _T(" "), 1, &size);
+				SelectObject(hdc, font2);
+				ReleaseDC(hWnd, hdc);
+				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = size.cy + 2;
+			}
+			else
+			{
+				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+				((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			}
+			break;
+		default:
+			break;
+		}
+	case WM_DRAWITEM:
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
+		{
+		case IDC_COLORDEPTH:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if ((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+			}
+			else ExtTextOut(drawitem->hDC, 0, 0, ETO_OPAQUE, &drawitem->rcItem, NULL, 0, NULL);
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				r.left = r.left + 2;
+				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				if (drawitem->itemID == 5)
+				{
+					if(!cfgmask->AddColorDepths)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, FALSE, &r);
+				}
+				else
+				{
+					if ((cfg->AddColorDepths >> drawitem->itemID) & 1)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddColorDepths, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddColorDepths, FALSE, &r);
+				}
+				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			}
+			combotext[0] = 0;
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETLBTEXT, drawitem->itemID, combotext);
+			else
+			{
+				if(!cfgmask->AddColorDepths) _tcscpy(combotext, strdefault);
+				else _tcscpy(combotext, colormodes[cfg->AddColorDepths & 31]);
+			}
+			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			SetTextColor(drawitem->hDC, OldTextColor);
+			SetBkColor(drawitem->hDC, OldBackColor);
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			DefWindowProc(hWnd, Msg, wParam, lParam);
+			break;
+		case IDC_EXTRAMODES:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if ((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+			}
+			else ExtTextOut(drawitem->hDC, 0, 0, ETO_OPAQUE, &drawitem->rcItem, NULL, 0, NULL);
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			{
+				r.left = r.left + 2;
+				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				if (drawitem->itemID == 7)
+				{
+					if (!cfgmask->AddModes)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, FALSE, FALSE, &r);
+				}
+				else
+				{
+					if ((cfg->AddModes >> drawitem->itemID) & 1)
+						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddModes, FALSE, &r);
+					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddModes, FALSE, &r);
+				}
+				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			}
+			combotext[0] = 0;
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
+			else
+			{
+				if (!cfgmask->AddModes) _tcscpy(combotext, strdefault);
+				else
+				{
+					switch (cfg->AddModes)
+					{
+					case 0:
+						_tcscpy(combotext, _T("None"));
+						break;
+					case 1:
+						_tcscpy(combotext, extramodes[0]);
+						break;
+					case 2:
+						_tcscpy(combotext, extramodes[1]);
+						break;
+					case 4:
+						_tcscpy(combotext, extramodes[2]);
+						break;
+					case 8:
+						_tcscpy(combotext, extramodes[3]);
+						break;
+					case 16:
+						_tcscpy(combotext, extramodes[4]);
+						break;
+					case 32:
+						_tcscpy(combotext, extramodes[5]);
+						break;
+					case 64:
+						_tcscpy(combotext, extramodes[6]);
+						break;
+					default:
+						_tcscpy(combotext, _T("Multiple selections"));
+					}
+				}
+			}
+			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			SetTextColor(drawitem->hDC, OldTextColor);
+			SetBkColor(drawitem->hDC, OldBackColor);
+			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			DefWindowProc(hWnd, Msg, wParam, lParam);
+			break;
+		default:
+			break;
+		}
+	case WM_THEMECHANGED:
+		if (uxtheme)
+		{
+			if (hThemeDisplay) _CloseThemeData(hThemeDisplay);
+			_OpenThemeData(hWnd, L"Button");
+		}
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case IDC_COLORDEPTH:
+			if (HIWORD(wParam) == CBN_SELENDOK)
+			{
+				if (ColorDepth_Dropdown)
+				{
+					cursel = SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETCURSEL, 0, 0);
+					if (cursel == 5)
+					{
+						if (cfgmask->AddColorDepths) cfgmask->AddColorDepths = 0;
+						else cfgmask->AddColorDepths = 1;
+					}
+					else
+					{
+						if (!cfgmask->AddColorDepths) cfgmask->AddColorDepths = 1;
+						i = ((cfg->AddColorDepths >> cursel) & 1);
+						if (i) cfg->AddColorDepths &= ~(1 << cursel);
+						else cfg->AddColorDepths |= 1 << cursel;
+					}
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == CBN_DROPDOWN)
+			{
+				ColorDepth_Dropdown = TRUE;
+			}
+			if (HIWORD(wParam) == CBN_CLOSEUP)
+			{
+				ColorDepth_Dropdown = FALSE;
+			}
+			break;
+		case IDC_EXTRAMODES:
+			if (HIWORD(wParam) == CBN_SELENDOK)
+			{
+				if (ExtraModes_Dropdown)
+				{
+					cursel = SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
+					if (cursel == 7)
+					{
+						if (cfgmask->AddModes) cfgmask->AddModes = 0;
+						else cfgmask->AddModes = 1;
+					}
+					else
+					{
+						if (!cfgmask->AddModes) cfgmask->AddModes = 1;
+						i = ((cfg->AddModes >> cursel) & 1);
+						if (i) cfg->AddModes &= ~(1 << cursel);
+						else cfg->AddModes |= 1 << cursel;
+					}
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == CBN_DROPDOWN)
+			{
+				ExtraModes_Dropdown = TRUE;
+			}
+			if (HIWORD(wParam) == CBN_CLOSEUP)
+			{
+				ExtraModes_Dropdown = FALSE;
+			}
+			break;
+		case IDC_VIDMODE:
+			cfg->scaler = GetCombo(hWnd, IDC_VIDMODE, &cfgmask->scaler);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_SCALE:
+			cfg->scalingfilter = GetCombo(hWnd, IDC_SCALE, &cfgmask->scalingfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ASPECT:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		case IDC_SORTMODES:
+			cfg->SortModes = GetCombo(hWnd, IDC_SORTMODES, &cfgmask->SortModes);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_DPISCALE:
+			cfg->DPIScale = GetCombo(hWnd, IDC_DPISCALE, &cfgmask->DPIScale);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_VSYNC:
+			cfg->vsync = GetCombo(hWnd, IDC_VSYNC, &cfgmask->vsync);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_FULLMODE:
+			cfg->fullmode = GetCombo(hWnd, IDC_FULLMODE, &cfgmask->fullmode);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_COLOR:
+			cfg->colormode = GetCheck(hWnd, IDC_COLOR, &cfgmask->colormode);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_SINGLEBUFFER:
+			cfg->SingleBufferDevice = GetCheck(hWnd, IDC_SINGLEBUFFER, &cfgmask->SingleBufferDevice);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
+			break;
+		}
+	}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_POSTSCALE:
+			cfg->postfilter = GetCombo(hWnd, IDC_POSTSCALE, &cfgmask->postfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_POSTSCALESIZE:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
+				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex, cfgmask->postsizey, tristate);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
+					&cfgmask->postsizex, &cfgmask->postsizey);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		case IDC_PRIMARYSCALE:
+			cfg->primaryscale = GetCombo(hWnd, IDC_PRIMARYSCALE, &cfgmask->primaryscale);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_SHADER:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				GetText(hWnd, IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		default:
+			break;
+		}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_TEXFILTER:
+			cfg->texfilter = GetCombo(hWnd, IDC_TEXFILTER, &cfgmask->texfilter);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ANISO:
+			cfg->anisotropic = GetCombo(hWnd, IDC_ANISO, &cfgmask->anisotropic);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_MSAA:
+			cfg->msaa = GetCombo(hWnd, IDC_MSAA, &cfgmask->msaa);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_ASPECT3D:
+			cfg->aspect3d = GetCombo(hWnd, IDC_ASPECT3D, &cfgmask->aspect3d);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
+			break;
+		}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_TEXTUREFORMAT:
+			cfg->TextureFormat = GetCombo(hWnd, IDC_TEXTUREFORMAT, &cfgmask->TextureFormat);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_TEXUPLOAD:
+			cfg->TexUpload = GetCombo(hWnd, IDC_TEXUPLOAD, &cfgmask->TexUpload);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
+			break;
+		}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void ReadDebugItem(int item, BOOL *value, BOOL *mask)
+{
+	switch (item)
+	{
+	case 0:
+		*value = cfg->DebugNoExtFramebuffer;
+		*mask = cfgmask->DebugNoExtFramebuffer;
+		break;
+	case 1:
+		*value = cfg->DebugNoArbFramebuffer;
+		*mask = cfgmask->DebugNoArbFramebuffer;
+		break;
+	case 2:
+		*value = cfg->DebugNoES2Compatibility;
+		*mask = cfgmask->DebugNoES2Compatibility;
+		break;
+	case 3:
+		*value = cfg->DebugNoExtDirectStateAccess;
+		*mask = cfgmask->DebugNoExtDirectStateAccess;
+		break;
+	case 4:
+		*value = cfg->DebugNoArbDirectStateAccess;
+		*mask = cfgmask->DebugNoArbDirectStateAccess;
+		break;
+	case 5:
+		*value = cfg->DebugNoSamplerObjects;
+		*mask = cfgmask->DebugNoSamplerObjects;
+		break;
+	case 6:
+		*value = cfg->DebugNoGpuShader4;
+		*mask = cfgmask->DebugNoGpuShader4;
+		break;
+	case 7:
+		*value = cfg->DebugNoGLSL130;
+		*mask = cfgmask->DebugNoGLSL130;
+		break;
+	/*case 8:
+		*value = cfg->DebugDisableErrors;
+		*mask = cfgmask->DebugDisableErrors;
+		break;*/
+	default:
+		*value = FALSE;
+		*mask = FALSE;
+		break;
+	}
+}
+
+void WriteDebugItem(int item, BOOL value, BOOL mask)
+{
+	switch (item)
+	{
+	case 0:
+		cfg->DebugNoExtFramebuffer = value;
+		cfgmask->DebugNoExtFramebuffer = mask;
+		break;
+	case 1:
+		cfg->DebugNoArbFramebuffer = value;
+		cfgmask->DebugNoArbFramebuffer = mask;
+		break;
+	case 2:
+		cfg->DebugNoES2Compatibility = value;
+		cfgmask->DebugNoES2Compatibility = mask;
+		break;
+	case 3:
+		cfg->DebugNoExtDirectStateAccess = value;
+		cfgmask->DebugNoExtDirectStateAccess = mask;
+		break;
+	case 4:
+		cfg->DebugNoArbDirectStateAccess = value;
+		cfgmask->DebugNoArbDirectStateAccess = mask;
+		break;
+	case 5:
+		cfg->DebugNoSamplerObjects = value;
+		cfgmask->DebugNoSamplerObjects = mask;
+		break;
+	case 6:
+		cfg->DebugNoGpuShader4 = value;
+		cfgmask->DebugNoGpuShader4 = mask;
+		break;
+	case 7:
+		cfg->DebugNoGLSL130 = value;
+		cfgmask->DebugNoGLSL130 = mask;
+		break;
+		/*case 8:
+		cfg->DebugDisableErrors = value;
+		cfgmask->DebugDisableErrors = mask;
+		break;*/
+	default:
+		break;
+	}
+}
+
+LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	TCHAR str[64];
+	RECT r;
+	DRAWITEMSTRUCT* drawitem;
+	COLORREF OldTextColor, OldBackColor;
+	BOOL debugvalue, debugmask;
+	DWORD item;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_MEASUREITEM:
+		switch (wParam)
+		{
+		case IDC_DEBUGLIST:
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			break;
+		default:
+			break;
+		}
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_DEBUGLIST:
+			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
+			{
+				item = SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETCURSEL, 0, 0);
+				ReadDebugItem(item, &debugvalue, &debugmask);
+				if (tristate)
+				{
+					if (debugvalue && debugmask)
+					{
+						debugvalue = FALSE;
+						debugmask = FALSE;
+					}
+					else if (!debugmask)
+					{
+						debugvalue = FALSE;
+						debugmask = TRUE;
+					}
+					else
+					{
+						debugvalue = TRUE;
+						debugmask = TRUE;
+					}
+				}
+				else
+				{
+					if (debugvalue)
+						debugvalue = FALSE;
+					else debugvalue = TRUE;
+				}
+				WriteDebugItem(item, debugvalue, debugmask);
+				RedrawWindow(GetDlgItem(hWnd, IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
+		default:
+			break;
+		}
+	case WM_DRAWITEM:
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
+		{
+		case IDC_DEBUGLIST:
+			OldTextColor = GetTextColor(drawitem->hDC);
+			OldBackColor = GetBkColor(drawitem->hDC);
+			if((drawitem->itemState & ODS_SELECTED))
+			{
+				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
+				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
+				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
+			}
+			else
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+			}
+			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
+			r.left = r.left + 2;
+			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+			ReadDebugItem(drawitem->itemID, &debugvalue, &debugmask);
+			DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, debugvalue, FALSE, !debugmask, &r);
+			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
+			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
+				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
+			SetTextColor(drawitem->hDC,OldTextColor);
+			SetBkColor(drawitem->hDC,OldBackColor);
+			DefWindowProc(hWnd,Msg,wParam,lParam);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
 }
 
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -698,7 +1519,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	TCHAR verpath[64];
 	WORD translation[2];
 	DWORD cursel;
-	DRAWITEMSTRUCT* drawitem = (DRAWITEMSTRUCT*)lParam;
+	DRAWITEMSTRUCT* drawitem;
 	BOOL hasname;
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
@@ -712,9 +1533,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	BOOL failed;
 	LPTSTR installpath;
 	DWORD err;
+	RECT r;
+	NMHDR *nm;
+	int newtab;
+	TCITEM tab;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		hDialog = hWnd;
 		tristate = FALSE;
 		maxapps = 128;
 		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));
@@ -722,7 +1548,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(apps[0].name,_T("Global"));
 		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
 		_tcscpy(apps[0].regkey,_T("Global"));
-		UpgradeConfig();
 		GetGlobalConfig(&apps[0].cfg, FALSE);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
@@ -766,149 +1591,228 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		wglDeleteContext(rc);
 		ReleaseDC(hGLWnd,dc);
 		DestroyWindow(hGLWnd);
+		uxtheme = LoadLibrary(_T("uxtheme.dll"));
+		if (uxtheme)
+		{
+
+			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
+			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
+			_DrawThemeBackground = 
+				(HRESULT(WINAPI*)(HTHEME, HDC, int, int, const RECT*, const RECT*))
+				GetProcAddress(uxtheme, "DrawThemeBackground");
+			_EnableThemeDialogTexture = (HRESULT(WINAPI*)(HWND, DWORD))
+				GetProcAddress(uxtheme, "EnableThemeDialogTexture");
+			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground && _EnableThemeDialogTexture))
+			{
+				FreeLibrary(uxtheme);
+				uxtheme = NULL;
+			}
+		}
+		// Add tabs
+		ZeroMemory(&tab, sizeof(TCITEM));
+		tab.mask = TCIF_TEXT;
+		tab.pszText = _T("Display");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 0, (LPARAM)&tab);
+		tab.pszText = _T("Effects");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 1, (LPARAM)&tab);
+		tab.pszText = _T("3D Graphics");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 2, (LPARAM)&tab);
+		tab.pszText = _T("Advanced");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 3, (LPARAM)&tab);
+		tab.pszText = _T("Debug");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
+/*		tab.pszText = _T("Hacks");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
+		tab.pszText = _T("Graphics Tests");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 6, (LPARAM)&tab);
+		tab.pszText = _T("About");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);*/
+		hTab = GetDlgItem(hWnd, IDC_TABS);
+		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
+		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
+		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
+		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
+		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+		ShowWindow(hTabs[1], SW_HIDE);
+		ShowWindow(hTabs[2], SW_HIDE);
+		ShowWindow(hTabs[3], SW_HIDE);
+		ShowWindow(hTabs[4], SW_HIDE);
+		ShowWindow(hTabs[5], SW_HIDE);
+		tabopen = 0;
+
 		// Load global settings.
 		// video mode
 		_tcscpy(buffer,_T("Change desktop resolution"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch to screen"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer,_T("Aspect corrected stretch"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Center image on screen"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,3,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Stretch if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,4,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Scale if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,5,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Center if mode not found"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,6,(LPARAM)buffer);
-		_tcscpy(buffer,_T("Crop to screen (experimental)"));
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 6, (LPARAM)buffer);
+		_tcscpy(buffer,_T("Crop to screen"));
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Non-exclusive fullscreen"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Non-resizable window"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Resizable window"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Borderless window"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Borderless window (scaled)"));
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
 		// colormode
-		if(cfg->colormode) SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETCHECK,BST_UNCHECKED,0);
+		if (cfg->colormode) SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
+		// single buffer
+		if(cfg->SingleBufferDevice) SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETCHECK, BST_UNCHECKED, 0);
 		// first scaling filter
 		_tcscpy(buffer, _T("Nearest"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
-		SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
 		// first scaling sizes
 		_tcscpy(buffer, _T("Auto"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("1x"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x1"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("2x"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("3x"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("4x"));
-		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
-		SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 			cfgmask->postsizex, cfgmask->postsizey, tristate);
-		// final scaling filter
+		// primary scaling
+		_tcscpy(buffer, _T("1x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Scale to screen"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Maximum integer scaling"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("1.5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2.5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("5x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("6x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("7x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("8x scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom scale"));
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_SETCURSEL, cfg->primaryscale, 0);
+		// scaling filter
 		_tcscpy(buffer,_T("Nearest"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
+		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("4:3"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("16:10"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("16:9"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);		
-		// highres
-		if(cfg->primaryscale) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, nearest mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,3,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Nearest, linear mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,4,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, nearest mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,5,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 5, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Bilinear, linear mipmap"));
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
+		SendDlgItemMessage(hTabs[2],IDC_TEXFILTER,CB_ADDSTRING,6,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2],IDC_TEXFILTER,CB_SETCURSEL,cfg->texfilter,0);
 		// anisotropic
 		if (anisotropic < 2)
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,0,0);
-			EnableWindow(GetDlgItem(hWnd,IDC_ANISO),FALSE);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[2], IDC_ANISO), FALSE);
 			cfg->anisotropic = 0;
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,1,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(anisotropic >= 2)
 			{
 				_tcscpy(buffer,_T("2x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,2,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 2, (LPARAM)buffer);
 			}
 			if(anisotropic >= 4)
 			{
 				_tcscpy(buffer,_T("4x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
 			if(anisotropic >= 8)
 			{
 				_tcscpy(buffer,_T("8x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,8,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 8, (LPARAM)buffer);
 			}
 			if(anisotropic >= 16)
 			{
 				_tcscpy(buffer,_T("16x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,16,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 16, (LPARAM)buffer);
 			}
 			if(anisotropic >= 32)
 			{
 				_tcscpy(buffer,_T("32x"));
-				SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,4,(LPARAM)buffer);
+				SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 4, (LPARAM)buffer);
 			}
-			SendDlgItemMessage(hWnd,IDC_ANISO,CB_SETCURSEL,cfg->anisotropic,0);
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
 		}
 		// msaa
 		if(msaa)
 		{
 			_tcscpy(buffer,_T("Application default"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
 			_tcscpy(buffer,_T("Disabled"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,1,(LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 1, (LPARAM)buffer);
 			if(maxcoverage)
 			{
 				for(i = 0; i < maxcoverage; i++)
@@ -916,7 +1820,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					if((msaamodes[i] & 0xfff) <= 4)
 						_sntprintf(buffer,64,_T("%dx"),msaamodes[i] & 0xfff);
 					else _sntprintf(buffer,64,_T("%dx coverage, %dx color"),(msaamodes[i] & 0xfff), (msaamodes[i] >> 12));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,msaamodes[i],(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, msaamodes[i], (LPARAM)buffer);
 				}
 			}
 			else
@@ -924,79 +1828,111 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(maxsamples >= 2)
 				{
 					_tcscpy(buffer,_T("2x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,2,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 2, (LPARAM)buffer);
 				}
 				if(maxsamples >= 4)
 				{
 					_tcscpy(buffer,_T("4x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,4,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 4, (LPARAM)buffer);
 				}
 				if(maxsamples >= 8)
 				{
 					_tcscpy(buffer,_T("8x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,8,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 8, (LPARAM)buffer);
 				}
 				if(maxsamples >= 16)
 				{
 					_tcscpy(buffer,_T("16x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,16,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 16, (LPARAM)buffer);
 				}
 				if(maxsamples >= 32)
 				{
 					_tcscpy(buffer,_T("32x"));
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,32,(LPARAM)buffer);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 32, (LPARAM)buffer);
 				}
 			}
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,cfg->msaa,0);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_SETCURSEL, cfg->msaa, 0);
 		}
 		else
 		{
 			_tcscpy(buffer,_T("Not supported"));
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)buffer);
-			SendDlgItemMessage(hWnd,IDC_MSAA,CB_SETCURSEL,0,0);
-			EnableWindow(GetDlgItem(hWnd,IDC_MSAA),FALSE);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[2], IDC_MSAA), FALSE);
 			cfg->msaa = 0;
 		}
 		// aspect3d
 		_tcscpy(buffer,_T("Stretch to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Expand viewable area"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to display"));
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
+		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by color depth"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 1, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Group by resolution"));
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
+		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_SORTMODES,CB_SETCURSEL,cfg->SortModes,0);
 		// color depths
-		if(cfg->AddColorDepths) SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETCHECK,BST_UNCHECKED,0);
-		// extra modes
-		if(cfg->AddModes) SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_CHECKED,0);
-		else SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETCHECK,BST_UNCHECKED,0);
+		for (i = 0; i < 5; i++)
+		{
+			_tcscpy(buffer, colormodedropdown[i]);
+			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
+		}
+		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
+		for (i = 0; i < 7; i++)
+		{
+			_tcscpy(buffer, extramodes[i]);
+			SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, i, (LPARAM)buffer);
+		}
+		// Enable shader
+		if (cfg->colormode) SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[1], IDC_USESHADER, BM_SETCHECK, BST_UNCHECKED, 0);
+		// shader path
+		SetText(hTabs[1],IDC_SHADER,cfg->shaderfile,cfgmask->shaderfile,FALSE);
 		// texture format
 		_tcscpy(buffer,_T("Automatic"));
-		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_SETCURSEL,cfg->TextureFormat,0);
+		SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_SETCURSEL,cfg->TextureFormat,0);
 		// Texture upload
 		_tcscpy(buffer,_T("Automatic"));
-		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
+		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
 		// DPI
 		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Enabled"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Windows AppCompat"));
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
-		SendDlgItemMessage(hWnd,IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
-		EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
-		EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
+		// Paths
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+		// Debug
+		_tcscpy(buffer, _T("Disable EXT framebuffers"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable ARB framebuffers"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable GLES2 compatibility extension"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable EXT direct state access"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable ARB direct state access"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable sampler objects"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable EXT_gpu_shader4 extension"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable GLSL 1.30 support"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/
+
 		// Check install path
 		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
@@ -1135,10 +2071,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		free(keyname);
 		for(i = 0; i < appcount; i++)
 		{
-			SendDlgItemMessage(hWnd,IDC_APPS,LB_ADDSTRING,0,(LPARAM)apps[i].name);
+			SendDlgItemMessage(hWnd,IDC_APPS,CB_ADDSTRING,0,(LPARAM)apps[i].name);
 		}
 		current_app = 0;
-		SendDlgItemMessage(hWnd,IDC_APPS,LB_SETCURSEL,0,0);
+		SendDlgItemMessage(hWnd,IDC_APPS,CB_SETCURSEL,0,0);
+		GetWindowRect(GetDlgItem(hWnd, IDC_APPS), &r);
+		SetWindowPos(GetDlgItem(hWnd, IDC_APPS), HWND_TOP, r.left, r.top, r.right - r.left,
+			(r.bottom - r.top) + (16 * (GetSystemMetrics(SM_CYSMICON) + 1)+(2*GetSystemMetrics(SM_CYBORDER))),
+			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
 		if(osver.dwMajorVersion >= 6)
 		{
 			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
@@ -1155,7 +2095,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		else
 		{
-			EnableWindow(GetDlgItem(hWnd, IDC_DPISCALE), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
 		return TRUE;
@@ -1163,35 +2103,56 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		switch(wParam)
 		{
 		case IDC_APPS:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON)+1;
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON) + 1;
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
+			break;
 		default:
 			break;
 		}
 		break;
+	case WM_NOTIFY:
+		nm = (LPNMHDR)lParam;
+		if (nm->code == TCN_SELCHANGE)
+		{
+			newtab = SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETCURSEL, 0, 0);
+			if (newtab != tabopen)
+			{
+				ShowWindow(hTabs[tabopen], SW_HIDE);
+				tabopen = newtab;
+				SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+				SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+			}
+		}
+		break;
 	case WM_DRAWITEM:
-		switch(wParam)
+		drawitem = (DRAWITEMSTRUCT*)lParam;
+		switch (wParam)
 		{
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemState & ODS_SELECTED) && !(drawitem->itemState & ODS_COMBOBOXEDIT))
+			if((drawitem->itemState & ODS_SELECTED))
 			{
 				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
 				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
 				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
 			}
-			else ExtTextOut(drawitem->hDC,0,0,ETO_OPAQUE,&drawitem->rcItem,NULL,0,NULL);
+			else
+			{
+				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+			}
 			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
 				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
 			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
 			DrawText(drawitem->hDC,apps[drawitem->itemID].name,
 				_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
+			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
+			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC,OldTextColor);
 			SetBkColor(drawitem->hDC,OldBackColor);
-			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON) + 5;
-			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd,Msg,wParam,lParam);
 			break;
 		default:
@@ -1223,230 +2184,123 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SaveChanges(hWnd);
 			return TRUE;
 		case IDC_APPS:
-			if(HIWORD(wParam) == LBN_SELCHANGE)
+			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
-				cursel = SendDlgItemMessage(hWnd,IDC_APPS,LB_GETCURSEL,0,0);
+				cursel = SendDlgItemMessage(hWnd,IDC_APPS,CB_GETCURSEL,0,0);
 				if(cursel == current_app) break;
 				current_app = cursel;
 				cfg = &apps[current_app].cfg;
 				cfgmask = &apps[current_app].mask;
 				dirty = &apps[current_app].dirty;
-				if(current_app)
+				if (current_app)
 				{
-					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), TRUE);
-					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), TRUE);
-					SetDlgItemText(hWnd, IDC_PROFILEPATH, apps[current_app].path);
-					if(apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), TRUE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), TRUE);
+					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, apps[current_app].path);
+					if (apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
 					else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
 				}
 				else
 				{
-					EnableWindow(GetDlgItem(hWnd, IDC_PATHLABEL), FALSE);
-					EnableWindow(GetDlgItem(hWnd, IDC_PROFILEPATH), FALSE);
-					SetDlgItemText(hWnd, IDC_PROFILEPATH, _T(""));
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, _T(""));
 					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
 				}
 				// Set 3-state status
 				if(current_app && !tristate)
 				{
 					tristate = TRUE;
-					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)strdefault);
-					//SendDlgItemMessage(hWnd,IDC_VSYNC,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_ANISO,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTO3STATE,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					// Display tab
+					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 				}
 				else if(!current_app && tristate)
 				{
 					tristate = FALSE;
-					SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_VIDMODE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_SORTMODES,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd,IDC_SCALE,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_SCALE,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-/*					SendDlgItemMessage(hWnd,IDC_VSYNC,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_VSYNC,CB_FINDSTRING,-1,(LPARAM)strdefault),0);*/
-					SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd,IDC_MSAA,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_MSAA,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_ANISO,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ANISO,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_TEXFILTER,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_COLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_UNCOMMONCOLOR,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_EXTRAMODES,BM_SETSTYLE,BS_AUTOCHECKBOX,(LPARAM)TRUE);
-					SendDlgItemMessage(hWnd,IDC_TEXTUREFORMAT,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd,IDC_TEXUPLOAD,CB_DELETESTRING,
-						SendDlgItemMessage(hWnd,IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hWnd, IDC_ASPECT, CB_DELETESTRING,
-						SendDlgItemMessage(hWnd, IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					// Display tab
+					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 				}
 				// Read settings into controls
-				SetCombo(hWnd,IDC_VIDMODE,cfg->scaler,cfgmask->scaler,tristate);
-				SetCombo(hWnd,IDC_SORTMODES,cfg->SortModes,cfgmask->SortModes,tristate);
-				SetCombo(hWnd,IDC_POSTSCALE,cfg->postfilter,cfgmask->postfilter,tristate);
-				SetCombo(hWnd,IDC_SCALE,cfg->scalingfilter,cfgmask->scalingfilter,tristate);
-				//SetCombo(hWnd,IDC_VSYNC,cfg->vsync,cfgmask->vsync,tristate);
-				SetCombo(hWnd,IDC_FULLMODE,cfg->fullmode,cfgmask->fullmode,tristate);
-				SetCombo(hWnd,IDC_MSAA,cfg->msaa,cfgmask->msaa,tristate);
-				SetCombo(hWnd,IDC_ANISO,cfg->anisotropic,cfgmask->anisotropic,tristate);
-				SetCombo(hWnd,IDC_TEXFILTER,cfg->texfilter,cfgmask->texfilter,tristate);
-				SetCombo(hWnd,IDC_ASPECT3D,cfg->aspect3d,cfgmask->aspect3d,tristate);
-				SetCheck(hWnd,IDC_COLOR,cfg->colormode,cfgmask->colormode,tristate);
-				SetCheck(hWnd,IDC_HIGHRES,cfg->primaryscale,cfgmask->primaryscale,tristate);
-				SetCheck(hWnd,IDC_UNCOMMONCOLOR,cfg->AddColorDepths,cfgmask->AddColorDepths,tristate);
-				SetCombo(hWnd,IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
-				SetCombo(hWnd,IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
-				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
-				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
-				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex, cfgmask->postsizey, tristate);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-			}
-			break;
-		case IDC_VIDMODE:
-			cfg->scaler = GetCombo(hWnd,IDC_VIDMODE,&cfgmask->scaler);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_SORTMODES:
-			cfg->SortModes = GetCombo(hWnd,IDC_SORTMODES,&cfgmask->SortModes);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_POSTSCALE:
-			cfg->postfilter = GetCombo(hWnd,IDC_POSTSCALE,&cfgmask->postfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_SCALE:
-			cfg->scalingfilter = GetCombo(hWnd,IDC_SCALE,&cfgmask->scalingfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-/*		case IDC_VSYNC:
-			cfg->vsync = GetCombo(hWnd,IDC_VSYNC,&cfgmask->vsync);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;*/
-		case IDC_FULLMODE:
-			cfg->fullmode = GetCombo(hWnd, IDC_FULLMODE, &cfgmask->fullmode);
-			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_MSAA:
-			cfg->msaa = GetCombo(hWnd,IDC_MSAA,&cfgmask->msaa);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_ANISO:
-			cfg->anisotropic = GetCombo(hWnd,IDC_ANISO,&cfgmask->anisotropic);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_TEXFILTER:
-			cfg->texfilter = GetCombo(hWnd,IDC_TEXFILTER,&cfgmask->texfilter);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_ASPECT3D:
-			cfg->aspect3d = GetCombo(hWnd,IDC_ASPECT3D,&cfgmask->aspect3d);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_COLOR:
-			cfg->colormode = GetCheck(hWnd,IDC_COLOR,&cfgmask->colormode);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_HIGHRES:
-			cfg->primaryscale = GetCheck(hWnd,IDC_HIGHRES,&cfgmask->primaryscale);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_UNCOMMONCOLOR:
-			cfg->AddColorDepths = GetCheckWithSpecificValue(hWnd, IDC_UNCOMMONCOLOR, &cfgmask->AddColorDepths, 1 | 4 | 16, 0);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_EXTRAMODES:
-			cfg->AddModes = GetCheckWithSpecificValue(hWnd,IDC_EXTRAMODES,&cfgmask->AddModes, 7, 0);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_TEXTUREFORMAT:
-			cfg->TextureFormat = GetCombo(hWnd,IDC_TEXTUREFORMAT,&cfgmask->TextureFormat);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_TEXUPLOAD:
-			cfg->TexUpload = GetCombo(hWnd,IDC_TEXUPLOAD,&cfgmask->TexUpload);
-			EnableWindow(GetDlgItem(hWnd,IDC_APPLY),TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_DPISCALE:
-			cfg->DPIScale = GetCombo(hWnd,IDC_DPISCALE,&cfgmask->DPIScale);
-			EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-			*dirty = TRUE;
-			break;
-		case IDC_POSTSCALESIZE:
-			if (HIWORD(wParam) == CBN_KILLFOCUS)
-			{
-				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
-					&cfgmask->postsizex, &cfgmask->postsizey);
-				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex, cfgmask->postsizey, tristate);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			else if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
-					&cfgmask->postsizex, &cfgmask->postsizey);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			break;
-		case IDC_ASPECT:
-			if (HIWORD(wParam) == CBN_KILLFOCUS)
-			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-			}
-			else if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
-				*dirty = TRUE;
+				// Display tab
+				SetCombo(hTabs[0], IDC_VIDMODE, cfg->scaler, cfgmask->scaler, tristate);
+				SetCombo(hTabs[0], IDC_COLORDEPTH, 0, 0, tristate);
+				SetCombo(hTabs[0], IDC_SCALE, cfg->scalingfilter, cfgmask->scalingfilter, tristate);
+				SetCombo(hTabs[0], IDC_EXTRAMODES, 0, 0, tristate);
+				SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetCombo(hTabs[0], IDC_SORTMODES, cfg->SortModes, cfgmask->SortModes, tristate);
+				SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
+				SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
+				SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
+				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
+				SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
+				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
+				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+					cfgmask->postsizex , cfgmask->postsizey, tristate);
+				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
+				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
+				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
+				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
+				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
+				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
+				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
+				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
+				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
 			}
 			break;
 		case IDC_ADD:
@@ -1848,7 +2702,7 @@ void UninstallDXGL(TCHAR uninstall)
 	else RegCloseKey(hKeyBase);
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
@@ -1863,7 +2717,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		UpgradeDXGL();
 		return 0;
 	}
-	if (!_tcsnicmp(lpCmdLine, _T("uninstall "), 10))
+	if (!_tcsnicmp(lpCmdLine, _T("uninstall"), 9))
 	{
 		UninstallDXGL(lpCmdLine[10]);
 		return 0;
@@ -1890,15 +2744,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
-	// Message for when transitioning to the new config UI
-	MessageBox(NULL, _T("This version of DXGL Config is deprecated and no longer developed or supported.  \
-Some options may no longer work correctly."),
-		_T("Notice"), MB_OK | MB_ICONWARNING);
 	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex"));
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Find DXGL Config window
-		hWnd = FindWindow(NULL, _T("DXGL Config (DEPRECATED)"));
+		hWnd = FindWindow(NULL, _T("DXGL Config"));
 		// Focus DXGL Config window
 		if (hWnd) SetForegroundWindow(hWnd);
 		return 0;

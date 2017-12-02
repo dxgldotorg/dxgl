@@ -345,7 +345,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "FileDescription", "DXGL Test App"
             VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
-            VALUE "LegalCopyright", "Copyright © 2011-2014 William Feely"
+            VALUE "LegalCopyright", "Copyright © 2011-2017 William Feely"
             VALUE "OriginalFilename", "dxgltest.exe"
             VALUE "ProductName", "DXGL"
 			VALUE "ProductVersion", DXGLVERSTRING

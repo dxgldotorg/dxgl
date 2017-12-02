@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="dxglcfg2.rc">
+    <ResourceCompile Include="dxglcfg-old.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -30,7 +30,7 @@
     </Manifest>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dxglcfg2.c">
+    <ClCompile Include="dxglcfg-old.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

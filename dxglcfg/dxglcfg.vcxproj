@@ -23,7 +23,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DF380DA1-90DE-4174-9A1F-EEC16C5B5879}</ProjectGuid>
+    <ProjectGuid>{C59AC409-F7D0-4153-9874-184CA00D537B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>dxglcfg</RootNamespace>
   </PropertyGroup>

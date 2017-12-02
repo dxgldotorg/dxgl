@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="dxglcfg" />
+		<Option title="dxglcfg-old" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin\Debug\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option output="bin\Debug\dxglcfg-old" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -20,7 +20,7 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin\Release\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option output="bin\Release\dxglcfg-old" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Release\" />
 				<Option type="0" />
 				<Option compiler="gcc" />
@@ -34,7 +34,7 @@
 				</Linker>
 			</Target>
 			<Target title="Unicode Debug">
-				<Option output="bin\Unicode Debug\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option output="bin\Unicode Debug\dxglcfg-old" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Unicode Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -49,7 +49,7 @@
 				</Linker>
 			</Target>
 			<Target title="Unicode Release">
-				<Option output="bin\Unicode Release\dxglcfg" prefix_auto="1" extension_auto="1" />
+				<Option output="bin\Unicode Release\dxglcfg-old" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Unicode Release\" />
 				<Option type="0" />
 				<Option compiler="gcc" />
@@ -83,8 +83,8 @@
 			<Add library="comdlg32" />
 			<Add library="ole32" />
 		</Linker>
-		<Unit filename="dxglcfg.cpp" />
-		<Unit filename="dxglcfg.rc">
+		<Unit filename="dxglcfg-old.cpp" />
+		<Unit filename="dxglcfg-old.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
 		<Unit filename="resource.h" />
