@@ -72,11 +72,13 @@
 #define IDC_SHADER                              2104
 #define IDC_BROWSESHADER                        2105
 #define IDC_PRIMARYSCALE                        2106
-#define IDC_CUSTOMSCALELABEL                    2107
-#define IDC_CUSTOMSCALELABELX                   2108
-#define IDC_CUSTOMSCALEX                        2109
-#define IDC_CUSTOMSCALELABELY                   2110
-#define IDC_CUSTOMSCALEY                        2111
+#define IDC_BLTFILTER                           2107
+#define IDC_BLTTHRESHOLD                        2108
+#define IDC_CUSTOMSCALELABEL                    2109
+#define IDC_CUSTOMSCALELABELX                   2110
+#define IDC_CUSTOMSCALEX                        2111
+#define IDC_CUSTOMSCALELABELY                   2112
+#define IDC_CUSTOMSCALEY                        2113
 
 // Controls - 3D Graphics Tab
 #define IDC_TEXFILTER                           2201
