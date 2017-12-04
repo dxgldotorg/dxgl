@@ -37,6 +37,8 @@
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
 #include "../ddraw/include/GL/glext.h"
+#include "dxgltest.h"
+#include "common.h"
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -49,8 +51,8 @@
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 BOOL *dirty;
-HINSTANCE hinstance;
-BOOL msaa = FALSE;
+static HINSTANCE hinstance;
+BOOL msaa_available = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
@@ -89,7 +91,7 @@ BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 HWND hTab;
 HWND hTabs[6];
-int tabopen;
+static int tabopen;
 
 static const TCHAR *colormodes[32] = {
 	_T("None"),
@@ -1708,7 +1710,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				if(maxcoverage) for(i = 0; i < maxcoverage; i++)
 				{
 					msaamodes[i] = coveragemodes[2*i]+(4096*coveragemodes[(2*i)+1]);
-					msaa = TRUE;
+					msaa_available = TRUE;
 				}
 			}
 		}
@@ -1748,10 +1750,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
 		tab.pszText = _T("Hacks");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
-		/*tab.pszText = _T("Graphics Tests");
+		tab.pszText = _T("Graphics Tests");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 6, (LPARAM)&tab);
 		tab.pszText = _T("About");
-		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);*/
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, (DLGPROC)DisplayTabCallback);
 		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, (DLGPROC)EffectsTabCallback);
@@ -1759,6 +1761,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, (DLGPROC)AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, (DLGPROC)DebugTabCallback);
 		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, (DLGPROC)HacksTabCallback);
+		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hTab, (DLGPROC)TestTabCallback);
+		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);
@@ -1933,7 +1937,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
 		}
 		// msaa
-		if(msaa)
+		if(msaa_available)
 		{
 			_tcscpy(buffer,_T("Application default"));
 			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2828,6 +2832,15 @@ void UninstallDXGL(TCHAR uninstall)
 	else RegCloseKey(hKeyBase);
 }
 
+#ifdef __GNUC__
+#ifndef INITCOMMONCONTROLSEX
+typedef struct tagINITCOMMONCONTROLSEX {
+	DWORD dwSize;
+	DWORD dwICC;
+} INITCOMMONCONTROLSEX, *LPINITCOMMONCONTROLSEX;
+#endif
+#endif
+
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
 	INITCOMMONCONTROLSEX icc;
@@ -2837,6 +2850,24 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	HWND hWnd;
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
+	if (osver.dwMajorVersion > 4) gradientavailable = true;
+	else if (osver.dwMajorVersion >= 4 && osver.dwMinorVersion >= 1) gradientavailable = true;
+	else gradientavailable = false;
+	HMODULE msimg32 = NULL;
+	if (gradientavailable)
+	{
+		msimg32 = LoadLibrary(_T("msimg32.dll"));
+		if (!msimg32) gradientavailable = false;
+		if (gradientavailable) _GradientFill =
+			(BOOL(_stdcall*)(HDC, TRIVERTEX*, ULONG, void*, ULONG, DWORD))
+			GetProcAddress(msimg32, "GradientFill");
+		if (!_GradientFill)
+		{
+			if (msimg32)FreeLibrary(msimg32);
+			msimg32 = NULL;
+			gradientavailable = false;
+		}
+	}
 	CoInitialize(NULL);
 	if (!_tcsnicmp(lpCmdLine, _T("upgrade"), 7))
 	{
@@ -2860,6 +2891,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	{
 		return DelApp(lpCmdLine+7,TRUE,NULL);
 	}
+	if (!_tcsnicmp(lpCmdLine, _T("profile_install"), 15))
+	{
+		// FIXME:  Remove DXGL Config profile
+		LPDIRECTDRAW lpdd;
+		DirectDrawCreate(NULL, &lpdd, NULL);
+		lpdd->Release();
+		return 0;
+	}
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
 	comctl32 = LoadLibrary(_T("comctl32.dll"));
@@ -2880,6 +2919,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 		return 0;
 	}
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	if (comctl32) FreeLibrary(comctl32);
+	if (msimg32) FreeLibrary(msimg32);
 	ReleaseMutex(hMutex);
 	CloseHandle(hMutex);
 #ifdef _DEBUG

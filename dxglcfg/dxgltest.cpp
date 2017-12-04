@@ -20,10 +20,9 @@
 #include "MultiDD.h"
 #include "tests.h"
 
-HINSTANCE hinstance;
+static HINSTANCE hinstance;
 bool gradientavailable;
 BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
-HRESULT (WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -141,7 +140,7 @@ int dllboxes[] = {
 	IDC_DDVER,
 };
 
-INT_PTR CALLBACK SysTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HMODULE mod_ddraw;
 	BOOL (WINAPI *IsDXGLDDraw)();
@@ -495,135 +494,4 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		return FALSE;
 	}
 	return TRUE;
-}
-
-HWND tabwnd[3];
-int tabopen;
-INT_PTR CALLBACK DXGLTestCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-    TCITEM tab;
-	HWND hTab;
-	RECT tabrect;
-	NMHDR *nm;
-	HICON icon;
-	int newtab;
-	ZeroMemory(&tab, sizeof(TCITEM));
-    switch(Msg)
-    {
-    case WM_INITDIALOG:
-		icon = (HICON)LoadImage(hinstance,MAKEINTRESOURCE(IDI_DXGLSM),IMAGE_ICON,
-			GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0);
-		SendMessage(hWnd,WM_SETICON,ICON_SMALL,(LPARAM)icon);
-		icon = (HICON)LoadImage(hinstance,MAKEINTRESOURCE(IDI_DXGL),IMAGE_ICON,
-			GetSystemMetrics(SM_CXICON),GetSystemMetrics(SM_CYICON),0);
-		SendMessage(hWnd,WM_SETICON,ICON_BIG,(LPARAM)icon);
-        tab.mask = TCIF_TEXT;
-        tab.pszText = _T("System");
-        SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,0,(LPARAM)&tab);
-        tab.pszText = _T("Graphics tests");
-		hTab = GetDlgItem(hWnd,IDC_TABS);
-        SendDlgItemMessage(hWnd,IDC_TABS,TCM_INSERTITEM,1,(LPARAM)&tab);
-		tabwnd[0] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_SYSINFO),hTab,SysTabCallback);
-        tabwnd[1] = CreateDialog(hinstance,MAKEINTRESOURCE(IDD_TESTGFX),hTab,TestTabCallback);
-		SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETITEMRECT,0,(LPARAM)&tabrect);
-		SetWindowPos(tabwnd[0],NULL,tabrect.left,tabrect.bottom+3,0,0,SWP_SHOWWINDOW|SWP_NOSIZE);
-		ShowWindow(tabwnd[1],SW_HIDE);
-		ShowWindow(tabwnd[2],SW_HIDE);
-		tabopen = 0;
-		ShowWindow(hWnd,SW_SHOWNORMAL);
-        return TRUE;
-    case WM_COMMAND:
-        switch(LOWORD(wParam))
-        {
-            case IDOK:
-			case IDCANCEL:
-                EndDialog(hWnd,IDOK);
-                break;
-        }
-		break;
-    case WM_CLOSE:
-        EndDialog(hWnd,IDCANCEL);
-        break;
-	case WM_NOTIFY:
-		nm = (LPNMHDR) lParam;
-		if(nm->code == TCN_SELCHANGE)
-		{
-			newtab = SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETCURSEL,0,0);
-			if(newtab != tabopen)
-			{
-				ShowWindow(tabwnd[tabopen],SW_HIDE);
-				tabopen = newtab;
-				SendDlgItemMessage(hWnd,IDC_TABS,TCM_GETITEMRECT,0,(LPARAM)&tabrect);
-				SetWindowPos(tabwnd[tabopen],NULL,tabrect.left,tabrect.bottom+3,0,0,SWP_SHOWWINDOW|SWP_NOSIZE);
-			}
-		}
-		break;
-    default:
-        return FALSE;
-    }
-    return TRUE;
-}
-
-#ifdef __GNUC__
-#ifndef INITCOMMONCONTROLSEX
-typedef struct tagINITCOMMONCONTROLSEX {
-  DWORD dwSize;
-  DWORD dwICC;
-} INITCOMMONCONTROLSEX, *LPINITCOMMONCONTROLSEX;
-#endif
-#endif
-
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-{
-	if(_tcsstr(lpCmdLine,_T("install")))
-	{
-		LPDIRECTDRAW lpdd;
-		DirectDrawCreate(NULL,&lpdd,NULL);
-		lpdd->Release();
-		return 0;
-	}
-	OSVERSIONINFO verinfo;
-	verinfo.dwOSVersionInfoSize = sizeof(verinfo);
-	GetVersionEx(&verinfo);
-	if(verinfo.dwMajorVersion > 4) gradientavailable = true;
-	else if(verinfo.dwMajorVersion >= 4 && verinfo.dwMinorVersion >= 1) gradientavailable = true;
-	else gradientavailable = false;
-	HMODULE msimg32 = NULL;;
-	if(gradientavailable)
-	{
-		msimg32 = LoadLibrary(_T("msimg32.dll"));
-		if(!msimg32) gradientavailable = false;
-		if(gradientavailable) _GradientFill =
-			(BOOL(_stdcall*)(HDC,TRIVERTEX*,ULONG,void*,ULONG,DWORD))
-			GetProcAddress(msimg32,"GradientFill");
-		if(!_GradientFill)
-		{
-			if(msimg32)FreeLibrary(msimg32);
-			msimg32 = NULL;
-			gradientavailable = false;
-		}
-	}
-	MessageBox(NULL, _T("DXGL Test is no longer a standalone application.  This version is no longer maintained.  Please use DXGL Config instead."),
-_T("Notice"), MB_OK | MB_ICONWARNING);
-	INITCOMMONCONTROLSEX icc;
-	icc.dwSize = sizeof(icc);
-	icc.dwICC = ICC_WIN95_CLASSES;
-	HMODULE comctl32 = LoadLibrary(_T("comctl32.dll"));
-	BOOL (WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
-	if(comctl32) iccex =(BOOL (WINAPI *)(LPINITCOMMONCONTROLSEX))
-		GetProcAddress(comctl32,"InitCommonControlsEx");
-	if(iccex) iccex(&icc);
-	else InitCommonControls();
-	if(comctl32) FreeLibrary(comctl32);
-	HMODULE uxtheme = LoadLibrary(_T("uxtheme.dll"));
-	if (uxtheme) _EnableThemeDialogTexture = (HRESULT(WINAPI*)(HWND, DWORD))
-		GetProcAddress(uxtheme, "EnableThemeDialogTexture");
-    hinstance = hInstance;
-    DialogBox(hinstance,MAKEINTRESOURCE(IDD_DXGLTEST),NULL,DXGLTestCallback);
-	if(msimg32) FreeLibrary(msimg32);
-	if (uxtheme) FreeLibrary(uxtheme);
-#ifdef _DEBUG
-	_CrtDumpMemoryLeaks();
-#endif
-    return 0;
 }
