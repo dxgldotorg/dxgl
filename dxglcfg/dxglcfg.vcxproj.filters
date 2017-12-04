@@ -30,7 +30,7 @@
     </Manifest>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dxglcfg.c">
+    <ClCompile Include="dxglcfg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

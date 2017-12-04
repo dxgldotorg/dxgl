@@ -36,6 +36,7 @@
 #include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
+#include "../ddraw/include/GL/glext.h"
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -44,12 +45,6 @@
 #ifndef BCM_SETSHIELD
 #define BCM_SETSHIELD 0x160C
 #endif
-
-#define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
-#define GL_MAX_SAMPLES_EXT                     0x8D57
-#define GL_MAX_MULTISAMPLE_COVERAGE_MODES_NV        0x8E11
-#define GL_MULTISAMPLE_COVERAGE_MODES_NV            0x8E12
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT      0x84FF
 
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
@@ -419,8 +414,8 @@ void SaveChanges(HWND hWnd)
 
 void FloatToAspect(float f, LPTSTR aspect)
 {
-	double integer;
-	double dummy;
+	float integer;
+	float dummy;
 	float fract;
 	TCHAR denominator[5];
 	int i;
@@ -851,7 +846,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				hdc = GetDC(hWnd);
 				font1 = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
-				font2 = SelectObject(hdc, font1);
+				font2 = (HFONT)SelectObject(hdc, font1);
 				GetTextExtentPoint(hdc, _T(" "), 1, &size);
 				SelectObject(hdc, font2);
 				ReleaseDC(hWnd, hdc);
@@ -901,7 +896,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			}
 			combotext[0] = 0;
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
-				SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETLBTEXT, drawitem->itemID, combotext);
+				SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETLBTEXT, drawitem->itemID, (LPARAM)combotext);
 			else
 			{
 				if(!cfgmask->AddColorDepths) _tcscpy(combotext, strdefault);
@@ -947,7 +942,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			}
 			combotext[0] = 0;
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
-				SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, combotext);
+				SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETLBTEXT, drawitem->itemID, (LPARAM)combotext);
 			else
 			{
 				if (!cfgmask->AddModes) _tcscpy(combotext, strdefault);
@@ -1758,12 +1753,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		tab.pszText = _T("About");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);*/
 		hTab = GetDlgItem(hWnd, IDC_TABS);
-		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, DisplayTabCallback);
-		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, EffectsTabCallback);
-		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, Tab3DCallback);
-		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, AdvancedTabCallback);
-		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, DebugTabCallback);
-		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, HacksTabCallback);
+		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, (DLGPROC)DisplayTabCallback);
+		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, (DLGPROC)EffectsTabCallback);
+		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, (DLGPROC)Tab3DCallback);
+		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, (DLGPROC)AdvancedTabCallback);
+		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, (DLGPROC)DebugTabCallback);
+		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, (DLGPROC)HacksTabCallback);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);
@@ -2072,7 +2067,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			if (RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
 			{
 				installpath = (LPTSTR)malloc(keysize);
-				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, installpath, &keysize);
+				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &keysize);
 				if (error != ERROR_SUCCESS)
 				{
 					free(installpath);
@@ -2551,8 +2546,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						free(verinfo);
 						free(path);
 					}
-					SendDlgItemMessage(hWnd, IDC_APPS, LB_SETCURSEL,
-						SendDlgItemMessage(hWnd, IDC_APPS, LB_ADDSTRING, 0, (LPARAM)apps[appcount - 1].name), 0);
+					SendDlgItemMessage(hWnd, IDC_APPS, CB_SETCURSEL,
+						SendDlgItemMessage(hWnd, IDC_APPS, CB_ADDSTRING, 0, (LPARAM)apps[appcount - 1].name), 0);
 					SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
 					RegCloseKey(hKey);
 					free(regbuffer);
@@ -2562,10 +2557,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_REMOVE:
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
 				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return FALSE;
-			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 15)*sizeof(TCHAR));
+			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 24)*sizeof(TCHAR));
 			_tcscpy(regpath, _T("Software\\DXGL\\Profiles\\"));
 			_tcscat(regpath, apps[current_app].regkey);
-			regkey = (LPTSTR)malloc(_tcslen(apps[current_app].regkey));
+			regkey = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 1) * sizeof(TCHAR));
 			_tcscpy(regkey, apps[current_app].regkey);
 			RegOpenKeyEx(HKEY_CURRENT_USER,regpath,0,KEY_READ,&hKey);
 			RegQueryValueEx(hKey,_T("InstallPath"),NULL,NULL,NULL,&buffersize);
@@ -2595,8 +2590,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				appcount--;
 			}
-			SendDlgItemMessage(hWnd,IDC_APPS,LB_DELETESTRING,current_app,0);
-			SendDlgItemMessage(hWnd, IDC_APPS, LB_SETCURSEL, 0, 0);
+			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETCURSEL, 0, 0);
+			SendDlgItemMessage(hWnd,IDC_APPS,CB_DELETESTRING,current_app,0);
 			SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
 			break;
 		}
