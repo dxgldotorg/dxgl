@@ -1770,6 +1770,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		ShowWindow(hTabs[3], SW_HIDE);
 		ShowWindow(hTabs[4], SW_HIDE);
 		ShowWindow(hTabs[5], SW_HIDE);
+		ShowWindow(hTabs[6], SW_HIDE);
+		ShowWindow(hTabs[7], SW_HIDE);
 		tabopen = 0;
 
 		// Load global settings.
