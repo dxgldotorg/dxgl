@@ -1791,7 +1791,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Center if mode not found"));
 		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 6, (LPARAM)buffer);
 		_tcscpy(buffer,_T("Crop to screen"));
-		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_ADDSTRING,7,(LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 7, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom size multiplier"));
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 8, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom display mode"));
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 9, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Custom size, centered"));
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 10, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
 		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
@@ -1807,19 +1813,27 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Borderless window (scaled)"));
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 5, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_SETCURSEL, cfg->fullmode, 0);
+		// vsync mode
+		_tcscpy(buffer, _T("Application default"));
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Enabled every flip or primary Blt"));
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 2, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_SETCURSEL, cfg->vsync, 0);
 		// colormode
 		if (cfg->colormode) SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETCHECK, BST_UNCHECKED, 0);
 		// single buffer
 		if(cfg->SingleBufferDevice) SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETCHECK, BST_UNCHECKED, 0);
-		// first scaling filter
+		// postprocess scaling filter
 		_tcscpy(buffer, _T("Nearest"));
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 1, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_SETCURSEL, cfg->postfilter, 0);
-		// first scaling sizes
+		// postprocess scaling sizes
 		_tcscpy(buffer, _T("Auto"));
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("1x"));

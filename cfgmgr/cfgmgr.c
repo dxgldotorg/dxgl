@@ -579,7 +579,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 		GetDirFromPath(path);
 		error = RegQueryValueEx(hKey,_T("InstallPath"),NULL,&regsz,NULL,&sizeout);
 		if(error == ERROR_FILE_NOT_FOUND)
-			RegSetValueEx(hKey, _T("InstallPath"), 0, REG_MULTI_SZ,
+			RegSetValueEx(hKey, _T("InstallPath"), 0, REG_SZ,
 				(LPBYTE)path, _tcslen(path) * sizeof(TCHAR));
 	}
 }

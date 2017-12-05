@@ -24,7 +24,7 @@
 #define IDD_LOADING                             102
 #define IDD_TEXSHADER                           103
 #define IDD_VERTEXSHADER                        104
-#define IDD_DXGLTEST                            199
+#define IDD_MODELIST                            105
 
 // Tabs
 #define IDD_DISPLAY                             201
@@ -71,9 +71,10 @@
 #define IDC_FIXEDSCALEX                         2012
 #define IDC_FIXEDSCALELABELY                    2013
 #define IDC_FIXEDSCALEY                         2014
-#define IDC_FIXEDSCALESQUARE                    2015
-#define IDC_COLOR                               2016
-#define IDC_SINGLEBUFFER                        2017
+#define IDC_CUSTOMMODE                          2015
+#define IDC_SETMODE                             2016
+#define IDC_COLOR                               2017
+#define IDC_SINGLEBUFFER                        2018
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101
@@ -242,3 +243,6 @@
 #define IDC_LIGHTATTEN2                         3039
 #define IDC_LIGHTTHETA                          3040
 #define IDC_LIGHTPHI                            3041
+
+// Controls - Mode list dialog
+#define IDC_MODELIST                            3101
