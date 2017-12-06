@@ -315,6 +315,25 @@ Valid settings:
 1 - Expand viewable area.  May have glitches on edge of screen.
 2 - Crop to viewable area. May cause graphics to get cut off.
 
+Member LowColorRendering
+INI Entry LowColorRendering
+INI Group d3d
+REG_DWORD HKCU\DXGL\Profiles\<app>\LowColorRendering
+If nonzero, increases low color render targets to 32bpp.
+
+Member EnableDithering
+INI Entry EnableDithering
+INI Group d3d
+REG_DWORD HKCU\DXGL\Profiles\<app>\EnableDithering
+Determines when dithering is enabled for Direct3D rendering.
+Valid settings:
+0 - Enables dithering when requested by the application except when in a
+    true-color mode.
+1 - Disables dithering at all times.
+2 - Always enables dithering for low color modes.
+3 - Enables dithering per application, for all modes.
+4 - Always enables dithering, for all modes.
+
 Member vsync
 INI Entry VSync
 INI Group advanced

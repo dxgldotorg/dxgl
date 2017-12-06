@@ -546,6 +546,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	cfg->msaa = ReadDWORD(hKey,cfg->msaa,&cfgmask->msaa,_T("Antialiasing"));
 	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,&cfgmask->aspect3d,_T("AdjustAspectRatio"));
+	cfg->LowColorRendering = ReadDWORD(hKey, cfg->LowColorRendering, &cfgmask->LowColorRendering, _T("LowColorRendering"));
+	cfg->EnableDithering = ReadDWORD(hKey, cfg->EnableDithering, &cfgmask->EnableDithering, _T("EnableDithering"));
 	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -680,6 +682,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
 	WriteDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
+	WriteDWORD(hKey, cfg->LowColorRendering, cfgmask->LowColorRendering, _T("LowColorRendering"));
+	WriteDWORD(hKey, cfg->EnableDithering, cfgmask->EnableDithering, _T("EnableDithering"));
 	WriteDWORD(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -935,6 +939,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "AnisotropicFiltering")) cfg->anisotropic = INIIntValue(value);
 		if (!stricmp(name, "Antialiasing")) cfg->msaa = INIHexValue(value);
 		if (!stricmp(name, "D3DAspect")) cfg->aspect3d = INIIntValue(value);
+		if (!stricmp(name, "LowColorRendering")) cfg->LowColorRendering = INIIntValue(value);
+		if (!stricmp(name, "EnableDithering")) cfg->EnableDithering = INIIntValue(value);
 	}
 	if (!stricmp(section, "advanced"))
 	{

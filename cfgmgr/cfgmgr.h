@@ -60,6 +60,8 @@ typedef struct
 	DWORD anisotropic;
 	DWORD msaa;
 	DWORD aspect3d;
+	DWORD LowColorRendering;
+	DWORD EnableDithering;
 	// [advanced]
 	DWORD vsync;
 	DWORD TextureFormat;
