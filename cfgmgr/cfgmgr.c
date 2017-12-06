@@ -554,6 +554,11 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->AddColorDepths = ReadDWORD(hKey,cfg->AddColorDepths,&cfgmask->AddColorDepths,_T("AddColorDepths"));
 	cfg->AddModes = ReadDeprecatedBool(hKey, cfg->AddModes, &cfgmask->AddModes, _T("ExtraModes"),7,0);
 	cfg->AddModes = ReadDWORD(hKey, cfg->AddModes, &cfgmask->AddModes, _T("AddModes"));
+	cfg->CustomResolutionX = ReadDWORD(hKey, cfg->CustomResolutionX, &cfgmask->CustomResolutionX, _T("CustomResolutionX"));
+	cfg->CustomResolutionY = ReadDWORD(hKey, cfg->CustomResolutionY, &cfgmask->CustomResolutionY, _T("CustomResolutionY"));
+	cfg->CustomRefresh = ReadDWORD(hKey, cfg->CustomRefresh, &cfgmask->CustomRefresh, _T("CustomRefresh"));
+	cfg->DisplayMultiplierX = ReadFloat(hKey, cfg->DisplayMultiplierX, &cfgmask->DisplayMultiplierX, _T("DisplayMultiplierX"));
+	cfg->DisplayMultiplierY = ReadFloat(hKey, cfg->DisplayMultiplierY, &cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
@@ -677,6 +682,11 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
 	WriteDWORD(hKey,cfg->AddColorDepths,cfgmask->AddColorDepths,_T("AddColorDepths"));
 	WriteDWORD(hKey,cfg->AddModes,cfgmask->AddModes,_T("AddModes"));
+	WriteDWORD(hKey, cfg->CustomResolutionX, cfgmask->CustomResolutionX, _T("CustomResolutionX"));
+	WriteDWORD(hKey, cfg->CustomResolutionY, cfgmask->CustomResolutionY, _T("CustomResolutionY"));
+	WriteDWORD(hKey, cfg->CustomRefresh, cfgmask->CustomRefresh, _T("CustomRefresh"));
+	WriteFloat(hKey, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX, _T("DisplayMultiplierX"));
+	WriteFloat(hKey, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierX, _T("DisplayMultiplierY"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
@@ -891,6 +901,11 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
 		if (!stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
 		if (!stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
+		if (!stricmp(name, "CustomResolutionX")) cfg->CustomResolutionX = INIIntValue(value);
+		if (!stricmp(name, "CustomResolutionY")) cfg->CustomResolutionY = INIIntValue(value);
+		if (!stricmp(name, "CustomRefresh")) cfg->CustomRefresh = INIIntValue(value);
+		if (!stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
+		if (!stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
 	}
 	if (!stricmp(section, "postprocess"))
 	{

@@ -26,6 +26,9 @@ Valid settings:
 5 - Change display mode, aspect corrected stretch if matching mode not found
 6 - Change display mode, center if matching mode not found
 7 - Crop output to desktop, preserving aspect ratio
+8 - Center output, multiply by custom values
+9 - Set display to custom resolution and refresh
+10 - Center output, scale to custom size
 
 Member fullmode
 INI Entry FullscreenWindowMode
@@ -99,6 +102,41 @@ Valid settings:
 0 - As reported by system
 1 - Group by depth
 2 - Group by resolution
+
+Member CustomResolutionX
+REG_DWORD HKCU\DXGL\Profiles\<app>\CustomResolutionX
+INI Entry CustomResolutionX
+INI Group display
+Width of the custom resolution for the display output for modes 9 and 10.
+Default is 640
+
+Member CustomResolutionY
+REG_DWORD HKCU\DXGL\Profiles\<app>\CustomResolutionY
+INI Entry CustomResolutionY
+INI Group display
+Height of the custom resolution for the display output for modes 9 and 10.
+Default is 480
+
+Member CustomRefresh
+REG_DWORD HKCU\DXGL\Profiles\<app>\CustomRefresh
+INI Entry CustomRefresh
+INI Group display
+Refresh rate for the display output for modes 9 and 10.
+Default is 60
+
+Member DisplayMultiplierX
+REG_DWORD HKCU\DXGL\Profiles\<app>\
+INI Entry DisplayMultiplierX
+INI Group display
+Multiplier for the pixel width for display mode 8.
+Default is 1.0
+
+Member DisplayMultiplierY
+REG_DWORD HKCU\DXGL\Profiles\<app>\
+INI Entry DisplayMultiplierY
+INI Group display
+Multiplier for the pixel height for display mode 8.
+Default is 1.0
 
 Member scalingfilter
 INI Entry ScalingFilter

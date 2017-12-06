@@ -35,6 +35,11 @@ typedef struct
 	DWORD AddColorDepths;
 	DWORD AddModes;
 	DWORD SortModes;
+	DWORD CustomResolutionX;
+	DWORD CustomResolutionY;
+	DWORD CustomRefresh;
+	float DisplayMultiplierX;
+	float DisplayMultiplierY;
 	// [scaling]
 	DWORD scalingfilter;
 	DWORD primaryscale;
