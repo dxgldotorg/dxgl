@@ -42,6 +42,8 @@ typedef struct
 	float DisplayMultiplierY;
 	// [scaling]
 	DWORD scalingfilter;
+	DWORD BltScale;
+	DWORD BltThreshold;
 	DWORD primaryscale;
 	float primaryscalex;
 	float primaryscaley;

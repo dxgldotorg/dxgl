@@ -540,6 +540,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->postsizey = ReadFloatWithObsolete(hKey, cfg->postsizey, &cfgmask->postsizey, _T("PostprocessScaleY"),
 		1, _T("FirstScaleY"));
 	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,&cfgmask->scalingfilter,_T("ScalingFilter"));
+	cfg->BltScale = ReadDWORD(hKey, cfg->BltScale, &cfgmask->BltScale, _T("BltScale"));
+	cfg->BltThreshold = ReadDWORD(hKey, cfg->BltThreshold, &cfgmask->BltThreshold, _T("BltThreshold"));
 	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,&cfgmask->texfilter,_T("TextureFilter"));
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	cfg->msaa = ReadDWORD(hKey,cfg->msaa,&cfgmask->msaa,_T("Antialiasing"));
@@ -660,6 +662,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	defaultmask.aspect = 1.0f;
 	defaultmask.postsizex = 1.0f;
 	defaultmask.postsizey = 1.0f;
+	defaultmask.DisplayMultiplierX = 1.0f;
+	defaultmask.DisplayMultiplierY = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
@@ -670,6 +674,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteFloatDeleteObsolete(hKey, cfg->postsizey, cfgmask->postsizey, _T("PostprocessScaleY"),
 		1, _T("FirstScaleY"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
+	WriteDWORD(hKey, cfg->BltScale, cfgmask->BltScale, _T("BltScale"));
+	WriteDWORD(hKey, cfg->BltThreshold, cfgmask->BltThreshold, _T("BltThreshold"));
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
@@ -796,6 +802,12 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	ZeroMemory(cfg, sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
 	cfg->AddModes = 1;
+	cfg->CustomResolutionX = 640;
+	cfg->CustomResolutionY = 480;
+	cfg->CustomRefresh = 60;
+	cfg->DisplayMultiplierX = 1.0f;
+	cfg->DisplayMultiplierY = 1.0f;
+	cfg->BltThreshold = 127;
 	if (!cfg->Windows8Detected)
 	{
 		OSVERSIONINFO osver;
@@ -896,6 +908,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	if (!stricmp(section, "scaling"))
 	{
 		if (!stricmp(name, "ScalingFilter")) cfg->scalingfilter = INIIntValue(value);
+		if (!stricmp(name, "BltScale")) cfg->BltScale = INIIntValue(value);
+		if (!stricmp(name, "BltThreshold")) cfg->BltThreshold = INIIntValue(value);
 		if (!stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
 		if (!stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
 		if (!stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);

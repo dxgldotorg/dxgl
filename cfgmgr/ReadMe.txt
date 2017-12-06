@@ -142,10 +142,29 @@ Member scalingfilter
 INI Entry ScalingFilter
 INI Group scaling
 REG_DWORD HKCU\DXGL\Profiles\<app>\ScalingFilter
-Filter to use for stretched 2D blits and the final display scaling.
+Filter to use for display scaling.
 Valid settings:
 0 - Nearest-neighbor stretching
 1 - Bilinear interpolation
+
+Member BltScale
+INI Entry BltScale
+INI Group scaling
+REG_DWORD HKCU\DXGL\Profiles\<app>\BltScale
+Filter to use for Blt scaling.
+Valid settings:
+0 - Nearest-neighbor stretching
+1 - Bilinear interpolation
+2 - Bilinear interpolation, sharp color key
+3 - Bilinear interpolation, soft color key
+
+Member BltThreshold
+INI Entry BltThreshold
+INI Group scaling
+REG_DWORD HKCU\DXGL\Profiles\<app>\BltThreshold
+Threshold point for sharp color key scaling.
+Default is 127.
+Valid settings are 0 to 254, 255 will be accepted but disable color keying.
 
 Member primaryscale
 INI Entry AdjustPrimaryResolution
