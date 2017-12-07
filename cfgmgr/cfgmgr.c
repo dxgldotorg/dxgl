@@ -696,7 +696,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey, cfg->CustomResolutionY, cfgmask->CustomResolutionY, _T("CustomResolutionY"));
 	WriteDWORD(hKey, cfg->CustomRefresh, cfgmask->CustomRefresh, _T("CustomRefresh"));
 	WriteFloat(hKey, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX, _T("DisplayMultiplierX"));
-	WriteFloat(hKey, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierX, _T("DisplayMultiplierY"));
+	WriteFloat(hKey, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));

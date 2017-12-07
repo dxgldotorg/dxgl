@@ -537,6 +537,14 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
 }
 
+void SetFloat3place(HWND hWnd, int DlgItem, float value, float mask)
+{
+	TCHAR number[32];
+	if(mask) _sntprintf(number, 31, _T("%.4g"), value);
+	else number[0] = 0;
+	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)number);
+}
+
 __inline DWORD EncodePrimaryScale(DWORD scale)
 {
 	switch (scale)
@@ -628,6 +636,30 @@ DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 	{
 		*mask = 1;
 		return value;
+	}
+}
+
+float GetFloat(HWND hWnd, int dlgitem, float *mask)
+{
+	TCHAR buffer[32];
+	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
+	if (buffer[0] == 0)
+	{
+		if (!current_app)
+		{
+			*mask = 1.0f;
+			return 1.0f;
+		}
+		else
+		{
+			*mask = 0.0f;
+			return 0.0f;
+		}
+	}
+	else
+	{
+		*mask = 1.0f;
+		return _ttof(buffer);
 	}
 }
 
@@ -1069,6 +1101,58 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			cfg->scaler = GetCombo(hWnd, IDC_VIDMODE, &cfgmask->scaler);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			if (cfg->scaler == 8)
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABEL), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABELX), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABELY), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALEX), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALEY), TRUE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABEL), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABELX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABELY), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALEX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALEY), FALSE);
+			}
+			if ((cfg->scaler == 9) || (cfg->scaler == 10))
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMMODELABEL), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMMODE), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_SETMODE), TRUE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMMODELABEL), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMMODE), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_SETMODE), FALSE);
+			}
+			break;
+		case IDC_FIXEDSCALEX:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				cfg->DisplayMultiplierX = GetFloat(hWnd, IDC_FIXEDSCALEX, &cfgmask->DisplayMultiplierX);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetFloat3place(hWnd, IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
+			}
+			break;
+		case IDC_FIXEDSCALEY:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				cfg->DisplayMultiplierY = GetFloat(hWnd, IDC_FIXEDSCALEY, &cfgmask->DisplayMultiplierY);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetFloat3place(hWnd, IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
+			}
 			break;
 		case IDC_SCALE:
 			cfg->scalingfilter = GetCombo(hWnd, IDC_SCALE, &cfgmask->scalingfilter);
@@ -1799,6 +1883,37 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Custom size, centered"));
 		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 10, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_VIDMODE,CB_SETCURSEL,cfg->scaler,0);
+		if (cfg->scaler == 8)
+		{
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), TRUE);
+		}
+		else
+		{
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), FALSE);
+		}
+		if ((cfg->scaler == 9) || (cfg->scaler == 10))
+		{
+			EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), TRUE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), TRUE);
+		}
+		else
+		{
+			EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), FALSE);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), FALSE);
+		}
+		// custom scale
+		SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
+		SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2078,6 +2193,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/
+
+		EnableWindow(GetDlgItem(hWnd, IDC_APPLY), FALSE);
 
 		// Check install path
 		installpath = NULL;
@@ -2436,6 +2553,36 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
 				SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
 				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
+				if (cfg->scaler == 8)
+				{
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), TRUE);
+				}
+				else
+				{
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), FALSE);
+				}
+				if ((cfg->scaler == 9) || (cfg->scaler == 10))
+				{
+					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), TRUE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), TRUE);
+				}
+				else
+				{
+					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), FALSE);
+					EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), FALSE);
+				}
+				SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
+				SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
 				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);

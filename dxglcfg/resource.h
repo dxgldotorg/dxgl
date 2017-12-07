@@ -71,10 +71,11 @@
 #define IDC_FIXEDSCALEX                         2012
 #define IDC_FIXEDSCALELABELY                    2013
 #define IDC_FIXEDSCALEY                         2014
-#define IDC_CUSTOMMODE                          2015
-#define IDC_SETMODE                             2016
-#define IDC_COLOR                               2017
-#define IDC_SINGLEBUFFER                        2018
+#define IDC_CUSTOMMODELABEL                     2015
+#define IDC_CUSTOMMODE                          2016
+#define IDC_SETMODE                             2017
+#define IDC_COLOR                               2018
+#define IDC_SINGLEBUFFER                        2019
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101
