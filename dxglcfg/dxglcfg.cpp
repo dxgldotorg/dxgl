@@ -1260,6 +1260,11 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				*dirty = TRUE;
 			}
 			break;
+		case IDC_BLTFILTER:
+			cfg->BltScale = GetCombo(hWnd, IDC_BLTFILTER, &cfgmask->BltScale);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		default:
 			break;
 		}
@@ -1296,6 +1301,16 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 			break;
 		case IDC_ASPECT3D:
 			cfg->aspect3d = GetCombo(hWnd, IDC_ASPECT3D, &cfgmask->aspect3d);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOWCOLORRENDER:
+			cfg->LowColorRendering = GetCombo(hWnd, IDC_LOWCOLORRENDER, &cfgmask->LowColorRendering);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_DITHERING:
+			cfg->EnableDithering = GetCombo(hWnd, IDC_DITHERING, &cfgmask->EnableDithering);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
@@ -1997,6 +2012,19 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Bilinear"));
 		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_ADDSTRING,1,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[0],IDC_SCALE,CB_SETCURSEL,cfg->scalingfilter,0);
+		// Blt scaling filter
+		_tcscpy(buffer, _T("Nearest"));
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear"));
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear, sharp colorkey"));
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear, soft colorkey"));
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_SETCURSEL, cfg->BltScale, 0);
+		// Blt scaling threshold
+		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETRANGE, 0, 0xFE0000);
+		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2068,6 +2096,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_SETCURSEL, cfg->anisotropic, 0);
 		}
 		// msaa
+#ifdef _DEBUG
 		if(msaa_available)
 		{
 			_tcscpy(buffer,_T("Application default"));
@@ -2122,6 +2151,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			EnableWindow(GetDlgItem(hTabs[2], IDC_MSAA), FALSE);
 			cfg->msaa = 0;
 		}
+#else
+		_tcscpy(buffer, _T("Not yet implemented"));
+		SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_SETCURSEL, 0, 0);
+		EnableWindow(GetDlgItem(hTabs[2], IDC_MSAA), FALSE);
+		cfg->msaa = 0;
+#endif
 		// aspect3d
 		_tcscpy(buffer,_T("Stretch to display"));
 		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2130,6 +2166,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Crop to display"));
 		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_ADDSTRING,2,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[2],IDC_ASPECT3D,CB_SETCURSEL,cfg->aspect3d,0);
+		// low color render
+		_tcscpy(buffer, _T("Use surface color depth"));
+		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Use 32-bpp color depth"));
+		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_SETCURSEL, cfg->LowColorRendering, 0);
+		// Enable dithering
+		_tcscpy(buffer, _T("Application defined, low color"));
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Always enabled, low color"));
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Application defined, all modes"));
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Always enabled, low color"));
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_SETCURSEL, cfg->EnableDithering, 0);
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2486,13 +2540,19 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+					// Effects tab
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					// 3D tab
 					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					// Advanced tab
 					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
 				}
@@ -2520,12 +2580,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+					// Effects tab
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					// 3D tab
 					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_DELETESTRING,
@@ -2534,6 +2598,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					// Advanced tab
 					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
 					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_DELETESTRING,
@@ -2552,7 +2621,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
 				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
 				SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
-				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 				if (cfg->scaler == 8)
 				{
 					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), TRUE);
@@ -2583,14 +2651,18 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
+				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
 				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
+				SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
 				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
 				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
 				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
 				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
+				SetCombo(hTabs[2], IDC_LOWCOLORRENDER, cfg->LowColorRendering, cfgmask->LowColorRendering, tristate);
+				SetCombo(hTabs[2], IDC_DITHERING, cfg->EnableDithering, cfgmask->EnableDithering, tristate);
 				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
