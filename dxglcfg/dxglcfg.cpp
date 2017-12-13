@@ -66,6 +66,7 @@ HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 static BOOL ExtraModes_Dropdown = FALSE;
 static BOOL ColorDepth_Dropdown = FALSE;
 static HWND hDialog = NULL;
+static BOOL EditInterlock = FALSE;
 
 
 typedef struct
@@ -89,6 +90,7 @@ int maxapps;
 DWORD current_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
+TCHAR strdefaultshort[] = _T("(default)");
 HWND hTab;
 HWND hTabs[6];
 static int tabopen;
@@ -541,8 +543,35 @@ void SetFloat3place(HWND hWnd, int DlgItem, float value, float mask)
 {
 	TCHAR number[32];
 	if(mask) _sntprintf(number, 31, _T("%.4g"), value);
-	else number[0] = 0;
+	else _tcscpy(number, strdefaultshort);
+	EditInterlock = TRUE;
 	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)number);
+	EditInterlock = FALSE;
+}
+
+void SetResolution(HWND hWnd, int DlgItem, const DXGLCFG *cfg, const DXGLCFG *cfgmask)
+{
+	TCHAR output[104];
+	TCHAR *ptr;
+	ptr = output;
+	if (!cfgmask->CustomResolutionX) _tcscpy(output, strdefault);
+	else
+	{
+		_itot(cfg->CustomResolutionX, ptr, 10);
+		_tcscat(ptr, _T("x"));
+		ptr = _tcschr(ptr, 0);
+		_itot(cfg->CustomResolutionY, ptr, 10);
+		if (cfgmask->CustomRefresh)
+		{
+			_tcscat(ptr, _T(", "));
+			ptr = _tcschr(ptr, 0);
+			_itot(cfg->CustomRefresh, ptr, 10);
+			_tcscat(ptr, _T("Hz"));
+		}
+	}
+	EditInterlock = TRUE;
+	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)output);
+	EditInterlock = FALSE;
 }
 
 __inline DWORD EncodePrimaryScale(DWORD scale)
@@ -661,6 +690,149 @@ float GetFloat(HWND hWnd, int dlgitem, float *mask)
 		*mask = 1.0f;
 		return _ttof(buffer);
 	}
+}
+
+void ProcessResolutionString(LPTSTR input)
+{
+	DWORD x, y, refresh;
+	TCHAR buffer[32];
+	int ptr;
+	int number[3];
+	int length;
+	int i;
+	BOOL found = FALSE;
+	BOOL skip = FALSE;
+	length = _tcslen(input);
+	for (i = 0; i < length; i++)
+	{
+		if (_istdigit(input[i]))
+		{
+			found = TRUE;
+			ptr = i;
+			break;
+		}
+	}
+	if (!found) // Totally invalid, no numbers
+	{
+		if (current_app)
+		{
+			cfgmask->CustomResolutionX = 0;
+			cfgmask->CustomResolutionY = 0;
+			cfgmask->CustomRefresh = 0;
+		}
+		return;
+	}
+	found = FALSE;
+	for (i = ptr; i < length; i++)
+	{
+		if (!(_istdigit(input[i])))
+		{
+			found = TRUE;
+			memset(buffer, 0, 32 * sizeof(TCHAR));
+			_tcsncpy(buffer, &input[ptr], i - ptr);
+			number[0] = _ttoi(buffer);
+			ptr = i;
+			break;
+		}
+	}
+	if (!found) // No separating character found
+	{
+		if (current_app)
+		{
+			cfgmask->CustomResolutionX = 0;
+			cfgmask->CustomResolutionY = 0;
+			cfgmask->CustomRefresh = 0;
+		}
+		return;
+	}
+	found = FALSE;
+	for (i = ptr; i < length; i++)
+	{
+		if (_istdigit(input[i]))
+		{
+			found = TRUE;
+			ptr = i;
+			break;
+		}
+	}
+	if (!found) // Needs two numbers
+	{
+		if (current_app)
+		{
+			cfgmask->CustomResolutionX = 0;
+			cfgmask->CustomResolutionY = 0;
+			cfgmask->CustomRefresh = 0;
+		}
+		return;
+	}
+	found = FALSE;
+	for (i = ptr; i < length; i++)
+	{
+		if (!(_istdigit(input[i])))
+		{
+			found = TRUE;
+			memset(buffer, 0, 32 * sizeof(TCHAR));
+			_tcsncpy(buffer, &input[ptr], i - ptr);
+			number[1] = _ttoi(buffer);
+			ptr = i;
+			break;
+		}
+	}
+	if (!found)
+	{
+		number[1] = _ttoi(&input[ptr]);
+		skip = TRUE;
+	}
+	found = FALSE;
+	if (!skip)
+	{
+		for (i = ptr; i < length; i++)
+		{
+			if (_istdigit(input[i]))
+			{
+				found = TRUE;
+				ptr = i;
+				break;
+			}
+		}
+	}
+	if (!found)  // Found two numbers
+	{
+		cfg->CustomResolutionX = number[0];
+		cfg->CustomResolutionY = number[1];
+		cfgmask->CustomResolutionX = 1;
+		cfgmask->CustomResolutionY = 1;
+		if (current_app) cfgmask->CustomRefresh = 0;
+		return;
+	}
+	found = FALSE;
+	for (i = ptr; i < length; i++)
+	{
+		if (!(_istdigit(input[i])))
+		{
+			found = TRUE;
+			memset(buffer, 0, 32 * sizeof(TCHAR));
+			_tcsncpy(buffer, &input[ptr], i - ptr);
+			number[2] = _ttoi(buffer);
+			ptr = i;
+			break;
+		}
+	}
+	if (!found)	number[2] = _ttoi(&input[ptr]);
+	// Found the refresh rate too.
+	cfg->CustomResolutionX = number[0];
+	cfg->CustomResolutionY = number[1];
+	cfg->CustomRefresh = number[2];
+	cfgmask->CustomResolutionX = 1;
+	cfgmask->CustomResolutionY = 1;
+	cfgmask->CustomRefresh = 1;
+}
+
+void GetResolution(HWND hWnd, int dlgitem, DXGLCFG *cfg, DXGLCFG *cfgmask)
+{
+	TCHAR input[104];
+	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 104, (LPARAM)input);
+	ProcessResolutionString(input);
 }
 
 void GetPostScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx, float *masky)
@@ -851,6 +1023,128 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 			}
 		}
 	}
+}
+
+static int CompareMode(const void *a, const void *b)
+{
+	DEVMODE *modea, *modeb;
+	modea = (DEVMODE*)a;
+	modeb = (DEVMODE*)b;
+	if (modea->dmPelsWidth < modeb->dmPelsWidth) return -1;
+	else if (modea->dmPelsWidth > modeb->dmPelsWidth) return 1;
+	if (modea->dmPelsHeight < modeb->dmPelsHeight) return -1;
+	else if (modea->dmPelsHeight > modeb->dmPelsHeight) return 1;
+	if (modea->dmDisplayFrequency < modeb->dmDisplayFrequency) return -1;
+	else if (modea->dmDisplayFrequency > modeb->dmDisplayFrequency) return 1;
+	return 0;
+}
+
+void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
+{
+	DEVMODE *newarray = (DEVMODE *)malloc(sizeof(DEVMODE)*(*count));
+	if (!newarray) return;
+	DWORD newcount = 0;
+	bool match;
+	for (DWORD x = 0; x < (*count); x++)
+	{
+		match = false;
+		memcpy(&newarray[newcount], &(*array)[x], sizeof(DEVMODE));
+		for (int y = newcount; y > 0; y--)
+		{
+			if ((*array)[x].dmDisplayFrequency == newarray[y - 1].dmDisplayFrequency &&
+				(*array)[x].dmPelsWidth == newarray[y - 1].dmPelsWidth &&
+				(*array)[x].dmPelsHeight == newarray[y - 1].dmPelsHeight)
+			{
+				match = true;
+				break;
+			}
+		}
+		if (!match) newcount++;
+	}
+	DEVMODE *newarray2 = (DEVMODE*)realloc(newarray, sizeof(DEVMODE)*newcount);
+	if (newarray2) newarray = newarray2;
+	free(*array);
+	*array = newarray;
+	*count = newcount;
+}
+
+LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	int newmodex, newmodey, newmoderefresh;
+	DEVMODE mode;
+	DEVMODE *modes;
+	DEVMODE *tmpmodes;
+	DWORD modenum;
+	DWORD modemax;
+	TCHAR str[64];
+	TCHAR *ptr;
+	int i, j;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		modenum = 0;
+		modemax = 128;
+		modes = (DEVMODE*)malloc(128 * sizeof(DEVMODE));
+		while (EnumDisplaySettings(NULL, modenum++, &mode))
+		{
+			modes[modenum - 1] = mode;
+			if (modenum >= modemax)
+			{
+				modemax += 128;
+				tmpmodes = (DEVMODE*)realloc(modes, modemax * sizeof(DEVMODE));
+				if (tmpmodes == NULL)
+				{
+					free(modes);
+					MessageBox(hWnd, _T("Out of memory!"), _T("Fatal error"), MB_OK | MB_ICONSTOP);
+					ExitProcess(ERROR_NOT_ENOUGH_MEMORY);
+				}
+				modes = tmpmodes;
+			}
+		}
+		DiscardDuplicateModes(&modes, &modenum);
+		qsort(modes, modenum-1, sizeof(DEVMODE), CompareMode);
+		for (i = 0; i < modenum-1; i++)
+		{
+			ptr = str;
+			_itot(modes[i].dmPelsWidth, ptr, 10);
+			_tcscat(ptr, _T("x"));
+			ptr = _tcschr(ptr, 0);
+			_itot(modes[i].dmPelsHeight, ptr, 10);
+			_tcscat(ptr, _T(", "));
+			ptr = _tcschr(ptr, 0);
+			_itot(modes[i].dmDisplayFrequency, ptr, 10);
+			_tcscat(ptr, _T("Hz"));
+			SendDlgItemMessage(hWnd, IDC_MODELIST, LB_ADDSTRING, 0, (LPARAM)str);
+		}
+		free(modes);
+		return TRUE;
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_MODELIST:
+			if ((HIWORD(wParam) == LBN_SELCHANGE))
+				EnableWindow(GetDlgItem(hWnd, IDOK), TRUE);
+			break;
+		case IDOK:
+			SendDlgItemMessage(hWnd, IDC_MODELIST, LB_GETTEXT,
+				SendDlgItemMessage(hWnd, IDC_MODELIST, LB_GETCURSEL, 0, 0), (LPARAM)str);
+			ProcessResolutionString(str);
+			EndDialog(hWnd, 1);
+			return TRUE;
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			return TRUE;
+		default:
+			break;
+		}
+		return TRUE;
+	default:
+		return DefWindowProc(hWnd, Msg, wParam, lParam);
+	}
+	return 0;
 }
 
 LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -1133,9 +1427,12 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		case IDC_FIXEDSCALEX:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
-				cfg->DisplayMultiplierX = GetFloat(hWnd, IDC_FIXEDSCALEX, &cfgmask->DisplayMultiplierX);
-				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
-				*dirty = TRUE;
+				if (!EditInterlock)
+				{
+					cfg->DisplayMultiplierX = GetFloat(hWnd, IDC_FIXEDSCALEX, &cfgmask->DisplayMultiplierX);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
 			}
 			if (HIWORD(wParam) == EN_KILLFOCUS)
 			{
@@ -1145,15 +1442,38 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		case IDC_FIXEDSCALEY:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
-				cfg->DisplayMultiplierY = GetFloat(hWnd, IDC_FIXEDSCALEY, &cfgmask->DisplayMultiplierY);
-				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
-				*dirty = TRUE;
+				if (!EditInterlock)
+				{
+					cfg->DisplayMultiplierY = GetFloat(hWnd, IDC_FIXEDSCALEY, &cfgmask->DisplayMultiplierY);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
 			}
 			if (HIWORD(wParam) == EN_KILLFOCUS)
 			{
 				SetFloat3place(hWnd, IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 			}
 			break;
+		case IDC_CUSTOMMODE:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					GetResolution(hWnd, IDC_CUSTOMMODE, cfg, cfgmask);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetResolution(hWnd, IDC_CUSTOMMODE, cfg, cfgmask);
+			}
+			break;
+		case IDC_SETMODE:
+		{
+			if (DialogBox(hinstance, MAKEINTRESOURCE(IDD_MODELIST), hWnd, (DLGPROC)ModeListCallback))
+				SetResolution(hWnd, IDC_CUSTOMMODE, cfg, cfgmask);
+		}
 		case IDC_SCALE:
 			cfg->scalingfilter = GetCombo(hWnd, IDC_SCALE, &cfgmask->scalingfilter);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
@@ -1929,6 +2249,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// custom scale
 		SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
 		SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
+		// custom resolution
+		SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
 		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2247,6 +2569,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/
+
+		// Hacks
+		_tcscpy(buffer, _T("Crop 640x480 to 640x400"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 
 		EnableWindow(GetDlgItem(hWnd, IDC_APPLY), FALSE);
 
@@ -2651,6 +2979,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				}
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
+				SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
 				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
