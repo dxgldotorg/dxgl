@@ -78,6 +78,9 @@ typedef struct
 	BOOL DebugNoGLSL130;
 	DWORD DebugMaxGLVersionMajor;
 	DWORD DebugMaxGLVersionMinor;
+	// [hacks]
+	BOOL HackCrop640480to640400;
+	BOOL HackAutoScale512448to640480;
 	// internal
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;

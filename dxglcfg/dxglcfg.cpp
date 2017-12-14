@@ -1996,6 +1996,14 @@ void ReadHacksItem(int item, BOOL *value, BOOL *mask)
 {
 	switch (item)
 	{
+	case 0:
+		*value = cfg->HackCrop640480to640400;
+		*mask = cfgmask->HackCrop640480to640400;
+		break;
+	case 1:
+		*value = cfg->HackAutoScale512448to640480;
+		*mask = cfgmask->HackAutoScale512448to640480;
+		break;
 	default:
 		*value = FALSE;
 		*mask = FALSE;
@@ -2007,6 +2015,14 @@ void WriteHacksItem(int item, BOOL value, BOOL mask)
 {
 	switch (item)
 	{
+	case 0:
+		cfg->HackCrop640480to640400 = value;
+		cfgmask->HackCrop640480to640400 = mask;
+		break;
+	case 1:
+		cfg->HackAutoScale512448to640480 = value;
+		cfgmask->HackAutoScale512448to640480 = mask;
+		break;
 	default:
 		break;
 	}
