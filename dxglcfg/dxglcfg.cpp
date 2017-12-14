@@ -549,6 +549,16 @@ void SetFloat3place(HWND hWnd, int DlgItem, float value, float mask)
 	EditInterlock = FALSE;
 }
 
+void SetInteger(HWND hWnd, int DlgItem, int value, int mask)
+{
+	TCHAR number[32];
+	if (mask) _itot(value, number, 10);
+	else number[0] = 0;
+	EditInterlock = TRUE;
+	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)number);
+	EditInterlock = FALSE;
+}
+
 void SetResolution(HWND hWnd, int DlgItem, const DXGLCFG *cfg, const DXGLCFG *cfgmask)
 {
 	TCHAR output[104];
@@ -689,6 +699,30 @@ float GetFloat(HWND hWnd, int dlgitem, float *mask)
 	{
 		*mask = 1.0f;
 		return _ttof(buffer);
+	}
+}
+
+int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum)
+{
+	TCHAR buffer[32];
+	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
+	if (buffer[0] == 0)
+	{
+		if (!current_app)
+		{
+			*mask = 1;
+			return defaultnum;
+		}
+		else
+		{
+			*mask = 0;
+			return defaultnum;
+		}
+	}
+	else
+	{
+		*mask = 1;
+		return _ttoi(buffer);
 	}
 }
 
@@ -1618,6 +1652,23 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				SetFloat3place(hWnd, IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 			}
 			break;
+		case IDC_BLTTHRESHOLD:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->BltThreshold = GetInteger(hWnd, IDC_BLTTHRESHOLD, (int*)&cfgmask->BltThreshold, 127);
+					if (cfg->BltThreshold > 255) cfg->BltThreshold = 255;
+					SendDlgItemMessage(hWnd, IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetInteger(hWnd, IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+			}
+			break;
 		case IDC_SHADER:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1634,6 +1685,28 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		default:
 			break;
 		}
+	case WM_HSCROLL:
+		switch (LOWORD(wParam))
+		{
+		case TB_ENDTRACK:
+		case TB_THUMBTRACK:
+		case TB_THUMBPOSITION:
+		case TB_BOTTOM:
+		case TB_TOP:
+		case TB_LINEDOWN:
+		case TB_LINEUP:
+		case TB_PAGEDOWN:
+		case TB_PAGEUP:
+			cfgmask->BltThreshold = 1;
+			cfg->BltThreshold = SendDlgItemMessage(hWnd, IDC_BLTTHRESHOLDSLIDER, TBM_GETPOS, 0, 0);
+			SetInteger(hWnd, IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
+			break;
+		}
+		break;
 	default:
 		return FALSE;
 	}
@@ -2412,6 +2485,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Blt scaling threshold
 		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETRANGE, 0, 0xFE0000);
 		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
+		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLD, EM_SETLIMITTEXT, 3, 0);
+		SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -3045,6 +3120,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
 				SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 				SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
+				// Effects tab
 				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
@@ -3069,15 +3145,26 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
 				SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
+				SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+				if (cfgmask->BltThreshold)
+				{
+					SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
+				}
+				else SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, 127);
+				// 3D tab
 				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
 				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
 				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
 				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
 				SetCombo(hTabs[2], IDC_LOWCOLORRENDER, cfg->LowColorRendering, cfgmask->LowColorRendering, tristate);
 				SetCombo(hTabs[2], IDC_DITHERING, cfg->EnableDithering, cfgmask->EnableDithering, tristate);
+				// Advanced tab
 				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
+				// Debug tab
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
+				// Hacks tab
+				RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
 			break;
 		case IDC_ADD:
