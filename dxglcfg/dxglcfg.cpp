@@ -1571,6 +1571,52 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			cfg->primaryscale = GetCombo(hWnd, IDC_PRIMARYSCALE, &cfgmask->primaryscale);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			if (cfg->primaryscale == 12)
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABEL), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABELX), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALEX), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABELY), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALEY), TRUE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABEL), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABELX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALEX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALELABELY), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CUSTOMSCALEY), FALSE);
+			}
+			break;
+		case IDC_CUSTOMSCALEX:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->primaryscalex = GetFloat(hWnd, IDC_CUSTOMSCALEX, &cfgmask->primaryscalex);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetFloat3place(hWnd, IDC_CUSTOMSCALEX, cfg->primaryscalex, cfgmask->primaryscalex);
+			}
+			break;
+		case IDC_CUSTOMSCALEY:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->primaryscaley = GetFloat(hWnd, IDC_CUSTOMSCALEY, &cfgmask->primaryscaley);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetFloat3place(hWnd, IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
+			}
 			break;
 		case IDC_SHADER:
 			if (HIWORD(wParam) == EN_CHANGE)
@@ -2328,6 +2374,25 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Custom scale"));
 		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_SETCURSEL, cfg->primaryscale, 0);
+		// Primary scaling size
+		if (cfg->primaryscale == 12)
+		{
+			EnableWindow(GetDlgItem(hTabs[1],IDC_CUSTOMSCALELABEL), TRUE);
+			EnableWindow(GetDlgItem(hTabs[1],IDC_CUSTOMSCALELABELX), TRUE);
+			EnableWindow(GetDlgItem(hTabs[1],IDC_CUSTOMSCALEX), TRUE);
+			EnableWindow(GetDlgItem(hTabs[1],IDC_CUSTOMSCALELABELY), TRUE);
+			EnableWindow(GetDlgItem(hTabs[1],IDC_CUSTOMSCALEY), TRUE);
+		}
+		else
+		{
+			EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), FALSE);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), FALSE);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), FALSE);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), FALSE);
+			EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), FALSE);
+		}
+		SetFloat3place(hTabs[1], IDC_CUSTOMSCALEX, cfg->primaryscalex, cfgmask->primaryscalex);
+		SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 		// scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2984,6 +3049,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
 					cfgmask->postsizex , cfgmask->postsizey, tristate);
 				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
+				if (cfg->primaryscale == 12)
+				{
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), TRUE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), TRUE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), TRUE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), TRUE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), TRUE);
+				}
+				else
+				{
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), FALSE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), FALSE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), FALSE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), FALSE);
+					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), FALSE);
+				}
+				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEX, cfg->primaryscalex, cfgmask->primaryscalex);
+				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
 				SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
 				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);

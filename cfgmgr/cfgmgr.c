@@ -666,6 +666,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	defaultmask.postsizey = 1.0f;
 	defaultmask.DisplayMultiplierX = 1.0f;
 	defaultmask.DisplayMultiplierY = 1.0f;
+	defaultmask.primaryscalex = 1.0f;
+	defaultmask.primaryscaley = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
@@ -811,6 +813,8 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->CustomRefresh = 60;
 	cfg->DisplayMultiplierX = 1.0f;
 	cfg->DisplayMultiplierY = 1.0f;
+	cfg->primaryscalex = 1.0f;
+	cfg->primaryscaley = 1.0f;
 	cfg->BltThreshold = 127;
 	if (!cfg->Windows8Detected)
 	{
