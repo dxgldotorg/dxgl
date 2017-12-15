@@ -65,7 +65,7 @@ HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
 HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
 static BOOL ExtraModes_Dropdown = FALSE;
 static BOOL ColorDepth_Dropdown = FALSE;
-static HWND hDialog = NULL;
+HWND hDialog = NULL;
 static BOOL EditInterlock = FALSE;
 
 
@@ -539,6 +539,106 @@ void SetCombo(HWND hWnd, int DlgItem, DWORD value, DWORD mask, BOOL tristate)
 		SendDlgItemMessage(hWnd,DlgItem,CB_SETCURSEL,value,0);
 }
 
+void SetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *majormask, DWORD *minormask, DWORD tristate, HWND hDialog)
+{
+	BOOL badversion = FALSE;
+	int position;
+	if (tristate && (!majormask || !minormask))
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+		SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+	{
+		switch (*major)
+		{
+		case 0:
+			position = 0;
+			break;
+		case 2:
+			switch (*minor)
+			{
+			case 0:
+				position = 1;
+				break;
+			case 1:
+				position = 2;
+				break;
+			default:
+				badversion = TRUE;
+				break;
+			}
+			break;
+		case 3:
+			switch (*minor)
+			{
+			case 0:
+				position = 3;
+				break;
+			case 1:
+				position = 4;
+				break;
+			case 2:
+				position = 5;
+				break;
+			case 3:
+				position = 6;
+				break;
+			default:
+				badversion = TRUE;
+				break;
+			}
+			break;
+		case 4:
+			switch (*minor)
+			{
+			case 0:
+				position = 7;
+				break;
+			case 1:
+				position = 8;
+				break;
+			case 2:
+				position = 9;
+				break;
+			case 3:
+				position = 10;
+				break;
+			case 4:
+				position = 11;
+				break;
+			case 5:
+				position = 12;
+				break;
+			case 6:
+				position = 13;
+				break;
+			default:
+				badversion = TRUE;
+				break;
+			}
+			break;
+		default:
+			badversion = TRUE;
+			break;
+		}
+		if (badversion)
+		{
+			*major = 0;
+			*minor = 0;
+			if (tristate)
+			{
+				position = SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault);
+				*majormask = 0;
+				*minormask = 0;
+			}
+			else position = 0;
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+		}
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL, position, 0);
+	}
+}
+
+
 void SetFloat3place(HWND hWnd, int DlgItem, float value, float mask)
 {
 	TCHAR number[32];
@@ -675,6 +775,84 @@ DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 	{
 		*mask = 1;
 		return value;
+	}
+}
+
+void GetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *majormask, DWORD *minormask)
+{
+	int value = SendDlgItemMessage(hWnd, DlgItem, CB_GETCURSEL, 0, 0);
+	if (value == SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault))
+	{
+		*majormask = 0;
+		*minormask = 0;
+		*major = 0;
+		*minor = 0;
+		return;
+	}
+	else
+	{
+		*majormask = 1;
+		*minormask = 1;
+		switch (value)
+		{
+		case 0:
+			*major = 0;
+			*minor = 0;
+			break;
+		case 1:
+			*major = 2;
+			*minor = 0;
+			break;
+		case 2:
+			*major = 2;
+			*minor = 1;
+			break;
+		case 3:
+			*major = 3;
+			*minor = 0;
+			break;
+		case 4:
+			*major = 3;
+			*minor = 1;
+			break;
+		case 5:
+			*major = 3;
+			*minor = 2;
+			break;
+		case 6:
+			*major = 3;
+			*minor = 3;
+			break;
+		case 7:
+			*major = 4;
+			*minor = 0;
+			break;
+		case 8:
+			*major = 4;
+			*minor = 1;
+			break;
+		case 9:
+			*major = 4;
+			*minor = 2;
+			break;
+		case 10:
+			*major = 4;
+			*minor = 3;
+			break;
+		case 11:
+			*major = 4;
+			*minor = 4;
+			break;
+		case 12:
+			*major = 4;
+			*minor = 5;
+			break;
+		case 13:
+			*major = 4;
+			*minor = 6;
+			break;
+		}
+		return;
 	}
 }
 
@@ -1945,6 +2123,12 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				*dirty = TRUE;
 			}
 			break;
+		case IDC_GLVERSION:
+			GetGLCombo(hWnd, IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
+				&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		default:
 			break;
 		}
@@ -2725,14 +2909,43 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/
-
+		// Max OpenGL
+		_tcscpy(buffer, _T("Maximum Available"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 2.0"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 2.1"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 3.0"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 3.1"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 3.2"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 3.3"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.0"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.1"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.2"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.3"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.4"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.5"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("OpenGL 4.6"));
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, WM_SETTEXT, 0, (LPARAM)buffer);
+		SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
+			&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, FALSE, hWnd);
 		// Hacks
 		_tcscpy(buffer, _T("Crop 640x480 to 640x400"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
-
-		EnableWindow(GetDlgItem(hWnd, IDC_APPLY), FALSE);
 
 		// Check install path
 		installpath = NULL;
@@ -3037,8 +3250,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					// Advanced tab
-					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_ADDSTRING,0,(LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					// Debug tab
+					SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
 				}
 				else if(!current_app && tristate)
 				{
@@ -3087,10 +3302,13 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					// Advanced tab
-					SendDlgItemMessage(hTabs[3],IDC_TEXTUREFORMAT,CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
-					SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3],IDC_ASPECT3D,CB_FINDSTRING,-1,(LPARAM)strdefault),0);
+					SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					// Debug tab
+					SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 				}
 				// Read settings into controls
 				// Display tab
@@ -3179,6 +3397,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
 				// Debug tab
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
+				SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
+					&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
 				// Hacks tab
 				RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
