@@ -329,6 +329,13 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			}
 			else if (HIWORD(wParam) == LBN_DBLCLK)
 			{
+				if (IsWindowEnabled(GetDlgItem(hDialog, IDC_APPLY)))
+				{
+					if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n\
+Do you want to apply them before running this test?"),
+_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+SaveChanges(hDialog);
+				}
 				if (SendDlgItemMessage(hWnd, IDC_RESIZABLE, BM_GETCHECK, 0, 0)) resizable = true;
 				else resizable = false;
 				if (buffer < minbuffer) buffer = minbuffer;

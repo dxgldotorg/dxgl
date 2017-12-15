@@ -135,10 +135,11 @@
 #define IDC_FSAA                                2616
 #define IDC_TEST                                2617
 
-// Controls - System Information Tab
-#define IDC_DDTYPE                              2701
-#define IDC_DDVER                               2702
-#define IDC_DXDIAG                              2703
+// Controls - About Tab
+#define IDC_ABOUTTEXT                           2701
+#define IDC_DDTYPE                              2702
+#define IDC_DDVER                               2703
+#define IDC_DXDIAG                              2704
 
 // Controls - Shader Test Dialog Common
 #define IDC_DISPLAY                             2801

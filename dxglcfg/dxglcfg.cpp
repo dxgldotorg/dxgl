@@ -39,6 +39,7 @@
 #include "../ddraw/include/GL/glext.h"
 #include "dxgltest.h"
 #include "common.h"
+#include "../common/version.h"
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -2400,6 +2401,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	DWORD err;
 	RECT r;
 	NMHDR *nm;
+	TCHAR abouttext[1024];
 	int newtab;
 	TCITEM tab;
 	switch (Msg)
@@ -2946,7 +2948,26 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
-
+		// About text
+		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
+		_tcscat(abouttext, _T(DXGLVERSTRING));
+		_tcscat(abouttext, _T("\r\nCopyright ©2011-"));
+		_tcscat(abouttext, _T(COPYYEARSTRING));
+		_tcscat(abouttext, _T(" William Feely\r\n\r\n\
+This library is free software; you can redistribute it and/or\r\n\
+modify it under the terms of the GNU Lesser General Public\r\n\
+License as published by the Free Software Foundation; either\r\n\
+version 2.1 of the License, or (at your option) any later version.\r\n\
+\r\n\
+This library is distributed in the hope that it will be useful,\r\n\
+but WITHOUT ANY WARRANTY; without even the implied warranty of\r\n\
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\r\n\
+Lesser General Public License for more details.\r\n\
+\r\n\
+You should have received a copy of the GNU Lesser General Public\r\n\
+License along with this library; if not, write to the Free Software\r\n\
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA"));
+		SendDlgItemMessage(hTabs[7], IDC_ABOUTTEXT, WM_SETTEXT, 0, (LPARAM)abouttext);
 		// Check install path
 		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
