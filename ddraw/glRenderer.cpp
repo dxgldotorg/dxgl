@@ -1611,6 +1611,8 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
   */
 void glRenderer__SetSwap(glRenderer *This, int swap)
 {
+	if (dxglcfg.vsync == 1) swap = 0;
+	else if (dxglcfg.vsync == 2) swap = 1;
 	if(swap != This->oldswap)
 	{
 		This->ext->wglSwapIntervalEXT(swap);
@@ -2720,6 +2722,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glFinish();
 	DXGLTimer_Init(&This->timer);
 	DXGLTimer_Calibrate(&This->timer, height, frequency);
+	if (dxglcfg.vsync == 1) This->oldswap = 1;
 	glRenderer__SetSwap(This,0);
 	glUtil_SetViewport(This->util,0,0,width,height);
 	glViewport(0,0,width,height);

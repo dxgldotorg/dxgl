@@ -93,7 +93,7 @@ BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 TCHAR strdefaultshort[] = _T("(default)");
 HWND hTab;
-HWND hTabs[6];
+HWND hTabs[8];
 static int tabopen;
 
 static const TCHAR *colormodes[32] = {
