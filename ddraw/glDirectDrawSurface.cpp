@@ -72,6 +72,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	ddsd = *lpDDSurfaceDesc2;
 	miptexture = NULL;
 	LONG sizes[6];
+	int i;
 	float xscale, yscale;
 	ddInterface->GetSizes(sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
@@ -105,8 +106,72 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 						xscale = dxglcfg.postsizex;
 						yscale = dxglcfg.postsizey;
 					}
-					fakex = (DWORD)((float)sizes[0] / xscale);
-					fakey = (DWORD)((float)sizes[1] / yscale);
+					switch (dxglcfg.primaryscale)
+					{
+					case 1: // Scale to window size
+					default:
+						fakex = (DWORD)((float)sizes[0] / xscale);
+						fakey = (DWORD)((float)sizes[1] / yscale);
+						break;
+					case 2: // Scale to integer auto
+						for (i = 1; i < 100; i++)
+						{
+							if ((ddsd.dwWidth * i) >(DWORD)((float)sizes[0] / xscale))
+							{
+								fakex = ddsd.dwWidth * i;
+								break;
+							}
+						}
+						for (i = 1; i < 100; i++)
+						{
+							if ((ddsd.dwHeight * i) >(DWORD)((float)sizes[1] / yscale))
+							{
+								fakey = ddsd.dwHeight * i;
+								break;
+							}
+						}
+						break;
+					case 3: // 1.5x scale
+						fakex = (DWORD)((float)ddsd.dwWidth * 1.5f);
+						fakey = (DWORD)((float)ddsd.dwHeight * 1.5f);
+						break;
+					case 4: // 2x scale
+						fakex = ddsd.dwWidth * 2;
+						fakey = ddsd.dwHeight * 2;
+						break;
+					case 5: // 2.5x scale
+						fakex = (DWORD)((float)ddsd.dwWidth * 2.5f);
+						fakey = (DWORD)((float)ddsd.dwHeight * 2.5f);
+						break;
+					case 6: // 3x scale
+						fakex = ddsd.dwWidth * 3;
+						fakey = ddsd.dwHeight * 3;
+						break;
+					case 7: // 4x scale
+						fakex = ddsd.dwWidth * 4;
+						fakey = ddsd.dwHeight * 4;
+						break;
+					case 8: // 5x scale
+						fakex = ddsd.dwWidth * 5;
+						fakey = ddsd.dwHeight * 5;
+						break;
+					case 9: // 6x scale
+						fakex = ddsd.dwWidth * 6;
+						fakey = ddsd.dwHeight * 6;
+						break;
+					case 10: // 7x scale
+						fakex = ddsd.dwWidth * 7;
+						fakey = ddsd.dwHeight * 7;
+						break;
+					case 11: // 8x scale
+						fakex = ddsd.dwWidth * 8;
+						fakey = ddsd.dwHeight * 8;
+						break;
+					case 12: // Custom scale
+						fakex = (DWORD)((float)ddsd.dwWidth * dxglcfg.primaryscalex);
+						fakey = (DWORD)((float)ddsd.dwHeight * dxglcfg.primaryscaley);
+						break;
+					}
 				}
 				else
 				{
@@ -1245,7 +1310,7 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 void glDirectDrawSurface7::Restore2()
 {
 	TRACE_ENTER(1,14,this);
-	/*LONG sizes[6];
+#	/*LONG sizes[6];
 	float xscale, yscale;
 	if(hRC != ddInterface->renderer->hRC)
 	{
