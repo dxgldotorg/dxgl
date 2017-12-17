@@ -3191,7 +3191,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		glUtil_SetTexture(This->util, 8, cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			if((dxglcfg.scalingfilter == 0) || (This->ddInterface->GetBPP() == 8))
+			if((dxglcfg.BltScale == 0) || (This->ddInterface->GetBPP() == 8))
 				glTexture__SetFilter(cmd->src, 8, GL_NEAREST, GL_NEAREST, This);
 			else glTexture__SetFilter(cmd->src, 8, GL_LINEAR, GL_LINEAR, This);
 		}

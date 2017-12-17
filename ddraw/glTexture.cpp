@@ -1001,9 +1001,18 @@ void glTexture__FinishCreate(glTexture *This)
 		This->minfilter = This->magfilter = GL_NEAREST;
 	else
 	{
-		if (dxglcfg.scalingfilter && (glRenderer_GetBPP(This->renderer) > 8))
-			This->minfilter = This->magfilter = GL_LINEAR;
-		else This->minfilter = This->magfilter = GL_NEAREST;
+		if (This->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			if (dxglcfg.scalingfilter && (glRenderer_GetBPP(This->renderer) > 8))
+				This->minfilter = This->magfilter = GL_LINEAR;
+			else This->minfilter = This->magfilter = GL_NEAREST;
+		}
+		else
+		{
+			if (dxglcfg.BltScale && (glRenderer_GetBPP(This->renderer) > 8))
+				This->minfilter = This->magfilter = GL_LINEAR;
+			else This->minfilter = This->magfilter = GL_NEAREST;
+		}
 	}
 	This->wraps = This->wrapt = GL_CLAMP_TO_EDGE;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, This->minfilter);
