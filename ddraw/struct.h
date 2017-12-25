@@ -337,6 +337,7 @@ typedef struct SHADER
 	GLint tex0;
 	GLint tex1;
 	GLint ckey;
+	GLint colorsize;
 	GLint pal;
 	GLint view;
 } SHADER;

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2016 William Feely
+// Copyright (C) 2013-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,7 @@ char IsReadablePointer(void *ptr, LONG_PTR size);
 char IsWritablePointer(void *ptr, LONG_PTR size, BOOL preserve);
 void AndMem(void *dest, const void *a, const void *b, size_t size);
 BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags);
+BOOL IsAlphaCKey();
 
 #ifdef __cplusplus
 }

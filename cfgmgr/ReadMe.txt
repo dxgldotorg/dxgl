@@ -155,8 +155,9 @@ Filter to use for Blt scaling.
 Valid settings:
 0 - Nearest-neighbor stretching
 1 - Bilinear interpolation
-2 - Bilinear interpolation, sharp color key
-3 - Bilinear interpolation, soft color key
+2 - Bilinear interpolation, nearest-neighbor color key
+3 - Bilinear interpolation, sharp color key
+4 - Bilinear interpolation, soft color key
 
 Member BltThreshold
 INI Entry BltThreshold
@@ -427,6 +428,13 @@ INI Group debug
 REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoGLSL130
 If nonzero, disables use of GLSL version 1.30.  When combined with
 DebugNoGpuShader4 this will disable raster operations in DirectDraw.
+
+Member DebugBlendDestColorKey
+INI Entry DebugBlendDestColorKey
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugBlendDestColorKey
+If nonzero, blends the texture used for destination color keying with the
+source.  For testing purposes only.
 
 Member DebugMaxGLVersionMajor
 INI Entry DebugMaxGLVersionMajor

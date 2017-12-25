@@ -578,6 +578,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugNoSamplerObjects = ReadBool(hKey, cfg->DebugNoSamplerObjects, &cfgmask->DebugNoSamplerObjects, _T("DebugNoSamplerObjects"));
 	cfg->DebugNoGpuShader4 = ReadBool(hKey, cfg->DebugNoGpuShader4, &cfgmask->DebugNoGpuShader4, _T("DebugNoGpuShader4"));
 	cfg->DebugNoGLSL130 = ReadBool(hKey, cfg->DebugNoGLSL130, &cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
+	cfg->DebugBlendDestColorKey = ReadBool(hKey, cfg->DebugBlendDestColorKey, &cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
@@ -716,6 +717,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteBool(hKey, cfg->DebugNoSamplerObjects, cfgmask->DebugNoSamplerObjects, _T("DebugNoSamplerObjects"));
 	WriteBool(hKey, cfg->DebugNoGpuShader4, cfgmask->DebugNoGpuShader4, _T("DebugNoGpuShader4"));
 	WriteBool(hKey, cfg->DebugNoGLSL130, cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
+	WriteBool(hKey, cfg->DebugBlendDestColorKey, cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
@@ -967,6 +969,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "DebugNoSamplerObjects")) cfg->DebugNoSamplerObjects = INIBoolValue(value);
 		if (!stricmp(name, "DebugNoGpuShader4")) cfg->DebugNoGpuShader4 = INIBoolValue(value);
 		if (!stricmp(name, "DebugNoGLSL130")) cfg->DebugNoGLSL130 = INIBoolValue(value);
+		if (!stricmp(name, "DebugBlendDestColorKey")) cfg->DebugBlendDestColorKey = INIBoolValue(value);
 		if (!stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
 		if (!stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
 	}

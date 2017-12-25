@@ -2006,7 +2006,11 @@ void ReadDebugItem(int item, BOOL *value, BOOL *mask)
 		*value = cfg->DebugNoGLSL130;
 		*mask = cfgmask->DebugNoGLSL130;
 		break;
-	/*case 8:
+	case 8:
+		*value = cfg->DebugBlendDestColorKey;
+		*mask = cfgmask->DebugBlendDestColorKey;
+		break;
+	/*case 9:
 		*value = cfg->DebugDisableErrors;
 		*mask = cfgmask->DebugDisableErrors;
 		break;*/
@@ -2053,7 +2057,11 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		cfg->DebugNoGLSL130 = value;
 		cfgmask->DebugNoGLSL130 = mask;
 		break;
-		/*case 8:
+	case 8:
+		cfg->DebugBlendDestColorKey = value;
+		cfgmask->DebugBlendDestColorKey = mask;
+		break;
+	/*case 9:
 		cfg->DebugDisableErrors = value;
 		cfgmask->DebugDisableErrors = mask;
 		break;*/
@@ -2679,10 +2687,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Bilinear, sharp colorkey"));
+		_tcscpy(buffer, _T("Bilinear, nearest colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Bilinear, soft colorkey"));
+		_tcscpy(buffer, _T("Bilinear, sharp colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Bilinear, soft colorkey"));
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_SETCURSEL, cfg->BltScale, 0);
 		// Blt scaling threshold
 		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETRANGE, 0, 0xFE0000);
@@ -2908,6 +2918,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Disable EXT_gpu_shader4 extension"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Disable GLSL 1.30 support"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("DEBUG: Blend destination color key texture with source"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);*/

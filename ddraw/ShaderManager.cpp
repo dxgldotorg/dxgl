@@ -30,29 +30,57 @@ extern "C" {
 const char frag_Texture[] = "\
 #version 110\n\
 uniform sampler2D tex0;\n\
-void main() \n\
-{ \n\
-    gl_FragColor = texture2D( tex0, gl_TexCoord[0].st ); \n\
-} ";
+void main()\n\
+{\n\
+	gl_FragColor = texture2D( tex0, gl_TexCoord[0].st);\n\
+}";
 
 const char frag_Pal256[] =  "\
 #version 110\n\
-uniform sampler2D pal; \n\
-uniform sampler2D tex0; \n\
-void main() \n\
-{ \n\
-	vec4 myindex = texture2D(tex0, gl_TexCoord[0].xy); \n\
+uniform sampler2D pal;\n\
+uniform sampler2D tex0;\n\
+void main()\n\
+{\n\
+	vec4 myindex = texture2D(tex0, gl_TexCoord[0].xy);\n\
 	vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
-	vec4 texel = texture2D(pal, index); \n\
-	gl_FragColor = texel; \n\
-} ";
+	vec4 texel = texture2D(pal, index);\n\
+	gl_FragColor = texel;\n\
+}";
 
 const char frag_clipstencil[] = "\
 #version 110\n\
-void main (void)\n\
+void main ()\n\
 {\n\
- gl_FragColor = vec4(1.0,0.0,0.0,0.0);\n\
-} ";
+	gl_FragColor = vec4(1.0,0.0,0.0,0.0);\n\
+}";
+
+const char frag_prepsrckey[] = "\
+#version 110\n\
+uniform sampler2D tex0;\n\
+uniform ivec3 ckey;\n\
+uniform ivec4 colorsize;\n\
+ivec4 pixel;\n\
+void main()\n\
+{\n\
+	pixel = ivec4(texture2D(tex0, gl_TexCoord[0].st)*vec4(colorsize) + .5);\n\
+	if (pixel.rgb == ckey) pixel.a = 0;\n\
+	else pixel.a = colorsize.a;\n\
+	gl_FragColor = vec4(pixel) / vec4(colorsize);\n\
+}";
+
+const char frag_prepdestkey[] = "\
+#version 110\n\
+uniform sampler2D tex0;\n\
+uniform ivec4 colorsize;\n\
+uniform ivec3 ckey;\n\
+ivec4 pixel;\n\
+void main()\n\
+{\n\
+	pixel = ivec4(texture2D(tex0, gl_TexCoord[0].st)*vec4(colorsize) + .5);\n\
+	if (pixel.rgb != ckey) pixel.a = 0;\n\
+	else pixel.a = colorsize.a;\n\
+	gl_FragColor = vec4(pixel) / vec4(colorsize);\n\
+}";
 
 const char vert_ortho[] = "\
 #version 110\n\
@@ -78,9 +106,11 @@ void main()\n\
 const int SHADER_START = __LINE__;
 const SHADER shader_template[] = 
 {
-	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1},
-	{0,0,	vert_ortho,			frag_clipstencil,	0,-1,-1,-1}
+	{0,0,	vert_ortho,			frag_Texture,		0,-1,-1,-1,-1,-1,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_Pal256,		0,-1,-1,-1,-1,-1,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_clipstencil,	0,-1,-1,-1,-1,-1,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_prepsrckey,	0,-1,-1,-1,-1,-1,-1,-1,-1},
+	{0,0,	vert_ortho,			frag_prepdestkey,	0,-1,-1,-1,-1,-1,-1,-1,-1}
 };
 const int SHADER_END = __LINE__ - 4;
 const int NumberOfShaders = SHADER_END - SHADER_START;
@@ -120,6 +150,7 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 		shaderman->shaders[i].tex0 = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"tex0");
 		shaderman->shaders[i].tex1 = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"tex1");
 		shaderman->shaders[i].ckey = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"ckey");
+		shaderman->shaders[i].colorsize = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog, "colorsize");
 		shaderman->shaders[i].pal = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"pal");
 		shaderman->shaders[i].view = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"view");
 	}

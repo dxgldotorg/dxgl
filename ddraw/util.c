@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2016 William Feely
+// Copyright (C) 2013-2017 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-// Note:  Requires a SSE2 and AVX compatible compiler.
 
 #include "common.h"
 #include "util.h"
@@ -137,6 +135,7 @@ const DDBLTFX cmp_fx =
 	{0,0},      // ddckDestColorkey
 	{0,0}       // ddckSrcColorkey
 };
+
 BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags)
 {
 	DDBLTFX comp_mask;
@@ -158,4 +157,11 @@ BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags)
 	AndMem(&comp_b, b, &comp_mask, sizeof(DDBLTFX));
 	if (!memcmp(&comp_a, &comp_b, sizeof(DDBLTFX))) return FALSE;
 	else return TRUE;
+}
+
+BOOL IsAlphaCKey()
+{
+	if ((dxglcfg.BltScale == 2) || (dxglcfg.BltScale == 3) || (dxglcfg.BltScale == 4))
+		return TRUE;
+	else return FALSE;
 }

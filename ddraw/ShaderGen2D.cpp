@@ -107,6 +107,7 @@ static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
 mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
 pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
+static const char op_destoutdestblend[] = "gl_FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,gl_TexCoord[1].st);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
@@ -870,8 +871,11 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 	}
 	if (id & DDBLT_KEYDEST)
 	{
-		if (id & 0x40000000) String_Append(fsrc, op_ckeydestrange);
-		else String_Append(fsrc, op_ckeydest);
+		if (!dxglcfg.DebugBlendDestColorKey)
+		{
+			if (id & 0x40000000) String_Append(fsrc, op_ckeydestrange);
+			else String_Append(fsrc, op_ckeydest);
+		}
 	}
 	if (id & DDBLT_ROP)
 	{
@@ -879,8 +883,9 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
 		if (intproc) String_Append(fsrc, op_ROP[rop]);
 		else String_Append(fsrc, op_ROP_float[rop]);
 	}
-
-	String_Append(fsrc, op_destout);
+	if (dxglcfg.DebugBlendDestColorKey && (id & DDBLT_KEYDEST))
+		String_Append(fsrc, op_destoutdestblend);
+	else String_Append(fsrc, op_destout);
 	String_Append(fsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("2D blitter fragment shader:\n");
