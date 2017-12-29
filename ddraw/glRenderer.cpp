@@ -3070,7 +3070,6 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	}
 	else if (usedest)
 	{
-		if (This->ext->GLEXT_GREMEDY_frame_terminator) This->ext->glFrameTerminatorGREMEDY();
 		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 		glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, destrect2, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.;
@@ -3339,7 +3338,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backbuffer->levels[0].ddsd.dwWidth, This->backbuffer->levels[0].ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
-	glUtil_SetTexture(This->util, 0, texture);
+	glUtil_SetTexture(This->util, 8, texture);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
 	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->levels[0].ddsd.dwWidth;
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->levels[0].ddsd.dwWidth;
