@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2017 William Feely
+// Copyright (C) 2012-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1667,6 +1667,8 @@ void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint lev
   */
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
+	RECT wndrect;
+	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
 	This->oldswap = 0;
 	This->fogcolor = 0;
@@ -1696,7 +1698,6 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 			ShowWindow(This->hWnd, SW_MAXIMIZE);
 			break;
 		case 1:    // Non-exclusive Fullscreen
-		case 4:     // Windowed borderless
 		case 5:    // Windowed borderless scaled
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
@@ -1709,14 +1710,78 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
-			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			ShowWindow(This->hWnd, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+			}
+			AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+				(winstyleex | WS_EX_APPWINDOW));
+			SetWindowPos(This->hWnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			break;
 		case 3:     // Windowed resizable
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
 			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(This->hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
-			ShowWindow(This->hWnd, SW_MAXIMIZE);
+			ShowWindow(This->hWnd, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+			}
+			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
+			SetWindowPos(This->hWnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		case 4:     // Windowed borderless
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWnd, GWL_EXSTYLE, winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(This->hWnd, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+			}
+			SetWindowPos(This->hWnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			break;
 		}
 	}
@@ -2020,6 +2085,22 @@ void glRenderer_Flush(glRenderer *This)
 	LeaveCriticalSection(&This->cs);
 }
 
+__inline BOOL UnadjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
+{
+	RECT r;
+	ZeroMemory(&r, sizeof(RECT));
+	BOOL ret = AdjustWindowRectEx(lpRect, dwStyle, bMenu, dwExStyle);
+	if (!ret) return ret;
+	else
+	{
+		lpRect->left -= r.left;
+		lpRect->top -= r.top;
+		lpRect->right -= r.right;
+		lpRect->bottom -= r.bottom;
+		return ret;
+	}
+}
+
 /**
   * Changes the window used for rendering.
   * @param This
@@ -2036,6 +2117,7 @@ void glRenderer_Flush(glRenderer *This)
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
 	RECT wndrect;
+	BOOL hasmenu;
 	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
 	EnterCriticalSection(&This->cs);
@@ -2070,15 +2152,28 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
 			ShowWindow(newwnd, SW_NORMAL);
-			screenx = GetSystemMetrics(SM_CXSCREEN);
-			screeny = GetSystemMetrics(SM_CYSCREEN);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				GetWindowRect(newwnd, &wndrect);
+				if (GetMenu(newwnd)) hasmenu = TRUE;
+				else hasmenu = FALSE;
+				UnadjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP),
+					hasmenu, winstyleex | WS_EX_APPWINDOW);
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.left = (screenx / 2) - (width / 2);
+				wndrect.top = (screeny / 2) - (height / 2);
+			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
-			wndrect.left = (screenx / 2) - (width / 2);
-			wndrect.top = (screeny / 2) - (height / 2);
-			AdjustWindowRect(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE);
+			AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+				(winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SaveWindowSettings(&dxglcfg);
 			break;
 		case 3:     // Windowed resizable
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
@@ -2086,15 +2181,27 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
 			ShowWindow(newwnd, SW_NORMAL);
-			screenx = GetSystemMetrics(SM_CXSCREEN);
-			screeny = GetSystemMetrics(SM_CYSCREEN);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				GetWindowRect(newwnd, &wndrect);
+				if (GetMenu(newwnd)) hasmenu = TRUE;
+				else hasmenu = FALSE;
+				UnadjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
+					hasmenu, (winstyleex | WS_EX_APPWINDOW));
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.left = (screenx / 2) - (width / 2);
+				wndrect.top = (screeny / 2) - (height / 2);
+			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
-			wndrect.left = (screenx / 2) - (width / 2);
-			wndrect.top = (screeny / 2) - (height / 2);
-			AdjustWindowRect(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE);
+			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SaveWindowSettings(&dxglcfg);
 			break;
 		case 4:     // Windowed borderless
 			winstyle = GetWindowLongPtrA(newwnd, GWL_STYLE);
@@ -2104,12 +2211,19 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
 			screeny = GetSystemMetrics(SM_CYSCREEN);
+			if (dxglcfg.WindowPosition == 1) GetWindowRect(newwnd, &wndrect);
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.left = (screenx / 2) - (width / 2);
+				wndrect.top = (screeny / 2) - (height / 2);
+			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
-			wndrect.left = (screenx / 2) - (width / 2);
-			wndrect.top = (screeny / 2) - (height / 2);
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SaveWindowSettings(&dxglcfg);
 			break;
 		}
 	}

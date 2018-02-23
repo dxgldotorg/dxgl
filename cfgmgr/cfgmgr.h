@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -67,6 +67,14 @@ typedef struct
 	DWORD TextureFormat;
 	DWORD TexUpload;
 	BOOL SingleBufferDevice;
+	DWORD WindowPosition;
+	BOOL RememberWindowSize;
+	BOOL RememberWindowPosition;
+	BOOL NoResizeWindow;
+	DWORD WindowX;
+	DWORD WindowY;
+	DWORD WindowWidth;
+	DWORD WindowHeight;
 	// [debug]
 	BOOL DebugNoExtFramebuffer;
 	BOOL DebugNoArbFramebuffer;
@@ -86,6 +94,7 @@ typedef struct
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;
 	BOOL ParsedAddModes;
+	TCHAR regkey[MAX_PATH + 80];
 } DXGLCFG;
 
 typedef struct
@@ -110,15 +119,17 @@ typedef struct
 } CFGREG;
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir);
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL global);
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask);
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial);
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial);
-void SetGlobalConfig(const DXGLCFG *cfg);
+void GetGlobalConfigWithMask(DXGLCFG *cfg, DXGLCFG *mask, BOOL initial);
+void SetGlobalConfig(const DXGLCFG *cfg, const DXGLCFG *mask);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
 void GetDirFromPath(LPTSTR path);
 void UpgradeConfig();
 void ReadAppINIOptions(LPCTSTR path, app_ini_options *options);
+void SaveWindowSettings(const DXGLCFG *cfg);
 BOOL CheckProfileExists(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
 

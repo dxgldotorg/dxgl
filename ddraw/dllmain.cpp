@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 		if (!hook_cs.LockCount && !hook_cs.OwningThread) InitializeCriticalSection(&hook_cs);
 		InitHooks();
-		GetCurrentConfig(&dxglcfg, true);
+		GetCurrentConfig(&dxglcfg, TRUE);
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:

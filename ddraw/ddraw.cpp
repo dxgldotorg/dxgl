@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -162,7 +162,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		TRACE_EXIT(23, ret);
 		return ret;
 	}
-	GetCurrentConfig(&dxglcfg,false);
+	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
@@ -226,7 +226,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 {
 	TRACE_ENTER(4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	GetCurrentConfig(&dxglcfg,false);
+	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
 	if(iid != IID_IDirectDraw7)
@@ -486,7 +486,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		TRACE_EXIT(23,CLASS_E_CLASSNOTAVAILABLE);
 		return CLASS_E_CLASSNOTAVAILABLE;
 	}
-	GetCurrentConfig(&dxglcfg,false);
+	GetCurrentConfig(&dxglcfg, FALSE);
 	glClassFactory *factory = new glClassFactory;
 	if(factory == NULL)
 	{

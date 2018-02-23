@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -409,7 +409,7 @@ shipped with a custom DirectDraw library."), _T("Warning"), MB_OK | MB_ICONWARNI
 void SaveChanges(HWND hWnd)
 {
 	int i;
-	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg);
+	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg, &apps[0].mask);
 	for(i = 1; i < appcount; i++)
 	{
 		if(apps[i].dirty) SetConfig(&apps[i].cfg,&apps[i].mask,apps[i].regkey);
@@ -654,7 +654,7 @@ void SetInteger(HWND hWnd, int DlgItem, int value, int mask)
 {
 	TCHAR number[32];
 	if (mask) _itot(value, number, 10);
-	else number[0] = 0;
+	else _tcscpy(number, strdefaultshort);
 	EditInterlock = TRUE;
 	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)number);
 	EditInterlock = FALSE;
@@ -881,13 +881,13 @@ float GetFloat(HWND hWnd, int dlgitem, float *mask)
 	}
 }
 
-int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum)
+int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum, BOOL usemask)
 {
 	TCHAR buffer[32];
 	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
 	if (buffer[0] == 0)
 	{
-		if (!current_app)
+		if (!usemask)
 		{
 			*mask = 1;
 			return defaultnum;
@@ -1836,7 +1836,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				if (!EditInterlock)
 				{
-					cfg->BltThreshold = GetInteger(hWnd, IDC_BLTTHRESHOLD, (int*)&cfgmask->BltThreshold, 127);
+					cfg->BltThreshold = GetInteger(hWnd, IDC_BLTTHRESHOLD, (int*)&cfgmask->BltThreshold, 127, current_app);
 					if (cfg->BltThreshold > 255) cfg->BltThreshold = 255;
 					SendDlgItemMessage(hWnd, IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
 					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
@@ -1958,6 +1958,86 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			break;
 		case IDC_TEXUPLOAD:
 			cfg->TexUpload = GetCombo(hWnd, IDC_TEXUPLOAD, &cfgmask->TexUpload);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_WINDOWPOS:
+			cfg->WindowPosition = GetCombo(hWnd, IDC_WINDOWPOS, &cfgmask->WindowPosition);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_REMEMBERWINDOWPOS:
+			cfg->RememberWindowPosition = GetCheck(hWnd, IDC_REMEMBERWINDOWPOS, &cfgmask->RememberWindowPosition);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_REMEMBERWINDOWSIZE:
+			cfg->RememberWindowSize = GetCheck(hWnd, IDC_REMEMBERWINDOWSIZE, &cfgmask->RememberWindowSize);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_WINDOWX:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->WindowX = GetInteger(hWnd, IDC_WINDOWX, (int*)&cfgmask->WindowX, 0, TRUE);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetInteger(hWnd, IDC_WINDOWX, cfg->WindowX, cfgmask->WindowX);
+			}
+			break;
+		case IDC_WINDOWY:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->WindowY = GetInteger(hWnd, IDC_WINDOWY, (int*)&cfgmask->WindowY, 0, TRUE);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetInteger(hWnd, IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
+			}
+			break;
+		case IDC_WINDOWWIDTH:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->WindowWidth = GetInteger(hWnd, IDC_WINDOWWIDTH, (int*)&cfgmask->WindowWidth, 0, TRUE);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetInteger(hWnd, IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
+			}
+			break;
+		case IDC_WINDOWHEIGHT:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->WindowHeight = GetInteger(hWnd, IDC_WINDOWHEIGHT, (int*)&cfgmask->WindowHeight, 0, TRUE);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetInteger(hWnd, IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+			}
+			break;
+		case IDC_NOAUTOSIZE:
+			cfg->NoResizeWindow = GetCheck(hWnd, IDC_NOAUTOSIZE, &cfgmask->NoResizeWindow);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
@@ -2423,11 +2503,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(apps[0].name,_T("Global"));
 		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
 		_tcscpy(apps[0].regkey,_T("Global"));
-		GetGlobalConfig(&apps[0].cfg, FALSE);
+		GetGlobalConfigWithMask(&apps[0].cfg, &apps[0].mask, FALSE);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
 		dirty = &apps[0].dirty;
-		memset(&apps[0].mask,0xff,sizeof(DXGLCFG));
 		apps[0].dirty = FALSE;
 		apps[0].icon = LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_STAR));
 		apps[0].icon_shared = TRUE;
@@ -2891,6 +2970,27 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer,_T("Automatic"));
 		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_ADDSTRING,0,(LPARAM)buffer);
 		SendDlgItemMessage(hTabs[3],IDC_TEXUPLOAD,CB_SETCURSEL,cfg->TexUpload,0);
+		// Default window position
+		_tcscpy(buffer, _T("Centered"));
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Saved position"));
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_SETCURSEL, cfg->WindowPosition, 0);
+		// Remember window position
+		if (cfg->RememberWindowPosition) SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETCHECK, BST_UNCHECKED, 0);
+		// Remember window size
+		if (cfg->RememberWindowSize) SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETCHECK, BST_UNCHECKED, 0);
+		// Remembered window position
+		SetInteger(hTabs[3], IDC_WINDOWX, cfg->WindowX, cfgmask->WindowX);
+		SetInteger(hTabs[3], IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
+		// Remembered window size
+		SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
+		SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+		// No autosize
+		if (cfg->NoResizeWindow) SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_UNCHECKED, 0);
 		// DPI
 		_tcscpy(buffer, _T("Disabled"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -3285,6 +3385,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					// Advanced tab
 					SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)strdefault);
+					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					// Debug tab
 					SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
 				}
@@ -3339,6 +3443,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 						SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_DELETESTRING,
+						SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 					// Debug tab
 					SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
 						SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
@@ -3428,6 +3537,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				// Advanced tab
 				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
 				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
+				SetCombo(hTabs[3], IDC_WINDOWPOS, cfg->WindowPosition, cfgmask->WindowPosition, tristate);
+				SetCheck(hTabs[3], IDC_REMEMBERWINDOWPOS, cfg->RememberWindowPosition, cfgmask->RememberWindowPosition, tristate);
+				SetCheck(hTabs[3], IDC_REMEMBERWINDOWSIZE, cfg->RememberWindowSize, cfgmask->RememberWindowSize, tristate);
+				SetInteger(hTabs[3], IDC_WINDOWX, cfg->WindowX, cfgmask->WindowX);
+				SetInteger(hTabs[3], IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
+				SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
+				SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+				SetCheck(hTabs[3], IDC_NOAUTOSIZE, cfg->NoResizeWindow, cfgmask->NoResizeWindow, tristate);
 				// Debug tab
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
 				SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,

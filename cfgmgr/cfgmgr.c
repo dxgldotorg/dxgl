@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -454,6 +454,78 @@ DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 	}
 }
 
+// This should be called after cfg->fullmode, cfg->WindowWidth, and
+// cfg->WindowHeight are set.
+void ReadWindowPos(HKEY hKey, DXGLCFG *cfg, DXGLCFG *cfgmask)
+{
+	int screenx, screeny;
+	RECT wndrect;
+	DWORD dwOut;
+	DWORD sizeout = 4;
+	DWORD regdword = REG_DWORD;
+	LSTATUS error;
+	error = RegQueryValueEx(hKey, _T("WindowX"), NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		cfgmask->WindowX = 1;
+		cfg->WindowX = dwOut;
+	}
+	else cfgmask->WindowX = 0;
+	error = RegQueryValueEx(hKey, _T("WindowY"), NULL, &regdword, (LPBYTE)&dwOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		cfgmask->WindowY = 1;
+		cfg->WindowY = dwOut;
+	}
+	else cfgmask->WindowY = 0;
+	if ((!cfgmask->WindowX) || (!cfgmask->WindowY))
+	{
+		switch (cfg->fullmode)
+		{
+		case 0:
+		case 1:
+		case 5:
+		default:
+			if (!cfgmask->WindowX) cfg->WindowX = 0;
+			if (!cfgmask->WindowY) cfg->WindowY = 0;
+			break;
+		case 2:
+			screenx = GetSystemMetrics(SM_CXSCREEN);
+			screeny = GetSystemMetrics(SM_CYSCREEN);
+			wndrect.right = 640 + (screenx / 2) - (640 / 2);
+			wndrect.bottom = 480 + (screeny / 2) - (480 / 2);
+			wndrect.left = (screenx / 2) - (640 / 2);
+			wndrect.top = (screeny / 2) - (480 / 2);
+			AdjustWindowRectEx(&wndrect, WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+				WS_EX_APPWINDOW);
+			if (!cfgmask->WindowX) cfg->WindowX = wndrect.left;
+			if (!cfgmask->WindowY) cfg->WindowY = wndrect.top;
+			break;
+		case 3:
+			screenx = GetSystemMetrics(SM_CXSCREEN);
+			screeny = GetSystemMetrics(SM_CYSCREEN);
+			wndrect.right = 640 + (screenx / 2) - (640 / 2);
+			wndrect.bottom = 480 + (screeny / 2) - (480 / 2);
+			wndrect.left = (screenx / 2) - (640 / 2);
+			wndrect.top = (screeny / 2) - (480 / 2);
+			AdjustWindowRectEx(&wndrect, WS_OVERLAPPEDWINDOW, FALSE, WS_EX_APPWINDOW);
+			if (!cfgmask->WindowX) cfg->WindowX = wndrect.left;
+			if (!cfgmask->WindowY) cfg->WindowY = wndrect.top;
+			break;
+		case 4:
+			screenx = GetSystemMetrics(SM_CXSCREEN);
+			screeny = GetSystemMetrics(SM_CYSCREEN);
+			wndrect.right = 640 + (screenx / 2) - (640 / 2);
+			wndrect.bottom = 480 + (screeny / 2) - (480 / 2);
+			wndrect.left = (screenx / 2) - (640 / 2);
+			wndrect.top = (screeny / 2) - (480 / 2);
+			if (!cfgmask->WindowX) cfg->WindowX = wndrect.left;
+			if (!cfgmask->WindowY) cfg->WindowY = wndrect.top;
+			break;
+		}
+	}
+}
+
 float ReadFloatWithObsolete(HKEY hKey, float original, float *mask, LPCTSTR value,
 	unsigned int obsolete_count, ...) // obsolete items are LPCTSTRs
 {
@@ -567,6 +639,13 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
 	cfg->SingleBufferDevice = ReadBool(hKey,cfg->SingleBufferDevice,&cfgmask->SingleBufferDevice,_T("SingleBufferDevice"));
+	cfg->WindowPosition = ReadDWORD(hKey, cfg->WindowPosition, &cfgmask->WindowPosition, _T("WindowPosition"));
+	cfg->RememberWindowSize = ReadBool(hKey, cfg->RememberWindowSize, &cfgmask->RememberWindowSize, _T("RememberWindowSize"));
+	cfg->RememberWindowPosition = ReadBool(hKey, cfg->RememberWindowPosition, &cfgmask->RememberWindowPosition, _T("RememberWindowPosition"));
+	cfg->NoResizeWindow = ReadBool(hKey, cfg->NoResizeWindow, &cfgmask->NoResizeWindow, _T("NoResizeWindow"));
+	cfg->WindowWidth = ReadDWORD(hKey, cfg->WindowWidth, &cfgmask->WindowWidth, _T("WindowWidth"));
+	cfg->WindowHeight = ReadDWORD(hKey, cfg->WindowHeight, &cfgmask->WindowHeight, _T("WindowHeight"));
+	ReadWindowPos(hKey, cfg, cfgmask);
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
 	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
@@ -658,7 +737,7 @@ void WriteFloat(HKEY hKey, float value, float mask, LPCTSTR name)
 	else RegDeleteValue(hKey, name);
 }
 
-void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL global)
+void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 {
 	const DXGLCFG *cfgmask;
 	if(mask) cfgmask = mask;
@@ -706,6 +785,14 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask, BOOL glob
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
 	WriteBool(hKey,cfg->SingleBufferDevice,cfgmask->SingleBufferDevice,_T("SingleBufferDevice"));
+	WriteDWORD(hKey, cfg->WindowPosition, cfgmask->WindowPosition, _T("WindowPosition"));
+	WriteBool(hKey, cfg->RememberWindowSize, cfgmask->RememberWindowSize, _T("RememberWindowSize"));
+	WriteBool(hKey, cfg->RememberWindowPosition, cfgmask->RememberWindowPosition, _T("RememberWindowPosition"));
+	WriteBool(hKey, cfg->NoResizeWindow, cfgmask->NoResizeWindow, _T("NoResizeWindow"));
+	WriteDWORD(hKey, cfg->WindowX, cfgmask->WindowX, _T("WindowX"));
+	WriteDWORD(hKey, cfg->WindowY, cfgmask->WindowY, _T("WindowY"));
+	WriteDWORD(hKey, cfg->WindowWidth, cfgmask->WindowWidth, _T("WindowWidth"));
+	WriteDWORD(hKey, cfg->WindowHeight, cfgmask->WindowHeight, _T("WindowHeight"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
@@ -822,6 +909,11 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->primaryscalex = 1.0f;
 	cfg->primaryscaley = 1.0f;
 	cfg->BltThreshold = 127;
+	cfg->WindowPosition = 1;
+	cfg->RememberWindowSize = TRUE;
+	cfg->RememberWindowPosition = TRUE;
+	cfg->WindowWidth = 640;
+	cfg->WindowHeight = 480;
 	if (!cfg->Windows8Detected)
 	{
 		OSVERSIONINFO osver;
@@ -958,6 +1050,14 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
 		if (!stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
 		if (!stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
+		if (!stricmp(name, "WindowPosition")) cfg->WindowPosition = INIIntValue(value);
+		if (!stricmp(name, "RememberWindowSize")) cfg->RememberWindowSize = INIBoolValue(value);
+		if (!stricmp(name, "RememberWindowPosition")) cfg->RememberWindowPosition = INIBoolValue(value);
+		if (!stricmp(name, "NoResizeWindow")) cfg->NoResizeWindow = INIBoolValue(value);
+		if (!stricmp(name, "WindowX")) cfg->WindowX = INIIntValue(value);
+		if (!stricmp(name, "WindowY")) cfg->WindowY = INIIntValue(value);
+		if (!stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
+		if (!stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
 	}
 	if (!stricmp(section, "debug"))
 	{
@@ -1002,7 +1102,6 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	Sha256Context sha_context;
 	SHA256_HASH sha256;
 	TCHAR sha256string[65];
-	TCHAR regkey[MAX_PATH+80];
 	FILE *file;
 	TCHAR filename[MAX_PATH+1];
 	int i;
@@ -1010,12 +1109,12 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
 	GetModuleFileName(NULL, filename, MAX_PATH);
-	_tcscpy(regkey, regkeybase);
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscpy(cfg->regkey, regkeybase);
+	_tcscat(cfg->regkey, _T("Profiles\\"));
 	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
-	_tcscat(regkey, &filename[i]);
-	_tcscat(regkey, _T("-"));
+	_tcscat(cfg->regkey, &filename[i]);
+	_tcscat(cfg->regkey, _T("-"));
 	i--;
 	filename[i] = 0;
 	_tcslwr(filename);
@@ -1028,7 +1127,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
 	}
 	sha256string[256 / 4] = 0;
-	_tcscat(regkey,sha256string);
+	_tcscat(cfg->regkey, sha256string);
 	GetGlobalConfig(cfg, initial);
 	ReadINI(cfg);
 	if (cfg->OverrideDefaults)
@@ -1045,12 +1144,12 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
 		if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
 	}
-	if (initial || cfg->NoWriteRegistry) RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
+	if (initial || cfg->NoWriteRegistry) RegOpenKeyEx(HKEY_CURRENT_USER, cfg->regkey, 0, KEY_READ, &hKey);
 	else
 	{
 		RegCreateKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 		if (hKey) RegCloseKey(hKey);
-		RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+		RegCreateKeyEx(HKEY_CURRENT_USER, cfg->regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	}
 	if (hKey)
 	{
@@ -1103,6 +1202,33 @@ void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 	}
 }
 
+void GetGlobalConfigWithMask(DXGLCFG *cfg, DXGLCFG *mask, BOOL initial)
+{
+	DWORD WindowXMask, WindowYMask, WindowWidthMask, WindowHeightMask;
+	HKEY hKey = NULL;
+	GetDefaultConfig(cfg);
+	RegOpenKeyEx(HKEY_CURRENT_USER, regkeyglobal, 0, KEY_READ, &hKey);
+	if (hKey)
+	{
+		ReadSettings(hKey, cfg, mask, TRUE, FALSE, NULL);
+		RegCloseKey(hKey);
+	}
+	// Set mask on optional components
+	if (mask)
+	{
+		WindowXMask = mask->WindowX;
+		WindowYMask = mask->WindowY;
+		WindowWidthMask = mask->WindowWidth;
+		WindowHeightMask = mask->WindowHeight;
+		memset(mask, 0xff, sizeof(DXGLCFG));
+		mask->WindowX = WindowXMask;
+		mask->WindowY = WindowYMask;
+		mask->WindowWidth = WindowWidthMask;
+		mask->WindowHeight = WindowHeightMask;
+	}
+}
+
+
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 {
 	HKEY hKey;
@@ -1116,11 +1242,11 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 	ReadSettings(hKey,cfg,mask,FALSE,FALSE,NULL);
 	RegCloseKey(hKey);
 }
-void SetGlobalConfig(const DXGLCFG *cfg)
+void SetGlobalConfig(const DXGLCFG *cfg, const DXGLCFG *mask)
 {
 	HKEY hKey;
 	RegCreateKeyEx(HKEY_CURRENT_USER,regkeyglobal,0,NULL,0,KEY_ALL_ACCESS,NULL,&hKey,NULL);
-	WriteSettings(hKey,cfg,NULL,TRUE);
+	WriteSettings(hKey,cfg,mask,TRUE);
 	RegCloseKey(hKey);
 }
 
@@ -1134,6 +1260,27 @@ void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 	RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	WriteSettings(hKey,cfg,mask,FALSE);
 	RegCloseKey(hKey);
+}
+
+void SaveWindowSettings(const DXGLCFG *cfg)
+{
+	HKEY hKey;
+	if ((!cfg->RememberWindowSize) && (!cfg->RememberWindowPosition)) return;
+	RegCreateKeyEx(HKEY_CURRENT_USER, cfg->regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (hKey)
+	{
+		if (cfg->RememberWindowPosition)
+		{
+			WriteDWORD(hKey, cfg->WindowX, 1, _T("WindowX"));
+			WriteDWORD(hKey, cfg->WindowY, 1, _T("WindowY"));
+		}
+		if (cfg->RememberWindowSize)
+		{
+			WriteDWORD(hKey, cfg->WindowWidth, 1, _T("WindowWidth"));
+			WriteDWORD(hKey, cfg->WindowHeight, 1, _T("WindowHeight"));
+		}
+		RegCloseKey(hKey);
+	}
 }
 
 /**

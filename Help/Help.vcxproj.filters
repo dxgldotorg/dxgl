@@ -4,6 +4,9 @@
     <Filter Include="Help files">
       <UniqueIdentifier>{906ea9c0-1ddf-4cb2-9e85-4eafde27f5ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\Images">
+      <UniqueIdentifier>{051b7381-64aa-484b-95bb-301c72c9c673}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -15,20 +18,17 @@
     <None Include="toc.hhc">
       <Filter>Help files</Filter>
     </None>
-    <None Include="introduction.htm">
-      <Filter>Help files</Filter>
-    </None>
-    <None Include="configuration.htm">
-      <Filter>Help files</Filter>
-    </None>
-    <None Include="dxglcfg.png">
-      <Filter>Help files</Filter>
-    </None>
     <None Include="dxgl.css">
       <Filter>Help files</Filter>
     </None>
-    <None Include="troubleshooting.htm">
+    <None Include="index.html">
       <Filter>Help files</Filter>
+    </None>
+    <None Include="html5.js">
+      <Filter>Help files</Filter>
+    </None>
+    <None Include="images\dxgl-header.png">
+      <Filter>Help files\Images</Filter>
     </None>
   </ItemGroup>
 </Project>

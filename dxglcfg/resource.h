@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -105,9 +105,17 @@
 #define IDC_TEXUPLOAD                           2302
 #define IDC_DISPLAYNAME                         2303
 #define IDC_LOWCOLORRENDER                      2304
-#define IDC_PATHLABEL                           2305
-#define IDC_PROFILEPATH                         2306
-#define IDC_WRITEINI                            2307
+#define IDC_WINDOWPOS                           2305
+#define IDC_REMEMBERWINDOWPOS                   2306
+#define IDC_REMEMBERWINDOWSIZE                  2307
+#define IDC_WINDOWX                             2308
+#define IDC_WINDOWY                             2309
+#define IDC_WINDOWWIDTH                         2310
+#define IDC_WINDOWHEIGHT                        2311
+#define IDC_NOAUTOSIZE                          2312
+#define IDC_PATHLABEL                           2313
+#define IDC_PROFILEPATH                         2314
+#define IDC_WRITEINI                            2315
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401

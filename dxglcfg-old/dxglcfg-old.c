@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -340,7 +340,7 @@ shipped with a custom DirectDraw library."), _T("Warning"), MB_OK | MB_ICONWARNI
 void SaveChanges(HWND hWnd)
 {
 	int i;
-	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg);
+	if(apps[0].dirty) SetGlobalConfig(&apps[0].cfg, &apps[0].mask);
 	for(i = 1; i < appcount; i++)
 	{
 		if(apps[i].dirty) SetConfig(&apps[i].cfg,&apps[i].mask,apps[i].regkey);

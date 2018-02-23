@@ -102,21 +102,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="configuration.htm">
-      <DeploymentContent>true</DeploymentContent>
-      <SubType>Designer</SubType>
-    </None>
     <None Include="dxgl.css" />
     <None Include="dxgl.hhp" />
-    <None Include="dxglcfg.png" />
+    <None Include="html5.js" />
+    <None Include="images\dxgl-header.png" />
     <None Include="Index.hhk" />
-    <None Include="introduction.htm">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
+    <None Include="index.html" />
     <None Include="toc.hhc" />
-    <None Include="troubleshooting.htm">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
