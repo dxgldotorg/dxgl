@@ -1104,17 +1104,18 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	TCHAR sha256string[65];
 	FILE *file;
 	TCHAR filename[MAX_PATH+1];
+	TCHAR regkey[MAX_PATH + 80];
 	int i;
 	BOOL DPIAwarePM = FALSE;
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
 	GetModuleFileName(NULL, filename, MAX_PATH);
-	_tcscpy(cfg->regkey, regkeybase);
-	_tcscat(cfg->regkey, _T("Profiles\\"));
+	_tcscpy(regkey, regkeybase);
+	_tcscat(regkey, _T("Profiles\\"));
 	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
-	_tcscat(cfg->regkey, &filename[i]);
-	_tcscat(cfg->regkey, _T("-"));
+	_tcscat(regkey, &filename[i]);
+	_tcscat(regkey, _T("-"));
 	i--;
 	filename[i] = 0;
 	_tcslwr(filename);
@@ -1127,8 +1128,9 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
 	}
 	sha256string[256 / 4] = 0;
-	_tcscat(cfg->regkey, sha256string);
+	_tcscat(regkey, sha256string);
 	GetGlobalConfig(cfg, initial);
+	_tcscpy(cfg->regkey, regkey);
 	ReadINI(cfg);
 	if (cfg->OverrideDefaults)
 	{
