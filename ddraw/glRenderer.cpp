@@ -1811,6 +1811,16 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
   */
 void glRenderer_Delete(glRenderer *This)
 {
+	switch (dxglcfg.fullmode)
+	{
+	case 2:
+	case 3:
+	case 4:
+		SaveWindowSettings(&dxglcfg);
+		break;
+	default:
+		break;
+	}
 	EnterCriticalSection(&This->cs);
 	This->opcode = OP_DELETE;
 	SetEvent(This->start);

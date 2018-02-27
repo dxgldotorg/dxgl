@@ -133,6 +133,125 @@ const int ExtraModes[] [3] =
 const int END_EXTRAMODESCOUNT = __LINE__ - 4;
 const int numextramodes = END_EXTRAMODESCOUNT - START_EXTRAMODESCOUNT;
 
+const int START_LOWRESMODES = __LINE__;
+const int LowResModes[][3] =
+{
+	{ 320,200,70 },
+	{ 320,240,60 },
+	{ 320,400,70 },
+	{ 320,480,60 },
+	{ 640,400,70 }
+};
+const int END_LOWRESMODES = __LINE__ - 4;
+const int NumLowResModes = END_LOWRESMODES - START_LOWRESMODES;
+
+const int START_UNCOMMONLOWRESMODES = __LINE__;
+const int UncommonLowResModes[][3] =
+{
+	{ 360,200,70 },
+	{ 360,240,60 },
+	{ 360,400,70 },
+	{ 360,480,60 },
+	{ 400,300,60 }
+};
+const int END_UNCOMMONLOWRESMODES = __LINE__ - 4;
+const int NumUncommonLowResModes = END_LOWRESMODES - START_LOWRESMODES;
+
+const int START_UNCOMMONSDMODES = __LINE__;
+const int UncommonSDModes[][3] =
+{
+	{ 512,384,60 },
+	{ 640,350,70 },
+	{ 640,360,60 },
+	{ 720,400,70 },
+	{ 720,480,60 },
+	{ 960,540,60 },
+	{ 960,600,60 },
+	{ 960,720,60 },
+	{ 1024,600,60 }
+};
+const int END_UNCOMMONSDMODES = __LINE__ - 4;
+const int NumUncommonSDModes = END_UNCOMMONSDMODES - START_UNCOMMONSDMODES;
+
+const int START_HDMODES = __LINE__;
+const int HDModes[][3] =
+{
+	{ 1024,800,60 },
+	{ 1280,720,60 },
+	{ 1280,800,60 },
+	{ 1360,768,60 },
+	{ 1366,768,60 },
+	{ 1400,1050,60 },
+	{ 1440,900,60 },
+	{ 1600,800,60 },
+	{ 1680,1050,60 },
+	{ 1920,1080,60 },
+	{ 1920,1200,60 },
+	{ 2048,1080,60 }
+};
+const int END_HDMODES = __LINE__ - 4;
+const int NumHDModes = END_HDMODES - START_HDMODES;
+
+const int START_UHDMODES = __LINE__;
+const int UHDModes[][3] =
+{
+	{ 2560,1080,60 },
+	{ 2560,1440,60 },
+	{ 2560,1600,60 },
+	{ 2560,1920,60 },
+	{ 2560,2048,60 },
+	{ 2800,2100,60 },
+	{ 3200,1800,60 },
+	{ 3200,2048,60 },
+	{ 3840,2160,60 },
+	{ 3840,2400,60 },
+	{ 4096,2304,60 },
+	{ 4096,3072,60 }
+};
+const int END_UHDMODES = __LINE__ - 4;
+const int NumUHDModes = END_UHDMODES - START_UHDMODES;
+
+const int START_UHD2MODES = __LINE__;
+const int UHD2Modes[][3] =
+{
+	{ 5120,2880,60 },
+	{ 5120,3200,60 },
+	{ 5120,4096,60 },
+	{ 6400,4800,60 },
+	{ 7680,4320,60 },
+	{ 7680,4800,60 },
+	{ 8192,4608,60 }
+};
+const int END_UHD2MODES = __LINE__ - 4;
+const int NumUHD2Modes = END_UHDMODES - START_UHDMODES;
+
+const int START_UNCOMMONMODES = __LINE__;
+const int UncommonModes[][3] =
+{
+	{ 240,160,60 },
+	{ 256,224,60 },
+	{ 256,240,60 },
+	{ 320,175,60 },
+	{ 320,224,60 },
+	{ 400,240,60 },
+	{ 416,312,75 },
+	{ 512,448,60 },
+	{ 512,480,60 },
+	{ 576,432,60 },
+	{ 640,200,60 },
+	{ 640,512,60 },
+	{ 700,525,60 },
+	{ 720,350,70 },
+	{ 720,450,60 },
+	{ 800,512,60 },
+	{ 832,624,75 },
+	{ 840,525,60 },
+	{ 896,672,60 },
+	{ 928,696,60 },
+};
+const int END_UNCOMMONMODES = __LINE__ - 4;
+const int NumUncommonModes = END_UNCOMMONMODES - START_UNCOMMONMODES;
+
 const int START_DOUBLEDMODESCOUNT = __LINE__;
 const int DoubledModes[] [5] = 
 {

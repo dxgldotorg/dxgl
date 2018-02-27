@@ -1109,6 +1109,9 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	BOOL DPIAwarePM = FALSE;
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
+	HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value);
+	BOOL(WINAPI *_SetProcessDpiAwarenessContext)(HANDLE value);
+	BOOL(WINAPI *_SetProcessDPIAware)();
 	GetModuleFileName(NULL, filename, MAX_PATH);
 	_tcscpy(regkey, regkeybase);
 	_tcscat(regkey, _T("Profiles\\"));
@@ -1163,13 +1166,14 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	else DelCompatFlag(_T("HIGHDPIAWARE"),initial);
 	if (initial)
 	{
-		if (cfg->DPIScale == 1)
+		switch(cfg->DPIScale)
 		{
+		case 1:  // Per-monitor DPI Aware V1
 			hSHCore = LoadLibrary(_T("SHCore.dll"));
 			if (hSHCore)
 			{
-				HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value)
-					= (HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
+				_SetProcessDpiAwareness	= 
+					(HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
 				if (_SetProcessDpiAwareness)
 				{
 					DPIAwarePM = TRUE;
@@ -1181,13 +1185,76 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 				hUser32 = LoadLibrary(_T("User32.dll"));
 				if (hUser32)
 				{
-					BOOL(WINAPI *_SetProcessDPIAware)()
-						= (BOOL(WINAPI*)())GetProcAddress(hUser32, "SetProcessDPIAware");
+					_SetProcessDPIAware	= 
+						(BOOL(WINAPI*)())GetProcAddress(hUser32, "SetProcessDPIAware");
 					if (_SetProcessDPIAware) _SetProcessDPIAware();
 				}
 			}
 			if (hSHCore) FreeLibrary(hSHCore);
 			if (hUser32) FreeLibrary(hUser32);
+			break;
+		case 3:  // System DPI Aware
+			hSHCore = LoadLibrary(_T("SHCore.dll"));
+			if (hSHCore)
+			{
+				_SetProcessDpiAwareness = 
+					(HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
+				if (_SetProcessDpiAwareness)
+				{
+					DPIAwarePM = TRUE;
+					_SetProcessDpiAwareness(1);
+				}
+			}
+			if (!DPIAwarePM)
+			{
+				hUser32 = LoadLibrary(_T("User32.dll"));
+				if (hUser32)
+				{
+					_SetProcessDPIAware = 
+						(BOOL(WINAPI*)())GetProcAddress(hUser32, "SetProcessDPIAware");
+					if (_SetProcessDPIAware) _SetProcessDPIAware();
+				}
+			}
+			if (hSHCore) FreeLibrary(hSHCore);
+			if (hUser32) FreeLibrary(hUser32);
+			break;
+		case 4:  // Per-monitor DPI Aware V2
+			hUser32 = LoadLibrary(_T("User32.dll"));
+			if (hUser32)
+			{
+				_SetProcessDpiAwarenessContext = 
+					(BOOL(WINAPI*)(HANDLE))GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+				if (_SetProcessDpiAwarenessContext) _SetProcessDpiAwarenessContext(-4);
+			}
+			if (!_SetProcessDpiAwarenessContext)
+			{
+				hSHCore = LoadLibrary(_T("SHCore.dll"));
+				if (hSHCore)
+				{
+					_SetProcessDpiAwareness =
+						(HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
+					if (_SetProcessDpiAwareness)
+					{
+						DPIAwarePM = TRUE;
+						_SetProcessDpiAwareness(2);
+					}
+				}
+				if (!DPIAwarePM)
+				{
+					if (!hUser32) hUser32 = LoadLibrary(_T("User32.dll"));
+					if (hUser32)
+					{
+						_SetProcessDPIAware =
+							(BOOL(WINAPI*)())GetProcAddress(hUser32, "SetProcessDPIAware");
+						if (_SetProcessDPIAware) _SetProcessDPIAware();
+					}
+				}
+			}
+			if (hSHCore) FreeLibrary(hSHCore);
+			if (hUser32) FreeLibrary(hUser32);
+			break;
+		default:
+			break;
 		}
 	}
 	//if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);  // Windows 10 compatibility issues; not needed?
