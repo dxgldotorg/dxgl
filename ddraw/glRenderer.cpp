@@ -2179,6 +2179,10 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			dxglcfg.WindowX = wndrect.left;
+			dxglcfg.WindowY = wndrect.top;
+			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
+			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
 			AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
 				(winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
@@ -2208,6 +2212,10 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			dxglcfg.WindowX = wndrect.left;
+			dxglcfg.WindowY = wndrect.top;
+			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
+			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
 			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
@@ -2231,6 +2239,10 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			}
 			wndrect.right = width + (screenx / 2) - (width / 2);
 			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			dxglcfg.WindowX = wndrect.left;
+			dxglcfg.WindowY = wndrect.top;
+			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
+			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			SaveWindowSettings(&dxglcfg);
