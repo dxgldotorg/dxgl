@@ -1804,6 +1804,22 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	WaitForSingleObject(This->busy,INFINITE);
 }
 
+__inline BOOL UnadjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
+{
+	RECT r;
+	ZeroMemory(&r, sizeof(RECT));
+	BOOL ret = AdjustWindowRectEx(&r, dwStyle, bMenu, dwExStyle);
+	if (!ret) return ret;
+	else
+	{
+		lpRect->left -= r.left;
+		lpRect->top -= r.top;
+		lpRect->right -= r.right;
+		lpRect->bottom -= r.bottom;
+		return ret;
+	}
+}
+
 /**
   * Deletes a glRenderer object
   * @param This
@@ -1811,11 +1827,27 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
   */
 void glRenderer_Delete(glRenderer *This)
 {
+	BOOL hasmenu;
+	RECT wndrect;
+	LONG_PTR winstyle, winstyleex;
 	switch (dxglcfg.fullmode)
 	{
 	case 2:
 	case 3:
 	case 4:
+		GetWindowRect(This->hWnd, &wndrect);
+		if (dxglcfg.fullmode != 4)
+		{
+			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
+			winstyleex = GetWindowLongPtrA(This->hWnd, GWL_EXSTYLE);
+			if (GetMenu(This->hWnd)) hasmenu = TRUE;
+			else hasmenu = FALSE;
+			UnadjustWindowRectEx(&wndrect, winstyle, hasmenu, winstyleex);
+		}
+		dxglcfg.WindowX = wndrect.left;
+		dxglcfg.WindowY = wndrect.top;
+		dxglcfg.WindowWidth = wndrect.right - wndrect.left;
+		dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
 		SaveWindowSettings(&dxglcfg);
 		break;
 	default:
@@ -2095,22 +2127,6 @@ void glRenderer_Flush(glRenderer *This)
 	LeaveCriticalSection(&This->cs);
 }
 
-__inline BOOL UnadjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
-{
-	RECT r;
-	ZeroMemory(&r, sizeof(RECT));
-	BOOL ret = AdjustWindowRectEx(&r, dwStyle, bMenu, dwExStyle);
-	if (!ret) return ret;
-	else
-	{
-		lpRect->left -= r.left;
-		lpRect->top -= r.top;
-		lpRect->right -= r.right;
-		lpRect->bottom -= r.bottom;
-		return ret;
-	}
-}
-
 /**
   * Changes the window used for rendering.
   * @param This
@@ -2205,13 +2221,19 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			}
 			else
 			{
+				if (dxglcfg.NoResizeWindow) break;
 				screenx = GetSystemMetrics(SM_CXSCREEN);
 				screeny = GetSystemMetrics(SM_CYSCREEN);
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
 			}
-			wndrect.right = wndrect.left + width;
-			wndrect.bottom = wndrect.top + height;
+			if (!dxglcfg.NoResizeWindow)
+			{
+				wndrect.right = wndrect.left + width;
+				wndrect.bottom = wndrect.top + height;
+			}
+			else glDirectDraw7_SetWindowSize(This->ddInterface, wndrect.right - wndrect.left,
+					wndrect.bottom - wndrect.top);
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
