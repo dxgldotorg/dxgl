@@ -2099,7 +2099,7 @@ __inline BOOL UnadjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWO
 {
 	RECT r;
 	ZeroMemory(&r, sizeof(RECT));
-	BOOL ret = AdjustWindowRectEx(lpRect, dwStyle, bMenu, dwExStyle);
+	BOOL ret = AdjustWindowRectEx(&r, dwStyle, bMenu, dwExStyle);
 	if (!ret) return ret;
 	else
 	{
@@ -2177,8 +2177,8 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
 			}
-			wndrect.right = width + (screenx / 2) - (width / 2);
-			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			wndrect.right = wndrect.left + width;
+			wndrect.bottom = wndrect.top + height;
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
@@ -2210,8 +2210,8 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
 			}
-			wndrect.right = width + (screenx / 2) - (width / 2);
-			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			wndrect.right = wndrect.left + width;
+			wndrect.bottom = wndrect.top + height;
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
@@ -2237,8 +2237,8 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
 			}
-			wndrect.right = width + (screenx / 2) - (width / 2);
-			wndrect.bottom = height + (screeny / 2) - (height / 2);
+			wndrect.right = wndrect.left + width;
+			wndrect.bottom = wndrect.top + height;
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
