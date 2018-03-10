@@ -112,10 +112,11 @@
 #define IDC_WINDOWY                             2309
 #define IDC_WINDOWWIDTH                         2310
 #define IDC_WINDOWHEIGHT                        2311
-#define IDC_NOAUTOSIZE                          2312
-#define IDC_PATHLABEL                           2313
-#define IDC_PROFILEPATH                         2314
-#define IDC_WRITEINI                            2315
+#define IDC_WINDOWMAXIMIZED                     2312
+#define IDC_NOAUTOSIZE                          2313
+#define IDC_PATHLABEL                           2314
+#define IDC_PROFILEPATH                         2315
+#define IDC_WRITEINI                            2316
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401

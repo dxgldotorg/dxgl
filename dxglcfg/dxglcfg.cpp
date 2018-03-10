@@ -2036,6 +2036,11 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				SetInteger(hWnd, IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
 			}
 			break;
+		case IDC_WINDOWMAXIMIZED:
+			cfg->WindowMaximized = GetCheck(hWnd, IDC_WINDOWMAXIMIZED, &cfgmask->WindowMaximized);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		case IDC_NOAUTOSIZE:
 			cfg->NoResizeWindow = GetCheck(hWnd, IDC_NOAUTOSIZE, &cfgmask->NoResizeWindow);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
@@ -2988,6 +2993,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Remembered window size
 		SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
 		SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+		// Remembered maximize state
+		if (cfg->WindowMaximized) SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETCHECK, BST_UNCHECKED, 0);
 		// No autosize
 		if (cfg->NoResizeWindow) SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -3388,6 +3396,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)strdefault);
 					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					// Debug tab
 					SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
@@ -3447,6 +3456,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 						SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 					// Debug tab
 					SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
@@ -3544,6 +3554,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SetInteger(hTabs[3], IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
 				SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
 				SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+				SetCheck(hTabs[3], IDC_WINDOWMAXIMIZED, cfg->WindowMaximized, cfgmask->WindowMaximized, tristate);
 				SetCheck(hTabs[3], IDC_NOAUTOSIZE, cfg->NoResizeWindow, cfgmask->NoResizeWindow, tristate);
 				// Debug tab
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);

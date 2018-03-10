@@ -645,6 +645,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->NoResizeWindow = ReadBool(hKey, cfg->NoResizeWindow, &cfgmask->NoResizeWindow, _T("NoResizeWindow"));
 	cfg->WindowWidth = ReadDWORD(hKey, cfg->WindowWidth, &cfgmask->WindowWidth, _T("WindowWidth"));
 	cfg->WindowHeight = ReadDWORD(hKey, cfg->WindowHeight, &cfgmask->WindowHeight, _T("WindowHeight"));
+	cfg->WindowMaximized = ReadDWORD(hKey, cfg->WindowMaximized, &cfgmask->WindowMaximized, _T("WindowMaximized"));
 	ReadWindowPos(hKey, cfg, cfgmask);
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
@@ -793,6 +794,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->WindowY, cfgmask->WindowY, _T("WindowY"));
 	WriteDWORD(hKey, cfg->WindowWidth, cfgmask->WindowWidth, _T("WindowWidth"));
 	WriteDWORD(hKey, cfg->WindowHeight, cfgmask->WindowHeight, _T("WindowHeight"));
+	WriteDWORD(hKey, cfg->WindowMaximized, cfgmask->WindowMaximized, _T("WindowMaximized"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
@@ -1058,6 +1060,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "WindowY")) cfg->WindowY = INIIntValue(value);
 		if (!stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
 		if (!stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
+		if (!stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIIntValue(value);
 	}
 	if (!stricmp(section, "debug"))
 	{
@@ -1347,6 +1350,7 @@ void SaveWindowSettings(const DXGLCFG *cfg)
 		{
 			WriteDWORD(hKey, cfg->WindowWidth, 1, _T("WindowWidth"));
 			WriteDWORD(hKey, cfg->WindowHeight, 1, _T("WindowHeight"));
+			WriteDWORD(hKey, cfg->WindowMaximized, 1, _T("WindowMaximized"));
 		}
 		RegCloseKey(hKey);
 	}

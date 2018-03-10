@@ -1668,6 +1668,7 @@ void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint lev
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	RECT wndrect;
+	WINDOWPLACEMENT wndplace;
 	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
 	This->oldswap = 0;
@@ -1755,8 +1756,13 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
 			}
 			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
-			SetWindowPos(This->hWnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
-				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			wndplace.length = sizeof(WINDOWPLACEMENT);
+			GetWindowPlacement(This->hWnd, &wndplace);
+			wndplace.flags = WPF_ASYNCWINDOWPLACEMENT;
+			if (dxglcfg.WindowMaximized == 1) wndplace.showCmd = SW_SHOWMAXIMIZED;
+			else wndplace.showCmd = SW_SHOWNORMAL;
+			wndplace.rcNormalPosition = wndrect;
+			SetWindowPlacement(This->hWnd, &wndplace);
 			break;
 		case 4:     // Windowed borderless
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
@@ -1830,12 +1836,15 @@ void glRenderer_Delete(glRenderer *This)
 	BOOL hasmenu;
 	RECT wndrect;
 	LONG_PTR winstyle, winstyleex;
+	WINDOWPLACEMENT wndplace;
 	switch (dxglcfg.fullmode)
 	{
 	case 2:
 	case 3:
 	case 4:
-		GetWindowRect(This->hWnd, &wndrect);
+		wndplace.length = sizeof(WINDOWPLACEMENT);
+		GetWindowPlacement(This->hWnd, &wndplace);
+		wndrect = wndplace.rcNormalPosition;
 		if (dxglcfg.fullmode != 4)
 		{
 			winstyle = GetWindowLongPtrA(This->hWnd, GWL_STYLE);
@@ -1848,6 +1857,11 @@ void glRenderer_Delete(glRenderer *This)
 		dxglcfg.WindowY = wndrect.top;
 		dxglcfg.WindowWidth = wndrect.right - wndrect.left;
 		dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
+		if (dxglcfg.fullmode == 3)
+		{
+			if (wndplace.showCmd == SW_MAXIMIZE) dxglcfg.WindowMaximized = TRUE;
+			else dxglcfg.WindowMaximized = FALSE;
+		}
 		SaveWindowSettings(&dxglcfg);
 		break;
 	default:
@@ -2142,7 +2156,8 @@ void glRenderer_Flush(glRenderer *This)
   */
 void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND newwnd, BOOL devwnd)
 {
-	RECT wndrect;
+	RECT wndrect, wndrect2;
+	WINDOWPLACEMENT wndplace;
 	BOOL hasmenu;
 	int screenx, screeny;
 	LONG_PTR winstyle, winstyleex;
@@ -2210,18 +2225,34 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			winstyleex = GetWindowLongPtrA(newwnd, GWL_EXSTYLE);
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
-			ShowWindow(newwnd, SW_NORMAL);
+			wndplace.length = sizeof(WINDOWPLACEMENT);
+			GetWindowPlacement(newwnd, &wndplace);
+			if(wndplace.showCmd == SW_SHOWMAXIMIZED) ShowWindow(newwnd, SW_SHOWMAXIMIZED);
+			else ShowWindow(newwnd, SW_NORMAL);
 			if (dxglcfg.WindowPosition == 1)
 			{
-				GetWindowRect(newwnd, &wndrect);
+				wndrect = wndplace.rcNormalPosition;
+				GetWindowRect(newwnd, &wndrect2);
 				if (GetMenu(newwnd)) hasmenu = TRUE;
 				else hasmenu = FALSE;
 				UnadjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
 					hasmenu, (winstyleex | WS_EX_APPWINDOW));
+				UnadjustWindowRectEx(&wndrect2, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
+					hasmenu, (winstyleex | WS_EX_APPWINDOW));
 			}
 			else
 			{
-				if (dxglcfg.NoResizeWindow) break;
+				if (dxglcfg.NoResizeWindow)
+				{
+					GetWindowRect(newwnd, &wndrect2);
+					if (GetMenu(newwnd)) hasmenu = TRUE;
+					else hasmenu = FALSE;
+					UnadjustWindowRectEx(&wndrect2, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
+						hasmenu, (winstyleex | WS_EX_APPWINDOW));
+					glDirectDraw7_SetWindowSize(This->ddInterface,
+						wndrect2.right - wndrect2.left, wndrect2.bottom - wndrect2.top);
+					break;
+				}
 				screenx = GetSystemMetrics(SM_CXSCREEN);
 				screeny = GetSystemMetrics(SM_CYSCREEN);
 				wndrect.left = (screenx / 2) - (width / 2);
@@ -2232,15 +2263,17 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				wndrect.right = wndrect.left + width;
 				wndrect.bottom = wndrect.top + height;
 			}
-			else glDirectDraw7_SetWindowSize(This->ddInterface, wndrect.right - wndrect.left,
-					wndrect.bottom - wndrect.top);
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
 			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
 			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
-			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
-				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			wndplace.flags = WPF_ASYNCWINDOWPLACEMENT;
+			if (!dxglcfg.NoResizeWindow) wndplace.showCmd = SW_SHOWNORMAL;
+			wndplace.rcNormalPosition = wndrect;
+			SetWindowPlacement(newwnd, &wndplace);
+			if(dxglcfg.NoResizeWindow) glDirectDraw7_SetWindowSize(This->ddInterface,
+				wndrect2.right - wndrect2.left, wndrect2.bottom - wndrect2.top);
 			SaveWindowSettings(&dxglcfg);
 			break;
 		case 4:     // Windowed borderless

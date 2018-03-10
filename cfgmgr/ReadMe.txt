@@ -12,6 +12,25 @@ INI Group system
 Does not have a registry value.
 If nonzero, ignores registry settings from Global section of registry.
 
+member NoOverwrite
+INI Entry NoOverwrite
+INI Group system
+Does not have a registry value.
+If true, prevents DXGL Config from overwriting an existing ddraw.dll
+
+member BundledDDrawSHA256
+INI Entry BundledDDrawSHA256
+INI Group system
+Does not have a registry value.
+If set, specifies the original copy of ddraw.dll in the game folder for
+backup purposes.
+
+member NoUninstall
+INI Entry NoUninstall
+INI Group system
+Does not have a registry value.
+If true, prevents DXGL Config from deleting ddraw.dll from the game folder.
+
 Member scaler
 INI Entry ScalingMode
 INI Group display
@@ -53,7 +72,8 @@ Member AddColorDepths
 INI Entry AllColorDepths
 INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\AllColorDepths
-[DEPRECATED FOR DXGLCFG2]Enable all color depths, even if unsupported by the system
+[DEPRECATED]Enable all color depths, even if unsupported by the system.
+Overridden by AddColorDepths
 Valid settings:
 0 - Off
 1 - On
@@ -76,7 +96,8 @@ Member AddModes
 INI Entry ExtraModes
 INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\ExtraModes
-[DEPRECATED FOR DXGLCFG2]Enable extra video modes, even if unsupported by the system
+[DEPRECATED]Enable extra video modes, even if unsupported by the system
+Overridden by AddModes
 Valid settings:
 0 - Off
 1 - On
@@ -185,7 +206,6 @@ Valid settings:
 7 - Use exact 4x scale.
 8 - Use custom scale.
 
-(future)
 Member primaryscalex
 INI Entry PrimaryScaleX
 INI Group scaling
@@ -194,12 +214,11 @@ Custom X scale for primary scaling.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, set to 1.
 
-(future)
 Member primaryscaley
 INI Entry PrimaryScaleY
 INI Group scaling
 REG_DWORD HKCU\DXGL\Profiles\<app>\PrimaryScaleY
-Custom X scale for primary scaling.
+Custom Y scale for primary scaling.
 Stored as a 32-bit float encoded as a DWORD.
 If zero, negative, or an invalid value, set to 1.
 
@@ -221,8 +240,10 @@ The program may be restarted if the Windows AppCompat method is enabled or
 disabled.
 Valid settings:
 0 - Disabled
-1 - Enabled
-2 - Use Windows AppCompat
+1 - Per-monitor on Windows 8.1 and up, system on Windows Vista through 8.0
+2 - Override with Windows AppCompat
+3 - System DPI
+4 - Per-monitor V2 on Windows 10 v1703 and up
 
 Member postfilter
 INI Entry PostprocessFilter
@@ -364,6 +385,63 @@ INI Entry SingleBufferDevice
 INI Group advanced
 REG_DWORD HKCU\DXGL\Profiles\<app>\SingleBufferDevice
 If true, do not use double buffering in OpenGL.
+
+Member WindowPosition
+INI Entry WindowPosition
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowPosition
+Selects the position to place the window in forced-window mode
+Valid settings:
+0 - Center
+1 - Remembered position
+
+Member RememberWindowSize
+INI Entry RememberWindowSize
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\RememberWindowSize
+If true, remembers the size of the window in forced-window mode.
+
+Member RememberWindowPosition
+INI Entry RememberWindowPosition
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\RememberWindowPosition
+If true, remembers the position of the window in forced-window mode.
+
+Member NoResizeWindow
+INI Entry NoResizeWindow
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\NoResizeWindow
+If true, prevents the window from resizing in resizable window mode.
+
+Member WindowX
+INI Entry WindowX
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowX
+Remembered X position of window in forced-window mode.
+
+Member WindowY
+INI Entry WindowY
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowY
+Remembered Y position of window in forced-window mode.
+
+Member WindowWidth
+INI Entry WindowWidth
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowWidth
+Remembered width of window in forced-window mode.
+
+Member WindowHeight
+INI Entry WindowHeight
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowHeight
+Remembered height of window in forced-window mode.
+
+Member WindowMaximized
+INI Entry WindowMaximized
+INI Group advanced
+REG_DWORD HKCU\DXGL\Profiles\<app>\WindowMaximized
+If true, resizable window mode starts maximized.
 
 Default for all Debug variables is 0 or FALSE.
 
