@@ -95,44 +95,6 @@ bool ScanModeList(DEVMODE *array, DEVMODE comp, DWORD count)
 	return false;
 }
 
-const int START_EXTRAMODESCOUNT = __LINE__;
-const int ExtraModes[] [3] =
-{
-	{320,175,70},
-	{320,200,70},
-	{320,240,60},
-	{320,400,70},
-	{320,480,60},
-	{360,200,70},
-	{360,240,60},
-	{360,400,70},
-	{360,480,60},
-	{400,300,60},
-	{416,312,75},
-	{512,384,60},
-	{576,432,60},
-	{640,200,70},
-	{640,350,70},
-	{640,400,70},
-	{640,512,60},
-	{680,384,60},
-	{700,525,60},
-	{720,350,70},
-	{720,400,70},
-	{720,450,60},
-	{720,480,60},
-	{800,512,60},
-	{832,624,75},
-	{840,525,60},
-	{896,672,60},
-	{928,696,60},
-	{960,540,60},
-	{960,600,60},
-	{960,720,60}
-};
-const int END_EXTRAMODESCOUNT = __LINE__ - 4;
-const int numextramodes = END_EXTRAMODESCOUNT - START_EXTRAMODESCOUNT;
-
 const int START_LOWRESMODES = __LINE__;
 const int LowResModes[][3] =
 {
@@ -155,7 +117,7 @@ const int UncommonLowResModes[][3] =
 	{ 400,300,60 }
 };
 const int END_UNCOMMONLOWRESMODES = __LINE__ - 4;
-const int NumUncommonLowResModes = END_LOWRESMODES - START_LOWRESMODES;
+const int NumUncommonLowResModes = END_UNCOMMONLOWRESMODES - START_UNCOMMONLOWRESMODES;
 
 const int START_UNCOMMONSDMODES = __LINE__;
 const int UncommonSDModes[][3] =
@@ -223,7 +185,7 @@ const int UHD2Modes[][3] =
 	{ 8192,4608,60 }
 };
 const int END_UHD2MODES = __LINE__ - 4;
-const int NumUHD2Modes = END_UHDMODES - START_UHDMODES;
+const int NumUHD2Modes = END_UHD2MODES - START_UHD2MODES;
 
 const int START_UNCOMMONMODES = __LINE__;
 const int UncommonModes[][3] =
@@ -265,6 +227,7 @@ const int DoubledModes[] [5] =
 	{360,240,60,720,480},
 	{360,400,70,720,400},
 	{360,480,60,720,480},
+	{400,300,56,800,600},
 	{400,300,60,800,600}
 };
 const int END_DOUBLEDMODESCOUNT = __LINE__ - 4;
@@ -290,89 +253,89 @@ bool ScanModeListNoRefresh(DEVMODE *array, DEVMODE comp, DWORD count)
 	return false;
 } 
 
-void AddExtraResolutions(DEVMODE **array, DWORD *count)
+void AddExtraResolutions(DEVMODE **array, DWORD *count, const int (*modelist)[3], const int nummodes)
 {
-	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*5*numextramodes);
+	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE) * 5 * nummodes);
 	DEVMODE compmode = *array[0];
 	DWORD newcount = 0;
 	int i;
-	if(ScanColorMode(*array,*count,8))
+	if (ScanColorMode(*array, *count, 8))
 	{
 		compmode.dmBitsPerPel = 8;
-		for(i = 0; i < numextramodes; i++)
+		for (i = 0; i < nummodes; i++)
 		{
-			compmode.dmPelsWidth = ExtraModes[i][0];
-			compmode.dmPelsHeight = ExtraModes[i][1];
-			compmode.dmDisplayFrequency = ExtraModes[i][2];
-			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			compmode.dmPelsWidth = modelist[i][0];
+			compmode.dmPelsHeight = modelist[i][1];
+			compmode.dmDisplayFrequency = modelist[i][2];
+			if (!ScanModeListNoRefresh(*array, compmode, *count))
 			{
 				array2[newcount] = compmode;
 				newcount++;
 			}
 		}
 	}
-	if(ScanColorMode(*array,*count,15))
+	if (ScanColorMode(*array, *count, 15))
 	{
 		compmode.dmBitsPerPel = 15;
-		for(i = 0; i < numextramodes; i++)
+		for (i = 0; i < nummodes; i++)
 		{
-			compmode.dmPelsWidth = ExtraModes[i][0];
-			compmode.dmPelsHeight = ExtraModes[i][1];
-			compmode.dmDisplayFrequency = ExtraModes[i][2];
-			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			compmode.dmPelsWidth = modelist[i][0];
+			compmode.dmPelsHeight = modelist[i][1];
+			compmode.dmDisplayFrequency = modelist[i][2];
+			if (!ScanModeListNoRefresh(*array, compmode, *count))
 			{
 				array2[newcount] = compmode;
 				newcount++;
 			}
 		}
 	}
-	if(ScanColorMode(*array,*count,16))
+	if (ScanColorMode(*array, *count, 16))
 	{
 		compmode.dmBitsPerPel = 16;
-		for(i = 0; i < numextramodes; i++)
+		for (i = 0; i < nummodes; i++)
 		{
-			compmode.dmPelsWidth = ExtraModes[i][0];
-			compmode.dmPelsHeight = ExtraModes[i][1];
-			compmode.dmDisplayFrequency = ExtraModes[i][2];
-			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			compmode.dmPelsWidth = modelist[i][0];
+			compmode.dmPelsHeight = modelist[i][1];
+			compmode.dmDisplayFrequency = modelist[i][2];
+			if (!ScanModeListNoRefresh(*array, compmode, *count))
 			{
 				array2[newcount] = compmode;
 				newcount++;
 			}
 		}
 	}
-	if(ScanColorMode(*array,*count,24))
+	if (ScanColorMode(*array, *count, 24))
 	{
 		compmode.dmBitsPerPel = 24;
-		for(i = 0; i < numextramodes; i++)
+		for (i = 0; i < nummodes; i++)
 		{
-			compmode.dmPelsWidth = ExtraModes[i][0];
-			compmode.dmPelsHeight = ExtraModes[i][1];
-			compmode.dmDisplayFrequency = ExtraModes[i][2];
-			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			compmode.dmPelsWidth = modelist[i][0];
+			compmode.dmPelsHeight = modelist[i][1];
+			compmode.dmDisplayFrequency = modelist[i][2];
+			if (!ScanModeListNoRefresh(*array, compmode, *count))
 			{
 				array2[newcount] = compmode;
 				newcount++;
 			}
 		}
 	}
-	if(ScanColorMode(*array,*count,32))
+	if (ScanColorMode(*array, *count, 32))
 	{
 		compmode.dmBitsPerPel = 32;
-		for(i = 0; i < numextramodes; i++)
+		for (i = 0; i < nummodes; i++)
 		{
-			compmode.dmPelsWidth = ExtraModes[i][0];
-			compmode.dmPelsHeight = ExtraModes[i][1];
-			compmode.dmDisplayFrequency = ExtraModes[i][2];
-			if(!ScanModeListNoRefresh(*array,compmode,*count))
+			compmode.dmPelsWidth = modelist[i][0];
+			compmode.dmPelsHeight = modelist[i][1];
+			compmode.dmDisplayFrequency = modelist[i][2];
+			if (!ScanModeListNoRefresh(*array, compmode, *count))
 			{
 				array2[newcount] = compmode;
 				newcount++;
 			}
 		}
 	}
-	*array = (DEVMODE *)realloc(*array,(*count+newcount)*sizeof(DEVMODE));
-	memcpy(&(*array)[*count-1],array2,newcount*sizeof(DEVMODE));
+	*array = (DEVMODE *)realloc(*array, (*count + newcount) * sizeof(DEVMODE));
+	memcpy(&(*array)[*count - 1], array2, newcount * sizeof(DEVMODE));
 	free(array2);
 	*count += newcount;
 }
@@ -636,12 +599,31 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
+	if (dxglcfg.scaler != 0)
+	{
+		if (dxglcfg.AddModes & 1) //Common low resolutions and doubled modes
+			AddExtraResolutions(&modes, &modenum, LowResModes, NumLowResModes);
+		if (dxglcfg.AddModes & 2) //Uncommon low resolutions
+			AddExtraResolutions(&modes, &modenum, UncommonLowResModes, NumUncommonLowResModes);
+		if (dxglcfg.AddModes & 4) //Uncommon SD reosolutions
+			AddExtraResolutions(&modes, &modenum, UncommonSDModes, NumUncommonSDModes);
+		if (dxglcfg.AddModes & 8) //High definition resolutions
+			AddExtraResolutions(&modes, &modenum, HDModes, NumHDModes);
+		if (dxglcfg.AddModes & 16) //Ultra-HD resolutions
+			AddExtraResolutions(&modes, &modenum, UHDModes, NumUHDModes);
+		if (dxglcfg.AddModes & 32) //Ultra-HD resolutions above 4k
+			AddExtraResolutions(&modes, &modenum, UHD2Modes, NumUHD2Modes);
+		if (dxglcfg.AddModes & 64) //Very uncommon resolutions
+			AddExtraResolutions(&modes, &modenum, UncommonModes, NumUncommonModes);
+	}
 	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 	{
-		AddDoubledResolutions(&modes, &modenum);
-		DiscardDuplicateModes(&modes, &modenum);
+		if (dxglcfg.AddModes & 1)
+		{
+			AddDoubledResolutions(&modes, &modenum);
+			DiscardDuplicateModes(&modes, &modenum);
+		}
 	}
 	modenum--;
 	switch(dxglcfg.SortModes)
@@ -752,7 +734,32 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	}
 	DiscardDuplicateModes(&modes,&modenum);
 	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
-	if(dxglcfg.AddModes && (dxglcfg.scaler != 0)) AddExtraResolutions(&modes,&modenum);  // FIXME:  Add modes by bitmask
+	if (dxglcfg.scaler != 0)
+	{
+		if (dxglcfg.AddModes & 1) //Common low resolutions and doubled modes
+			AddExtraResolutions(&modes, &modenum, LowResModes, NumLowResModes);
+		if (dxglcfg.AddModes & 2) //Uncommon low resolutions
+			AddExtraResolutions(&modes, &modenum, UncommonLowResModes, NumUncommonLowResModes);
+		if (dxglcfg.AddModes & 4) //Uncommon SD reosolutions
+			AddExtraResolutions(&modes, &modenum, UncommonSDModes, NumUncommonSDModes);
+		if (dxglcfg.AddModes & 8) //High definition resolutions
+			AddExtraResolutions(&modes, &modenum, HDModes, NumHDModes);
+		if (dxglcfg.AddModes & 16) //Ultra-HD resolutions
+			AddExtraResolutions(&modes, &modenum, UHDModes, NumUHDModes);
+		if (dxglcfg.AddModes & 32) //Ultra-HD resolutions above 4k
+			AddExtraResolutions(&modes, &modenum, UHD2Modes, NumUHD2Modes);
+		if (dxglcfg.AddModes & 64) //Very uncommon resolutions
+			AddExtraResolutions(&modes, &modenum, UncommonModes, NumUncommonModes);
+	}
+	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
+	{
+		if (dxglcfg.AddModes & 1)
+		{
+			AddDoubledResolutions(&modes, &modenum);
+			DiscardDuplicateModes(&modes, &modenum);
+		}
+	}
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
