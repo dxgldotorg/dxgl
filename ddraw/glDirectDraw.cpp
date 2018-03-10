@@ -449,27 +449,25 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 		case 15:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 16;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 4))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
 			break;
-#ifdef _DEBUG //FIXME:  Temporarily removed in release builds for compatibility.
 		case 16:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 15;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 2))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
 			break;
-#endif
 		case 24:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 32;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 16))
 			{
 				array2[count2] = compmode;
 				count2++;
@@ -478,30 +476,28 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 		case 32:
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 24;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 8))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
 			compmode = (*array)[i];
 			compmode.dmBitsPerPel = 16;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 4))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
 			compmode = (*array)[i];
-#ifdef _DEBUG //FIXME:  Temporarily removed in release builds for compatibility.
 			compmode.dmBitsPerPel = 15;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 2))
 			{
 				array2[count2] = compmode;
 				count2++;
 			}
 			compmode = (*array)[i];
-#endif
 			compmode.dmBitsPerPel = 8;
-			if(!ScanModeList(*array,compmode,*count))
+			if(!ScanModeList(*array,compmode,*count) && (dxglcfg.AddColorDepths & 1))
 			{
 				array2[count2] = compmode;
 				count2++;
@@ -515,6 +511,13 @@ void AddExtraColorModes(DEVMODE **array, DWORD *count)
 	memcpy(&(*array)[*count-1],array2,count2*sizeof(DEVMODE));
 	free(array2);
 	*count += count2;
+	if ((dxglcfg.AddColorDepths & 2) && !(dxglcfg.AddColorDepths & 4))
+	{
+		for (DWORD x = 0; x < (*count); x++)
+		{
+			if ((*array)[x].dmBitsPerPel == 15) (*array)[x].dmBitsPerPel = 16;
+		}
+	}
 }
 
 int SortDepth(const DEVMODE *mode1, const DEVMODE *mode2)
@@ -1910,6 +1913,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	LONG error;
 	DWORD flags;
 	int stretchmode;
+	if ((dxglcfg.AddColorDepths & 2) && !(dxglcfg.AddColorDepths & 4) && (dwBPP == 16))
+		dwBPP = 15;
 	if(!oldmode.dmSize)
 	{
 		oldmode.dmSize = sizeof(DEVMODE);
