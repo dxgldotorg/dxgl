@@ -19,5 +19,6 @@
 
 #include "resource.h"
 
+void ResetModeList(HWND hWnd);
 INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);

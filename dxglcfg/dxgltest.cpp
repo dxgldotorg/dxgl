@@ -23,6 +23,7 @@
 static HINSTANCE hinstance;
 bool gradientavailable;
 BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
+extern BOOL modelistdirty;
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -242,6 +243,20 @@ TCHAR frameratestring[33];
 
 TCHAR tmpstring[33];
 
+void ResetModeList(HWND hWnd)
+{
+	LPDIRECTDRAW lpdd;
+	HRESULT error;
+	SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_RESETCONTENT, 0, 0);
+	error = DirectDrawCreate(NULL, &lpdd, NULL);
+	if (error == DD_OK)
+	{
+		error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES, NULL, GetDlgItem(hWnd, IDC_VIDMODES), EnumModesCallback8);
+		IDirectDraw_Release(lpdd);
+	}
+	SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_SETCURSEL, modenum, 0);
+}
+
 INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
@@ -261,7 +276,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		if(error == DD_OK)
 		{
 			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback8);
-			lpdd->Release();
+			IDirectDraw_Release(lpdd);
 		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
 		break;
@@ -335,6 +350,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 Do you want to apply them before running this test?"),
 _T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 SaveChanges(hDialog);
+					if (modelistdirty) ResetModeList(hWnd);
 				}
 				if (SendDlgItemMessage(hWnd, IDC_RESIZABLE, BM_GETCHECK, 0, 0)) resizable = true;
 				else resizable = false;

@@ -95,6 +95,7 @@ TCHAR strdefaultshort[] = _T("(default)");
 HWND hTab;
 HWND hTabs[8];
 static int tabopen;
+BOOL modelistdirty = FALSE;
 
 static const TCHAR *colormodes[32] = {
 	_T("None"),
@@ -1562,6 +1563,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					}
 					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 					*dirty = TRUE;
+					modelistdirty = TRUE;
 				}
 			}
 			if (HIWORD(wParam) == CBN_DROPDOWN)
@@ -1593,6 +1595,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					}
 					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 					*dirty = TRUE;
+					modelistdirty = TRUE;
 				}
 			}
 			if (HIWORD(wParam) == CBN_DROPDOWN)
@@ -1608,6 +1611,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			cfg->scaler = GetCombo(hWnd, IDC_VIDMODE, &cfgmask->scaler);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			modelistdirty = TRUE;
 			if (cfg->scaler == 8)
 			{
 				EnableWindow(GetDlgItem(hWnd, IDC_FIXEDSCALELABEL), TRUE);
@@ -1711,6 +1715,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			cfg->SortModes = GetCombo(hWnd, IDC_SORTMODES, &cfgmask->SortModes);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			modelistdirty = TRUE;
 			break;
 		case IDC_DPISCALE:
 			cfg->DPIScale = GetCombo(hWnd, IDC_DPISCALE, &cfgmask->DPIScale);
@@ -1771,6 +1776,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					cfgmask->postsizex, cfgmask->postsizey, tristate);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
+				modelistdirty = TRUE;
 			}
 			else if (HIWORD(wParam) == CBN_SELCHANGE)
 			{
@@ -1778,6 +1784,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					&cfgmask->postsizex, &cfgmask->postsizey);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
+				modelistdirty = TRUE;
 			}
 			break;
 		case IDC_PRIMARYSCALE:
@@ -2375,6 +2382,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				RedrawWindow(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
+				if(item == 2) modelistdirty = TRUE;
 			}
 			break;
 		default:
@@ -3349,6 +3357,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			return TRUE;
 		case IDC_APPLY:
 			SaveChanges(hWnd);
+			if(modelistdirty) ResetModeList(hTabs[6]);
 			return TRUE;
 		case IDC_APPS:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
