@@ -529,6 +529,24 @@ If DebugMaxGLVersionMajor is nonzero, sets the maximum OpenGL minor version
 that DXGL will use, unless the actual major version is less than
 DebugMaxGLVersionMajor.
 
+Member HackCrop640480to640400
+INI Entry HackCrop640480to640400
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackCrop640480to640400
+Crops 640x480 display mode to 640x400.
+
+Member HackAutoScale512448to640480
+INI Entry HackAutoScale512448to640480
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackAutoScale512448to640480
+Expands a 512x448 image to 640x480 if the bordering pixels are black.
+
+Member HackNoTVRefresh
+INI Entry HackNoTVRefresh
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackNoTVRefresh
+Rounds out TV-compatible refresh rates and discards duplicates.
+
 Member Windows8Detected
 Not in INI file
 REG_DWORD HKCU\DXGL\Global\Windows8Detected

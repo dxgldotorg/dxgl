@@ -43,7 +43,8 @@ typedef struct
 	// [scaling]
 	DWORD scalingfilter;
 	DWORD BltScale;
-	DWORD BltThreshold;
+	// Removed for DXGL 0.5.13 release
+	// DWORD BltThreshold;
 	DWORD primaryscale;
 	float primaryscalex;
 	float primaryscaley;
@@ -91,6 +92,7 @@ typedef struct
 	// [hacks]
 	BOOL HackCrop640480to640400;
 	BOOL HackAutoScale512448to640480;
+	BOOL HackNoTVRefresh;
 	// internal
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;

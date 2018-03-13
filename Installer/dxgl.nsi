@@ -143,9 +143,9 @@ Section "DXGL Components (required)" SEC01
   SectionIn RO
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "..\${SRCDIR}\dxgltest.exe"
+  Delete "$INSTDIR\dxgltest.exe"
   CreateDirectory "$SMPROGRAMS\DXGL"
-  CreateShortCut "$SMPROGRAMS\DXGL\DXGL Test.lnk" "$INSTDIR\dxgltest.exe"
+  Delete "$SMPROGRAMS\DXGL\DXGL Test.lnk"
   File "..\${SRCDIR}\dxglcfg.exe"
   CreateShortCut "$SMPROGRAMS\DXGL\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
   File "..\${SRCDIR}\ddraw.dll"
@@ -193,7 +193,7 @@ SectionEnd
 
 Section -PostInstall
   ExecWait '"$INSTDIR\dxglcfg.exe" upgrade'
-  ExecWait '"$INSTDIR\dxgltest.exe" install'
+  ExecWait '"$INSTDIR\dxglcfg.exe" profile_install'
 SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX

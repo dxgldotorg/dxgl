@@ -437,6 +437,26 @@ void AddDoubledResolutions(DEVMODE **array, DWORD *count)
 	*count += newcount;
 }
 
+void RemoveTVAspectModes(DEVMODE **array, DWORD count)
+{
+	for (DWORD i = 0; i < count; i++)
+	{
+		if ((*array)[i].dmDisplayFrequency == 23)
+			(*array)[i].dmDisplayFrequency = 24;
+		else if ((*array)[i].dmDisplayFrequency == 29)
+			(*array)[i].dmDisplayFrequency = 30;
+		else if ((*array)[i].dmDisplayFrequency == 47)
+			(*array)[i].dmDisplayFrequency = 48;
+		else if ((*array)[i].dmDisplayFrequency == 59)
+			(*array)[i].dmDisplayFrequency = 60;
+		else if ((*array)[i].dmDisplayFrequency == 71)
+			(*array)[i].dmDisplayFrequency = 72;
+		else if ((*array)[i].dmDisplayFrequency == 119)
+			(*array)[i].dmDisplayFrequency = 120;
+	}
+}
+
+
 void AddExtraColorModes(DEVMODE **array, DWORD *count)
 {
 	DEVMODE *array2 = (DEVMODE *)malloc(sizeof(DEVMODE)*(7*(*count)));
@@ -600,8 +620,7 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
-	DiscardDuplicateModes(&modes,&modenum);
+	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);
 	if (dxglcfg.scaler != 0)
 	{
 		if (dxglcfg.AddModes & 1) //Common low resolutions and doubled modes
@@ -622,12 +641,10 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 	{
-		if (dxglcfg.AddModes & 1)
-		{
-			AddDoubledResolutions(&modes, &modenum);
-			DiscardDuplicateModes(&modes, &modenum);
-		}
+		if (dxglcfg.AddModes & 1) AddDoubledResolutions(&modes, &modenum);
 	}
+	if (dxglcfg.HackNoTVRefresh) RemoveTVAspectModes(&modes, modenum);
+	DiscardDuplicateModes(&modes, &modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{
@@ -707,7 +724,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 }
 HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK2 lpEnumModesCallback)
 {
-	bool match;
+	BOOL match;
+	BOOL scalemodes;
 	DWORD modenum = 0;
 	DWORD modemax = 128;
 	DEVMODE mode;
@@ -720,8 +738,20 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC2));
 	ddmode.dwSize = sizeof(DDSURFACEDESC2);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
+	if (!_isnan(dxglcfg.postsizex) && !_isnan(dxglcfg.postsizey) &&
+		(dxglcfg.postsizex > 0.25f) && (dxglcfg.postsizey > 0.25f) &&
+		(dxglcfg.postsizex != 1.0f) && (dxglcfg.postsizey != 1.0f) &&
+		((dxglcfg.scaler == 0) || ((dxglcfg.scaler >= 4) && (dxglcfg.scaler <= 6))) &&
+		(!dxglcfg.primaryscale))
+		scalemodes = TRUE;
+	else scalemodes = FALSE;
 	while(EnumDisplaySettings(NULL,modenum++,&mode))
 	{
+		if (scalemodes)
+		{
+			mode.dmPelsWidth /= dxglcfg.postsizex;
+			mode.dmPelsHeight /= dxglcfg.postsizey;
+		}
 		modes[modenum-1] = mode;
 		if(modenum >= modemax)
 		{
@@ -736,7 +766,7 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 		}
 	}
 	DiscardDuplicateModes(&modes,&modenum);
-	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);  // FIXME:  Add color depths by bitmask
+	if(dxglcfg.AddColorDepths) AddExtraColorModes(&modes,&modenum);
 	if (dxglcfg.scaler != 0)
 	{
 		if (dxglcfg.AddModes & 1) //Common low resolutions and doubled modes
@@ -757,12 +787,10 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 	{
-		if (dxglcfg.AddModes & 1)
-		{
-			AddDoubledResolutions(&modes, &modenum);
-			DiscardDuplicateModes(&modes, &modenum);
-		}
+		if (dxglcfg.AddModes & 1) AddDoubledResolutions(&modes, &modenum);
 	}
+	if (dxglcfg.HackNoTVRefresh) RemoveTVAspectModes(&modes, modenum);
+	DiscardDuplicateModes(&modes, &modenum);
 	modenum--;
 	switch(dxglcfg.SortModes)
 	{

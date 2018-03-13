@@ -613,7 +613,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 		1, _T("FirstScaleY"));
 	cfg->scalingfilter = ReadDWORD(hKey,cfg->scalingfilter,&cfgmask->scalingfilter,_T("ScalingFilter"));
 	cfg->BltScale = ReadDWORD(hKey, cfg->BltScale, &cfgmask->BltScale, _T("BltScale"));
-	cfg->BltThreshold = ReadDWORD(hKey, cfg->BltThreshold, &cfgmask->BltThreshold, _T("BltThreshold"));
+	// Removed for DXGL 0.5.13 release
+	// cfg->BltThreshold = ReadDWORD(hKey, cfg->BltThreshold, &cfgmask->BltThreshold, _T("BltThreshold"));
 	cfg->texfilter = ReadDWORD(hKey,cfg->texfilter,&cfgmask->texfilter,_T("TextureFilter"));
 	cfg->anisotropic = ReadDWORD(hKey,cfg->anisotropic,&cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	cfg->msaa = ReadDWORD(hKey,cfg->msaa,&cfgmask->msaa,_T("Antialiasing"));
@@ -663,6 +664,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	cfg->HackAutoScale512448to640480 = ReadBool(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	if(!global && dll)
 	{
 		sizeout = 0;
@@ -762,7 +764,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 		1, _T("FirstScaleY"));
 	WriteDWORD(hKey,cfg->scalingfilter,cfgmask->scalingfilter,_T("ScalingFilter"));
 	WriteDWORD(hKey, cfg->BltScale, cfgmask->BltScale, _T("BltScale"));
-	WriteDWORD(hKey, cfg->BltThreshold, cfgmask->BltThreshold, _T("BltThreshold"));
+	// Removed for DXGL 0.5.13 release
+	// WriteDWORD(hKey, cfg->BltThreshold, cfgmask->BltThreshold, _T("BltThreshold"));
 	WriteDWORD(hKey,cfg->texfilter,cfgmask->texfilter,_T("TextureFilter"));
 	WriteDWORD(hKey,cfg->anisotropic,cfgmask->anisotropic,_T("AnisotropicFiltering"));
 	WriteDWORD(hKey,cfg->msaa,cfgmask->msaa,_T("Antialiasing"));
@@ -811,6 +814,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	WriteBool(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 }
 
 TCHAR newregname[MAX_PATH+65];
@@ -910,7 +914,8 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->DisplayMultiplierY = 1.0f;
 	cfg->primaryscalex = 1.0f;
 	cfg->primaryscaley = 1.0f;
-	cfg->BltThreshold = 127;
+	// Removed for DXGL 0.5.13 release
+	// cfg->BltThreshold = 127;
 	cfg->WindowPosition = 1;
 	cfg->RememberWindowSize = TRUE;
 	cfg->RememberWindowPosition = TRUE;
@@ -1017,7 +1022,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	{
 		if (!stricmp(name, "ScalingFilter")) cfg->scalingfilter = INIIntValue(value);
 		if (!stricmp(name, "BltScale")) cfg->BltScale = INIIntValue(value);
-		if (!stricmp(name, "BltThreshold")) cfg->BltThreshold = INIIntValue(value);
+		// Removed for DXGL 0.5.13 release
+		// if (!stricmp(name, "BltThreshold")) cfg->BltThreshold = INIIntValue(value);
 		if (!stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
 		if (!stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
 		if (!stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
@@ -1060,7 +1066,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "WindowY")) cfg->WindowY = INIIntValue(value);
 		if (!stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
 		if (!stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
-		if (!stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIIntValue(value);
+		if (!stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIBoolValue(value);
 	}
 	if (!stricmp(section, "debug"))
 	{
@@ -1080,6 +1086,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	{
 		if (!stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
 		if (!stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIBoolValue(value);
+		if (!stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
 	}
 	return 1;
 }

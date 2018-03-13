@@ -1831,7 +1831,8 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				SetFloat3place(hWnd, IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 			}
 			break;
-		case IDC_BLTTHRESHOLD:
+		// Removed for DXGL 0.5.13 release
+		/*case IDC_BLTTHRESHOLD:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
 				if (!EditInterlock)
@@ -1847,7 +1848,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				SetInteger(hWnd, IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
 			}
-			break;
+			break;*/
 		case IDC_SHADER:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
@@ -1864,7 +1865,8 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		default:
 			break;
 		}
-	case WM_HSCROLL:
+	// Removed for DXGL 0.5.13 release
+	/* case WM_HSCROLL:
 		switch (LOWORD(wParam))
 		{
 		case TB_ENDTRACK:
@@ -1885,7 +1887,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		default:
 			break;
 		}
-		break;
+		break;*/
 	default:
 		return FALSE;
 	}
@@ -2282,6 +2284,10 @@ void ReadHacksItem(int item, BOOL *value, BOOL *mask)
 		*value = cfg->HackAutoScale512448to640480;
 		*mask = cfgmask->HackAutoScale512448to640480;
 		break;
+	case 2:
+		*value = cfg->HackNoTVRefresh;
+		*mask = cfgmask->HackNoTVRefresh;
+		break;
 	default:
 		*value = FALSE;
 		*mask = FALSE;
@@ -2301,6 +2307,9 @@ void WriteHacksItem(int item, BOOL value, BOOL mask)
 		cfg->HackAutoScale512448to640480 = value;
 		cfgmask->HackAutoScale512448to640480 = mask;
 		break;
+	case 2:
+		cfg->HackNoTVRefresh = value;
+		cfgmask->HackNoTVRefresh = mask;
 	default:
 		break;
 	}
@@ -2778,11 +2787,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Bilinear, soft colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_SETCURSEL, cfg->BltScale, 0);
+		// Removed for DXGL 0.5.13 release
 		// Blt scaling threshold
-		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETRANGE, 0, 0xFE0000);
-		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
-		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLD, EM_SETLIMITTEXT, 3, 0);
-		SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+		// SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETRANGE, 0, 0xFE0000);
+		// SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
+		// SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLD, EM_SETLIMITTEXT, 3, 0);
+		// SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
 		// aspect
 		_tcscpy(buffer,_T("Default"));
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -3067,6 +3077,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Crop 640x480 to 640x400"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		// About text
 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
@@ -3531,12 +3543,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
 				SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
-				SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+				// Removed for DXGL 0.5.13 release
+				/* SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
 				if (cfgmask->BltThreshold)
 				{
 					SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
 				}
-				else SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, 127);
+				else SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, 127);*/
 				// 3D tab
 				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
 				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
@@ -4027,7 +4040,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 		// FIXME:  Remove DXGL Config profile
 		LPDIRECTDRAW lpdd;
 		DirectDrawCreate(NULL, &lpdd, NULL);
-		lpdd->Release();
+		IDirectDraw_Release(lpdd);
 		return 0;
 	}
 	icc.dwSize = sizeof(icc);
