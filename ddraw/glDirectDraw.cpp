@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1729,7 +1729,9 @@ extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (This->currmode.dmSize != 0)
 	{
-		ChangeDisplaySettingsEx(NULL, &This->currmode, NULL, CDS_FULLSCREEN, NULL);
+		if((This->currmode.dmPelsWidth == 640) && (This->currmode.dmPelsHeight == 480)
+			&& dxglcfg.HackCrop640480to640400) Try640400Mode(NULL, &This->currmode, CDS_FULLSCREEN, NULL);
+		else ChangeDisplaySettingsEx(NULL, &This->currmode, NULL, CDS_FULLSCREEN, NULL);
 	}
 	TRACE_EXIT(0, 0);
 }
@@ -1741,6 +1743,8 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 {
 	glDD7->internalx = glDD7->screenx = dwWidth;
 	glDD7->internaly = glDD7->screeny = dwHeight;
+	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
+		glDD7->internaly *= 1.2f;
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
 		glDD7->primary->texture->palette, 0, NULL);
 }
@@ -1919,6 +1923,26 @@ int IsStretchedMode(DWORD width, DWORD height)
 	else return 0;
 }
 
+LONG Try640400Mode(LPCWSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
+{
+	LONG error;
+	DEVMODE newmode = *mode;
+	newmode.dmPelsHeight = 400;
+	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	if (error == DISP_CHANGE_SUCCESSFUL) return error;
+	// Try setting refresh to 70
+	newmode.dmDisplayFrequency = 70;
+	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	if (error == DISP_CHANGE_SUCCESSFUL) return error;
+	// Try without refresh
+	newmode.dmFields &= (DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFLAGS | DM_POSITION);
+	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	if (error == DISP_CHANGE_SUCCESSFUL) return error;
+	// Finally try the original mode
+	if(crop400) *crop400 = FALSE;
+	return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+}
+
 HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
 	TRACE_ENTER(6,14,this,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
@@ -1940,7 +1964,9 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	float aspect,xmul,ymul,xscale,yscale;
 	LONG error;
 	DWORD flags;
+	BOOL crop400 = FALSE;
 	int stretchmode;
+	if ((dwWidth == 640) && (dwHeight == 480) && dxglcfg.HackCrop640480to640400) crop400 = TRUE;
 	if ((dxglcfg.AddColorDepths & 2) && !(dxglcfg.AddColorDepths & 4) && (dwBPP == 16))
 		dwBPP = 15;
 	if(!oldmode.dmSize)
@@ -1995,7 +2021,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 			flags = 0;
 			if (fullscreen) flags |= CDS_FULLSCREEN;
-			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			if (crop400) error = Try640400Mode(NULL, &newmode, flags, &crop400);
+			else error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
 			switch (error)
 			{
 			case DISP_CHANGE_SUCCESSFUL:
@@ -2011,7 +2038,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 					primaryy = newmode.dmPelsHeight / yscale;
 				}
 				screenx = newmode.dmPelsWidth;
-				screeny = newmode.dmPelsHeight;
+				if (crop400) screeny = 400;
+				else screeny = newmode.dmPelsHeight;
 				internalx = newmode.dmPelsWidth;
 				internaly = newmode.dmPelsHeight;
 				internalbpp = screenbpp = newmode.dmBitsPerPel;
@@ -2047,6 +2075,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			internalx = screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
 			internaly = screeny = currmode.dmPelsHeight;
+			if (crop400) internaly *= 1.2f;
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
@@ -2093,15 +2122,18 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				else
 				{
 					xmul = (float)screenx / (float)dwWidth;
-					ymul = (float)screeny / (float)dwHeight;
+					if (crop400) ymul = (float)screeny / 400.0f;
+					else ymul = (float)screeny / (float)dwHeight;
 					if ((float)dwWidth*(float)ymul > (float)screenx)
 					{
 						internalx = (DWORD)((float)dwWidth * (float)xmul);
-						internaly = (DWORD)((float)dwHeight * (float)xmul);
+						if(crop400) internaly = (DWORD)(400.0f * (float)xmul);
+						else internaly = (DWORD)((float)dwHeight * (float)xmul);
 					}
 					else
 					{
 						internalx = (DWORD)((float)dwWidth * (float)ymul);
+						if(crop400) internaly = (DWORD)(400.0f * (float)ymul);
 						internaly = (DWORD)((float)dwHeight * (float)ymul);
 					}
 				}
@@ -2163,13 +2195,16 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 			flags = 0;
 			if (fullscreen) flags |= CDS_FULLSCREEN;
-			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			if (crop400) error = Try640400Mode(NULL, &newmode, flags, &crop400);
+			else error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
 			if (error != DISP_CHANGE_SUCCESSFUL)
 			{
 				newmode2 = FindClosestMode(newmode);
-				error = ChangeDisplaySettingsEx(NULL, &newmode2, NULL, flags, NULL);
+				if (crop400) error = Try640400Mode(NULL, &newmode2, flags, &crop400);
+				else error = ChangeDisplaySettingsEx(NULL, &newmode2, NULL, flags, NULL);
 			}
 			else newmode2 = newmode;
+			if (crop400) newmode2.dmPelsHeight = 400;
 			if (error == DISP_CHANGE_SUCCESSFUL) this->currmode = newmode2;
 			switch (dxglcfg.scaler)
 			{
@@ -2178,6 +2213,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				internalx = screenx = newmode2.dmPelsWidth;
 				primaryy = dwHeight;
 				internaly = screeny = newmode2.dmPelsHeight;
+				if (crop400) internaly *= 1.2f;
 				if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 				else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
@@ -2224,15 +2260,18 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 					else
 					{
 						xmul = (float)screenx / (float)dwWidth;
-						ymul = (float)screeny / (float)dwHeight;
+						if (crop400) ymul = (float)screeny / 400.0f;
+						else ymul = (float)screeny / (float)dwHeight;
 						if ((float)dwWidth*(float)ymul > (float)screenx)
 						{
 							internalx = (DWORD)((float)dwWidth * (float)xmul);
-							internaly = (DWORD)((float)dwHeight * (float)xmul);
+							if (crop400) internaly = (DWORD)(400.0f * (float)xmul);
+							else internaly = (DWORD)((float)dwHeight * (float)xmul);
 						}
 						else
 						{
 							internalx = (DWORD)((float)dwWidth * (float)ymul);
+							if (crop400) internaly = (DWORD)(400.0f * (float)ymul);
 							internaly = (DWORD)((float)dwHeight * (float)ymul);
 						}
 					}
@@ -2362,7 +2401,12 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 		primaryx = dwWidth;
 		internalx = screenx = dwWidth * xscale;
 		primaryy = dwHeight;
-		internaly = screeny = dwHeight * yscale;
+		if (crop400)
+		{
+			screeny = 400 * yscale;
+			internaly = dwHeight * yscale;
+		}
+		else internaly = screeny = dwHeight * yscale;
 		internalbpp = screenbpp = dwBPP;
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;

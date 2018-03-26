@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -144,6 +144,7 @@ private:
 extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
 extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *glDD7, LONG *sizes);
 extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
+LONG Try640400Mode(LPCWSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400);
 
 class glDirectDraw1 : public IDirectDraw
 {

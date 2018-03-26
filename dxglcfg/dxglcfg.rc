@@ -132,7 +132,8 @@ FONT 8, "Ms Shell Dlg"
 		AUTOCHECKBOX    "Don't auto-size window in resizable window mode", IDC_NOAUTOSIZE, 7, 101, 171, 8, 0, WS_EX_LEFT
 		LTEXT           "Installation path", IDC_PATHLABEL, 7, 124, 51, 9, SS_LEFT, WS_EX_LEFT
 		EDITTEXT        IDC_PROFILEPATH, 7, 135, 331, 14, NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL | ES_READONLY, WS_EX_LEFT
-		PUSHBUTTON      "Write INI file...", IDC_WRITEINI, 262, 150, 73, 14, 0, WS_EX_LEFT
+		// Removed for DXGL 0.5.13 release
+		// PUSHBUTTON      "Write INI file...", IDC_WRITEINI, 262, 150, 73, 14, 0, WS_EX_LEFT
 }
 
 
