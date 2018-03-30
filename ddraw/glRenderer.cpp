@@ -3549,10 +3549,69 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetFBO(This->util, NULL);
 }
 
+BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
+{
+	DWORD *ptr32;
+	WORD *ptr16;
+	BYTE *ptr8;
+	if (dxglcfg.HackAutoScale512448to640480)
+	{
+		if ((primary->levels[0].ddsd.dwWidth == 640) && (primary->levels[0].ddsd.dwHeight == 480))
+		{
+			if (primary->levels[0].dirty & 2) glTexture__Download(primary, 0);
+			if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
+			{
+				ptr8 = (BYTE*)primary->levels[0].buffer;
+				ptr32 = (DWORD*)palette->levels[0].buffer;
+				if (!(ptr32[ptr8[0]] & 0xFFFFFF)) return TRUE;
+				else return FALSE;
+			}
+			else if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
+			{
+				ptr16 = (WORD*)primary->levels[0].buffer;
+				if (!ptr16[0]) return TRUE;
+				else return FALSE;
+			}
+			else
+			{
+				ptr32 = (DWORD*)primary->levels[0].buffer;
+				if (!(ptr32[0] & 0xFFFFFF)) return TRUE;
+				else return FALSE;
+			}
+		}
+		else if ((primary->levels[0].ddsd.dwWidth == 320) && (primary->levels[0].ddsd.dwHeight == 240))
+		{
+			if (primary->levels[0].dirty & 2) glTexture__Download(primary, 0);
+			if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
+			{
+				ptr8 = (BYTE*)primary->levels[0].buffer;
+				ptr32 = (DWORD*)palette->levels[0].buffer;
+				if (!(ptr32[ptr8[0]] & 0xFFFFFF)) return TRUE;
+				else return FALSE;
+			}
+			else if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
+			{
+				ptr16 = (WORD*)primary->levels[0].buffer;
+				if (!ptr16[0]) return TRUE;
+				else return FALSE;
+			}
+			else
+			{
+				ptr32 = (DWORD*)primary->levels[0].buffer;
+				if (!(ptr32[0] & 0xFFFFFF)) return TRUE;
+				else return FALSE;
+			}
+		}
+		else return FALSE;
+	}
+	else return FALSE;
+}
+
 void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync)
 {
 	int progtype;
 	RECT r, r2;
+	BOOL scale512448 = Is512448Scale(This, texture, paltex);
 	glUtil_BlendEnable(This->util, FALSE);
 	if (previous) previous->levels[0].ddsd.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
 	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
@@ -3669,8 +3728,18 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
 		This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->bigheight;
 	}
-	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
-	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+	if (scale512448)
+	{
+		This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
+		This->bltvertices[0].t = This->bltvertices[1].t = 0.966666667f;
+		This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;
+		This->bltvertices[2].t = This->bltvertices[3].t = 0.0333333333f;
+	}
+	else
+	{
+		This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
+		This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+	}
 	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].pos, TRUE);
 	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
 	glUtil_EnableArray(This->util, This->shaders->shaders[progtype].texcoord, TRUE);
