@@ -1363,9 +1363,120 @@ void SaveWindowSettings(const DXGLCFG *cfg)
 	}
 }
 
+//  Checks for obsolete DXGL Test registry entry and renames it to DXGLCFG.
+
+void UpgradeDXGLTestToDXGLCfg()
+{
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	TCHAR sha256string[65];
+	TCHAR installpath[MAX_PATH + 1];
+	TCHAR profilepath[MAX_PATH + 80];
+	TCHAR destpath[MAX_PATH + 80];
+	LONG error;
+	DWORD sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
+	DWORD sizeout2;
+	HKEY hKeyInstall = NULL;
+	HKEY hKeyProfile = NULL;
+	HKEY hKeyDest = NULL;
+	DWORD numvalue;
+	DWORD olddirsize = 1024;
+	TCHAR *olddir = NULL;
+	DWORD oldvaluesize = 1024;
+	TCHAR *oldvalue = NULL;
+	DWORD regtype;
+	int i;
+	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		if (error == ERROR_SUCCESS)
+		{
+			_tcslwr(installpath);
+			Sha256Initialise(&sha_context);
+			Sha256Update(&sha_context, installpath, _tcslen(installpath));
+			Sha256Finalise(&sha_context, &sha256);
+			for (i = 0; i < (256 / 8); i++)
+			{
+				sha256string[i * 2] = (TCHAR)hexdigit(sha256.bytes[i] >> 4);
+				sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
+			}
+			sha256string[256 / 4] = 0;
+			_tcscpy(profilepath, _T("Software\\DXGL\\Profiles\\dxgltest.exe-"));
+			_tcscat(profilepath, sha256string);
+			_tcscpy(destpath, _T("Software\\DXGL\\Profiles\\dxglcfg.exe-"));
+			_tcscat(destpath, sha256string);
+			error = RegOpenKeyEx(HKEY_CURRENT_USER, profilepath, 0, KEY_READ, &hKeyProfile);
+			if (error == ERROR_SUCCESS)
+			{
+				error = RegOpenKeyEx(HKEY_CURRENT_USER, destpath, 0, KEY_READ, &hKeyDest);
+				if (error == ERROR_SUCCESS)  // Clear spurious DXGLCfg entry
+				{
+					RegCloseKey(hKeyDest);
+					RegDeleteKey(HKEY_CURRENT_USER, destpath);
+				}
+				// Copy over to new key
+				error = RegCreateKeyEx(HKEY_CURRENT_USER, destpath, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKeyDest, NULL);
+				if (error == ERROR_SUCCESS)
+				{
+					olddir = malloc(olddirsize);
+					oldvalue = malloc(oldvaluesize);
+					numvalue = 0;
+					do
+					{
+						sizeout = olddirsize;
+						sizeout2 = oldvaluesize;
+						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						if (error == ERROR_MORE_DATA)
+						{
+							if (sizeout > olddirsize)
+							{
+								olddirsize = sizeout;
+								olddir = realloc(olddir, olddirsize);
+								if (!olddir)
+								{
+									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+									ExitProcess(error);
+								}
+							}
+							if (sizeout2 > oldvaluesize)
+							{
+								oldvaluesize = sizeout2;
+								oldvalue = realloc(oldvalue, oldvaluesize);
+								if (!oldvalue)
+								{
+									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+									ExitProcess(error);
+								}
+							}
+							sizeout = olddirsize;
+							sizeout2 = oldvaluesize;
+							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						}
+						if (error == ERROR_SUCCESS)
+						{
+							if (_tcsnicmp(olddir, _T("InstallPaths"), sizeout))
+								RegSetValueEx(hKeyDest, olddir, 0, regtype, oldvalue, sizeout2);
+						}
+						numvalue++;
+					} while (error == ERROR_SUCCESS);
+					RegCloseKey(hKeyDest);
+					free(olddir);
+					free(oldvalue);
+				}
+				// Delete old key
+				RegCloseKey(hKeyProfile);
+				RegDeleteKey(HKEY_CURRENT_USER, profilepath);
+			}
+		}
+	}
+	if (hKeyInstall) RegCloseKey(hKeyInstall);
+}
+
+
 /**
   * Checks the registry configuration version and if outdated upgrades to
-  * the latest version - currently version 1
+  * the latest version - currently version 2
   * Alpha version configuration is assumed to be version 0.
   */
 void UpgradeConfig()

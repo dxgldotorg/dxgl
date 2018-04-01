@@ -4047,6 +4047,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if (!_tcsnicmp(lpCmdLine, _T("profile_install"), 15))
 	{
 		// FIXME:  Remove DXGL Config profile
+		UpgradeDXGLTestToDXGLCfg();
 		LPDIRECTDRAW lpdd;
 		DirectDrawCreate(NULL, &lpdd, NULL);
 		IDirectDraw_Release(lpdd);

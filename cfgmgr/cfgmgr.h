@@ -130,6 +130,7 @@ void SetGlobalConfig(const DXGLCFG *cfg, const DXGLCFG *mask);
 void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name);
 void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name);
 void GetDirFromPath(LPTSTR path);
+void UpgradeDXGLTestToDXGLCfg();
 void UpgradeConfig();
 void ReadAppINIOptions(LPCTSTR path, app_ini_options *options);
 void SaveWindowSettings(const DXGLCFG *cfg);
