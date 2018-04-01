@@ -2446,6 +2446,48 @@ LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
+DWORD GetDPISupportLevel()
+{
+	HMODULE hSHCore = NULL;
+	HMODULE hUser32 = NULL;
+	HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value) = NULL;
+	BOOL(WINAPI *_SetProcessDpiAwarenessContext)(HANDLE value) = NULL;
+	DWORD level = 0;
+	// Vista or higher - supports DWM and DPI scaling
+	if (osver.dwMajorVersion >= 6) level = 1;
+	else return level;
+	// 8.1 or higher - Supports Per-Monitor scaling
+	hSHCore = LoadLibrary(_T("SHCore.dll"));
+	if (hSHCore)
+	{
+		_SetProcessDpiAwareness =
+			(HRESULT(WINAPI*)(DWORD))GetProcAddress(hSHCore, "SetProcessDpiAwareness");
+		if (_SetProcessDpiAwareness) level = 2;
+		else
+		{
+			FreeLibrary(hSHCore);
+			return level;
+		}
+		FreeLibrary(hSHCore);
+	}
+	else return level;
+	// v1703 or higher - Support Per-Monitor scaling v2
+	hUser32 = LoadLibrary(_T("User32.dll"));
+	if (hUser32)
+	{
+		_SetProcessDpiAwarenessContext =
+			(BOOL(WINAPI*)(HANDLE))GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+		if (_SetProcessDpiAwarenessContext) level = 3;
+		else
+		{
+			FreeLibrary(hUser32);
+			return level;
+		}
+		FreeLibrary(hUser32);
+	}
+	return level;
+}
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -2513,6 +2555,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	NMHDR *nm;
 	TCHAR abouttext[1024];
 	int newtab;
+	DWORD dpisupport;
 	TCITEM tab;
 	switch (Msg)
 	{
@@ -3018,12 +3061,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		if (cfg->NoResizeWindow) SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_UNCHECKED, 0);
 		// DPI
+		dpisupport = GetDPISupportLevel();
 		_tcscpy(buffer, _T("Disabled"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,0,(LPARAM)buffer);
-		_tcscpy(buffer, _T("Enabled"));
+		if (dpisupport >= 2) _tcscpy(buffer, _T("Per-monitor"));
+		else _tcscpy(buffer, _T("Enabled"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,1,(LPARAM)buffer);
 		_tcscpy(buffer, _T("Windows AppCompat"));
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_ADDSTRING,2,(LPARAM)buffer);
+		if (dpisupport >= 2)
+		{
+			_tcscpy(buffer, _T("System"));
+			SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		}
+		if (dpisupport >= 3)
+		{
+			_tcscpy(buffer, _T("Per-monitor V2"));
+			SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 2, (LPARAM)buffer);
+		}
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
 		// Paths
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
