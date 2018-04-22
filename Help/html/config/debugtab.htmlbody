@@ -1,0 +1,31 @@
+<p>
+  <img class="alignnone size-full wp-image-268" src="images/dxglcfg-debug.png" alt="" width="537" height="418" />
+</p>
+<p>The Debug tab contains several options for testing purposes only.</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-ext-framebuffers/">Disable EXT framebuffers</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-arb-framebuffers/">Disable ARB framebuffers</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-gles2-compatibility-extension/">Disable GLES2 compatibility extension</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-ext-direct-state-access/">Disable EXT direct state access</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-arb-direct-state-access/">Disable ARB direct state access</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-sampler-objects/">Disable sampler objects</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-ext_gpu_shader4-extension/">Disable EXT_gpu_shader4 extension</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-glsl-1.30-support/">Disable GLSL 1.30 support</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/debug-tab/debug-blend-destination-color-key-texture-with-source/">DEBUG: Blend destination color key texture with source</a>
+</p>

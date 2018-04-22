@@ -9,8 +9,50 @@
 </OBJECT>
 <UL>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Index">
-		<param name="Local" value="index.html">
+		<param name="Name" value="Introduction">
+		<param name="Local" value="html\introduction.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Configuration">
+		<param name="Local" value="html\configuration.html">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Display Tab">
+			<param name="Local" value="html\config\displaytab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Effects Tab">
+			<param name="Local" value="html\config\effectstab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="3D Graphics Tab">
+			<param name="Local" value="html\config\3dgraphicstab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Advanced Tab">
+			<param name="Local" value="html\config\advancedtab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Debug Tab">
+			<param name="Local" value="html\config\debugtab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Hacks Tab">
+			<param name="Local" value="html\config\hackstab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Graphics Tests Tab">
+			<param name="Local" value="html\config\gfxtesttab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="About Tab">
+			<param name="Local" value="html\config\abouttab.html">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Troubleshooting">
+		<param name="Local" value="html\troubleshooting.html">
 		</OBJECT>
 </UL>
 </BODY></HTML>

@@ -1,0 +1,16 @@
+<img src="images/dxglcfg-effects.png" alt="Effects tab" width="537" height="418" class="alignnone size-full wp-image-265" />
+<p>
+  The Effects tab adjusts the scaling and filtering of the graphics, and allows the increasing of the resolution of the primary buffer.
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/effects-tab/postprocess-scaler/">Postprocess scaler</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/effects-tab/postprocess-input-multiplier/">Postprocess input multiplier</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/effects-tab/primary-buffer-scaling/">Primary buffer scaling</a>
+</p>
+<p>
+  <a href="https://www.dxgl.info/help/configuration/effects-tab/blt-scaling-filter/">Blt scaling filter</a>
+</p>

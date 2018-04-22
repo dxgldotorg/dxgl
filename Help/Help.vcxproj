@@ -105,11 +105,20 @@
     <None Include="dxgl.css" />
     <None Include="dxgl.hhp" />
     <None Include="html5.js" />
+    <None Include="html\configuration.htmlbody" />
+    <None Include="html\config\3dgraphicstab.htmlbody" />
+    <None Include="html\config\abouttab.htmlbody" />
+    <None Include="html\config\advancedtab.htmlbody" />
+    <None Include="html\config\debugtab.htmlbody" />
+    <None Include="html\config\displaytab.htmlbody" />
+    <None Include="html\config\effectstab.htmlbody" />
+    <None Include="html\config\gfxtesttab.htmlbody" />
+    <None Include="html\config\hackstab.htmlbody" />
     <None Include="html\introduction.htmlbody" />
     <None Include="html\troubleshooting.htmlbody" />
     <None Include="images\dxgl-header.png" />
+    <None Include="images\dxglcfg-display.png" />
     <None Include="Index.hhk" />
-    <None Include="index.html" />
     <None Include="template.html" />
     <None Include="toc.hhc" />
   </ItemGroup>

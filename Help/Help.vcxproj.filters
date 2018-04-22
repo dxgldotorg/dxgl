@@ -10,6 +10,9 @@
     <Filter Include="Help files\html">
       <UniqueIdentifier>{22f3e2a1-c231-4f50-8a0f-2d9f538b01d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\html\config">
+      <UniqueIdentifier>{788bd65e-b156-4723-9023-258fb5b2c058}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -22,9 +25,6 @@
       <Filter>Help files</Filter>
     </None>
     <None Include="dxgl.css">
-      <Filter>Help files</Filter>
-    </None>
-    <None Include="index.html">
       <Filter>Help files</Filter>
     </None>
     <None Include="html5.js">
@@ -41,6 +41,36 @@
     </None>
     <None Include="html\troubleshooting.htmlbody">
       <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\configuration.htmlbody">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="images\dxglcfg-display.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="html\config\displaytab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\effectstab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\3dgraphicstab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\advancedtab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\debugtab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\hackstab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\gfxtesttab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\abouttab.htmlbody">
+      <Filter>Help files\html\config</Filter>
     </None>
   </ItemGroup>
 </Project>

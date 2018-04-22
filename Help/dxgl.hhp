@@ -3,19 +3,39 @@ Compatibility=1.1 or later
 Compiled file=dxgl.chm
 Contents file=toc.hhc
 Default Window=DXGL Help
-Default topic=index.html
+Default topic=html/introduction.html
 Display compile progress=No
+Index file=Index.hhk
 Language=0x409 English (United States)
 Title=DXGL Help
 
 [WINDOWS]
-DXGL Help=,"toc.hhc",,"index.html",,,,,,0x22520,,0x3006,[0,0,922,684],0x318f0000,,,,,,0
+DXGL Help=,"toc.hhc",,"html/introduction.html",,,,,,0x22520,,0x3006,[0,0,922,684],0x318f0000,,,,,,0
 
 
 [FILES]
-index.html
 dxgl.css
 html5.js
-images/dxgl-header.png
+images\dxgl-header.png
+images\dxglcfg-display.png
+images\dxglcfg-3dgraphics.png
+images\dxglcfg-about.png
+images\dxglcfg-advanced.png
+images\dxglcfg-debug.png
+images\dxglcfg-effects.png
+images\dxglcfg-hacks.png
+images\dxglcfg-tests.png
+html\introduction.html
+html\troubleshooting.html
+html\configuration.html
+html\config\displaytab.html
+html\config\effectstab.html
+html\config\3dgraphicstab.html
+html\config\advancedtab.html
+html\config\debugtab.html
+html\config\hackstab.html
+html\config\gfxtesttab.html
+html\config\abouttab.html
+
 [INFOTYPES]
 
