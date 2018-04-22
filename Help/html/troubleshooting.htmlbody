@@ -1,0 +1,29 @@
+<h1>Troubleshooting</h1>
+&nbsp;
+<h2>Problem: DXGL does not load</h2>
+<h3>Cause: No application profile</h3>
+Solution: Open "Configure DXGL" and click the Add button. Browse to your program and double click it.
+<h3>Cause: System ddraw.dll registered under absolute path</h3>
+Solution: Make sure the "Fix DDraw COM Registration" option is selected when installing DXGL. After upgrading to Windows
+8, you may need to re-run the installer to set the registry keys.
+<h3>Cause: Program does not use DirectDraw</h3>
+Solution: Make sure your program is configured to use DirectDraw or Direct3D up to version 7.
+<h2>Problem: Program crashes</h2>
+<h3>Cause: Incompatible Application Compatibility flags in registry</h3>
+Solution: Browse to the folder where the application is installed. Right click the program file and click Properties.
+Click the Compatibility tab and make sure no compatibility options are checked. If this does not solve your problem,
+open Registry Editor and browse to HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers
+and make sure there is no entry for your program. If there is, delete the entry.
+<h3>Cause: Bug in DXGL</h3>
+Solution: Go to <a href="https://www.williamfeely.info/bugzilla">https://www.williamfeely.info/bugzilla</a> and create a
+bug report. Please be sure to be as descriptive as possible.
+<h3>Cause: Change color depth option checked</h3>
+Solution: Uncheck Change color depth in DXGL Config.
+<h2>Problem: Graphics corruption or missing graphics</h2>
+<h3>Cause: Bug in DXGL</h3>
+Solution: Go to <a href="https://www.williamfeely.info/bugzilla">https://www.williamfeely.info/bugzilla</a> and create a
+bug report. Please be sure to be as descriptive as possible.
+<h2>Problem: OpenGL error message on load</h2>
+<h3>Cause: Incompatible drivers</h3>
+Solution: Make sure your graphics card supports OpenGL 2.0 and framebuffer objects. Then go to the graphics card
+manufacturer's website and download updated drivers.

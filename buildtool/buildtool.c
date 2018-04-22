@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2017 William Feely
+// Copyright (C) 2012-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>
 #include <windows.h>
+#include <tchar.h>
 #include "../common/releasever.h"
 
 
@@ -236,14 +237,125 @@ int ProcessHeaders(char *path)
 	return 0;
 }
 
+void ParseHTMLFile(const TCHAR *filein, const TCHAR *fileout, const TCHAR *filetemplate)
+{
+	FILE *in;
+	FILE *out;
+	FILE *template;
+	char buffer[32768];
+	in = _tfopen(filein, _T("r"));
+	if (!in) return;
+	template = _tfopen(filetemplate, _T("r"));
+	if (!template)
+	{
+		fclose(in);
+		return;
+	}
+	out = _tfopen(fileout, _T("w"));
+	if (!out)
+	{
+		fclose(in);
+		fclose(template);
+		return;
+	}
+	fputs("Procesing help file ", stdout);
+	_putts(filein);
+	while (fgets(buffer, 32768, template))
+	{
+		if (!strncmp(buffer, "$HTMLCONTENT", 12))
+		{
+			rewind(in);
+			while (fgets(buffer, 32768, in))
+			{
+				fwrite("                            ", 1, 28, out);
+				fputs(buffer, out);
+			}
+		}
+		else
+		{
+			fputs(buffer, out);
+		}
+	}
+
+
+	fclose(in);
+	fclose(template);
+	fclose(out);
+}
+
+int ProcessHTMLFiles(const TCHAR *path, const TCHAR *templatepath)
+{
+	WIN32_FIND_DATA finddata;
+	HANDLE hFind = NULL;
+	TCHAR findpath[MAX_PATH+1];
+	TCHAR filename[MAX_PATH * 2];
+	TCHAR fileout[MAX_PATH * 2];
+	TCHAR *ptr;
+	_tcsncpy(findpath, path, MAX_PATH+1);
+	_tcscat(findpath, _T("*.*"));
+	hFind = FindFirstFile(findpath, &finddata);
+	if (hFind == INVALID_HANDLE_VALUE) return 1;
+	do
+	{
+		if (!_tcscmp(finddata.cFileName, _T("."))) continue;
+		if (!_tcscmp(finddata.cFileName, _T(".."))) continue;
+		_tcscpy(filename, path);
+		_tcscat(filename, finddata.cFileName);
+		if (finddata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			_tcscat(filename, _T("\\"));
+			if (ProcessHTMLFiles(filename, templatepath))
+			{
+				FindClose(hFind);
+				return 1;
+			}
+			continue;
+		}
+		ptr = _tcsrchr(filename, _T('.'));
+		if (ptr)
+		{
+			if (!_tcscmp(ptr, _T(".htmlbody")))
+			{
+				_tcscpy(fileout, filename);
+				ptr = _tcsrchr(fileout, _T('b'));
+				*ptr = 0;
+				ParseHTMLFile(filename, fileout, templatepath);
+			}
+		}
+	} while (FindNextFile(hFind, &finddata));
+	FindClose(hFind);
+	return 0;
+}
+
 int MakeHelp(char *path)
 {
 	HKEY hKey;
 	BOOL foundhhc = FALSE;
-	char hhcpath[(MAX_PATH+1)*2];
-	DWORD buffersize = MAX_PATH+1;
+	char hhcpath[(MAX_PATH + 1) * 2];
+	DWORD buffersize = MAX_PATH + 1;
 	PROCESS_INFORMATION process;
 	STARTUPINFOA startinfo;
+	char htmlpath[MAX_PATH + 1];
+	TCHAR htmlpath2[MAX_PATH + 1];
+	char templatepath[MAX_PATH + 1];
+	TCHAR templatepath2[MAX_PATH + 1];
+	strcpy(htmlpath, path);
+	if (strrchr(htmlpath, '\\')) *(strrchr(htmlpath, '\\')) = 0;
+	strcpy(templatepath, htmlpath);
+	strcat(htmlpath, "\\html\\");
+	strcat(templatepath, "\\template.html");
+#ifdef _UNICODE
+	MultiByteToWideChar(CP_THREAD_ACP, MB_PRECOMPOSED, htmlpath, -1, htmlpath2, MAX_PATH + 1);
+	MultiByteToWideChar(CP_THREAD_ACP, MB_PRECOMPOSED, templatepath, -1, templatepath2, MAX_PATH + 1);
+#else
+	strncpy(htmlpath2, htmlpath, MAX_PATH + 1);
+	strncpy(templatepath2, templatepath, MAX_PATH + 1);
+#endif
+	if (ProcessHTMLFiles(htmlpath2, templatepath2))
+	{
+		puts("Error processing HTML files.");
+		return -1;
+	}
 	if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\HTML Help Workshop", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
 		if(RegQueryValueExA(hKey,"InstallDir",NULL,NULL,(LPBYTE)hhcpath,&buffersize) == ERROR_SUCCESS)
@@ -316,7 +428,6 @@ int MakeInstaller(char *path)
 
 int main(int argc, char *argv[])
 {
-
 	fputs("DXGL Build Tool, version ", stdout);
 	puts(DXGLSTRVER);
 #ifdef _DEBUG

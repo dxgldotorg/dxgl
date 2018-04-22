@@ -105,9 +105,12 @@
     <None Include="dxgl.css" />
     <None Include="dxgl.hhp" />
     <None Include="html5.js" />
+    <None Include="html\introduction.htmlbody" />
+    <None Include="html\troubleshooting.htmlbody" />
     <None Include="images\dxgl-header.png" />
     <None Include="Index.hhk" />
     <None Include="index.html" />
+    <None Include="template.html" />
     <None Include="toc.hhc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

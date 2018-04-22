@@ -155,6 +155,8 @@ Section "DXGL Components (required)" SEC01
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
   CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
+  File "..\dxgl-example.ini"
+  CreateShortCut "$SMPROGRAMS\DXGL\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
 SectionEnd
 
