@@ -1,5 +1,6 @@
 // DXGL
 // Copyright (C) 2011-2018 William Feely
+// Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -2295,6 +2296,14 @@ void ReadHacksItem(int item, BOOL *value, BOOL *mask)
 		*value = cfg->HackNoTVRefresh;
 		*mask = cfgmask->HackNoTVRefresh;
 		break;
+	case 3:
+		*value = cfg->HackSetCursorPos;
+		*mask = cfgmask->HackSetCursorPos;
+		break;
+	case 4:
+		*value = cfg->HackSetCursor;
+		*mask = cfgmask->HackSetCursor;
+		break;
 	default:
 		*value = FALSE;
 		*mask = FALSE;
@@ -2317,6 +2326,15 @@ void WriteHacksItem(int item, BOOL value, BOOL mask)
 	case 2:
 		cfg->HackNoTVRefresh = value;
 		cfgmask->HackNoTVRefresh = mask;
+		break;
+	case 3:
+		cfg->HackSetCursorPos = value;
+		cfgmask->HackSetCursorPos = mask;
+		break;
+	case 4:
+		cfg->HackSetCursor = value;
+		cfgmask->HackSetCursor = mask;
+		break;
 	default:
 		break;
 	}
@@ -3142,6 +3160,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("SetCursorPos centered"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("SetCursor hide visibility"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		// About text
 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));

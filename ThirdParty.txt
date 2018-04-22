@@ -217,3 +217,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Installer uses Nullsoft Scriptable Install System; the license for which
 can be viewed at http://nsis.sourceforge.net/License
+
+------------------------------------------------------------------------------
+
+Contains code contributed from the following:
+Syahmi Azhar (mouse cursor hacks)

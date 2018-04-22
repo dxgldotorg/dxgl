@@ -1,0 +1,202 @@
+Index: cfgmgr/cfgmgr.c
+===================================================================
+--- cfgmgr/cfgmgr.c	(revision 798)
++++ cfgmgr/cfgmgr.c	(working copy)
+@@ -665,6 +665,8 @@
+ 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
+ 	cfg->HackAutoScale512448to640480 = ReadBool(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+ 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
++	cfg->HackSetCursorPos = ReadBool(hKey, cfg->HackSetCursorPos, &cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
++	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
+ 	if(!global && dll)
+ 	{
+ 		sizeout = 0;
+@@ -815,6 +817,8 @@
+ 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
+ 	WriteBool(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+ 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
++	WriteBool(hKey, cfg->HackSetCursorPos, cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
++	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
+ }
+ 
+ TCHAR newregname[MAX_PATH+65];
+@@ -1087,6 +1091,8 @@
+ 		if (!stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
+ 		if (!stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIBoolValue(value);
+ 		if (!stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
++		if (!stricmp(section, "HackSetCursorPos")) cfg->HackSetCursorPos = INIBoolValue(value);
++		if (!stricmp(section, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
+ 	}
+ 	return 1;
+ }
+Index: cfgmgr/cfgmgr.h
+===================================================================
+--- cfgmgr/cfgmgr.h	(revision 798)
++++ cfgmgr/cfgmgr.h	(working copy)
+@@ -93,6 +93,8 @@
+ 	BOOL HackCrop640480to640400;
+ 	BOOL HackAutoScale512448to640480;
+ 	BOOL HackNoTVRefresh;
++	BOOL HackSetCursorPos;
++	BOOL HackSetCursor;
+ 	// internal
+ 	BOOL Windows8Detected;
+ 	BOOL ParsedAddColorDepths;
+Index: ddraw/hooks.c
+===================================================================
+--- ddraw/hooks.c	(revision 798)
++++ ddraw/hooks.c	(working copy)
+@@ -38,6 +38,8 @@
+ LONG(WINAPI *_SetWindowLongW)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
+ LONG(WINAPI *_GetWindowLongA)(HWND hWnd, int nIndex) = NULL;
+ LONG(WINAPI *_GetWindowLongW)(HWND hWnd, int nIndex) = NULL;
++BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
++HCURSOR (WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
+ #ifdef _M_X64
+ LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+ LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+@@ -155,6 +157,8 @@
+ 	MH_CreateHook(&SetWindowLongW, HookSetWindowLongW, &_SetWindowLongW);
+ 	MH_CreateHook(&GetWindowLongA, HookGetWindowLongA, &_GetWindowLongA);
+ 	MH_CreateHook(&GetWindowLongW, HookGetWindowLongW, &_GetWindowLongW);
++	MH_CreateHook(&SetCursorPos, HookSetCursorPos, &_SetCursorPos);
++	MH_CreateHook(&SetCursor, HookSetCursor, &_SetCursor);
+ #ifdef _M_X64
+ 	MH_CreateHook(&SetWindowLongPtrA, HookSetWindowLongPtrA, &_SetWindowLongPtrA);
+ 	MH_CreateHook(&SetWindowLongPtrW, HookSetWindowLongPtrW, &_SetWindowLongPtrW);
+@@ -173,6 +177,8 @@
+ 	MH_RemoveHook(&SetWindowLongW);
+ 	MH_RemoveHook(&GetWindowLongA);
+ 	MH_RemoveHook(&GetWindowLongW);
++	MH_RemoveHook(&SetCursorPos);
++	MH_RemoveHook(&SetCursor);
+ #ifdef _M_X64
+ 	MH_RemoveHook(&SetWindowLongPtrA);
+ 	MH_RemoveHook(&SetWindowLongPtrW);
+@@ -195,6 +201,8 @@
+ 		MH_EnableHook(&SetWindowLongW);
+ 		MH_EnableHook(&GetWindowLongA);
+ 		MH_EnableHook(&GetWindowLongW);
++		MH_EnableHook(&SetCursorPos);
++		MH_EnableHook(&SetCursor);
+ #ifdef _M_X64
+ 		MH_EnableHook(&SetWindowLongPtrA);
+ 		MH_EnableHook(&SetWindowLongPtrW);
+@@ -217,6 +225,8 @@
+ 		MH_DisableHook(&SetWindowLongW);
+ 		MH_DisableHook(&GetWindowLongA);
+ 		MH_DisableHook(&GetWindowLongW);
++		MH_DisableHook(&SetCursorPos);
++		MH_DisableHook(&SetCursor);
+ #ifdef _M_X64
+ 		MH_DisableHook(&SetWindowLongPtrA);
+ 		MH_DisableHook(&SetWindowLongPtrW);
+@@ -440,6 +450,49 @@
+ 	if (!wndhook) return _GetWindowLongW(hWnd, nIndex);
+ 	return (LONG)wndhook->wndproc;
+ }
++BOOL WINAPI HookSetCursorPos(int x, int y)
++{
++	HWND_HOOK *wndhook;
++	LONG sizes[6];
++	POINT pt;
++	int winWidth, winHeight;
++
++	if (!dxglcfg.HackSetCursorPos) {
++		return _SetCursorPos(x, y);
++	}
++
++	wndhook = GetWndHook(GetActiveWindow()); 
++	if (!wndhook) {
++		return _SetCursorPos(x, y);
++	}
++
++	pt.x = 0;
++	pt.y = 0;
++	glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
++	ClientToScreen(wndhook->hwnd, &pt);
++
++	return _SetCursorPos(x * sizes[4] / sizes[2] + pt.x, y * sizes[5] / sizes[3] + pt.y);
++}
++HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
++{
++	static HCURSOR prevCursor = NULL;
++	static BOOLEAN prevCursorSet = FALSE;
++
++	if (!dxglcfg.HackSetCursor) {
++		return _SetCursor(hCursor);
++	}
++
++	if (!prevCursorSet) {
++		prevCursorSet = TRUE;
++		prevCursor = GetCursor();
++	}
++
++	if (hCursor == NULL) {
++		prevCursor = _SetCursor(hCursor);
++	}
++
++	return prevCursor;
++}
+ #ifdef _M_X64
+ LONG_PTR WINAPI HookSetWindowLongPtrA(HWND hWnd, int nIndex, LONG_PTR dwNewLong)
+ {
+Index: ddraw/hooks.h
+===================================================================
+--- ddraw/hooks.h	(revision 798)
++++ ddraw/hooks.h	(working copy)
+@@ -42,6 +42,8 @@
+ LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);
+ LONG WINAPI HookGetWindowLongA(HWND hWnd, int nIndex);
+ LONG WINAPI HookGetWindowLongW(HWND hWnd, int nIndex);
++BOOL WINAPI HookSetCursorPos(int x, int y);
++HCURSOR WINAPI HookSetCursor(HCURSOR hCursor);
+ #ifdef _M_X64
+ LONG_PTR WINAPI HookSetWindowLongPtrA(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+ LONG_PTR WINAPI HookSetWindowLongPtrW(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+Index: dxglcfg/dxglcfg.cpp
+===================================================================
+--- dxglcfg/dxglcfg.cpp	(revision 798)
++++ dxglcfg/dxglcfg.cpp	(working copy)
+@@ -2295,6 +2295,14 @@
+ 		*value = cfg->HackNoTVRefresh;
+ 		*mask = cfgmask->HackNoTVRefresh;
+ 		break;
++	case 3:
++		*value = cfg->HackSetCursorPos;
++		*mask = cfgmask->HackSetCursorPos;
++		break;
++	case 4:
++		*value = cfg->HackSetCursor;
++		*mask = cfgmask->HackSetCursor;
++		break;
+ 	default:
+ 		*value = FALSE;
+ 		*mask = FALSE;
+@@ -2317,6 +2325,15 @@
+ 	case 2:
+ 		cfg->HackNoTVRefresh = value;
+ 		cfgmask->HackNoTVRefresh = mask;
++		break;
++	case 3:
++		cfg->HackSetCursorPos = value;
++		cfgmask->HackSetCursorPos = mask;
++		break;
++	case 4:
++		cfg->HackSetCursor = value;
++		cfgmask->HackSetCursor = mask;
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -3143,6 +3160,10 @@
+ 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+ 		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
+ 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
++		_tcscpy(buffer, _T("SetCursorPos centered"));
++		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
++		_tcscpy(buffer, _T("SetCursor hide visibility"));
++		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+ 		// About text
+ 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
+ 		_tcscat(abouttext, _T(DXGLVERSTRING));

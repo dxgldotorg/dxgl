@@ -1,5 +1,6 @@
 // DXGL
 // Copyright (C) 2014-2015 William Feely
+// Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -49,6 +50,8 @@ LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
 #define _GetWindowLongPtrA   _GetWindowLongA
 #define _GetWindowLongPtrW   _GetWindowLongW
 #endif
+BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
+HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
 UINT wndhook_count = 0;
 
 int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
@@ -161,6 +164,8 @@ void InitHooks()
 	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, &_GetWindowLongPtrA);
 	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, &_GetWindowLongPtrW);
 #endif
+	MH_CreateHook(&SetCursorPos, HookSetCursorPos, &_SetCursorPos);
+	MH_CreateHook(&SetCursor, HookSetCursor, &_SetCursor);
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
 }
@@ -179,6 +184,8 @@ void ShutdownHooks()
 	MH_RemoveHook(&GetWindowLongPtrA);
 	MH_RemoveHook(&GetWindowLongPtrW);
 #endif
+	MH_RemoveHook(&SetCursorPos);
+	MH_RemoveHook(&SetCursor);
 	MH_Uninitialize();
 	wndhook_count = 0;
 	hooks_init = FALSE;
@@ -201,6 +208,8 @@ void EnableWindowLongHooks()
 		MH_EnableHook(&GetWindowLongPtrA);
 		MH_EnableHook(&GetWindowLongPtrW);
 #endif
+		MH_EnableHook(&SetCursorPos);
+		MH_EnableHook(&SetCursor);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -223,6 +232,8 @@ void DisableWindowLongHooks(BOOL force)
 		MH_DisableHook(&GetWindowLongPtrA);
 		MH_DisableHook(&GetWindowLongPtrW);
 #endif
+		MH_DisableHook(&SetCursorPos);
+		MH_DisableHook(&SetCursor);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -480,3 +491,46 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex)
 	return (LONG_PTR)wndhook->wndproc;
 }
 #endif
+BOOL WINAPI HookSetCursorPos(int x, int y)
+{
+	HWND_HOOK *wndhook;
+	LONG sizes[6];
+	POINT pt;
+	int winWidth, winHeight;
+
+	if (!dxglcfg.HackSetCursorPos) {
+		return _SetCursorPos(x, y);
+	}
+
+	wndhook = GetWndHook(GetActiveWindow()); 
+	if (!wndhook) {
+		return _SetCursorPos(x, y);
+	}
+
+	pt.x = 0;
+	pt.y = 0;
+	glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+	ClientToScreen(wndhook->hwnd, &pt);
+
+	return _SetCursorPos(x * sizes[4] / sizes[2] + pt.x, y * sizes[5] / sizes[3] + pt.y);
+}
+HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
+{
+	static HCURSOR prevCursor = NULL;
+	static BOOLEAN prevCursorSet = FALSE;
+
+	if (!dxglcfg.HackSetCursor) {
+		return _SetCursor(hCursor);
+	}
+
+	if (!prevCursorSet) {
+		prevCursorSet = TRUE;
+		prevCursor = GetCursor();
+	}
+
+	if (hCursor == NULL) {
+		prevCursor = _SetCursor(hCursor);
+	}
+
+	return prevCursor;
+}

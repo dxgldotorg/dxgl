@@ -1,5 +1,6 @@
 // DXGL
 // Copyright (C) 2014-2015 William Feely
+// Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -48,6 +49,8 @@ LONG_PTR WINAPI HookSetWindowLongPtrW(HWND hWnd, int nIndex, LONG_PTR dwNewLong)
 LONG_PTR WINAPI HookGetWindowLongPtrA(HWND hWnd, int nIndex);
 LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex);
 #endif
+BOOL WINAPI HookSetCursorPos(int x, int y);
+HCURSOR WINAPI HookSetCursor(HCURSOR hCursor);
 
 #ifdef __cplusplus
 }

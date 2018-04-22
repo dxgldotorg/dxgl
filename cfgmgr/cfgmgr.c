@@ -1,5 +1,6 @@
 // DXGL
 // Copyright (C) 2011-2018 William Feely
+// Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -665,6 +666,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	cfg->HackAutoScale512448to640480 = ReadBool(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
+	cfg->HackSetCursorPos = ReadBool(hKey, cfg->HackSetCursorPos, &cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
+	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
 	if(!global && dll)
 	{
 		sizeout = 0;
@@ -815,6 +818,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	WriteBool(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
+	WriteBool(hKey, cfg->HackSetCursorPos, cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
+	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
 }
 
 TCHAR newregname[MAX_PATH+65];
@@ -1087,6 +1092,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
 		if (!stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIBoolValue(value);
 		if (!stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
+		if (!stricmp(section, "HackSetCursorPos")) cfg->HackSetCursorPos = INIBoolValue(value);
+		if (!stricmp(section, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 	}
 	return 1;
 }

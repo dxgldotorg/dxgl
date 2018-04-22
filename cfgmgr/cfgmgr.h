@@ -1,5 +1,6 @@
 // DXGL
 // Copyright (C) 2011-2018 William Feely
+// Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -93,6 +94,8 @@ typedef struct
 	BOOL HackCrop640480to640400;
 	BOOL HackAutoScale512448to640480;
 	BOOL HackNoTVRefresh;
+	BOOL HackSetCursorPos;
+	BOOL HackSetCursor;
 	// internal
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;
