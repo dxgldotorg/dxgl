@@ -72,5 +72,38 @@
     <None Include="html\config\abouttab.htmlbody">
       <Filter>Help files\html\config</Filter>
     </None>
+    <None Include="html\configuration.htmltitle">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\introduction.htmltitle">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\troubleshooting.htmltitle">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\config\3dgraphicstab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\abouttab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\advancedtab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\debugtab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\displaytab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\effectstab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\gfxtesttab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\hackstab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
   </ItemGroup>
 </Project>

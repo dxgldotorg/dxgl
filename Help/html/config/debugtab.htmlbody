@@ -1,7 +1,7 @@
 <p>
   <img class="alignnone size-full wp-image-268" src="images/dxglcfg-debug.png" alt="" width="537" height="418" />
+  The Debug tab contains several options for testing purposes only.
 </p>
-<p>The Debug tab contains several options for testing purposes only.</p>
 <p>
   <a href="https://www.dxgl.info/help/configuration/debug-tab/disable-ext-framebuffers/">Disable EXT framebuffers</a>
 </p>
