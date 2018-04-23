@@ -1,0 +1,1 @@
+<p>If checked, creates an OpenGL device that does not have double buffering.  This will disable vertical sync and exclusive fullscreen mode.  This may effect certain third party programs, for example Fraps will no longer display the FPS overlay.</p>

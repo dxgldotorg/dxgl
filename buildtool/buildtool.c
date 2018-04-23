@@ -242,6 +242,9 @@ void ParseHTMLFile(const TCHAR *filein, const TCHAR *fileout, const TCHAR *filet
 	FILE *in;
 	FILE *out;
 	FILE *template;
+	FILE *title;
+	TCHAR filetitle[MAX_PATH * 2];
+	TCHAR *ptr;
 	char buffer[32768];
 	in = _tfopen(filein, _T("r"));
 	if (!in) return;
@@ -258,6 +261,11 @@ void ParseHTMLFile(const TCHAR *filein, const TCHAR *fileout, const TCHAR *filet
 		fclose(template);
 		return;
 	}
+	_tcscpy(filetitle, filein);
+	ptr = _tcsrchr(filetitle, _T('b'));
+	*ptr = 0;
+	_tcscat(filetitle, _T("title"));
+	title = _tfopen(filetitle, _T("r"));
 	fputs("Procesing help file ", stdout);
 	_putts(filein);
 	while (fgets(buffer, 32768, template))
@@ -271,16 +279,33 @@ void ParseHTMLFile(const TCHAR *filein, const TCHAR *fileout, const TCHAR *filet
 				fputs(buffer, out);
 			}
 		}
+		else if (!strncmp(buffer, "$HTMLTITLE", 10))
+		{
+			rewind(title);
+			if (!strncmp(buffer, "$HTMLTITLE2", 11))
+			{
+				fwrite("        ", 1, 8, out);
+			}
+			else
+			{
+				fwrite("                                ", 1, 32, out);
+			}
+			if (title)
+			{
+				fgets(buffer, 32768, title);
+				fputs(buffer, out);
+			}
+			else fputs("Unknown title", out);
+		}
 		else
 		{
 			fputs(buffer, out);
 		}
 	}
-
-
 	fclose(in);
 	fclose(template);
 	fclose(out);
+	if (title) fclose(title);
 }
 
 int ProcessHTMLFiles(const TCHAR *path, const TCHAR *templatepath)

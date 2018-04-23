@@ -1,0 +1,23 @@
+<p>Chooses how to handle video mode changes.</p>
+<h1>Change desktop resolution</h1>
+<p>Changes the resolution of the Windows desktop to match the paramaters of SetDisplayMode. The function will return an error if an incompatible mode is attempted.</p>
+<h1>Stretch to screen</h1>
+<p>Stretches the primary surface to fill the entire screen.</p>
+<h1>Aspect corrected stretch</h1>
+<p>Scales the primary surface to fit the screen, while preserving the original aspect ratio.</p>
+<h1>Center image on screen</h1>
+<p>Displays the primary surface as an unscaled image in the center of the screen.</p>
+<h1>Stretch if mode not found</h1>
+<p>Attempts to change the desktop resolution. If the mode is not compatible, chooses the closest mode and stretches the primary to the screen.</p>
+<h1>Scale if mode not found</h1>
+<p>Attempts to change the desktop resolution. If the mode is not compatible, chooses the closest mode and scales the primary to the screen, preserving aspect ratio.</p>
+<h1>Center if mode not found</h1>
+<p>Attempts to change the desktop resolution. If the mode is not compatible, chooses the closest mode and displays the primary in the center of the screen.</p>
+<h1>Crop to screen</h1>
+<p>Scales the primary surface to fit the screen, while preserving the original aspect ratio.  If the aspect ratio of the primary does not match the aspect ratio of the display, this will crop the image to fit.</p>
+<h1>Custom size multiplier</h1>
+<p>Multiplies the size of the primary surface by the X and Y values specified under &#8220;Fixed scaling.&#8221;  The image is centered within the screen.</p>
+<h1>Custom display mode</h1>
+<p>Switches the display to the mode specified under &#8220;Custom resolution&#8221; and stretches the image to fit to that mode.</p>
+<h1>Custom size, centered</h1>
+<p>Stretches the primary surface to the size specified under &#8220;Custom resolution&#8221; and centers it on the display.</p>

@@ -13,6 +13,9 @@
     <Filter Include="Help files\html\config">
       <UniqueIdentifier>{788bd65e-b156-4723-9023-258fb5b2c058}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\html\config\display">
+      <UniqueIdentifier>{933e60ac-025f-4ea7-8faf-4de1dd6fb468}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -104,6 +107,84 @@
     </None>
     <None Include="html\config\hackstab.htmltitle">
       <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\display\videomode.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\videomode.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\addcolordepths.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\addcolordepths.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\scalingmethod.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\scalingmethod.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\additionaldisplaymodes.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\additionaldisplaymodes.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\screenaspectratio.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\screenaspectratio.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\sortvideomodes.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\sortvideomodes.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\dpiscalingmode.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\dpiscalingmode.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\verticalsync.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\verticalsync.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\fullscreenwindowmode.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\fullscreenwindowmode.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\fixedscaling.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\fixedscaling.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\customresolution.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\customresolution.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\changedisplaycolordepth.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\changedisplaycolordepth.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\singlebuffereddisplay.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\singlebuffereddisplay.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
     </None>
   </ItemGroup>
 </Project>

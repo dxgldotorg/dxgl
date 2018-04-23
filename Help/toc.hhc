@@ -21,6 +21,60 @@
 			<param name="Name" value="Display Tab">
 			<param name="Local" value="html\config\displaytab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Video mode">
+				<param name="Local" value="html\config\display\videomode.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Add color depths">
+				<param name="Local" value="html\config\display\addcolordepths.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Scaling method">
+				<param name="Local" value="html\config\display\scalingmethod.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Additional display modes">
+				<param name="Local" value="html\config\display\additionaldisplaymodes.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Screen aspect ratio">
+				<param name="Local" value="html\config\display\screenaspectratio.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Sort video modes">
+				<param name="Local" value="html\config\display\sortvideomodes.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="DPI scaling mode">
+				<param name="Local" value="html\config\display\dpiscalingmode.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Vertical sync">
+				<param name="Local" value="html\config\display\verticalsync.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Fullscreen window mode">
+				<param name="Local" value="html\config\display\fullscreenwindowmode.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Fixed scaling">
+				<param name="Local" value="html\config\display\fixedscaling.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Custom resolution">
+				<param name="Local" value="html\config\display\customresolution.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Change display color depth">
+				<param name="Local" value="html\config\display\changedisplaycolordepth.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Single buffered display">
+				<param name="Local" value="html\config\display\singlebuffereddisplay.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Effects Tab">
 			<param name="Local" value="html\config\effectstab.html">
@@ -49,10 +103,10 @@
 			<param name="Name" value="About Tab">
 			<param name="Local" value="html\config\abouttab.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Troubleshooting">
+			<param name="Local" value="html\troubleshooting.html">
+			</OBJECT>
 	</UL>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Troubleshooting">
-		<param name="Local" value="html\troubleshooting.html">
-		</OBJECT>
 </UL>
 </BODY></HTML>

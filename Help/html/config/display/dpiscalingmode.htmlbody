@@ -1,0 +1,11 @@
+<p>Fixes errors caused by Windows High DPI scaling in Windows Vista and greater. This option is always set to Per-monitor on older operating systems, as these operating systems apply high DPI modes to all applications.</p>
+<h3>Disabled</h3>
+<p>Disables the DPI scaling fix, unless specified by the program.</p>
+<h3>Per-monitor</h3>
+<p>Default setting. Enables the DPI scaling fix during program initialization.  On Windows 8.1 or higher this sets DPI scaling to per-monitor DPI aware.</p>
+<h3>Windows AppCompat</h3>
+<p>Sets a compatibility flag to tell Windows to fix High DPI scaling. Use if Enabled does not work.</p>
+<h3>System</h3>
+<p>Enables the DPI scaling fix during program initialization.  On Windows 8.1 or higher this sets the DPI scaling to system DPI aware.</p>
+<h3>Per-monitor V2</h3>
+<p>Enables the DPI scaling fix during program initialization.  On Windows 10 version 1703 (Creators Update) or higher this sets the DPI scaling to Per-monitor DPI aware version 2.  This will attempt to adjust the DPI of programs on-the-fly, but may cause various glitches.</p>

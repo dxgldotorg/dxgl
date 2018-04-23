@@ -1,0 +1,7 @@
+<p>Adjusts the vertical sync mode for DXGL. This can reduce or eliminate tearing or stutter at the cost of performance. The following modes are currently available:</p>
+<h3>Application default</h3>
+<p>Uses the application defined vertical sync mode, allowing the application to turn on or off vertical sync at will.</p>
+<h3> Disabled</h3>
+<p>Completely disables vertical sync.  This may cause tearing and/or stutter, and may cause the application to run faster than expected.</p>
+<h3>Enabled every flip or primary Blt</h3>
+<p>Syncs every buffer flip or Blt operation to the primary buffer to the vertical retrace.  This eliminates tearing, but may result in slow painting if the application writes or performs Blt operations directly to the primary buffer.</p>

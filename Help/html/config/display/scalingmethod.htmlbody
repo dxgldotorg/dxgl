@@ -1,0 +1,9 @@
+<p>
+  Selects the filter to use for scaling the output when the resolution is different than the desktop resolution, or when the optional postprocess scaling is in effect, the scaled resolution is different from the desktop resolution, as well as for blitting operations.<br />
+  As of DXGL 0.5.13, this no longer sets the scaling method for Blt commands.
+</p>
+<p>The following methods are available:</p>
+<h1>Nearest</h1>
+<p>Uses nearest-neighbor scaling.</p>
+<h1>Bilinear</h1>
+<p>Uses bilinear scaling. Reduces jagged edges, but may create visual artifacts in some applications.</p>

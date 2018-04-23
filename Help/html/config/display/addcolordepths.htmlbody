@@ -1,0 +1,29 @@
+<p>
+  This option adds color depths to display modes that are not already exposed by the system.  This option does not remove any modes already exposed by the system.  Due to limitations in Windows 8 and above, by default this option adds 8-, 16-, and 32-bit modes.  Selecting a color depth<br />
+  The following color depths are supported:
+</p>
+<h1>8-bit</h1>
+<p>
+  <img class="alignnone size-full wp-image-179" src="images/gradients-8bpp.png" alt="" width="320" height="240" /><br />
+  Adds 8-bit, 256-color indexed color modes. These modes have an application-defined color palette of 256 32-bit color values.
+</p>
+<h1>15-bit</h1>
+<p>
+  <img class="alignnone size-full wp-image-180" src="images/gradients-15bpp.png" alt="" width="320" height="240" /><br />
+  Adds 15-bit color modes. These modes store 5 bits each of red, greeen, and blue color values in 16 bits (2 bytes) of memory per pixel. If 15-bit but not 16-bit is selected, 15-bit modes will replace 16-bit modes and display as 16-bit modes.
+</p>
+<h1>16-bit</h1>
+<p>
+  <img class="alignnone size-full wp-image-181" src="images/gradients-16bpp.png" alt="" width="320" height="240" /><br />
+  Adds 16-bit color modes. These modes store 5 bits each of red and blue color values, and 6 bits of green color values, in 16 bits (2 bytes) of memory per pixel. The extra color data in the green channel increases color detail, but introduces slight color artifacts in some images. 16-bit modes in DXGL will be stored internally as 32-bit on older graphics cards, as OpenGL has limited support for this color format.
+</p>
+<h1>24-bit</h1>
+<p>
+  <img class="alignnone size-full wp-image-182" src="images/gradients-24bpp.png" alt="" width="320" height="240" /><br />
+  Adds 24-bit color modes.  These modes store 8 bits each of red, green, and blue in 24 bits (3 bytes) of memory per pixel.  Because the color data is not aligned to 4-byte intervals, this mode may have poor performance.
+</p>
+<h1>32-bit</h1>
+<p>
+  <img class="alignnone size-full wp-image-182" src="images/gradients-24bpp.png" alt="" width="320" height="240" /><br />
+  Adds 32-bit color modes.  These modes store 8 bits each of red, green, and blue, as well as 8 bits of padding, in 32 bits (4 bytes) of memory per pixel.  The padding bits align the pixel data to increase performance.
+</p>

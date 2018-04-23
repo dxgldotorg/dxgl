@@ -1,0 +1,139 @@
+<p>
+  This option adds display modes to DXGL, even if they are not available on the current display. These modes only appear if supported by the current scaling mode.<br />
+  The following items are available:
+</p>
+<h1>Common low resolutions</h1>
+<p>
+  Adds low-resolution modes that are common on older Windows based computers. This option is recommended to be enabled to improve compatibility with some older games.<br />
+  The following video modes are added:<br />
+  <code>
+    320x200, 70Hz refresh<br />
+    320x240, 60Hz refresh<br />
+    320x400, 70Hz refresh<br />
+    320x480, 60Hz refresh<br />
+    640x400, 70Hz refresh
+  </code><br />
+  In addition, if the postprocess scaling is set to automatic, this will attempt to add pixel-doubled resolutions for the following:<br />
+  <code>
+    640x350, 70Hz refresh -> 320x175<br />
+    640x400, 70Hz refresh -> 320x200<br />
+    640x480, 60Hz refresh -> 320x480<br />
+    640x400, 70Hz refresh -> 320x400<br />
+    640x480, 60Hz refresh -> 320x480<br />
+    640x400, 60Hz refresh -> 640x200<br />
+    720x400, 70Hz refresh -> 360x200<br />
+    720x480, 60Hz refresh -> 360x240<br />
+    720x400, 70Hz refresh -> 360x400<br />
+    720x480, 60Hz refresh -> 360x480<br />
+    800x600, 56Hz refresh -> 400x300<br />
+    800x600, 60Hz refresh -> 400x300
+  </code>
+</p>
+<h1>Uncommon low resolutions</h1>
+<p>
+  Adds several low resolution modes commonly used on older DOS and VESA 2.0 based computers.<br />
+  The following video modes are added:<br />
+  <code>
+    360x200, 70Hz refresh<br />
+    360x240, 60Hz refresh<br />
+    360x400, 70Hz refresh<br />
+    360x480, 60Hz refresh<br />
+    400x300, 60Hz refresh
+  </code>
+</p>
+<h1>Uncommon SD resolutions</h1>
+<p>
+  Adds a few uncommon and widescreen standard-definition resolutions, including modes used on old VESA 2.0 displays, EGA displays, and small widescreen displays.<br />
+  The following video modes are added:<br />
+  <code>
+    512x384, 60Hz refresh<br />
+    640x350, 70Hz refresh<br />
+    640x360, 60Hz refresh<br />
+    720x400, 70Hz refresh<br />
+    720x480, 70Hz refresh<br />
+    960x540, 60Hz refresh<br />
+    960x600, 60Hz refresh<br />
+    960x720, 60Hz refresh<br />
+    1024x600, 60Hz refresh
+  </code>
+</p>
+<h1>High Definition resolutions</h1>
+<p>
+  Adds several high definition resolutions to the list of available modes.<br />
+  The following video modes are added:<br />
+  <code>
+    1024x800, 60Hz refresh<br />
+    1280x720, 60Hz refresh<br />
+    1280x800, 60Hz refresh<br />
+    1360x768, 60Hz refresh<br />
+    1366x768, 60Hz refresh<br />
+    1400x1050, 60Hz refresh<br />
+    1440x900, 60Hz refresh<br />
+    1600x800, 60Hz refresh<br />
+    1680x1050, 60Hz refresh<br />
+    1920x1080, 60Hz refresh<br />
+    1920x1200, 60Hz refresh<br />
+    2048x1080, 60Hz refresh
+  </code>
+</p>
+<h2>Ultra-HD resolutions</h2>
+<p>
+  Adds several Quad-HD and UHD resolutions to the list of available modes.  <strong>Your GPU must support 4096 wide textures for these modes to work.</strong><br />
+  The following video modes are added:<br />
+  <code>
+    2560x1080, 60Hz refresh<br />
+    2560x1440, 60Hz refresh<br />
+    2560x1600, 60Hz refresh<br />
+    2560x1920, 60Hz refresh<br />
+    2560x2048, 60Hz refresh<br />
+    2800x2100, 60Hz refresh<br />
+    3200x1800, 60Hz refresh<br />
+    3200x2048, 60Hz refresh<br />
+    3840x2160, 60Hz refresh<br />
+    3840x2400, 60Hz refresh<br />
+    4096x2304, 60Hz refresh<br />
+    4096x3072, 60Hz refresh
+  </code>
+</p>
+<h2>Ultra-HD above 4k</h2>
+<p>
+  Adds several UHD resolutions greater than 4k to the list of available modes.<br />
+  <strong>Your GPU must support 8192 wide textures for these modes to work.</strong><br />
+  The following video modes are added:<br />
+  <code>
+    5120x2880, 60Hz refresh<br />
+    5120x3200, 60Hz refresh<br />
+    5120x4096, 60Hz refresh<br />
+    6400x4800, 60Hz refresh<br />
+    7680x4320, 60Hz refresh<br />
+    7680x4800, 60Hz refresh<br />
+    8192x4608, 60Hz refresh
+  </code>
+</p>
+<h1>Very uncommon resolutions</h1>
+<p>
+  Adds several unusual display resolutions, including some resolutions used by video game consoles, and some modes found on certain Linux display drivers.<br />
+  The following video modes are added:<br />
+  <code>
+    240x160, 60Hz refresh<br />
+    256x224, 60Hz refresh<br />
+    256x240, 60Hz refresh<br />
+    320x175, 60Hz refresh<br />
+    320x224, 60Hz refresh<br />
+    400x240, 60Hz refresh<br />
+    416x312, 75Hz refresh<br />
+    512x448, 60Hz refresh<br />
+    512x480, 60Hz refresh<br />
+    576x432, 60Hz refresh<br />
+    640x200, 60Hz refresh<br />
+    640x512, 60Hz refresh<br />
+    700x525, 60Hz refresh<br />
+    720x350, 70Hz refresh<br />
+    720x450, 60Hz refresh<br />
+    800x512, 60Hz refresh<br />
+    832x624, 75Hz refresh<br />
+    840x525, 60Hz refresh<br />
+    896x672, 60Hz refresh<br />
+    928x696, 60Hz refresh
+  </code>
+</p>

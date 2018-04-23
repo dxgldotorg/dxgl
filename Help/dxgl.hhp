@@ -36,6 +36,19 @@ html\config\debugtab.html
 html\config\hackstab.html
 html\config\gfxtesttab.html
 html\config\abouttab.html
+html\config\display\addcolordepths.html
+html\config\display\additionaldisplaymodes.html
+html\config\display\changedisplaycolordepth.html
+html\config\display\customresolution.html
+html\config\display\dpiscalingmode.html
+html\config\display\fixedscaling.html
+html\config\display\fullscreenwindowmode.html
+html\config\display\scalingmethod.html
+html\config\display\screenaspectratio.html
+html\config\display\singlebuffereddisplay.html
+html\config\display\sortvideomodes.html
+html\config\display\verticalsync.html
+html\config\display\videomode.html
 
 [INFOTYPES]
 

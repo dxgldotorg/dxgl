@@ -1,0 +1,1 @@
+<p>Overrides the aspect ratio for &#8220;Aspect corrected stretch&#8221; and &#8220;Scale if mode not found&#8221;.  Enter as x:y or as a floating point ratio, for example 4:3 or 1.333333, or select a preset from the dropdown list.  Default uses a square pixel ratio, with the aspect ratio depending on the dimensions of the current display mode.</p>

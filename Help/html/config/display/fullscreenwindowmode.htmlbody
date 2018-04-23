@@ -1,0 +1,19 @@
+<p>Sets the mode to be used when creating a window for fullscreen mode.</p>
+<h3>Exclusive fullscreen</h3>
+<p>Sets the display to fullscreen mode. For Windows Vista and greater, causes the Windows graphics to be temporarily suspended, giving the GPU exclusive control of the screen. This mode is the default and may have the best fullscreen performance.</p>
+<h3>Non-exclusive fullscreen</h3>
+<p>
+  Creates a window that fills the screen but tells the display driver not to take exclusive control of the screen. Try this mode if the application mixes DirectDraw with GDI and some graphics elements are missing.<br />
+  In Windows Vista and greater, this mode may have reduced performance, increased lag, or choppy graphics. In Windows 8 and 8.1, this performance reduction may be significant due to an operating system flaw.
+</p>
+<h3>Non-resizable window</h3>
+<p>Forces the fullscreen application to display in a floating window. Please note that some applications may capture the mouse and thus may cause compatibility issues.</p>
+<h3>Resizable window</h3>
+<p>Forces the fullscreen application to display in a floating window that can be resized or maximized. Please note that some applications may capture the mouse and thus may cause compatibility issues.</p>
+<h3>Borderless window</h3>
+<p>Forces the application to display in a borderless pop-up window. If the application is not running at the same resolution as the display, the window will be the same size as the application&#8217;s display resolution.</p>
+<h3>Borderless window (scaled)</h3>
+<p>
+  Forces the application to display in a borderless pop-up window. Sizes the window to fill the screen. Similar to Non-exclusive fullscreen except that the window does not minimize when focus is lost.<br />
+  Depending on the &#8220;Video mode&#8221; setting, the graphics resolution may be changed to accomodate the application.
+</p>
