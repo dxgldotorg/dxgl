@@ -1,0 +1,5 @@
+<p>
+  Selects the amount to scale the display on the first pass. There is an Auto preset as well as presets for fixed 1x, 2&#215;1, 2x, 3x, and 4x ratios. In addition, a ratio can manually be set anywhere from 0.25&#215;0.25 to 16&#215;16. The Auto preset will automatically double pixels horizontally if the horizontal resolution is 400 pixels or less, and will double pixels vertically if the vertical resolution is 300 or less.<br />
+  In addition, if Video mode is set to Change desktop resolution and Add extra display modes is enabled, a subset of low resolution pixel doubled modes will be added, providing support for low resolution modes even if not supported by your graphics card.<br />
+  If Primary buffer scaling is set to Scale to screen, typing 0.5 in the box will enable 2&#215;2 supersampling for Direct3D applications. This will also modify the behavior of &#8220;Change desktop resolution&#8221; in the Display tab.
+</p>

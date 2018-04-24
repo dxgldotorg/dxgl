@@ -1,0 +1,9 @@
+<p>
+  Scaling method for an optional image scaling pass. This can be used to create a pixelated effect while still preserving the ability to have filtered display scaling.<br />
+  In addition, it can be used to set the scaling filter for a postprocess pass, to be implemented in the future.<br />
+  The following methods are available:
+</p>
+<h3>Nearest</h3>
+<p>Uses nearest-neighbor scaling.</p>
+<h3>Bilinear</h3>
+<p>Uses bilinear scaling. 8-bit display modes will always use nearest scaling for this pass.</p>

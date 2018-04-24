@@ -1,0 +1,5 @@
+<p>Selects the method used for scaling Blt commands.  The following modes are available:</p>
+<h1>Nearest</h1>
+<p>Uses nearest-neighbor scaling.</p>
+<h1>Bilinear</h1>
+<p>Uses bilinear scaling. Reduces jagged edges, but may create visual artifacts in some applications.  This mode does not work in 8-bit color mode.</p>

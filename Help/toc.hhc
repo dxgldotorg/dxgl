@@ -79,6 +79,24 @@
 			<param name="Name" value="Effects Tab">
 			<param name="Local" value="html\config\effectstab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Postprocess scaler">
+				<param name="Local" value="html\config\effects\postprocessscaler.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Postprocess input multiplier">
+				<param name="Local" value="html\config\effects\postprocessinputmultiplier.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Primary buffer scaling">
+				<param name="Local" value="html\config\effects\primarybufferscaling.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Blt scaling filter">
+				<param name="Local" value="html\config\effects\bltscalingfilter.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="3D Graphics Tab">
 			<param name="Local" value="html\config\3dgraphicstab.html">
@@ -103,10 +121,10 @@
 			<param name="Name" value="About Tab">
 			<param name="Local" value="html\config\abouttab.html">
 			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Troubleshooting">
-			<param name="Local" value="html\troubleshooting.html">
-			</OBJECT>
 	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Troubleshooting">
+		<param name="Local" value="html\troubleshooting.html">
+		</OBJECT>
 </UL>
 </BODY></HTML>

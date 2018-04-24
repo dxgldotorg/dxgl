@@ -16,6 +16,9 @@
     <Filter Include="Help files\html\config\display">
       <UniqueIdentifier>{933e60ac-025f-4ea7-8faf-4de1dd6fb468}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\html\config\effects">
+      <UniqueIdentifier>{508eed92-c424-422b-9783-90a3a2baf281}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -185,6 +188,63 @@
     </None>
     <None Include="html\config\display\singlebuffereddisplay.htmlbody">
       <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\effects\postprocessscaler.htmltitle">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\postprocessscaler.htmlbody">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\postprocessinputmultiplier.htmltitle">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\postprocessinputmultiplier.htmlbody">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\primarybufferscaling.htmltitle">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\primarybufferscaling.htmlbody">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\bltscalingfilter.htmltitle">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="html\config\effects\bltscalingfilter.htmlbody">
+      <Filter>Help files\html\config\effects</Filter>
+    </None>
+    <None Include="images\dxglcfg-3dgraphics.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-about.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-advanced.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-debug.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-effects.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-hacks.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-tests.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gradients-8bpp.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gradients-15bpp.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gradients-16bpp.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gradients-24bpp.png">
+      <Filter>Help files\images</Filter>
     </None>
   </ItemGroup>
 </Project>

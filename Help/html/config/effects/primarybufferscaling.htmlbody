@@ -1,0 +1,25 @@
+<p>
+  Selects an amount to scale the primary buffer by. May cause slowdowns in certain applications or on certain computers.<br />
+  Can enhance the resolution of 3D applications.
+</p>
+<p>The following options are available:</p>
+<h3>1x scale</h3>
+<p>Disables primary buffer scaling.</p>
+<h3>Scale to screen</h3>
+<p>Scales the primary buffer to the current screen resolution.  May cause significant artifacts.</p>
+<h3>Maximum integer scaling</h3>
+<p>Scales the primary buffer to an automatic amount, by a whole number amount.  This may reduce artifacts compared to Scale to screen.</p>
+<h3>
+  1.5x scale<br />
+  2x scale<br />
+  2.5x scale<br />
+  3x scale<br />
+  4x scale<br />
+  5x SCALE<br />
+  6X scale<br />
+  7X scale<br />
+  8x scale
+</h3>
+<p>Scales the primary buffer by the specified amount.  Note that this may fail if the selected mode scales the primary beyond your graphics card&#8217;s capability.</p>
+<h3>Custom scale</h3>
+<p>Scales the primary buffer by a custom amount.  This amount can be entered in X and Y dimensions and may be an integer or floating point using the boxes provided.  The default scaling is 1&#215;1, disabling scaling.</p>
