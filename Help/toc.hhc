@@ -101,10 +101,78 @@
 			<param name="Name" value="3D Graphics Tab">
 			<param name="Local" value="html\config\3dgraphicstab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Texture filter">
+				<param name="Local" value="html\config\3dgraphics\texturefilter.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Anisotropic filtering">
+				<param name="Local" value="html\config\3dgraphics\anisotropicfiltering.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Antialiasing (MSAA)">
+				<param name="Local" value="html\config\3dgraphics\antialiasing.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Renderer aspect ratio">
+				<param name="Local" value="html\config\3dgraphics\rendereraspectratio.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Low color rendering">
+				<param name="Local" value="html\config\3dgraphics\lowcolorrendering.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Enable dithering">
+				<param name="Local" value="html\config\3dgraphics\enabledithering.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Advanced Tab">
 			<param name="Local" value="html\config\advancedtab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Texture format">
+				<param name="Local" value="html\config\advanced\textureformat.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Texture access method">
+				<param name="Local" value="html\config\advanced\textureaccessmethod.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Default window position">
+				<param name="Local" value="html\config\advanced\defaultwindowposition.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Remember window position">
+				<param name="Local" value="html\config\advanced\rememberwindowposition.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Remember window size">
+				<param name="Local" value="html\config\advanced\rememberwindowsize.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Remembered window position">
+				<param name="Local" value="html\config\advanced\rememberedwindowposition.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Remembered window size">
+				<param name="Local" value="html\config\advanced\rememberedwindowsize.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Start resizable window maximized">
+				<param name="Local" value="html\config\advanced\startresizablewindowmaximized.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Don't auto-size window in resizable window mode">
+				<param name="Local" value="html\config\advanced\dontautosizewindow.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Installation path">
+				<param name="Local" value="html\config\advanced\installationpath.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Debug Tab">
 			<param name="Local" value="html\config\debugtab.html">

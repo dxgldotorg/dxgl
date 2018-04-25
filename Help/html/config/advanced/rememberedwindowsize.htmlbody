@@ -1,0 +1,1 @@
+<p>If set, these values will be used to size the window in forced-window mode on startup.  If not set, 640&#215;480 will be used until the window is either resized or overridden by a display mode change.</p>

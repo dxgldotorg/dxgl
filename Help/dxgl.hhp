@@ -53,6 +53,22 @@ html\config\effects\bltscalingfilter.html
 html\config\effects\postprocessinputmultiplier.html
 html\config\effects\postprocessscaler.html
 html\config\effects\primarybufferscaling.html
+html\config\3dgraphics\anisotropicfiltering.html
+html\config\3dgraphics\antialiasing.html
+html\config\3dgraphics\enabledithering.html
+html\config\3dgraphics\lowcolorrendering.html
+html\config\3dgraphics\rendereraspectratio.html
+html\config\3dgraphics\texturefilter.html
+html\config\advanced\defaultwindowposition.html
+html\config\advanced\dontautosizewindow.html
+html\config\advanced\installationpath.html
+html\config\advanced\rememberedwindowposition.html
+html\config\advanced\rememberedwindowsize.html
+html\config\advanced\rememberwindowposition.html
+html\config\advanced\rememberwindowsize.html
+html\config\advanced\startresizablewindowmaximized.html
+html\config\advanced\textureaccessmethod.html
+html\config\advanced\textureformat.html
 
 [INFOTYPES]
 

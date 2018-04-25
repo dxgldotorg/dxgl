@@ -3,20 +3,20 @@
   The 3D Graphics tab adjusts various settings specific to 3D graphics.  At this time, most options are not yet available.
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/texture-filter/">Texture filter</a>
+  <a href="3dgraphics/texturefilter.html">Texture filter</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/anisotropic-filtering/">Anisotropic filtering</a>
+  <a href="3dgraphics/anisotropicfiltering.html">Anisotropic filtering</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/antialiasing-msaa/">Antialiasing (MSAA)</a>
+  <a href="3dgraphics/antialiasing.html">Antialiasing (MSAA)</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/renderer-aspect-ratio/">Renderer aspect ratio</a>
+  <a href="3dgraphics/rendereraspectratio.html">Renderer aspect ratio</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/low-color-rendering/">Low color rendering</a>
+  <a href="3dgraphics/lowcolorrendering.html">Low color rendering</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/3d-graphics-tab/enable-dithering/">Enable dithering</a>
+  <a href="3dgraphics/enabledithering.html">Enable dithering</a>
 </p>

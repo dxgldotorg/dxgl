@@ -1,0 +1,8 @@
+<p>
+  Selects the default position for forced-window mode.<br />
+  The following options are available:
+</p>
+<h3>Centered</h3>
+<p>Locates the window in the center of the display.</p>
+<h3>Saved position</h3>
+<p>Uses the position stored in &#8220;Remembered window position&#8221; to position the window, using logical window coordinates.</p>

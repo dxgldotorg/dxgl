@@ -1,0 +1,15 @@
+<p>Specifies the filter to use when rendering 3D graphics.</p>
+<p>The following options are available:</p>
+<h3>Application default</h3>
+<p>Uses the mode specified by the application for filtering textures.</p>
+<h3>Nearest</h3>
+<p>Uses nearest-neighbor scaling for all textures.</p>
+<h3>Bilinear</h3>
+<p>Uses bilinear filtering for all textures.</p>
+<h3>
+  Nearest, nearest mipmap<br />
+  Nearest, linear mipmap<br />
+  Bilinear, nearest mipmap<br />
+  Bilinear, linear mipmap
+</h3>
+<p>These options are currently not implemented.</p>

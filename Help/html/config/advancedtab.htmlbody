@@ -3,32 +3,32 @@
   The Advanced tab adjusts internal options for DXGL as well as specifying window behavior in forced-window mode.
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/texture-format/">Texture format</a>
+  <a href="advanced/textureformat.html">Texture format</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/texture-access-method/">Texture access method</a>
+  <a href="advanced/textureaccessmethod.html">Texture access method</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/default-window-position/">Default window position</a>
+  <a href="advanced/defaultwindowposition.html">Default window position</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/remember-window-position/">Remember window position</a>
+  <a href="advanced/rememberwindowposition.html">Remember window position</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/remember-window-size/">Remember window size</a>
+  <a href="advanced/rememberwindowsize.html">Remember window size</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/remembered-window-position/">Remembered window position</a>
+  <a href="advanced/rememberedwindowposition.html">Remembered window position</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/remembered-window-size/">Remembered window size</a>
+  <a href="advanced/rememberedwindowsize.html">Remembered window size</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/start-resizable-window-maximized/">Start resizable window maximized</a>
+  <a href="advanced/startresizablewindowmaximized.html">Start resizable window maximized</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/dont-auto-size-window-in-resizable-window-mode/">Don't auto-size window in resizable window mode</a>
+  <a href="advanced/dontautosizewindow.html">Don't auto-size window in resizable window mode</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/advanced-tab/installation-path/">Installation path</a>
+  <a href="advanced/installationpath.html">Installation path</a>
 </p>
