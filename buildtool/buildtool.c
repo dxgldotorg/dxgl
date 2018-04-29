@@ -275,27 +275,19 @@ void ParseHTMLFile(const TCHAR *filein, const TCHAR *fileout, const TCHAR *filet
 			rewind(in);
 			while (fgets(buffer, 32768, in))
 			{
-				fwrite("                            ", 1, 28, out);
 				fputs(buffer, out);
 			}
 		}
 		else if (!strncmp(buffer, "$HTMLTITLE", 10))
 		{
 			rewind(title);
-			if (!strncmp(buffer, "$HTMLTITLE2", 11))
-			{
-				fwrite("        ", 1, 8, out);
-			}
-			else
-			{
-				fwrite("                                ", 1, 32, out);
-			}
 			if (title)
 			{
 				fgets(buffer, 32768, title);
 				fputs(buffer, out);
+				fputs("\r\n", out);
 			}
-			else fputs("Unknown title", out);
+			else fputs("Unknown title\r\n", out);
 		}
 		else
 		{

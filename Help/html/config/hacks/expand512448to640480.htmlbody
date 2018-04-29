@@ -1,0 +1,4 @@
+<p>If the display is set to 640&#215;480, this hack will test if there is a border around the display, and if so, expands the inner 512&#215;448 pixels to the 640&#215;480 screen.  In addition, if the display is set to 320&#215;240, this will expand the inner 256&#215;224 pixels to the display.</p>
+<p>This hack is intended for emulators and similar applications that render at 256&#215;224 or 512&#215;448 resolution, while allowing menus to continue to display properly.</p>
+<p>For best quality, use a scaled display mode when using this hack.</p>
+<p>Currently, this hack only reads the upper-left pixel of the display.</p>

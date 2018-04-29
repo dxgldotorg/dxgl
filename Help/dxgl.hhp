@@ -28,6 +28,7 @@ images\dxglcfg-tests.png
 html\introduction.html
 html\troubleshooting.html
 html\configuration.html
+html\licenses.html
 html\config\displaytab.html
 html\config\effectstab.html
 html\config\3dgraphicstab.html
@@ -69,6 +70,27 @@ html\config\advanced\rememberwindowsize.html
 html\config\advanced\startresizablewindowmaximized.html
 html\config\advanced\textureaccessmethod.html
 html\config\advanced\textureformat.html
+html\config\debug\debugblenddestinationcolor.html
+html\config\debug\disablearbdirectstateaccess.html
+html\config\debug\disablearbframebuffers.html
+html\config\debug\disableextdirectstateaccess.html
+html\config\debug\disableextframebuffers.html
+html\config\debug\disableextgpushader4.html
+html\config\debug\disablegles2compatibility.html
+html\config\debug\disableglsl130support.html
+html\config\debug\disablesamplerobjects.html
+html\config\debug\maximumopenglversion.html
+html\config\hacks\crop640480to640400.html
+html\config\hacks\expand512448to640480.html
+html\config\hacks\removetvcompatiblerefreshrates.html
+html\config\hacks\setcursorhidevisibility.html
+html\licenses\crc32.html
+html\licenses\dxgl.html
+html\licenses\inih.html
+html\licenses\mesa.html
+html\licenses\minhook.html
+html\licenses\sha.html
+html\licenses\wine.html
 
 [INFOTYPES]
 

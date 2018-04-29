@@ -1,0 +1,49 @@
+<p>
+  DXGL is free software; you can redistribute it and/or<br />
+  modify it under the terms of the GNU Lesser General Public<br />
+  License as published by the Free Software Foundation; either<br />
+  version 2.1 of the License, or (at your option) any later version.<br />
+  <br />
+  This library is distributed in the hope that it will be useful,<br />
+  but WITHOUT ANY WARRANTY; without even the implied warranty of<br />
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU<br />
+  Lesser General Public License for more details.<br />
+  <br />
+  You should have received a copy of the GNU Lesser General Public<br />
+  License along with this library; if not, write to the Free Software<br />
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+</p>
+
+<h1>Licenses</h1>
+
+<p>
+  <a href="licenses/dxgl.html">DXGL License</a>
+</p>
+<p>
+  Contains headers and some code from the Wine project, released under the
+  following <a href="licenses/wine.html">license</a>
+</p>
+<p>
+  Contains CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29, under the following
+  <a href="licenses/crc32.html">declaration</a>
+</p>
+<p>
+  Contains SHA-256 and SHA-512 code from WjCryptLib, available at <a href="https://github.com/WaterJuice/WjCryptLib">https://github.com/WaterJuice/WjCryptLib</a>, formerly from waterjuice.org, under the following <a href="licenses/sha.html">declaration</a>
+</p>
+<p>
+  Contains portions of the Mesa project.c file, under the following <a href="licenses/mesa.html">license</a>
+</p>
+<p>
+  Contains the MinHook library, subject to the following <a href="licenses/minhook.html">license</a>
+</p>
+<p>
+  Contains the inih .INI parser, subject to the following <a href="licenses/inih.html">license</a>
+</p>
+<p>
+  Installer uses Nullsoft Scriptable Install System; the license for which
+  can be viewed at <a href="http://nsis.sourceforge.net/License">http://nsis.sourceforge.net/License</a>
+</p>
+<p>
+  Contains code contributed from the following:<br />
+  Syahmi Azhar (mouse cursor hacks)
+</p>

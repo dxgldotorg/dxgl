@@ -1,0 +1,1 @@
+<p>Disables the GL_ARB_ES2_compatibility extension.  Disabling this will disable native support for 16 bit color mode, and fall back to an emulated mode.</p>

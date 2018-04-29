@@ -1,0 +1,3 @@
+<p>If enabled, crops the 640&#215;480 mode to a 640&#215;400 display size.<br />
+If the Video mode is set to Change desktop resolution this will attempt to switch the display to 640&#215;400 mode.</p>
+<p>This hack is intended for some older games that render at 640&#215;400 resolution, but switch the display to 640&#215;480 due to limitations in early 3D accelerator cards.</p>

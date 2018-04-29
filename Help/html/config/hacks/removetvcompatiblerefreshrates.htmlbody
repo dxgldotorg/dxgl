@@ -1,0 +1,1 @@
+<p>Removes TV-compatible refresh rates that may be added by Windows 7 and above.  If a rounded refresh rate is not available it will be added. This may fix some games that may run at a reduced framerate due to these compatible refresh rates operating above the integer refresh rate.</p>

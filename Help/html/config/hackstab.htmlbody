@@ -3,11 +3,14 @@
   This tab contains several rendering hacks, which should only be enabled in specific circumstances.
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/hacks-tab/crop-640x480-to-640x400/">Crop 640&#215;480 to 640&#215;400</a>
+  <a href="hacks/crop640480to640400.html">Crop 640&#215;480 to 640&#215;400</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/hacks-tab/expand-512x448-to-640x480-when-border-is-blank/">Expand 512&#215;448 to 640&#215;480 when border is blank</a>
+  <a href="hacks/expand512448to640480.html">Expand 512&#215;448 to 640&#215;480 when border is blank</a>
 </p>
 <p>
-  <a href="https://www.dxgl.info/help/configuration/hacks-tab/remove-tv-compatible-refresh-rates/">Remove TV-compatible refresh rates</a>
+  <a href="hacks/removetvcompatiblerefreshrates.html">Remove TV-compatible refresh rates</a>
+</p>
+<p>
+  <a href="hacks/setcursorhidevisibility.html">SetCursor hide visibility</a>
 </p>

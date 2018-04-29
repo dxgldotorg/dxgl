@@ -177,10 +177,70 @@
 			<param name="Name" value="Debug Tab">
 			<param name="Local" value="html\config\debugtab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable EXT framebuffers">
+				<param name="Local" value="html\config\debug\disableextframebuffers.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable ARB framebuffers">
+				<param name="Local" value="html\config\debug\disablearbframebuffers.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable GLES2 compatibility extension">
+				<param name="Local" value="html\config\debug\disablegles2compatibility.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable EXT direct state access">
+				<param name="Local" value="html\config\debug\disableextdirectstateaccess.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable ARB direct state access">
+				<param name="Local" value="html\config\debug\disablearbdirectstateaccess.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable sampler objects">
+				<param name="Local" value="html\config\debug\disablesamplerobjects.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable EXT_gpu_shader4 extension">
+				<param name="Local" value="html\config\debug\disableextgpushader4.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable GLSL 1.30 support">
+				<param name="Local" value="html\config\debug\disableglsl130support.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="DEBUG: Blend destination color key texture with source">
+				<param name="Local" value="html\config\debug\debugblenddestinationcolor.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Maximum OpenGL version">
+				<param name="Local" value="html\config\debug\maximumopenglversion.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Hacks Tab">
 			<param name="Local" value="html\config\hackstab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Crop 640&times;480 to 640&times;400">
+				<param name="Local" value="html\config\hacks\crop640480to640400.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Expand 512&times;448 to 640&times;480 when border is blank">
+				<param name="Local" value="html\config\hacks\expand512448to640480.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Remove TV-compatible refresh rates">
+				<param name="Local" value="html\config\hacks\removetvcompatiblerefreshrates.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="SetCursor hide visibility">
+				<param name="Local" value="html\config\hacks\setcursorhidevisibility.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Graphics Tests Tab">
 			<param name="Local" value="html\config\gfxtesttab.html">
@@ -194,5 +254,39 @@
 		<param name="Name" value="Troubleshooting">
 		<param name="Local" value="html\troubleshooting.html">
 		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Licenses">
+		<param name="Local" value="html\licenses.html">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="DXGL License">
+			<param name="Local" value="html\licenses\dxgl.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Wine License">
+			<param name="Local" value="html\licenses\wine.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="CRC-32 Public Domain Declaration">
+			<param name="Local" value="html\licenses\crc32.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="WjCryptLib Unlicense">
+			<param name="Local" value="html\licenses\sha.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Mesa SGI License">
+			<param name="Local" value="html\licenses\mesa.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="MinHook License">
+			<param name="Local" value="html\licenses\minhook.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="inih License">
+			<param name="Local" value="html\licenses\inih.html">
+			</OBJECT>
+	</UL>
 </UL>
 </BODY></HTML>

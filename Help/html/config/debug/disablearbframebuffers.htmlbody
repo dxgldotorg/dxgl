@@ -1,0 +1,1 @@
+<p>Disables the GL_ARB_framebuffer_object extension.  If the GL_EXT_framebuffer_object extension is not available DXGL will fail to load.</p>

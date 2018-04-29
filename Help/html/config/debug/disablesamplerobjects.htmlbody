@@ -1,0 +1,1 @@
+<p>Disables the GL_ARB_sampler_objects extension.  This will revert to attaching texture filtering modes to the texture objects themselves, and will result in inaccuracies in Direct3D mode if the same texture is used in different texture units.</p>

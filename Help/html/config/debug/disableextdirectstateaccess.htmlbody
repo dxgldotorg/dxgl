@@ -1,0 +1,1 @@
+<p>Disables the GL_EXT_direct_state_access extension.  If GL_ARB_direct_state_access is not available this will fall back to using classic OpenGL object manipulation functions.</p>

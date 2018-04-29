@@ -1,0 +1,4 @@
+<p>Contains CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29, under the following declaration:</p>
+<p>THIS PROGRAM IS PUBLIC-DOMAIN SOFTWARE.<br />
+Based on the byte-oriented implementation "File Verification Using CRC"
+by Mark R. Nelson in Dr. Dobb's Journal, May 1992, pp. 64-67.</p>

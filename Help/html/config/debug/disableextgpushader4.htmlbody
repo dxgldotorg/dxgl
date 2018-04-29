@@ -1,0 +1,1 @@
+<p>Disables support for the GL_EXT_gpu_shader4 extension.  This is one of two methods used for supporting integer operations in shaders.  If this is enabled and GLSL 1.30 is not available, then this will limit the availability of ROP operations and may make some operations less accurate.</p>

@@ -1,5 +1,3 @@
-<h1>Troubleshooting</h1>
-&nbsp;
 <h2>Problem: DXGL does not load</h2>
 <h3>Cause: No application profile</h3>
 Solution: Open "Configure DXGL" and click the Add button. Browse to your program and double click it.

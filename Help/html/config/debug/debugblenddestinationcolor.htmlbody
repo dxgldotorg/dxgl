@@ -1,0 +1,1 @@
+<p>This option is used for debugging destination color keying.  If enabled, then the destination texture sampled for the color key operation will be blended with the source pixels, in order to determine of the shader is properly sampling the destination pixels.  This option should normally be left off.</p>

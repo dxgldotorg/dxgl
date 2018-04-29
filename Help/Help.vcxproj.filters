@@ -25,6 +25,15 @@
     <Filter Include="Help files\html\config\advanced">
       <UniqueIdentifier>{f46bbc6c-86ac-4296-85a2-41262b3aa6ac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\html\config\debug">
+      <UniqueIdentifier>{a60d8545-0c0a-4788-af08-6e8364880a77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Help files\html\config\hacks">
+      <UniqueIdentifier>{2dae2734-32a0-4a33-8126-8ea206cf9008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Help files\html\licenses">
+      <UniqueIdentifier>{518a1b28-a12a-45ef-85ac-2720c1a59035}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -347,6 +356,138 @@
     </None>
     <None Include="html\config\advanced\installationpath.htmlbody">
       <Filter>Help files\html\config\advanced</Filter>
+    </None>
+    <None Include="html\config\debug\disableextframebuffers.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableextframebuffers.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablearbframebuffers.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablearbframebuffers.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablegles2compatibility.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablegles2compatibility.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableextdirectstateaccess.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableextdirectstateaccess.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablearbdirectstateaccess.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablearbdirectstateaccess.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablesamplerobjects.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablesamplerobjects.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableextgpushader4.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableextgpushader4.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableglsl130support.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disableglsl130support.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\debugblenddestinationcolor.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\debugblenddestinationcolor.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\maximumopenglversion.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\maximumopenglversion.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\hacks\crop640480to640400.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\crop640480to640400.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\expand512448to640480.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\expand512448to640480.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\setcursorhidevisibility.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\setcursorhidevisibility.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\licenses.htmltitle">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\licenses.htmlbody">
+      <Filter>Help files\html</Filter>
+    </None>
+    <None Include="html\licenses\dxgl.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\dxgl.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\wine.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\wine.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\crc32.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\crc32.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\sha.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\sha.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\mesa.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\mesa.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\minhook.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\minhook.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\inih.htmltitle">
+      <Filter>Help files\html\licenses</Filter>
+    </None>
+    <None Include="html\licenses\inih.htmlbody">
+      <Filter>Help files\html\licenses</Filter>
     </None>
   </ItemGroup>
 </Project>

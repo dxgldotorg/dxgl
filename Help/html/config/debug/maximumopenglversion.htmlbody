@@ -1,0 +1,2 @@
+<p>Overrides the maximum core OpenGL version detected by DXGL.  If your version of OpenGL is lower than the selected version, then your OpenGL version will be used instead.</p>
+<p>This option can be used to limit the OpenGL functionality available to DXGL.</p>
