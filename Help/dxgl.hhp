@@ -80,6 +80,7 @@ html\config\debug\disablegles2compatibility.html
 html\config\debug\disableglsl130support.html
 html\config\debug\disablesamplerobjects.html
 html\config\debug\maximumopenglversion.html
+html\config\debug\uploadsurfacecontentsonunlock.html
 html\config\hacks\crop640480to640400.html
 html\config\hacks\expand512448to640480.html
 html\config\hacks\removetvcompatiblerefreshrates.html

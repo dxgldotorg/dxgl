@@ -1,0 +1,4 @@
+<p>
+  <em>This option is available in DXGL 0.5.14 and newer.</em>
+</p>
+<p>Immediately uploads the contents of a surface when it is unlocked by the program.  This can help with debugging, but can also cause a reduction in performance.</p>

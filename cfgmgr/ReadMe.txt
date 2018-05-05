@@ -507,6 +507,12 @@ REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoGLSL130
 If nonzero, disables use of GLSL version 1.30.  When combined with
 DebugNoGpuShader4 this will disable raster operations in DirectDraw.
 
+Member DebugUploadAfterUnlock
+INI Entry DebugUploadAfterUnlock
+INI group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugUploadAfterUnlock
+If nonzero, uploads surfaces on unlock.
+
 Member DebugBlendDestColorKey
 INI Entry DebugBlendDestColorKey
 INI Group debug

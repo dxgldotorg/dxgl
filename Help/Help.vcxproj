@@ -167,6 +167,8 @@
     <None Include="html\config\debug\disablesamplerobjects.htmltitle" />
     <None Include="html\config\debug\maximumopenglversion.htmlbody" />
     <None Include="html\config\debug\maximumopenglversion.htmltitle" />
+    <None Include="html\config\debug\uploadsurfacecontentsonunlock.htmlbody" />
+    <None Include="html\config\debug\uploadsurfacecontentsonunlock.htmltitle" />
     <None Include="html\config\displaytab.htmlbody" />
     <None Include="html\config\displaytab.htmltitle" />
     <None Include="html\config\display\addcolordepths.htmlbody" />

@@ -489,5 +489,11 @@
     <None Include="html\licenses\inih.htmlbody">
       <Filter>Help files\html\licenses</Filter>
     </None>
+    <None Include="html\config\debug\uploadsurfacecontentsonunlock.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\uploadsurfacecontentsonunlock.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -299,7 +299,7 @@ HRESULT glTexture_Unlock(glTexture *This, GLint level, LPRECT r, BOOL backend)
 {
 	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	InterlockedDecrement(&This->levels[level].locked);
-	if (This->miplevel > 1)
+	if ((This->miplevel > 1) || dxglcfg.DebugUploadAfterUnlock)
 	{
 		if (backend) glTexture__Upload(This, level);
 		else glRenderer_UploadTexture(This->renderer, This, level);
@@ -362,10 +362,10 @@ HRESULT glTexture_ReleaseDC(glTexture *This, GLint level, HDC hdc)
 		This->levels[level].ddsd.dwHeight, This->levels[level].ddsd.lpSurface,
 		This->levels[level].bitmapinfo, DIB_RGB_COLORS);
 	glTexture_Unlock(This, level, NULL, FALSE);
-	DeleteObject(This->levels[level].hbitmap);
-	This->levels[level].hbitmap = NULL;
 	DeleteDC(This->levels[level].hdc);
 	This->levels[level].hdc = NULL;
+	DeleteObject(This->levels[level].hbitmap);
+	This->levels[level].hbitmap = NULL;
 	return DD_OK;
 }
 void glTexture_SetPalette(glTexture *This, glTexture *palette, BOOL backend)

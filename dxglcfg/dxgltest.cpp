@@ -212,7 +212,7 @@ const TEST_ITEM Tests[] =
 	{1,		7,		0,		0,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Random GDI patterns (does not clear screen between paints)")},
 	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("BltFast background and sprites")},
 	{1,		7,		0,		0,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Random color fill Blt() paterns")},
-	{1,		7,		0,		0,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Mouse pointer event test")},
+	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("Mouse pointer event test")},
 	{1,		7,		1,		1,		TRUE,		1.0,		FALSE,	FALSE,		FALSE,		_T("Raster Operation Blt() test")},
 	{1,		7,		0,		0,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Mirrored and Rotated Blt() test")},
 	{1,		7,		0,		1,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Large batch color fill Blt() operations")},

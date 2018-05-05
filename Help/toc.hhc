@@ -211,6 +211,10 @@
 				<param name="Local" value="html\config\debug\disableglsl130support.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Upload surface contents on unlock">
+				<param name="Local" value="html\config\debug\uploadsurfacecontentsonunlock.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="DEBUG: Blend destination color key texture with source">
 				<param name="Local" value="html\config\debug\debugblenddestinationcolor.html">
 				</OBJECT>

@@ -23,11 +23,11 @@
 #include "misc.h"
 #define D3D_OVERLOADS
 #include "../ddraw/include/d3d.h"
+#include <WindowsX.h>
 
 void InitTest(int test);
 void RunTestTimed(int test);
 void RunTestLooped(int test);
-void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 
 static MultiDirectDraw *ddinterface;
@@ -46,7 +46,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,2,0,2,1,0,0,0,0,0,0};
+static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0};
 static DWORD counter;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
@@ -84,6 +84,10 @@ static WORD *mesh = NULL;
 static D3DLIGHT7 lights[8];
 static BOOL lightenable[8];
 static DWORD bgcolor = 0;
+
+static UINT lastmousemsg = WM_NULL;
+static WPARAM lastmousewparam = 0;
+static LPARAM lastmouselparam = NULL;
 
 typedef struct
 {
@@ -181,6 +185,9 @@ typedef struct
 static VERTEXSHADERSTATE vertexshaderstate;
 
 static DDSPRITE sprites[16];
+static HFONT displayfonts[16];
+static SIZE textsize;
+
 
 LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -236,7 +243,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 			pal->Release();
 			pal = NULL;
 		}
-		if(ddclipper)
+		if (ddclipper)
 		{
 			ddclipper->Release();
 			ddclipper = NULL;
@@ -305,20 +312,9 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	case WM_XBUTTONUP:
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEHWHEEL:
-		RunTestMouse(testnum,Msg,wParam,lParam);
-		if(!fullscreen)
-		{
-			if ((testnum != 4) && (testnum != 10) && (testnum != 11))
-			{
-				p.x = 0;
-				p.y = 0;
-				ClientToScreen(hWnd, &p);
-				GetClientRect(hWnd, &destrect);
-				OffsetRect(&destrect, p.x, p.y);
-				SetRect(&srcrect, 0, 0, width, height);
-				if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
-			}
-		}
+		lastmousemsg = Msg;
+		lastmousewparam = wParam;
+		lastmouselparam = lParam;
 		break;
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
@@ -329,131 +325,6 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 static int ddtestnum;
 static int d3dver;
 static int ddver;
-
-void RunTestMouse(int test, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	if(!ddsrender) return;
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(DDSURFACEDESC2);
-	DDBLTFX bltfx;
-	unsigned char *surface;
-	int bytes;
-	unsigned int x,y;
-	bool out = false;
-	bool msgbottom = false;
-	TCHAR message[256];
-	message[0] = 0;
-	HDC hDC;
-	switch(test)
-	{
-	case 6:
-		x = LOWORD(lParam);
-		y = HIWORD(lParam);
-		ZeroMemory(&bltfx,sizeof(DDBLTFX));
-		bltfx.dwSize = sizeof(DDBLTFX);
-		bltfx.dwFillColor = 0;
-		ddsrender->Blt(NULL,NULL,NULL,DDBLT_COLORFILL,&bltfx);
-		if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
-		else ddsd.dwSize = sizeof(DDSURFACEDESC);
-		ddsrender->GetSurfaceDesc(&ddsd);
-		switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
-		{
-		case 8:
-			bytes=1;
-			break;
-		case 15:
-		case 16:
-			bytes=2;
-			break;
-		case 24:
-			bytes=3;
-			break;
-		case 32:
-		default:
-			bytes=4;
-		}
-		_tcscpy(message,_T("Message: "));
-		switch(Msg)
-		{
-		case WM_MOUSEMOVE:
-			_tcscat(message,_T("WM_MOUSEMOVE "));
-			break;
-		case WM_LBUTTONDOWN:
-			_tcscat(message,_T("WM_LBUTTONDOWN "));
-			break;
-		case WM_LBUTTONUP:
-			_tcscat(message,_T("WM_LBUTTONUP "));
-			break;
-		case WM_LBUTTONDBLCLK:
-			_tcscat(message,_T("WM_LBUTTONDBLCLK "));
-			break;
-		case WM_RBUTTONDOWN:
-			_tcscat(message,_T("WM_RBUTTONDOWN "));
-			break;
-		case WM_RBUTTONUP:
-			_tcscat(message,_T("WM_RBUTTONUP "));
-			break;
-		case WM_RBUTTONDBLCLK:
-			_tcscat(message,_T("WM_RBUTTONDBLCLK "));
-			break;
-		case WM_MBUTTONDOWN:
-			_tcscat(message,_T("WM_MBUTTONDOWN "));
-			break;
-		case WM_MBUTTONUP:
-			_tcscat(message,_T("WM_MBUTTONUP "));
-			break;
-		case WM_MBUTTONDBLCLK:
-			_tcscat(message,_T("WM_MBUTTONDBLCLK "));
-			break;
-		case WM_MOUSEWHEEL:
-			_tcscat(message,_T("WM_MOUSEWHEEL "));
-			break;
-		case WM_XBUTTONDOWN:
-			_tcscat(message,_T("WM_XBUTTONDOWN "));
-			break;
-		case WM_XBUTTONUP:
-			_tcscat(message,_T("WM_XBUTTONUP "));
-			break;
-		case WM_XBUTTONDBLCLK:
-			_tcscat(message,_T("WM_XBUTTONDBLCLK "));
-			break;
-		case WM_MOUSEHWHEEL:
-			_tcscat(message,_T("WM_MOUSEHWHEEL "));
-			break;
-		default:
-			_tcscat(message,_T("unknown "));
-		}
-		_tcscat(message,_T("Keys: "));
-		if(wParam & MK_CONTROL) _tcscat(message, _T("CTRL "));
-		if(wParam & MK_SHIFT) _tcscat(message,_T("SHIFT "));
-		_tcscat(message,_T("Buttons: "));
-		if(wParam & MK_LBUTTON) _tcscat(message,_T("L "));
-		if(wParam & MK_MBUTTON) _tcscat(message,_T("M "));
-		if(wParam & MK_RBUTTON) _tcscat(message,_T("R "));
-		if(wParam & MK_XBUTTON1) _tcscat(message,_T("X1 "));
-		if(wParam & MK_XBUTTON2) _tcscat(message,_T("X2 "));
-		// Add X and Y
-		ddsrender->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
-		surface = (unsigned char *)ddsd.lpSurface;
-		if((x > ddsd.dwWidth) || (y > ddsd.dwHeight))
-		{
-			out = true;
-			_tcscat(message,_T(" OUT OF BOUNDS"));
-		}
-		else surface[(x*bytes)+(y*ddsd.lPitch)] = 0xFF;
-		ddsrender->Unlock(NULL);
-		ddsrender->GetDC(&hDC);
-		if(out)SetBkColor(hDC,RGB(255,0,0));
-		else SetBkColor(hDC,RGB(0,0,255));
-		SetTextColor(hDC,RGB(255,255,255));
-		if(y > ddsd.dwHeight / 2) TextOut(hDC,0,0,message,_tcslen(message));
-		else TextOut(hDC,0,ddsd.dwHeight-16,message,_tcslen(message));
-		ddsrender->ReleaseDC(hDC);
-		break;
-	default:
-		break;
-	}
-}
 
 const TCHAR wndclassname[] = _T("DDTestWndClass");
 
@@ -922,6 +793,17 @@ void InitTest(int test)
 	D3DMATRIX mat;
 	bgcolor = 0;
 	DDCOLORKEY ckey;
+	HCURSOR cursor;
+	HDC memorydc;
+	BITMAPINFO bitmapinfo;
+	HBITMAP bitmap;
+	HGDIOBJ temp;
+	HBRUSH brush;
+	RECT r;
+	DDCOLORKEY colorkey;
+	void *bmppointer;
+	int i;
+	const DWORD colormasks[7] = { 0xFF0000, 0xFF00, 0xFFFF00, 0xFF, 0xFF00FF, 0xFFFF, 0xFFFFFF };
 	ckey.dwColorSpaceHighValue = ckey.dwColorSpaceLowValue = 0;
 	if(ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	else ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -1077,7 +959,7 @@ void InitTest(int test)
 		else temp1 = ddsrender;
 		temp1->SetColorKey(DDCKEY_DESTBLT, &ckey);
 		if (backbuffers) temp1->Release();
-		for (int i = 1; i < 16; i++)
+		for (i = 1; i < 16; i++)
 		{
 			switch ((i - 1 & 3))
 			{
@@ -1120,6 +1002,68 @@ void InitTest(int test)
 			sprites[i].xvelocity = randfloat(5);
 			sprites[i].yvelocity = randfloat(5);
 		}
+		break;
+	case 6:
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddsd.dwWidth = GetSystemMetrics(SM_CXCURSOR);
+		ddsd.dwHeight = GetSystemMetrics(SM_CYCURSOR);
+		sprites[0].width = (float)ddsd.dwWidth;
+		sprites[0].height = (float)ddsd.dwHeight;
+		sprites[0].rect.left = sprites[0].rect.top = 0;
+		sprites[0].rect.right = ddsd.dwWidth;
+		sprites[0].rect.bottom = ddsd.dwHeight;
+		memcpy(&sprites[0].ddsd, &ddsd, sizeof(DDSURFACEDESC2));
+		for (i = 1; i < 7; i++)
+		{
+			memcpy(&sprites[i], &sprites[0], sizeof(DDSPRITE));
+			memcpy(&sprites[0].ddsd, &ddsd, sizeof(DDSURFACEDESC2));
+		}
+		colorkey.dwColorSpaceHighValue = colorkey.dwColorSpaceLowValue = 0;
+		for (i = 0; i < 7; i++)
+		{
+			ddinterface->CreateSurface(&sprites[i].ddsd, &sprites[i].surface, NULL);
+			sprites[i].surface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
+		}
+		cursor = LoadCursor(NULL, IDC_ARROW);
+		memorydc = CreateCompatibleDC(NULL);
+		ZeroMemory(&bitmapinfo, sizeof(BITMAPINFO));
+		bitmapinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bitmapinfo.bmiHeader.biWidth = 8*GetSystemMetrics(SM_CXCURSOR);
+		bitmapinfo.bmiHeader.biHeight = 0 - GetSystemMetrics(SM_CYCURSOR);
+		bitmapinfo.bmiHeader.biPlanes = 1;
+		bitmapinfo.bmiHeader.biBitCount = 32;
+		bitmapinfo.bmiHeader.biCompression = BI_RGB;
+		bitmap = CreateDIBSection(memorydc, &bitmapinfo, DIB_RGB_COLORS, &bmppointer, NULL, 0);
+		temp = SelectObject(memorydc, bitmap);
+		DeleteObject(temp);
+		for (i = 0; i < 7; i++)
+		{
+			DrawIcon(memorydc, i*sprites[0].ddsd.dwWidth, 0, cursor);
+		}
+		for (i = 0; i < 7; i++)
+		{
+			brush = CreateSolidBrush(colormasks[i]);
+			r.left = 7 * sprites[0].ddsd.dwWidth;
+			r.right = 8 * sprites[0].ddsd.dwHeight;
+			r.top = 0;
+			r.bottom = sprites[0].ddsd.dwHeight;
+			FillRect(memorydc, &r, brush);
+			DeleteObject(brush);
+			BitBlt(memorydc, i*sprites[0].ddsd.dwWidth, 0,
+				sprites[0].ddsd.dwWidth, sprites[0].ddsd.dwHeight, memorydc,
+				7 * sprites[0].ddsd.dwWidth, 0, SRCAND);
+		}
+		for (i = 0; i < 7; i++)
+		{
+			sprites[i].surface->GetDC(&hRenderDC);
+			BitBlt(hRenderDC, 0, 0, sprites[0].ddsd.dwWidth, sprites[0].ddsd.dwHeight,
+				memorydc, i*sprites[0].ddsd.dwWidth, 0, SRCCOPY);
+			sprites[i].surface->ReleaseDC(hRenderDC);
+		}
+		DeleteDC(memorydc);
+		DeleteObject(bitmap);
 		break;
 	case 7:
 		if (!fullscreen) backbuffers = 0;
@@ -1361,11 +1305,15 @@ void RunTestTimed(int test)
 	DDBLTFX bltfx;
 	HDC hDCdest, hDCsrc;
 	RECT r1, r2;
+	int x, y;
 	POINT p;
 	RECT srcrect, destrect;
 	HRESULT error;
 	D3DMATRIX mat;
 	TCHAR message[256];
+	TCHAR number[32];
+	HBRUSH brush;
+	BOOL out[7];
 	bltfx.dwSize = sizeof(DDBLTFX);
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
@@ -1405,6 +1353,169 @@ void RunTestTimed(int test)
 				temp1->BltFast((DWORD)sprites[i].x,(DWORD)sprites[i].y,sprites[i].surface,&sprites[i].rect,sprites[i].bltflags);
 				if(backbuffers) temp1->Release();
 			}
+		}
+		if (fullscreen)
+		{
+			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);
+		}
+		else
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &r1);
+			OffsetRect(&r1, p.x, p.y);
+			SetRect(&r2, 0, 0, width, height);
+			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
+		}
+		break;
+	case 6: // Mouse pointer test
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		temp1->GetDC(&hDCdest);
+		brush = CreateSolidBrush(0);
+		destrect.left = 0;
+		destrect.right = width;
+		destrect.top = 0;
+		destrect.bottom = height;
+		FillRect(hDCdest, &destrect, brush);
+		DeleteObject(brush);
+		_tcscpy(message, _T("Mouse pointer test"));
+		displayfonts[0] = CreateFont(9, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+			ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+			DEFAULT_PITCH, _T("Fixedsys"));
+		displayfonts[1] = (HFONT)SelectObject(hDCdest, displayfonts[0]);
+		SetTextColor(hDCdest, RGB(255,255,255));
+		SetBkColor(hDCdest, RGB(0,0,255));
+		TextOut(hDCdest, 0, 0, message, _tcslen(message));
+		GetTextExtentPoint(hDCdest, _T("A"), 1, &textsize);
+		_tcscpy(message, _T("Last mouse message: "));
+		switch (lastmousemsg)
+		{
+		case WM_MOUSEMOVE:
+			_tcscat(message, _T("WM_MOUSEMOVE "));
+			break;
+		case WM_LBUTTONDOWN:
+			_tcscat(message, _T("WM_LBUTTONDOWN "));
+			break;
+		case WM_LBUTTONUP:
+			_tcscat(message, _T("WM_LBUTTONUP "));
+			break;
+		case WM_LBUTTONDBLCLK:
+			_tcscat(message, _T("WM_LBUTTONDBLCLK "));
+			break;
+		case WM_RBUTTONDOWN:
+			_tcscat(message, _T("WM_RBUTTONDOWN "));
+			break;
+		case WM_RBUTTONUP:
+			_tcscat(message, _T("WM_RBUTTONUP "));
+			break;
+		case WM_RBUTTONDBLCLK:
+			_tcscat(message, _T("WM_RBUTTONDBLCLK "));
+			break;
+		case WM_MBUTTONDOWN:
+			_tcscat(message, _T("WM_MBUTTONDOWN "));
+			break;
+		case WM_MBUTTONUP:
+			_tcscat(message, _T("WM_MBUTTONUP "));
+			break;
+		case WM_MBUTTONDBLCLK:
+			_tcscat(message, _T("WM_MBUTTONDBLCLK "));
+			break;
+		case WM_MOUSEWHEEL:
+			_tcscat(message, _T("WM_MOUSEWHEEL "));
+			break;
+		case WM_XBUTTONDOWN:
+			_tcscat(message, _T("WM_XBUTTONDOWN "));
+			break;
+		case WM_XBUTTONUP:
+			_tcscat(message, _T("WM_XBUTTONUP "));
+			break;
+		case WM_XBUTTONDBLCLK:
+			_tcscat(message, _T("WM_XBUTTONDBLCLK "));
+			break;
+		case WM_MOUSEHWHEEL:
+			_tcscat(message, _T("WM_MOUSEHWHEEL "));
+			break;
+		default:
+			_tcscat(message, _T("unknown "));
+		}
+		x = GET_X_LPARAM(lastmouselparam);
+		y = GET_Y_LPARAM(lastmouselparam);
+		_tcscat(message, _T("X="));
+		_itot(x, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" "));
+		_tcscat(message, _T("Y="));
+		_itot(y, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" "));
+		_tcscat(message, _T("Keys: "));
+		if (lastmousewparam & MK_CONTROL) _tcscat(message, _T("CTRL "));
+		if (lastmousewparam & MK_SHIFT) _tcscat(message, _T("SHIFT "));
+		_tcscat(message, _T("Buttons: "));
+		if (lastmousewparam & MK_LBUTTON) _tcscat(message, _T("L "));
+		if (lastmousewparam & MK_MBUTTON) _tcscat(message, _T("M "));
+		if (lastmousewparam & MK_RBUTTON) _tcscat(message, _T("R "));
+		if (lastmousewparam & MK_XBUTTON1) _tcscat(message, _T("X1 "));
+		if (lastmousewparam & MK_XBUTTON2) _tcscat(message, _T("X2 "));
+		if ((x > width) || (y > height) || (x < 0) || (y < 0))
+		{
+			out[0] = TRUE;
+			_tcscat(message, _T(" OUT OF BOUNDS"));
+		}
+		else out[0] = FALSE;
+		if (out[0]) SetTextColor(hDCdest, RGB(255, 0, 0));
+		else SetTextColor(hDCdest, RGB(255, 255, 255));
+		TextOut(hDCdest, 0, textsize.cy, message, _tcslen(message));
+		GetCursorPos(&p);
+		_tcscpy(message, _T("GetCursorPos() position: "));
+		_tcscat(message, _T("X="));
+		_itot(p.x, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" "));
+		_tcscat(message, _T("Y="));
+		_itot(p.y, number, 10);
+		_tcscat(message, number);
+		if ((p.x > width) || (p.y > height) || (p.x < 0) || (p.y < 0))
+		{
+			out[1] = TRUE;
+			_tcscat(message, _T(" OUT OF BOUNDS"));
+		}
+		else out[1] = FALSE;
+		if (out[1]) SetTextColor(hDCdest, RGB(255, 0, 0));
+		else SetTextColor(hDCdest, RGB(255, 255, 255));
+		SetBkColor(hDCdest, RGB(0, 255, 0));
+		TextOut(hDCdest, 0, 2 * textsize.cy, message, _tcslen(message));
+		SelectObject(hDCdest, displayfonts[1]);
+		DeleteObject(displayfonts[0]);
+		temp1->ReleaseDC(hDCdest);
+		// Draw cursors
+		if (!out[0])
+		{
+			destrect.left = GET_X_LPARAM(lastmouselparam);
+			destrect.top = GET_Y_LPARAM(lastmouselparam);
+			destrect.right = GET_X_LPARAM(lastmouselparam) + sprites[0].ddsd.dwWidth;
+			if (destrect.right > width) destrect.right = width;
+			destrect.bottom = GET_Y_LPARAM(lastmouselparam) + sprites[0].ddsd.dwHeight;
+			if (destrect.bottom > height) destrect.bottom = height;
+			srcrect.left = srcrect.top = 0;
+			srcrect.right = destrect.right - destrect.left;
+			srcrect.bottom = destrect.bottom - destrect.top;
+			temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
+		}
+		if (!out[1])
+		{
+			destrect.left = p.x;
+			destrect.top = p.y;
+			destrect.right = p.x + sprites[1].ddsd.dwWidth;
+			if (destrect.right > width) destrect.right = width;
+			destrect.bottom = p.y + sprites[1].ddsd.dwHeight;
+			if (destrect.bottom > height) destrect.bottom = height;
+			srcrect.left = srcrect.top = 0;
+			srcrect.right = destrect.right - destrect.left;
+			srcrect.bottom = destrect.bottom - destrect.top;
+			temp1->Blt(&destrect, sprites[1].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 		}
 		if (fullscreen)
 		{

@@ -2102,10 +2102,14 @@ void ReadDebugItem(int item, BOOL *value, BOOL *mask)
 		*mask = cfgmask->DebugNoGLSL130;
 		break;
 	case 8:
+		*value = cfg->DebugUploadAfterUnlock;
+		*mask = cfgmask->DebugUploadAfterUnlock;
+		break;
+	case 9:
 		*value = cfg->DebugBlendDestColorKey;
 		*mask = cfgmask->DebugBlendDestColorKey;
 		break;
-	/*case 9:
+	/*case 10:
 		*value = cfg->DebugDisableErrors;
 		*mask = cfgmask->DebugDisableErrors;
 		break;*/
@@ -2153,10 +2157,14 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		cfgmask->DebugNoGLSL130 = mask;
 		break;
 	case 8:
+		cfg->DebugUploadAfterUnlock = value;
+		cfgmask->DebugUploadAfterUnlock = mask;
+		break;
+	case 9:
 		cfg->DebugBlendDestColorKey = value;
 		cfgmask->DebugBlendDestColorKey = mask;
 		break;
-	/*case 9:
+	/*case 10:
 		cfg->DebugDisableErrors = value;
 		cfgmask->DebugDisableErrors = mask;
 		break;*/
@@ -3117,6 +3125,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Disable EXT_gpu_shader4 extension"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Disable GLSL 1.30 support"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Upload surface contents on unlock"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("DEBUG: Blend destination color key texture with source"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);

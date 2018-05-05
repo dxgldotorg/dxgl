@@ -27,6 +27,9 @@
   <a href="debug/disableglsl130support.html">Disable GLSL 1.30 support</a>
 </p>
 <p>
+  <a href="debug/uploadsurfacecontentsonunlock.html">Upload surface contents on unlock</a>
+</p>
+<p>
   <a href="debug/debugblenddestinationcolor.html">DEBUG: Blend destination color key texture with source</a>
 </p>
 <p>

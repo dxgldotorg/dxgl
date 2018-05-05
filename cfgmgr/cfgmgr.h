@@ -87,6 +87,7 @@ typedef struct
 	BOOL DebugNoSamplerObjects;
 	BOOL DebugNoGpuShader4;
 	BOOL DebugNoGLSL130;
+	BOOL DebugUploadAfterUnlock;
 	BOOL DebugBlendDestColorKey;
 	DWORD DebugMaxGLVersionMajor;
 	DWORD DebugMaxGLVersionMinor;
