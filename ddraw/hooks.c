@@ -25,6 +25,7 @@
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
 void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);
 void glDirectDraw7_GetSizes(LPDIRECTDRAW7 lpDD7, LONG *sizes);
+BOOL glDirectDraw7_GetFullscreen(LPDIRECTDRAW7 lpDD7);
 extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
@@ -40,8 +41,8 @@ LONG(WINAPI *_SetWindowLongW)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
 LONG(WINAPI *_GetWindowLongA)(HWND hWnd, int nIndex) = NULL;
 LONG(WINAPI *_GetWindowLongW)(HWND hWnd, int nIndex) = NULL;
 #ifdef _M_X64
-LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
-LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong) = NULL;
+LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong) = NULL;
 LONG_PTR(WINAPI *_GetWindowLongPtrA)(HWND hWnd, int nIndex) = NULL;
 LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
 #else
@@ -50,6 +51,7 @@ LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
 #define _GetWindowLongPtrA   _GetWindowLongA
 #define _GetWindowLongPtrW   _GetWindowLongW
 #endif
+BOOL(WINAPI *_GetCursorPos)(LPPOINT point) = NULL;
 BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
 HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
 UINT wndhook_count = 0;
@@ -164,6 +166,7 @@ void InitHooks()
 	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, &_GetWindowLongPtrA);
 	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, &_GetWindowLongPtrW);
 #endif
+	MH_CreateHook(&GetCursorPos, HookGetCursorPos, &_GetCursorPos);
 	MH_CreateHook(&SetCursorPos, HookSetCursorPos, &_SetCursorPos);
 	MH_CreateHook(&SetCursor, HookSetCursor, &_SetCursor);
 	hooks_init = TRUE;
@@ -184,6 +187,7 @@ void ShutdownHooks()
 	MH_RemoveHook(&GetWindowLongPtrA);
 	MH_RemoveHook(&GetWindowLongPtrW);
 #endif
+	MH_RemoveHook(&GetCursorPos);
 	MH_RemoveHook(&SetCursorPos);
 	MH_RemoveHook(&SetCursor);
 	MH_Uninitialize();
@@ -208,6 +212,7 @@ void EnableWindowLongHooks()
 		MH_EnableHook(&GetWindowLongPtrA);
 		MH_EnableHook(&GetWindowLongPtrW);
 #endif
+		MH_EnableHook(&GetCursorPos);
 		MH_EnableHook(&SetCursorPos);
 		MH_EnableHook(&SetCursor);
 	}
@@ -232,6 +237,7 @@ void DisableWindowLongHooks(BOOL force)
 		MH_DisableHook(&GetWindowLongPtrA);
 		MH_DisableHook(&GetWindowLongPtrW);
 #endif
+		MH_DisableHook(&GetCursorPos);
 		MH_DisableHook(&SetCursorPos);
 		MH_DisableHook(&SetCursor);
 	}
@@ -491,6 +497,63 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex)
 	return (LONG_PTR)wndhook->wndproc;
 }
 #endif
+BOOL WINAPI HookGetCursorPos(LPPOINT point)
+{
+	HWND_HOOK *wndhook;
+	LONG sizes[6];
+	POINT pt;
+	BOOL error;
+	int oldx, oldy;
+	float mulx, muly;
+	int translatex, translatey;
+
+	if (dxglcfg.DebugNoMouseHooks)
+		return _GetCursorPos(point);
+
+	wndhook = GetWndHook(GetActiveWindow());
+	if (!wndhook) {
+		return _GetCursorPos(point);
+	}
+	error = _GetCursorPos(&pt);
+	if (!error) return error;
+	if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >=2) && (dxglcfg.fullmode <= 4)))
+		&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+	{
+		oldx = pt.x;
+		oldy = pt.y;
+		if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+		{
+			pt.x = 0;
+			pt.y = 0;
+			ClientToScreen(wndhook->hwnd, &pt);
+			oldx -= pt.x;
+			oldy -= pt.y;
+		}
+		glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+		mulx = (float)sizes[2] / (float)sizes[0];
+		muly = (float)sizes[3] / (float)sizes[1];
+		translatex = (sizes[4] - sizes[0]) / 2;
+		translatey = (sizes[5] - sizes[1]) / 2;
+		oldx -= translatex;
+		oldy -= translatey;
+		oldx = (int)((float)oldx * mulx);
+		oldy = (int)((float)oldy * muly);
+		if (oldx < 0) oldx = 0;
+		if (oldy < 0) oldy = 0;
+		if (oldx >= sizes[2]) oldx = sizes[2] - 1;
+		if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+		point->x = oldx;
+		point->y = oldy;
+		return error;
+	}
+	else
+	{
+		point->x = pt.x;
+		point->y = pt.y;
+		return error;
+	}
+}
+
 BOOL WINAPI HookSetCursorPos(int x, int y)
 {
 	HWND_HOOK *wndhook;
@@ -498,7 +561,7 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	POINT pt;
 	int winWidth, winHeight;
 
-	if (!dxglcfg.HackSetCursorPos) {
+	if (dxglcfg.DebugNoMouseHooks) {
 		return _SetCursorPos(x, y);
 	}
 

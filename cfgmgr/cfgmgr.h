@@ -89,13 +89,13 @@ typedef struct
 	BOOL DebugNoGLSL130;
 	BOOL DebugUploadAfterUnlock;
 	BOOL DebugBlendDestColorKey;
+	BOOL DebugNoMouseHooks;
 	DWORD DebugMaxGLVersionMajor;
 	DWORD DebugMaxGLVersionMinor;
 	// [hacks]
 	BOOL HackCrop640480to640400;
 	BOOL HackAutoScale512448to640480;
 	BOOL HackNoTVRefresh;
-	BOOL HackSetCursorPos;
 	BOOL HackSetCursor;
 	// internal
 	BOOL Windows8Detected;

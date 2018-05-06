@@ -177,7 +177,8 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEHWHEEL:
 		hParent = GetParent(hwnd);
-		if((dxglcfg.scaler != 0) && ddInterface->GetFullscreen())
+		if(((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+			&& ddInterface->GetFullscreen())
 		{
 			oldx = LOWORD(lParam);
 			oldy = HIWORD(lParam);

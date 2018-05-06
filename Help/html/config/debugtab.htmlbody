@@ -30,6 +30,9 @@
   <a href="debug/uploadsurfacecontentsonunlock.html">Upload surface contents on unlock</a>
 </p>
 <p>
+  <a href="debug/disablemousecursorhooks.html">Disable mouse cursor hooks</a>
+</p>
+<p>
   <a href="debug/debugblenddestinationcolor.html">DEBUG: Blend destination color key texture with source</a>
 </p>
 <p>

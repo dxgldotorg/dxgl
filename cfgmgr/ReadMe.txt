@@ -513,6 +513,12 @@ INI group debug
 REG_DWORD HKCU\DXGL\Profiles\<app>\DebugUploadAfterUnlock
 If nonzero, uploads surfaces on unlock.
 
+Member DebugNoMouseHooks
+INI Entry DebugNoMouseHooks
+INI group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoMouseHooks
+If nonzero, disables mouse pointer hooks.
+
 Member DebugBlendDestColorKey
 INI Entry DebugBlendDestColorKey
 INI Group debug
@@ -552,6 +558,12 @@ INI Entry HackNoTVRefresh
 INI Group hacks
 REG_DWORD HKCU\DXGL\Profiles\<app>\HackNoTVRefresh
 Rounds out TV-compatible refresh rates and discards duplicates.
+
+Member HackSetCursor
+INI Entry HackSetCursor
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackSetCursor
+Tries to prevent flickering cursor in some games.
 
 Member Windows8Detected
 Not in INI file

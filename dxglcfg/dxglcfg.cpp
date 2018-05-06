@@ -2106,10 +2106,14 @@ void ReadDebugItem(int item, BOOL *value, BOOL *mask)
 		*mask = cfgmask->DebugUploadAfterUnlock;
 		break;
 	case 9:
+		*value = cfg->DebugNoMouseHooks;
+		*mask = cfgmask->DebugNoMouseHooks;
+		break;
+	case 10:
 		*value = cfg->DebugBlendDestColorKey;
 		*mask = cfgmask->DebugBlendDestColorKey;
 		break;
-	/*case 10:
+	/*case 11:
 		*value = cfg->DebugDisableErrors;
 		*mask = cfgmask->DebugDisableErrors;
 		break;*/
@@ -2161,6 +2165,10 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		cfgmask->DebugUploadAfterUnlock = mask;
 		break;
 	case 9:
+		cfg->DebugNoMouseHooks = value;
+		cfgmask->DebugNoMouseHooks = mask;
+		break;
+	case 10:
 		cfg->DebugBlendDestColorKey = value;
 		cfgmask->DebugBlendDestColorKey = mask;
 		break;
@@ -2305,10 +2313,6 @@ void ReadHacksItem(int item, BOOL *value, BOOL *mask)
 		*mask = cfgmask->HackNoTVRefresh;
 		break;
 	case 3:
-		*value = cfg->HackSetCursorPos;
-		*mask = cfgmask->HackSetCursorPos;
-		break;
-	case 4:
 		*value = cfg->HackSetCursor;
 		*mask = cfgmask->HackSetCursor;
 		break;
@@ -2336,10 +2340,6 @@ void WriteHacksItem(int item, BOOL value, BOOL mask)
 		cfgmask->HackNoTVRefresh = mask;
 		break;
 	case 3:
-		cfg->HackSetCursorPos = value;
-		cfgmask->HackSetCursorPos = mask;
-		break;
-	case 4:
 		cfg->HackSetCursor = value;
 		cfgmask->HackSetCursor = mask;
 		break;
@@ -3128,6 +3128,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Upload surface contents on unlock"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable mouse cursor hooks"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("DEBUG: Blend destination color key texture with source"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
@@ -3170,8 +3172,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
-		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("SetCursorPos centered"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("SetCursor hide visibility"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);

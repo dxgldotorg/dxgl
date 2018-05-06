@@ -495,5 +495,11 @@
     <None Include="html\config\debug\uploadsurfacecontentsonunlock.htmlbody">
       <Filter>Help files\html\config\debug</Filter>
     </None>
+    <None Include="html\config\debug\disablemousecursorhooks.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disablemousecursorhooks.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
   </ItemGroup>
 </Project>

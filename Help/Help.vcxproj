@@ -163,6 +163,8 @@
     <None Include="html\config\debug\disablegles2compatibility.htmltitle" />
     <None Include="html\config\debug\disableglsl130support.htmlbody" />
     <None Include="html\config\debug\disableglsl130support.htmltitle" />
+    <None Include="html\config\debug\disablemousecursorhooks.htmlbody" />
+    <None Include="html\config\debug\disablemousecursorhooks.htmltitle" />
     <None Include="html\config\debug\disablesamplerobjects.htmlbody" />
     <None Include="html\config\debug\disablesamplerobjects.htmltitle" />
     <None Include="html\config\debug\maximumopenglversion.htmlbody" />

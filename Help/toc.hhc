@@ -215,6 +215,10 @@
 				<param name="Local" value="html\config\debug\uploadsurfacecontentsonunlock.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable mouse cursor hooks">
+				<param name="Local" value="html\config\debug\disablemousecursorhooks.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="DEBUG: Blend destination color key texture with source">
 				<param name="Local" value="html\config\debug\debugblenddestinationcolor.html">
 				</OBJECT>

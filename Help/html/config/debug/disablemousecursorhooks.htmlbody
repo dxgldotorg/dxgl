@@ -1,0 +1,4 @@
+<p>
+  <em>This option is available in DXGL 0.5.14 and newer.</em>
+</p>
+<p>Disables all API hooks for translating the mouse cursor position in scaled and forced-window modes, such as GetCursorPos().</p>

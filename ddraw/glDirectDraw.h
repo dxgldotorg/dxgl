@@ -144,6 +144,7 @@ private:
 extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
 extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *glDD7, LONG *sizes);
 extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
+extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7);
 LONG Try640400Mode(LPCWSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400);
 
 class glDirectDraw1 : public IDirectDraw

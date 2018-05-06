@@ -662,12 +662,12 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugNoGLSL130 = ReadBool(hKey, cfg->DebugNoGLSL130, &cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
 	cfg->DebugUploadAfterUnlock = ReadBool(hKey, cfg->DebugUploadAfterUnlock, &cfgmask->DebugUploadAfterUnlock, _T("DebugUploadAfterUnlock"));
 	cfg->DebugBlendDestColorKey = ReadBool(hKey, cfg->DebugBlendDestColorKey, &cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
+	cfg->DebugNoMouseHooks = ReadBool(hKey, cfg->DebugNoMouseHooks, &cfgmask->DebugNoMouseHooks, _T("DebugNoMouseHooks"));
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	cfg->HackAutoScale512448to640480 = ReadBool(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
-	cfg->HackSetCursorPos = ReadBool(hKey, cfg->HackSetCursorPos, &cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
 	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
 	if(!global && dll)
 	{
@@ -815,12 +815,12 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteBool(hKey, cfg->DebugNoGLSL130, cfgmask->DebugNoGLSL130, _T("DebugNoGLSL130"));
 	WriteBool(hKey, cfg->DebugUploadAfterUnlock, cfgmask->DebugUploadAfterUnlock, _T("DebugUploadAfterUnlock"));
 	WriteBool(hKey, cfg->DebugBlendDestColorKey, cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
+	WriteBool(hKey, cfg->DebugNoMouseHooks, cfgmask->DebugNoMouseHooks, _T("DebugNoMouseHooks"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	WriteBool(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
-	WriteBool(hKey, cfg->HackSetCursorPos, cfgmask->HackSetCursorPos, _T("HackSetCursorPos"));
 	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
 }
 
@@ -1087,6 +1087,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(name, "DebugNoGLSL130")) cfg->DebugNoGLSL130 = INIBoolValue(value);
 		if (!stricmp(name, "DebugUploadAfterUnlock")) cfg->DebugUploadAfterUnlock = INIBoolValue(value);
 		if (!stricmp(name, "DebugBlendDestColorKey")) cfg->DebugBlendDestColorKey = INIBoolValue(value);
+		if (!stricmp(name, "DebugNoMouseHooks")) cfg->DebugNoMouseHooks = INIBoolValue(value);
 		if (!stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
 		if (!stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
 	}
@@ -1095,7 +1096,6 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
 		if (!stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIBoolValue(value);
 		if (!stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
-		if (!stricmp(section, "HackSetCursorPos")) cfg->HackSetCursorPos = INIBoolValue(value);
 		if (!stricmp(section, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 	}
 	return 1;

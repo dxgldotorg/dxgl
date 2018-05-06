@@ -1748,7 +1748,11 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
 		glDD7->primary->texture->palette, 0, NULL);
 }
-
+extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
+{
+	if (glDD7->GetFullscreen()) return TRUE;
+	else return FALSE;
+}
 
 HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 {
