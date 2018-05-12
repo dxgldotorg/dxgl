@@ -85,9 +85,9 @@ static D3DLIGHT7 lights[8];
 static BOOL lightenable[8];
 static DWORD bgcolor = 0;
 
-static UINT lastmousemsg = WM_NULL;
-static WPARAM lastmousewparam = 0;
-static LPARAM lastmouselparam = NULL;
+static UINT lastmousemsg[8] = { WM_NULL,WM_NULL,WM_NULL,WM_NULL,WM_NULL,WM_NULL,WM_NULL,WM_NULL };
+static WPARAM lastmousewparam[8] = { 0,0,0,0,0,0,0,0 };
+static LPARAM lastmouselparam[8] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL };
 
 typedef struct
 {
@@ -196,6 +196,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	RECT srcrect,destrect;
 	HRESULT error;
 	PAINTSTRUCT paintstruct;
+	int i;
 	switch(Msg)
 	{
 	case WM_CLOSE:
@@ -312,9 +313,15 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	case WM_XBUTTONUP:
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEHWHEEL:
-		lastmousemsg = Msg;
-		lastmousewparam = wParam;
-		lastmouselparam = lParam;
+		for (i = 7; i > 0; i--)
+			lastmousemsg[i] = lastmousemsg[i - 1];
+		lastmousemsg[0] = Msg;
+		for (i = 7; i > 0; i--)
+			lastmousewparam[i] = lastmousewparam[i-1];
+		lastmousewparam[0] = wParam;
+		for (i = 7; i > 0; i--)
+			lastmouselparam[i] = lastmouselparam[i-1];
+		lastmouselparam[0] = lParam;
 		break;
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
@@ -1313,7 +1320,8 @@ void RunTestTimed(int test)
 	TCHAR message[256];
 	TCHAR number[32];
 	HBRUSH brush;
-	BOOL out[7];
+	BOOL out[9];
+	int i;
 	bltfx.dwSize = sizeof(DDBLTFX);
 	ZeroMemory(&ddscaps,sizeof(DDSCAPS2));
 	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
@@ -1380,8 +1388,8 @@ void RunTestTimed(int test)
 		destrect.bottom = height;
 		FillRect(hDCdest, &destrect, brush);
 		DeleteObject(brush);
-		_tcscpy(message, _T("Mouse pointer test"));
-		displayfonts[0] = CreateFont(9, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+		_tcscpy(message, _T("Mouse pointer test - colored pointers should follow mouse."));
+		displayfonts[0] = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
 			ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 			DEFAULT_PITCH, _T("Fixedsys"));
 		displayfonts[1] = (HFONT)SelectObject(hDCdest, displayfonts[0]);
@@ -1389,85 +1397,89 @@ void RunTestTimed(int test)
 		SetBkColor(hDCdest, RGB(0,0,255));
 		TextOut(hDCdest, 0, 0, message, _tcslen(message));
 		GetTextExtentPoint(hDCdest, _T("A"), 1, &textsize);
-		_tcscpy(message, _T("Last mouse message: "));
-		switch (lastmousemsg)
+		for (i = 0; i < 8; i++)
 		{
-		case WM_MOUSEMOVE:
-			_tcscat(message, _T("WM_MOUSEMOVE "));
-			break;
-		case WM_LBUTTONDOWN:
-			_tcscat(message, _T("WM_LBUTTONDOWN "));
-			break;
-		case WM_LBUTTONUP:
-			_tcscat(message, _T("WM_LBUTTONUP "));
-			break;
-		case WM_LBUTTONDBLCLK:
-			_tcscat(message, _T("WM_LBUTTONDBLCLK "));
-			break;
-		case WM_RBUTTONDOWN:
-			_tcscat(message, _T("WM_RBUTTONDOWN "));
-			break;
-		case WM_RBUTTONUP:
-			_tcscat(message, _T("WM_RBUTTONUP "));
-			break;
-		case WM_RBUTTONDBLCLK:
-			_tcscat(message, _T("WM_RBUTTONDBLCLK "));
-			break;
-		case WM_MBUTTONDOWN:
-			_tcscat(message, _T("WM_MBUTTONDOWN "));
-			break;
-		case WM_MBUTTONUP:
-			_tcscat(message, _T("WM_MBUTTONUP "));
-			break;
-		case WM_MBUTTONDBLCLK:
-			_tcscat(message, _T("WM_MBUTTONDBLCLK "));
-			break;
-		case WM_MOUSEWHEEL:
-			_tcscat(message, _T("WM_MOUSEWHEEL "));
-			break;
-		case WM_XBUTTONDOWN:
-			_tcscat(message, _T("WM_XBUTTONDOWN "));
-			break;
-		case WM_XBUTTONUP:
-			_tcscat(message, _T("WM_XBUTTONUP "));
-			break;
-		case WM_XBUTTONDBLCLK:
-			_tcscat(message, _T("WM_XBUTTONDBLCLK "));
-			break;
-		case WM_MOUSEHWHEEL:
-			_tcscat(message, _T("WM_MOUSEHWHEEL "));
-			break;
-		default:
-			_tcscat(message, _T("unknown "));
+			_tcscpy(message, _T("Mouse message: "));
+			switch (lastmousemsg[i])
+			{
+			case WM_MOUSEMOVE:
+				_tcscat(message, _T("WM_MOUSEMOVE "));
+				break;
+			case WM_LBUTTONDOWN:
+				_tcscat(message, _T("WM_LBUTTONDOWN "));
+				break;
+			case WM_LBUTTONUP:
+				_tcscat(message, _T("WM_LBUTTONUP "));
+				break;
+			case WM_LBUTTONDBLCLK:
+				_tcscat(message, _T("WM_LBUTTONDBLCLK "));
+				break;
+			case WM_RBUTTONDOWN:
+				_tcscat(message, _T("WM_RBUTTONDOWN "));
+				break;
+			case WM_RBUTTONUP:
+				_tcscat(message, _T("WM_RBUTTONUP "));
+				break;
+			case WM_RBUTTONDBLCLK:
+				_tcscat(message, _T("WM_RBUTTONDBLCLK "));
+				break;
+			case WM_MBUTTONDOWN:
+				_tcscat(message, _T("WM_MBUTTONDOWN "));
+				break;
+			case WM_MBUTTONUP:
+				_tcscat(message, _T("WM_MBUTTONUP "));
+				break;
+			case WM_MBUTTONDBLCLK:
+				_tcscat(message, _T("WM_MBUTTONDBLCLK "));
+				break;
+			case WM_MOUSEWHEEL:
+				_tcscat(message, _T("WM_MOUSEWHEEL "));
+				break;
+			case WM_XBUTTONDOWN:
+				_tcscat(message, _T("WM_XBUTTONDOWN "));
+				break;
+			case WM_XBUTTONUP:
+				_tcscat(message, _T("WM_XBUTTONUP "));
+				break;
+			case WM_XBUTTONDBLCLK:
+				_tcscat(message, _T("WM_XBUTTONDBLCLK "));
+				break;
+			case WM_MOUSEHWHEEL:
+				_tcscat(message, _T("WM_MOUSEHWHEEL "));
+				break;
+			default:
+				_tcscat(message, _T("unknown "));
+			}
+			x = GET_X_LPARAM(lastmouselparam[i]);
+			y = GET_Y_LPARAM(lastmouselparam[i]);
+			_tcscat(message, _T("X="));
+			_itot(x, number, 10);
+			_tcscat(message, number);
+			_tcscat(message, _T(" "));
+			_tcscat(message, _T("Y="));
+			_itot(y, number, 10);
+			_tcscat(message, number);
+			_tcscat(message, _T(" "));
+			_tcscat(message, _T("Keys: "));
+			if (lastmousewparam[i] & MK_CONTROL) _tcscat(message, _T("CTRL "));
+			if (lastmousewparam[i] & MK_SHIFT) _tcscat(message, _T("SHIFT "));
+			_tcscat(message, _T("Buttons: "));
+			if (lastmousewparam[i] & MK_LBUTTON) _tcscat(message, _T("L "));
+			if (lastmousewparam[i] & MK_MBUTTON) _tcscat(message, _T("M "));
+			if (lastmousewparam[i] & MK_RBUTTON) _tcscat(message, _T("R "));
+			if (lastmousewparam[i] & MK_XBUTTON1) _tcscat(message, _T("X1 "));
+			if (lastmousewparam[i] & MK_XBUTTON2) _tcscat(message, _T("X2 "));
+			if ((x > width) || (y > height) || (x < 0) || (y < 0))
+			{
+				out[i] = TRUE;
+				_tcscat(message, _T(" OUT OF BOUNDS"));
+			}
+			else out[i] = FALSE;
+			if (out[i]) SetTextColor(hDCdest, RGB(255, 0, 0));
+			else SetTextColor(hDCdest, RGB(255, 255, 255));
+			SetBkColor(hDCdest, RGB(0, 0, 127));
+			TextOut(hDCdest, 0, (i + 1)*textsize.cy, message, _tcslen(message));
 		}
-		x = GET_X_LPARAM(lastmouselparam);
-		y = GET_Y_LPARAM(lastmouselparam);
-		_tcscat(message, _T("X="));
-		_itot(x, number, 10);
-		_tcscat(message, number);
-		_tcscat(message, _T(" "));
-		_tcscat(message, _T("Y="));
-		_itot(y, number, 10);
-		_tcscat(message, number);
-		_tcscat(message, _T(" "));
-		_tcscat(message, _T("Keys: "));
-		if (lastmousewparam & MK_CONTROL) _tcscat(message, _T("CTRL "));
-		if (lastmousewparam & MK_SHIFT) _tcscat(message, _T("SHIFT "));
-		_tcscat(message, _T("Buttons: "));
-		if (lastmousewparam & MK_LBUTTON) _tcscat(message, _T("L "));
-		if (lastmousewparam & MK_MBUTTON) _tcscat(message, _T("M "));
-		if (lastmousewparam & MK_RBUTTON) _tcscat(message, _T("R "));
-		if (lastmousewparam & MK_XBUTTON1) _tcscat(message, _T("X1 "));
-		if (lastmousewparam & MK_XBUTTON2) _tcscat(message, _T("X2 "));
-		if ((x > width) || (y > height) || (x < 0) || (y < 0))
-		{
-			out[0] = TRUE;
-			_tcscat(message, _T(" OUT OF BOUNDS"));
-		}
-		else out[0] = FALSE;
-		if (out[0]) SetTextColor(hDCdest, RGB(255, 0, 0));
-		else SetTextColor(hDCdest, RGB(255, 255, 255));
-		TextOut(hDCdest, 0, textsize.cy, message, _tcslen(message));
 		GetCursorPos(&p);
 		_tcscpy(message, _T("GetCursorPos() position: "));
 		_tcscat(message, _T("X="));
@@ -1479,32 +1491,35 @@ void RunTestTimed(int test)
 		_tcscat(message, number);
 		if ((p.x > width) || (p.y > height) || (p.x < 0) || (p.y < 0))
 		{
-			out[1] = TRUE;
+			out[8] = TRUE;
 			_tcscat(message, _T(" OUT OF BOUNDS"));
 		}
-		else out[1] = FALSE;
-		if (out[1]) SetTextColor(hDCdest, RGB(255, 0, 0));
+		else out[8] = FALSE;
+		if (out[8]) SetTextColor(hDCdest, RGB(255, 0, 0));
 		else SetTextColor(hDCdest, RGB(255, 255, 255));
-		SetBkColor(hDCdest, RGB(0, 255, 0));
-		TextOut(hDCdest, 0, 2 * textsize.cy, message, _tcslen(message));
+		SetBkColor(hDCdest, RGB(0, 127, 0));
+		TextOut(hDCdest, 0, 9 * textsize.cy, message, _tcslen(message));
 		SelectObject(hDCdest, displayfonts[1]);
 		DeleteObject(displayfonts[0]);
 		temp1->ReleaseDC(hDCdest);
 		// Draw cursors
-		if (!out[0])
+		for (i = 0; i < 8; i++)
 		{
-			destrect.left = GET_X_LPARAM(lastmouselparam);
-			destrect.top = GET_Y_LPARAM(lastmouselparam);
-			destrect.right = GET_X_LPARAM(lastmouselparam) + sprites[0].ddsd.dwWidth;
-			if (destrect.right > width) destrect.right = width;
-			destrect.bottom = GET_Y_LPARAM(lastmouselparam) + sprites[0].ddsd.dwHeight;
-			if (destrect.bottom > height) destrect.bottom = height;
-			srcrect.left = srcrect.top = 0;
-			srcrect.right = destrect.right - destrect.left;
-			srcrect.bottom = destrect.bottom - destrect.top;
-			temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
+			if (!out[i])
+			{
+				destrect.left = GET_X_LPARAM(lastmouselparam[i]);
+				destrect.top = GET_Y_LPARAM(lastmouselparam[i]);
+				destrect.right = GET_X_LPARAM(lastmouselparam[i]) + sprites[0].ddsd.dwWidth;
+				if (destrect.right > width) destrect.right = width;
+				destrect.bottom = GET_Y_LPARAM(lastmouselparam[i]) + sprites[0].ddsd.dwHeight;
+				if (destrect.bottom > height) destrect.bottom = height;
+				srcrect.left = srcrect.top = 0;
+				srcrect.right = destrect.right - destrect.left;
+				srcrect.bottom = destrect.bottom - destrect.top;
+				temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
+			}
 		}
-		if (!out[1])
+		if (!out[8])
 		{
 			destrect.left = p.x;
 			destrect.top = p.y;
@@ -1517,6 +1532,7 @@ void RunTestTimed(int test)
 			srcrect.bottom = destrect.bottom - destrect.top;
 			temp1->Blt(&destrect, sprites[1].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 		}
+		if (backbuffers) temp1->Release();
 		if (fullscreen)
 		{
 			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);

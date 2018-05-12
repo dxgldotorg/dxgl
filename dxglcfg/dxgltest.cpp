@@ -221,7 +221,8 @@ const TEST_ITEM Tests[] =
 	{7,		7,		0,		2,		TRUE,		60.0,		TRUE,	FALSE,		TRUE,		_T("DrawIndexedPrimitive cube with directional light (DX7)")},
 	{7,		7,		0,		2,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("DrawPrimitive textured cube (DX7)")},
 	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Texture Stage shaders (Interactive, DX7)")},
-	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Vertex shaders (Interactive, DX7)")}
+	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Vertex shaders (Interactive, DX7)")},
+	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("SetCursorPos Test")}
 };
 const int END_TESTS = __LINE__ - 4;
 const int numtests = END_TESTS - START_TESTS;
