@@ -177,28 +177,7 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEHWHEEL:
 		hParent = GetParent(hwnd);
-		if(((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
-			&& ddInterface->GetFullscreen())
-		{
-			oldx = LOWORD(lParam);
-			oldy = HIWORD(lParam);
-			ddInterface->GetSizes(sizes);
-			mulx = (float)sizes[2] / (float)sizes[0];
-			muly = (float)sizes[3] / (float)sizes[1];
-			translatex = (sizes[4]-sizes[0])/2;
-			translatey = (sizes[5]-sizes[1])/2;
-			oldx -= translatex;
-			oldy -= translatey;
-			oldx = (int)((float)oldx * mulx);
-			oldy = (int)((float)oldy * muly);
-			if(oldx < 0) oldx = 0;
-			if(oldy < 0) oldy = 0;
-			if(oldx >= sizes[2]) oldx = sizes[2]-1;
-			if(oldy >= sizes[3]) oldy = sizes[3]-1;
-			newpos = oldx + (oldy << 16);
-			return SendMessage(hParent,msg,wParam,newpos);
-		}
-		else return SendMessage(hParent,msg,wParam,lParam);
+		return SendMessage(hParent,msg,wParam,lParam);
 	case WM_CLOSE:
 		DestroyWindow(hWnd);
 		return 0;

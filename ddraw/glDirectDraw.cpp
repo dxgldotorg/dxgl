@@ -1750,6 +1750,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 }
 extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
+	if (!glDD7) return FALSE;
 	if (glDD7->GetFullscreen()) return TRUE;
 	else return FALSE;
 }
