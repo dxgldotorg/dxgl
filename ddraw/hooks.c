@@ -403,8 +403,34 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			if (lpDD7 && (dxglcfg.fullmode < 2)) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
 		}
 		break;
-	case WM_MOUSEMOVE:
 	case WM_LBUTTONDOWN:
+		if (lpDD7)
+		{
+			if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+				&& glDirectDraw7_GetFullscreen(lpDD7))
+			{
+				oldx = LOWORD(lParam);
+				oldy = HIWORD(lParam);
+				glDirectDraw7_GetSizes(lpDD7, sizes);
+				mulx = (float)sizes[2] / (float)sizes[0];
+				muly = (float)sizes[3] / (float)sizes[1];
+				translatex = (sizes[4] - sizes[0]) / 2;
+				translatey = (sizes[5] - sizes[1]) / 2;
+				oldx -= translatex;
+				oldy -= translatey;
+				oldx = (int)((float)oldx * mulx);
+				oldy = (int)((float)oldy * muly);
+				if (oldx < 0) oldx = 0;
+				if (oldy < 0) oldy = 0;
+				if (oldx >= sizes[2]) oldx = sizes[2] - 1;
+				if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+				newpos = oldx + (oldy << 16);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
+			}
+			else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
+		}
+		else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
+	case WM_MOUSEMOVE:
 	case WM_LBUTTONUP:
 	case WM_LBUTTONDBLCLK:
 	case WM_RBUTTONDOWN:

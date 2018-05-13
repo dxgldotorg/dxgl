@@ -78,6 +78,7 @@ typedef struct
 	DWORD WindowWidth;
 	DWORD WindowHeight;
 	BOOL WindowMaximized;
+	BOOL CaptureMouse;
 	// [debug]
 	BOOL DebugNoExtFramebuffer;
 	BOOL DebugNoArbFramebuffer;

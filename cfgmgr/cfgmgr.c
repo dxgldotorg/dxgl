@@ -648,6 +648,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->WindowWidth = ReadDWORD(hKey, cfg->WindowWidth, &cfgmask->WindowWidth, _T("WindowWidth"));
 	cfg->WindowHeight = ReadDWORD(hKey, cfg->WindowHeight, &cfgmask->WindowHeight, _T("WindowHeight"));
 	cfg->WindowMaximized = ReadDWORD(hKey, cfg->WindowMaximized, &cfgmask->WindowMaximized, _T("WindowMaximized"));
+	cfg->CaptureMouse = ReadDWORD(hKey, cfg->CaptureMouse, &cfgmask->CaptureMouse, _T("CaptureMouse"));
 	ReadWindowPos(hKey, cfg, cfgmask);
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
@@ -802,6 +803,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->WindowWidth, cfgmask->WindowWidth, _T("WindowWidth"));
 	WriteDWORD(hKey, cfg->WindowHeight, cfgmask->WindowHeight, _T("WindowHeight"));
 	WriteDWORD(hKey, cfg->WindowMaximized, cfgmask->WindowMaximized, _T("WindowMaximized"));
+	WriteDWORD(hKey, cfg->CaptureMouse, cfgmask->CaptureMouse, _T("CaptureMouse"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
@@ -1084,6 +1086,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
 		if (!_stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
 		if (!_stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIBoolValue(value);
+		if (!_stricmp(name, "CaptureMouse")) cfg->CaptureMouse = INIBoolValue(value);
 	}
 	if (!_stricmp(section, "debug"))
 	{

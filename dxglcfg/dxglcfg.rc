@@ -130,6 +130,7 @@ FONT 8, "Ms Shell Dlg"
 		EDITTEXT        IDC_WINDOWHEIGHT, 172, 69, 40, 14, ES_AUTOHSCROLL, WS_EX_LEFT
 		AUTOCHECKBOX    "Start resizable window maximized", IDC_WINDOWMAXIMIZED, 7, 88, 120, 8, 0, WS_EX_LEFT
 		AUTOCHECKBOX    "Don't auto-size window in resizable window mode", IDC_NOAUTOSIZE, 7, 101, 171, 8, 0, WS_EX_LEFT
+		AUTOCHECKBOX    "Capture mouse in window mode (Press Ctrl+Alt to release)", IDC_CAPTUREMOUSE, 7, 114, 196, 8, 0, WS_EX_LEFT
 		LTEXT           "Installation path", IDC_PATHLABEL, 7, 124, 51, 9, SS_LEFT, WS_EX_LEFT
 		EDITTEXT        IDC_PROFILEPATH, 7, 135, 331, 14, NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL | ES_READONLY, WS_EX_LEFT
 		// Removed for DXGL 0.5.13 release

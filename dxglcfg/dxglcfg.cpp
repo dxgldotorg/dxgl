@@ -2056,6 +2056,11 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
+		case IDC_CAPTUREMOUSE:
+			cfg->CaptureMouse = GetCheck(hWnd, IDC_CAPTUREMOUSE, &cfgmask->CaptureMouse);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		default:
 			break;
 		}
@@ -2606,7 +2611,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	int newtab;
 	DWORD dpisupport;
 	TCITEM tab;
-	int progresscount;
 	HWND hProgressWnd;
 	switch (Msg)
 	{
@@ -3114,6 +3118,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// No autosize
 		if (cfg->NoResizeWindow) SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETCHECK, BST_UNCHECKED, 0);
+		// Capture mouse
+		if (cfg->CaptureMouse) SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETCHECK, BST_UNCHECKED, 0);
 		// DPI
 		dpisupport = GetDPISupportLevel();
 		_tcscpy(buffer, _T("Disabled"));
@@ -3244,7 +3251,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
-		progresscount = 1;
 		regbuffersize = 1024;
 		regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
 		RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
@@ -3252,9 +3258,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		keysize++;
 		keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
 		keysize2 = keysize;
-		i = 0;
-		while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
-			progresscount++;
 		i = 0;
 		while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
@@ -3540,6 +3543,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+					SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 					// Debug tab
 					SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
 				}
@@ -3699,6 +3703,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
 				SetCheck(hTabs[3], IDC_WINDOWMAXIMIZED, cfg->WindowMaximized, cfgmask->WindowMaximized, tristate);
 				SetCheck(hTabs[3], IDC_NOAUTOSIZE, cfg->NoResizeWindow, cfgmask->NoResizeWindow, tristate);
+				SetCheck(hTabs[3], IDC_CAPTUREMOUSE, cfg->CaptureMouse, cfgmask->CaptureMouse, tristate);
 				// Debug tab
 				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
 				SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
