@@ -2514,6 +2514,29 @@ DWORD GetDPISupportLevel()
 	return level;
 }
 
+LRESULT CALLBACK LoadingCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	HWND *hWndReturn = (HWND*)lParam;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		*hWndReturn = hWnd;
+		return TRUE;
+	case WM_USER+1:
+		DestroyWindow(hWnd);
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+DWORD WINAPI ProgressThread(LPVOID hWndOut)
+{
+	DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_LOADING), NULL, (DLGPROC)LoadingCallback, (LPARAM)hWndOut);
+	ExitThread(0);
+	return 0;
+}
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -2583,9 +2606,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	int newtab;
 	DWORD dpisupport;
 	TCITEM tab;
+	int progresscount;
+	HWND hProgressWnd;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		hProgressWnd = NULL;
+		CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, NULL);
+		while (hProgressWnd == NULL) Sleep(10);
 		hDialog = hWnd;
 		tristate = FALSE;
 		maxapps = 128;
@@ -3216,6 +3244,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		// Add installed programs
 		current_app = 1;
 		appcount = 1;
+		progresscount = 1;
 		regbuffersize = 1024;
 		regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
 		RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
@@ -3223,6 +3252,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		keysize++;
 		keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
 		keysize2 = keysize;
+		i = 0;
+		while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+			progresscount++;
 		i = 0;
 		while (RegEnumKeyEx(hKeyBase, i, keyname, &keysize2, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
@@ -3360,6 +3392,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			EnableWindow(GetDlgItem(hTabs[0], IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
+		SendMessage(hProgressWnd, WM_USER+1, 0, 0);
+		SetForegroundWindow(hWnd);
 		return TRUE;
 	case WM_MEASUREITEM:
 		switch(wParam)

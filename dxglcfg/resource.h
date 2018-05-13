@@ -54,7 +54,7 @@
 #define IDB_DXGLINV64                           312
 
 // Controls - Progress Dialog
-#define IDC_PROGRESS                            1101
+//#define IDC_PROGRESS                            1101
 
 // Controls - Display Tab
 #define IDC_VIDMODE                             2001
