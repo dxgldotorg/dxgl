@@ -57,7 +57,7 @@ SVN readonly access is available at:
 https://www.dxgl.info/svn/dxgl/
 
 There is a Mediawiki-based SVN log at:
-https://www.williamfeely.info/wiki/Special:Code/DXGL
+https://www.dxgl.info/wiki/Special:Code/DXGL
 
 ## AppDB
 
