@@ -1,0 +1,2 @@
+<p><em>This option is available in DXGL 0.5.14 and newer.</em></p>
+<p>Captures the mouse when you first click inside the application window in forced window mode.  You can exit mouse capture by pressing and releasing the Ctrl and Alt keys together.</p>

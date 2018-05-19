@@ -55,6 +55,11 @@ BOOL(WINAPI *_GetCursorPos)(LPPOINT point) = NULL;
 BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
 HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
 UINT wndhook_count = 0;
+static BOOL keyctrlalt = FALSE;
+static BOOL cursorclipped = FALSE;
+static RECT rcOldClip;
+static RECT rcClip;
+static RECT rcWindow;
 
 int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
 {
@@ -292,7 +297,20 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	switch (uMsg)
 	{
 	case WM_DESTROY:
+		if (cursorclipped)
+		{
+			ClipCursor(NULL);
+			cursorclipped = FALSE;
+		}
 		UninstallDXGLFullscreenHook(hWnd);
+		break;
+	case WM_MOVE:
+	case WM_KILLFOCUS:
+		if (cursorclipped)
+		{
+			ClipCursor(NULL);
+			cursorclipped = FALSE;
+		}
 		break;
 	case WM_ACTIVATEAPP:
 		if (!wParam)
@@ -398,12 +416,41 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	case WM_SYSCOMMAND:
+		if ((wParam == SC_MOVE) || (wParam == SC_SIZE))
+		{
+			if (cursorclipped)
+			{
+				ClipCursor(NULL);
+				cursorclipped = FALSE;
+			}
+		}
 		if (wParam == SC_RESTORE)
 		{
 			if (lpDD7 && (dxglcfg.fullmode < 2)) glDirectDraw7_UnrestoreDisplayMode(lpDD7);
 		}
 		break;
 	case WM_LBUTTONDOWN:
+		if (dxglcfg.CaptureMouse)
+		{
+			if (!cursorclipped)
+			{
+				GetClipCursor(&rcOldClip);
+				ClipCursor(NULL);
+				GetClipCursor(&rcClip);
+				if (!memcmp(&rcOldClip, &rcClip, sizeof(RECT)))
+				{
+					// Cursor is not clipped
+					pt.x = 0;
+					pt.y = 0;
+					GetClientRect(hWnd, &rcWindow);
+					ClientToScreen(hWnd, &pt);
+					OffsetRect(&rcWindow, pt.x, pt.y);
+					ClipCursor(&rcWindow);
+					cursorclipped = TRUE;
+				}
+				else ClipCursor(&rcOldClip);
+			}
+		}
 		if (lpDD7)
 		{
 			if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
@@ -430,6 +477,38 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 		}
 		else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		if (dxglcfg.CaptureMouse)
+		{
+			if (wParam == VK_CONTROL)
+			{
+				if (GetKeyState(VK_MENU)) keyctrlalt = TRUE;
+			}
+			if (wParam == VK_MENU)
+			{
+				if (GetKeyState(VK_CONTROL)) keyctrlalt = TRUE;
+			}
+		}
+		break;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		if (dxglcfg.CaptureMouse)
+		{
+			if ((wParam == VK_CONTROL) || (wParam == VK_MENU))
+			{
+				if (keyctrlalt)
+				{
+					keyctrlalt = FALSE;
+					if (cursorclipped)
+					{
+						ClipCursor(NULL);
+						cursorclipped = FALSE;
+					}
+				}
+			}
+		}
+		break;
 	case WM_MOUSEMOVE:
 	case WM_LBUTTONUP:
 	case WM_LBUTTONDBLCLK:
@@ -502,6 +581,11 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 	case WM_SIZE:
+		if (cursorclipped)
+		{
+			ClipCursor(NULL);
+			cursorclipped = FALSE;
+		}
 		if (wParam != SIZE_MINIMIZED)
 		{
 			if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7 && (dxglcfg.scaler != 0))

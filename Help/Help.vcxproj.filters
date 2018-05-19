@@ -501,5 +501,11 @@
     <None Include="html\config\debug\disablemousecursorhooks.htmlbody">
       <Filter>Help files\html\config\debug</Filter>
     </None>
+    <None Include="html\config\advanced\capturemouseinwindowmode.htmltitle">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
+    <None Include="html\config\advanced\capturemouseinwindowmode.htmlbody">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
   </ItemGroup>
 </Project>

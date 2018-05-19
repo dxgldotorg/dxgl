@@ -125,6 +125,8 @@
     <None Include="html\config\abouttab.htmltitle" />
     <None Include="html\config\advancedtab.htmlbody" />
     <None Include="html\config\advancedtab.htmltitle" />
+    <None Include="html\config\advanced\capturemouseinwindowmode.htmlbody" />
+    <None Include="html\config\advanced\capturemouseinwindowmode.htmltitle" />
     <None Include="html\config\advanced\defaultwindowposition.htmlbody" />
     <None Include="html\config\advanced\defaultwindowposition.htmltitle" />
     <None Include="html\config\advanced\dontautosizewindow.htmlbody" />
