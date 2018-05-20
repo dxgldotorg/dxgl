@@ -395,7 +395,7 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	wc.hInstance = hinstance;
 	wc.hIcon = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGL));
 	wc.hIconSm = LoadIcon(hinstance,MAKEINTRESOURCE(IDI_DXGLSM));
-	if(testnum == 6) wc.hCursor = LoadCursor(NULL,IDC_CROSS);
+	if((testnum == 6) || (testnum == 16)) wc.hCursor = LoadCursor(NULL,IDC_CROSS);
 	else wc.hCursor = LoadCursor(NULL,IDC_ARROW);
 	wc.hbrBackground = NULL;
 	wc.lpszClassName = wndclassname;
@@ -808,6 +808,7 @@ void InitTest(int test)
 	HBRUSH brush;
 	RECT r;
 	DDCOLORKEY colorkey;
+	DDBLTFX bltfx;
 	void *bmppointer;
 	int i;
 	const DWORD colormasks[7] = { 0xFF0000, 0xFF00, 0xFFFF00, 0xFF, 0xFF00FF, 0xFFFF, 0xFFFFFF };
@@ -817,7 +818,7 @@ void InitTest(int test)
 	error = ddsrender->GetSurfaceDesc(&ddsd);
 	switch (test)
 	{
-	case 0:
+	case 0: // Palette and gradients
 		if (!fullscreen) backbuffers = 0;
 		buffer = (unsigned char *)malloc(ddsd.lPitch*ddsd.dwHeight);
 		DrawPalette(ddsd, buffer);
@@ -871,7 +872,7 @@ void InitTest(int test)
 		free(buffer);
 		if (palette) palette->Release();
 		break;
-	case 2:
+	case 2: // GDI patterns
 		if (!fullscreen) backbuffers = 0;
 		error = ddsrender->GetDC(&hRenderDC);
 		DrawGDIPatterns(ddsd, hRenderDC, 0);
@@ -946,7 +947,7 @@ void InitTest(int test)
 		}
 		if (temp1) temp1->Release();
 		break;
-	case 4:
+	case 4: // BltFast sprites
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -1010,7 +1011,7 @@ void InitTest(int test)
 			sprites[i].yvelocity = randfloat(5);
 		}
 		break;
-	case 6:
+	case 6: // Mouse pointer test
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -1072,7 +1073,7 @@ void InitTest(int test)
 		DeleteDC(memorydc);
 		DeleteObject(bitmap);
 		break;
-	case 7:
+	case 7: // ROP patterns
 		if (!fullscreen) backbuffers = 0;
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsrender->GetPalette(&palette);
@@ -1115,7 +1116,7 @@ void InitTest(int test)
 		DrawROPPatterns(ddsrender, sprites, backbuffers, ddver, bpp, ddcaps.dwRops,hWnd,palette);
 		if (palette) palette->Release();
 		break;
-	case 8:
+	case 8: // Rotated Blt patterns
 		ddsrender->GetSurfaceDesc(&ddsd);
 		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -1137,8 +1138,8 @@ void InitTest(int test)
 		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
 		counter = 0;
 		break;
-	case 10:
-	case 11:
+	case 10: // Source Key Override test
+	case 11: // Destination Key Override Test
 		ddsrender->GetSurfaceDesc(&ddsd);
 		sprites[0].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		sprites[0].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
@@ -1179,7 +1180,7 @@ void InitTest(int test)
 		sprites[2].surface->Unlock(NULL);
 		counter = 0;
 		break;
-	case 12:
+	case 12: // Solid cube
 		MakeCube3D(5, 2);
 		ZeroMemory(&material, sizeof(D3DMATERIAL7));
 		material.ambient.r = 0.5f;
@@ -1218,7 +1219,7 @@ void InitTest(int test)
 		lights[0].dvAttenuation1 = 0.4f;
 		error = d3d7dev->SetLight(0, &lights[0]);
 		break;
-	case 13:
+	case 13: // Solid cube
 		MakeCube3D(5, 2);
 		cleartexformats();
 		d3d7dev->EnumTextureFormats(gettexformat, NULL);
@@ -1264,10 +1265,10 @@ void InitTest(int test)
 		lights[0].dvAttenuation1 = 0.4f;
 		error = d3d7dev->SetLight(0, &lights[0]);
 		break;
-	case 15:
+	case 15: // Vertex pipeline test
 		ZeroMemory(lights, 8 * sizeof(D3DLIGHT7));
 		MakeLights();
-	case 14:
+	case 14: // Pixel pipeline test
 		MakeCube3D(5, 8);
 		ZeroMemory(&material, sizeof(D3DMATERIAL7));
 		material.ambient.r = 1.0f;
@@ -1299,6 +1300,34 @@ void InitTest(int test)
 		error = d3d7dev->SetTransform(D3DTRANSFORMSTATE_PROJECTION, &matProj);
 		texshaderstate = defaulttexshaderstate;
 		break;
+	case 16: // SetCursorPos test
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddsd.dwWidth = GetSystemMetrics(SM_CXCURSOR);
+		ddsd.dwHeight = GetSystemMetrics(SM_CYCURSOR);
+		sprites[0].width = (float)ddsd.dwWidth;
+		sprites[0].height = (float)ddsd.dwHeight;
+		sprites[0].rect.left = sprites[0].rect.top = 0;
+		sprites[0].rect.right = ddsd.dwWidth;
+		sprites[0].rect.bottom = ddsd.dwHeight;
+		memcpy(&sprites[0].ddsd, &ddsd, sizeof(DDSURFACEDESC2));
+		colorkey.dwColorSpaceHighValue = colorkey.dwColorSpaceLowValue = 0;
+		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
+		sprites[0].surface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
+		bltfx.dwSize = sizeof(DDBLTFX);
+		bltfx.dwFillColor = 0;
+		sprites[0].surface->Blt(NULL, NULL, NULL, DDBLT_COLORFILL, &bltfx);
+		cursor = LoadCursor(NULL, IDC_ARROW);
+		sprites[0].surface->GetDC(&hRenderDC);
+		DrawIcon(hRenderDC, 0, 0, cursor);
+		sprites[0].surface->ReleaseDC(hRenderDC);
+		ddsrender->GetSurfaceDesc(&ddsd);
+		sprites[0].x = randfloat((float)ddsd.dwWidth);
+		sprites[0].y = randfloat((float)ddsd.dwHeight);
+		sprites[0].xvelocity = randfloat(5);
+		sprites[0].yvelocity = randfloat(5);
+		break;
 	default:
 		break;
 	}
@@ -1313,7 +1342,7 @@ void RunTestTimed(int test)
 	HDC hDCdest, hDCsrc;
 	RECT r1, r2;
 	int x, y;
-	POINT p;
+	POINT p, p2;
 	RECT srcrect, destrect;
 	HRESULT error;
 	D3DMATRIX mat;
@@ -1744,7 +1773,7 @@ void RunTestTimed(int test)
 			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
 		}
 		break;
-	case 12:
+	case 12: // Solid cube
 		error = d3d7dev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, bgcolor, 1.0, 0);
 		time = (float)clock() / (float)CLOCKS_PER_SEC;
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
@@ -1774,7 +1803,7 @@ void RunTestTimed(int test)
 			if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 		}
 		break;
-	case 13:
+	case 13: // Textured cube
 		error = d3d7dev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, bgcolor, 1.0, 0);
 		time = (float)clock() / (float)CLOCKS_PER_SEC;
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
@@ -1811,7 +1840,7 @@ void RunTestTimed(int test)
 			if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 		}
 		break;
-	case 14:
+	case 14: // Pixel pipeline test
 		error = d3d7dev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, bgcolor, 1.0, 0);
 		time = (float)clock() / (float)CLOCKS_PER_SEC;
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
@@ -1841,7 +1870,7 @@ void RunTestTimed(int test)
 			if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 		}
 		break;
-	case 15:
+	case 15: // Vertex pipeline test
 		error = d3d7dev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, bgcolor, 1.0, 0);
 		time = (float)clock() / (float)CLOCKS_PER_SEC;
 		mat._11 = mat._22 = mat._33 = mat._44 = 1.0f;
@@ -1871,6 +1900,122 @@ void RunTestTimed(int test)
 			if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 		}
 		break;
+	case 16: // SetCursorPos test
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		temp1->GetDC(&hDCdest);
+		brush = CreateSolidBrush(0);
+		destrect.left = 0;
+		destrect.right = width;
+		destrect.top = 0;
+		destrect.bottom = height;
+		FillRect(hDCdest, &destrect, brush);
+		DeleteObject(brush);
+		_tcscpy(message, _T("SetCursorPos test - Mouse should follow pointer."));
+		displayfonts[0] = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+			ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+			DEFAULT_PITCH, _T("Fixedsys"));
+		displayfonts[1] = (HFONT)SelectObject(hDCdest, displayfonts[0]);
+		SetTextColor(hDCdest, RGB(255, 255, 255));
+		SetBkColor(hDCdest, RGB(0, 0, 255));
+		TextOut(hDCdest, 0, 0, message, _tcslen(message));
+		GetTextExtentPoint(hDCdest, _T("A"), 1, &textsize);
+		sprites[0].x += sprites[0].xvelocity;
+		if (sprites[0].xvelocity < 0 && sprites[0].x < 0) sprites[0].xvelocity = -sprites[0].xvelocity;
+		if (sprites[0].xvelocity > 0 && sprites[0].x >= width) sprites[0].xvelocity = -sprites[0].xvelocity;
+		sprites[0].y += sprites[0].yvelocity;
+		if (sprites[0].yvelocity < 0 && sprites[0].y < 0) sprites[0].yvelocity = -sprites[0].yvelocity;
+		if (sprites[0].yvelocity > 0 && sprites[0].y >= height) sprites[0].yvelocity = -sprites[0].yvelocity;
+		// Show stats
+		_tcscpy(message, _T("Requested position: X="));
+		_itot(sprites[0].x, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" Y="));
+		_itot(sprites[0].y, number, 10);
+		_tcscat(message, number);
+		SetBkColor(hDCdest, RGB(0, 0, 127));
+		TextOut(hDCdest, 0, textsize.cy, message, _tcslen(message));
+		if (GetActiveWindow() == hWnd)
+		{
+			if (fullscreen)
+			{
+				SetCursorPos(sprites[0].x, sprites[0].y);
+				GetCursorPos(&p2);
+			}
+			else
+			{
+				p.x = 0;
+				p.y = 0;
+				ClientToScreen(hWnd, &p);
+				SetCursorPos((int)sprites[0].x + p.x, (int)sprites[0].y + p.y);
+				GetCursorPos(&p2);
+				p2.x -= p.x;
+				p2.y -= p.y;
+			}
+		}
+		_tcscpy(message, _T("Actual position: X="));
+		_itot(p2.x, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" Y="));
+		_itot(p2.y, number, 10);
+		_tcscat(message, number);
+		_tcscat(message, _T(" "));
+		TextOut(hDCdest, 0, 2*textsize.cy, message, _tcslen(message));
+		x = (_tcslen(message)*textsize.cx);
+		if ((p2.x == (LONG)sprites[0].x) && (p2.y == (LONG)sprites[0].y))
+		{
+			SetTextColor(hDCdest, RGB(0, 255, 0));
+			_tcscpy(message, _T("Positions match"));
+		}
+		else
+		{
+			_tcscpy(message, _T("Positions offset by X="));
+			_itot(p2.x - (LONG)sprites[0].x, number, 10);
+			_tcscat(message, number);
+			_tcscat(message, _T(" Y="));
+			_itot(p2.y - (LONG)sprites[0].y, number, 10);
+			_tcscat(message, number);
+			if (((p2.x - (LONG)sprites[0].x <= 2) && (p2.x - (LONG)sprites[0].x >= -2)) &&
+				((p2.y - (LONG)sprites[0].y <= 2) && (p2.y - (LONG)sprites[0].y >= -2)))
+				SetTextColor(hDCdest, RGB(255, 255, 0));
+			else SetTextColor(hDCdest, RGB(255, 0, 0));
+		}
+		TextOut(hDCdest, x, 2 * textsize.cy, message, _tcslen(message));
+		SelectObject(hDCdest, displayfonts[1]);
+		DeleteObject(displayfonts[0]);
+		temp1->ReleaseDC(hDCdest);
+		if (backbuffers) temp1->Release();
+		if (sprites[0].surface)
+		{
+			if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+			else temp1 = ddsrender;
+			destrect.left = sprites[0].x;
+			destrect.top = sprites[0].y;
+			destrect.right = sprites[0].x + sprites[0].ddsd.dwWidth;
+			if (destrect.right > width) destrect.right = width;
+			destrect.bottom = sprites[0].y + sprites[0].ddsd.dwHeight;
+			if (destrect.bottom > height) destrect.bottom = height;
+			srcrect.left = srcrect.top = 0;
+			srcrect.right = destrect.right - destrect.left;
+			srcrect.bottom = destrect.bottom - destrect.top;
+			temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
+			if (backbuffers) temp1->Release();
+		}
+		if (fullscreen)
+		{
+			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);
+		}
+		else
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &r1);
+			OffsetRect(&r1, p.x, p.y);
+			SetRect(&r2, 0, 0, width, height);
+			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
+		}
+		break;
 	}
 }
 
@@ -1898,7 +2043,7 @@ void RunTestLooped(int test)
 	int op;
 	switch(test)
 	{
-	case 1:
+	case 1: // Random noise
 	default:
 		if(backbuffers)
 		{
@@ -1927,7 +2072,7 @@ void RunTestLooped(int test)
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
 		break;
-	case 3:
+	case 3: // Random GDI patterns
 		ddsrender->GetDC(&hdc);
 		op = rand32(randnum) % 4;
 		pen = CreatePen(rand32(randnum) % 5,0,RGB(rand32(randnum)%256,rand32(randnum)%256,rand32(randnum)%256));
@@ -1971,7 +2116,7 @@ void RunTestLooped(int test)
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
 		break;
-	case 5:
+	case 5: // Random color fill Blt
 		rndrect5:
 		destrect.bottom = rand32(randnum)%ddsd.dwHeight;
 		destrect.top = rand32(randnum)%ddsd.dwHeight;
@@ -2008,7 +2153,7 @@ void RunTestLooped(int test)
 			if(ddsurface && ddsrender)error = ddsurface->Blt(&destrect,ddsrender,&srcrect,DDBLT_WAIT,NULL);
 		}
 		break;
-	case 9:
+	case 9: // Large batch color fill
 		bltfx.dwSize = sizeof(DDBLTFX);
 		switch (bpp)
 		{
