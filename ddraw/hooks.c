@@ -746,7 +746,10 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	HWND_HOOK *wndhook;
 	LONG sizes[6];
 	POINT pt;
-	int winWidth, winHeight;
+	BOOL error;
+	int oldx, oldy;
+	float mulx, muly;
+	int translatex, translatey;
 
 	if (dxglcfg.DebugNoMouseHooks) {
 		return _SetCursorPos(x, y);
@@ -756,13 +759,31 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	if (!wndhook) {
 		return _SetCursorPos(x, y);
 	}
-
-	pt.x = 0;
-	pt.y = 0;
-	glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
-	ClientToScreen(wndhook->hwnd, &pt);
-
-	return _SetCursorPos(x * sizes[4] / sizes[2] + pt.x, y * sizes[5] / sizes[3] + pt.y);
+	if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+		&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+	{
+		oldx = x;
+		oldy = y;
+		glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+		mulx = (float)sizes[0] / (float)sizes[2];
+		muly = (float)sizes[1] / (float)sizes[3];
+		oldx = (int)((float)oldx * mulx);
+		oldy = (int)((float)oldy * muly);
+		translatex = (sizes[4] - sizes[0]) / 2;
+		translatey = (sizes[5] - sizes[1]) / 2;
+		oldx += translatex;
+		oldy += translatey;
+		if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+		{
+			pt.x = 0;
+			pt.y = 0;
+			ClientToScreen(wndhook->hwnd, &pt);
+			oldx += pt.x;
+			oldy += pt.y;
+		}
+		return _SetCursorPos(oldx, oldy);
+	}
+	else return _SetCursorPos(x, y);
 }
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 {
