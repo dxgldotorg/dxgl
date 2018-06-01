@@ -25,6 +25,7 @@
 #define IDD_TEXSHADER                           103
 #define IDD_VERTEXSHADER                        104
 #define IDD_MODELIST                            105
+#define IDD_SAVEINI                             106
 
 // Tabs
 #define IDD_DISPLAY                             201
@@ -260,3 +261,10 @@
 
 // Controls - Mode list dialog
 #define IDC_MODELIST                            3101
+
+// Controls - Save .ini file dialog
+#define IDC_NOWRITEREGISTRY                     3201
+#define IDC_OVERRIDEREGISTRY                    3202
+#define IDC_NOOVERWRITE                         3203
+#define IDC_SAVESHA256                          3204
+#define IDC_NOUNINSTALL                         3205

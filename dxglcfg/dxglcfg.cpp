@@ -1951,6 +1951,36 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 	return TRUE;
 }
 
+LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch(Msg)
+	{
+	case WM_INITDIALOG:
+		SendDlgItemMessage(hWnd, IDC_NOWRITEREGISTRY, BM_SETCHECK, BST_CHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_OVERRIDEREGISTRY, BM_SETCHECK, BST_UNCHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_NOOVERWRITE, BM_SETCHECK, BST_UNCHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_SAVESHA256, BM_SETCHECK, BST_CHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_NOUNINSTALL, BM_SETCHECK, BST_CHECKED, 0);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			EndDialog(hWnd, IDOK);
+			return TRUE;
+		case IDCANCEL:
+			EndDialog(hWnd, IDCANCEL);
+			return TRUE;
+		default:
+			break;
+		}
+		return FALSE;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
 LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
@@ -2060,6 +2090,9 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			cfg->CaptureMouse = GetCheck(hWnd, IDC_CAPTUREMOUSE, &cfgmask->CaptureMouse);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			break;
+		case IDC_WRITEINI:
+			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SAVEINI), hWnd, (DLGPROC)SaveINICallback);
 			break;
 		default:
 			break;
@@ -2612,6 +2645,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	DWORD dpisupport;
 	TCITEM tab;
 	HWND hProgressWnd;
+	WNDCLASSEX wndclass;
+	HWND hTempWnd;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -2619,6 +2654,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, NULL);
 		while (hProgressWnd == NULL) Sleep(10);
 		hDialog = hWnd;
+		ZeroMemory(&wndclass, sizeof(WNDCLASSEX));
+		wndclass.cbSize = sizeof(WNDCLASSEX);
+		wndclass.lpfnWndProc = DefWindowProc;
+		wndclass.hInstance = GetModuleHandle(NULL);
+		wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wndclass.hbrBackground = (HBRUSH)COLOR_WINDOW;
+		wndclass.lpszClassName = _T("DXGLConfigDlgPosition");
+		RegisterClassEx(&wndclass);
+		GetWindowRect(hWnd, &r);
+		hTempWnd = CreateWindow(_T("DXGLConfigDlgPosition"), _T("DXGL Config"),
+			DS_3DLOOK | DS_CONTEXTHELP | DS_SHELLFONT | WS_CAPTION | WS_SYSMENU,
+			CW_USEDEFAULT, CW_USEDEFAULT, r.right-r.left,r.bottom-r.top,NULL,NULL,
+			GetModuleHandle(NULL), NULL);
+		error = GetLastError();
+		GetWindowRect(hTempWnd, &r);
+		SetWindowPos(hWnd, HWND_TOP,r.left,r.top,0,0, SWP_NOSIZE);
+		DestroyWindow(hTempWnd);
+		UnregisterClass(_T("DXGLConfigDlgPosition"), GetModuleHandle(NULL));
 		tristate = FALSE;
 		maxapps = 128;
 		apps = (app_setting *)malloc(maxapps*sizeof(app_setting));

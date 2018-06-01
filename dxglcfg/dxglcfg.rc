@@ -133,8 +133,7 @@ FONT 8, "Ms Shell Dlg"
 		AUTOCHECKBOX    "Capture mouse in window mode (Press Ctrl+Alt to release)", IDC_CAPTUREMOUSE, 7, 114, 196, 8, 0, WS_EX_LEFT
 		LTEXT           "Installation path", IDC_PATHLABEL, 7, 124, 51, 9, SS_LEFT, WS_EX_LEFT
 		EDITTEXT        IDC_PROFILEPATH, 7, 135, 331, 14, NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL | ES_READONLY, WS_EX_LEFT
-		// Removed for DXGL 0.5.13 release
-		// PUSHBUTTON      "Write INI file...", IDC_WRITEINI, 262, 150, 73, 14, 0, WS_EX_LEFT
+		PUSHBUTTON      "Write INI file...", IDC_WRITEINI, 262, 150, 73, 14, 0, WS_EX_LEFT
 }
 
 
@@ -254,6 +253,24 @@ FONT 8, "Ms Shell Dlg"
 //    LTEXT           "Loading profiles...", 0, 95, 10, 56, 8, SS_LEFT, WS_EX_LEFT
 //    CONTROL         "", IDC_PROGRESS, PROGRESS_CLASS, 0, 7, 20, 232, 14, WS_EX_LEFT
 	LTEXT           "Please wait...", 0, 13, 4, 43, 9, SS_LEFT, WS_EX_LEFT
+}
+
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDD_SAVEINI DIALOG 0, 0, 186, 95
+STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
+CAPTION "Save .ini File"
+FONT 8, "Ms Shell Dlg"
+{
+	AUTOCHECKBOX    "Don't write application profile to registry", IDC_NOWRITEREGISTRY, 11, 16, 138, 8, 0, WS_EX_LEFT
+		AUTOCHECKBOX    "Override global registry settings", IDC_OVERRIDEREGISTRY, 11, 26, 113, 8, 0, WS_EX_LEFT
+		AUTOCHECKBOX    "Prevent DXGL Config from overwriting ddraw.dll", IDC_NOOVERWRITE, 11, 36, 165, 8, 0, WS_EX_LEFT
+		GROUPBOX        ".ini file options", 0, 5, 5, 172, 69, 0, WS_EX_LEFT
+		AUTOCHECKBOX    "Save SHA-256 signature of existing ddraw.dll", IDC_SAVESHA256, 11, 46, 157, 8, 0, WS_EX_LEFT
+		AUTOCHECKBOX    "Prevent DXGL Config from deleting ddraw.dll", IDC_NOUNINSTALL, 11, 56, 156, 8, 0, WS_EX_LEFT
+		PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
+		DEFPUSHBUTTON   "&Save...", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
 }
 
 
