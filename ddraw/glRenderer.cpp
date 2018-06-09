@@ -1718,6 +1718,20 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.top = dxglcfg.WindowY;
 				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
 				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
 			}
 			else
 			{
@@ -1727,9 +1741,9 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
 				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
 				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
 			}
-			AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
-				(winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(This->hWnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			break;
@@ -1745,6 +1759,18 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.top = dxglcfg.WindowY;
 				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
 				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
 			}
 			else
 			{
@@ -1754,8 +1780,8 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
 				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
 				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
 			}
-			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
 			wndplace.length = sizeof(WINDOWPLACEMENT);
 			GetWindowPlacement(This->hWnd, &wndplace);
 			wndplace.flags = WPF_ASYNCWINDOWPLACEMENT;
@@ -1776,6 +1802,12 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.top = dxglcfg.WindowY;
 				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
 				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
 			}
 			else
 			{
@@ -2200,6 +2232,23 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				else hasmenu = FALSE;
 				UnadjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP),
 					hasmenu, winstyleex | WS_EX_APPWINDOW);
+				wndrect.right = wndrect.left + width;
+				wndrect.bottom = wndrect.top + height;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = 0;
+				wndrect.top = 0;
+				wndrect.right = width;
+				wndrect.bottom = height;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
 			}
 			else
 			{
@@ -2207,15 +2256,15 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				screeny = GetSystemMetrics(SM_CYSCREEN);
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
+				wndrect.right = wndrect.left + width;
+				wndrect.bottom = wndrect.top + height;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
 			}
-			wndrect.right = wndrect.left + width;
-			wndrect.bottom = wndrect.top + height;
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
 			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
-			AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
-				(winstyleex | WS_EX_APPWINDOW));
 			SetWindowPos(newwnd, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
 				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 			SaveWindowSettings(&dxglcfg);
@@ -2239,6 +2288,34 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 					hasmenu, (winstyleex | WS_EX_APPWINDOW));
 				UnadjustWindowRectEx(&wndrect2, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
 					hasmenu, (winstyleex | WS_EX_APPWINDOW));
+				if (!dxglcfg.NoResizeWindow)
+				{
+					wndrect.right = wndrect.left + width;
+					wndrect.bottom = wndrect.top + height;
+				}
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				if (dxglcfg.NoResizeWindow)
+				{
+					GetWindowRect(newwnd, &wndrect2);
+					if (GetMenu(newwnd)) hasmenu = TRUE;
+					else hasmenu = FALSE;
+					UnadjustWindowRectEx(&wndrect2, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP,
+						hasmenu, (winstyleex | WS_EX_APPWINDOW));
+					glDirectDraw7_SetWindowSize(This->ddInterface,
+						wndrect2.right - wndrect2.left, wndrect2.bottom - wndrect2.top);
+					break;
+				}
+				wndrect.left = 0;
+				wndrect.top = 0;
+				wndrect.right = width;
+				wndrect.bottom = height;
+				AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
 			}
 			else
 			{
@@ -2257,17 +2334,18 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 				screeny = GetSystemMetrics(SM_CYSCREEN);
 				wndrect.left = (screenx / 2) - (width / 2);
 				wndrect.top = (screeny / 2) - (height / 2);
-			}
-			if (!dxglcfg.NoResizeWindow)
-			{
-				wndrect.right = wndrect.left + width;
-				wndrect.bottom = wndrect.top + height;
+				if (!dxglcfg.NoResizeWindow)
+				{
+					wndrect.right = wndrect.left + width;
+					wndrect.bottom = wndrect.top + height;
+				}
 			}
 			dxglcfg.WindowX = wndrect.left;
 			dxglcfg.WindowY = wndrect.top;
 			dxglcfg.WindowWidth = wndrect.right - wndrect.left;
 			dxglcfg.WindowHeight = wndrect.bottom - wndrect.top;
-			AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
+			if(dxglcfg.WindowPosition != 2)
+				AdjustWindowRectEx(&wndrect, winstyle | WS_OVERLAPPEDWINDOW, FALSE, (winstyleex | WS_EX_APPWINDOW));
 			wndplace.flags = WPF_ASYNCWINDOWPLACEMENT;
 			if (!dxglcfg.NoResizeWindow) wndplace.showCmd = SW_SHOWNORMAL;
 			wndplace.rcNormalPosition = wndrect;
@@ -2285,6 +2363,11 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			screenx = GetSystemMetrics(SM_CXSCREEN);
 			screeny = GetSystemMetrics(SM_CYSCREEN);
 			if (dxglcfg.WindowPosition == 1) GetWindowRect(newwnd, &wndrect);
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = 0;
+				wndrect.top = 0;
+			}
 			else
 			{
 				screenx = GetSystemMetrics(SM_CXSCREEN);

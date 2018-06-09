@@ -3152,6 +3152,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Saved position"));
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Top left"));
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_SETCURSEL, cfg->WindowPosition, 0);
 		// Remember window position
 		if (cfg->RememberWindowPosition) SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETCHECK, BST_CHECKED, 0);
