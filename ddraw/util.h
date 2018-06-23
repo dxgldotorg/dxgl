@@ -29,6 +29,12 @@ void AndMem(void *dest, const void *a, const void *b, size_t size);
 BOOL comp_bltfx(DDBLTFX *a, DDBLTFX *b, DWORD flags);
 BOOL IsAlphaCKey();
 
+extern WNDCLASSEX wndclassdxgltemp;
+extern ATOM wndclassdxgltempatom;
+
+void RegisterDXGLTempWindowClass();
+void UnregisterDXGLTempWindowClass();
+
 #ifdef __cplusplus
 }
 #endif

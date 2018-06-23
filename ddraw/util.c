@@ -165,3 +165,37 @@ BOOL IsAlphaCKey()
 		return TRUE;
 	else return FALSE;
 }
+
+WNDCLASSEX wndclassdxgltemp =
+{
+	sizeof(WNDCLASSEX),
+	0,
+	DefWindowProc,
+	0,0,
+	NULL,
+	NULL,NULL,
+	(HBRUSH)COLOR_WINDOW,
+	NULL,
+	_T("DXGLTempSizingWindowClass"),
+	NULL
+};
+ATOM wndclassdxgltempatom = NULL;
+
+void RegisterDXGLTempWindowClass()
+{
+	if (!wndclassdxgltempatom)
+	{
+		if (!wndclassdxgltemp.hInstance) wndclassdxgltemp.hInstance = GetModuleHandle(NULL);
+		if (!wndclassdxgltemp.hCursor) wndclassdxgltemp.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wndclassdxgltempatom = RegisterClassEx(&wndclassdxgltemp);
+	}
+}
+
+void UnregisterDXGLTempWindowClass()
+{
+	if (wndclassdxgltempatom)
+	{
+		UnregisterClass(wndclassdxgltemp.lpszClassName, GetModuleHandle(NULL));
+		wndclassdxgltempatom = NULL;
+	}
+}

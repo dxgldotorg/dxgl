@@ -18,6 +18,7 @@
 #include "common.h"
 #include "ddraw.h"
 #include "hooks.h"
+#include "util.h"
 ATOM WindowClass = NULL;
 CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -42,6 +43,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		ZeroMemory(&hook_cs, sizeof(CRITICAL_SECTION));
 		DeleteCriticalSection(&dll_cs);
 		ZeroMemory(&dll_cs, sizeof(CRITICAL_SECTION));
+		if (wndclassdxgltempatom) UnregisterDXGLTempWindowClass();
 		break;
 	}
 	return TRUE;

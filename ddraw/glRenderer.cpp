@@ -1687,6 +1687,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	InitializeCriticalSection(&This->cs);
 	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
 	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
+	HWND hTempWnd;
 	if(fullscreen)
 	{
 		switch (dxglcfg.fullmode)
@@ -1733,6 +1734,21 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.bottom -= wndrect.top;
 				wndrect.top = 0;
 			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(winstyleex | WS_EX_APPWINDOW));
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					(winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE),
+					CW_USEDEFAULT, CW_USEDEFAULT, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL,
+					GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
+			}
 			else
 			{
 				screenx = GetSystemMetrics(SM_CXSCREEN);
@@ -1772,6 +1788,19 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.bottom -= wndrect.top;
 				wndrect.top = 0;
 			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (winstyle | WS_OVERLAPPEDWINDOW), FALSE, (winstyleex | WS_EX_APPWINDOW));
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					((winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_POPUP | WS_VISIBLE)), CW_USEDEFAULT, CW_USEDEFAULT,
+					wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL, GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
+			}
 			else
 			{
 				screenx = GetSystemMetrics(SM_CXSCREEN);
@@ -1808,6 +1837,18 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 				wndrect.left = wndrect.top = 0;
 				wndrect.right = dxglcfg.WindowWidth;
 				wndrect.bottom = dxglcfg.WindowHeight;
+			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP | WS_VISIBLE), CW_USEDEFAULT, CW_USEDEFAULT,
+					wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL, GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
 			}
 			else
 			{
@@ -2225,7 +2266,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			SetWindowLongPtrA(newwnd, GWL_EXSTYLE, winstyleex | WS_EX_APPWINDOW);
 			SetWindowLongPtrA(newwnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
 			ShowWindow(newwnd, SW_NORMAL);
-			if (dxglcfg.WindowPosition == 1)
+			if ((dxglcfg.WindowPosition == 1) || (dxglcfg.WindowPosition == 3))
 			{
 				GetWindowRect(newwnd, &wndrect);
 				if (GetMenu(newwnd)) hasmenu = TRUE;
@@ -2278,7 +2319,7 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			GetWindowPlacement(newwnd, &wndplace);
 			if(wndplace.showCmd == SW_SHOWMAXIMIZED) ShowWindow(newwnd, SW_SHOWMAXIMIZED);
 			else ShowWindow(newwnd, SW_NORMAL);
-			if (dxglcfg.WindowPosition == 1)
+			if ((dxglcfg.WindowPosition == 1) || (dxglcfg.WindowPosition == 3))
 			{
 				wndrect = wndplace.rcNormalPosition;
 				GetWindowRect(newwnd, &wndrect2);
@@ -2362,7 +2403,8 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 			ShowWindow(newwnd, SW_NORMAL);
 			screenx = GetSystemMetrics(SM_CXSCREEN);
 			screeny = GetSystemMetrics(SM_CYSCREEN);
-			if (dxglcfg.WindowPosition == 1) GetWindowRect(newwnd, &wndrect);
+			if ((dxglcfg.WindowPosition == 1) || (dxglcfg.WindowPosition == 3))
+				GetWindowRect(newwnd, &wndrect);
 			else if (dxglcfg.WindowPosition == 2)
 			{
 				wndrect.left = 0;

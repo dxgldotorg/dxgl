@@ -2667,7 +2667,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			DS_3DLOOK | DS_CONTEXTHELP | DS_SHELLFONT | WS_CAPTION | WS_SYSMENU,
 			CW_USEDEFAULT, CW_USEDEFAULT, r.right-r.left,r.bottom-r.top,NULL,NULL,
 			GetModuleHandle(NULL), NULL);
-		error = GetLastError();
 		GetWindowRect(hTempWnd, &r);
 		SetWindowPos(hWnd, HWND_TOP,r.left,r.top,0,0, SWP_NOSIZE);
 		DestroyWindow(hTempWnd);
@@ -3153,6 +3152,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Saved position"));
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Top left"));
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Windows default"));
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_SETCURSEL, cfg->WindowPosition, 0);
 		// Remember window position

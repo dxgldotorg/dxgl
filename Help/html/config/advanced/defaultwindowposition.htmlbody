@@ -6,3 +6,12 @@
 <p>Locates the window in the center of the display.</p>
 <h3>Saved position</h3>
 <p>Uses the position stored in &#8220;Remembered window position&#8221; to position the window, using logical window coordinates.</p>
+<h3>Top left</h3>
+<p>Locates the window at the top left of the display.</p>
+<h3>Windows default</h3>
+<p>
+  Allows Windows to select the position to place the window.<br />
+  <span style="font-size: 8pt;">
+    <em>Top left and Windows default options are available in DXGL 0.5.14 and later.</em>
+  </span>
+</p>
