@@ -681,6 +681,15 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 			RegSetValueEx(hKey, _T("InstallPath"), 0, REG_SZ,
 				(LPBYTE)path, _tcslen(path) * sizeof(TCHAR));
 	}
+	if (global && !cfg->Windows8Detected)
+	{
+		OSVERSIONINFO osver;
+		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		GetVersionEx(&osver);
+		if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
+		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
+		if (cfg->Windows8Detected) cfg->AddColorDepths |= 1 | 4 | 16;
+	}
 }
 
 void WriteBool(HKEY hKey, BOOL value, BOOL mask, LPCTSTR name)
@@ -936,7 +945,7 @@ void GetDefaultConfig(DXGLCFG *cfg)
 		GetVersionEx(&osver);
 		if (osver.dwMajorVersion > 6) Windows8Detected = TRUE;
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) Windows8Detected = TRUE;
-		if (Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
+		if (Windows8Detected) cfg->AddColorDepths |= (1 | 4 | 16);
 	}
 }
 
@@ -1171,15 +1180,6 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	{
 		GetDefaultConfig(cfg);
 		ReadINI(cfg);
-	}
-	if (!cfg->Windows8Detected)
-	{
-		OSVERSIONINFO osver;
-		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		GetVersionEx(&osver);
-		if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
-		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
-		if (cfg->Windows8Detected) cfg->AddColorDepths = 1 | 4 | 16;
 	}
 	if (initial || cfg->NoWriteRegistry) RegOpenKeyEx(HKEY_CURRENT_USER, cfg->regkey, 0, KEY_READ, &hKey);
 	else
