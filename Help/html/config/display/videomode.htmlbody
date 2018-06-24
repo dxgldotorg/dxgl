@@ -21,3 +21,8 @@
 <p>Switches the display to the mode specified under &#8220;Custom resolution&#8221; and stretches the image to fit to that mode.</p>
 <h1>Custom size, centered</h1>
 <p>Stretches the primary surface to the size specified under &#8220;Custom resolution&#8221; and centers it on the display.</p>
+<p>
+  <span style="font-size: 8pt;">
+    <em>Custom size multiplier, Custom display mode, and Custom size, centered are implemented in DXGL 0.5.14 and later.</em>
+  </span>
+</p>

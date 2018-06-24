@@ -2398,6 +2398,73 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
+		case 8:  // Custom size multiplier
+			primaryx = dwWidth;
+			internalx = dwWidth * xscale;
+			if (dxglcfg.DisplayMultiplierX) internalx *= dxglcfg.DisplayMultiplierX;
+			screenx = currmode.dmPelsWidth;
+			primaryy = dwHeight;
+			internaly = dwHeight * yscale;
+			if (dxglcfg.DisplayMultiplierY) internaly *= dxglcfg.DisplayMultiplierY;
+			screeny = currmode.dmPelsHeight;
+			primarybpp = dwBPP;
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+			//glRenderer_SetBPP(this->renderer, primarybpp);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+			break;
+		case 9:  // Custom display mode
+			newmode.dmSize = sizeof(DEVMODE);
+			newmode.dmDriverExtra = 0;
+			newmode.dmPelsWidth = dxglcfg.CustomResolutionX;
+			newmode.dmPelsHeight = dxglcfg.CustomResolutionY;
+			if (dxglcfg.colormode)
+				newmode.dmBitsPerPel = dwBPP;
+			else newmode.dmBitsPerPel = currmode.dmBitsPerPel;
+			newmode.dmDisplayFrequency = dxglcfg.CustomRefresh;
+			if (dxglcfg.CustomRefresh) newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+			flags = 0;
+			if (fullscreen) flags |= CDS_FULLSCREEN;
+			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			if (error == DISP_CHANGE_SUCCESSFUL) currmode = newmode;
+			primaryx = dwWidth;
+			internalx = screenx = currmode.dmPelsWidth;
+			primaryy = dwHeight;
+			internaly = screeny = currmode.dmPelsHeight;
+			if (crop400) internaly *= 1.2f;
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			primarybpp = dwBPP;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+			//glRenderer_SetBPP(this->renderer, primarybpp);
+			primarylost = true;
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+			break;
+		case 10: // Custom size, centered
+			primaryx = dwWidth;
+			internalx = dxglcfg.CustomResolutionX;
+			screenx = currmode.dmPelsWidth;
+			primaryy = dwHeight;
+			internaly = dxglcfg.CustomResolutionY;
+			screeny = currmode.dmPelsHeight;
+			primarybpp = dwBPP;
+			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
+			else internalbpp = screenbpp = currmode.dmBitsPerPel;
+			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
+			else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;
+			InitGL(screenx, screeny, screenbpp, true, internalrefresh, hWnd, this, devwnd);
+			//glRenderer_SetBPP(this->renderer, primarybpp);
+			TRACE_EXIT(23, DD_OK);
+			return DD_OK;
+			break;
 		}
 		break;
 	case 2:
