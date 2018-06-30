@@ -128,6 +128,7 @@ typedef struct
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir);
 void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask);
+DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path);
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial);
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial);
 void GetGlobalConfigWithMask(DXGLCFG *cfg, DXGLCFG *mask, BOOL initial);

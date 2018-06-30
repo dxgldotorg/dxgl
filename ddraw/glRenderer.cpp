@@ -3855,10 +3855,18 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	if (scale512448)
 	{
-		This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
-		This->bltvertices[0].t = This->bltvertices[1].t = 0.966666667f;
-		This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;
-		This->bltvertices[2].t = This->bltvertices[3].t = 0.0333333333f;
+		if (dxglcfg.HackAutoScale512448to640480 == 1)
+		{
+			This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
+			This->bltvertices[0].t = This->bltvertices[1].t = 0.966666667f;
+			This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;
+			This->bltvertices[2].t = This->bltvertices[3].t = 0.0333333333f;
+		}
+		else if (dxglcfg.HackAutoScale512448to640480 == 2)
+		{
+			This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
+			This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;
+		}
 	}
 	else
 	{

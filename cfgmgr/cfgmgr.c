@@ -667,7 +667,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
-	cfg->HackAutoScale512448to640480 = ReadBool(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	cfg->HackAutoScale512448to640480 = ReadDWORD(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
 	if(!global && dll)
@@ -830,7 +830,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
-	WriteBool(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	WriteDWORD(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
 }
@@ -961,6 +961,15 @@ DWORD INIBoolValue(const char *value)
 
 DWORD INIIntValue(const char *value)
 {
+	return atoi(value);
+}
+
+DWORD INIIntBoolValue(const char *value)
+{
+	if (value[0] == 'F') return 0;
+	if (value[0] == 'f') return 0;
+	if (value[0] == 'T') return 1;
+	if (value[0] == 't') return 1;
 	return atoi(value);
 }
 
@@ -1116,7 +1125,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	if (!_stricmp(section, "hacks"))
 	{
 		if (!_stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
-		if (!_stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIBoolValue(value);
+		if (!_stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIIntBoolValue(value);
 		if (!_stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
 		if (!_stricmp(section, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 	}
@@ -1136,6 +1145,12 @@ void ReadINI(DXGLCFG *cfg)
 		ini_parse_file(file, ReadINICallback, cfg);
 		fclose(file);
 	}
+}
+
+DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path)
+{
+	//TODO:  Write INI file.
+	return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)

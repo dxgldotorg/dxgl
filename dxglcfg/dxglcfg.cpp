@@ -1953,6 +1953,8 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 
 LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	DWORD error;
+	TCHAR errormsg[2048];
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -1966,6 +1968,18 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
+			error = WriteINI(cfg, cfgmask, apps[current_app].path);
+			if (error == 5)
+			{
+				MessageBox(hWnd, _T("Access denied error writing .ini file.  Please re-launch DXGL Config as Administrator and try again."),
+					_T("Error"), MB_OK | MB_ICONWARNING);
+			}
+			else if (error != 0)
+			{
+				_tcscpy(errormsg, _T("Error writing .ini file:\r\n"));
+				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errormsg + _tcslen(errormsg), 2048 - _tcslen(errormsg), NULL);
+				MessageBox(hWnd, errormsg, _T("Error"), MB_OK | MB_ICONERROR);
+			}
 			EndDialog(hWnd, IDOK);
 			return TRUE;
 		case IDCANCEL:

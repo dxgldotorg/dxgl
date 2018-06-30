@@ -270,7 +270,7 @@ FONT 8, "Ms Shell Dlg"
 		AUTOCHECKBOX    "Save SHA-256 signature of existing ddraw.dll", IDC_SAVESHA256, 11, 46, 157, 8, 0, WS_EX_LEFT
 		AUTOCHECKBOX    "Prevent DXGL Config from deleting ddraw.dll", IDC_NOUNINSTALL, 11, 56, 156, 8, 0, WS_EX_LEFT
 		PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
-		DEFPUSHBUTTON   "&Save...", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
+		DEFPUSHBUTTON   "&Save", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
 }
 
 
