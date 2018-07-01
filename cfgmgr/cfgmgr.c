@@ -42,6 +42,18 @@ TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
 DXGLCFG defaultmask;
 
+#define INISECTION_NULL 0
+#define INISECTION_SYSTEM 1
+#define INISECTION_DISPLAY 2
+#define INISECTION_SCALING 3
+#define INISECTION_POSTPROCESS 4
+#define INISECTION_D3D 5
+#define INISECTION_ADVANCED 6
+#define INISECTION_DEBUG 7
+#define INISECTION_HACKS 8
+
+static int ini_currentsection = 0;
+
 /**
 * Gets the hexadecimal digit for a number; the number must be less than 16
 * or 0x10.
@@ -1046,6 +1058,13 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			cfg->AddModes = INIIntValue(value);
 		}
 		if (!_stricmp(name, "SortModes")) cfg->SortModes = INIIntValue(value);
+		if (!_stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
+		if (!_stricmp(name, "CustomResolutionX")) cfg->CustomResolutionX = INIIntValue(value);
+		if (!_stricmp(name, "CustomResolutionY")) cfg->CustomResolutionY = INIIntValue(value);
+		if (!_stricmp(name, "CustomRefresh")) cfg->CustomRefresh = INIIntValue(value);
+		if (!_stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
+		if (!_stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
+		if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
 	}
 	if (!_stricmp(section, "scaling"))
 	{
@@ -1058,11 +1077,6 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
 		if (!_stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
 		if (!_stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
-		if (!_stricmp(name, "CustomResolutionX")) cfg->CustomResolutionX = INIIntValue(value);
-		if (!_stricmp(name, "CustomResolutionY")) cfg->CustomResolutionY = INIIntValue(value);
-		if (!_stricmp(name, "CustomRefresh")) cfg->CustomRefresh = INIIntValue(value);
-		if (!_stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
-		if (!_stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
 	}
 	if (!_stricmp(section, "postprocess"))
 	{
@@ -1091,10 +1105,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	}
 	if (!_stricmp(section, "advanced"))
 	{
-		if (!_stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
 		if (!_stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
 		if (!_stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
-		if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
 		if (!_stricmp(name, "WindowPosition")) cfg->WindowPosition = INIIntValue(value);
 		if (!_stricmp(name, "RememberWindowSize")) cfg->RememberWindowSize = INIBoolValue(value);
 		if (!_stricmp(name, "RememberWindowPosition")) cfg->RememberWindowPosition = INIBoolValue(value);
@@ -1147,10 +1159,396 @@ void ReadINI(DXGLCFG *cfg)
 	}
 }
 
-DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path)
+void SetINISection(HANDLE file, int section)
 {
-	//TODO:  Write INI file.
-	return ERROR_CALL_NOT_IMPLEMENTED;
+	char buffer[32];
+	int buffersize;
+	int outsize;
+	if (section != ini_currentsection)
+	{
+		ini_currentsection = section;
+		switch (section)
+		{
+		case INISECTION_SYSTEM:
+			strcpy(buffer, "\r\n[system]\r\n");
+			break;
+		case INISECTION_DISPLAY:
+			strcpy(buffer, "\r\n[display]\r\n");
+			break;
+		case INISECTION_SCALING:
+			strcpy(buffer, "\r\n[scaling]\r\n");
+			break;
+		case INISECTION_POSTPROCESS:
+			strcpy(buffer, "\r\n[postprocess]\r\n");
+			break;
+		case INISECTION_D3D:
+			strcpy(buffer, "\r\n[d3d]\r\n");
+			break;
+		case INISECTION_ADVANCED:
+			strcpy(buffer, "\r\n[advanced]\r\n");
+			break;
+		case INISECTION_DEBUG:
+			strcpy(buffer, "\r\n[debug]\r\n");
+			break;
+		case INISECTION_HACKS:
+			strcpy(buffer, "\r\n[hacks]\r\n");
+			break;
+		default:
+			return;
+		}
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteBool(HANDLE file, const char *name, BOOL value, BOOL mask, int section)
+{
+	char buffer[256];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+		if (value) strcat(buffer, "true");
+		else strcat(buffer, "false");
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int section)
+{
+	char buffer[256];
+	char number[32];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+		itoa(value, number, 10);
+		strcat(buffer, number);
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteHex(HANDLE file, const char *name, DWORD value, DWORD mask, int section)
+{
+	char buffer[256];
+	char number[32];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=0x");
+		itoa(value, number, 16);
+		strcat(buffer, number);
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteFloat(HANDLE file, const char *name, float value, float mask, int digits, int section)
+{
+	char buffer[256];
+	char number[32];
+	char floatformat[16];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+		itoa(digits, number, 10);
+		strcpy(floatformat, "%.");
+		strcat(floatformat, number);
+		strcat(floatformat, "g");
+		_snprintf(number, 31, floatformat, value);
+		itoa(value, number, 10);
+		strcat(buffer, number);
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void FloatToAspectString(float f, char *aspect)
+{
+	double integer;
+	double dummy;
+	double fract;
+	char denominator[5];
+	int i;
+	if (_isnan(f)) f = 0.0f; //Handle NAN condition
+	if (f >= 1000.0f)  // Clamp ridiculously wide aspects
+	{
+		strcpy(aspect, "1000:1");
+		return;
+	}
+	if (f < 0.001f)   // Exclude ridiculously tall aspects, zero, and negative
+	{
+		strcpy(aspect, "Default");
+		return;
+	}
+	// Handle common aspects
+	if (fabs(f - 1.25f) < 0.0001f)
+	{
+		strcpy(aspect, "5:4");
+		return;
+	}
+	if (fabs(f - 1.3333333f) < 0.0001f)
+	{
+		strcpy(aspect, "4:3");
+		return;
+	}
+	if (fabs(f - 1.6f) < 0.0001f)
+	{
+		strcpy(aspect, "16:10");
+		return;
+	}
+	if (fabs(f - 1.7777777) < 0.0001f)
+	{
+		strcpy(aspect, "16:9");
+		return;
+	}
+	if (fabs(f - 1.9333333) < 0.0001f)
+	{
+		strcpy(aspect, "256:135");
+		return;
+	}
+	fract = modf(f, &integer);
+	if (fract < 0.0001f)  //Handle integer aspects
+	{
+		_itoa((int)integer, aspect, 10);
+		strcat(aspect, ":1");
+		return;
+	}
+	// Finally try from 2 to 1000
+	for (i = 2; i < 1000; i++)
+	{
+		if (fabs(modf(fract*i, &dummy)) < 0.0001f)
+		{
+			_itoa((f*i) + .5f, aspect, 10);
+			_itoa(i, denominator, 10);
+			strcat(aspect, ":");
+			strcat(aspect, denominator);
+			return;
+		}
+	}
+	// Cannot find a reasonable fractional aspect, so display as decimal.
+	sprintf(aspect, "%.6g", f);
+}
+
+void INIWriteAspect(HANDLE file, const char *name, float value, float mask, int section)
+{
+	char buffer[256];
+	char number[32];
+	char floatformat[16];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+		FloatToAspectString(value,number);
+		strcat(buffer, number);
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteString(HANDLE file, const char *name, const char *value, DWORD mask, int section)
+{
+	char buffer[512];
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+		strcat(buffer, value);
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteTCHARString(HANDLE file, const char *name, LPCTSTR value, DWORD mask, int section)
+{
+	char buffer[512];
+#ifdef _UNICODE
+	wchar_t unicodebuffer[MAX_PATH + 1];
+#endif
+	int buffersize;
+	int outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=");
+#ifdef _UNICODE
+		WideCharToMultiByte(CP_UTF8, 0, value, _tcslen(value), unicodebuffer, MAX_PATH, NULL, NULL);
+		strcat(buffer, unicodebuffer);
+#else
+		strcat(buffer, value);
+#endif
+		strcat(buffer, "\r\n");
+		buffersize = strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
+{
+	Sha256Context sha_context;
+	SHA256_HASH sha256;
+	char sha256string[65];
+	char buffer[512];
+	DWORD bytesread;
+	HANDLE file, file2;
+	TCHAR inipath[MAX_PATH + 10];
+	DWORD error;
+	int i;
+	int answer;
+	_tcscpy(inipath, path);
+	_tcscat(inipath, _T("\\dxgl.ini"));
+	file = CreateFile(inipath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		error = GetLastError();
+		if (error == ERROR_FILE_EXISTS)
+		{
+			answer = MessageBox(hWnd, _T("File already exists.  Do you want to overwrite it?"),
+				_T("File exists"), MB_YESNO | MB_ICONQUESTION);
+			if (answer == IDNO) return error;
+		}
+		else return error;
+		file = CreateFile(inipath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (file == INVALID_HANDLE_VALUE) return GetLastError();
+	}
+	ini_currentsection = INISECTION_NULL;
+	strcpy(buffer, "; DXGL Configuration file\r\n; This file was generated by DXGL Config.\r\n");
+	WriteFile(file, buffer, strlen(buffer), &bytesread, NULL);
+	// [system]
+	if (cfg->NoWriteRegistry) INIWriteBool(file, "NoWriteRegistry", TRUE, TRUE, INISECTION_SYSTEM);
+	if (cfg->OverrideDefaults) INIWriteBool(file, "OverrideDefaults", TRUE, TRUE, INISECTION_SYSTEM);
+	if (cfg->NoOverwrite) INIWriteBool(file, "NoOverwrite", TRUE, TRUE, INISECTION_SYSTEM);
+	if (cfg->SaveSHA256)
+	{
+		_tcscpy(inipath, path);
+		_tcscat(inipath, _T("\\ddraw.dll"));
+		Sha256Initialise(&sha_context);
+		file2 = CreateFile(inipath, GENERIC_READ, FILE_SHARE_READ, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (file2 != INVALID_HANDLE_VALUE)
+		{
+			while (1)
+			{
+				ReadFile(file2, buffer, 512, &bytesread, NULL);
+				if (!bytesread) break;
+				Sha256Update(&sha_context, buffer, bytesread);
+				if (bytesread < 512) break;
+			}
+			Sha256Finalise(&sha_context, &sha256);
+			CloseHandle(file2);
+			ZeroMemory(sha256string, 65 * sizeof(char));
+			for (i = 0; i < (256 / 8); i++)
+			{
+				sha256string[i * 2] = hexdigit(sha256.bytes[i] >> 4);
+				sha256string[(i * 2) + 1] = hexdigit(sha256.bytes[i] & 0xF);
+			}
+			strcpy(buffer, "; Do not change the following value!\r\n");
+			WriteFile(file, buffer, strlen(buffer), &bytesread, NULL);
+			INIWriteString(file, "BundledDDrawSHA256", sha256string, 1, INISECTION_SYSTEM);
+		}
+		else MessageBox(hWnd, _T("Cannot read ddraw.dll, skipping SHA-256 checksum"),
+				_T("Warning"), MB_OK | MB_ICONWARNING);
+	}
+	if (cfg->NoUninstall) INIWriteBool(file, "NoUninstall", TRUE, TRUE, INISECTION_SYSTEM);
+	// [display]
+	INIWriteInt(file, "ScalingMode", cfg->scaler, mask->scaler, INISECTION_DISPLAY);
+	INIWriteInt(file, "FullscreenWindowMode", cfg->fullmode, mask->fullmode, INISECTION_DISPLAY);
+	INIWriteBool(file, "ChangeColorDepth", cfg->colormode, mask->colormode, INISECTION_DISPLAY);
+	INIWriteInt(file, "AddColorDepths", cfg->AddColorDepths, mask->AddColorDepths, INISECTION_DISPLAY);
+	INIWriteInt(file, "AddModes", cfg->AddModes, mask->AddModes, INISECTION_DISPLAY);
+	INIWriteInt(file, "SortModes", cfg->SortModes, mask->SortModes, INISECTION_DISPLAY);
+	INIWriteInt(file, "VSync", cfg->vsync, mask->vsync, INISECTION_DISPLAY);
+	INIWriteInt(file, "CustomResolutionX", cfg->CustomResolutionX, mask->CustomResolutionX, INISECTION_DISPLAY);
+	INIWriteInt(file, "CustomResolutionY", cfg->CustomResolutionY, mask->CustomResolutionY, INISECTION_DISPLAY);
+	INIWriteInt(file, "CustomRefresh", cfg->CustomRefresh, mask->CustomRefresh, INISECTION_DISPLAY);
+	INIWriteFloat(file, "DisplayMultiplierX", cfg->DisplayMultiplierX, mask->DisplayMultiplierX, 4, INISECTION_DISPLAY);
+	INIWriteFloat(file, "DisplayMultiplierY", cfg->DisplayMultiplierY, mask->DisplayMultiplierY, 4, INISECTION_DISPLAY);
+	INIWriteInt(file, "SingleBufferDevice", cfg->SingleBufferDevice, mask->SingleBufferDevice, INISECTION_DISPLAY);
+	// [scaling]
+	INIWriteInt(file, "ScalingFilter", cfg->scalingfilter, mask->scalingfilter, INISECTION_SCALING);
+	INIWriteInt(file, "BltScale", cfg->BltScale, mask->BltScale, INISECTION_SCALING);
+	// Option was temporarily removed for DXGL 0.5.13 release
+	//INIWriteInt(file, "BltThreshold", cfg->BltThreshold, mask->BltThreshold, INISECTION_SCALING);
+	INIWriteInt(file, "AdjustPrimaryResolution", cfg->primaryscale, mask->primaryscale, INISECTION_SCALING);
+	INIWriteFloat(file, "PrimaryScaleX", cfg->primaryscalex, mask->primaryscalex, 4, INISECTION_SCALING);
+	INIWriteFloat(file, "PrimaryScaleY", cfg->primaryscaley, mask->primaryscaley, 4, INISECTION_SCALING);
+	INIWriteAspect(file, "ScreenAspect", cfg->aspect, mask->aspect, INISECTION_SCALING);
+	INIWriteInt(file, "DPIScale", cfg->DPIScale, mask->DPIScale, INISECTION_SCALING);
+	// [postprocess]
+	INIWriteInt(file, "PostprocessFilter", cfg->postfilter, mask->postfilter, INISECTION_POSTPROCESS);
+	INIWriteFloat(file, "PostprocessScaleX", cfg->postsizex, mask->postsizex, 4, INISECTION_POSTPROCESS);
+	INIWriteFloat(file, "PostprocessScaleY", cfg->postsizey, mask->postsizey, 4, INISECTION_POSTPROCESS);
+	INIWriteInt(file, "EnableShader", cfg->EnableShader, mask->EnableShader, INISECTION_POSTPROCESS);
+	INIWriteTCHARString(file, "ShaderFile", cfg->shaderfile, mask->shaderfile[0], INISECTION_POSTPROCESS);
+	// [d3d]
+	INIWriteInt(file, "TextureFilter", cfg->texfilter, mask->texfilter, INISECTION_D3D);
+	INIWriteInt(file, "AnisotropicFiltering", cfg->anisotropic, mask->anisotropic, INISECTION_D3D);
+	INIWriteHex(file, "Antialiasing", cfg->msaa, mask->msaa, INISECTION_D3D);
+	INIWriteInt(file, "D3DAspect", cfg->aspect3d, mask->aspect3d, INISECTION_D3D);
+	INIWriteInt(file, "LowColorRendering", cfg->LowColorRendering, mask->LowColorRendering, INISECTION_D3D);
+	INIWriteInt(file, "EnableDithering", cfg->EnableDithering, mask->EnableDithering, INISECTION_D3D);
+	// [advanced]
+	INIWriteInt(file, "TextureFormat", cfg->TextureFormat, mask->TextureFormat, INISECTION_ADVANCED);
+	INIWriteInt(file, "TexUpload", cfg->TexUpload, mask->TexUpload, INISECTION_ADVANCED);
+	INIWriteInt(file, "WindowPosition", cfg->WindowPosition, mask->WindowPosition, INISECTION_ADVANCED);
+	INIWriteBool(file, "RememberWindowSize", cfg->RememberWindowSize, mask->RememberWindowSize, INISECTION_ADVANCED);
+	INIWriteBool(file, "RememberWindowPosition", cfg->RememberWindowPosition, mask->RememberWindowPosition, INISECTION_ADVANCED);
+	INIWriteBool(file, "NoResizeWindow", cfg->NoResizeWindow, mask->NoResizeWindow, INISECTION_ADVANCED);
+	INIWriteInt(file, "WindowX", cfg->WindowX, mask->WindowX, INISECTION_ADVANCED);
+	INIWriteInt(file, "WindowY", cfg->WindowY, mask->WindowY, INISECTION_ADVANCED);
+	INIWriteInt(file, "WindowWidth", cfg->WindowWidth, mask->WindowWidth, INISECTION_ADVANCED);
+	INIWriteInt(file, "WindowHeight", cfg->WindowHeight, mask->WindowHeight, INISECTION_ADVANCED);
+	INIWriteBool(file, "WindowMaximized", cfg->WindowMaximized, mask->WindowMaximized, INISECTION_ADVANCED);
+	INIWriteBool(file, "CaptureMouse", cfg->CaptureMouse, mask->CaptureMouse, INISECTION_ADVANCED);
+	// [debug]
+	INIWriteBool(file, "DebugNoExtFramebuffer", cfg->DebugNoExtFramebuffer, mask->DebugNoExtFramebuffer, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoArbFramebuffer", cfg->DebugNoArbFramebuffer, mask->DebugNoArbFramebuffer, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoES2Compatibility", cfg->DebugNoES2Compatibility, mask->DebugNoES2Compatibility, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoExtDirectStateAccess", cfg->DebugNoExtDirectStateAccess, mask->DebugNoExtDirectStateAccess, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoArbDirectStateAccess", cfg->DebugNoArbDirectStateAccess, mask->DebugNoArbDirectStateAccess, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoSamplerObjects", cfg->DebugNoSamplerObjects, mask->DebugNoSamplerObjects, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoGpuShader4", cfg->DebugNoGpuShader4, mask->DebugNoGpuShader4, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoGLSL130", cfg->DebugNoGLSL130, mask->DebugNoGLSL130, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugUnloadAfterUnlock", cfg->DebugUploadAfterUnlock, mask->DebugUploadAfterUnlock, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugBlendDestColorKey", cfg->DebugBlendDestColorKey, mask->DebugBlendDestColorKey, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoMouseHooks", cfg->DebugNoMouseHooks, mask->DebugNoMouseHooks, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugMaxGLVersionMajor", cfg->DebugMaxGLVersionMajor, mask->DebugMaxGLVersionMajor, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugMaxGLVersionMinor", cfg->DebugMaxGLVersionMinor, mask->DebugMaxGLVersionMinor, INISECTION_DEBUG);
+	// [hacks]
+	INIWriteBool(file, "HackCrop640480to640400", cfg->HackCrop640480to640400, mask->HackCrop640480to640400, INISECTION_HACKS);
+	INIWriteInt(file, "HackAutoScale512448to640480", cfg->HackAutoScale512448to640480, mask->HackAutoScale512448to640480, INISECTION_HACKS);
+	INIWriteBool(file, "HackNoTVRefresh", cfg->HackNoTVRefresh, mask->HackNoTVRefresh, INISECTION_HACKS);
+	INIWriteBool(file, "HackSetCursor", cfg->HackSetCursor, mask->HackSetCursor, INISECTION_HACKS);
+	CloseHandle(file);
+	return ERROR_SUCCESS;
 }
 
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)

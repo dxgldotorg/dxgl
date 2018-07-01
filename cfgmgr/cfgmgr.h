@@ -29,6 +29,9 @@ typedef struct
 	// [system]
 	DWORD NoWriteRegistry;
 	DWORD OverrideDefaults;
+	DWORD NoOverwrite;
+	DWORD SaveSHA256;
+	DWORD NoUninstall;
 	// [display]
 	DWORD scaler;
 	DWORD fullmode;
@@ -128,7 +131,7 @@ typedef struct
 
 void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll, LPTSTR dir);
 void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask);
-DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path);
+DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd);
 void GetCurrentConfig(DXGLCFG *cfg, BOOL initial);
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial);
 void GetGlobalConfigWithMask(DXGLCFG *cfg, DXGLCFG *mask, BOOL initial);

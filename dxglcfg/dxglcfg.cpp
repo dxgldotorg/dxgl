@@ -1953,8 +1953,9 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 
 LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	BOOL unused;
 	DWORD error;
-	TCHAR errormsg[2048];
+	TCHAR errormsg[2048+MAX_PATH];
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -1968,17 +1969,29 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			error = WriteINI(cfg, cfgmask, apps[current_app].path);
-			if (error == 5)
+			cfg->NoWriteRegistry = GetCheck(hWnd, IDC_NOWRITEREGISTRY, &unused);
+			cfg->OverrideDefaults = GetCheck(hWnd, IDC_OVERRIDEREGISTRY, &unused);
+			cfg->NoOverwrite = GetCheck(hWnd, IDC_NOOVERWRITE, &unused);
+			cfg->SaveSHA256 = GetCheck(hWnd, IDC_SAVESHA256, &unused);
+			cfg->NoUninstall = GetCheck(hWnd, IDC_NOUNINSTALL, &unused);
+			error = WriteINI(cfg, cfgmask, apps[current_app].path, hWnd);
+			if (error == ERROR_ACCESS_DENIED)
 			{
 				MessageBox(hWnd, _T("Access denied error writing .ini file.  Please re-launch DXGL Config as Administrator and try again."),
 					_T("Error"), MB_OK | MB_ICONWARNING);
 			}
-			else if (error != 0)
+			else if (error != ERROR_SUCCESS)
 			{
 				_tcscpy(errormsg, _T("Error writing .ini file:\r\n"));
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errormsg + _tcslen(errormsg), 2048 - _tcslen(errormsg), NULL);
 				MessageBox(hWnd, errormsg, _T("Error"), MB_OK | MB_ICONERROR);
+			}
+			else
+			{
+				_tcscpy(errormsg, _T("Saved dxgl.ini to "));
+				_tcscat(errormsg, apps[current_app].path);
+				_tcscat(errormsg, _T("\dxgl.ini"));
+				MessageBox(hWnd, errormsg, _T("Notice"), MB_OK | MB_ICONINFORMATION);
 			}
 			EndDialog(hWnd, IDOK);
 			return TRUE;
@@ -3214,6 +3227,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Paths
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), FALSE);
 		// Debug
 		_tcscpy(buffer, _T("Disable EXT framebuffers"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
@@ -3566,6 +3580,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				{
 					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), TRUE);
 					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), TRUE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), TRUE);
 					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, apps[current_app].path);
 					if (apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
 					else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
@@ -3574,6 +3589,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				{
 					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
 					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+					EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), FALSE);
 					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, _T(""));
 					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
 				}
