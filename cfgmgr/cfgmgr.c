@@ -32,6 +32,7 @@ typedef LONG LSTATUS;
 #include "../ddraw/resource.h"
 #include <tchar.h>
 #include <math.h>
+#include <float.h>
 #include <stdarg.h>
 #include "inih/ini.h"
 
@@ -1230,7 +1231,7 @@ void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 		SetINISection(file, section);
 		strcpy(buffer, name);
 		strcat(buffer, "=");
-		itoa(value, number, 10);
+		_itoa(value, number, 10);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
 		buffersize = strlen(buffer);
@@ -1249,7 +1250,7 @@ void INIWriteHex(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 		SetINISection(file, section);
 		strcpy(buffer, name);
 		strcat(buffer, "=0x");
-		itoa(value, number, 16);
+		_itoa(value, number, 16);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
 		buffersize = strlen(buffer);
@@ -1269,12 +1270,11 @@ void INIWriteFloat(HANDLE file, const char *name, float value, float mask, int d
 		SetINISection(file, section);
 		strcpy(buffer, name);
 		strcat(buffer, "=");
-		itoa(digits, number, 10);
+		_itoa(digits, number, 10);
 		strcpy(floatformat, "%.");
 		strcat(floatformat, number);
 		strcat(floatformat, "g");
 		_snprintf(number, 31, floatformat, value);
-		itoa(value, number, 10);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
 		buffersize = strlen(buffer);
@@ -1338,7 +1338,7 @@ void FloatToAspectString(float f, char *aspect)
 	{
 		if (fabs(modf(fract*i, &dummy)) < 0.0001f)
 		{
-			_itoa((f*i) + .5f, aspect, 10);
+			_itoa((int)((f*i) + .5f), aspect, 10);
 			_itoa(i, denominator, 10);
 			strcat(aspect, ":");
 			strcat(aspect, denominator);
@@ -1353,7 +1353,6 @@ void INIWriteAspect(HANDLE file, const char *name, float value, float mask, int 
 {
 	char buffer[256];
 	char number[32];
-	char floatformat[16];
 	int buffersize;
 	int outsize;
 	if (mask)
@@ -1390,7 +1389,7 @@ void INIWriteTCHARString(HANDLE file, const char *name, LPCTSTR value, DWORD mas
 {
 	char buffer[512];
 #ifdef _UNICODE
-	wchar_t unicodebuffer[MAX_PATH + 1];
+	char unicodebuffer[MAX_PATH + 1];
 #endif
 	int buffersize;
 	int outsize;
@@ -1861,7 +1860,7 @@ void UpgradeDXGLTestToDXGLCfg()
 					{
 						sizeout = olddirsize;
 						sizeout2 = oldvaluesize;
-						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
 						if (error == ERROR_MORE_DATA)
 						{
 							if (sizeout > olddirsize)
@@ -1886,12 +1885,12 @@ void UpgradeDXGLTestToDXGLCfg()
 							}
 							sizeout = olddirsize;
 							sizeout2 = oldvaluesize;
-							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
 						}
 						if (error == ERROR_SUCCESS)
 						{
 							if (_tcsnicmp(olddir, _T("InstallPaths"), sizeout))
-								RegSetValueEx(hKeyDest, olddir, 0, regtype, oldvalue, sizeout2);
+								RegSetValueEx(hKeyDest, olddir, 0, regtype, (LPBYTE)oldvalue, sizeout2);
 						}
 						numvalue++;
 					} while (error == ERROR_SUCCESS);
@@ -1942,7 +1941,7 @@ void UpgradeConfig()
 	Sha256Context sha_context;
 	LONG error;
 	LONG error2;
-	int i;
+	DWORD i;
 	// Check configuration version first
 	_tcscpy(regkey, regkeybase);
 	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
@@ -1953,7 +1952,7 @@ void UpgradeConfig()
 	}
 	sizeout = 4;
 	regtype = REG_DWORD;
-	error = RegQueryValueEx(hKey, _T("Configuration Version"), NULL, &regtype, &version, &sizeout);
+	error = RegQueryValueEx(hKey, _T("Configuration Version"), NULL, &regtype, (LPBYTE)&version, &sizeout);
 	if (error != ERROR_SUCCESS) version = 0;  // Version is 0 if not set (alpha didn't have version)
 	if (regtype != REG_DWORD) version = 0; // Is the key the wrong type?
 	if (version >= 1) goto ver1to2;  // If version is 1 check for version 2.
@@ -1966,7 +1965,7 @@ ver0to1:
 	do
 	{
 		sizeout = MAX_PATH;
-		error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+		error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
 			NULL, NULL, NULL, NULL);
 		keyindex++;
 		if (error == ERROR_SUCCESS)
@@ -1977,7 +1976,7 @@ ver0to1:
 				regtype = REG_MULTI_SZ;
 				sizeout = olddirsize;
 				error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
-					&regtype, olddir, &sizeout);
+					&regtype, (LPBYTE)olddir, &sizeout);
 				if (error2 == ERROR_MORE_DATA)
 				{
 					olddirsize = sizeout;
@@ -1989,7 +1988,7 @@ ver0to1:
 					}
 					sizeout = olddirsize;
 					error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
-						&regtype, olddir, &sizeout);
+						&regtype, (LPBYTE)olddir, &sizeout);
 				}
 				if (error2 == ERROR_SUCCESS)
 				{
@@ -2027,7 +2026,7 @@ ver0to1:
 	do
 	{
 		sizeout = MAX_PATH;
-		error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+		error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
 			NULL, NULL, NULL, NULL);
 		keyindex++;
 		if (error == ERROR_SUCCESS)
@@ -2038,7 +2037,7 @@ ver0to1:
 				regtype = REG_MULTI_SZ;
 				sizeout = olddirsize;
 				error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
-					&regtype, olddir, &sizeout);
+					&regtype, (LPBYTE)olddir, &sizeout);
 				if (error2 == ERROR_MORE_DATA)
 				{
 					olddirsize = sizeout;
@@ -2050,7 +2049,7 @@ ver0to1:
 					}
 					sizeout = olddirsize;
 					error2 = RegQueryValueEx(hKeyProfile, _T("InstallPaths"), NULL,
-						&regtype, olddir, &sizeout);
+						&regtype, (LPBYTE)olddir, &sizeout);
 				}
 				if (error2 == ERROR_SUCCESS)
 				{
@@ -2084,7 +2083,7 @@ ver0to1:
 								}
 								else
 								{
-									_tcscpy(oldkeys[oldconfigcount].crc32, "0");
+									_tcscpy(oldkeys[oldconfigcount].crc32, _T("0"));
 								}
 								_tcscpy(exepath, oldkeys[oldconfigcount].InstallPath);
 								_tcscat(exepath, _T("\\"));
@@ -2150,7 +2149,7 @@ ver0to1:
 					{
 						sizeout = olddirsize;
 						sizeout2 = oldvaluesize;
-						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
 						if (error == ERROR_MORE_DATA)
 						{
 							if (sizeout > olddirsize)
@@ -2175,16 +2174,16 @@ ver0to1:
 							}
 							sizeout = olddirsize;
 							sizeout2 = oldvaluesize;
-							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, oldvalue, &sizeout2);
+							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
 						}
 						if (error == ERROR_SUCCESS)
 						{
 							if (_tcsnicmp(olddir, _T("InstallPaths"), sizeout))
-								RegSetValueEx(hKeyDest, olddir, 0, regtype, oldvalue, sizeout2);
+								RegSetValueEx(hKeyDest, olddir, 0, regtype, (BYTE*)oldvalue, sizeout2);
 						}
 						numvalue++;
 					} while (error == ERROR_SUCCESS);
-					RegSetValueEx(hKeyDest, _T("InstallPath"), 0, REG_SZ, oldkeys[i].InstallPath,
+					RegSetValueEx(hKeyDest, _T("InstallPath"), 0, REG_SZ, (BYTE*)oldkeys[i].InstallPath,
 						((_tcslen(oldkeys[i].InstallPath) + 1) * sizeof(TCHAR)));
 					RegCloseKey(hKeyDest);
 				}
@@ -2199,7 +2198,7 @@ ver0to1:
 	if(olddir) free(olddir);
 	if(oldvalue) free(oldvalue);
 	sizeout = 1;
-	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
+	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)&sizeout, 4);
 ver1to2:
 	RegCloseKey(hKey);
 	// Version 1 to 2:  Fix an incorrectly written AddColorDepths value
@@ -2210,13 +2209,13 @@ ver1to2:
 	sizeout = 4;
 	regtype = REG_DWORD;
 	error = RegQueryValueEx(hKey,_T("AddColorDepths"),NULL,
-		&regtype, &numvalue, &sizeout);
+		&regtype, (LPBYTE)&numvalue, &sizeout);
 	if (error == ERROR_SUCCESS)
 	{
 		if (numvalue == 1)
 		{
 			numvalue = 1 | 4 | 16;
-			RegSetValueEx(hKey, _T("AddColorDepths"), 0, REG_DWORD, &numvalue, 4);
+			RegSetValueEx(hKey, _T("AddColorDepths"), 0, REG_DWORD, (LPBYTE)&numvalue, 4);
 		}
 	}
 	RegCloseKey(hKey);
@@ -2229,7 +2228,7 @@ ver1to2:
 		do
 		{
 			sizeout = MAX_PATH;
-			error = RegEnumKeyEx(hKey, keyindex, &subkey, &sizeout,
+			error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
 				NULL, NULL, NULL, NULL);
 			keyindex++;
 			if (error == ERROR_SUCCESS)
@@ -2238,13 +2237,13 @@ ver1to2:
 				if (error2 == ERROR_SUCCESS)
 				{
 					error2 = RegQueryValueEx(hKeyProfile, _T("AddColorDepths"), NULL,
-						&regtype, &numvalue, &sizeout);
+						&regtype, (LPBYTE)&numvalue, &sizeout);
 					if (error2 == ERROR_SUCCESS)
 					{
 						if (numvalue == 1)
 						{
 							numvalue = 1 | 4 | 16;
-							RegSetValueEx(hKeyProfile, _T("AddColorDepths"), 0, REG_DWORD, &numvalue, 4);
+							RegSetValueEx(hKeyProfile, _T("AddColorDepths"), 0, REG_DWORD, (BYTE*)&numvalue, 4);
 						}
 					}
 					RegCloseKey(hKeyProfile);
@@ -2258,7 +2257,7 @@ ver1to2:
 	if (error == ERROR_SUCCESS)
 	{
 		sizeout = 2;
-		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, &sizeout, 4);
+		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)&sizeout, 4);
 		RegCloseKey(hKey);
 	}
 }
@@ -2266,16 +2265,16 @@ ver1to2:
 int ReadINIOptionsCallback(app_ini_options *options, const char *section, const char *name,
 	const char *value)
 {
-	if (!stricmp(section, "system"))
+	if (!_stricmp(section, "system"))
 	{
-		if (!stricmp(name, "NoOverwrite")) options->NoOverwrite = INIBoolValue(value);
-		if (!stricmp(name, "BundledDDrawSHA256"))
+		if (!_stricmp(name, "NoOverwrite")) options->NoOverwrite = INIBoolValue(value);
+		if (!_stricmp(name, "BundledDDrawSHA256"))
 		{
 			strncpy(options->sha256comp, value, 65);
 			options->sha256comp[64] = 0;
 			if (options->sha256comp[63] == 0) options->sha256comp[0] = 0;
 		}
-		if (!stricmp(name, "NoUninstall")) options->NoUninstall = INIBoolValue(value);
+		if (!_stricmp(name, "NoUninstall")) options->NoUninstall = INIBoolValue(value);
 	}
 	return 1;
 }
@@ -2285,7 +2284,6 @@ void ReadAppINIOptions(LPCTSTR path, app_ini_options *options)
 	int i;
 	Sha256Context sha_context;
 	SHA256_HASH sha256;
-	TCHAR sha256string[65];
 	FILE *file;
 	HANDLE file2;
 	char buffer[512];

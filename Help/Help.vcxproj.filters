@@ -507,5 +507,11 @@
     <None Include="html\config\advanced\capturemouseinwindowmode.htmlbody">
       <Filter>Help files\html\config\advanced</Filter>
     </None>
+    <None Include="html\config\advanced\writeinifile.htmltitle">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
+    <None Include="html\config\advanced\writeinifile.htmlbody">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
   </ItemGroup>
 </Project>

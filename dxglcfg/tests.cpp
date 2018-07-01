@@ -46,7 +46,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0};
+static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0,0};
 static DWORD counter;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)

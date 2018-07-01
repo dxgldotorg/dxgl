@@ -1,0 +1,15 @@
+<p><img class="alignnone size-full wp-image-427" src="images/dxglcfg-saveini.png" alt="Save .ini File" width="285" height="179" /></p>
+<p>Saves a .ini file called dxgl.ini in the profile&#8217;s folder.  You may need to launch DXGL Config as administrator in order to use this feature.  The .ini file will contain all profile-specific settings.  This does not currently allow saving a .ini file for the Global profile.</p>
+<p>For more information about dxgl.ini files, please refer to the example configuration file dxgl-example.ini in the DXGL installation folder.</p>
+<p><em>This function is available in DXGL 0.5.14 and up.</em></p>
+<p>The following functions will affect the saved .ini file:</p>
+<h3>Don&#8217;t write application profile to registry</h3>
+<p>Adds an option to the .ini file that prevents DXGL from automatically creating a profile for the application.  This option is recommended when distributing DXGL with a third-party application or game.</p>
+<h3>Override global registry settings</h3>
+<p>Adds an option to the .ini file that suppresses loading of the &#8220;Global&#8221; profile when initializing DXGL.  Profile-specific settings will still override .ini settings.</p>
+<h3>Prevent DXGL Config from overwriting ddraw.dll</h3>
+<p>Add an option to the .ini file that prevents DXGL Config from overwriting the ddraw.dll file in the folder where the .ini file resides.  This will take effect regardless of whether the ddraw.dll file is from DXGL.  This option can be useful for software distributed via clients like Steam where the file&#8217;s contents are managed by the client.</p>
+<h3>Save SHA-256 signature of existing ddraw.dll</h3>
+<p>If a copy of ddraw.dll is in the profile folder, DXGL Config will calculate its SHA-256 signature and save the results in the .ini file.  When DXGL Config creates a profile or DXGL is updated, DXGL will check the SHA-256 signature of the existing ddraw.dll file, and if it matches, back it up to ddraw.dll.dxgl-backup.  When removing a profile or uninstalling DXGL, the backup file will be restored back to ddraw.dll unless &#8220;Prevent DXGL Config from deleting ddraw.dll&#8221; is set.  This option is recommended when distributing DXGL with a third-party application or game.</p>
+<h3>Prevent DXGL Config from deleting ddraw.dll</h3>
+<p>Prevents DXGL Config or DXGL uninstallation from deleting the ddraw.dll file in the profile folder.  If a backup file is present, the user will have to manually copy it back to ddraw.dll.</p>

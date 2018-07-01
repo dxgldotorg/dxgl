@@ -147,6 +147,8 @@
     <None Include="html\config\advanced\textureaccessmethod.htmltitle" />
     <None Include="html\config\advanced\textureformat.htmlbody" />
     <None Include="html\config\advanced\textureformat.htmltitle" />
+    <None Include="html\config\advanced\writeinifile.htmlbody" />
+    <None Include="html\config\advanced\writeinifile.htmltitle" />
     <None Include="html\config\debugtab.htmlbody" />
     <None Include="html\config\debugtab.htmltitle" />
     <None Include="html\config\debug\debugblenddestinationcolor.htmlbody" />

@@ -176,6 +176,10 @@
 				<param name="Name" value="Capture mouse in window mode (Press Ctrl+Alt to release)">
 				<param name="Local" value="html\config\advanced\capturemouseinwindowmode.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Write INI file...">
+				<param name="Local" value="html\config\advanced\writeinifile.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Debug Tab">

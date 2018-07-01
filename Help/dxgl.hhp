@@ -25,6 +25,7 @@ images\dxglcfg-debug.png
 images\dxglcfg-effects.png
 images\dxglcfg-hacks.png
 images\dxglcfg-tests.png
+images\dxglcfg-saveini.png
 html\introduction.html
 html\troubleshooting.html
 html\configuration.html
@@ -71,6 +72,7 @@ html\config\advanced\startresizablewindowmaximized.html
 html\config\advanced\textureaccessmethod.html
 html\config\advanced\textureformat.html
 html\config\advanced\capturemouseinwindowmode.html
+html\config\advanced\writeinifile.html
 html\config\debug\debugblenddestinationcolor.html
 html\config\debug\disablearbdirectstateaccess.html
 html\config\debug\disablearbframebuffers.html
