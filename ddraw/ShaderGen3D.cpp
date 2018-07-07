@@ -200,7 +200,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->current_shadertype = 1;
 		GenShader2D key2d;
 		GenShader2D *shader2d;
-		key2d.id = id;
+		key2d.id = id & 0xFFFFFFFF;
 		shader2d = (GenShader2D*)bsearch(&key2d, gen2d->genshaders2D, gen2d->genindex, sizeof(GenShader2D),
 			(int(__cdecl *) (const void *, const void *))compshader2D);
 		if (!shader2d)
@@ -216,7 +216,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.fsrc);
 				ZeroMemory(&gen2d->genshaders2D[gen2d->genindex], sizeof(GenShader2D));
 			}
-			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id);
+			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id & 0xFFFFFFFF);
 			gen2d->genindex++;
 			if (gen2d->genindex >= gen2d->maxshaders)
 			{

@@ -146,7 +146,7 @@ public:
 	GLfloat matTransform[16];
 	bool transform_dirty;
 	D3D1MATRIX *matrices;
-	int matrixcount;
+	D3DMATRIXHANDLE matrixcount;
 	D3DMATERIAL7 material;
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
@@ -157,9 +157,9 @@ public:
 	glDirect3D7 *glD3D7;
 	glDirect3DMaterial3 **materials;
 	glDirect3DMaterial3 *currentmaterial;
-	int materialcount;
+	DWORD materialcount;
 	glDirectDrawSurface7 **textures;
-	int texturecount;
+	DWORD texturecount;
 	bool modelview_dirty;
 	bool projection_dirty;
 	D3DSTATS stats;
@@ -184,8 +184,8 @@ private:
 	GLfloat *texcoords[8];
 	GLVERTEX vertdata[18];
 	int texformats[8];
-	int maxmaterials;
-	int maxtextures;
+	DWORD maxmaterials;
+	DWORD maxtextures;
 	glDirect3DViewport3 **viewports;
 	glDirect3DViewport3 *currentviewport;
 	int viewportcount;

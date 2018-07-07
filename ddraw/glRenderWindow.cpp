@@ -144,12 +144,7 @@ DWORD WINAPI BeepThread(void *unused)
 
 LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	int oldx,oldy;
-	float mulx, muly;
-	int translatex, translatey;
-	LPARAM newpos;
 	HWND hParent;
-	LONG sizes[6];
 	HCURSOR cursor;
 	switch(msg)
 	{

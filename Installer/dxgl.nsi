@@ -281,12 +281,10 @@ Function .onInit
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
   ${VersionCompare} "$0" "14.14.26429" $1
   ${If} $1 == 0
-    SectionSetFlags ${SEC_VCREDIST} 0
-    SectionSetText ${SEC_VCREDIST} ""
+    goto skipvcredist
   ${EndIf}
   ${If} $1 == 1
-    SectionSetFlags ${SEC_VCREDIST} 0
-    SectionSetText ${SEC_VCREDIST} ""
+    goto skipvcredist
   ${EndIf}
   goto vcinstall
   !else

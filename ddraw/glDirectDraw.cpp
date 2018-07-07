@@ -603,8 +603,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 	{
 		if (scalemodes)
 		{
-			mode.dmPelsWidth /= dxglcfg.postsizex;
-			mode.dmPelsHeight /= dxglcfg.postsizey;
+			mode.dmPelsWidth = (DWORD)((float)mode.dmPelsWidth / dxglcfg.postsizex);
+			mode.dmPelsHeight = (DWORD)((float)mode.dmPelsHeight / dxglcfg.postsizey);
 		}
 		modes[modenum-1] = mode;
 		if(modenum >= modemax)
@@ -749,8 +749,8 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	{
 		if (scalemodes)
 		{
-			mode.dmPelsWidth /= dxglcfg.postsizex;
-			mode.dmPelsHeight /= dxglcfg.postsizey;
+			mode.dmPelsWidth = (DWORD)((float)mode.dmPelsWidth / dxglcfg.postsizex);
+			mode.dmPelsHeight = (DWORD)((float)mode.dmPelsHeight / dxglcfg.postsizey);
 		}
 		modes[modenum-1] = mode;
 		if(modenum >= modemax)
@@ -1744,7 +1744,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	glDD7->internalx = glDD7->screenx = dwWidth;
 	glDD7->internaly = glDD7->screeny = dwHeight;
 	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
-		glDD7->internaly *= 1.2f;
+		glDD7->internaly = (DWORD)((float)glDD7->internaly * 1.2f);
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
 		glDD7->primary->texture->palette, 0, NULL);
 }
@@ -2010,8 +2010,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			if (!dxglcfg.primaryscale || (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 				(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
 			{
-				newmode.dmPelsWidth = dwWidth * xscale;
-				newmode.dmPelsHeight = dwHeight * yscale;
+				newmode.dmPelsWidth = (DWORD)(dwWidth * xscale);
+				newmode.dmPelsHeight = (DWORD)(dwHeight * yscale);
 			}
 			else
 			{
@@ -2039,8 +2039,8 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				}
 				else
 				{
-					primaryx = newmode.dmPelsWidth / xscale;
-					primaryy = newmode.dmPelsHeight / yscale;
+					primaryx = (DWORD)((float)newmode.dmPelsWidth / xscale);
+					primaryy = (DWORD)((float)newmode.dmPelsHeight / yscale);
 				}
 				screenx = newmode.dmPelsWidth;
 				if (crop400) screeny = 400;
@@ -2080,7 +2080,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			internalx = screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
 			internaly = screeny = currmode.dmPelsHeight;
-			if (crop400) internaly *= 1.2f;
+			if (crop400) internaly = (DWORD)((float)internaly * 1.2f);
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
@@ -2170,10 +2170,10 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			break;
 		case 3: // Center image
 			primaryx = dwWidth;
-			internalx = dwWidth * xscale;
+			internalx = (DWORD)((float)dwWidth * xscale);
 			screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
-			internaly = dwHeight * yscale;
+			internaly = (DWORD)((float)dwHeight * yscale);
 			screeny = currmode.dmPelsHeight;
 			primarybpp = dwBPP;
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
@@ -2218,7 +2218,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 				internalx = screenx = newmode2.dmPelsWidth;
 				primaryy = dwHeight;
 				internaly = screeny = newmode2.dmPelsHeight;
-				if (crop400) internaly *= 1.2f;
+				if (crop400) internaly = (DWORD)((float)internaly* 1.2f);
 				if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 				else internalbpp = screenbpp = newmode2.dmBitsPerPel;
 				if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
@@ -2400,12 +2400,14 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			break;
 		case 8:  // Custom size multiplier
 			primaryx = dwWidth;
-			internalx = dwWidth * xscale;
-			if (dxglcfg.DisplayMultiplierX) internalx *= dxglcfg.DisplayMultiplierX;
+			internalx = (DWORD)((float)dwWidth * xscale);
+			if (dxglcfg.DisplayMultiplierX) internalx =
+				(DWORD)((float)internalx * dxglcfg.DisplayMultiplierX);
 			screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
-			internaly = dwHeight * yscale;
-			if (dxglcfg.DisplayMultiplierY) internaly *= dxglcfg.DisplayMultiplierY;
+			internaly = (DWORD)((float)dwHeight * yscale);
+			if (dxglcfg.DisplayMultiplierY) internaly =
+				(DWORD)((float)internaly * dxglcfg.DisplayMultiplierY);
 			screeny = currmode.dmPelsHeight;
 			primarybpp = dwBPP;
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
@@ -2436,7 +2438,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			internalx = screenx = currmode.dmPelsWidth;
 			primaryy = dwHeight;
 			internaly = screeny = currmode.dmPelsHeight;
-			if (crop400) internaly *= 1.2f;
+			if (crop400) internaly  = (DWORD)((float)internaly * 1.2f);
 			if (dxglcfg.colormode) internalbpp = screenbpp = dwBPP;
 			else internalbpp = screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
@@ -2471,14 +2473,14 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 	case 3:
 	case 4:  // Forced windowed modes
 		primaryx = dwWidth;
-		internalx = screenx = dwWidth * xscale;
+		internalx = screenx = (DWORD)((float)dwWidth * xscale);
 		primaryy = dwHeight;
 		if (crop400)
 		{
-			screeny = 400 * yscale;
-			internaly = dwHeight * yscale;
+			screeny = (DWORD)(400.0f * yscale);
+			internaly = (DWORD)((float)dwHeight * yscale);
 		}
-		else internaly = screeny = dwHeight * yscale;
+		else internaly = screeny = (DWORD)((float)dwHeight * yscale);
 		internalbpp = screenbpp = dwBPP;
 		if (dwRefreshRate) internalrefresh = primaryrefresh = screenrefresh = dwRefreshRate;
 		else internalrefresh = primaryrefresh = screenrefresh = currmode.dmDisplayFrequency;

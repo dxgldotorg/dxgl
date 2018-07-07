@@ -21,6 +21,7 @@
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
+#pragma warning(disable: 4996)
 
 static const DDSURFACEDESC2 ddsdclipper =
 {
@@ -420,6 +421,7 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->hWnd) TRACE_RET(HRESULT,23,DDERR_CLIPPERISUSINGHWND);
 	bool memfail;
+	DWORD i;
 	if(lpClipList)
 	{
 		if(lpClipList->rdh.dwSize != sizeof(RGNDATAHEADER)) TRACE_RET(HRESULT,23,DDERR_INVALIDCLIPLIST);
@@ -473,19 +475,19 @@ HRESULT WINAPI glDirectDrawClipper_SetClipList(glDirectDrawClipper *This, LPRGND
 		This->clipsize = lpClipList->rdh.nCount;
 		memcpy(This->cliplist,lpClipList,sizeof(RGNDATAHEADER)+(lpClipList->rdh.nCount*sizeof(RECT)));
 		RECT *buffer = (RECT*)This->cliplist->Buffer;
-		for(int i = 0; i < lpClipList->rdh.nCount; i++)
+		for(i = 0; i < lpClipList->rdh.nCount; i++)
 		{
-			This->vertices[(i*4)+1].x = This->vertices[(i*4)+3].x = buffer[i].left;
-			This->vertices[i*4].x = This->vertices[(i*4)+2].x = buffer[i].right;
-			This->vertices[i*4].y = This->vertices[(i*4)+1].y = buffer[i].top;
-			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = buffer[i].bottom;
+			This->vertices[(i*4)+1].x = This->vertices[(i*4)+3].x = (GLfloat)buffer[i].left;
+			This->vertices[i*4].x = This->vertices[(i*4)+2].x = (GLfloat)buffer[i].right;
+			This->vertices[i*4].y = This->vertices[(i*4)+1].y = (GLfloat)buffer[i].top;
+			This->vertices[(i*4)+2].y = This->vertices[(i*4)+3].y = (GLfloat)buffer[i].bottom;
 			// 0 1 2 2 1 3
-			This->indices[i*6] = i*4;
-			This->indices[(i*6)+1] = This->indices[(i*6)+4] = (i*4)+1;
-			This->indices[(i*6)+2] = This->indices[(i*6)+3] = (i*4)+2;
-			This->indices[(i*6)+5] = (i*4)+3;
+			This->indices[i*6] = (GLushort)i*4;
+			This->indices[(i*6)+1] = This->indices[(i*6)+4] = (GLushort)(i*4)+1;
+			This->indices[(i*6)+2] = This->indices[(i*6)+3] = (GLushort)(i*4)+2;
+			This->indices[(i*6)+5] = (GLushort)(i*4)+3;
 		}
-		for(int i = 0; i < (4*lpClipList->rdh.nCount); i++)
+		for(i = 0; i < (4*lpClipList->rdh.nCount); i++)
 		{
 			This->vertices[i].s = This->vertices[i].t = 0.0f;
 		}

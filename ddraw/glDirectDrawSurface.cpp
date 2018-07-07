@@ -1361,7 +1361,7 @@ HRESULT WINAPI glDirectDrawSurface7::Restore()
 {
 	TRACE_ENTER(1,14,this);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	LONG sizes[6];
+	//LONG sizes[6];
 	//float xscale, yscale;
 	if(!ddInterface->renderer) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	/*if(hRC != ddInterface->renderer->hRC)

@@ -362,7 +362,6 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_VERTEXSHADER),NULL,VertexShader7Proc);
 		return;
 	}
-	DDSCAPS2 caps;
 	DDSURFACEDESC2 ddsd;
 	DDPIXELFORMAT ddpfz;
 	BOOL done = false;
@@ -1165,8 +1164,8 @@ void InitTest(int test)
 			sprites[0].height = 7;
 			break;
 		}
-		sprites[0].ddsd.dwWidth = sprites[0].width;
-		sprites[0].ddsd.dwHeight = sprites[0].height;
+		sprites[0].ddsd.dwWidth = (DWORD)sprites[0].width;
+		sprites[0].ddsd.dwHeight = (DWORD)sprites[0].height;
 		memcpy(&sprites[1], &sprites[0], sizeof(DDSPRITE));
 		memcpy(&sprites[2], &sprites[0], sizeof(DDSPRITE));
 		ddinterface->CreateSurface(&sprites[0].ddsd, &sprites[0].surface, NULL);
@@ -1928,10 +1927,10 @@ void RunTestTimed(int test)
 		if (sprites[0].yvelocity > 0 && sprites[0].y >= height) sprites[0].yvelocity = -sprites[0].yvelocity;
 		// Show stats
 		_tcscpy(message, _T("Requested position: X="));
-		_itot(sprites[0].x, number, 10);
+		_itot((int)sprites[0].x, number, 10);
 		_tcscat(message, number);
 		_tcscat(message, _T(" Y="));
-		_itot(sprites[0].y, number, 10);
+		_itot((int)sprites[0].y, number, 10);
 		_tcscat(message, number);
 		SetBkColor(hDCdest, RGB(0, 0, 127));
 		TextOut(hDCdest, 0, textsize.cy, message, _tcslen(message));
@@ -1939,7 +1938,7 @@ void RunTestTimed(int test)
 		{
 			if (fullscreen)
 			{
-				SetCursorPos(sprites[0].x, sprites[0].y);
+				SetCursorPos((int)sprites[0].x, (int)sprites[0].y);
 				GetCursorPos(&p2);
 			}
 			else
@@ -1989,11 +1988,11 @@ void RunTestTimed(int test)
 		{
 			if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
 			else temp1 = ddsrender;
-			destrect.left = sprites[0].x;
-			destrect.top = sprites[0].y;
-			destrect.right = sprites[0].x + sprites[0].ddsd.dwWidth;
+			destrect.left = (LONG)sprites[0].x;
+			destrect.top = (LONG)sprites[0].y;
+			destrect.right = (LONG)sprites[0].x + sprites[0].ddsd.dwWidth;
 			if (destrect.right > width) destrect.right = width;
-			destrect.bottom = sprites[0].y + sprites[0].ddsd.dwHeight;
+			destrect.bottom = (LONG)sprites[0].y + sprites[0].ddsd.dwHeight;
 			if (destrect.bottom > height) destrect.bottom = height;
 			srcrect.left = srcrect.top = 0;
 			srcrect.right = destrect.right - destrect.left;
@@ -2442,7 +2441,6 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 		RECT r;
-		DDSCAPS2 caps;
 		DDSURFACEDESC2 ddsd;
 		DDPIXELFORMAT ddpfz;
 		testnum = 14;
@@ -2935,7 +2933,6 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	{
 	case WM_INITDIALOG:
 		RECT r;
-		DDSCAPS2 caps;
 		DDSURFACEDESC2 ddsd;
 		DDPIXELFORMAT ddpfz;
 		testnum = 15;
@@ -3204,10 +3201,10 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd, IDC_EMISSIVE, WM_GETTEXT, MAX_PATH, (LPARAM)tmpstring);
 				if (!_stscanf(tmpstring, _T("%x"), &number)) number = 0;
-				material.emissive.b = (float)(number & 255) / 255.0;
-				material.emissive.g = (float)((number >> 8) & 255) / 255.0;
-				material.emissive.r = (float)((number >> 16) & 255) / 255.0;
-				material.emissive.a = (float)((number >> 24) & 255) / 255.0;
+				material.emissive.b = (float)(number & 255) / 255.0f;
+				material.emissive.g = (float)((number >> 8) & 255) / 255.0f;
+				material.emissive.r = (float)((number >> 16) & 255) / 255.0f;
+				material.emissive.a = (float)((number >> 24) & 255) / 255.0f;
 				d3d7dev->SetMaterial(&material);
 			}
 			break;
@@ -3216,10 +3213,10 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd, IDC_MATAMBIENT, WM_GETTEXT, MAX_PATH, (LPARAM)tmpstring);
 				if (!_stscanf(tmpstring, _T("%x"), &number)) number = 0;
-				material.ambient.b = (float)(number & 255) / 255.0;
-				material.ambient.g = (float)((number >> 8) & 255) / 255.0;
-				material.ambient.r = (float)((number >> 16) & 255) / 255.0;
-				material.ambient.a = (float)((number >> 24) & 255) / 255.0;
+				material.ambient.b = (float)(number & 255) / 255.0f;
+				material.ambient.g = (float)((number >> 8) & 255) / 255.0f;
+				material.ambient.r = (float)((number >> 16) & 255) / 255.0f;
+				material.ambient.a = (float)((number >> 24) & 255) / 255.0f;
 				d3d7dev->SetMaterial(&material);
 			}
 			break;
@@ -3228,10 +3225,10 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd, IDC_MATDIFFUSE, WM_GETTEXT, MAX_PATH, (LPARAM)tmpstring);
 				if (!_stscanf(tmpstring, _T("%x"), &number)) number = 0;
-				material.diffuse.b = (float)(number & 255) / 255.0;
-				material.diffuse.g = (float)((number >> 8) & 255) / 255.0;
-				material.diffuse.r = (float)((number >> 16) & 255) / 255.0;
-				material.diffuse.a = (float)((number >> 24) & 255) / 255.0;
+				material.diffuse.b = (float)(number & 255) / 255.0f;
+				material.diffuse.g = (float)((number >> 8) & 255) / 255.0f;
+				material.diffuse.r = (float)((number >> 16) & 255) / 255.0f;
+				material.diffuse.a = (float)((number >> 24) & 255) / 255.0f;
 				d3d7dev->SetMaterial(&material);
 			}
 			break;
@@ -3240,10 +3237,10 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 			{
 				SendDlgItemMessage(hWnd, IDC_MATSPECULAR, WM_GETTEXT, MAX_PATH, (LPARAM)tmpstring);
 				if (!_stscanf(tmpstring, _T("%x"), &number)) number = 0;
-				material.specular.b = (float)(number & 255) / 255.0;
-				material.specular.g = (float)((number >> 8) & 255) / 255.0;
-				material.specular.r = (float)((number >> 16) & 255) / 255.0;
-				material.specular.a = (float)((number >> 24) & 255) / 255.0;
+				material.specular.b = (float)(number & 255) / 255.0f;
+				material.specular.g = (float)((number >> 8) & 255) / 255.0f;
+				material.specular.r = (float)((number >> 16) & 255) / 255.0f;
+				material.specular.a = (float)((number >> 24) & 255) / 255.0f;
 				d3d7dev->SetMaterial(&material);
 			}
 			break;

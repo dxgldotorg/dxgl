@@ -371,13 +371,14 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 }
 glDirect3DDevice7::~glDirect3DDevice7()
 {
+	DWORD i;
 	TRACE_ENTER(1,14,this);
-	for(int i = 0; i < lightsmax; i++)
+	for(i = 0; i < lightsmax; i++)
 		if(lights[i]) delete lights[i];
 	free(lights);
-	for(int i = 0; i < 8; i++)
+	for(i = 0; i < 8; i++)
 		if(texstages[i].surface) texstages[i].surface->Release();
-	for(int i = 0; i < materialcount; i++)
+	for(i = 0; i < materialcount; i++)
 	{
 		if(materials[i])
 		{
@@ -394,7 +395,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 			glDirect3DViewport3_Release(viewports[i]);
 		}
 	}
-	for(int i = 0; i < texturecount; i++)
+	for(i = 0; i < texturecount; i++)
 	{
 		if(textures[i])
 		{
@@ -1267,7 +1268,6 @@ HRESULT WINAPI glDirect3DDevice7::LightEnable(DWORD dwLightIndex, BOOL bEnable)
 	TRACE_ENTER(3,14,this,8,dwLightIndex,22,bEnable);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	int i;
-	D3DLIGHT7 light;
 	bool foundlight = false;
 	if(dwLightIndex >= lightsmax)
 	{
@@ -2113,6 +2113,7 @@ HRESULT glDirect3DDevice7::CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle)
 	TRACE_ENTER(2,14,this,14,lpD3DMatHandle);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DMatHandle) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	D3DMATRIXHANDLE i;
 	int foundslot = 0;
 	if(!matrices)
 	{
@@ -2121,7 +2122,7 @@ HRESULT glDirect3DDevice7::CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle)
 		ZeroMemory(matrices,16*sizeof(D3D1MATRIX));
 		matrixcount = 16;
 	}
-	for(int i = 0; i < matrixcount; i++)
+	for(i = 0; i < matrixcount; i++)
 	{
 		if(i == 0) continue;
 		if(!matrices[i].active)
@@ -2245,10 +2246,11 @@ void glDirect3DDevice7::UpdateTransform()
 void CalculateExtents(D3DRECT *extents, D3DTLVERTEX *vertices, DWORD count)
 {
 	if(!count) return;
+	DWORD i;
 	D3DVALUE minX,minY,maxX,maxY;
 	minX = maxX = vertices[0].dvSX;
 	minY = maxY = vertices[0].dvSY;
-	for(int i = 0; i < count; i++)
+	for(i = 0; i < count; i++)
 	{
 		if(vertices[i].dvSX < minX) minX = vertices[i].dvSX;
 		if(vertices[i].dvSX > maxX) maxX = vertices[i].dvSX;
@@ -2357,6 +2359,7 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 	D3DVALUE length;
 	D3DVALUE attenuation;
 	D3DVALUE pf;
+	DWORD i;
 	in[3] = 1.0f;
 	if(transform_dirty) UpdateTransform();
 	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
@@ -2366,7 +2369,7 @@ INT glDirect3DDevice7::TransformAndLight(D3DTLVERTEX **output, DWORD *outsize, D
 		*output = tmpptr;
 		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
 	}
-	for(int i = 0; i < count; i++)
+	for(i = 0; i < count; i++)
 	{
 		in[0] = input[i+start].dvX;
 		in[1] = input[i+start].dvY;
@@ -2468,6 +2471,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVE
 {
 	TRACE_ENTER(8,14,this,14,output,14,outsize,14,input,5,start,5,dest,8,count,14,extents);
 	GLfloat in[4];
+	DWORD i;
 	in[3] = 1.0f;
 	if(transform_dirty) UpdateTransform();
 	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
@@ -2477,7 +2481,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DVE
 		*output = tmpptr;
 		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
 	}
-	for(int i = 0; i < count; i++)
+	for(i = 0; i < count; i++)
 	{
 		in[0] = input[i+start].dvX;
 		in[1] = input[i+start].dvY;
@@ -2498,6 +2502,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLV
 {
 	TRACE_ENTER(8,14,this,14,output,14,outsize,14,input,5,start,5,dest,8,count,14,extents);
 	GLfloat in[4];
+	DWORD i;
 	in[3] = 1.0f;
 	if(transform_dirty) UpdateTransform();
 	if(*outsize < (dest+count)*sizeof(D3DTLVERTEX))
@@ -2507,7 +2512,7 @@ INT glDirect3DDevice7::TransformOnly(D3DTLVERTEX **output, DWORD *outsize, D3DLV
 		*output = tmpptr;
 		*outsize = (dest+count)*sizeof(D3DTLVERTEX);
 	}
-	for(int i = 0; i < count; i++)
+	for(i = 0; i < count; i++)
 	{
 		in[0] = input[i+start].dvX;
 		in[1] = input[i+start].dvY;

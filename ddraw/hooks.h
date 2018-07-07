@@ -31,7 +31,7 @@ typedef struct
 
 extern CRITICAL_SECTION hook_cs;
 
-BOOL IsCallerOpenGL(void *returnaddress);
+BOOL IsCallerOpenGL(BYTE *returnaddress);
 
 void InitHooks();
 void ShutdownHooks();

@@ -41,6 +41,7 @@
 #include "dxgltest.h"
 #include "common.h"
 #include "../common/version.h"
+#pragma warning(disable: 4996)
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -453,12 +454,12 @@ void FloatToAspect(float f, LPTSTR aspect)
 		_tcscpy(aspect, _T("16:10"));
 		return;
 	}
-	if (fabsf(f - 1.7777777) < 0.0001f)
+	if (fabsf(f - 1.7777777f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("16:9"));
 		return;
 	}
-	if (fabsf(f - 1.9333333) < 0.0001f)
+	if (fabsf(f - 1.9333333f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("256:135"));
 		return;
@@ -475,7 +476,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 	{
 		if (fabsf(modff(fract*i, &dummy)) < 0.0001f)
 		{
-			_itot((f*i) + .5f, aspect, 10);
+			_itot((int)((f*(float)i) + .5f), aspect, 10);
 			_itot(i, denominator, 10);
 			_tcscat(aspect, _T(":"));
 			_tcscat(aspect, denominator);
@@ -879,7 +880,7 @@ float GetFloat(HWND hWnd, int dlgitem, float *mask)
 	else
 	{
 		*mask = 1.0f;
-		return _ttof(buffer);
+		return (float)_ttof(buffer);
 	}
 }
 
@@ -909,7 +910,6 @@ int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum, BOOL usemask)
 
 void ProcessResolutionString(LPTSTR input)
 {
-	DWORD x, y, refresh;
 	TCHAR buffer[32];
 	int ptr;
 	int number[3];
@@ -1086,15 +1086,15 @@ void GetPostScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx,
 			if (ptr)
 			{
 				*ptr = 0;
-				*x = _ttof(buffer);
-				*y = _ttof(ptr + 1);
+				*x = (float)_ttof(buffer);
+				*y = (float)_ttof(ptr + 1);
 				if ((*x >= 0.25f) && (*y < 0.25f)) *y = *x;
 				return;
 			}
 			else
 			{
-				*x = _ttof(buffer);
-				*y = _ttof(buffer);
+				*x = (float)_ttof(buffer);
+				*y = (float)_ttof(buffer);
 				return;
 			}
 		}
@@ -1285,7 +1285,6 @@ void DiscardDuplicateModes(DEVMODE **array, DWORD *count)
 
 LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	int newmodex, newmodey, newmoderefresh;
 	DEVMODE mode;
 	DEVMODE *modes;
 	DEVMODE *tmpmodes;
@@ -1293,7 +1292,7 @@ LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	DWORD modemax;
 	TCHAR str[64];
 	TCHAR *ptr;
-	int i, j;
+	DWORD i;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -1701,7 +1700,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			if (HIWORD(wParam) == CBN_KILLFOCUS)
 			{
 				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}
@@ -1774,7 +1773,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
 					&cfgmask->postsizex, &cfgmask->postsizey);
 				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex, cfgmask->postsizey, tristate);
+					(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				modelistdirty = TRUE;
@@ -1990,7 +1989,7 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			{
 				_tcscpy(errormsg, _T("Saved dxgl.ini to "));
 				_tcscat(errormsg, apps[current_app].path);
-				_tcscat(errormsg, _T("\dxgl.ini"));
+				_tcscat(errormsg, _T("\\dxgl.ini"));
 				MessageBox(hWnd, errormsg, _T("Notice"), MB_OK | MB_ICONINFORMATION);
 			}
 			EndDialog(hWnd, IDOK);
@@ -2909,7 +2908,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("4x"));
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-			cfgmask->postsizex, cfgmask->postsizey, tristate);
+			(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
 		// primary scaling
 		_tcscpy(buffer, _T("1x scale"));
 		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -2992,7 +2991,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)buffer);
-		SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+		SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
 		// texfilter
 		_tcscpy(buffer,_T("Application default"));
 		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
@@ -3700,7 +3699,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SetCombo(hTabs[0], IDC_COLORDEPTH, 0, 0, tristate);
 				SetCombo(hTabs[0], IDC_SCALE, cfg->scalingfilter, cfgmask->scalingfilter, tristate);
 				SetCombo(hTabs[0], IDC_EXTRAMODES, 0, 0, tristate);
-				SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
 				SetCombo(hTabs[0], IDC_SORTMODES, cfg->SortModes, cfgmask->SortModes, tristate);
 				SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
@@ -3741,7 +3740,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				// Effects tab
 				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex , cfgmask->postsizey, tristate);
+					(DWORD)cfgmask->postsizex , (DWORD)cfgmask->postsizey, tristate);
 				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
 				if (cfg->primaryscale == 12)
 				{

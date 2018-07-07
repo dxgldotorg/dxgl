@@ -1292,19 +1292,19 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 		switch (bpp)
 		{
 		case 8:
-			for (int y = 0; y < 16; y++)
+			for (y = 0; y < 16; y++)
 			{
-				for (int x = 0; x < 16; x++)
+				for (x = 0; x < 16; x++)
 				{
 					i = x + ((15 - y) << 4);
-					buffer[x + (ddsd.lPitch*y)] = i;
+					buffer[x + (ddsd.lPitch*y)] = i & 0xFF;
 				}
 			}
 			break;
 		case 15:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 32; x++)
+				for (x = 0; x < 32; x++)
 				{
 					switch (y)
 					{
@@ -1337,9 +1337,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			}
 			break;
 		case 16:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 64; x++)
+				for (x = 0; x < 64; x++)
 				{
 					switch (y)
 					{
@@ -1372,9 +1372,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			}
 			break;
 		case 24:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 256; x++)
+				for (x = 0; x < 256; x++)
 				{
 					switch (y)
 					{
@@ -1409,9 +1409,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			break;
 		case 32:
 		default:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 256; x++)
+				for (x = 0; x < 256; x++)
 				{
 					switch (y)
 					{
@@ -1452,19 +1452,19 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 		switch (bpp)
 		{
 		case 8:
-			for (int y = 0; y < 16; y++)
+			for (y = 0; y < 16; y++)
 			{
-				for (int x = 0; x < 16; x++)
+				for (x = 0; x < 16; x++)
 				{
 					i = 255 - (x + ((15 - y) << 4));
-					buffer[x + (ddsd.lPitch*y)] = i;
+					buffer[x + (ddsd.lPitch*y)] = i & 0xFF;
 				}
 			}
 			break;
 		case 15:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 32; x++)
+				for (x = 0; x < 32; x++)
 				{
 					switch (y)
 					{
@@ -1497,9 +1497,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			}
 			break;
 		case 16:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 64; x++)
+				for (x = 0; x < 64; x++)
 				{
 					switch (y)
 					{
@@ -1532,9 +1532,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			}
 			break;
 		case 24:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 256; x++)
+				for (x = 0; x < 256; x++)
 				{
 					switch (y)
 					{
@@ -1569,9 +1569,9 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 			break;
 		case 32:
 		default:
-			for (int y = 1; y < 8; y++)
+			for (y = 1; y < 8; y++)
 			{
-				for (int x = 0; x < 256; x++)
+				for (x = 0; x < 256; x++)
 				{
 					switch (y)
 					{

@@ -179,7 +179,7 @@ WNDCLASSEX wndclassdxgltemp =
 	_T("DXGLTempSizingWindowClass"),
 	NULL
 };
-ATOM wndclassdxgltempatom = NULL;
+ATOM wndclassdxgltempatom = 0;
 
 void RegisterDXGLTempWindowClass()
 {
@@ -196,6 +196,6 @@ void UnregisterDXGLTempWindowClass()
 	if (wndclassdxgltempatom)
 	{
 		UnregisterClass(wndclassdxgltemp.lpszClassName, GetModuleHandle(NULL));
-		wndclassdxgltempatom = NULL;
+		wndclassdxgltempatom = 0;
 	}
 }

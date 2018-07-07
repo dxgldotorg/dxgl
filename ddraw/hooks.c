@@ -65,8 +65,8 @@ int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
 {
 	if (!cmp->hwnd) return 1; // Put blanks at end for cleanup
 	if (key->hwnd < cmp->hwnd) return -1;
-	if (key->hwnd == cmp->hwnd) return 0;
-	if (key->hwnd > cmp->hwnd) return 1;
+	else if (key->hwnd == cmp->hwnd) return 0;
+	else return 1;
 }
 
 void SetHookWndProc(HWND hWnd, WNDPROC wndproc, LPDIRECTDRAW7 lpDD7, BOOL proconly, BOOL delete)
@@ -126,7 +126,7 @@ HWND_HOOK *GetWndHook(HWND hWnd)
 * @return
 *  Returns nonzero if the address points to opengl32.dll, otherwise returns zero.
 */
-BOOL IsCallerOpenGL(void *returnaddress)
+BOOL IsCallerOpenGL(BYTE *returnaddress)
 {
 	HANDLE hSnapshot;
 	int isgl = 0;
@@ -161,19 +161,19 @@ void InitHooks()
 	EnterCriticalSection(&hook_cs);
 	wndhook_count = 0;
 	MH_Initialize();
-	MH_CreateHook(&SetWindowLongA, HookSetWindowLongA, &_SetWindowLongA);
-	MH_CreateHook(&SetWindowLongW, HookSetWindowLongW, &_SetWindowLongW);
-	MH_CreateHook(&GetWindowLongA, HookGetWindowLongA, &_GetWindowLongA);
-	MH_CreateHook(&GetWindowLongW, HookGetWindowLongW, &_GetWindowLongW);
+	MH_CreateHook(&SetWindowLongA, HookSetWindowLongA, (LPVOID*)&_SetWindowLongA);
+	MH_CreateHook(&SetWindowLongW, HookSetWindowLongW, (LPVOID*)&_SetWindowLongW);
+	MH_CreateHook(&GetWindowLongA, HookGetWindowLongA, (LPVOID*)&_GetWindowLongA);
+	MH_CreateHook(&GetWindowLongW, HookGetWindowLongW, (LPVOID*)&_GetWindowLongW);
 #ifdef _M_X64
-	MH_CreateHook(&SetWindowLongPtrA, HookSetWindowLongPtrA, &_SetWindowLongPtrA);
-	MH_CreateHook(&SetWindowLongPtrW, HookSetWindowLongPtrW, &_SetWindowLongPtrW);
-	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, &_GetWindowLongPtrA);
-	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, &_GetWindowLongPtrW);
+	MH_CreateHook(&SetWindowLongPtrA, HookSetWindowLongPtrA, (LPVOID*)&_SetWindowLongPtrA);
+	MH_CreateHook(&SetWindowLongPtrW, HookSetWindowLongPtrW, (LPVOID*)&_SetWindowLongPtrW);
+	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, (LPVOID*)&_GetWindowLongPtrA);
+	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, (LPVOID*)&_GetWindowLongPtrW);
 #endif
-	MH_CreateHook(&GetCursorPos, HookGetCursorPos, &_GetCursorPos);
-	MH_CreateHook(&SetCursorPos, HookSetCursorPos, &_SetCursorPos);
-	MH_CreateHook(&SetCursor, HookSetCursor, &_SetCursor);
+	MH_CreateHook(&GetCursorPos, HookGetCursorPos, (LPVOID*)&_GetCursorPos);
+	MH_CreateHook(&SetCursorPos, HookSetCursorPos, (LPVOID*)&_SetCursorPos);
+	MH_CreateHook(&SetCursor, HookSetCursor, (LPVOID*)&_SetCursor);
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
 }
@@ -258,7 +258,7 @@ void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 		if (lpDD7) wndhook->lpDD7 = lpDD7;
 		return;
 	}
-	wndproc = _GetWindowLongPtrA(hWnd, GWLP_WNDPROC);
+	wndproc = (WNDPROC)_GetWindowLongPtrA(hWnd, GWLP_WNDPROC);
 	SetHookWndProc(hWnd, wndproc, lpDD7, FALSE, FALSE);
 	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
 	EnableWindowLongHooks();
@@ -323,7 +323,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	case WM_STYLECHANGED:
-		style = lParam;
+		style = (STYLESTRUCT*)lParam;
 		if (style->styleNew == style->styleOld) break;
 		if (wParam == GWL_STYLE)
 		{
@@ -746,7 +746,6 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	HWND_HOOK *wndhook;
 	LONG sizes[6];
 	POINT pt;
-	BOOL error;
 	int oldx, oldy;
 	float mulx, muly;
 	int translatex, translatey;

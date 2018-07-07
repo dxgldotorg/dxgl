@@ -89,7 +89,6 @@ HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport)
 
 HRESULT WINAPI glDirect3DViewport3_QueryInterface(glDirect3DViewport3 *This, REFIID riid, void** ppvObj)
 {
-	HRESULT ret;
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if ((riid == IID_IDirect3DViewport3) || (riid == IID_IDirect3DViewport2) ||

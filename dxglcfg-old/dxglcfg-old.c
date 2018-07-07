@@ -34,6 +34,7 @@
 #include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
 #include <gl/GL.h>
+#pragma warning(disable: 4996)
 
 #ifndef SHGFI_ADDOVERLAYS
 #define SHGFI_ADDOVERLAYS 0x000000020
@@ -352,7 +353,7 @@ void FloatToAspect(float f, LPTSTR aspect)
 {
 	double integer;
 	double dummy;
-	float fract;
+	double fract;
 	TCHAR denominator[5];
 	int i;
 	if (_isnan(f)) f = 0.0f; //Handle NAN condition
@@ -367,32 +368,32 @@ void FloatToAspect(float f, LPTSTR aspect)
 		return;
 	}
 	// Handle common aspects
-	if (fabsf(f - 1.25f) < 0.0001f)
+	if (fabs(f - 1.25f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("5:4"));
 		return;
 	}
-	if (fabsf(f - 1.3333333f) < 0.0001f)
+	if (fabs(f - 1.3333333f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("4:3"));
 		return;
 	}
-	if (fabsf(f - 1.6f) < 0.0001f)
+	if (fabs(f - 1.6f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("16:10"));
 		return;
 	}
-	if (fabsf(f - 1.7777777) < 0.0001f)
+	if (fabs(f - 1.7777777f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("16:9"));
 		return;
 	}
-	if (fabsf(f - 1.9333333) < 0.0001f)
+	if (fabs(f - 1.9333333f) < 0.0001f)
 	{
 		_tcscpy(aspect, _T("256:135"));
 		return;
 	}
-	fract = modff(f, &integer);
+	fract = modf(f, &integer);
 	if (fract < 0.0001f)  //Handle integer aspects
 	{
 		_itot((int)integer, aspect, 10);
@@ -402,9 +403,9 @@ void FloatToAspect(float f, LPTSTR aspect)
 	// Finally try from 2 to 1000
 	for (i = 2; i < 1000; i++)
 	{
-		if (fabsf(modff(fract*i, &dummy)) < 0.0001f)
+		if (fabs(modf(fract*i, &dummy)) < 0.0001f)
 		{
-			_itot((f*i) + .5f, aspect, 10);
+			_itot((int)((f*(float)i) + .5f), aspect, 10);
 			_itot(i, denominator, 10);
 			_tcscat(aspect, _T(":"));
 			_tcscat(aspect, denominator);
@@ -595,15 +596,15 @@ void GetPostScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx,
 			if (ptr)
 			{
 				*ptr = 0;
-				*x = _ttof(buffer);
-				*y = _ttof(ptr + 1);
+				*x = (float)_ttof(buffer);
+				*y = (float)_ttof(ptr + 1);
 				if ((*x >= 0.25f) && (*y < 0.25f)) *y = *x;
 				return;
 			}
 			else
 			{
-				*x = _ttof(buffer);
-				*y = _ttof(buffer);
+				*x = (float)_ttof(buffer);
+				*y = (float)_ttof(buffer);
 				return;
 			}
 		}
@@ -633,11 +634,11 @@ float GetAspectCombo(HWND hWnd, int DlgItem, float *mask)
 			if (ptr)
 			{
 				*ptr = 0;
-				numerator = _ttof(buffer);
-				denominator = _ttof(ptr + 1);
+				numerator = (float)_ttof(buffer);
+				denominator = (float)_ttof(ptr + 1);
 				return numerator / denominator;
 			}
-			else return _ttof(buffer);
+			else return (float)_ttof(buffer);
 		}
 	}
 }
@@ -822,7 +823,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("4x"));
 		SendDlgItemMessage(hWnd, IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-			cfgmask->postsizex, cfgmask->postsizey, tristate);
+			(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
 		// final scaling filter
 		_tcscpy(buffer,_T("Nearest"));
 		SendDlgItemMessage(hWnd,IDC_SCALE,CB_ADDSTRING,0,(LPARAM)buffer);
@@ -840,7 +841,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
 		_tcscpy(buffer,_T("5:4"));
 		SendDlgItemMessage(hWnd,IDC_ASPECT,CB_ADDSTRING,0,(LPARAM)buffer);
-		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);		
+		SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);		
 		// highres
 		if(cfg->primaryscale) SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_CHECKED,0);
 		else SendDlgItemMessage(hWnd,IDC_HIGHRES,BM_SETCHECK,BST_UNCHECKED,0);
@@ -1005,7 +1006,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			if (RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
 			{
 				installpath = (LPTSTR)malloc(keysize);
-				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, installpath, &keysize);
+				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &keysize);
 				if (error != ERROR_SUCCESS)
 				{
 					free(installpath);
@@ -1327,8 +1328,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				SetCheck(hWnd,IDC_EXTRAMODES,cfg->AddModes,cfgmask->AddModes,tristate);
 				SetCombo(hWnd, IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex, cfgmask->postsizey, tristate);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+					(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
 			}
 			break;
 		case IDC_VIDMODE:
@@ -1422,7 +1423,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				GetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, &cfg->postsizex, &cfg->postsizey,
 					&cfgmask->postsizex, &cfgmask->postsizey);
 				SetPostScaleCombo(hWnd, IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					cfgmask->postsizex, cfgmask->postsizey, tristate);
+					(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
 				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}
@@ -1438,7 +1439,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == CBN_KILLFOCUS)
 			{
 				cfg->aspect = GetAspectCombo(hWnd, IDC_ASPECT, &cfgmask->aspect);
-				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, cfgmask->aspect, tristate);
+				SetAspectCombo(hWnd, IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
 				EnableWindow(GetDlgItem(hWnd, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 			}

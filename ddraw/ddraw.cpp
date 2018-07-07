@@ -131,7 +131,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 	EnterCriticalSection(&dll_cs);
 	HRESULT ret;
-	if(gllock || IsCallerOpenGL(_ReturnAddress()))
+	if(gllock || IsCallerOpenGL((BYTE*)_ReturnAddress()))
 	{
 		if(!sysddraw)
 		{

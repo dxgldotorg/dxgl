@@ -169,8 +169,8 @@ typedef struct glExtensions
 	int GLEXT_ARB_sampler_objects;
 	int GLEXT_EXT_gpu_shader4;
 	int GLEXT_GREMEDY_frame_terminator;
-	int glver_major;
-	int glver_minor;
+	DWORD glver_major;
+	DWORD glver_minor;
 	BOOL atimem;
 } glExtensions;
 
