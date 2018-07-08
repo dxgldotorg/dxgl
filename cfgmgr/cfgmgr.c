@@ -24,9 +24,6 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <ShellAPI.h>
-#ifndef LSTATUS
-typedef LONG LSTATUS;
-#endif
 #include "crc32.h"
 #include "LibSha256.h"
 #include "cfgmgr.h"
@@ -109,6 +106,11 @@ void ShowRestartDialog()
 	DialogBox(hddraw, MAKEINTRESOURCE(IDD_COMPAT), NULL, CompatDialogCallback);
 	cmdline = GetCommandLine();
 	cmdline2 = (LPTSTR)malloc((_tcslen(cmdline) + 1)*sizeof(TCHAR));
+	if (!cmdline2)
+	{
+		MessageBox(NULL, _T("Fatal error restarting application"), _T("Out of memory"), MB_OK | MB_ICONSTOP);
+		ExitProcess(ERROR_NOT_ENOUGH_MEMORY);
+	}
 	_tcscpy(cmdline2, cmdline);
 	ZeroMemory(&startupinfo, sizeof(STARTUPINFO));
 	startupinfo.cb = sizeof(STARTUPINFO);
@@ -882,7 +884,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	sha256string[256 / 4] = 0;
 	_tcscat(regkey, sha256string);
 	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hKey);
-	if (error = ERROR_SUCCESS)
+	if (error == ERROR_SUCCESS)
 	{
 		RegCloseKey(hKey);
 		return TRUE;
@@ -902,6 +904,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	int i;
 	TCHAR filename[MAX_PATH + 1];
 	_tcsncpy(pathlwr, path, MAX_PATH);
+	pathlwr[MAX_PATH] = 0;
 	for (i = _tcslen(pathlwr); (i > 0) && (pathlwr[i] != 92) && (pathlwr[i] != 47); i--);
 	pathlwr[i] = 0;
 	_tcslwr(pathlwr);
@@ -1276,6 +1279,7 @@ void INIWriteFloat(HANDLE file, const char *name, float value, float mask, int d
 		strcat(floatformat, number);
 		strcat(floatformat, "g");
 		_snprintf(number, 31, floatformat, value);
+		number[31] = 0;
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
 		buffersize = strlen(buffer);
@@ -1457,7 +1461,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 		{
 			while (1)
 			{
-				ReadFile(file2, buffer, 512, &bytesread, NULL);
+				if(!ReadFile(file2, buffer, 512, &bytesread, NULL)) break;
 				if (!bytesread) break;
 				Sha256Update(&sha_context, buffer, bytesread);
 				if (bytesread < 512) break;
@@ -1564,7 +1568,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
 	HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value);
-	BOOL(WINAPI *_SetProcessDpiAwarenessContext)(HANDLE value);
+	BOOL(WINAPI *_SetProcessDpiAwarenessContext)(HANDLE value) = NULL;
 	BOOL(WINAPI *_SetProcessDPIAware)();
 	GetModuleFileName(NULL, filename, MAX_PATH);
 	_tcscpy(regkey, regkeybase);

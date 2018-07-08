@@ -152,10 +152,10 @@ INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		mod_ddraw = LoadLibrary(_T("ddraw.dll"));
-		IsDXGLDDraw = GetProcAddress(mod_ddraw,"IsDXGLDDraw");
+		if(mod_ddraw) IsDXGLDDraw = GetProcAddress(mod_ddraw,"IsDXGLDDraw");
 		if(IsDXGLDDraw)	SetWindowText(GetDlgItem(hWnd,IDC_DDTYPE),_T("DXGL"));
 		else SetWindowText(GetDlgItem(hWnd,IDC_DDTYPE),_T("System"));
-		FreeLibrary(mod_ddraw);
+		if(mod_ddraw) FreeLibrary(mod_ddraw);
 		GetFileVersion(ver,dllnames[0]);
 		SetWindowText(GetDlgItem(hWnd,dllboxes[0]),ver.c_str());
 		if(!IsDXGLDDraw)
