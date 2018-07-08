@@ -116,12 +116,12 @@ BOOL CheckCmdBuffer(glRenderer *This, DWORD cmdsize, DWORD uploadsize, DWORD ver
 	}
 	if (vertexsize)
 	{
-		if ((This->state.cmd->write_ptr_vertex + vertexsize) > (unsigned)This->state.cmd->vertices->size)
+		if ((This->state.cmd->write_ptr_vertex + vertexsize) > This->state.cmd->vertices->size)
 			over = TRUE;
 	}
 	if (indexsize)
 	{
-		if ((This->state.cmd->write_ptr_index + indexsize) > (unsigned)This->state.cmd->indices->size)
+		if ((This->state.cmd->write_ptr_index + indexsize) > This->state.cmd->indices->size)
 			over = TRUE;
 	}
 	if (over)
@@ -786,12 +786,12 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 					r1.bottom = cmd->Blt.cmd.dest->levels[0].ddsd.dwHeight;
 				}
 				// Check backbuffer size and resize
-				if(((signed)This->backbuffer->levels[0].ddsd.dwWidth < r1.right) ||
-					((signed)This->backbuffer->levels[0].ddsd.dwHeight < r1.bottom))
+				if((This->backbuffer->levels[0].ddsd.dwWidth < r1.right) ||
+					(This->backbuffer->levels[0].ddsd.dwHeight < r1.bottom))
 				{
 					DDSURFACEDESC2 newdesc = This->backbuffer->levels[0].ddsd;
-					if ((signed)newdesc.dwWidth < r1.right) newdesc.dwWidth = r1.right;
-					if ((signed)newdesc.dwHeight < r1.bottom) newdesc.dwHeight = r1.bottom;
+					if (newdesc.dwWidth < r1.right) newdesc.dwWidth = r1.right;
+					if (newdesc.dwHeight < r1.bottom) newdesc.dwHeight = r1.bottom;
 					tmp_cmd.SetTextureSurfaceDesc.opcode = OP_SETTEXTURESURFACEDESC;
 					tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd) - 8;
 					tmp_cmd.SetTextureSurfaceDesc.level = 0;
@@ -1138,13 +1138,13 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			(cmd->DrawScreen.texture->bigheight != (view[3]-view[2]))))
 		{
 			// Check backbuffer size and resize
-			if (((signed)This->backbuffer->levels[0].ddsd.dwWidth < cmd->DrawScreen.texture->bigwidth) ||
-				((signed)This->backbuffer->levels[0].ddsd.dwHeight < cmd->DrawScreen.texture->bigheight))
+			if ((This->backbuffer->levels[0].ddsd.dwWidth < cmd->DrawScreen.texture->bigwidth) ||
+				(This->backbuffer->levels[0].ddsd.dwHeight < cmd->DrawScreen.texture->bigheight))
 			{
 				DDSURFACEDESC2 newdesc = This->backbuffer->levels[0].ddsd;
-				if ((signed)newdesc.dwWidth < cmd->DrawScreen.texture->bigwidth)
+				if (newdesc.dwWidth < cmd->DrawScreen.texture->bigwidth)
 					newdesc.dwWidth = cmd->DrawScreen.texture->bigwidth;
-				if ((signed)newdesc.dwHeight < cmd->DrawScreen.texture->bigheight)
+				if (newdesc.dwHeight < cmd->DrawScreen.texture->bigheight)
 					newdesc.dwHeight = cmd->DrawScreen.texture->bigheight;
 				tmp_cmd.SetTextureSurfaceDesc.opcode = OP_SETTEXTURESURFACEDESC;
 				tmp_cmd.SetTextureSurfaceDesc.size = sizeof(SetTextureSurfaceDescCmd) - 8;
@@ -3631,10 +3631,10 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 		ddsd.dwHeight = y2;
 		glTexture_Create(&ddsd, &This->backbuffer, This, x2, y2, FALSE, TRUE);
 	}
-	if (((signed)This->backbuffer->levels[0].ddsd.dwWidth < x2) || ((signed)This->backbuffer->levels[0].ddsd.dwHeight < y2))
+	if ((This->backbuffer->levels[0].ddsd.dwWidth < x2) || (This->backbuffer->levels[0].ddsd.dwHeight < y2))
 	{
-		if ((signed)This->backbuffer->levels[0].ddsd.dwWidth > x2) x2 = This->backbuffer->levels[0].ddsd.dwWidth;
-		if ((signed)This->backbuffer->levels[0].ddsd.dwHeight > y2) y2 = This->backbuffer->levels[0].ddsd.dwHeight;
+		if (This->backbuffer->levels[0].ddsd.dwWidth > x2) x2 = This->backbuffer->levels[0].ddsd.dwWidth;
+		if (This->backbuffer->levels[0].ddsd.dwHeight > y2) y2 = This->backbuffer->levels[0].ddsd.dwHeight;
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		ddsd.dwWidth = x2;

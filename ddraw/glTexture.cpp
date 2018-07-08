@@ -272,7 +272,7 @@ ULONG glTexture_Release(glTexture *This, BOOL backend)
 }
 HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 ddsd, DWORD flags, BOOL backend)
 {
-	if (level > (signed)(This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
+	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	if (!ddsd) return DDERR_INVALIDPARAMS;
 	InterlockedIncrement(&This->levels[level].locked);
 	if (backend)
@@ -297,7 +297,7 @@ HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 
 }
 HRESULT glTexture_Unlock(glTexture *This, GLint level, LPRECT r, BOOL backend)
 {
-	if (level > (signed)(This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
+	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	InterlockedDecrement(&This->levels[level].locked);
 	if ((This->miplevel > 1) || dxglcfg.DebugUploadAfterUnlock)
 	{
