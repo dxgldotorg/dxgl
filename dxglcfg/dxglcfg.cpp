@@ -1537,8 +1537,9 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		if (uxtheme)
 		{
 			if (hThemeDisplay) _CloseThemeData(hThemeDisplay);
-			_OpenThemeData(hWnd, L"Button");
+			hThemeDisplay = _OpenThemeData(hWnd, L"Button");
 		}
+		break;
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
