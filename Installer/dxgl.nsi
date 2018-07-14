@@ -184,7 +184,7 @@ Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
   DetailPrint "Downloading ${runtime_name} Runtime"
   NSISdl::download ${runtime_url} $TEMP\${runtime_filename}
   DetailPrint "Checking ${runtime_name} Runtime"
-  sha512-nsis::CalculateSha512Sum $TEMP\${runtime_filename} ${runtime_sha512}
+  dxgl-nsis::CalculateSha512Sum $TEMP\${runtime_filename} ${runtime_sha512}
   Pop $0
   ${If} $0 == "0"
     MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download ${runtime_name} Redistributable.  Would you like to retry?" IDYES vcdownloadretry
@@ -249,6 +249,13 @@ SectionEnd
 
 Function .onInit
   !if ${COMPILER} == "VC2017_7"
+  dxgl-nsis::CheckSSE2 $0
+  Pop $0
+  ${If} $0 == "0"
+    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires a processor with SSE2 capability.$\r\
+	Please download the VS2010 build to use DXGL on your system."
+	Quit
+  ${EndIf}
   ${IfNot} ${AtLeastWinVista}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows Vista Service Pack 2.$\r\
 	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the VS2010 build."

@@ -18,10 +18,10 @@
     <ClCompile Include="LibSha512.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sha512-nsis.c">
+    <ClCompile Include="pluginapi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pluginapi.c">
+    <ClCompile Include="dxgl-nsis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

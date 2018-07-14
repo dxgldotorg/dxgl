@@ -1,4 +1,5 @@
-// SHA-512 plugin for NSIS, used to verify runtime files in the DXGL installer.
+// DXGL plugin for NSIS, used to verify runtime files in the DXGL installer,
+// and to verify certain CPU features on certain builds of DXGL.
 // This plugin links to LibSha512, from waterjuice.org, which is published as
 // public domain.  In addition, the source code to this plugin is public
 // domain.
@@ -10,6 +11,7 @@
 #include <Windows.h>
 #include "LibSha512.h"
 #include "pluginapi.h"
+#include <intrin.h>
 #ifndef _TCHAR_DEFINED
 #include <tchar.h>
 #endif
@@ -25,7 +27,7 @@ unsigned char hexdigit(unsigned char c)
 	else return (c + 'A' - 10);
 }
 
-// API:  sha512-nsis::CalculateSha512Sum file comp
+// API:  dxgl-nsis::CalculateSha512Sum file comp
 
 void __declspec(dllexport) CalculateSha512Sum(HWND hwndParent, int string_size,
 	TCHAR *variables, stack_t **stacktop, extra_parameters *extra)
@@ -82,6 +84,20 @@ void __declspec(dllexport) CalculateSha512Sum(HWND hwndParent, int string_size,
 	pushstring(filename);
 }
 
+// API:  dxgl-nsis::CheckSSE2
+
+void __declspec(dllexport) CheckSSE2(HWND hwndParent, int string_size,
+	TCHAR *variables, stack_t **stacktop, extra_parameters *extra)
+{
+	int cpuid[4];
+	char out[256];
+	EXDLL_INIT();
+	__cpuid(cpuid, 1);
+	if ((cpuid[3] >> 26) & 1) out[0] = '1';
+	else out[0] = '0';
+	out[1] = 0;
+	pushstring(out);
+}
 
 // Quick and dirty memcpy
 void *memcpy(unsigned char *dest, unsigned char *src, size_t size)

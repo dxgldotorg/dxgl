@@ -47,7 +47,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxglcfg", "dxglcfg\dxglcfg.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libMinHook", "minhook\build\DXGL\libMinHook.vcxproj", "{F142A341-5EE0-442D-A15F-98AE9B48DBAE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sha512-nsis", "sha512-nsis\sha512-nsis.vcxproj", "{F822EDB0-63E2-4EB8-B80D-F72481CDE3E1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxgl-nsis", "dxgl-nsis\dxgl-nsis.vcxproj", "{F822EDB0-63E2-4EB8-B80D-F72481CDE3E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
