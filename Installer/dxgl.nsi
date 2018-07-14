@@ -248,6 +248,25 @@ SectionEnd
 
 
 Function .onInit
+  !if ${COMPILER} == "VC2017_7"
+  ${IfNot} ${AtLeastWinVista}
+    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows Vista Service Pack 2.$\r\
+	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the VS2010 build."
+	Quit
+  ${EndIf}
+  ${If} ${IsWinVista}
+  ${AndIfNot} ${AtLeastServicePack} 2
+    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Vista or Windows Server 2008 must be upgraded to Service Pack 2 before you can use the VC2017 build of DXGL.$\r\
+	Please visit https://support.microsoft.com/en-us/kb/948465/ for instructions on upgrading to Service Pack 2."
+	Quit
+  ${endif}
+  ${If} ${IsWin7}
+  ${AndIfNot} ${AtLeastServicePack} 1
+    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows 7 or Windows Server 2008 R2 must be upgraded to Service Pack 1 before you can use the VC2017 build of DXGL.$\r\
+	Please visit X for instructions on upgrading to Service Pack 1."
+	Quit
+  ${endif}
+  !else
   ${IfNot} ${AtleastWinXP}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows XP Service Pack 3."
 	Quit
@@ -256,15 +275,16 @@ Function .onInit
   ${AndIfNot} ${AtLeastServicePack} 3
   ${AndIfNot} ${RunningX64}
     MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows XP must be upgraded to Service Pack 3 before you can use DXGL.$\r\
-	Please visit https://support.microsoft.com/en-us/kb/322389/ for instructions on upgrading to Service Pack 3."
+	Please visit http://web.archive.org/web/20151010042325/https://support.microsoft.com/en-us/kb/322389/ for instructions on upgrading to Service Pack 3."
 	Quit
   ${EndIf}
   ${If} ${IsWin2003}
   ${AndIfNot} ${AtLeastServicePack} 1
     MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Server 2003 must be upgraded to at least Service Pack 1 before you can use DXGL.$\r\
-	Please visit https://support.microsoft.com/en-us/kb/889100/ for instructions on upgrading to Service Pack 2."
+	Please visit http://web.archive.org/web/20150501080245/https://support.microsoft.com/en-us/kb/889100/ for instructions on upgrading to Service Pack 2."
 	Quit
   ${EndIf}
+  !endif
   !ifdef _DEBUG
   MessageBox MB_OK|MB_ICONEXCLAMATION "This is a debug build of DXGL.  It is not meant for regular \
   usage and requires the debug version of the Visual C++ runtime to work.$\r$\r\
