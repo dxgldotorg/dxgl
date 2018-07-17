@@ -48,6 +48,7 @@ static int testnum;
 static unsigned int randnum;
 static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0,0};
 static DWORD counter;
+static DWORD hotspotx,hotspoty;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -800,6 +801,7 @@ void InitTest(int test)
 	bgcolor = 0;
 	DDCOLORKEY ckey;
 	HCURSOR cursor;
+	ICONINFO iconinfo;
 	HDC memorydc;
 	BITMAPINFO bitmapinfo;
 	HBITMAP bitmap;
@@ -1045,6 +1047,11 @@ void InitTest(int test)
 		bitmap = CreateDIBSection(memorydc, &bitmapinfo, DIB_RGB_COLORS, &bmppointer, NULL, 0);
 		temp = SelectObject(memorydc, bitmap);
 		DeleteObject(temp);
+		GetIconInfo(cursor,&iconinfo);
+		hotspotx = iconinfo.xHotspot;
+		hotspoty = iconinfo.yHotspot;
+		if(iconinfo.hbmColor) DeleteObject(iconinfo.hbmColor);
+		if(iconinfo.hbmMask) DeleteObject(iconinfo.hbmMask);
 		for (i = 0; i < 7; i++)
 		{
 			DrawIcon(memorydc, i*sprites[0].ddsd.dwWidth, 0, cursor);
@@ -1318,6 +1325,11 @@ void InitTest(int test)
 		bltfx.dwFillColor = 0;
 		sprites[0].surface->Blt(NULL, NULL, NULL, DDBLT_COLORFILL, &bltfx);
 		cursor = LoadCursor(NULL, IDC_ARROW);
+		GetIconInfo(cursor,&iconinfo);
+		hotspotx = iconinfo.xHotspot;
+		hotspoty = iconinfo.yHotspot;
+		if(iconinfo.hbmColor) DeleteObject(iconinfo.hbmColor);
+		if(iconinfo.hbmMask) DeleteObject(iconinfo.hbmMask);
 		sprites[0].surface->GetDC(&hRenderDC);
 		DrawIcon(hRenderDC, 0, 0, cursor);
 		sprites[0].surface->ReleaseDC(hRenderDC);
@@ -1535,29 +1547,53 @@ void RunTestTimed(int test)
 		{
 			if (!out[i])
 			{
-				destrect.left = GET_X_LPARAM(lastmouselparam[i]);
-				destrect.top = GET_Y_LPARAM(lastmouselparam[i]);
-				destrect.right = GET_X_LPARAM(lastmouselparam[i]) + sprites[0].ddsd.dwWidth;
+				destrect.left = GET_X_LPARAM(lastmouselparam[i])-hotspotx;
+				destrect.top = GET_Y_LPARAM(lastmouselparam[i])-hotspoty;
+				destrect.right = (GET_X_LPARAM(lastmouselparam[i])-hotspotx) + sprites[0].ddsd.dwWidth;
 				if (destrect.right > width) destrect.right = width;
-				destrect.bottom = GET_Y_LPARAM(lastmouselparam[i]) + sprites[0].ddsd.dwHeight;
+				destrect.bottom = (GET_Y_LPARAM(lastmouselparam[i])-hotspoty) + sprites[0].ddsd.dwHeight;
 				if (destrect.bottom > height) destrect.bottom = height;
 				srcrect.left = srcrect.top = 0;
-				srcrect.right = destrect.right - destrect.left;
-				srcrect.bottom = destrect.bottom - destrect.top;
+				if(destrect.left >= 0) srcrect.right = destrect.right - destrect.left;
+				else
+				{
+					srcrect.left = -destrect.left-1;
+					destrect.left = 0;
+					srcrect.right = sprites[0].ddsd.dwWidth;
+				}
+				if(destrect.top >= 0) srcrect.bottom = destrect.bottom - destrect.top;
+				else
+				{
+					srcrect.top = -destrect.top-1;
+					destrect.top = 0;
+					srcrect.bottom = sprites[0].ddsd.dwWidth;
+				}
 				temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 			}
 		}
 		if (!out[8])
 		{
-			destrect.left = p.x;
-			destrect.top = p.y;
-			destrect.right = p.x + sprites[1].ddsd.dwWidth;
+			destrect.left = p.x-hotspotx;
+			destrect.top = p.y-hotspoty;
+			destrect.right = (p.x-hotspotx) + sprites[1].ddsd.dwWidth;
 			if (destrect.right > width) destrect.right = width;
-			destrect.bottom = p.y + sprites[1].ddsd.dwHeight;
+			destrect.bottom = (p.y-hotspoty) + sprites[1].ddsd.dwHeight;
 			if (destrect.bottom > height) destrect.bottom = height;
 			srcrect.left = srcrect.top = 0;
-			srcrect.right = destrect.right - destrect.left;
-			srcrect.bottom = destrect.bottom - destrect.top;
+			if(destrect.left >= 0) srcrect.right = destrect.right - destrect.left;
+			else
+			{
+				srcrect.left = -destrect.left-1;
+				destrect.left = 0;
+				srcrect.right = sprites[0].ddsd.dwWidth;
+			}
+			if(destrect.top >= 0) srcrect.bottom = destrect.bottom - destrect.top;
+			else
+			{
+				srcrect.top = -destrect.top-1;
+				destrect.top = 0;
+				srcrect.bottom = sprites[0].ddsd.dwWidth;
+			}
 			temp1->Blt(&destrect, sprites[1].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 		}
 		if (backbuffers) temp1->Release();
@@ -1988,15 +2024,27 @@ void RunTestTimed(int test)
 		{
 			if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
 			else temp1 = ddsrender;
-			destrect.left = (LONG)sprites[0].x;
-			destrect.top = (LONG)sprites[0].y;
-			destrect.right = (LONG)sprites[0].x + sprites[0].ddsd.dwWidth;
+			destrect.left = (LONG)sprites[0].x-hotspotx;
+			destrect.top = (LONG)sprites[0].y-hotspoty;
+			destrect.right = (LONG)(sprites[0].x-hotspotx) + sprites[0].ddsd.dwWidth;
 			if (destrect.right > width) destrect.right = width;
-			destrect.bottom = (LONG)sprites[0].y + sprites[0].ddsd.dwHeight;
+			destrect.bottom = (LONG)(sprites[0].y-hotspoty) + sprites[0].ddsd.dwHeight;
 			if (destrect.bottom > height) destrect.bottom = height;
 			srcrect.left = srcrect.top = 0;
-			srcrect.right = destrect.right - destrect.left;
-			srcrect.bottom = destrect.bottom - destrect.top;
+			if(destrect.left >= 0) srcrect.right = destrect.right - destrect.left;
+			else
+			{
+				srcrect.left = -destrect.left-1;
+				destrect.left = 0;
+				srcrect.right = sprites[0].ddsd.dwWidth;
+			}
+			if(destrect.top >= 0) srcrect.bottom = destrect.bottom - destrect.top;
+			else
+			{
+				srcrect.top = -destrect.top-1;
+				destrect.top = 0;
+				srcrect.bottom = sprites[0].ddsd.dwWidth;
+			}
 			temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 			if (backbuffers) temp1->Release();
 		}
