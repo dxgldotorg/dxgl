@@ -127,6 +127,8 @@
 
 // Controls - Hacks Tab
 #define IDC_HACKSLIST                           2501
+#define IDC_HACKSDROPDOWN                       2502
+#define IDC_HACKSEDIT                           2503
 
 // Controls - Graphics Tests Tab
 #define IDC_TESTLIST                            2601

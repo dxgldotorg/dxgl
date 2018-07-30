@@ -547,11 +547,34 @@ INI Group hacks
 REG_DWORD HKCU\DXGL\Profiles\<app>\HackCrop640480to640400
 Crops 640x480 display mode to 640x400.
 
-Member HackAutoScale512448to640480
-INI Entry HackAutoScale512448to640480
+Member HackAutoExpandViewport
+INI Entry HackAutoExpandViewport
 INI Group hacks
-REG_DWORD HKCU\DXGL\Profiles\<app>\HackAutoScale512448to640480
-Expands a 512x448 image to 640x480 if the bordering pixels are black.
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackAutoExpandViewport
+Applies a hack to expand the viewport if a bodering pixel matches a set value.
+Valid settings:
+0 - Hack is disabled.
+1 - Expands 512x448 to 640x480, or 256x224 to 320x240
+2 - Expands 512x480 to 640x480, or 256x240 to 320x240
+
+Member HackAutoExpandViewportCompare
+INI Entry HackAutoExpandViewportCompare
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackAutoExpandViewportCompare
+Comparison method to detect blank pixels when HackAutoExpandViewport is active.
+Valid settings:
+0 - Activate when the pixel matches a set color
+1 - Activate when the pixel color is less than or equal to a set color
+2 - Activate when the pixel color is greater than or equal to a set color
+3 - Activate when the pixel value matches a set value (i.e. palette index)
+4 - Activate when the pixel value is less than or equal to a set value
+5 - Activate when the pixel value is greater than or equal to a set value
+
+Member HackAutoExpandViewportValue
+INI Entry HackAutoExpandViewportValue
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackAutoExpandViewportValue
+Value to use for detecting blank pixels when HackAutoExpandViewport is active.
 
 Member HackNoTVRefresh
 INI Entry HackNoTVRefresh

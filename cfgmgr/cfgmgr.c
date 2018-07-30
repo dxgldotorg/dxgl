@@ -683,7 +683,10 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
-	cfg->HackAutoScale512448to640480 = ReadDWORD(hKey, cfg->HackAutoScale512448to640480, &cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	cfg->HackAutoExpandViewport = ReadDWORDWithObsolete(hKey, cfg->HackAutoExpandViewport, &cfgmask->HackAutoExpandViewport, _T("HackAutoExpandViewport"),
+		1, _T("HackAutoScale512448to640480"));
+	cfg->HackAutoExpandViewportCompare = ReadDWORD(hKey, cfg->HackAutoExpandViewportCompare, &cfgmask->HackAutoExpandViewportCompare, _T("HackAutoExpandViewportCompare"));
+	cfg->HackAutoExpandViewportValue = ReadDWORD(hKey, cfg->HackAutoExpandViewportValue, &cfgmask->HackAutoExpandViewportValue, _T("HackAutoExpandViewportValue"));
 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
 	if(!global && dll)
@@ -846,7 +849,10 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
-	WriteDWORD(hKey, cfg->HackAutoScale512448to640480, cfgmask->HackAutoScale512448to640480, _T("HackAutoScale512448to640480"));
+	WriteDWORDDeleteObsolete(hKey, cfg->HackAutoExpandViewport, cfgmask->HackAutoExpandViewport, _T("HackAutoExpandViewport"),
+		1, _T("HackAutoScale512448to640480"));
+	WriteDWORD(hKey, cfg->HackAutoExpandViewportCompare, cfgmask->HackAutoExpandViewportCompare, _T("HackAutoExpandViewportCompare"));
+	WriteDWORD(hKey, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue, _T("HackAutoExpandViewportValue"));
 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
 }
@@ -1141,10 +1147,13 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	}
 	if (!_stricmp(section, "hacks"))
 	{
-		if (!_stricmp(section, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
-		if (!_stricmp(section, "HackAutoScale512448to640480")) cfg->HackAutoScale512448to640480 = INIIntBoolValue(value);
-		if (!_stricmp(section, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
-		if (!_stricmp(section, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
+		if (!_stricmp(name, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
+		if (!_stricmp(name, "HackAutoExpandViewport")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
+		if (!_stricmp(name, "HackAutoScale512448to640480")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
+		if (!_stricmp(name, "HackAutoExpandViewportCompare")) cfg->HackAutoExpandViewportCompare = INIIntValue(value);
+		if (!_stricmp(name, "HackAutoExpandViewportValue")) cfg->HackAutoExpandViewportValue = INIHexValue(value);
+		if (!_stricmp(name, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
+		if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 	}
 	return 1;
 }
@@ -1548,7 +1557,9 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "DebugMaxGLVersionMinor", cfg->DebugMaxGLVersionMinor, mask->DebugMaxGLVersionMinor, INISECTION_DEBUG);
 	// [hacks]
 	INIWriteBool(file, "HackCrop640480to640400", cfg->HackCrop640480to640400, mask->HackCrop640480to640400, INISECTION_HACKS);
-	INIWriteInt(file, "HackAutoScale512448to640480", cfg->HackAutoScale512448to640480, mask->HackAutoScale512448to640480, INISECTION_HACKS);
+	INIWriteInt(file, "HackAutoExpandViewport", cfg->HackAutoExpandViewport, mask->HackAutoExpandViewport, INISECTION_HACKS);
+	INIWriteInt(file, "HackAutoExpandViewportCompare", cfg->HackAutoExpandViewportCompare, mask->HackAutoExpandViewportCompare, INISECTION_HACKS);
+	INIWriteHex(file, "HackAutoExpandViewportValue", cfg->HackAutoExpandViewportValue, mask->HackAutoExpandViewportValue, INISECTION_HACKS);
 	INIWriteBool(file, "HackNoTVRefresh", cfg->HackNoTVRefresh, mask->HackNoTVRefresh, INISECTION_HACKS);
 	INIWriteBool(file, "HackSetCursor", cfg->HackSetCursor, mask->HackSetCursor, INISECTION_HACKS);
 	CloseHandle(file);

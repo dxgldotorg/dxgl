@@ -3677,7 +3677,7 @@ BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
 	DWORD *ptr32;
 	WORD *ptr16;
 	BYTE *ptr8;
-	if (dxglcfg.HackAutoScale512448to640480)
+	if (dxglcfg.HackAutoExpandViewport)
 	{
 		if ((primary->levels[0].ddsd.dwWidth == 640) && (primary->levels[0].ddsd.dwHeight == 480))
 		{
@@ -3853,14 +3853,14 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	if (scale512448)
 	{
-		if (dxglcfg.HackAutoScale512448to640480 == 1)
+		if (dxglcfg.HackAutoExpandViewport == 1)
 		{
 			This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
 			This->bltvertices[0].t = This->bltvertices[1].t = 0.966666667f;
 			This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;
 			This->bltvertices[2].t = This->bltvertices[3].t = 0.0333333333f;
 		}
-		else if (dxglcfg.HackAutoScale512448to640480 == 2)
+		else if (dxglcfg.HackAutoExpandViewport == 2)
 		{
 			This->bltvertices[0].s = This->bltvertices[2].s = 0.9f;
 			This->bltvertices[1].s = This->bltvertices[3].s = 0.1f;

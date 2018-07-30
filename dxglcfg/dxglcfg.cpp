@@ -70,6 +70,7 @@ static BOOL ExtraModes_Dropdown = FALSE;
 static BOOL ColorDepth_Dropdown = FALSE;
 HWND hDialog = NULL;
 static BOOL EditInterlock = FALSE;
+static DWORD hackstabitem = 0xFFFFFFFF;
 
 
 typedef struct
@@ -2237,7 +2238,7 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		cfg->DebugBlendDestColorKey = value;
 		cfgmask->DebugBlendDestColorKey = mask;
 		break;
-	/*case 10:
+	/*case 11:
 		cfg->DebugDisableErrors = value;
 		cfgmask->DebugDisableErrors = mask;
 		break;*/
@@ -2361,77 +2362,97 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
-void ReadHacksItem(int item, BOOL *value, BOOL *mask)
+void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 {
+	TCHAR buffer[64];
 	switch (item)
 	{
 	case 0:
-		*value = cfg->HackCrop640480to640400;
-		*mask = cfgmask->HackCrop640480to640400;
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Enabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, tristate);
 		break;
 	case 1:
-		*value = cfg->HackAutoScale512448to640480;
-		*mask = cfgmask->HackAutoScale512448to640480;
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("512x448 to 640x480"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("512x480 to 640x480"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewport, cfgmask->HackAutoExpandViewport, tristate);
 		break;
 	case 2:
-		*value = cfg->HackNoTVRefresh;
-		*mask = cfgmask->HackNoTVRefresh;
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		_tcscpy(buffer, _T("Match color"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Color less than or equal"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Color greater than or equal"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Match palette entry"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Palette less than or equal"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Palette greater than or equal"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewportCompare, cfgmask->HackAutoExpandViewportCompare, tristate);
 		break;
 	case 3:
-		*value = cfg->HackSetCursor;
-		*mask = cfgmask->HackSetCursor;
+		break;
+	case 4:
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Enabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, tristate);
+		break;
+	case 5:
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Enabled"));
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackSetCursor, cfgmask->HackSetCursor, tristate);
 		break;
 	default:
-		*value = FALSE;
-		*mask = FALSE;
 		break;
 	}
 }
-
-void WriteHacksItem(int item, BOOL value, BOOL mask)
-{
-	switch (item)
-	{
-	case 0:
-		cfg->HackCrop640480to640400 = value;
-		cfgmask->HackCrop640480to640400 = mask;
-		break;
-	case 1:
-		cfg->HackAutoScale512448to640480 = value;
-		cfgmask->HackAutoScale512448to640480 = mask;
-		break;
-	case 2:
-		cfg->HackNoTVRefresh = value;
-		cfgmask->HackNoTVRefresh = mask;
-		break;
-	case 3:
-		cfg->HackSetCursor = value;
-		cfgmask->HackSetCursor = mask;
-		break;
-	default:
-		break;
-	}
-}
-
 LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	TCHAR str[64];
-	RECT r;
+	RECT r, r2;
+	DWORD x;
 	DRAWITEMSTRUCT* drawitem;
 	COLORREF OldTextColor, OldBackColor;
-	BOOL hackvalue, hackmask;
-	DWORD item;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		SetParent(GetDlgItem(hWnd,IDC_HACKSDROPDOWN), GetDlgItem(hWnd,IDC_HACKSLIST));
+		SetParent(GetDlgItem(hWnd, IDC_HACKSEDIT), GetDlgItem(hWnd, IDC_HACKSLIST));
+		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
+		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
 		return TRUE;
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
 		case IDC_HACKSLIST:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
-			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			if(((LPMEASUREITEMSTRUCT)lParam)->itemID == 3)
+				GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = r.bottom - r.top;
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = r.right - r.left;
 			break;
 		default:
 			break;
@@ -2440,40 +2461,70 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
+		case IDC_HACKSDROPDOWN:
+			switch (hackstabitem)
+			{
+			case 0:
+				cfg->HackCrop640480to640400 = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					(DWORD*)&cfgmask->HackCrop640480to640400);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				break;
+			case 1:
+				cfg->HackAutoExpandViewport = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					&cfgmask->HackAutoExpandViewport);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				break;
+			case 2:
+				cfg->HackAutoExpandViewportCompare = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					&cfgmask->HackAutoExpandViewportCompare);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				break;
+			case 4:
+				cfg->HackNoTVRefresh = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					(DWORD*)&cfgmask->HackNoTVRefresh);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				modelistdirty = TRUE;
+				break;
+			case 5:
+				cfg->HackSetCursor = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					(DWORD*)&cfgmask->HackSetCursor);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				break;
+			default:
+				break;
+			}
+			break;
 		case IDC_HACKSLIST:
 			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
 			{
-				item = SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
-				ReadHacksItem(item, &hackvalue, &hackmask);
-				if (tristate)
+				hackstabitem = SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
+				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETITEMRECT, hackstabitem, (LPARAM)&r2);
+				if (hackstabitem == 3)
 				{
-					if (hackvalue && hackmask)
-					{
-						hackvalue = FALSE;
-						hackmask = FALSE;
-					}
-					else if (!hackmask)
-					{
-						hackvalue = FALSE;
-						hackmask = TRUE;
-					}
-					else
-					{
-						hackvalue = TRUE;
-						hackmask = TRUE;
-					}
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+					x = r.right - r.left;
+					r2.left = r2.right - x;
+					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT),
+						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
+					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, hackstabitem);
 				}
 				else
 				{
-					if (hackvalue)
-						hackvalue = FALSE;
-					else hackvalue = TRUE;
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+					x = r.right - r.left;
+					r2.left = r2.right - x;
+					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN),
+						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
+					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 				}
-				WriteHacksItem(item, hackvalue, hackmask);
 				RedrawWindow(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
-				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
-				*dirty = TRUE;
-				if(item == 2) modelistdirty = TRUE;
 			}
 			break;
 		default:
@@ -2501,13 +2552,11 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
 			r.left = r.left + 2;
 			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
-			ReadHacksItem(drawitem->itemID, &hackvalue, &hackmask);
-			DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, hackvalue, FALSE, !hackmask, &r);
-			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON) + 5;
+			drawitem->rcItem.left += 1;
 			SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
 			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
-			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON) + 5;
+			drawitem->rcItem.left -= 1;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
@@ -3288,7 +3337,11 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Hacks
 		_tcscpy(buffer, _T("Crop 640x480 to 640x400"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Expand 512x448 to 640x480 when border is blank"));
+		_tcscpy(buffer, _T("Automatically expand viewport"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Automatic expand comparison method"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Automatic expand comparison value"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
@@ -3795,6 +3848,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
 					&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
 				// Hacks tab
+				UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 				RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
 			break;

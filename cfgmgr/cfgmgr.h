@@ -98,7 +98,9 @@ typedef struct
 	DWORD DebugMaxGLVersionMinor;
 	// [hacks]
 	BOOL HackCrop640480to640400;
-	BOOL HackAutoScale512448to640480;
+	DWORD HackAutoExpandViewport;
+	DWORD HackAutoExpandViewportCompare;
+	DWORD HackAutoExpandViewportValue;
 	BOOL HackNoTVRefresh;
 	BOOL HackSetCursor;
 	// internal
