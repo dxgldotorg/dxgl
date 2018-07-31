@@ -2362,6 +2362,24 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
+LPCTSTR strDisabled = _T("Disabled");
+LPCTSTR strEnabled = _T("Enabled");
+LPCTSTR strExpandViewport[] =
+{
+	_T("512x448 to 640x480"),
+	_T("512x480 to 640x480")
+};
+LPCTSTR strViewportCompare[] =
+{
+	_T("Match color"),
+	_T("Color less than or equal"),
+	_T("Color greater than or equal"),
+	_T("Match palette entry"),
+	_T("Palette less than or equal"),
+	_T("Palette greater than or equal")
+};
+LPCTSTR strUnknown = _T("Unknown");
+
 void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 {
 	TCHAR buffer[64];
@@ -2369,38 +2387,27 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 	{
 	case 0:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
-		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Enabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strDisabled);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strEnabled);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, tristate);
 		break;
 	case 1:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
-		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("512x448 to 640x480"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("512x480 to 640x480"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strDisabled);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strExpandViewport[0]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strExpandViewport[1]);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewport, cfgmask->HackAutoExpandViewport, tristate);
 		break;
 	case 2:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
-		_tcscpy(buffer, _T("Match color"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Color less than or equal"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Color greater than or equal"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Match palette entry"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Palette less than or equal"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Palette greater than or equal"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[0]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[1]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[2]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[3]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[4]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[5]);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewportCompare, cfgmask->HackAutoExpandViewportCompare, tristate);
 		break;
@@ -2408,19 +2415,15 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 		break;
 	case 4:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
-		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Enabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strDisabled);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strEnabled);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, tristate);
 		break;
 	case 5:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
-		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Enabled"));
-		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strDisabled);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strEnabled);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackSetCursor, cfgmask->HackSetCursor, tristate);
 		break;
@@ -2428,6 +2431,59 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 		break;
 	}
 }
+
+void DrawHacksItemText(HDC hdc, RECT *r, int item)
+{
+	LPCTSTR str = strUnknown;
+	switch (item)
+	{
+	case 0:
+		if (!cfgmask->HackCrop640480to640400) str = strdefault;
+		else
+		{
+			if (cfg->HackCrop640480to640400) str = strEnabled;
+			else str = strDisabled;
+		}
+		break;
+	case 1:
+		if (!cfgmask->HackAutoExpandViewport) str = strdefault;
+		else
+		{
+			if (cfg->HackAutoExpandViewport > 2) str = strUnknown;
+			else if (cfg->HackAutoExpandViewport == 0) str = strDisabled;
+			else str = strExpandViewport[cfg->HackAutoExpandViewport-1];
+		}
+		break;
+	case 2:
+		if (!cfgmask->HackAutoExpandViewportCompare) str = strdefault;
+		else
+		{
+			if (cfg->HackAutoExpandViewportCompare > 5) str = strUnknown;
+			else str = strViewportCompare[cfg->HackAutoExpandViewportCompare];
+		}
+		break;
+	case 4:
+		if (!cfgmask->HackNoTVRefresh) str = strdefault;
+		else
+		{
+			if (cfg->HackNoTVRefresh) str = strEnabled;
+			else str = strDisabled;
+		}
+		break;
+	case 5:
+		if (!cfgmask->HackSetCursor) str = strdefault;
+		else
+		{
+			if (cfg->HackSetCursor) str = strEnabled;
+			else str = strDisabled;
+		}
+		break;
+	default:
+		str = strUnknown;
+	}
+	DrawText(hdc, str, _tcslen(str), r, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+}
+
 LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	TCHAR str[64];
@@ -2557,6 +2613,11 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			drawitem->rcItem.left -= 1;
+			if (hackstabitem == 3) GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+			memcpy(&r2, &drawitem->rcItem, sizeof(RECT));
+			r2.left = r2.right - (r.right - r.left);
+			DrawHacksItemText(drawitem->hDC, &r2, drawitem->itemID);
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
