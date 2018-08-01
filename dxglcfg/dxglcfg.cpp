@@ -2616,7 +2616,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			if (hackstabitem == 3) GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
 			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
 			memcpy(&r2, &drawitem->rcItem, sizeof(RECT));
-			r2.left = r2.right - (r.right - r.left);
+			r2.left = r2.right - (r.right - r.left) + 4;
 			DrawHacksItemText(drawitem->hDC, &r2, drawitem->itemID);
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
