@@ -643,6 +643,15 @@ void SetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *major
 	}
 }
 
+void SetRGBHex(HWND hWnd, int DlgItem, DWORD value, DWORD mask)
+{
+	TCHAR number[32];
+	if (mask) _sntprintf(number, 31, _T("%06X"), value);
+	else _tcscpy(number, strdefault);
+	EditInterlock = TRUE;
+	SendDlgItemMessage(hWnd, DlgItem, WM_SETTEXT, 0, (LPARAM)number);
+	EditInterlock = FALSE;
+}
 
 void SetFloat3place(HWND hWnd, int DlgItem, float value, float mask)
 {
@@ -861,11 +870,35 @@ void GetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *major
 	}
 }
 
+DWORD GetRGBHex(HWND hWnd, int dlgitem, DWORD *mask)
+{
+	TCHAR buffer[32];
+	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
+	if ((buffer[0] == 0) || (!_tcsicmp(buffer, strdefaultshort)) || (!_tcsicmp(buffer, strdefault)))
+	{
+		if (!current_app)
+		{
+			*mask = 1;
+			return 1;
+		}
+		else
+		{
+			*mask = 0;
+			return 0;
+		}
+	}
+	else
+	{
+		*mask = 1;
+		return _tcstol(buffer, NULL, 16) & 0xFFFFFF;
+	}
+}
+
 float GetFloat(HWND hWnd, int dlgitem, float *mask)
 {
 	TCHAR buffer[32];
 	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
-	if (buffer[0] == 0)
+	if ((buffer[0] == 0) || (!_tcsicmp(buffer, strdefaultshort)) || (!_tcsicmp(buffer, strdefault)))
 	{
 		if (!current_app)
 		{
@@ -889,7 +922,7 @@ int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum, BOOL usemask)
 {
 	TCHAR buffer[32];
 	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 32, (LPARAM)buffer);
-	if (buffer[0] == 0)
+	if ((buffer[0] == 0) || (!_tcsicmp(buffer, strdefaultshort)) || (!_tcsicmp(buffer, strdefault)))
 	{
 		if (!usemask)
 		{
@@ -2382,7 +2415,6 @@ LPCTSTR strUnknown = _T("Unknown");
 
 void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 {
-	TCHAR buffer[64];
 	switch (item)
 	{
 	case 0:
@@ -2435,6 +2467,7 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 void DrawHacksItemText(HDC hdc, RECT *r, int item)
 {
 	LPCTSTR str = strUnknown;
+	TCHAR buffer[33];
 	switch (item)
 	{
 	case 0:
@@ -2460,6 +2493,14 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 		{
 			if (cfg->HackAutoExpandViewportCompare > 5) str = strUnknown;
 			else str = strViewportCompare[cfg->HackAutoExpandViewportCompare];
+		}
+		break;
+	case 3:
+		if (!cfgmask->HackAutoExpandViewportValue) str = strdefault;
+		else
+		{
+			_sntprintf(buffer, 32, _T("%06X"), cfg->HackAutoExpandViewportValue);
+			str = buffer;
 		}
 		break;
 	case 4:
@@ -2517,6 +2558,21 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
+		case IDC_HACKSEDIT:
+			if (HIWORD(wParam) == EN_CHANGE)
+			{
+				if (!EditInterlock)
+				{
+					cfg->HackAutoExpandViewportValue = GetRGBHex(GetDlgItem(hWnd,IDC_HACKSLIST), IDC_HACKSEDIT, &cfgmask->HackAutoExpandViewportValue);
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+			}
+			if (HIWORD(wParam) == EN_KILLFOCUS)
+			{
+				SetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+			}
+			break;
 		case IDC_HACKSDROPDOWN:
 			switch (hackstabitem)
 			{
@@ -3408,6 +3464,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("SetCursor hide visibility"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		// Auto expand viewport hack value
+		SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
 		// About text
 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
 		_tcscat(abouttext, _T(DXGLVERSTRING));
@@ -3910,6 +3968,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
 				// Hacks tab
 				UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
+				SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
 				RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
 			break;
