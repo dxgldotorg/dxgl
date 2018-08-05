@@ -86,7 +86,9 @@ html\config\debug\maximumopenglversion.html
 html\config\debug\uploadsurfacecontentsonunlock.html
 html\config\debug\disablemousecursorhooks.html
 html\config\hacks\crop640480to640400.html
-html\config\hacks\expand512448to640480.html
+html\config\hacks\automaticallyexpandviewport.html
+html\config\hacks\automaticexpandcomparisonmethod.html
+html\config\hacks\automaticexpandcomparisonvalue.html
 html\config\hacks\removetvcompatiblerefreshrates.html
 html\config\hacks\setcursorhidevisibility.html
 html\licenses\crc32.html

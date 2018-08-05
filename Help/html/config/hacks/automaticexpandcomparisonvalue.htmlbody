@@ -1,0 +1,4 @@
+<p>
+  Value to use, in hexadecimal, for the comparison value to use when comparing border pixels.  For more details on the value to use, see <a href="automaticexpandcomparisonmethod.html">Automatic expand comparison method</a>.
+</p>
+<p>In DXGL Config, enter the number, up to 6 hexadecimal digits, without any prefix.  In a dxgl.ini file, prefix the number with 0x.</p>

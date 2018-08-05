@@ -6,7 +6,13 @@
   <a href="hacks/crop640480to640400.html">Crop 640&#215;480 to 640&#215;400</a>
 </p>
 <p>
-  <a href="hacks/expand512448to640480.html">Expand 512&#215;448 to 640&#215;480 when border is blank</a>
+  <a href="hacks/automaticallyexpandviewport.html">Automatically expand viewport</a>
+</p>
+<p>
+  <a href="hacks/automaticexpandcomparisonmethod.html">Automatic expand comparison method</a>
+</p>
+<p>
+  <a href="hacks/automaticexpandcomparisonvalue.html">Automatic expand comparison value</a>
 </p>
 <p>
   <a href="hacks/removetvcompatiblerefreshrates.html">Remove TV-compatible refresh rates</a>

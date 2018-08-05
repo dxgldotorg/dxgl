@@ -2409,7 +2409,8 @@ LPCTSTR strViewportCompare[] =
 	_T("Color greater than or equal"),
 	_T("Match palette entry"),
 	_T("Palette less than or equal"),
-	_T("Palette greater than or equal")
+	_T("Palette greater than or equal"),
+	_T("Match 3 palette entries (8-bit only)")
 };
 LPCTSTR strUnknown = _T("Unknown");
 
@@ -2440,6 +2441,7 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[3]);
 		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[4]);
 		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[5]);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strViewportCompare[6]);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewportCompare, cfgmask->HackAutoExpandViewportCompare, tristate);
 		break;
@@ -2491,7 +2493,7 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 		if (!cfgmask->HackAutoExpandViewportCompare) str = strdefault;
 		else
 		{
-			if (cfg->HackAutoExpandViewportCompare > 5) str = strUnknown;
+			if (cfg->HackAutoExpandViewportCompare > 6) str = strUnknown;
 			else str = strViewportCompare[cfg->HackAutoExpandViewportCompare];
 		}
 		break;

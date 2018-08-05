@@ -1,0 +1,19 @@
+<p>Determines the method to use for comparing pixels when determining whether to expand the viewport.</p>
+<p>The following options are available:</p>
+<h3>Match color</h3>
+<p>Uses an exact match of the RGB value of the pixel&#8217;s color.  When in 8-bit mode this will perform a palette lookup and use the RGB value of the palette entry to perform the comparison.  In 16 or 15 bit mode this will convert the pixel to 32-bit color before comparing.</p>
+<h3>Color less than or equal</h3>
+<p>Matches if all of the R, G, and B channels match or are less than the comparison value, converting the pixel as described in &#8220;Match color.&#8221;</p>
+<h3>Color greater than or equal</h3>
+<p>Matches if all of the R, G, and B channels match or are less than the comparison value, converting the pixel as described in &#8220;Match color.&#8221;</p>
+<h3>Match palette entry</h3>
+<p>In 8-bit mode, uses the palette index of the pixel for comparison.  In other modes, uses the numeric value of the pixel for comparison, matching at most 24 bits.</p>
+<h3>Palette less than or equal</h3>
+<p>Matches if the palette index or pixel&#8217;s numeric value matches or is less than the comparison value.</p>
+<h3>Palette greater than or equal</h3>
+<p>Matches if the palette index or pixel&#8217;s numeric value matches or is greater than the comparison value.</p>
+<h3>Match 3 palette entries (8-bit only)</h3>
+<p>
+  In 8-bit color mode, matches up to 3 palette entries.  These should be packed in the comparison value.  For instance to match palette entries 1, 5, and 12, use value 01050C.  If you need to match only 1 or 2 palette entries, duplicate the numbers, for instance to match entries 15 or 127 use 0F0F7F.<br />
+  In other color modes, functions the same as &#8220;Match palette entry.&#8221;
+</p>

@@ -245,8 +245,16 @@
 				<param name="Local" value="html\config\hacks\crop640480to640400.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Expand 512&times;448 to 640&times;480 when border is blank">
-				<param name="Local" value="html\config\hacks\expand512448to640480.html">
+				<param name="Name" value="Automatically expand viewport">
+				<param name="Local" value="html\config\hacks\automaticallyexpandviewport.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Automatic expand comparison method">
+				<param name="Local" value="html\config\hacks\automaticexpandcomparisonmethod.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Automatic expand comparison value">
+				<param name="Local" value="html\config\hacks\automaticexpandcomparisonvalue.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Remove TV-compatible refresh rates">

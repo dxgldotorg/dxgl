@@ -250,10 +250,14 @@
     <None Include="html\config\gfxtesttab.htmltitle" />
     <None Include="html\config\hackstab.htmlbody" />
     <None Include="html\config\hackstab.htmltitle" />
+    <None Include="html\config\hacks\automaticexpandcomparisonmethod.htmlbody" />
+    <None Include="html\config\hacks\automaticexpandcomparisonmethod.htmltitle" />
+    <None Include="html\config\hacks\automaticexpandcomparisonvalue.htmlbody" />
+    <None Include="html\config\hacks\automaticexpandcomparisonvalue.htmltitle" />
     <None Include="html\config\hacks\crop640480to640400.htmlbody" />
     <None Include="html\config\hacks\crop640480to640400.htmltitle" />
-    <None Include="html\config\hacks\expand512448to640480.htmlbody" />
-    <None Include="html\config\hacks\expand512448to640480.htmltitle" />
+    <None Include="html\config\hacks\automaticallyexpandviewport.htmlbody" />
+    <None Include="html\config\hacks\automaticallyexpandviewport.htmltitle" />
     <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmlbody" />
     <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmltitle" />
     <None Include="html\config\hacks\setcursorhidevisibility.htmlbody" />

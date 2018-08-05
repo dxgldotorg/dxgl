@@ -3672,11 +3672,182 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetFBO(This->util, NULL);
 }
 
+static DWORD dummypalette[256];
+
+BOOL CompareRGB(DWORD rgb, BOOL greater)
+{
+	RGBQUAD *pixel = (RGBQUAD*)&rgb;
+	RGBQUAD *comp = (RGBQUAD*)&dxglcfg.HackAutoExpandViewportValue;
+	if (greater)
+	{
+		if ((pixel->rgbBlue >= comp->rgbBlue) && (pixel->rgbGreen >= comp->rgbGreen)
+			&& (pixel->rgbRed >= comp->rgbRed)) return TRUE;
+		else return FALSE;
+	}
+	else
+	{
+		if ((pixel->rgbBlue <= comp->rgbBlue) && (pixel->rgbGreen <= comp->rgbGreen)
+			&& (pixel->rgbRed <= comp->rgbRed)) return TRUE;
+		else return FALSE;
+	}
+}
+
+DWORD RGB555toRGB888(WORD pixel)
+{
+	DWORD red, green, blue;
+	red = _5to8bit((pixel & 0x7C00) >> 10) << 16;
+	green = _5to8bit((pixel & 0x3E0) >> 5) << 8;
+	blue = _5to8bit(pixel & 0x1F);
+	return red | green | blue;
+}
+
+DWORD RGB565toRGB888(WORD pixel)
+{
+	DWORD red, green, blue;
+	red = _5to8bit((pixel & 0xF800) >> 11) << 16;
+	green = _6to8bit((pixel & 0x7E0) >> 5) << 8;
+	blue = _5to8bit(pixel & 0x1F);
+	return red | green | blue;
+}
+
+BOOL BorderColorCompare(glRenderer *This, DWORD pixel, DWORD *palette, DWORD bpp)
+{
+	if (!palette) palette = dummypalette;
+	switch (bpp)
+	{
+	case 8:
+		switch (dxglcfg.HackAutoExpandViewportCompare)
+		{
+		case 0: // Match color
+			if ((palette[pixel & 0xFF] & 0xFFFFFF) == dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF) return TRUE;
+			else return FALSE;
+			break;
+		case 1: // Color less than or equal
+			return CompareRGB(palette[pixel & 0xFF], FALSE);
+			break;
+		case 2: // Color greater than or equal
+			return CompareRGB(palette[pixel & 0xFF], TRUE);
+			break;
+		case 3: // Palette/value equal
+			if ((pixel & 0xFF) == (dxglcfg.HackAutoExpandViewportValue & 0xFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 4: // Palette/value less than or equal
+			if ((pixel & 0xFF) <= (dxglcfg.HackAutoExpandViewportValue & 0xFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 5: // Palette/value greater than or equal
+			if ((pixel & 0xFF) >= (dxglcfg.HackAutoExpandViewportValue & 0xFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 6: // Match 3 palette entries
+			if (((pixel & 0xFF) == (dxglcfg.HackAutoExpandViewportValue & 0xFF)) ||
+				((pixel & 0xFF) == ((dxglcfg.HackAutoExpandViewportValue & 0xFF00) >> 8)) ||
+				((pixel & 0xFF) == ((dxglcfg.HackAutoExpandViewportValue & 0xFF0000) >> 16))) return TRUE;
+			else return FALSE;
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	case 15:
+		switch (dxglcfg.HackAutoExpandViewportCompare)
+		{
+		case 0: // Match color
+			if (RGB555toRGB888(pixel) == dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF) return TRUE;
+			else return FALSE;
+			break;
+		case 1: // Color less than or equal
+			return CompareRGB(RGB555toRGB888(pixel), FALSE);
+			break;
+		case 2: // Color greater than or equal
+			return CompareRGB(RGB555toRGB888(pixel), TRUE);
+			break;
+		case 3: // Palette/value equal
+		case 6: // Match 3 palette entries
+			if ((pixel & 0x7FFF) == (dxglcfg.HackAutoExpandViewportValue & 0x7FFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 4: // Palette/value less than or equal
+			if ((pixel & 0x7FFF) <= (dxglcfg.HackAutoExpandViewportValue & 0x7FFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 5: // Palette/value greater than or equal
+			if ((pixel & 0x7FFF) >= (dxglcfg.HackAutoExpandViewportValue & 0x7FFF)) return TRUE;
+			else return FALSE;
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	case 16:
+		switch (dxglcfg.HackAutoExpandViewportCompare)
+		{
+		case 0: // Match color
+			if (RGB565toRGB888(pixel) == dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF) return TRUE;
+			else return FALSE;
+			break;
+		case 1: // Color less than or equal
+			return CompareRGB(RGB565toRGB888(pixel), FALSE);
+			break;
+		case 2: // Color greater than or equal
+			return CompareRGB(RGB565toRGB888(pixel), TRUE);
+			break;
+		case 3: // Palette/value equal
+		case 6: // Match 3 palette entries
+			if ((pixel & 0xFFFF) == (dxglcfg.HackAutoExpandViewportValue & 0xFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 4: // Palette/value less than or equal
+			if ((pixel & 0xFFFF) <= (dxglcfg.HackAutoExpandViewportValue & 0xFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 5: // Palette/value greater than or equal
+			if ((pixel & 0xFFFF) >= (dxglcfg.HackAutoExpandViewportValue & 0xFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	case 24:
+	case 32:
+		switch (dxglcfg.HackAutoExpandViewportCompare)
+		{
+		case 0: // Match color
+			if (pixel == dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF) return TRUE;
+			else return FALSE;
+			break;
+		case 1: // Color less than or equal
+			return CompareRGB(pixel, FALSE);
+			break;
+		case 2: // Color greater than or equal
+			return CompareRGB(pixel, TRUE);
+			break;
+		case 3: // Palette/value equal
+		case 6: // Match 3 palette entries
+			if ((pixel & 0xFFFFFF) == (dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 4: // Palette/value less than or equal
+			if ((pixel & 0xFFFFFF) <= (dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		case 5: // Palette/value greater than or equal
+			if ((pixel & 0xFFFFFF) >= (dxglcfg.HackAutoExpandViewportValue & 0xFFFFFF)) return TRUE;
+			else return FALSE;
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+}
+
 BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
 {
-	DWORD *ptr32;
-	WORD *ptr16;
-	BYTE *ptr8;
 	if (dxglcfg.HackAutoExpandViewport)
 	{
 		if ((primary->levels[0].ddsd.dwWidth == 640) && (primary->levels[0].ddsd.dwHeight == 480))
@@ -3684,46 +3855,30 @@ BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
 			if (primary->levels[0].dirty & 2) glTexture__Download(primary, 0);
 			if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 			{
-				ptr8 = (BYTE*)primary->levels[0].buffer;
-				ptr32 = (DWORD*)palette->levels[0].buffer;
-				if (!(ptr32[ptr8[0]] & 0xFFFFFF)) return TRUE;
-				else return FALSE;
+				return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, (DWORD*)palette->levels[0].buffer, 8);
 			}
 			else if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
 			{
-				ptr16 = (WORD*)primary->levels[0].buffer;
-				if (!ptr16[0]) return TRUE;
-				else return FALSE;
+				if (primary->levels[0].ddsd.ddpfPixelFormat.dwRBitMask == 0x7FFF)
+					return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 15);
+				else return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 16);
 			}
-			else
-			{
-				ptr32 = (DWORD*)primary->levels[0].buffer;
-				if (!(ptr32[0] & 0xFFFFFF)) return TRUE;
-				else return FALSE;
-			}
+			else return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 24);
 		}
 		else if ((primary->levels[0].ddsd.dwWidth == 320) && (primary->levels[0].ddsd.dwHeight == 240))
 		{
 			if (primary->levels[0].dirty & 2) glTexture__Download(primary, 0);
 			if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
 			{
-				ptr8 = (BYTE*)primary->levels[0].buffer;
-				ptr32 = (DWORD*)palette->levels[0].buffer;
-				if (!(ptr32[ptr8[0]] & 0xFFFFFF)) return TRUE;
-				else return FALSE;
+				return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, (DWORD*)palette->levels[0].buffer, 8);
 			}
 			else if (primary->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount == 16)
 			{
-				ptr16 = (WORD*)primary->levels[0].buffer;
-				if (!ptr16[0]) return TRUE;
-				else return FALSE;
+				if (primary->levels[0].ddsd.ddpfPixelFormat.dwRBitMask == 0x7FFF)
+					return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 15);
+				else return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 16);
 			}
-			else
-			{
-				ptr32 = (DWORD*)primary->levels[0].buffer;
-				if (!(ptr32[0] & 0xFFFFFF)) return TRUE;
-				else return FALSE;
-			}
+			else return BorderColorCompare(This, *(DWORD*)primary->levels[0].buffer, NULL, 24);
 		}
 		else return FALSE;
 	}

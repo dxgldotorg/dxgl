@@ -1,4 +1,1 @@
-<p>
-  <em>This option is available in DXGL 0.5.14 and newer.</em>
-</p>
 <p>Applies a hook to the SetCursor() API to fix a flickering mouse cursor in some instances.  Try enabling this hack if your mouse cursor is flickering in-game when it should be invisible.</p>
