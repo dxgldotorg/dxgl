@@ -79,7 +79,7 @@ void __declspec(dllexport) CalculateSha512Sum(HWND hwndParent, int string_size,
 	{
 		filename[0] = '1';
 	}
-	filename[1] = 0;
+	filename[1] = filename[2] = filename[3] = 0;
 	pushstring(comp);
 	pushstring(filename);
 }
@@ -95,7 +95,30 @@ void __declspec(dllexport) CheckSSE2(HWND hwndParent, int string_size,
 	__cpuid(cpuid, 1);
 	if ((cpuid[3] >> 26) & 1) out[0] = '1';
 	else out[0] = '0';
-	out[1] = 0;
+	out[1] = out[2] = out[3] = 0;
+	pushstring(out);
+}
+
+void __declspec(dllexport) IsWine(HWND hwndParent, int string_size,
+	TCHAR *variables, stack_t **stacktop, extra_parameters *extra)
+{
+	HMODULE ntdll;
+	char* (__cdecl *wine_get_version)();
+	char out[256];
+	EXDLL_INIT();
+	ntdll = LoadLibraryA("ntdll.dll");
+	if (!ntdll)
+	{
+		out[0] = '0';
+		out[1] = out[2] = out[3] = 0;
+		pushstring(out);
+		return;
+	}
+	wine_get_version = (char*(__cdecl*)())GetProcAddress(ntdll, "wine_get_version");
+	if (wine_get_version) out[0] = '1';
+	else out[0] = '0';
+	FreeLibrary(ntdll);
+	out[1] = out[2] = out[3] = 0;
 	pushstring(out);
 }
 

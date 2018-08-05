@@ -215,6 +215,11 @@ Section -PostInstall
   ExecWait '"$INSTDIR\dxglcfg.exe" profile_install'
 SectionEnd
 
+Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
+  DetailPrint "Setting Wine DLL Overrides"
+  WriteRegStr HKCU "Software\Wine\DllOverrides" "ddraw" "native,builtin"
+SectionEnd
+
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
   ${If} ${RunningX64}
@@ -338,8 +343,25 @@ Function .onInit
   BelowEight:
   SectionSetFlags ${SEC_COMFIX} 0
   VersionFinish:
+  dxgl-nsis::IsWine $0
+  Pop $0
+  ${If} $0 == "0"
+    SectionSetFlags ${SEC_WINEDLLOVERRIDE} 0
+	SectionSetText ${SEC_WINEDLLOVERRIDE} ""
+  ${EndIf}
 FunctionEnd
 
+LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL."
+LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "The Visual C++ Redistributable package required for this version of DXGL was not detected.  Selecting this will download a copy of the redistributable hosted on dxgl.info and install it."
+LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
+LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adjusts the COM registration of ddraw.dll to allow DXGL to be used from a game's folder.  This option only applies to the user profile being used to install DXGL.  Use for Windows 8 and above."
+
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(DESC_SEC01)
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_VCREDIST} $(DESC_SEC_VCREDIST)
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_WINEDLLOVERRIDE} $(DESC_SEC_WINEDLLOVERRIDE)
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_COMFIX} $(DESC_SEC_COMFIX)
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Function un.onUninstSuccess
   HideWindow
