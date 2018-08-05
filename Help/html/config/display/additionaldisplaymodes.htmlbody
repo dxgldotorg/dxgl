@@ -137,3 +137,20 @@
     928x696, 60Hz refresh
   </code>
 </p>
+<h1>Common SVGA resolutions</h1>
+<p>
+  Adds several common 4:3 and 5:4 display resolutions used by SVGA type graphics adapters.  This option is useful when running under Wine on a system that doesn&#8217;t support mode switching.<br />
+  The following video modes are added:<br />
+  <code>
+    640x480, 60Hz refresh<br />
+    800x600, 56Hz refresh<br />
+    800x600, 60Hz refresh<br />
+    1024x768, 60Hz refresh<br />
+    1152x864, 60Hz refresh<br />
+    1280x960, 60Hz refresh<br />
+    1280x1024, 60Hz refresh<br />
+    1600x1200, 60Hz refresh<br />
+    1920x1440, 60Hz refresh<br />
+    2048x1536, 60Hz refresh
+  </code>
+</p>

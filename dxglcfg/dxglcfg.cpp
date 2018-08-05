@@ -143,14 +143,15 @@ static const TCHAR *colormodedropdown[5] = {
 	_T("32-bit")
 };
 
-static const TCHAR *extramodes[7] = {
+static const TCHAR *extramodes[8] = {
 	_T("Common low resolutions"),
 	_T("Uncommon low resolutions"),
 	_T("Uncommon SD resolutions"),
 	_T("High Definition resolutions"),
 	_T("Ultra-HD resolutions"),
 	_T("Ultra-HD above 4k"),
-	_T("Very uncommon resolutions")
+	_T("Very uncommon resolutions"),
+	_T("Common SVGA resolutions")
 };
 
 DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
@@ -1502,7 +1503,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				r.left = r.left + 2;
 				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
-				if (drawitem->itemID == 7)
+				if (drawitem->itemID == 8)
 				{
 					if (!cfgmask->AddModes)
 						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, FALSE, FALSE, &r);
@@ -1550,6 +1551,9 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					case 64:
 						_tcscpy(combotext, extramodes[6]);
 						break;
+					case 128:
+						_tcscpy(combotext, extramodes[7]);
+					break;
 					default:
 						_tcscpy(combotext, _T("Multiple selections"));
 					}
@@ -1616,7 +1620,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if (ExtraModes_Dropdown)
 				{
 					cursel = SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
-					if (cursel == 7)
+					if (cursel == 8)
 					{
 						if (cfgmask->AddModes) cfgmask->AddModes = 0;
 						else cfgmask->AddModes = 1;
@@ -3323,7 +3327,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, i, (LPARAM)buffer);
 		}
 		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_SETCURSEL, cfg->AddColorDepths, 0);
-		for (i = 0; i < 7; i++)
+		for (i = 0; i < 8; i++)
 		{
 			_tcscpy(buffer, extramodes[i]);
 			SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, i, (LPARAM)buffer);

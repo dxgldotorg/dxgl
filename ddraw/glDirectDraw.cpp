@@ -214,6 +214,23 @@ const int UncommonModes[][3] =
 const int END_UNCOMMONMODES = __LINE__ - 4;
 const int NumUncommonModes = END_UNCOMMONMODES - START_UNCOMMONMODES;
 
+const int START_COMMONSVGAMODES = __LINE__;
+const int CommonSVGAModes[][3] =
+{
+	{ 640,480,60 },
+	{ 800,600,56 },
+	{ 800,600,60 },
+	{ 1024,768,60 },
+	{ 1152,864,60 },
+	{ 1280,960,60 },
+	{ 1280,1024,60 },
+	{ 1600,1200,60 },
+	{ 1920,1440,60 },
+	{ 2048,1536,60 }
+};
+const int END_COMMONSVGAMODES = __LINE__ - 4;
+const int NumCommonSVGAModes = END_COMMONSVGAMODES - START_COMMONSVGAMODES;
+
 const int START_DOUBLEDMODESCOUNT = __LINE__;
 const int DoubledModes[] [5] = 
 {
@@ -637,6 +654,8 @@ HRESULT EnumDisplayModes1(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID
 			AddExtraResolutions(&modes, &modenum, UHD2Modes, NumUHD2Modes);
 		if (dxglcfg.AddModes & 64) //Very uncommon resolutions
 			AddExtraResolutions(&modes, &modenum, UncommonModes, NumUncommonModes);
+		if (dxglcfg.AddModes & 128) //Common SVGA modes
+			AddExtraResolutions(&modes, &modenum, CommonSVGAModes, NumCommonSVGAModes);
 	}
 	if (dxglcfg.AddModes && (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 		(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f)))
