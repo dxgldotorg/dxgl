@@ -46,7 +46,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0,0};
+static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0,0,0};
 static DWORD counter;
 static DWORD hotspotx,hotspoty;
 
@@ -1097,7 +1097,7 @@ void InitTest(int test)
 		sprites[2].width = sprites[2].height = 16.0f;
 		sprites[3].width = sprites[3].height = 16.0f;
 		sprites[4].width = sprites[4].height = 8.0f;
-		sprites[5].width = sprites[4].height = 6.0f;
+		sprites[5].width = sprites[5].height = 6.0f;
 		sprites[0].ddsd.dwWidth = sprites[0].ddsd.dwHeight =
 			sprites[0].rect.right = sprites[0].rect.bottom = 256;
 		sprites[1].ddsd.dwWidth = sprites[1].ddsd.dwHeight =
@@ -1338,6 +1338,71 @@ void InitTest(int test)
 		sprites[0].y = randfloat((float)ddsd.dwHeight);
 		sprites[0].xvelocity = randfloat(5);
 		sprites[0].yvelocity = randfloat(5);
+		break;
+	case 17: // ROP sprites
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
+		ddsrender->GetPalette(&palette);
+		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		if (palette) palette->Release();
+		DrawGradients(ddsd, (unsigned char *)ddsd.lpSurface, hWnd, palette, 1, 0);
+		error = sprites[0].surface->Unlock(NULL);
+		sprites[0].width = (float)ddsd.dwWidth;
+		sprites[0].height = (float)ddsd.dwHeight;
+		sprites[0].rect.left = sprites[0].rect.top = 0;
+		sprites[0].rect.right = ddsd.dwWidth;
+		sprites[0].rect.bottom = ddsd.dwHeight;
+		sprites[0].bltfx.dwSize = 0;
+		sprites[0].bltflags = DDBLT_WAIT;
+		memcpy(&sprites[4], &sprites[0], sizeof(DDSPRITE));
+		sprites[4].ddsd = ddsd;
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		temp1->SetColorKey(DDCKEY_DESTBLT, &ckey);
+		if (backbuffers) temp1->Release();
+		sprites[4].surface = NULL;
+		sprites[4].width = sprites[4].height = 6.0f;
+		sprites[4].ddsd.dwWidth = sprites[4].ddsd.dwHeight =
+			sprites[4].rect.right = sprites[4].rect.bottom = 6;
+		ddinterface->CreateSurface(&sprites[4].ddsd, &sprites[4].surface, NULL);
+		DrawROPPatternSurface(sprites[4].surface, bpp, ddver);
+		for (i = 1; i < 4; i++)
+		{
+			sprites[i].width = sprites[i].height = 64.f;
+			sprites[i].ddsd.dwWidth = sprites[i].ddsd.dwHeight =
+				sprites[i].rect.right = sprites[i].rect.bottom = 64;
+			sprites[i].ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+			sprites[i].ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+			if (ddver > 3) sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC2);
+			else sprites[i].ddsd.dwSize = sizeof(DDSURFACEDESC);
+			ddinterface->CreateSurface(&sprites[i].ddsd, &sprites[i].surface, NULL);
+			error = sprites[i].surface->Lock(NULL, &sprites[i].ddsd, DDLOCK_WAIT, NULL);
+			DrawPalette(sprites[i].ddsd, (unsigned char *)sprites[i].ddsd.lpSurface);
+			sprites[i].surface->Unlock(NULL);
+			sprites[i].x = randfloat((float)ddsd.dwWidth);
+			sprites[i].y = randfloat((float)ddsd.dwHeight);
+			sprites[i].xvelocity = randfloat(5);
+			sprites[i].yvelocity = randfloat(5);
+			sprites[i].bltflags = DDBLT_WAIT | DDBLT_ROP;
+			sprites[i].bltfx.dwSize = sizeof(DDBLTFX);
+			switch (i)
+			{
+			case 1:
+				sprites[i].bltfx.dwROP = SRCCOPY;
+				break;
+			case 2:
+				sprites[i].bltfx.dwROP = DSTINVERT;
+				break;
+			case 3:
+				sprites[i].bltfx.dwROP = PATCOPY;
+				sprites[i].bltfx.lpDDSPattern = (LPDIRECTDRAWSURFACE)sprites[4].surface->GetSurface();
+				break;
+			default:
+				break;
+			}
+		}
 		break;
 	default:
 		break;
@@ -2047,6 +2112,51 @@ void RunTestTimed(int test)
 			}
 			temp1->Blt(&destrect, sprites[0].surface, &srcrect, DDBLT_KEYSRC | DDBLT_WAIT, NULL);
 			if (backbuffers) temp1->Release();
+		}
+		if (fullscreen)
+		{
+			if (backbuffers && ddsrender) ddsrender->Flip(NULL, DDFLIP_WAIT);
+		}
+		else
+		{
+			p.x = 0;
+			p.y = 0;
+			ClientToScreen(hWnd, &p);
+			GetClientRect(hWnd, &r1);
+			OffsetRect(&r1, p.x, p.y);
+			SetRect(&r2, 0, 0, width, height);
+			if (ddsurface && ddsrender) ddsurface->Blt(&r1, ddsrender, &r2, DDBLT_WAIT, NULL);
+		}
+		break;
+	case 17: // ROP sprites
+		if (backbuffers) ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+		else temp1 = ddsrender;
+		bltfx.dwFillColor = 0;
+		temp1->Blt(NULL, NULL, NULL, DDBLT_COLORFILL, &bltfx);
+		if (backbuffers) temp1->Release();
+		for (int i = 0; i < 4; i++)
+		{
+			sprites[i].x += sprites[i].xvelocity;
+			if (sprites[i].xvelocity < 0 && sprites[i].x < 0) sprites[i].xvelocity = -sprites[i].xvelocity;
+			if (sprites[i].xvelocity > 0 && (sprites[i].x + sprites[i].width) > width)
+				sprites[i].xvelocity = -sprites[i].xvelocity;
+			sprites[i].y += sprites[i].yvelocity;
+			if (sprites[i].yvelocity < 0 && sprites[i].y < 0) sprites[i].yvelocity = -sprites[i].yvelocity;
+			if (sprites[i].yvelocity > 0 && (sprites[i].y + sprites[i].height) > height)
+				sprites[i].yvelocity = -sprites[i].yvelocity;
+			if (sprites[i].surface)
+			{
+				if (backbuffers)	ddsrender->GetAttachedSurface(&ddscaps, &temp1);
+				else temp1 = ddsrender;
+				r1.left = (DWORD)sprites[i].x;
+				r1.right = (DWORD)sprites[i].x + (DWORD)sprites[i].width;
+				r1.top = (DWORD)sprites[i].y;
+				r1.bottom = (DWORD)sprites[i].y + (DWORD)sprites[i].height;
+				if(sprites[i].bltfx.dwSize == sizeof(DDBLTFX))
+					temp1->Blt(&r1, sprites[i].surface, &sprites[i].rect, sprites[i].bltflags, &sprites[i].bltfx);
+				else temp1->Blt(&r1, sprites[i].surface, &sprites[i].rect, sprites[i].bltflags, NULL);
+				if (backbuffers) temp1->Release();
+			}
 		}
 		if (fullscreen)
 		{

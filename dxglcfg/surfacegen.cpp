@@ -986,6 +986,40 @@ void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type)
 	}
 }
 
+void DrawROPPatternSurface(MultiDirectDrawSurface *surface, int bpp, int ddver)
+{
+	DDSURFACEDESC2 ddsd;
+	if (ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	surface->GetSurfaceDesc(&ddsd);
+	surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	switch (bpp)
+	{
+	case 8:
+	default:
+		for (int i = 0; i < 6; i++)
+			memcpy((unsigned char*)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_8[6 * i], 6);
+		break;
+	case 15:
+		for (int i = 0; i < 6; i++)
+			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_15[6 * i], 12);
+		break;
+	case 16:
+		for (int i = 0; i < 6; i++)
+			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_16[6 * i], 12);
+		break;
+	case 24:
+		for (int i = 0; i < 6; i++)
+			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_24[18 * i], 18);
+		break;
+	case 32:
+		for (int i = 0; i < 6; i++)
+			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_32[6 * i], 24);
+		break;
+	}
+	surface->Unlock(NULL);
+}
+
 void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int backbuffers, int ddver, int bpp, DWORD *ropcaps, 
 	HWND hwnd, LPDIRECTDRAWPALETTE palette)
 {
@@ -1041,33 +1075,7 @@ void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int bac
 		break;
 	}
 	sprites[4].surface->Unlock(NULL);
-	sprites[5].surface->GetSurfaceDesc(&ddsd);
-	sprites[5].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-	switch (bpp)
-	{
-	case 8:
-	default:
-		for (int i = 0; i < 6; i++)
-			memcpy((unsigned char*)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_8[6 * i], 6);
-		break;
-	case 15:
-		for (int i = 0; i < 6; i++)
-			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_15[6 * i], 12);
-		break;
-	case 16:
-		for (int i = 0; i < 6; i++)
-			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_16[6 * i], 12);
-		break;
-	case 24:
-		for (int i = 0; i < 6; i++)
-			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_24[18 * i], 18);
-		break;
-	case 32:
-		for (int i = 0; i < 6; i++)
-			memcpy((unsigned char *)ddsd.lpSurface + (i*ddsd.lPitch), &blt_pattern_32[6 * i], 24);
-		break;
-	}
-	sprites[5].surface->Unlock(NULL);
+	DrawROPPatternSurface(sprites[5].surface, bpp, ddver);
 	for (int y = 0; y < 32; y++)
 	{
 		for (int x = 0; x < 32; x++)

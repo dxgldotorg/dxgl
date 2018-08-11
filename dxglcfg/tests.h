@@ -31,6 +31,7 @@ typedef struct
 	float yvelocity;
 	DWORD bltflags;
 	RECT rect;
+	DDBLTFX bltfx;
 } DDSPRITE;
 
 void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,

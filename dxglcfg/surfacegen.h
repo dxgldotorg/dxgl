@@ -23,6 +23,7 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer);  // Palette test
 void DrawDitheredColor(DDSURFACEDESC2 *ddsd, unsigned char *buffer, DWORD color, BOOL invert);  // Draw a dithered color over the surface
 void DrawGradients(DDSURFACEDESC2 ddsd, unsigned char *buffer, HWND hwnd, LPDIRECTDRAWPALETTE palette, int type, DWORD color); // Gradients
 void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type); // GDI pattern test
+void DrawROPPatternSurface(MultiDirectDrawSurface *surface, int bpp, int ddver); // ROP pattern test - pattern surface
 void DrawROPPatterns(MultiDirectDrawSurface *primary, DDSPRITE *sprites, int backbuffers, int ddver, int bpp, DWORD *ropcaps,
 	HWND hwnd, LPDIRECTDRAWPALETTE palette); // ROP pattern test
 void DrawRotatedBlt(MultiDirectDrawSurface *primary, DDSPRITE *sprites);
