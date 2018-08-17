@@ -36,7 +36,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
-!if ${COMPILER} == "VC2017_7"
+!if ${COMPILER} == "VC2017_8"
 !ifdef _DEBUG
 !define SRCDIR "Debug VS2017"
 !else
@@ -109,12 +109,12 @@ SetCompressor /SOLID lzma
 !define runtime_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
-!else if ${COMPILER} == "VC2017_7"
+!else if ${COMPILER} == "VC2017_8"
 !define download_runtime 1
-!define runtime_url http://www.dxgl.info/download/runtimes/vc14.14/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2017.7"
+!define runtime_url http://www.dxgl.info/download/runtimes/vc14.15/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2017.8"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "9D954611243942F4AF6CE37D531EA67CB88CA8CFE5BBE7942606AF11577B12F250F3A9622255760B8BF0610EE72C647BAF42BCCC1F708D3EA05B63B6945DEB8F"
+!define runtime_sha512 "05B02AB523D7DDEA468C94F28D4EDB1BD945BDC525B87DE11F7F995196407D412D9E76A950F9F3134467D88A4F6E0B3456E9E941AB7118EDE04025E19F1D2751"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -253,7 +253,7 @@ SectionEnd
 
 
 Function .onInit
-  !if ${COMPILER} == "VC2017_7"
+  !if ${COMPILER} == "VC2017_8"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -306,12 +306,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2017_7"
+  !if ${COMPILER} == "VC2017_8"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.14.26429" $1
+  ${VersionCompare} "$0" "14.15.26706" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
