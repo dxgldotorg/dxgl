@@ -389,6 +389,8 @@ Section Uninstall
   Delete "$INSTDIR\ddraw.dll"
   Delete "$INSTDIR\dxglcfg.exe"
   Delete "$INSTDIR\dxgltest.exe"
+  Delete "$INSTDIR\dxgl.chm"
+  Delete "$INSTDIR\dxgl-example.ini"
 
   Delete "$SMPROGRAMS\DXGL\Uninstall.lnk"
   Delete "$SMPROGRAMS\DXGL\Website.lnk"
