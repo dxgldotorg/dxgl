@@ -3597,6 +3597,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	if (!paletted && firstpass && (dxglcfg.postfilter == 1))
 		glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
 	else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
+	This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
 	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
 	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
@@ -3653,6 +3654,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
 	glUtil_SetTexture(This->util, 8, texture);
+	This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
 	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->levels[0].ddsd.dwWidth;
 	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->levels[0].ddsd.dwWidth;

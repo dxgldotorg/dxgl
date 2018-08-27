@@ -3140,12 +3140,14 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 1, (LPARAM)buffer);
+		/* Temporarily removed until implemented
 		_tcscpy(buffer, _T("Bilinear, nearest colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 2, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear, sharp colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 3, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Bilinear, soft colorkey"));
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 4, (LPARAM)buffer);
+		*/
 		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_SETCURSEL, cfg->BltScale, 0);
 		// Removed for DXGL 0.5.13 release
 		// Blt scaling threshold
