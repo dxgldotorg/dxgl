@@ -2774,6 +2774,232 @@ DWORD WINAPI ProgressThread(LPVOID hWndOut)
 	return 0;
 }
 
+void RefreshControls(HWND hWnd)
+{
+	if (current_app)
+	{
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), TRUE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), TRUE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), TRUE);
+		SetDlgItemText(hTabs[3], IDC_PROFILEPATH, apps[current_app].path);
+		if (apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+		else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), FALSE);
+		SetDlgItemText(hTabs[3], IDC_PROFILEPATH, _T(""));
+		EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
+	}
+	// Set 3-state status
+	if (current_app && !tristate)
+	{
+		tristate = TRUE;
+		// Display tab
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		// Effects tab
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		// 3D tab
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		// Advanced tab
+		SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		// Debug tab
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
+	}
+	else if (!current_app && tristate)
+	{
+		tristate = FALSE;
+		// Display tab
+		SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		// Effects tab
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		// 3D tab
+		SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		// Advanced tab
+		SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+		SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+		// Debug tab
+		SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	}
+	// Read settings into controls
+	// Display tab
+	SetCombo(hTabs[0], IDC_VIDMODE, cfg->scaler, cfgmask->scaler, tristate);
+	SetCombo(hTabs[0], IDC_COLORDEPTH, 0, 0, tristate);
+	SetCombo(hTabs[0], IDC_SCALE, cfg->scalingfilter, cfgmask->scalingfilter, tristate);
+	SetCombo(hTabs[0], IDC_EXTRAMODES, 0, 0, tristate);
+	SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
+	SetCombo(hTabs[0], IDC_SORTMODES, cfg->SortModes, cfgmask->SortModes, tristate);
+	SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
+	SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
+	SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
+	SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
+	SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
+	if (cfg->scaler == 8)
+	{
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), TRUE);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), FALSE);
+	}
+	if ((cfg->scaler == 9) || (cfg->scaler == 10))
+	{
+		EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), TRUE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), TRUE);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), FALSE);
+		EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), FALSE);
+	}
+	SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
+	SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
+	SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
+	// Effects tab
+	SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
+	SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
+		(DWORD)cfgmask->postsizex, (DWORD)cfgmask->postsizey, tristate);
+	SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
+	if (cfg->primaryscale == 12)
+	{
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), TRUE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), TRUE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), TRUE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), TRUE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), TRUE);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), FALSE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), FALSE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), FALSE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), FALSE);
+		EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), FALSE);
+	}
+	SetFloat3place(hTabs[1], IDC_CUSTOMSCALEX, cfg->primaryscalex, cfgmask->primaryscalex);
+	SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
+	SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
+	SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
+	// Removed for DXGL 0.5.13 release
+	/* SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
+	if (cfgmask->BltThreshold)
+	{
+		SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
+	}
+	else SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, 127);*/
+	// 3D tab
+	SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
+	SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
+	SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
+	SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
+	SetCombo(hTabs[2], IDC_LOWCOLORRENDER, cfg->LowColorRendering, cfgmask->LowColorRendering, tristate);
+	SetCombo(hTabs[2], IDC_DITHERING, cfg->EnableDithering, cfgmask->EnableDithering, tristate);
+	// Advanced tab
+	SetCombo(hTabs[3], IDC_TEXTUREFORMAT, cfg->TextureFormat, cfgmask->TextureFormat, tristate);
+	SetCombo(hTabs[3], IDC_TEXUPLOAD, cfg->TexUpload, cfgmask->TexUpload, tristate);
+	SetCombo(hTabs[3], IDC_WINDOWPOS, cfg->WindowPosition, cfgmask->WindowPosition, tristate);
+	SetCheck(hTabs[3], IDC_REMEMBERWINDOWPOS, cfg->RememberWindowPosition, cfgmask->RememberWindowPosition, tristate);
+	SetCheck(hTabs[3], IDC_REMEMBERWINDOWSIZE, cfg->RememberWindowSize, cfgmask->RememberWindowSize, tristate);
+	SetInteger(hTabs[3], IDC_WINDOWX, cfg->WindowX, cfgmask->WindowX);
+	SetInteger(hTabs[3], IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
+	SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
+	SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
+	SetCheck(hTabs[3], IDC_WINDOWMAXIMIZED, cfg->WindowMaximized, cfgmask->WindowMaximized, tristate);
+	SetCheck(hTabs[3], IDC_NOAUTOSIZE, cfg->NoResizeWindow, cfgmask->NoResizeWindow, tristate);
+	SetCheck(hTabs[3], IDC_CAPTUREMOUSE, cfg->CaptureMouse, cfgmask->CaptureMouse, tristate);
+	// Debug tab
+	RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
+	SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
+		&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
+	// Hacks tab
+	UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
+	SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+	RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
+}
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -3756,228 +3982,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				cfg = &apps[current_app].cfg;
 				cfgmask = &apps[current_app].mask;
 				dirty = &apps[current_app].dirty;
-				if (current_app)
-				{
-					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), TRUE);
-					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), TRUE);
-					EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), TRUE);
-					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, apps[current_app].path);
-					if (apps[current_app].builtin) EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
-					else EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), TRUE);
-				}
-				else
-				{
-					EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
-					EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
-					EnableWindow(GetDlgItem(hTabs[3], IDC_WRITEINI), FALSE);
-					SetDlgItemText(hTabs[3], IDC_PROFILEPATH, _T(""));
-					EnableWindow(GetDlgItem(hWnd, IDC_REMOVE), FALSE);
-				}
-				// Set 3-state status
-				if(current_app && !tristate)
-				{
-					tristate = TRUE;
-					// Display tab
-					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
-					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
-					// Effects tab
-					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					// 3D tab
-					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					// Advanced tab
-					SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_ADDSTRING, 0, (LPARAM)strdefault);
-					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
-					// Debug tab
-					SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
-				}
-				else if(!current_app && tristate)
-				{
-					tristate = FALSE;
-					// Display tab
-					SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_VIDMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_COLORDEPTH, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_SCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_EXTRAMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_ASPECT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
-					SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
-					// Effects tab
-					SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[1], IDC_POSTSCALESIZE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[1], IDC_PRIMARYSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[1], IDC_BLTFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					// 3D tab
-					SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_TEXFILTER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_ANISO, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_MSAA, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					// Advanced tab
-					SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3], IDC_WINDOWPOS, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWPOS, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
-					SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
-					// Debug tab
-					SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
-						SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-				}
-				// Read settings into controls
-				// Display tab
-				SetCombo(hTabs[0], IDC_VIDMODE, cfg->scaler, cfgmask->scaler, tristate);
-				SetCombo(hTabs[0], IDC_COLORDEPTH, 0, 0, tristate);
-				SetCombo(hTabs[0], IDC_SCALE, cfg->scalingfilter, cfgmask->scalingfilter, tristate);
-				SetCombo(hTabs[0], IDC_EXTRAMODES, 0, 0, tristate);
-				SetAspectCombo(hTabs[0], IDC_ASPECT, cfg->aspect, (DWORD)cfgmask->aspect, tristate);
-				SetCombo(hTabs[0], IDC_SORTMODES, cfg->SortModes, cfgmask->SortModes, tristate);
-				SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
-				SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
-				SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
-				SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
-				SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
-				if (cfg->scaler == 8)
-				{
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), TRUE);
-				}
-				else
-				{
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABEL), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELX), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALELABELY), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY), FALSE);
-				}
-				if ((cfg->scaler == 9) || (cfg->scaler == 10))
-				{
-					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), TRUE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), TRUE);
-				}
-				else
-				{
-					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODELABEL), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_CUSTOMMODE), FALSE);
-					EnableWindow(GetDlgItem(hTabs[0], IDC_SETMODE), FALSE);
-				}
-				SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
-				SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
-				SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
-				// Effects tab
-				SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
-				SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
-					(DWORD)cfgmask->postsizex , (DWORD)cfgmask->postsizey, tristate);
-				SetCombo(hTabs[1], IDC_PRIMARYSCALE, cfg->primaryscale, cfgmask->primaryscale, tristate);
-				if (cfg->primaryscale == 12)
-				{
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), TRUE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), TRUE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), TRUE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), TRUE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), TRUE);
-				}
-				else
-				{
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABEL), FALSE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELX), FALSE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX), FALSE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALELABELY), FALSE);
-					EnableWindow(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY), FALSE);
-				}
-				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEX, cfg->primaryscalex, cfgmask->primaryscalex);
-				SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
-				SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
-				SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
-				// Removed for DXGL 0.5.13 release
-				/* SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
-				if (cfgmask->BltThreshold)
-				{
-					SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, cfg->BltThreshold);
-				}
-				else SendDlgItemMessage(hTabs[1], IDC_BLTTHRESHOLDSLIDER, TBM_SETPOS, TRUE, 127);*/
-				// 3D tab
-				SetCombo(hTabs[2], IDC_TEXFILTER, cfg->texfilter, cfgmask->texfilter, tristate);
-				SetCombo(hTabs[2], IDC_ANISO, cfg->anisotropic, cfgmask->anisotropic, tristate);
-				SetCombo(hTabs[2], IDC_MSAA, cfg->msaa, cfgmask->msaa, tristate);
-				SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
-				SetCombo(hTabs[2], IDC_LOWCOLORRENDER, cfg->LowColorRendering, cfgmask->LowColorRendering, tristate);
-				SetCombo(hTabs[2], IDC_DITHERING, cfg->EnableDithering, cfgmask->EnableDithering, tristate);
-				// Advanced tab
-				SetCombo(hTabs[3],IDC_TEXTUREFORMAT,cfg->TextureFormat,cfgmask->TextureFormat,tristate);
-				SetCombo(hTabs[3],IDC_TEXUPLOAD,cfg->TexUpload,cfgmask->TexUpload,tristate);
-				SetCombo(hTabs[3], IDC_WINDOWPOS, cfg->WindowPosition, cfgmask->WindowPosition, tristate);
-				SetCheck(hTabs[3], IDC_REMEMBERWINDOWPOS, cfg->RememberWindowPosition, cfgmask->RememberWindowPosition, tristate);
-				SetCheck(hTabs[3], IDC_REMEMBERWINDOWSIZE, cfg->RememberWindowSize, cfgmask->RememberWindowSize, tristate);
-				SetInteger(hTabs[3], IDC_WINDOWX, cfg->WindowX, cfgmask->WindowX);
-				SetInteger(hTabs[3], IDC_WINDOWY, cfg->WindowY, cfgmask->WindowY);
-				SetInteger(hTabs[3], IDC_WINDOWWIDTH, cfg->WindowWidth, cfgmask->WindowWidth);
-				SetInteger(hTabs[3], IDC_WINDOWHEIGHT, cfg->WindowHeight, cfgmask->WindowHeight);
-				SetCheck(hTabs[3], IDC_WINDOWMAXIMIZED, cfg->WindowMaximized, cfgmask->WindowMaximized, tristate);
-				SetCheck(hTabs[3], IDC_NOAUTOSIZE, cfg->NoResizeWindow, cfgmask->NoResizeWindow, tristate);
-				SetCheck(hTabs[3], IDC_CAPTUREMOUSE, cfg->CaptureMouse, cfgmask->CaptureMouse, tristate);
-				// Debug tab
-				RedrawWindow(GetDlgItem(hTabs[4], IDC_DEBUGLIST), NULL, NULL, RDW_INVALIDATE);
-				SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
-					&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
-				// Hacks tab
-				UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
-				SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
-				RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
+				RefreshControls(hWnd);
 			}
 			break;
 		case IDC_ADD:
@@ -4144,6 +4149,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETCURSEL, 0, 0);
 			SendDlgItemMessage(hWnd,IDC_APPS,CB_DELETESTRING,current_app,0);
 			SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
+			break;
+		case IDC_RESTOREDEFAULTS:
+			GetDefaultConfig(&apps[current_app].cfg);
+			if(current_app) ZeroMemory(&apps[current_app].mask, sizeof(DXGLCFG));
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			RefreshControls(hWnd);
 			break;
 		}
 		break;

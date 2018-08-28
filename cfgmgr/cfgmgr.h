@@ -147,6 +147,7 @@ void ReadAppINIOptions(LPCTSTR path, app_ini_options *options);
 void SaveWindowSettings(const DXGLCFG *cfg);
 BOOL CheckProfileExists(LPTSTR path);
 LPTSTR MakeNewConfig(LPTSTR path);
+void GetDefaultConfig(DXGLCFG *cfg);
 
 #ifdef __cplusplus
 }

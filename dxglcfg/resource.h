@@ -49,6 +49,7 @@
 #define IDC_TABS                                1002
 #define IDC_ADD                                 1003
 #define IDC_REMOVE                              1004
+#define IDC_RESTOREDEFAULTS                     1005
 
 // Bitmaps
 #define IDB_DXGLINV                             311
