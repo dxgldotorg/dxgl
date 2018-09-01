@@ -47,6 +47,7 @@ typedef struct DXGLTimer
 	double monitor_period;
 	double timer_frequency;
 	LARGE_INTEGER timer_base;
+	LARGE_INTEGER lastdraw;
 } DXGLTimer;
 
 // OpenGL Extensions structure

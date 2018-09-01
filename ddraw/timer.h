@@ -26,6 +26,8 @@ extern "C" {
 void DXGLTimer_Init(DXGLTimer *timer);
 void DXGLTimer_Calibrate(DXGLTimer *timer, unsigned int lines, unsigned int frequency);
 unsigned int DXGLTimer_GetScanLine(DXGLTimer *timer);
+void DXGLTimer_SetLastDraw(DXGLTimer *timer);
+BOOL DXGLTimer_CheckLastDraw(DXGLTimer *timer, DWORD ms);
 
 #ifdef __cplusplus
 }

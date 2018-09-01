@@ -74,3 +74,22 @@ unsigned int DXGLTimer_GetScanLine(DXGLTimer *timer)
 	sync_pos *= (double)timer->lines;
 	return (unsigned int)sync_pos;
 }
+
+void DXGLTimer_SetLastDraw(DXGLTimer *timer)
+{
+	if (timer->timertype == 1) QueryPerformanceCounter(&timer->lastdraw);
+	else timer->lastdraw.QuadPart = timeGetTime();
+}
+
+BOOL DXGLTimer_CheckLastDraw(DXGLTimer *timer, DWORD ms)
+{
+	LARGE_INTEGER timerpos;
+	double milliseconds;
+	if (timer->timertype == 1)	QueryPerformanceCounter(&timerpos);
+	else timerpos.QuadPart = timeGetTime();
+	timerpos.QuadPart -= timer->timer_base.QuadPart;
+	if (timer->timertype == 1) milliseconds = ((double)timerpos.QuadPart / (double)timer->timer_frequency) * 1000.0;
+	else milliseconds = (double)timerpos.QuadPart;
+	if (milliseconds < ms) return FALSE;
+	else return TRUE;
+}
