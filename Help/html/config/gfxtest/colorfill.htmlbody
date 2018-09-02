@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/colorfill-random.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws randomly colored rectangles to the primary buffer, using the Blt() API with the DDBLT_COLORFILL option. Please note that on some graphics cards this can result in up to thousands of frames per second.
+</p>

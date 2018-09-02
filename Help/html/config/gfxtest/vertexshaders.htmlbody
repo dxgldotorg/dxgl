@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/vertexshader.png" alt="" width="737" height="634" />
+</p>
+<p>
+  This is an interactive test, which allows the user to experiment with the Direct3D7 vertex pipeline, aka the T&amp;L pipeline.<br />
+  This test is currently far from completion, and several parts do not work.
+</p>

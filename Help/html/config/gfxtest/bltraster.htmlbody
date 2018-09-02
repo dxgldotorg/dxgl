@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/bltrop.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws a background consisting of gradients, and then draws three objects using three different common Win32 raster operations, specifically SRCCOPY, DSTINVERT, and PATCOPY. The SRCCOPY should be a color palette, the DSTINVERT should invert the background, and the PATCOPY should show a pattern revealed under the object (the object moves, the pattern doesn’t).
+</p>

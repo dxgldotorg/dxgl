@@ -1,0 +1,8 @@
+<p>
+  <img class="alignnone size-full" src="images/setcursorpos.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test moves the mouse cursor, then reads back its position.<br />
+  In scaled modes, it is currently expected for a slight offset to be detected.<br />
+  The mouse cursor drawn by this test should follow the real cursor, which is a cross.<br />
+</p>

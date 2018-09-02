@@ -34,6 +34,9 @@
     <Filter Include="Help files\html\licenses">
       <UniqueIdentifier>{518a1b28-a12a-45ef-85ac-2720c1a59035}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Help files\html\config\gfxtest">
+      <UniqueIdentifier>{4abdb459-188c-4577-99ec-e822db390921}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="dxgl.hhp">
@@ -525,5 +528,115 @@
     <None Include="html\config\hacks\automaticexpandcomparisonvalue.htmlbody">
       <Filter>Help files\html\config\hacks</Filter>
     </None>
+    <None Include="html\config\gfxtest\colorpalette.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\colorpalette.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\randomnoise.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\randomnoise.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\gditest.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\gditest.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\randomgdi.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\randomgdi.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\bltfast.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\bltfast.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\colorfill.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\colorfill.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\mousetest.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\mousetest.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\rasterop.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\mirrorrotate.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\mirrorrotate.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\largebatchblt.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\largebatchblt.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\srckeyoverride.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\srckeyoverride.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\destkeyoverride.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\destkeyoverride.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\drawindexedprimitive.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\drawindexedprimitive.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\drawprimitivetextured.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\drawprimitivetextured.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\texturestageshaders.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\texturestageshaders.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\vertexshaders.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\vertexshaders.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\setcursorpos.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\setcursorpos.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\bltraster.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\bltraster.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="html\config\gfxtest\rasterop.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

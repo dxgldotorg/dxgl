@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/large-batch-blt.png" alt="" width="512" height="512" />
+</p>
+<p>
+  This test draws cycling colors in single pixels using color fill Blt() commands, to a 256×256 back buffer, then uses Blt() to stretch that buffer to the screen.<br />
+  Due to the current design of DXGL, this test takes several seconds per frame, but in the future may become much faster.
+</p>

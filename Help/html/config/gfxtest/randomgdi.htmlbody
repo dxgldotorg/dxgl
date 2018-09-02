@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/gdi-random.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test paints random GDI commands to the primary buffer, unlocking and displaying it after each command.<br/>
+  On some systems, this may be slow due to the method GDI access is currently implemented.
+</p>

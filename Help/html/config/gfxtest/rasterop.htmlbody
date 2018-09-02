@@ -1,0 +1,8 @@
+<p>
+  <img class="alignnone size-full" src="images/rop-patterns.png" alt="" width="512" height="544" />
+</p>
+<p>
+  This test draws all 256 ternary raster operations supported by Windows, first using DirectDraw API and second using Windows GDI. The source is a 16×16 version of the DXGL logo, the destination is a checkerboard pattern, and the pattern is a different checkerboard.<br />
+  The DDraw screen should look exactly the same as the GDI screen, indicating the raster operations are working correctly.<br />
+  On graphics cards that do not support OpenGL 3, many of the DirectDraw raster operations will be replaced with a red X, indicating they cannot be drawn, as the necessary shader hardware is not detected to simulate the raster operations.
+</p>

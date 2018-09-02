@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/bltfast.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws gradients in the background, with every other pixel left black, and draws several objects to the foreground.  Two of the objects are drawn behind the dithered background (using a destination color key) and one of the objects drawn on the foreground has one of the colors of its palette not drawn due to using a color key.  Everything is drawn using the BltFast() API, which has limited functionality compared to the Blt() API.
+</p>

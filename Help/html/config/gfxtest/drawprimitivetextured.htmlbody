@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/drawprimitivetextured.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws a cube using the DrawPrimitive() API, using 4 different textures for 4 sides, with color formats RGBA4444, RGBA1555, RGB565, and RGBA8888.
+</p>

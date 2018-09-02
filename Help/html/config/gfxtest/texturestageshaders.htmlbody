@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/textureshader.png" alt="" width="737" height="540" />
+</p>
+<p>
+  This is an interactive test, which allows the user to experiment with the Direct3D7 texture stage pipeline.<br />
+  Please note this test is currently incomplete.
+</p>

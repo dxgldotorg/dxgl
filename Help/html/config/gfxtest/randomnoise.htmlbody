@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/random-noise.jpg" alt="" width="640" height="480" />
+</p>
+<p>
+  This test generates a pseudorandom noise pattern and copies it to the primary (or back) buffer.<br/>
+  Depending on your graphics driver some color depths may be slow.  For example, 15-bit color is slow on the VMWare SVGA3D driver.
+</p>

@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/mouse-test.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws colored mouse pointers, displays the last few mouse related events to be posted to the test window, and the results of GetCursorPos().<br />
+  The colored pointers should follow the mouse pointer (which is a cross) and the events at the top of the screen should represent the current activity of the mouse.
+</p>

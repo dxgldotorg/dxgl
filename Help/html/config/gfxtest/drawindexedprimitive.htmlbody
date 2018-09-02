@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/drawindexedprimitive.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws a colored cube, with a single directional light, using the DrawIndexedPrimitive() API.<br />
+  Please note, the Direct3D tests do not work correctly under 8-bit color as proper support is not yet implemented in DXGL.
+</p>

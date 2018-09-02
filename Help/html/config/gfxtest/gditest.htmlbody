@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/gdi-pattern.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws various patterns using Windows GDI functions. It displays text, lines, beziers, polygons, rectangles, gradients, and bitmaps.<br/>The gradients in this test, unlike the color palette test, are drawn dithered, resulting in greater smoothness.
+</p>

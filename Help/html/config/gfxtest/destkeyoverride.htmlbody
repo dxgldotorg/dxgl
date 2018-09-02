@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/destkeyoverride.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test draws a set of gradients (or a color palette in 8-bit mode), then draws another set of gradients or a color palette on top, while cycling the color key on the second set. This test is similar to the source color key override test, except only one color from the second surface should appear at a time as it shows through the first surface.<br />
+  This uses the _DDBLT_KEYDESTOVERRIDE flag to set the color key.
+</p>

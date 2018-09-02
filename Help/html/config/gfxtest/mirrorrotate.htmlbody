@@ -1,0 +1,6 @@
+<p>
+  <img class="alignnone size-full" src="images/mirror-rotate.png" alt="" width="512" height="512" />
+</p>
+<p>
+  This test displays the DXGL logo using various combinations of flipping and 60 degree rotation, using combinations of DDBLTFX_MIRRORLEFTRIGHT, DDBLTFX_MIRRORUPDOWN, DDBLTFX_ROTATE90, DDBLTFX_ROTATE180, and DDBLTFX_ROTATE270.
+</p>

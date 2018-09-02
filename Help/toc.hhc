@@ -269,15 +269,89 @@
 			<param name="Name" value="Graphics Tests Tab">
 			<param name="Local" value="html\config\gfxtesttab.html">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Color palette and gradient screens">
+				<param name="Local" value="html\config\gfxtest\colorpalette.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Random noise">
+				<param name="Local" value="html\config\gfxtest\randomnoise.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="GDI Test patterns">
+				<param name="Local" value="html\config\gfxtest\gditest.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Random GDI patterns">
+				<param name="Local" value="html\config\gfxtest\randomgdi.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="BltFast background and sprites">
+				<param name="Local" value="html\config\gfxtest\bltfast.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Random color fill Blt() patterns">
+				<param name="Local" value="html\config\gfxtest\colorfill.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Mouse pointer event test">
+				<param name="Local" value="html\config\gfxtest\mousetest.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Raster operation Blt() test">
+				<param name="Local" value="html\config\gfxtest\rasterop.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Mirrored and rotated Blt() test">
+				<param name="Local" value="html\config\gfxtest\mirrorrotate.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Large batch color fill Blt() operations">
+				<param name="Local" value="html\config\gfxtest\largebatchblt.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Source color key override test">
+				<param name="Local" value="html\config\gfxtest\srckeyoverride.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Destination color key override test">
+				<param name="Local" value="html\config\gfxtest\destkeyoverride.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="DrawIndexedPrimitive cube with directional light">
+				<param name="Local" value="html\config\gfxtest\drawindexedprimitive.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="DrawPrimitive textured cube">
+				<param name="Local" value="html\config\gfxtest\drawprimitivetextured.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Texture stage shaders">
+				<param name="Local" value="html\config\gfxtest\texturestageshaders.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Vertex shaders">
+				<param name="Local" value="html\config\gfxtest\vertexshaders.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="SetCursorPos test">
+				<param name="Local" value="html\config\gfxtest\setcursorpos.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Blt background, Raster operation Blt sprites">
+				<param name="Local" value="html\config\gfxtest\bltraster.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="About Tab">
 			<param name="Local" value="html\config\abouttab.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Troubleshooting">
+			<param name="Local" value="html\troubleshooting.html">
+			</OBJECT>
 	</UL>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Troubleshooting">
-		<param name="Local" value="html\troubleshooting.html">
-		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Licenses">
 		<param name="Local" value="html\licenses.html">

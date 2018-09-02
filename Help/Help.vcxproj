@@ -248,6 +248,41 @@
     <None Include="html\config\effects\primarybufferscaling.htmltitle" />
     <None Include="html\config\gfxtesttab.htmlbody" />
     <None Include="html\config\gfxtesttab.htmltitle" />
+    <None Include="html\config\gfxtest\bltfast.htmlbody" />
+    <None Include="html\config\gfxtest\bltfast.htmltitle" />
+    <None Include="html\config\gfxtest\bltraster.htmlbody" />
+    <None Include="html\config\gfxtest\bltraster.htmltitle" />
+    <None Include="html\config\gfxtest\colorfill.htmlbody" />
+    <None Include="html\config\gfxtest\colorfill.htmltitle" />
+    <None Include="html\config\gfxtest\colorpalette.htmlbody" />
+    <None Include="html\config\gfxtest\colorpalette.htmltitle" />
+    <None Include="html\config\gfxtest\destkeyoverride.htmlbody" />
+    <None Include="html\config\gfxtest\destkeyoverride.htmltitle" />
+    <None Include="html\config\gfxtest\drawindexedprimitive.htmlbody" />
+    <None Include="html\config\gfxtest\drawindexedprimitive.htmltitle" />
+    <None Include="html\config\gfxtest\drawprimitivetextured.htmlbody" />
+    <None Include="html\config\gfxtest\drawprimitivetextured.htmltitle" />
+    <None Include="html\config\gfxtest\gditest.htmlbody" />
+    <None Include="html\config\gfxtest\gditest.htmltitle" />
+    <None Include="html\config\gfxtest\largebatchblt.htmlbody" />
+    <None Include="html\config\gfxtest\largebatchblt.htmltitle" />
+    <None Include="html\config\gfxtest\mirrorrotate.htmlbody" />
+    <None Include="html\config\gfxtest\mirrorrotate.htmltitle" />
+    <None Include="html\config\gfxtest\mousetest.htmlbody" />
+    <None Include="html\config\gfxtest\mousetest.htmltitle" />
+    <None Include="html\config\gfxtest\randomgdi.htmlbody" />
+    <None Include="html\config\gfxtest\randomgdi.htmltitle" />
+    <None Include="html\config\gfxtest\randomnoise.htmlbody" />
+    <None Include="html\config\gfxtest\randomnoise.htmltitle" />
+    <None Include="html\config\gfxtest\rasterop.htmlbody" />
+    <None Include="html\config\gfxtest\setcursorpos.htmlbody" />
+    <None Include="html\config\gfxtest\setcursorpos.htmltitle" />
+    <None Include="html\config\gfxtest\srckeyoverride.htmlbody" />
+    <None Include="html\config\gfxtest\srckeyoverride.htmltitle" />
+    <None Include="html\config\gfxtest\texturestageshaders.htmlbody" />
+    <None Include="html\config\gfxtest\texturestageshaders.htmltitle" />
+    <None Include="html\config\gfxtest\vertexshaders.htmlbody" />
+    <None Include="html\config\gfxtest\vertexshaders.htmltitle" />
     <None Include="html\config\hackstab.htmlbody" />
     <None Include="html\config\hackstab.htmltitle" />
     <None Include="html\config\hacks\automaticexpandcomparisonmethod.htmlbody" />
@@ -298,6 +333,9 @@
     <None Include="Index.hhk" />
     <None Include="template.html" />
     <None Include="toc.hhc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="html\config\gfxtest\rasterop.htmltitle" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,59 @@
 <p>
   <img src="images/dxglcfg-tests.png" alt="" width="537" height="418" class="alignnone size-full wp-image-271" /><br />
-  Displays various test patterns that have been created as part of the development of DXGL.  This tab contains all the functionality previously available in the standalone DXGL Test application.
+  Displays various test patterns that have been created as part of the development of DXGL. This tab contains all the functionality previously available in the standalone DXGL Test application.
+</p>
+<p>The following tests are available:</p>
+<p>
+  <a href="gfxtest/colorpalette.html">Color palette and gradient screens</a>
+</p>
+<p>
+  <a href="gfxtest/randomnoise.html">Random noise</a>
+</p>
+<p>
+  <a href="gfxtest/gditest.html">GDI Test patterns</a>
+</p>
+<p>
+  <a href="gfxtest/randomgdi.html">Random GDI patterns</a>
+</p>
+<p>
+  <a href="gfxtest/bltfast.html">BltFast background and sprites</a>
+</p>
+<p>
+  <a href="gfxtest/colorfill.html">Random color fill Blt() patterns</a>
+</p>
+<p>
+  <a href="gfxtest/mousetest.html">Mouse pointer event test</a>
+</p>
+<p>
+  <a href="gfxtest/rasterop.html">Raster operation Blt() test</a>
+</p>
+<p>
+  <a href="gfxtest/mirrorrotate.html">Mirrored and rotated Blt() test</a>
+</p>
+<p>
+  <a href="gfxtest/largebatchblt.html">Large batch color fill Blt() operations</a>
+</p>
+<p>
+  <a href="gfxtest/srckeyoverride.html">Source color key override test</a>
+</p>
+<p>
+  <a href="gfxtest/destkeyoverride.html">Destination color key override test</a>
+</p>
+<p>
+  <a href="gfxtest/drawindexedprimitive.html">DrawIndexedPrimitive cube with directional light</a>
+</p>
+<p>
+  <a href="gfxtest/drawprimitivetextured.html">DrawPrimitive textured cube</a>
+</p>
+<p>
+  <a href="gfxtest/texturestageshaders.html">Texture stage shaders</a>
+</p>
+<p>
+  <a href="gfxtest/vertexshaders.html">Vertex shaders</a>
+</p>
+<p>
+  <a href="gfxtest/setcursorpos.html">SetCursorPos test</a>
+</p>
+<p>
+  <a href="gfxtest/bltraster.html">Blt background, Raster operation Blt sprites</a>
 </p>

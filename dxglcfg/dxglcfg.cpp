@@ -3949,13 +3949,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		}
 		break;
 	case WM_HELP:
-		HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
+		HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("html/configuration.html"));
 		return TRUE;
 		break;
 	case WM_SYSCOMMAND:
 		if(LOWORD(wParam) == SC_CONTEXTHELP)
 		{
-			HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("configuration.htm"));
+			HtmlHelp(hWnd,hlppath,HH_DISPLAY_TOPIC,(DWORD_PTR)_T("html/configuration.html"));
 			return TRUE;
 		}
 		break;

@@ -1,0 +1,7 @@
+<p>
+  <img class="alignnone size-full" src="images/palette-8bpp.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test displays a color palette and one or more screens of gradients, whose smoothness is dependent on the color depth selected for this test.<br />
+    Since DXGL Test uses a &#8220;default&#8221; palette there is very little smoothness for the 8-bit mode.<br />For 15, 16, and 24/32 bit modes, the palette is generated mathematically to display as many of the possible colors as possible on the screen.
+</p>
