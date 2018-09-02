@@ -101,6 +101,7 @@ SetCompressor /SOLID lzma
 !define runtime_sha512 "D2D99E06D49A5990B449CF31D82A33104A6B45164E76FBEB34C43D10BCD25C3622AF52E59A2D4B7F5F45F83C3BA4D23CF1A5FC0C03B3606F42426988E63A9770"
 !define runtime_regkey SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86
 !define runtime_regvalue Installed
+!define PRODUCT_SUFFIX "-msvc10"
 !else if ${COMPILER} == "VC2013"
 !define download_runtime 1
 !define runtime_url "http://www.dxgl.info/download/runtimes/vc12/vcredist_x86.exe"
@@ -109,6 +110,7 @@ SetCompressor /SOLID lzma
 !define runtime_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2017_8"
 !define download_runtime 1
 !define runtime_url http://www.dxgl.info/download/runtimes/vc14.15/vc_redist.x86.exe
@@ -118,6 +120,7 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
+!define PRODUCT_SUFFIX ""
 !else
 !define download_runtime 0
 !endif
@@ -131,9 +134,9 @@ Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 !endif
 !ifdef _BETA
 !ifdef _DEBUG
-OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32-Debug.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32-Debug${PRODUCT_SUFFIX}.exe"
 !else
-OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32${PRODUCT_SUFFIX}.exe"
 !endif
 !else
 !ifdef _DEBUG
