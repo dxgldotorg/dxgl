@@ -633,6 +633,24 @@
     <None Include="html\config\gfxtest\bltraster.htmlbody">
       <Filter>Help files\html\config\gfxtest</Filter>
     </None>
+    <None Include="html\config\debug\disabledrawonpalettechange.htmlbody">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\debug\disabledrawonpalettechange.htmltitle">
+      <Filter>Help files\html\config\debug</Filter>
+    </None>
+    <None Include="html\config\hacks\palettedrawdelayms.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\palettedrawdelayms.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\syncpaletteupdatetovsync.htmltitle">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
+    <None Include="html\config\hacks\syncpaletteupdatetovsync.htmlbody">
+      <Filter>Help files\html\config\hacks</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">

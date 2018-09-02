@@ -24,6 +24,7 @@ void DXGLTimer_Init(DXGLTimer *timer)
 	TIMECAPS mmcaps;
 	LARGE_INTEGER freq;
 	timer->timertype = 0;
+	timer->lastdrawmeasured = FALSE;
 	freq.QuadPart = 0;
 	QueryPerformanceFrequency(&freq);
 	if (!freq.QuadPart)
@@ -79,15 +80,18 @@ void DXGLTimer_SetLastDraw(DXGLTimer *timer)
 {
 	if (timer->timertype == 1) QueryPerformanceCounter(&timer->lastdraw);
 	else timer->lastdraw.QuadPart = timeGetTime();
+	timer->lastdrawmeasured = TRUE;
 }
 
 BOOL DXGLTimer_CheckLastDraw(DXGLTimer *timer, DWORD ms)
 {
 	LARGE_INTEGER timerpos;
 	double milliseconds;
+	if (!timer->lastdrawmeasured) return TRUE;
+	if (!ms) ms = 30;
 	if (timer->timertype == 1)	QueryPerformanceCounter(&timerpos);
 	else timerpos.QuadPart = timeGetTime();
-	timerpos.QuadPart -= timer->timer_base.QuadPart;
+	timerpos.QuadPart -= timer->lastdraw.QuadPart;
 	if (timer->timertype == 1) milliseconds = ((double)timerpos.QuadPart / (double)timer->timer_frequency) * 1000.0;
 	else milliseconds = (double)timerpos.QuadPart;
 	if (milliseconds < ms) return FALSE;

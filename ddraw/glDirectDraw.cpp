@@ -1765,7 +1765,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
 		glDD7->internaly = (DWORD)((float)glDD7->internaly * 1.2f);
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
-		glDD7->primary->texture->palette, 0, NULL);
+		glDD7->primary->texture->palette, 0, NULL, FALSE);
 }
 extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
@@ -2523,7 +2523,7 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lastsync) lastsync = true;
-	else if(primary) primary->RenderScreen(primary->texture,1,NULL);
+	else if(primary) primary->RenderScreen(primary->texture,1,NULL,TRUE);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

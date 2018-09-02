@@ -2121,7 +2121,7 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
   * @param previous
   *  Texture previously used as primary before a flip
   */
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous)
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime)
 {
 	/*DrawScreenCmd cmd;
 	cmd.opcode = OP_DRAWSCREEN;
@@ -2136,6 +2136,7 @@ void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *palt
 	This->inputs[1] = paltex;
 	This->inputs[2] = (void*)vsync;
 	This->inputs[3] = previous;
+	This->inputs[4] = (void*)settime;
 	This->opcode = OP_DRAWSCREEN;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -2886,7 +2887,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
-				(GLint)This->inputs[2],(glTexture*)This->inputs[3],true);
+				(GLint)This->inputs[2],(glTexture*)This->inputs[3],true,(BOOL)This->inputs[4]);
 			break;
 		case OP_INITD3D:
 			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
@@ -3550,7 +3551,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,false);
+		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,FALSE,TRUE);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -3887,7 +3888,7 @@ BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
 	else return FALSE;
 }
 
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime)
 {
 	int progtype;
 	RECT r, r2;
@@ -4070,7 +4071,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
 	}
 	if(setsync) SetEvent(This->busy);
-
+	if(settime) DXGLTimer_SetLastDraw(&This->timer);
 }
 
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture)

@@ -21,6 +21,10 @@
 #include "glTexture.h"
 #include "glRenderer.h"
 #include "util.h"
+#include "timer.h"
+
+extern DXGLCFG dxglcfg;
+void glDirectDrawSurface7_RenderScreen(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime);
 
 static const DDSURFACEDESC2 ddsd256pal =
 {
@@ -228,6 +232,17 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 		memcpy(ddsd.lpSurface, This->palette, 1024);
 		glTexture_Unlock(This->texture, 0, NULL, FALSE);
 	}
+	if ((This->primary) && (This->surface))
+	{
+		if (!dxglcfg.DebugNoPaletteRedraw)
+		{
+			if (This->timer)
+			{
+				if (DXGLTimer_CheckLastDraw(This->timer, dxglcfg.HackPaletteDelay))
+					glDirectDrawSurface7_RenderScreen(This->surface, dxglcfg.HackPaletteVsync, FALSE);
+			}
+		}
+	}
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -273,6 +288,9 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
 	newpal->creator = NULL;
 	newpal->texture = NULL;
+	newpal->primary = FALSE;
+	newpal->surface = NULL;
+	newpal->timer = NULL;
 	if (lpDDColorArray == NULL)
 	{
 		if (dwFlags & 0x800) memcpy(newpal->palette, DefaultPalette, 1024);

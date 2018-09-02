@@ -33,6 +33,9 @@
   <a href="debug/disablemousecursorhooks.html">Disable mouse cursor hooks</a>
 </p>
 <p>
+  <a href="debug/disabledrawonpalettechange.html">Disable draw on palette change</a>
+</p>
+<p>
   <a href="debug/debugblenddestinationcolor.html">DEBUG: Blend destination color key texture with source</a>
 </p>
 <p>

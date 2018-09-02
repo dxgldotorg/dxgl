@@ -110,6 +110,7 @@ public:
 	ULONG WINAPI ReleaseGamma();
 	ULONG WINAPI AddRefColor();
 	ULONG WINAPI ReleaseColor();
+	HRESULT WINAPI SetPaletteNoDraw(LPDIRECTDRAWPALETTE lpDDPalette);
 	//void SetFilter(int level, GLint mag, GLint min, glExtensions *ext, glUtil *util);
 	void Restore2();
 	HRESULT Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags, glTexture **previous);
@@ -117,7 +118,7 @@ public:
 	void SetTexture(glTexture *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(glTexture *texture, int vsync, glTexture *previous);
+	void RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);

@@ -94,6 +94,7 @@ typedef struct
 	BOOL DebugUploadAfterUnlock;
 	BOOL DebugBlendDestColorKey;
 	BOOL DebugNoMouseHooks;
+	BOOL DebugNoPaletteRedraw;
 	DWORD DebugMaxGLVersionMajor;
 	DWORD DebugMaxGLVersionMinor;
 	// [hacks]
@@ -103,6 +104,8 @@ typedef struct
 	DWORD HackAutoExpandViewportValue;
 	BOOL HackNoTVRefresh;
 	BOOL HackSetCursor;
+	DWORD HackPaletteDelay;
+	BOOL HackPaletteVsync;
 	// internal
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;

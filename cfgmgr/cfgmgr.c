@@ -680,6 +680,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugUploadAfterUnlock = ReadBool(hKey, cfg->DebugUploadAfterUnlock, &cfgmask->DebugUploadAfterUnlock, _T("DebugUploadAfterUnlock"));
 	cfg->DebugBlendDestColorKey = ReadBool(hKey, cfg->DebugBlendDestColorKey, &cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
 	cfg->DebugNoMouseHooks = ReadBool(hKey, cfg->DebugNoMouseHooks, &cfgmask->DebugNoMouseHooks, _T("DebugNoMouseHooks"));
+	cfg->DebugNoPaletteRedraw = ReadBool(hKey, cfg->DebugNoPaletteRedraw, &cfgmask->DebugNoPaletteRedraw, _T("DebugNoPaletteRedraw"));
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
@@ -689,6 +690,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->HackAutoExpandViewportValue = ReadDWORD(hKey, cfg->HackAutoExpandViewportValue, &cfgmask->HackAutoExpandViewportValue, _T("HackAutoExpandViewportValue"));
 	cfg->HackNoTVRefresh = ReadBool(hKey, cfg->HackNoTVRefresh, &cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
+	cfg->HackPaletteDelay = ReadDWORD(hKey, cfg->HackPaletteDelay, &cfgmask->HackPaletteDelay, _T("HackPaletteDelay"));
+	cfg->HackPaletteVsync = ReadBool(hKey, cfg->HackPaletteVsync, &cfgmask->HackPaletteVsync, _T("HackPaletteVsync"));
 	if(!global && dll)
 	{
 		sizeout = 0;
@@ -846,6 +849,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteBool(hKey, cfg->DebugUploadAfterUnlock, cfgmask->DebugUploadAfterUnlock, _T("DebugUploadAfterUnlock"));
 	WriteBool(hKey, cfg->DebugBlendDestColorKey, cfgmask->DebugBlendDestColorKey, _T("DebugBlendDestColorKey"));
 	WriteBool(hKey, cfg->DebugNoMouseHooks, cfgmask->DebugNoMouseHooks, _T("DebugNoMouseHooks"));
+	WriteBool(hKey, cfg->DebugNoPaletteRedraw, cfgmask->DebugNoPaletteRedraw, _T("DebugNoPaletteRedraw"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
@@ -855,6 +859,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue, _T("HackAutoExpandViewportValue"));
 	WriteBool(hKey, cfg->HackNoTVRefresh, cfgmask->HackNoTVRefresh, _T("HackNoTVRefresh"));
 	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
+	WriteDWORD(hKey, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay, _T("HackPaletteDelay"));
+	WriteDWORD(hKey, cfg->HackPaletteVsync, cfgmask->HackPaletteVsync, _T("HackPaletteVsync"));
 }
 
 TCHAR newregname[MAX_PATH+65];
@@ -961,6 +967,7 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->RememberWindowPosition = TRUE;
 	cfg->WindowWidth = 640;
 	cfg->WindowHeight = 480;
+	cfg->HackPaletteDelay = 30;
 	if (!cfg->Windows8Detected)
 	{
 		OSVERSIONINFO osver;
@@ -1142,6 +1149,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "DebugUploadAfterUnlock")) cfg->DebugUploadAfterUnlock = INIBoolValue(value);
 		if (!_stricmp(name, "DebugBlendDestColorKey")) cfg->DebugBlendDestColorKey = INIBoolValue(value);
 		if (!_stricmp(name, "DebugNoMouseHooks")) cfg->DebugNoMouseHooks = INIBoolValue(value);
+		if (!_stricmp(name, "DebugNoPaletteRedraw")) cfg->DebugNoPaletteRedraw = INIBoolValue(value);
 		if (!_stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
 		if (!_stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
 	}
@@ -1154,6 +1162,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "HackAutoExpandViewportValue")) cfg->HackAutoExpandViewportValue = INIHexValue(value);
 		if (!_stricmp(name, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
 		if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
+		if (!_stricmp(name, "HackPaletteDelay")) cfg->HackPaletteDelay = INIIntValue(value);
+		if (!_stricmp(name, "HackPaletteVsync")) cfg->HackPaletteVsync = INIBoolValue(value);
 	}
 	return 1;
 }
@@ -1553,6 +1563,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "DebugUnloadAfterUnlock", cfg->DebugUploadAfterUnlock, mask->DebugUploadAfterUnlock, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugBlendDestColorKey", cfg->DebugBlendDestColorKey, mask->DebugBlendDestColorKey, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugNoMouseHooks", cfg->DebugNoMouseHooks, mask->DebugNoMouseHooks, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugNoPaletteRedraw", cfg->DebugNoPaletteRedraw, mask->DebugNoPaletteRedraw, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMajor", cfg->DebugMaxGLVersionMajor, mask->DebugMaxGLVersionMajor, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMinor", cfg->DebugMaxGLVersionMinor, mask->DebugMaxGLVersionMinor, INISECTION_DEBUG);
 	// [hacks]
@@ -1562,6 +1573,8 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteHex(file, "HackAutoExpandViewportValue", cfg->HackAutoExpandViewportValue, mask->HackAutoExpandViewportValue, INISECTION_HACKS);
 	INIWriteBool(file, "HackNoTVRefresh", cfg->HackNoTVRefresh, mask->HackNoTVRefresh, INISECTION_HACKS);
 	INIWriteBool(file, "HackSetCursor", cfg->HackSetCursor, mask->HackSetCursor, INISECTION_HACKS);
+	INIWriteInt(file, "HackPaletteDelay", cfg->HackPaletteDelay, mask->HackPaletteDelay, INISECTION_HACKS);
+	INIWriteBool(file, "HackPaletteVsync", cfg->HackPaletteVsync, mask->HackPaletteVsync, INISECTION_HACKS);
 	CloseHandle(file);
 	return ERROR_SUCCESS;
 }

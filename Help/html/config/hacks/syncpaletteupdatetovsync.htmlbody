@@ -1,0 +1,3 @@
+<p>
+  Determines whether to wait for Vsync before drawing the screen due to a palette change. Setting to true can reduce tearing (or flickering on NVIDIA drivers) but may reduce framerate. Try adjusting the delay before changing this.
+</p>

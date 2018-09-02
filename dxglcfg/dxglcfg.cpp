@@ -2213,10 +2213,14 @@ void ReadDebugItem(int item, BOOL *value, BOOL *mask)
 		*mask = cfgmask->DebugNoMouseHooks;
 		break;
 	case 10:
+		*value = cfg->DebugNoPaletteRedraw;
+		*mask = cfgmask->DebugNoPaletteRedraw;
+		break;
+	case 11:
 		*value = cfg->DebugBlendDestColorKey;
 		*mask = cfgmask->DebugBlendDestColorKey;
 		break;
-	/*case 11:
+	/*case 12:
 		*value = cfg->DebugDisableErrors;
 		*mask = cfgmask->DebugDisableErrors;
 		break;*/
@@ -2272,10 +2276,14 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		cfgmask->DebugNoMouseHooks = mask;
 		break;
 	case 10:
+		cfg->DebugNoPaletteRedraw = value;
+		cfgmask->DebugNoPaletteRedraw = mask;
+		break;
+	case 11:
 		cfg->DebugBlendDestColorKey = value;
 		cfgmask->DebugBlendDestColorKey = mask;
 		break;
-	/*case 11:
+	/*case 12:
 		cfg->DebugDisableErrors = value;
 		cfgmask->DebugDisableErrors = mask;
 		break;*/
@@ -2450,6 +2458,7 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 		SetCombo(hWnd, DlgItem, cfg->HackAutoExpandViewportCompare, cfgmask->HackAutoExpandViewportCompare, tristate);
 		break;
 	case 3:
+		SetRGBHex(hWnd, DlgItem, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
 		break;
 	case 4:
 		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
@@ -2464,6 +2473,16 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strEnabled);
 		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SetCombo(hWnd, DlgItem, cfg->HackSetCursor, cfgmask->HackSetCursor, tristate);
+		break;
+	case 6:
+		SetInteger(hWnd, DlgItem, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay);
+		break;
+	case 7:
+		SendDlgItemMessage(hWnd, DlgItem, CB_RESETCONTENT, 0, 0);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strDisabled);
+		SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strEnabled);
+		if (tristate) SendDlgItemMessage(hWnd, DlgItem, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SetCombo(hWnd, DlgItem, cfg->HackPaletteVsync, cfgmask->HackPaletteVsync, tristate);
 		break;
 	default:
 		break;
@@ -2525,6 +2544,22 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 			else str = strDisabled;
 		}
 		break;
+	case 6:
+		if (!cfgmask->HackPaletteDelay) str = strdefault;
+		else
+		{
+			_itot(cfg->HackPaletteDelay, buffer, 10);
+			str = buffer;
+		}
+		break;
+	case 7:
+		if (!cfgmask->HackPaletteVsync) str = strdefault;
+		else
+		{
+			if (cfg->HackPaletteVsync) str = strEnabled;
+			else str = strDisabled;
+		}
+		break;
 	default:
 		str = strUnknown;
 	}
@@ -2565,18 +2600,38 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		switch (LOWORD(wParam))
 		{
 		case IDC_HACKSEDIT:
-			if (HIWORD(wParam) == EN_CHANGE)
+			switch (hackstabitem)
 			{
-				if (!EditInterlock)
+			case 3:
+				if (HIWORD(wParam) == EN_CHANGE)
 				{
-					cfg->HackAutoExpandViewportValue = GetRGBHex(GetDlgItem(hWnd,IDC_HACKSLIST), IDC_HACKSEDIT, &cfgmask->HackAutoExpandViewportValue);
-					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
-					*dirty = TRUE;
+					if (!EditInterlock)
+					{
+						cfg->HackAutoExpandViewportValue = GetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, &cfgmask->HackAutoExpandViewportValue);
+						EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+						*dirty = TRUE;
+					}
 				}
-			}
-			if (HIWORD(wParam) == EN_KILLFOCUS)
-			{
-				SetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+				if (HIWORD(wParam) == EN_KILLFOCUS)
+				{
+					SetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+				}
+				break;
+			case 6:
+				if (HIWORD(wParam) == EN_CHANGE)
+				{
+					if (!EditInterlock)
+					{
+						cfg->HackPaletteDelay = GetInteger(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, (int*)&cfgmask->HackPaletteDelay, 20, TRUE);
+						EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+						*dirty = TRUE;
+					}
+				}
+				if (HIWORD(wParam) == EN_KILLFOCUS)
+				{
+					SetInteger(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay);
+				}
+				break;
 			}
 			break;
 		case IDC_HACKSDROPDOWN:
@@ -2613,6 +2668,12 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				break;
+			case 7:
+				cfg->HackPaletteVsync = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+					(DWORD*)&cfgmask->HackPaletteVsync);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				break;
 			default:
 				break;
 			}
@@ -2622,7 +2683,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			{
 				hackstabitem = SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
 				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETITEMRECT, hackstabitem, (LPARAM)&r2);
-				if (hackstabitem == 3)
+				if ((hackstabitem == 3) || (hackstabitem == 6))
 				{
 					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
 					x = r.right - r.left;
@@ -2675,7 +2736,8 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			drawitem->rcItem.left -= 1;
-			if (hackstabitem == 3) GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+			if ((hackstabitem == 3) || (hackstabitem == 6))
+				GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
 			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
 			memcpy(&r2, &drawitem->rcItem, sizeof(RECT));
 			r2.left = r2.right - (r.right - r.left) + 4;
@@ -2995,8 +3057,9 @@ void RefreshControls(HWND hWnd)
 	SetGLCombo(hTabs[4], IDC_GLVERSION, &cfg->DebugMaxGLVersionMajor, &cfg->DebugMaxGLVersionMinor,
 		&cfgmask->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMinor, tristate, hWnd);
 	// Hacks tab
-	UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
-	SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+	if((hackstabitem == 3) || (hackstabitem == 6))
+		UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, hackstabitem);
+	else UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 	RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 }
 
@@ -3649,6 +3712,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Disable mouse cursor hooks"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Disable draw on palette change"));
+		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("DEBUG: Blend destination color key texture with source"));
 		SendDlgItemMessage(hTabs[4], IDC_DEBUGLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		/*_tcscpy(buffer, _T("Disable OpenGL errors (OpenGL 4.6+)"));
@@ -3697,6 +3762,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Remove TV-compatible refresh rates"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("SetCursor hide visibility"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Palette draw delay (ms)"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Sync palette update to Vsync"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		// Auto expand viewport hack value
 		SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);

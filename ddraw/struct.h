@@ -48,6 +48,7 @@ typedef struct DXGLTimer
 	double timer_frequency;
 	LARGE_INTEGER timer_base;
 	LARGE_INTEGER lastdraw;
+	BOOL lastdrawmeasured;
 } DXGLTimer;
 
 // OpenGL Extensions structure
@@ -417,6 +418,9 @@ typedef struct glDirectDrawPalette
 	glTexture *texture;
 	DWORD flags;
 	IUnknown *creator;
+	BOOL primary;
+	LPDIRECTDRAWSURFACE7 surface;
+	DXGLTimer *timer;
 } glDirectDrawPalette;
 
 // Function pointer table for glDirectDrawPalette

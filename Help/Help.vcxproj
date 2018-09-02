@@ -190,6 +190,8 @@
     <None Include="html\config\debug\disablearbdirectstateaccess.htmltitle" />
     <None Include="html\config\debug\disablearbframebuffers.htmlbody" />
     <None Include="html\config\debug\disablearbframebuffers.htmltitle" />
+    <None Include="html\config\debug\disabledrawonpalettechange.htmlbody" />
+    <None Include="html\config\debug\disabledrawonpalettechange.htmltitle" />
     <None Include="html\config\debug\disableextdirectstateaccess.htmlbody" />
     <None Include="html\config\debug\disableextdirectstateaccess.htmltitle" />
     <None Include="html\config\debug\disableextframebuffers.htmlbody" />
@@ -293,10 +295,14 @@
     <None Include="html\config\hacks\crop640480to640400.htmltitle" />
     <None Include="html\config\hacks\automaticallyexpandviewport.htmlbody" />
     <None Include="html\config\hacks\automaticallyexpandviewport.htmltitle" />
+    <None Include="html\config\hacks\palettedrawdelayms.htmlbody" />
+    <None Include="html\config\hacks\palettedrawdelayms.htmltitle" />
     <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmlbody" />
     <None Include="html\config\hacks\removetvcompatiblerefreshrates.htmltitle" />
     <None Include="html\config\hacks\setcursorhidevisibility.htmlbody" />
     <None Include="html\config\hacks\setcursorhidevisibility.htmltitle" />
+    <None Include="html\config\hacks\syncpaletteupdatetovsync.htmlbody" />
+    <None Include="html\config\hacks\syncpaletteupdatetovsync.htmltitle" />
     <None Include="html\introduction.htmlbody" />
     <None Include="html\introduction.htmltitle" />
     <None Include="html\licenses.htmlbody" />

@@ -519,6 +519,12 @@ INI group debug
 REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoMouseHooks
 If nonzero, disables mouse pointer hooks.
 
+Member DebugNoPaletteRedraw
+INI Entry DebugNoPaletteRedraw
+INI group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugNoPaletteRedraw
+If nonzero, disables redrawing due to palette changes
+
 Member DebugBlendDestColorKey
 INI Entry DebugBlendDestColorKey
 INI Group debug
@@ -587,6 +593,18 @@ INI Entry HackSetCursor
 INI Group hacks
 REG_DWORD HKCU\DXGL\Profiles\<app>\HackSetCursor
 Tries to prevent flickering cursor in some games.
+
+Member HackPaletteDelay
+INI Entry HackPaletteDelay
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackPaletteDelay
+Sets the delay before palette changes affect the display.
+
+Member HackPaletteVsync
+INI Entry HackPaletteVsync
+INI Group hacks
+REG_DWORD HKCU\DXGL\Profiles\<app>\HackPaletteVsync
+Sets whether to use vsync when updating the display due to a palette change.
 
 Member Windows8Detected
 Not in INI file

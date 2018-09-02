@@ -1,0 +1,3 @@
+<p>
+  Sets the time delay in milliseconds since the last frame was drawn before  SetPalette or SetEntries causes the screen to be drawn. Setting this too low can generate excessive frames. Setting this too high can cause palette effects to be missed. The default is set to a reasonable delay for a 60Hz monitor.
+</p>

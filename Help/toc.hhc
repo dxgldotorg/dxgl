@@ -227,6 +227,10 @@
 				<param name="Local" value="html\config\debug\disablemousecursorhooks.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disable draw on palette change">
+				<param name="Local" value="html\config\debug\disabledrawonpalettechange.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="DEBUG: Blend destination color key texture with source">
 				<param name="Local" value="html\config\debug\debugblenddestinationcolor.html">
 				</OBJECT>
@@ -263,6 +267,14 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="SetCursor hide visibility">
 				<param name="Local" value="html\config\hacks\setcursorhidevisibility.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Palette draw delay (ms)">
+				<param name="Local" value="html\config\hacks\palettedrawdelayms.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Sync palette update to Vsync">
+				<param name="Local" value="html\config\hacks\syncpaletteupdatetovsync.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">

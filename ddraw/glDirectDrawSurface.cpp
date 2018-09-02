@@ -291,11 +291,11 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			if (!palettein)
 			{
 				glDirectDrawPalette_Create(DDPCAPS_8BIT | DDPCAPS_ALLOW256 | DDPCAPS_PRIMARYSURFACE | 0x800, NULL, (LPDIRECTDRAWPALETTE*)&palette);
-				this->SetPalette((LPDIRECTDRAWPALETTE)palette);
+				this->SetPaletteNoDraw((LPDIRECTDRAWPALETTE)palette);
 			}
 			else
 			{
-				this->SetPalette((LPDIRECTDRAWPALETTE)palettein);
+				this->SetPaletteNoDraw((LPDIRECTDRAWPALETTE)palettein);
 			}
 		}
 	}
@@ -382,7 +382,15 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (gammacontrol) free(gammacontrol);
 	if (texture) glTexture_Release(texture, FALSE);
 	//if(bitmapinfo) free(bitmapinfo);
-	if(palette) glDirectDrawPalette_Release(palette);
+	if (palette)
+	{
+		if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			palette->surface = NULL;
+			palette->timer = NULL;
+		}
+		glDirectDrawPalette_Release(palette);
+	}
 	if(backbuffer) backbuffer->Release();
 	if(clipper) glDirectDrawClipper_Release(clipper);
 	//if(buffer) free(buffer);
@@ -960,7 +968,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			swapinterval++;
 			ddInterface->lastsync = false;
 		}
-		RenderScreen(texture,swapinterval,previous);
+		RenderScreen(texture,swapinterval,previous,TRUE);
 	}
 	TRACE_EXIT(23,ret);
 	return ret;
@@ -1299,10 +1307,10 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	{
 		if (ddInterface->lastsync)
 		{
-			RenderScreen(texture, 1, NULL);
+			RenderScreen(texture, 1, NULL, TRUE);
 			ddInterface->lastsync = false;
 		}
-		else RenderScreen(texture, 0, NULL);
+		else RenderScreen(texture, 0, NULL, TRUE);
 	}
 	TRACE_EXIT(23,error);
 	return error;
@@ -1501,6 +1509,9 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	{
 		if (palette)
 		{
+			palette->primary = FALSE;
+			palette->surface = NULL;
+			palette->timer = NULL;
 			glDirectDrawPalette_Release(palette);
 			if (!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT | DDPCAPS_ALLOW256 | DDPCAPS_PRIMARYSURFACE | 0x800, NULL, (LPDIRECTDRAWPALETTE*)&palette);
 		}
@@ -1508,6 +1519,18 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		{
 			palette = (glDirectDrawPalette *)lpDDPalette;
 			glDirectDrawPalette_AddRef(palette);
+			if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+			{
+				palette->primary = TRUE;
+				palette->surface = this;
+				palette->timer = &ddInterface->renderer->timer;
+			}
+			else
+			{
+				palette->primary = FALSE;
+				palette->surface = NULL;
+				palette->timer = NULL;
+			}
 		}
 	}
 	if (palette)
@@ -1519,7 +1542,60 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	{
 		glTexture_SetPalette(texture, NULL, FALSE);
 	}
+	if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	{
+		if (!dxglcfg.DebugNoPaletteRedraw)
+		{
+			if(DXGLTimer_CheckLastDraw(&ddInterface->renderer->timer,dxglcfg.HackPaletteDelay))
+				RenderScreen(texture, dxglcfg.HackPaletteVsync, NULL, FALSE);
+		}
+	}
 	TRACE_EXIT(23,DD_OK);
+	return DD_OK;
+}
+
+HRESULT WINAPI glDirectDrawSurface7::SetPaletteNoDraw(LPDIRECTDRAWPALETTE lpDDPalette)
+{
+	TRACE_ENTER(2, 14, this, 14, lpDDPalette);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if ((LPDIRECTDRAWPALETTE)palette != lpDDPalette)
+	{
+		if (palette)
+		{
+			palette->primary = FALSE;
+			palette->surface = NULL;
+			palette->timer = NULL;
+			glDirectDrawPalette_Release(palette);
+			if (!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT | DDPCAPS_ALLOW256 | DDPCAPS_PRIMARYSURFACE | 0x800, NULL, (LPDIRECTDRAWPALETTE*)&palette);
+		}
+		if (lpDDPalette)
+		{
+			palette = (glDirectDrawPalette *)lpDDPalette;
+			glDirectDrawPalette_AddRef(palette);
+			if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+			{
+				palette->primary = TRUE;
+				palette->surface = this;
+				palette->timer = &ddInterface->renderer->timer;
+			}
+			else
+			{
+				palette->primary = FALSE;
+				palette->surface = NULL;
+				palette->timer = NULL;
+			}
+		}
+	}
+	if (palette)
+	{
+		if (!palette->texture) glDirectDrawPalette_CreateTexture(palette, ddInterface->renderer);
+		glTexture_SetPalette(texture, palette->texture, FALSE);
+	}
+	else
+	{
+		glTexture_SetPalette(texture, NULL, FALSE);
+	}
+	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
 
@@ -1538,10 +1614,10 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 		{
 			if(ddInterface->lastsync)
 			{
-				RenderScreen(texture,1,NULL);
+				RenderScreen(texture,1,NULL,TRUE);
 				ddInterface->lastsync = false;
 			}
-			else RenderScreen(texture,0,NULL);
+			else RenderScreen(texture,0,NULL,TRUE);
 		}
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
@@ -1571,10 +1647,15 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-void glDirectDrawSurface7::RenderScreen(glTexture *texture, int vsync, glTexture *previous)
+extern "C" void glDirectDrawSurface7_RenderScreen(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime)
+{
+	((glDirectDrawSurface7*)surface)->RenderScreen(((glDirectDrawSurface7*)surface)->texture, vsync, NULL, settime);
+}
+
+void glDirectDrawSurface7::RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime)
 {
 	TRACE_ENTER(3,14,this,14,texture,14,vsync);
-	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, vsync, previous);
+	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, vsync, previous, settime);
 	TRACE_EXIT(0,0);
 }
 // ddraw 2+ api

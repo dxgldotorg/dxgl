@@ -20,3 +20,9 @@
 <p>
   <a href="hacks/setcursorhidevisibility.html">SetCursor hide visibility</a>
 </p>
+<p>
+  <a href="hacks/palettedrawdelayms.html">Palette draw delay (ms)</a>
+</p>
+<p>
+  <a href="hacks/syncpaletteupdatetovsync.html">Sync palette update to Vsync</a>
+</p>

@@ -1,0 +1,3 @@
+<p>
+  Disables redrawing the screen when the primary color palette is changed. If this is enabled, the palette will be updated the next time another DirectDraw API draws to the screen or flips the primary buffer.
+</p>

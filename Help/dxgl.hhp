@@ -103,12 +103,15 @@ html\config\debug\disablesamplerobjects.html
 html\config\debug\maximumopenglversion.html
 html\config\debug\uploadsurfacecontentsonunlock.html
 html\config\debug\disablemousecursorhooks.html
+html\config\debug\disabledrawonpalettechange.html
 html\config\hacks\crop640480to640400.html
 html\config\hacks\automaticallyexpandviewport.html
 html\config\hacks\automaticexpandcomparisonmethod.html
 html\config\hacks\automaticexpandcomparisonvalue.html
 html\config\hacks\removetvcompatiblerefreshrates.html
 html\config\hacks\setcursorhidevisibility.html
+html\config\hacks\palettedrawdelayms.html
+html\config\hacks\syncpaletteupdatetovsync.html
 html\config\gfxtest\colorpalette.html
 html\config\gfxtest\randomnoise.html
 html\config\gfxtest\gditest.html
