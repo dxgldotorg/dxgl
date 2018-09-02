@@ -220,11 +220,13 @@ SectionEnd
 
 Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
   DetailPrint "Setting Wine DLL Overrides"
+  WriteRegDWORD HKLM "Software\DXGL" "WineDLLOverride" 1
   WriteRegStr HKCU "Software\Wine\DllOverrides" "ddraw" "native,builtin"
 SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
+  WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
   ${If} ${RunningX64}
   SetRegView 32
   ${EndIf}
@@ -402,6 +404,19 @@ Section Uninstall
 
   RMDir "$SMPROGRAMS\DXGL"
   RMDir "$INSTDIR"
+
+  ReadRegDWORD $0 HKLM "Software\DXGL" "WineDLLOverride"
+  ${If} $0 == "1"
+    DeleteRegValue HKCU "Software\Wine\DllOverrides" "ddraw"
+  ${EndIf}
+
+  ReadRegDWORD $1 HKLM "Software\DXGL" "COMFix"
+  ${If} $1 == "1"
+    SetRegView 32
+    DeleteRegKey HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}"
+    DeleteRegKey HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}"
+	DeleteRegKey HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}"
+  ${EndIf}
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
