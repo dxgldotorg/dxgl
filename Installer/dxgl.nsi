@@ -140,9 +140,9 @@ OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32${PRODUCT_SUFFIX}.
 !endif
 !else
 !ifdef _DEBUG
-OutFile "DXGL-${PRODUCT_VERSION}-win32-Debug.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-win32-Debug${PRODUCT_SUFFIX}.exe"
 !else
-OutFile "DXGL-${PRODUCT_VERSION}-win32.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-win32${PRODUCT_SUFFIX}.exe"
 !endif
 !endif
 InstallDir "$PROGRAMFILES\DXGL"
