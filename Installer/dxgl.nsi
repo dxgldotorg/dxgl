@@ -263,24 +263,24 @@ Function .onInit
   Pop $0
   ${If} $0 == "0"
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires a processor with SSE2 capability.$\r\
-	Please download the VS2010 build to use DXGL on your system."
+	Please download the legacy build to use DXGL on your system."
 	Quit
   ${EndIf}
   ${IfNot} ${AtLeastWinVista}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows Vista Service Pack 2.$\r\
-	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the VS2010 build."
+	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the legacy build."
 	Quit
   ${EndIf}
   ${If} ${IsWinVista}
   ${AndIfNot} ${AtLeastServicePack} 2
-    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Vista or Windows Server 2008 must be upgraded to Service Pack 2 before you can use the VC2017 build of DXGL.$\r\
+    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Vista or Windows Server 2008 must be upgraded to Service Pack 2 before you can use this version of DXGL.$\r\
 	Please visit https://support.microsoft.com/en-us/kb/948465/ for instructions on upgrading to Service Pack 2."
 	Quit
   ${endif}
   ${If} ${IsWin7}
   ${AndIfNot} ${AtLeastServicePack} 1
-    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows 7 or Windows Server 2008 R2 must be upgraded to Service Pack 1 before you can use the VC2017 build of DXGL.$\r\
-	Please visit X for instructions on upgrading to Service Pack 1."
+    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows 7 or Windows Server 2008 R2 must be upgraded to Service Pack 1 before you can use this version of DXGL.$\r\
+	Please visit https://support.microsoft.com/en-us/kb/976932/ for instructions on upgrading to Service Pack 1."
 	Quit
   ${endif}
   !else
