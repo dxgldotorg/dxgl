@@ -3412,25 +3412,33 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	{
 		ddsdSrc = cmd->src->levels[cmd->srclevel].ddsd;
 		if (cmd->src->levels[cmd->srclevel].dirty & 1) glTexture__Upload(cmd->src, cmd->srclevel);
+		if (!memcmp(&cmd->srcrect, &nullrect, sizeof(RECT)))
+		{
+			srcrect.left = 0;
+			srcrect.top = 0;
+			srcrect.right = ddsdSrc.dwWidth;
+			srcrect.bottom = ddsdSrc.dwHeight;
+		}
 	}
 	if (cmd->dest->levels[cmd->destlevel].dirty & 1)
 		glTexture__Upload(cmd->dest, cmd->destlevel);
-	if (!memcmp(&cmd->srcrect, &nullrect, sizeof(RECT)))
-	{
-		srcrect.left = 0;
-		srcrect.top = 0;
-		srcrect.right = ddsdSrc.dwWidth;
-		srcrect.bottom = ddsdSrc.dwHeight;
-	}
 	else srcrect = cmd->srcrect;
 	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
 	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
 	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
 	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
-	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
-	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
-	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
-	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	if (cmd->src)
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
+		This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
+		This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
+		This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	}
+	else
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = This->bltvertices[0].t = This->bltvertices[1].t = 0.0f;
+		This->bltvertices[0].s = This->bltvertices[2].s = This->bltvertices[2].t = This->bltvertices[3].t = 1.0f;
+	}
 	if ((cmd->bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->flags & DDBLT_DDFX))
 	{
 		if (cmd->bltfx.dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)

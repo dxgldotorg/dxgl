@@ -142,8 +142,16 @@ HRESULT WINAPI glDirectDrawPalette_QueryInterface(glDirectDrawPalette *This, REF
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
+	if (!memcmp(riid, &IID_IDirectDrawPalette, sizeof(GUID)))
+	{
+		glDirectDrawPalette_AddRef(This);
+		*ppvObj = This;
+		TRACE_VAR("*ppvObj", 14, *ppvObj);
+		TRACE_EXIT(23, DD_OK);
+		return DD_OK;
+	}
 	TRACE_EXIT(23,E_NOINTERFACE);
-	ERR(E_NOINTERFACE);
+	return E_NOINTERFACE;
 }
 
 ULONG WINAPI glDirectDrawPalette_AddRef(glDirectDrawPalette *This)
@@ -187,7 +195,9 @@ HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD d
 	DWORD allentries = 256;
 	DWORD entrysize;
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwBase, 8, dwNumEntries, 14, lpEntries);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsWritablePointer(lpEntries, dwNumEntries * 4, FALSE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
 	if(This->flags & DDPCAPS_2BIT) allentries=4;
 	if(This->flags & DDPCAPS_4BIT) allentries=16;
@@ -212,7 +222,9 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 	DWORD entrysize;
 	DDSURFACEDESC2 ddsd;
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwStartingEntry, 8, dwCount, 14, lpEntries);
+	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!IsReadablePointer(lpEntries, dwCount * 4)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
 	if(This->flags & DDPCAPS_2BIT) allentries=4;
 	if(This->flags & DDPCAPS_4BIT) allentries=16;
