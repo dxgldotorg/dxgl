@@ -418,7 +418,6 @@ typedef struct glDirectDrawPalette
 	glTexture *texture;
 	DWORD flags;
 	IUnknown *creator;
-	BOOL primary;
 	LPDIRECTDRAWSURFACE7 surface;
 	DXGLTimer *timer;
 } glDirectDrawPalette;

@@ -1509,7 +1509,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	{
 		if (palette)
 		{
-			palette->primary = FALSE;
+			palette->flags &= ~DDPCAPS_PRIMARYSURFACE;
 			palette->surface = NULL;
 			palette->timer = NULL;
 			glDirectDrawPalette_Release(palette);
@@ -1521,13 +1521,13 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 			glDirectDrawPalette_AddRef(palette);
 			if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 			{
-				palette->primary = TRUE;
+				palette->flags |= DDPCAPS_PRIMARYSURFACE;
 				palette->surface = this;
 				palette->timer = &ddInterface->renderer->timer;
 			}
 			else
 			{
-				palette->primary = FALSE;
+				palette->flags &= ~DDPCAPS_PRIMARYSURFACE;
 				palette->surface = NULL;
 				palette->timer = NULL;
 			}
@@ -1562,7 +1562,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetPaletteNoDraw(LPDIRECTDRAWPALETTE lpDDPa
 	{
 		if (palette)
 		{
-			palette->primary = FALSE;
+			palette->flags &= ~DDPCAPS_PRIMARYSURFACE;
 			palette->surface = NULL;
 			palette->timer = NULL;
 			glDirectDrawPalette_Release(palette);
@@ -1574,13 +1574,13 @@ HRESULT WINAPI glDirectDrawSurface7::SetPaletteNoDraw(LPDIRECTDRAWPALETTE lpDDPa
 			glDirectDrawPalette_AddRef(palette);
 			if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 			{
-				palette->primary = TRUE;
+				palette->flags |= DDPCAPS_PRIMARYSURFACE;
 				palette->surface = this;
 				palette->timer = &ddInterface->renderer->timer;
 			}
 			else
 			{
-				palette->primary = FALSE;
+				palette->flags &= ~DDPCAPS_PRIMARYSURFACE;
 				palette->surface = NULL;
 				palette->timer = NULL;
 			}

@@ -244,7 +244,7 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 		memcpy(ddsd.lpSurface, This->palette, 1024);
 		glTexture_Unlock(This->texture, 0, NULL, FALSE);
 	}
-	if ((This->primary) && (This->surface))
+	if ((This->flags & DDPCAPS_PRIMARYSURFACE) && (This->surface))
 	{
 		if (!dxglcfg.DebugNoPaletteRedraw)
 		{
@@ -300,7 +300,6 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
 	newpal->creator = NULL;
 	newpal->texture = NULL;
-	newpal->primary = FALSE;
 	newpal->surface = NULL;
 	newpal->timer = NULL;
 	if (lpDDColorArray == NULL)
