@@ -30,7 +30,7 @@ SetCompressor /SOLID lzma
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
 !define PRODUCT_PUBLISHER "William Feely"
-!define PRODUCT_WEB_SITE "https://www.dxgl.info/"
+!define PRODUCT_WEB_SITE "https://www.dxgl.org/"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -95,7 +95,7 @@ SetCompressor /SOLID lzma
 
 !if ${COMPILER} == "VC2010"
 !define download_runtime 1
-!define runtime_url "http://www.dxgl.info/download/runtimes/vc10/vcredist_x86.exe"
+!define runtime_url "http://www.dxgl.org/download/runtimes/vc10/vcredist_x86.exe"
 !define runtime_name "Visual C++ 2010"
 !define runtime_filename "vcredist_x86.exe"
 !define runtime_sha512 "D2D99E06D49A5990B449CF31D82A33104A6B45164E76FBEB34C43D10BCD25C3622AF52E59A2D4B7F5F45F83C3BA4D23CF1A5FC0C03B3606F42426988E63A9770"
@@ -104,7 +104,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc10"
 !else if ${COMPILER} == "VC2013"
 !define download_runtime 1
-!define runtime_url "http://www.dxgl.info/download/runtimes/vc12/vcredist_x86.exe"
+!define runtime_url "http://www.dxgl.org/download/runtimes/vc12/vcredist_x86.exe"
 !define runtime_name "Visual C++ 2013"
 !define runtime_filename "vcredist_x86.exe"
 !define runtime_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
@@ -113,7 +113,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2017_8"
 !define download_runtime 1
-!define runtime_url http://www.dxgl.info/download/runtimes/vc14.15/vc_redist.x86.exe
+!define runtime_url http://www.dxgl.org/download/runtimes/vc14.15/vc_redist.x86.exe
 !define runtime_name "Visual C++ 2017.8"
 !define runtime_filename "vc_redist.x86.exe"
 !define runtime_sha512 "05B02AB523D7DDEA468C94F28D4EDB1BD945BDC525B87DE11F7F995196407D412D9E76A950F9F3134467D88A4F6E0B3456E9E941AB7118EDE04025E19F1D2751"
@@ -357,7 +357,7 @@ Function .onInit
 FunctionEnd
 
 LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL."
-LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "The Visual C++ Redistributable package required for this version of DXGL was not detected.  Selecting this will download a copy of the redistributable hosted on dxgl.info and install it."
+LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "The Visual C++ Redistributable package required for this version of DXGL was not detected.  Selecting this will download a copy of the redistributable hosted on dxgl.org and install it."
 LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
 LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adjusts the COM registration of ddraw.dll to allow DXGL to be used from a game's folder.  This option only applies to the user profile being used to install DXGL.  Use for Windows 8 and above."
 

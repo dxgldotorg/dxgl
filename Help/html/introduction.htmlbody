@@ -1,5 +1,5 @@
 <h1>DXGL</h1>
-<p>View help online at <a href="https://www.dxgl.info/help/">https://www.dxgl.info/help/</a></p>
+<p>View help online at <a href="https://www.dxgl.org/help/">https://www.dxgl.org/help/</a></p>
 <h2>Introduction</h2>
 <p>DXGL is a free replacement for the Windows ddraw.dll library, running on OpenGL. It is designed to overcome driver bugs, particularly in Windows Vista and newer operating systems. It also adds various enhancements to the graphics output such as display scaling and filtering options. DXGL supports the DirectX 7.0 graphics APIs, however it is currently under development and many programs are not yet compatible with DXGL.</p>
 <h2>Updgrade notes</h2>
@@ -9,7 +9,7 @@
     If you wish to migrate any old profiles generated after installing DXGL 0.5.9 or later, you will need to use Regedit to delete the "Configuration Version" registry value from the HKEY_CURRENT_USER\SOFTWARE\DXGL registry key to force the upgrade to be run again.
 </p>
 <h2>GitHub Notice</h2>
-<p>If you downloaded the DXGL source code from GitHub, please note that when compiling DXGL, the version number will not indicate the revision number.  This issue is also present when compiling from a zipped source code distribution from the <a href="http://www.dxgl.info">www.dxgl.info</a> or <a href="http://www.williamfeely.info">www.williamfeely.info</a> website.</p>
+<p>If you downloaded the DXGL source code from GitHub, please note that when compiling DXGL, the version number will not indicate the revision number.  This issue is also present when compiling from a zipped source code distribution from the <a href="http://www.dxgl.org>www.dxgl.org</a>, <a href="http://www.dxgl.info">www.dxgl.info</a>, or <a href="http://www.williamfeely.info">www.williamfeely.info</a> website.</p>
 <h2>System Requirements</h2>
 <ul>
     <li>Windows XP SP3, Vista, 7, 8, 8.1, or 10 (May work under recent versions of Wine)</li>
@@ -67,7 +67,7 @@
 <h2>SVN</h2>
 <p>
     SVN readonly access is available at:
-    <a href="https://www.dxgl.info/svn/dxgl/">https://www.dxgl.info/svn/dxgl/</a>
+    <a href="https://www.dxgl.org/svn/dxgl/">https://www.dxgl.org/svn/dxgl/</a>
 </p>
 <p>
     There is a Mediawiki-based SVN log at:
@@ -83,7 +83,7 @@
 <h2>Discussion boards</h2>
 <p>
     You may discuss DXGL at:
-    <a href="https://www.dxgl.info/phpBB3/">https://www.dxgl.info/phpBB3/</a>
+    <a href="https://forum.dxgl.info">https://forum.dxgl.info</a>
 </p>
 <p>You must create a forum account to post content.  For bug reports, please refer to the next section.</p>
 <h2>Bug reports</h2>
