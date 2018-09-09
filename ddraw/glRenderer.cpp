@@ -3407,6 +3407,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	glUtil_SetViewport(This->util,0,0,cmd->dest->bigwidth,cmd->dest->bigheight);
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
+	ZeroMemory(&ddsdSrc, sizeof(DDSURFACEDESC2));
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
 	if (cmd->src)
 	{
