@@ -46,7 +46,7 @@ static bool fullscreen,resizable;
 static HWND hWnd;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,0,0,2,1,0,0,0,0,0,0,0,0};
+static int testtypes[] = {0,1,0,1,0,1,0,0,-1,1,0,0,0,0,0,0,0,0,2};
 static DWORD counter;
 static DWORD hotspotx,hotspoty;
 
@@ -278,7 +278,30 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		break;
 	case WM_KEYDOWN:
-		if(wParam == VK_ESCAPE) DestroyWindow(hWnd);
+		if (wParam == VK_ESCAPE)
+		{
+			DestroyWindow(hWnd);
+			break;
+		}
+		if (testtypes[testnum] == 2)
+		{
+			if (testnum == 18)
+			{
+				switch (wParam)
+				{
+				case VK_SPACE:
+					break;
+				case VK_UP:
+					break;
+				case VK_DOWN:
+					break;
+				case VK_LEFT:
+					break;
+				case VK_RIGHT:
+					break;
+				}
+			}
+		}
 		break;
 	case WM_APP:
 		RunTestTimed(testnum);

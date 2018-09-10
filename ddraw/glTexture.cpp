@@ -135,6 +135,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	if (!newtexture) return DDERR_OUTOFMEMORY;
 	ZeroMemory(newtexture, sizeof(glTexture));
 	memcpy(&newtexture->levels[0].ddsd, ddsd, sizeof(DDSURFACEDESC2));
+	newtexture->useconv = FALSE;
 	if (bigwidth)
 	{
 		newtexture->bigwidth = bigwidth;
@@ -815,6 +816,8 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 7: // 16-bit RGBA8332
+		//This->useconv = TRUE;
+		//This->convfunction = 0;
 		FIXME("Unusual texture format RGBA8332 not supported");
 		This->colororder = 1;
 		This->colorsizes[0] = 7;

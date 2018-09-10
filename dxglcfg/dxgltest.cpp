@@ -223,7 +223,8 @@ const TEST_ITEM Tests[] =
 	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Texture Stage shaders (Interactive, DX7)")},
 	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Vertex shaders (Interactive, DX7)")},
 	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("SetCursorPos Test")},
-	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("Blt Background, Raster operation Blt sprites")}
+	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("Blt Background, Raster operation Blt sprites")},
+	{7,		7,		1,		1,		FALSE,		0.0,		TRUE,	TRUE,		FALSE,		_T("Surface/Texture format test")}
 };
 const int END_TESTS = __LINE__ - 4;
 const int numtests = END_TESTS - START_TESTS;

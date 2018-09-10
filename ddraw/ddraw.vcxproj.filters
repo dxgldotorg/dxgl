@@ -158,6 +158,9 @@
     <ClInclude Include="struct_command.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="colorconv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -263,6 +266,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="const.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="colorconv.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
