@@ -20,10 +20,16 @@
 #define _COMMON_H
 
 #define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include <tchar.h>
 #include <MMSystem.h>
 #include "include/winedef.h"
+#ifndef DUMMYUNIONNAME6
+#define DUMMYUNIONNAME6
+#define DUMMYUNIONNAME7
+#define DUMMYUNIONNAME8
+#endif
 #include "include/ddraw.h"
 #include "include/d3d.h"
 #include "GL/gl.h"
@@ -55,10 +61,12 @@ extern const GUID device_template;
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#if MSC_VER >= 1600
 #ifdef _DEBUG
 #include <crtdbg.h>
 #define new DEBUGNEW
 #define DEBUGNEW new(_NORMAL_BLOCK,__FILE__,__LINE__)
+#endif
 #endif
 #define FIXME(x)\
 {\

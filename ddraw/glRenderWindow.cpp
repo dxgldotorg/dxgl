@@ -20,6 +20,9 @@
 #include "glRenderWindow.h"
 #include "ddraw.h"
 
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL 0x020E
+#endif
 
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;

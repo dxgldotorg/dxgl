@@ -40,12 +40,12 @@ void BufferObject_Create(BufferObject **out, glExtensions *ext, struct glUtil *u
 
 void BufferObject_AddRef(BufferObject *This)
 {
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 }
 
 void BufferObject_Release(BufferObject *This)
 {
-	InterlockedDecrement(&This->refcount);
+	InterlockedDecrement((LONG*)&This->refcount);
 	if (!This->refcount)
 	{
 		This->ext->glDeleteBuffers(1, &This->buffer);

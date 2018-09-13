@@ -34,6 +34,13 @@
 #include <stdarg.h>
 #include "inih/ini.h"
 
+#ifndef GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
+#endif
+#ifndef LSTATUS
+typedef LONG LSTATUS;
+#endif
+
 TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
 TCHAR regkeybase[] = _T("Software\\DXGL\\");

@@ -34,6 +34,7 @@
 #include <string>
 using namespace std;
 #include "ShaderGen3D.h"
+#include <math.h>
 
 
 // DDRAW7 routines

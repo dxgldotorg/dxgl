@@ -91,12 +91,12 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 
 void glUtil_AddRef(glUtil *This)
 {
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 }
 
 void glUtil_Release(glUtil *This)
 {
-	InterlockedDecrement(&This->refcount);
+	InterlockedDecrement((LONG*)&This->refcount);
 	if (!This->refcount)
 	{
 		int i;

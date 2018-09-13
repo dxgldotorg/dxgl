@@ -21,6 +21,10 @@
 #include <tlhelp32.h>
 #include "../minhook/include/MinHook.h"
 
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL 0x020E
+#endif
+
 // temporary references to C++ C-linked stuff
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
 void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);

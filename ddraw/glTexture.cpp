@@ -248,13 +248,13 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 }
 ULONG glTexture_AddRef(glTexture *This)
 {
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 	return This->refcount;
 }
 ULONG glTexture_Release(glTexture *This, BOOL backend)
 {
 	ULONG ret;
-	ret = InterlockedDecrement(&This->refcount);
+	ret = InterlockedDecrement((LONG*)&This->refcount);
 	if (This->refcount == 0)
 	{
 		if (This->palette) glTexture_Release(This->palette, backend);
@@ -275,7 +275,7 @@ HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 
 {
 	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	if (!ddsd) return DDERR_INVALIDPARAMS;
-	InterlockedIncrement(&This->levels[level].locked);
+	InterlockedIncrement((LONG*)&This->levels[level].locked);
 	if (backend)
 	{
 		if (This->levels[level].dirty & 2) glTexture__Download(This, level);
@@ -299,7 +299,7 @@ HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 
 HRESULT glTexture_Unlock(glTexture *This, GLint level, LPRECT r, BOOL backend)
 {
 	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
-	InterlockedDecrement(&This->levels[level].locked);
+	InterlockedDecrement((LONG*)&This->levels[level].locked);
 	if ((This->miplevel > 1) || dxglcfg.DebugUploadAfterUnlock)
 	{
 		if (backend) glTexture__Upload(This, level);

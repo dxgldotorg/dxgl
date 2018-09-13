@@ -28,7 +28,11 @@
 // Icon resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#ifdef _NOBIGICONS
+IDI_ICON1          ICON           "..\\common\\dxgl48.ico"
+#else
 IDI_ICON1          ICON           "..\\common\\dxgl.ico"
+#endif
 
 //
 // Dialog resources

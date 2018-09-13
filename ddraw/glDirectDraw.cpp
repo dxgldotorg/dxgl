@@ -33,6 +33,10 @@ using namespace std;
 #include "../common/version.h"
 #include "hooks.h"
 
+#ifndef DISP_CHANGE_BADDUALVIEW
+#define DISP_CHANGE_BADDUALVIEW -6
+#endif
+
 const DDDEVICEIDENTIFIER2 devid_default = {
 	"ddraw.dll",
 	"DXGL DDraw Wrapper",
@@ -1947,7 +1951,7 @@ int IsStretchedMode(DWORD width, DWORD height)
 	else return 0;
 }
 
-LONG Try640400Mode(LPCWSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
+LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
 {
 	LONG error;
 	DEVMODE newmode = *mode;

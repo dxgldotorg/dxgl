@@ -113,8 +113,8 @@ HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
 {
 	TRACE_ENTER(2,14,this,22,fLock);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(fLock) InterlockedIncrement(&lockcount);
-	else InterlockedDecrement(&lockcount);
+	if(fLock) InterlockedIncrement((LONG*)&lockcount);
+	else InterlockedDecrement((LONG*)&lockcount);
 	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }

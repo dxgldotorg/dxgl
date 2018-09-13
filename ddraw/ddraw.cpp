@@ -401,7 +401,7 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 	TRACE_EXIT(22,ret);
 	return ret;
 }
-
+#ifdef _UNICODE
 /**
   * Enumerates the available device GUIDs for DXGL, Unicode character format.
   * @param lpCallback
@@ -451,7 +451,14 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
-
+#else
+HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
+{
+	TRACE_ENTER(3,14,lpCallback,14,lpContext,9,dwFlags);
+	TRACE_EXIT(23,DDERR_UNSUPPORTED);
+	return DDERR_UNSUPPORTED;
+}
+#endif
 /**
   * Tells the operating system whether it can unload the DLL.
   * @return

@@ -2990,12 +2990,12 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	pfd.iPixelType = PFD_TYPE_RGBA;
 	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
-	InterlockedIncrement(&gllock);
+	InterlockedIncrement((LONG*)&gllock);
 	This->hDC = GetDC(This->RenderWnd->GetHWnd());
 	if(!This->hDC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create hDC\n");
-		InterlockedDecrement(&gllock);
+		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
@@ -3003,7 +3003,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	if(!pf)
 	{
 		DEBUG("glRenderer::InitGL: Can not get pixelformat\n");
-		InterlockedDecrement(&gllock);
+		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
@@ -3013,7 +3013,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	if(!This->hRC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create GL context\n");
-		InterlockedDecrement(&gllock);
+		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
@@ -3024,11 +3024,11 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 		This->hRC = NULL;
 		ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
 		This->hDC = NULL;
-		InterlockedDecrement(&gllock);
+		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
 		return FALSE;
 	}
-	InterlockedDecrement(&gllock);
+	InterlockedDecrement((LONG*)&gllock);
 	LeaveCriticalSection(&dll_cs);
 	This->ext = (glExtensions *)malloc(sizeof(glExtensions));
 	glExtensions_Init(This->ext);
@@ -4299,7 +4299,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface, devwnd);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
-		InterlockedIncrement(&gllock);
+		InterlockedIncrement((LONG*)&gllock);
 		ZeroMemory(&pfd,sizeof(PIXELFORMATDESCRIPTOR));
 		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 		pfd.nVersion = 1;
@@ -4318,7 +4318,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 			DEBUG("glRenderer::SetWnd: Can not set pixelformat\n");
 		if(!wglMakeCurrent(This->hDC,This->hRC))
 			DEBUG("glRenderer::SetWnd: Can not activate GL context\n");
-		InterlockedDecrement(&gllock);
+		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
 		glRenderer__SetSwap(This,1);
 		SwapBuffers(This->hDC);
