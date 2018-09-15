@@ -3142,7 +3142,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	case WM_INITDIALOG:
 		hProgressWnd = NULL;
 		CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, &threadid);
-		while (hProgressWnd == NULL) Sleep(100);
+		while (hProgressWnd == NULL) Sleep(10);
 		hDialog = hWnd;
 		ZeroMemory(&wndclass, sizeof(WNDCLASSEX));
 		wndclass.cbSize = sizeof(WNDCLASSEX);
