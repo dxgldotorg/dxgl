@@ -70,6 +70,7 @@ static BOOL ColorDepth_Dropdown = FALSE;
 HWND hDialog = NULL;
 static BOOL EditInterlock = FALSE;
 static DWORD hackstabitem = 0xFFFFFFFF;
+static BOOL createdialoglock = FALSE;
 
 
 typedef struct
@@ -1438,6 +1439,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			break;
 		}
 	case WM_DRAWITEM:
+		if(createdialoglock) break;
 		drawitem = (DRAWITEMSTRUCT*)lParam;
 		switch (wParam)
 		{
@@ -3244,6 +3246,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		tab.pszText = _T("About");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
+		createdialoglock = TRUE;
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, (DLGPROC)DisplayTabCallback);
 		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, (DLGPROC)EffectsTabCallback);
 		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, (DLGPROC)Tab3DCallback);
@@ -3252,6 +3255,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, (DLGPROC)HacksTabCallback);
 		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hTab, (DLGPROC)TestTabCallback);
 		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
+		createdialoglock = FALSE;
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		ShowWindow(hTabs[1], SW_HIDE);
