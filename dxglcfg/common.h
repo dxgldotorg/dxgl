@@ -21,14 +21,28 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-
+#define _WIN32_WINNT 0x0600
 #define WIN32_LEAN_AND_MEAN
 // Windows Header Files:
 #include <windows.h>
+#include <winnt.h>
 #include <commctrl.h>
 #include <Uxtheme.h>
 extern bool gradientavailable;
 extern BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode);
+
+#ifndef DUMMYUNIONNAME6
+#define DUMMYUNIONNAME6
+#define DUMMYUNIONNAME7
+#define DUMMYUNIONNAME8
+#endif
+
+#ifndef WM_THEMECHANGED
+#define WM_THEMECHANGED 0x031A
+#endif
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL 0x020E
+#endif
 
 // C RunTime Header Files
 #ifdef _DEBUG

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\include">
+      <UniqueIdentifier>{00b9be7f-ae4c-4117-ba71-daa3de7c40fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dxglcfg.rc">
@@ -46,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vsstyle.h">
+      <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

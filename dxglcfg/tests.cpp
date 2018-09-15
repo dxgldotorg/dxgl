@@ -299,6 +299,8 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 					break;
 				case VK_RIGHT:
 					break;
+				case 'P':
+					break;
 				}
 			}
 		}

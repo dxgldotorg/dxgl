@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _WIN32_WINNT 0x0600
-#define _WIN32_IE 0x0300
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -32,7 +31,7 @@
 #include <math.h>
 #include <io.h>
 #include <Uxtheme.h>
-#include <Vsstyle.h>
+#include "include/vsstyle.h"
 #include "resource.h"
 #include "../cfgmgr/LibSha256.h"
 #include "../cfgmgr/cfgmgr.h"
@@ -3117,7 +3116,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
 	HANDLE token = NULL;
-	TOKEN_ELEVATION elevation;
+	DWORD elevation;
 	HWND hGLWnd;
 	OPENFILENAME filename;
 	TCHAR selectedfile[MAX_PATH + 1];
@@ -3939,9 +3938,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		{
 			if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token))
 			{
-				if(GetTokenInformation(token,(TOKEN_INFORMATION_CLASS)TokenElevation,&elevation,sizeof(TOKEN_ELEVATION),(PDWORD)&outlen))
+				if(GetTokenInformation(token,(TOKEN_INFORMATION_CLASS)20,&elevation,sizeof(DWORD),(PDWORD)&outlen))
 				{
-					if(!elevation.TokenIsElevated)
+					if(!elevation)
 					{
 						SendDlgItemMessage(hWnd,IDC_ADD,BCM_SETSHIELD,0,TRUE);
 						SendDlgItemMessage(hWnd,IDC_REMOVE,BCM_SETSHIELD,0,TRUE);

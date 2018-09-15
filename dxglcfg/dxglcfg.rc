@@ -512,7 +512,11 @@ FONT 8, "Ms Shell Dlg"
 // Icon resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#ifdef _NOBIGICONS
+IDI_DXGL           ICON           "..\\common\\dxgl48.ico"
+#else
 IDI_DXGL           ICON           "..\\common\\dxgl.ico"
+#endif
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
@@ -571,5 +575,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 // Manifest resources
 //
+#ifndef _NOMANIFEST
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST    "xp.manifest"
+#endif
