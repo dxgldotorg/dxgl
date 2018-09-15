@@ -1687,6 +1687,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->busy = CreateEvent(NULL,FALSE,FALSE,NULL);
 	This->start = CreateEvent(NULL,FALSE,FALSE,NULL);
 	HWND hTempWnd;
+	DWORD threadid;
 	if(fullscreen)
 	{
 		switch (dxglcfg.fullmode)
@@ -1878,7 +1879,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->inputs[6] = glDD7;
 	This->inputs[7] = This;
 	This->inputs[8] = (void*)devwnd;
-	This->hThread = CreateThread(NULL, 0, glRenderer_ThreadEntry, This->inputs, 0, NULL);
+	This->hThread = CreateThread(NULL, 0, glRenderer_ThreadEntry, This->inputs, 0, &threadid);
 	WaitForSingleObject(This->busy,INFINITE);
 }
 

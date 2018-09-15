@@ -52,6 +52,7 @@ void WaitForObjectAndMessages(HANDLE object)
 
 glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7, bool devwnd)
 {
+	DWORD threadid;
 	ddInterface = glDD7;
 	this->width = width;
 	this->height = height;
@@ -59,7 +60,7 @@ glRenderWindow::glRenderWindow(int width, int height, bool fullscreen, HWND pare
 	this->device = devwnd;
 	hParentWnd = parent;
 	ReadyEvent = CreateEvent(NULL,false,false,NULL);
-	hThread = CreateThread(NULL,0,ThreadEntry,this,0,NULL);
+	hThread = CreateThread(NULL,0,ThreadEntry,this,0,&threadid);
 	WaitForObjectAndMessages(ReadyEvent);
 	CloseHandle(ReadyEvent);
 	ReadyEvent = NULL;
@@ -149,6 +150,9 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 {
 	HWND hParent;
 	HCURSOR cursor;
+	#ifdef _TRACE
+	DWORD threadid;
+	#endif
 	switch(msg)
 	{
 	case WM_CREATE:
@@ -187,7 +191,7 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_HOTKEY:
 		#ifdef _TRACE
 		trace_end = TRUE;
-		CreateThread(NULL,0,BeepThread,NULL,0,NULL);
+		CreateThread(NULL,0,BeepThread,NULL,0,&threadid);
 		UnregisterHotKey(hWnd,1);
 		hotkeyregistered = false;
 		#else

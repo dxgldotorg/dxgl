@@ -54,13 +54,14 @@ loop:
 
 void StartTimer(HWND hWnd, UINT message, double framerate)
 {
+	DWORD threadid;
 	TimerhWnd = hWnd;
 	wndMessage = message;
 	delay = (1.0/framerate)*1000.0;
 	stoptimer = false;
 	if(!hThread)
 	{
-		hThread = CreateThread(NULL,0,TimerThread,NULL,0,NULL);
+		hThread = CreateThread(NULL,0,TimerThread,NULL,0,&threadid);
 		CloseHandle(hThread);
 	}
 }
