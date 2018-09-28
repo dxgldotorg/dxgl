@@ -31,6 +31,7 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <limits.h>
+#include <tchar.h>
 
 #include "../include/MinHook.h"
 #include "buffer.h"
@@ -305,6 +306,30 @@ static VOID EnumerateThreads(PFROZEN_THREADS pThreads)
     }
 }
 
+static HANDLE(WINAPI *__OpenThread)(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId) = NULL;
+static BOOL OpenThreadFail = FALSE;
+static HANDLE WINAPI _OpenThread(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId)
+{
+    HANDLE hKernel32;
+    if (!__OpenThread)
+    {
+        if (OpenThreadFail) return NULL;
+        hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+        if (!hKernel32)
+        {
+            OpenThreadFail = TRUE;
+            return NULL;
+        }
+        __OpenThread = GetProcAddress(hKernel32, "OpenThread");
+        if (!__OpenThread)
+        {
+            OpenThreadFail = TRUE;
+            return NULL;
+        }
+    }
+    return __OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId);
+}
+
 //-------------------------------------------------------------------------
 static VOID Freeze(PFROZEN_THREADS pThreads, UINT pos, UINT action)
 {
@@ -318,7 +343,7 @@ static VOID Freeze(PFROZEN_THREADS pThreads, UINT pos, UINT action)
         UINT i;
         for (i = 0; i < pThreads->size; ++i)
         {
-            HANDLE hThread = OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
+            HANDLE hThread = _OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
             if (hThread != NULL)
             {
                 SuspendThread(hThread);
@@ -337,7 +362,7 @@ static VOID Unfreeze(PFROZEN_THREADS pThreads)
         UINT i;
         for (i = 0; i < pThreads->size; ++i)
         {
-            HANDLE hThread = OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
+            HANDLE hThread = _OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
             if (hThread != NULL)
             {
                 ResumeThread(hThread);
