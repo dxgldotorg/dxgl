@@ -3890,6 +3890,33 @@ BOOL Is512448Scale(glRenderer *This, glTexture *primary, glTexture *palette)
 	else return FALSE;
 }
 
+static BOOL(WINAPI *__UpdateLayeredWindow)(HWND hWnd, HDC hdcDst, POINT *pptDst, SIZE *psize,
+	HDC hdcSrc, POINT *pptSrc, COLORREF crKey, BLENDFUNCTION *pblend, DWORD dwFlags) = NULL;
+static BOOL UpdateLayeredWindowFail = FALSE;
+static BOOL WINAPI _UpdateLayeredWindow(HWND hWnd, HDC hdcDst, POINT *pptDst, SIZE *psize,
+	HDC hdcSrc, POINT *pptSrc, COLORREF crKey, BLENDFUNCTION *pblend, DWORD dwFlags)
+{
+	HANDLE hUser32;
+	if (!__UpdateLayeredWindow)
+	{
+		if (UpdateLayeredWindowFail) return FALSE;
+		hUser32 = GetModuleHandle(_T("user32.dll"));
+		if (!hUser32)
+		{
+			UpdateLayeredWindowFail = TRUE;
+			return FALSE;
+		}
+		__UpdateLayeredWindow = (BOOL(WINAPI*)(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD))
+			GetProcAddress((HMODULE)hUser32, "UpdateLayeredWindow");
+		if (!__UpdateLayeredWindow)
+		{
+			UpdateLayeredWindowFail = TRUE;
+			return NULL;
+		}
+	}
+	return __UpdateLayeredWindow(hWnd, hdcDst, pptDst, psize, hdcSrc, pptSrc, crKey, pblend, dwFlags);
+}
+
 void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime)
 {
 	int progtype;
@@ -4067,7 +4094,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
 		hPrevObj = SelectObject(This->dib.hdc,This->dib.hbitmap);
 		ClientToScreen(This->RenderWnd->GetHWnd(),&dest);
-		UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
+		_UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
 			This->dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
 		SelectObject(This->dib.hdc,hPrevObj);
 		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
