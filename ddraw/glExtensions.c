@@ -19,6 +19,17 @@
 #include "glExtensions.h"
 extern DXGLCFG dxglcfg;
 
+static int stubswapinterval = 1;
+static BOOL APIENTRY wglSwapIntervalEXTStub(GLint interval)
+{
+	stubswapinterval = interval;
+	return FALSE;
+}
+static GLint APIENTRY wglGetSwapIntervalEXTStub()
+{
+	return stubswapinterval;
+}
+
 void glExtensions_Init(glExtensions *ext)
 {
 	const GLubyte *glversion;
@@ -231,4 +242,9 @@ Please contact your graphics card manufacturer for an updated driver.\n\nThis pr
 	}
 	ext->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 	ext->wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
+	if((!ext->wglSwapIntervalEXT) || (!ext->wglGetSwapIntervalEXT))
+	{
+		ext->wglSwapIntervalEXT = wglSwapIntervalEXTStub;
+		ext->wglGetSwapIntervalEXT = wglGetSwapIntervalEXTStub;
+	}
 }
