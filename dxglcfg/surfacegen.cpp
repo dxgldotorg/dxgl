@@ -1616,3 +1616,99 @@ void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bp
 		}
 	}
 }
+
+BOOL TextOutShadow(HDC hDC, int x, int y, LPCTSTR string, int count, COLORREF shadow)
+{
+	int bkmode;
+	BOOL ret;
+	COLORREF color;
+	int x2, y2;
+	x2 = x + 1;
+	y2 = y + 1;
+	bkmode = GetBkMode(hDC);
+	if (bkmode == OPAQUE) TextOut(hDC, x, y, string, count); // Ensure background is painted
+	bkmode = SetBkMode(hDC, TRANSPARENT);
+	color = SetTextColor(hDC, shadow);
+	TextOut(hDC, x2, y2, string, count);
+	SetTextColor(hDC, color);
+	ret = TextOut(hDC, x, y, string, count);
+	SetBkMode(hDC, bkmode);
+	return ret;
+}
+
+static const TCHAR strFormatTestTitle[] = _T("Surface format test");
+static const TCHAR strFormatTestKeys1[] = _T("UP/DOWN: src type PGUP/DN: dest type ");
+static const TCHAR strFormatTestKeys2[] = _T("LEFT/RIGHT: pattern TAB: render method");
+static const TCHAR strFormatTestKeys3[] = _T("SPACE: show/hide help/info");
+
+void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud, int testpattern, int testmethod, int x, int y)
+{
+	HDC hdc;
+	HRESULT error;
+	COLORREF oldcolor;
+	COLORREF oldbkcolor;
+	HFONT DefaultFont;
+	HFONT newfont;
+	RECT r;
+	int oldbk;
+	SIZE charsize;
+	int rows, cols;
+	int posx, posy;
+	if (!showhud) return;
+	error = surface->GetDC(&hdc);
+	if (FAILED(error)) return;
+	if (y < 350)
+	{
+		newfont = CreateFont(-8, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+		charsize.cx = 8;
+		charsize.cy = 8;
+	}
+	else if ((x > 1024) && (y > 600))
+	{
+		newfont = CreateFont(-16, -12, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+		charsize.cx = 12;
+		charsize.cy = 16;
+	}
+	else
+	{
+		newfont = CreateFont(-12, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+		charsize.cx = 8;
+		charsize.cy = 12;
+	}
+	rows = y / charsize.cy;
+	cols = x / charsize.cx;
+	DefaultFont = (HFONT)SelectObject(hdc, newfont);
+	r.left = 0;
+	r.right = 128;
+	r.top = 0;
+	r.bottom = 16;
+	oldcolor = SetTextColor(hdc, RGB(255, 255, 255));
+	oldbkcolor = SetBkColor(hdc, RGB(0, 0, 255));
+	if(showhud == 2) oldbk = SetBkMode(hdc, TRANSPARENT);
+	else oldbk = SetBkMode(hdc, OPAQUE);
+	TextOutShadow(hdc, 0, 0, strFormatTestTitle, _tcslen(strFormatTestTitle), RGB(0, 0, 192));
+	TextOutShadow(hdc, 0, charsize.cy, strFormatTestKeys1, _tcslen(strFormatTestKeys1), RGB(0, 0, 192));
+	if (cols < (_tcslen(strFormatTestKeys1) + _tcslen(strFormatTestKeys2)))
+	{
+		posx = 0;
+		posy = 2 * charsize.cy;
+	}
+	else
+	{
+		posx = _tcslen(strFormatTestKeys1) * charsize.cx;
+		posy = charsize.cy;
+	}
+	TextOutShadow(hdc, posx, posy, strFormatTestKeys2, _tcslen(strFormatTestKeys2), RGB(0, 0, 192));
+	posx = 0;
+	posy += charsize.cy;
+	TextOutShadow(hdc, posx, posy, strFormatTestKeys3, _tcslen(strFormatTestKeys3), RGB(0, 0, 192));
+	SelectObject(hdc, DefaultFont);
+	DeleteObject(newfont);
+	SetTextColor(hdc, oldcolor);
+	SetBkColor(hdc, oldbkcolor);
+	SetBkMode(hdc, oldbk);
+	surface->ReleaseDC(hdc);
+}

@@ -49,6 +49,12 @@ static unsigned int randnum;
 static int testtypes[] = {0,1,0,1,0,1,0,0,-1,1,0,0,0,0,0,0,0,0,2};
 static DWORD counter;
 static DWORD hotspotx,hotspoty;
+static int srcformat = 0;
+static int destformat = -1;
+static int showhud = 1;
+static int testpattern = 0;
+static int testmethod = 0;
+
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -289,17 +295,21 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 			{
 				switch (wParam)
 				{
-				case VK_SPACE:
+				case VK_SPACE:  // Show/hide HUD
 					break;
-				case VK_UP:
+				case VK_UP:  // Source format -
 					break;
-				case VK_DOWN:
+				case VK_DOWN:  // Source format +
 					break;
-				case VK_LEFT:
+				case VK_LEFT:  // Test pattern -
 					break;
-				case VK_RIGHT:
+				case VK_RIGHT:  // Test pattern +
 					break;
-				case 'P':
+				case VK_PRIOR:  // Dest format - (PgUp)
+					break;
+				case VK_NEXT:  // Dest format + (PgDn)
+					break;
+				case VK_TAB:  // Render method
 					break;
 				}
 			}
@@ -832,7 +842,8 @@ void InitTest(int test)
 	HBITMAP bitmap;
 	HGDIOBJ temp;
 	HBRUSH brush;
-	RECT r;
+	RECT r, r1, r2;
+	POINT p;
 	DDCOLORKEY colorkey;
 	DDBLTFX bltfx;
 	void *bmppointer;
@@ -1429,6 +1440,21 @@ void InitTest(int test)
 			}
 		}
 		break;
+	case 18: // Surface format test
+		ddsrender->GetSurfaceDesc(&ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL); // Initial source surface
+		srcformat = 0;
+		destformat = -1;
+		showhud = 1;
+		testpattern = 0;
+		testmethod = 0;
+		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
+		error = sprites[0].surface->Unlock(NULL);
+		ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+		DrawFormatTestHUD(ddsrender, 0, -1, 1, 0, 0, ddsd.dwWidth, ddsd.dwHeight);
 	default:
 		break;
 	}
