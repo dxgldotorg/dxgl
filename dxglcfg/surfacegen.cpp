@@ -1636,75 +1636,164 @@ BOOL TextOutShadow(HDC hDC, int x, int y, LPCTSTR string, int count, COLORREF sh
 	return ret;
 }
 
-static const TCHAR strFormatTestTitle[] = _T("Surface format test");
-static const TCHAR strFormatTestKeys1[] = _T("UP/DOWN: src type PGUP/DN: dest type ");
-static const TCHAR strFormatTestKeys2[] = _T("LEFT/RIGHT: pattern TAB: render method");
-static const TCHAR strFormatTestKeys3[] = _T("SPACE: show/hide help/info");
+static const LPTSTR strFormatTestTitle = _T("Surface format test");
+static const LPTSTR strFormatTestKeys1 = _T("UP/DOWN: src type PGUP/DN: dest type ");
+static const LPTSTR strFormatTestKeys2 = _T("LEFT/RIGHT: pattern TAB: render method");
+static const LPTSTR strFormatTestKeys3 = _T("SPACE: show/hide help/info");
+static const LPTSTR strFormatTestStatus1 = _T("PATTERN: ");
+static const LPTSTR strFormatTestStatus2 = _T("METHOD: ");
+static const LPTSTR strFormatTestPatterns[] =
+{
+	_T("Unknown "),
+	_T("Palettes "),
+	_T("Gradients "),
+};
+static const LPTSTR StrFormatTestMethods[] =
+{
+	_T("Unknown"),
+	_T("DDraw Blt"),
+	_T("D3D Quad"),
+	_T("Overlay")
+};
+static const int START_SURFACEFORMATS = __LINE__;
+static const LPTSTR strSurfaceFormats[] =
+{
+	_T("Primary surface"), // -1
+	_T("Same as primary"), // 0
+	_T("8-bit Palette"),
+	_T("8-bit 332"),
+	_T("15-bit 555"),
+	_T("16-bit 565"),
+	_T("24-bit 888"),
+	_T("32-bit 888"),
+	_T("32-bit 888 RGB"),
+	_T("16-bit 8332"),
+	_T("16-bit 4444"),
+	_T("16-bit 1555"),
+	_T("32-bit 8888"),
+	_T("8-bit luminance"),
+	_T("8-bit alpha"),
+	_T("8-bit lum/alpha"),
+	_T("16-bit Zbuffer"),
+	_T("24-bit Zbuffer"),
+	_T("24-bit Z, 32bit"),
+	_T("32-bit Zbuffer"),
+	_T("32-bit Z/stencil"),
+	_T("32-bit Z/st.rev")
+};
+static const int END_SURFACEFORMATS = __LINE__ - 4;
+static const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
 
-void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud, int testpattern, int testmethod, int x, int y)
+static const LPTSTR strErrorMessages[] =
+{
+	_T("Unknown error"),
+	_T("Error creating src surf: "),
+	_T("Error locking src surf: "),
+	_T("Error getting hdc: "),
+	_T("Error creating dest surf: "),
+	_T("Error blitting src to pri: "),
+	_T("Error blitting src to dest: "),
+	_T("Error blitting dest to pri: ")
+};
+
+void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud,
+	int testpattern, int testmethod, int x, int y, int errorlocation, HRESULT error)
 {
 	HDC hdc;
-	HRESULT error;
+	HRESULT err;
 	COLORREF oldcolor;
 	COLORREF oldbkcolor;
 	HFONT DefaultFont;
 	HFONT newfont;
 	RECT r;
+	TCHAR buffer[256];
 	int oldbk;
 	SIZE charsize;
 	int rows, cols;
+	int formatrows;
 	int posx, posy;
-	if (!showhud) return;
-	error = surface->GetDC(&hdc);
-	if (FAILED(error)) return;
+	int formatposy;
+	int formatfirst, formatlast;
+	err = surface->GetDC(&hdc);
+	if (FAILED(err)) return;
 	if (y < 350)
 	{
 		newfont = CreateFont(-8, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
 			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
-		charsize.cx = 8;
-		charsize.cy = 8;
 	}
 	else if ((x > 1024) && (y > 600))
 	{
 		newfont = CreateFont(-16, -12, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
 			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
-		charsize.cx = 12;
-		charsize.cy = 16;
 	}
 	else
 	{
 		newfont = CreateFont(-12, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
 			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
-		charsize.cx = 8;
-		charsize.cy = 12;
 	}
+	DefaultFont = (HFONT)SelectObject(hdc, newfont);
+	GetTextExtentPoint(hdc, _T("A"), 1, &charsize);
 	rows = y / charsize.cy;
 	cols = x / charsize.cx;
-	DefaultFont = (HFONT)SelectObject(hdc, newfont);
 	r.left = 0;
 	r.right = 128;
 	r.top = 0;
 	r.bottom = 16;
 	oldcolor = SetTextColor(hdc, RGB(255, 255, 255));
 	oldbkcolor = SetBkColor(hdc, RGB(0, 0, 255));
-	if(showhud == 2) oldbk = SetBkMode(hdc, TRANSPARENT);
+	if (showhud == 2) oldbk = SetBkMode(hdc, TRANSPARENT);
 	else oldbk = SetBkMode(hdc, OPAQUE);
-	TextOutShadow(hdc, 0, 0, strFormatTestTitle, _tcslen(strFormatTestTitle), RGB(0, 0, 192));
-	TextOutShadow(hdc, 0, charsize.cy, strFormatTestKeys1, _tcslen(strFormatTestKeys1), RGB(0, 0, 192));
-	if (cols < (_tcslen(strFormatTestKeys1) + _tcslen(strFormatTestKeys2)))
+	if (showhud)
 	{
+		TextOutShadow(hdc, 0, 0, strFormatTestTitle, _tcslen(strFormatTestTitle), RGB(0, 0, 192));
+		TextOutShadow(hdc, 0, charsize.cy, strFormatTestKeys1, _tcslen(strFormatTestKeys1), RGB(0, 0, 192));
+		if (cols < (_tcslen(strFormatTestKeys1) + _tcslen(strFormatTestKeys2)))
+		{
+			posx = 0;
+			posy = 2 * charsize.cy;
+		}
+		else
+		{
+			posx = _tcslen(strFormatTestKeys1) * charsize.cx;
+			posy = charsize.cy;
+		}
+		TextOutShadow(hdc, posx, posy, strFormatTestKeys2, _tcslen(strFormatTestKeys2), RGB(0, 0, 192));
 		posx = 0;
-		posy = 2 * charsize.cy;
+		posy += charsize.cy;
+		TextOutShadow(hdc, posx, posy, strFormatTestKeys3, _tcslen(strFormatTestKeys3), RGB(0, 0, 192));
+		posy += charsize.cy;
+		_tcscpy(buffer, strFormatTestStatus1);
+		if (testpattern < 0) testpattern = 0;
+		if (testpattern > 2) testpattern = 0;
+		_tcscat(buffer, strFormatTestPatterns[testpattern]);
+		_tcscat(buffer, strFormatTestStatus2);
+		if (testmethod < 0) testmethod = 0;
+		if (testmethod > 3) testmethod = 0;
+		_tcscat(buffer, StrFormatTestMethods[testmethod]);
+		TextOutShadow(hdc, posx, posy, buffer, _tcslen(buffer), RGB(0, 0, 192));
+		// List source formats
+		formatposy = posy + charsize.cy;
+		SetBkMode(hdc, TRANSPARENT);
+		formatrows = rows - (formatposy / charsize.cy) - 1;
+		if (formatrows > numsurfaceformats)
+		{
+			formatfirst = -1;
+			formatlast = numsurfaceformats - 2;
+		}
+		else
+		{
+
+		}
 	}
-	else
+	// Display error if present
+	if (error)
 	{
-		posx = _tcslen(strFormatTestKeys1) * charsize.cx;
-		posy = charsize.cy;
+		SetBkMode(hdc, OPAQUE);
+		SetBkColor(hdc, RGB(255, 0, 0));
+		SetTextColor(hdc, RGB(255, 255, 255));
+		if (errorlocation < 0) errorlocation = 0;
+		if (errorlocation > 7) errorlocation = 0;
 	}
-	TextOutShadow(hdc, posx, posy, strFormatTestKeys2, _tcslen(strFormatTestKeys2), RGB(0, 0, 192));
-	posx = 0;
-	posy += charsize.cy;
-	TextOutShadow(hdc, posx, posy, strFormatTestKeys3, _tcslen(strFormatTestKeys3), RGB(0, 0, 192));
 	SelectObject(hdc, DefaultFont);
 	DeleteObject(newfont);
 	SetTextColor(hdc, oldcolor);

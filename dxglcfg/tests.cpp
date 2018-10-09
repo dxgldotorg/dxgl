@@ -54,6 +54,7 @@ static int destformat = -1;
 static int showhud = 1;
 static int testpattern = 0;
 static int testmethod = 0;
+static BOOL d3dfail = FALSE;
 
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
@@ -423,6 +424,7 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	HINSTANCE hinstance = (HINSTANCE)GetModuleHandle(NULL);
 	WNDCLASSEX wc;
 	MSG Msg;
+	d3dfail = FALSE;
 	ZeroMemory(&wc,sizeof(WNDCLASS));
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -475,6 +477,12 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		if(is3d) ddsd.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE;
 	}
 	error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
+	if(FAILED(error))
+	{
+		d3dfail = TRUE;
+		ddsd.ddsCaps.dwCaps &= ~DDSCAPS_3DDEVICE;
+		error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
+	}
 	if(!fullscreen)
 	{
 		error = ddinterface->CreateClipper(0,&ddclipper,NULL);
@@ -503,23 +511,45 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		ddsrender->SetPalette(pal);
 	}
 	else pal = NULL;
-	if (is3d)
+	if (is3d )
 	{
 		error = ddinterface->QueryInterface(IID_IDirect3D7, (VOID**)&d3d7);
-		error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
-		error = ddsrender->GetSurfaceDesc(&ddsd);
-		ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
-		ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER | DDSCAPS_VIDEOMEMORY;
-		memcpy(&ddsd.ddpfPixelFormat, &ddpfz, sizeof(DDPIXELFORMAT));
-		error = ddinterface->CreateSurface(&ddsd, &zbuffer, NULL);
-		error = ddsrender->AddAttachedSurface(zbuffer);
-		error = d3d7->CreateDevice(IID_IDirect3DHALDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
-		if (error != D3D_OK)
-			error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
-		ddsrender->GetSurfaceDesc(&ddsd);
-		D3DVIEWPORT7 vp = { 0,0,ddsd.dwWidth,ddsd.dwHeight,0.0f,1.0f };
-		error = d3d7dev->SetViewport(&vp);
-		error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE, TRUE);
+		if (FAILED(error)) d3dfail = TRUE;
+		else
+		{
+			error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
+			error = ddsrender->GetSurfaceDesc(&ddsd);
+			ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
+			ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER | DDSCAPS_VIDEOMEMORY;
+			memcpy(&ddsd.ddpfPixelFormat, &ddpfz, sizeof(DDPIXELFORMAT));
+			error = ddinterface->CreateSurface(&ddsd, &zbuffer, NULL);
+			if (FAILED(error))
+			{
+				d3dfail = TRUE;
+				d3d7->Release();
+			}
+			else
+			{
+				error = ddsrender->AddAttachedSurface(zbuffer);
+				error = d3d7->CreateDevice(IID_IDirect3DHALDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				if (error != D3D_OK)
+					error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				if (error != D3D_OK)
+				{
+					d3dfail = TRUE;
+					zbuffer->Release();
+					d3d7->Release();
+				}
+				else
+				{
+					ddsrender->GetSurfaceDesc(&ddsd);
+					D3DVIEWPORT7 vp = { 0,0,ddsd.dwWidth,ddsd.dwHeight,0.0f,1.0f };
+					error = d3d7dev->SetViewport(&vp);
+					error = d3d7dev->SetRenderState(D3DRENDERSTATE_ZENABLE, TRUE);
+					d3dfail = FALSE;
+				}
+			}
+		}
 	}
 	InitTest(testnum);
 	if(!fullscreen) SendMessage(hWnd,WM_PAINT,0,0);
@@ -1454,7 +1484,7 @@ void InitTest(int test)
 		DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
 		error = sprites[0].surface->Unlock(NULL);
 		ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-		DrawFormatTestHUD(ddsrender, 0, -1, 1, 0, 0, ddsd.dwWidth, ddsd.dwHeight);
+		DrawFormatTestHUD(ddsrender, 0, -1, 1, 0, 0, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
 	default:
 		break;
 	}
