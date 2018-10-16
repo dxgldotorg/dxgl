@@ -1682,7 +1682,32 @@ static const LPTSTR strSurfaceFormats[] =
 	_T("32-bit Z/st.rev")
 };
 static const int END_SURFACEFORMATS = __LINE__ - 4;
-static const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
+const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
+
+const DDPIXELFORMAT surfaceformats[] =
+{
+	{0,						0,								0,		0,		0,			0,			0,			0},  // reserved
+	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED8,			0,		8,		0,			0,			0,			0},  // 8-bit paletted
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		8,		0xE0,		0x1C,		0x3,		0},  // 8 bit 332
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0x7C00,		0x3E0,		0x1F,		0},  // 15 bit 555
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0xF800,		0x7E0,		0x1F,		0},  // 16 bit 565
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		24,		0xFF0000,	0xFF00,		0xFF,		0},  // 24 bit 888
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		32,		0xFF0000,	0xFF00,		0xFF,		0},  // 32 bit 888
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		32,		0xFF,		0xFF00,		0xFF0000,	0},  // 32 bit 888 RGB
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0xE0,		0x1C,		0x3,		0xFF00},  // 16-bit 8332
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0xF00,		0xF0,		0xF,		0xF000},  // 16-bit 4444
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0x7c00,		0x3E0,		0x1F,		0x8000},  // 16-bit 1555
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		32,		0xFF0000,	0xFF00,		0xFF,		0xFF000000},  // 32-bit 8888
+	{sizeof(DDPIXELFORMAT), DDPF_LUMINANCE,					0,		8,		0xFF,		0,			0,			0},  // 8-bit luminance
+	{sizeof(DDPIXELFORMAT),	DDPF_ALPHA,						0,		8,		0,			0,			0,			0},  // 8-bit alpha
+	{sizeof(DDPIXELFORMAT),	DDPF_LUMINANCE|DDPF_ALPHAPIXELS,0,		16,		0xFF,		0,			0,			0xFF00},  // 8-bit luminance alpha
+	{sizeof(DDPIXELFORMAT), DDPF_ZBUFFER,					0,		16,		0,			0xFFFF,		0,			0},  // 16 bit Z buffer
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		24,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}   // 32 bit Z buffer with stencil, reversed
+};
 
 static const LPTSTR strErrorMessages[] =
 {
@@ -1707,6 +1732,7 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 	HFONT newfont;
 	RECT r;
 	TCHAR buffer[256];
+	TCHAR number[34];
 	int oldbk;
 	SIZE charsize;
 	int rows, cols;
@@ -1714,6 +1740,7 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 	int posx, posy;
 	int formatposy;
 	int formatfirst, formatlast;
+	int i;
 	err = surface->GetDC(&hdc);
 	if (FAILED(err)) return;
 	if (y < 350)
@@ -1773,26 +1800,111 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 		TextOutShadow(hdc, posx, posy, buffer, _tcslen(buffer), RGB(0, 0, 192));
 		// List source formats
 		formatposy = posy + charsize.cy;
+		posy = formatposy;
 		SetBkMode(hdc, TRANSPARENT);
 		formatrows = rows - (formatposy / charsize.cy) - 1;
 		if (formatrows > numsurfaceformats)
 		{
-			formatfirst = -1;
-			formatlast = numsurfaceformats - 2;
+			formatfirst = 0;
+			formatlast = numsurfaceformats - 1;
 		}
 		else
 		{
-
+			if (srcformat < formatrows / 2)
+			{
+				formatfirst = 0;
+				formatlast = formatrows;
+			}
+			else if (srcformat+2 > (numsurfaceformats - (formatrows / 2)))
+			{
+				formatlast = numsurfaceformats - 1;
+				formatfirst = formatlast - (formatrows);
+			}
+			else
+			{
+				formatfirst = srcformat - (formatrows / 2);
+				formatlast = srcformat + (formatrows / 2) + (formatrows % 2);
+			}
+		}
+		for (i = formatfirst; i < formatlast; i++)
+		{
+			if (i == srcformat)
+			{
+				posx = 0;
+				SetTextColor(hdc, RGB(255, 255, 255));
+				TextOutShadow(hdc, posx, posy, _T("-->"), 3, RGB(0, 0, 192));
+				posx = 3 * charsize.cx;
+				TextOutShadow(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]), RGB(0, 0, 192));
+			}
+			else
+			{
+				SetTextColor(hdc, RGB(192, 192, 192));
+				posx = 3 * charsize.cx;
+				TextOut(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]));
+			}
+			posy += charsize.cy;
+		}
+		// List destination formats
+		posy = formatposy;
+		SetBkMode(hdc, TRANSPARENT);
+		formatrows = rows - (formatposy / charsize.cy) - 1;
+		if (formatrows >= numsurfaceformats)
+		{
+			formatfirst = -1;
+			formatlast = numsurfaceformats - 1;
+		}
+		else
+		{
+			if (destformat < formatrows / 2)
+			{
+				formatfirst = 0;
+				formatlast = formatrows;
+			}
+			else if (destformat + 2 > (numsurfaceformats - (formatrows / 2)))
+			{
+				formatlast = numsurfaceformats - 1;
+				formatfirst = formatlast - (formatrows);
+			}
+			else
+			{
+				formatfirst = destformat - (formatrows / 2);
+				formatlast = destformat + (formatrows / 2) + (formatrows % 2);
+			}
+		}
+		for (i = formatfirst; i < formatlast; i++)
+		{
+			if (i == destformat)
+			{
+				posx = (cols / 2) * charsize.cx;
+				SetTextColor(hdc, RGB(255, 255, 255));
+				TextOutShadow(hdc, posx, posy, _T("-->"), 3, RGB(0, 0, 192));
+				posx = ((cols / 2) + 3) * charsize.cx;
+				TextOutShadow(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]), RGB(0, 0, 192));
+			}
+			else
+			{
+				SetTextColor(hdc, RGB(192, 192, 192));
+				posx = ((cols / 2) + 3) * charsize.cx;
+				TextOut(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]));
+			}
+			posy += charsize.cy;
 		}
 	}
 	// Display error if present
-	if (error)
+	if (error != 0)
 	{
 		SetBkMode(hdc, OPAQUE);
 		SetBkColor(hdc, RGB(255, 0, 0));
 		SetTextColor(hdc, RGB(255, 255, 255));
 		if (errorlocation < 0) errorlocation = 0;
 		if (errorlocation > 7) errorlocation = 0;
+		posx = 0;
+		posy = charsize.cy * (rows - 1);
+		_tcscpy(buffer, strErrorMessages[errorlocation]);
+		_tcscat(buffer, _T("0x"));
+		_itot(error, number, 16);
+		_tcscat(buffer, number);
+		TextOutShadow(hdc, posx, posy, buffer, _tcslen(buffer), RGB(192, 0, 0));
 	}
 	SelectObject(hdc, DefaultFont);
 	DeleteObject(newfont);

@@ -30,5 +30,7 @@ void DrawRotatedBlt(MultiDirectDrawSurface *primary, DDSPRITE *sprites);
 void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bpp, int index);
 void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud,
 	int testpattern, int testmethod, int x, int y, int errorlocation, HRESULT error);
+extern const DDPIXELFORMAT surfaceformats[];
+extern const int numsurfaceformats;
 
 #endif //_SURFACEGEN_H

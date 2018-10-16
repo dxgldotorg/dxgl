@@ -55,7 +55,9 @@ static int showhud = 1;
 static int testpattern = 0;
 static int testmethod = 0;
 static BOOL d3dfail = FALSE;
-
+static int errorlocation;
+static int errornumber;
+void RunSurfaceFormatTest();
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -213,7 +215,11 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		StopTimer();
 		for(int i = 0; i < 16; i++)
-			if(sprites[i].surface) sprites[i].surface->Release();
+			if (sprites[i].surface)
+			{
+				sprites[i].surface->Release();
+				sprites[i].surface = NULL;
+			}
 		for (int i = 0; i < 8; i++)
 		{
 			if (textures[i])
@@ -297,18 +303,49 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 				switch (wParam)
 				{
 				case VK_SPACE:  // Show/hide HUD
+					showhud++;
+					if (showhud > 2) showhud = 0;
+					RunSurfaceFormatTest();
 					break;
 				case VK_UP:  // Source format -
+					srcformat--;
+					if (srcformat < 0)
+					{
+						srcformat = 0;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_DOWN:  // Source format +
+					srcformat++;
+					if (srcformat > numsurfaceformats - 2)
+					{
+						srcformat = numsurfaceformats - 2;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_LEFT:  // Test pattern -
 					break;
 				case VK_RIGHT:  // Test pattern +
 					break;
 				case VK_PRIOR:  // Dest format - (PgUp)
+					destformat--;
+					if (destformat < -1)
+					{
+						destformat = -1;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_NEXT:  // Dest format + (PgDn)
+					destformat++;
+					if (destformat > numsurfaceformats - 2)
+					{
+						destformat = numsurfaceformats - 2;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_TAB:  // Render method
 					break;
@@ -2255,6 +2292,78 @@ void RunTestTimed(int test)
 		}
 		break;
 	}
+}
+
+void RunSurfaceFormatTest()
+{
+	HRESULT error;
+	DDSURFACEDESC2 ddsd;
+	DDBLTFX bltfx;
+	errorlocation = 0;
+	errornumber = 0;
+	if (ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	if (sprites[0].surface)
+	{
+		sprites[0].surface->Release();
+		sprites[0].surface = NULL;
+	}
+	if (sprites[1].surface)
+	{
+		sprites[1].surface->Release();
+		sprites[1].surface = NULL;
+	}
+	ddsrender->GetSurfaceDesc(&ddsd);
+	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+	if (srcformat > 0)
+	{
+		ddsd.dwFlags |= DDSD_PIXELFORMAT;
+		ddsd.ddpfPixelFormat = surfaceformats[srcformat];
+	}
+	error = ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
+	if(error)
+	{
+		errorlocation = 1;
+		errornumber = error;
+		bltfx.dwSize = sizeof(DDBLTFX);
+		bltfx.dwFillColor = 0;
+		ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
+	}
+	else
+	{
+		// FIXME: Select pattern
+		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		if(error)
+		{
+			errorlocation = 2;
+			errornumber = error;
+			bltfx.dwSize = sizeof(DDBLTFX);
+			bltfx.dwFillColor = 0;
+			ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
+			sprites[0].surface->Release();
+			sprites[0].surface = NULL;
+		}
+		else
+		{
+			DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
+			error = sprites[0].surface->Unlock(NULL);
+			// FIXME: Get dest surface type
+			error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+			if(error)
+			{
+				errorlocation = 5;
+				errornumber = error;
+				bltfx.dwSize = sizeof(DDBLTFX);
+				bltfx.dwFillColor = 0;
+				ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
+				sprites[0].surface->Release();
+				sprites[0].surface = NULL;
+			}
+		}
+	}
+	DrawFormatTestHUD(ddsrender, srcformat, destformat, showhud, testpattern,
+		testmethod, ddsd.dwWidth, ddsd.dwHeight, errorlocation, errornumber);
 }
 
 void RunTestLooped(int test)
