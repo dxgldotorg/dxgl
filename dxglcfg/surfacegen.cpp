@@ -1651,7 +1651,8 @@ static const LPTSTR strFormatTestPatterns[] =
 static const LPTSTR StrFormatTestMethods[] =
 {
 	_T("Unknown"),
-	_T("DDraw Blt"),
+	_T("Blt Vidmem"),
+	_T("Blt Sysmem"),
 	_T("D3D Quad"),
 	_T("Overlay")
 };

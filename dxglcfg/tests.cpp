@@ -1515,13 +1515,13 @@ void InitTest(int test)
 		srcformat = 0;
 		destformat = -1;
 		showhud = 1;
-		testpattern = 0;
-		testmethod = 0;
+		testpattern = 1;
+		testmethod = 1;
 		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
 		DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
 		error = sprites[0].surface->Unlock(NULL);
 		ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-		DrawFormatTestHUD(ddsrender, 0, -1, 1, 0, 0, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
+		DrawFormatTestHUD(ddsrender, 0, -1, 1, 1, 1, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
 	default:
 		break;
 	}
@@ -2322,13 +2322,13 @@ void RunSurfaceFormatTest()
 		ddsd.ddpfPixelFormat = surfaceformats[srcformat];
 	}
 	error = ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
-	if(error)
+	if (error)
 	{
 		errorlocation = 1;
 		errornumber = error;
 		bltfx.dwSize = sizeof(DDBLTFX);
 		bltfx.dwFillColor = 0;
-		ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
+		ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
 	}
 	else
 	{
@@ -2348,15 +2348,67 @@ void RunSurfaceFormatTest()
 		{
 			DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
 			error = sprites[0].surface->Unlock(NULL);
-			// FIXME: Get dest surface type
-			error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-			if(error)
+			if (destformat != -1)
 			{
-				errorlocation = 5;
-				errornumber = error;
-				bltfx.dwSize = sizeof(DDBLTFX);
-				bltfx.dwFillColor = 0;
-				ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
+				ddsrender->GetSurfaceDesc(&ddsd);
+				ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+				ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+				if (destformat > 0)
+				{
+					ddsd.dwFlags |= DDSD_PIXELFORMAT;
+					ddsd.ddpfPixelFormat = surfaceformats[destformat];
+				}
+				error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
+				if (error)
+				{
+					errorlocation = 4;
+					errornumber = error;
+					bltfx.dwSize = sizeof(DDBLTFX);
+					bltfx.dwFillColor = 0;
+					ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+					sprites[0].surface->Release();
+					sprites[0].surface = NULL;
+				}
+				else
+				{
+					error = sprites[1].surface->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+					if (error)
+					{
+						errorlocation = 6;
+						errornumber = error;
+						bltfx.dwSize = sizeof(DDBLTFX);
+						bltfx.dwFillColor = 0;
+						ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+					}
+					else
+					{
+						error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
+						if (error)
+						{
+							errorlocation = 7;
+							errornumber = error;
+							bltfx.dwSize = sizeof(DDBLTFX);
+							bltfx.dwFillColor = 0;
+							ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+						}
+					}
+					sprites[0].surface->Release();
+					sprites[0].surface = NULL;
+					sprites[1].surface->Release();
+					sprites[1].surface = NULL;
+				}
+			}
+			else
+			{
+				error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+				if (error)
+				{
+					errorlocation = 5;
+					errornumber = error;
+					bltfx.dwSize = sizeof(DDBLTFX);
+					bltfx.dwFillColor = 0;
+					ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+				}
 				sprites[0].surface->Release();
 				sprites[0].surface = NULL;
 			}
