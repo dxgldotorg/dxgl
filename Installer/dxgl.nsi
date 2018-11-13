@@ -51,6 +51,7 @@ SetCompressor /SOLID lzma
 !endif
 
 ; MUI2
+!define MUI_BGCOLOR "SYSCLR:Window"
 !include "MUI2.nsh"
 
 ; MUI Settings
