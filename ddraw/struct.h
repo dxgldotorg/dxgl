@@ -312,7 +312,8 @@ typedef struct glTexture
 	GLenum type;
 	BOOL zhasstencil;
 	BOOL useconv;
-	int convfunction;
+	int convfunctionupload;
+	int convfunctiondownload;
 	struct glTexture *palette;
 	struct glTexture *stencil;
 	struct glTexture *dummycolor;

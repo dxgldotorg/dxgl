@@ -25,6 +25,7 @@
 #include "util.h"
 #include <math.h>
 #include "scalers.h"
+#include "colorconv.h"
 
 extern "C" {
 
@@ -816,9 +817,11 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 7: // 16-bit RGBA8332
-		//This->useconv = TRUE;
-		//This->convfunction = 0;
-		FIXME("Unusual texture format RGBA8332 not supported");
+		This->useconv = TRUE;
+		This->convfunctionupload = 0;
+		This->convfunctiondownload = 1;
+		This->internalformats[0] = GL_RGBA8;
+		This->type = GL_UNSIGNED_BYTE;
 		This->colororder = 1;
 		This->colorsizes[0] = 7;
 		This->colorsizes[1] = 7;
@@ -930,7 +933,7 @@ void glTexture__FinishCreate(glTexture *This)
 	case 15: // 24-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
-		This->type = GL_UNSIGNED_INT;
+		This->type = GL_UNSIGNED_SHORT;
 		This->colororder = 4;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;

@@ -18,6 +18,21 @@
 #include "common.h"
 #include "colorconv.h"
 
+typedef void(*COLORCONVPROC) (size_t count, void *dest, void *src);
+COLORCONVPROC colorconvproc[] =
+{
+	rgba8332torgba8888,
+	rgba8888torgba8332,
+	rgb565torgba8888,
+	rgb565torgbx8888,
+	rgbx8888torgb565,
+	rgba1555torgba8888,
+	rgba8888torgba1555,
+	rgba4444torgba8888,
+	rgba8888torgba4444,
+	uyvytorgbx8888
+};
+
 __inline unsigned int _1to8(unsigned int input)
 {
 	return input * 255;
