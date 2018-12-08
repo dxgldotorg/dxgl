@@ -314,10 +314,13 @@ typedef struct glTexture
 	BOOL useconv;
 	int convfunctionupload;
 	int convfunctiondownload;
+	int internalsize;
 	struct glTexture *palette;
 	struct glTexture *stencil;
 	struct glTexture *dummycolor;
 	struct glRenderer *renderer;
+	BufferObject *pboPack;
+	BufferObject *pboUnpack;
 } glTexture;
 
 // Color orders:

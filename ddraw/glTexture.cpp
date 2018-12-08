@@ -137,6 +137,8 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	ZeroMemory(newtexture, sizeof(glTexture));
 	memcpy(&newtexture->levels[0].ddsd, ddsd, sizeof(DDSURFACEDESC2));
 	newtexture->useconv = FALSE;
+	newtexture->pboPack = NULL;
+	newtexture->pboUnpack = NULL;
 	if (bigwidth)
 	{
 		newtexture->bigwidth = bigwidth;
@@ -425,9 +427,13 @@ void glTexture__Download(glTexture *This, GLint level)
 	int bpp = This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount;
 	int x = This->levels[level].ddsd.dwWidth;
 	int y = This->levels[level].ddsd.dwHeight;
+	int i;
 	int bigpitch = NextMultipleOf4((bpp / 8)*This->bigwidth);
 	int pitch = This->levels[level].ddsd.lPitch;
 	int bigx, bigy;
+	int inpitch, outpitch;
+	GLenum error;
+	char *readbuffer;
 	if (level)
 	{
 		bigx = This->levels[level].ddsd.dwWidth;
@@ -438,46 +444,83 @@ void glTexture__Download(glTexture *This, GLint level)
 		bigx = This->bigwidth;
 		bigy = This->bigheight;
 	}
-	if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
+	if (This->useconv)
 	{
+		if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
+		{
+			if (!This->pboPack)
+				BufferObject_Create(&This->pboPack, This->renderer->ext, This->renderer->util);
+		}
+		else return; // Non-primary surfaces should not have scaling
+		inpitch = NextMultipleOf4(This->levels[level].ddsd.dwWidth * This->internalsize);
+		outpitch = NextMultipleOf4(This->levels[level].ddsd.dwHeight 
+			* (NextMultipleOf8(This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount)/8));
+		if (This->pboPack->size < inpitch * This->levels[level].ddsd.dwHeight)
+			BufferObject_SetData(This->pboPack, GL_PIXEL_PACK_BUFFER,
+				inpitch * This->levels[level].ddsd.dwHeight, NULL, GL_DYNAMIC_READ);
+		BufferObject_Bind(This->pboPack, GL_PIXEL_PACK_BUFFER);
 		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-			This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+			This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, 0);
 		else
 		{
 			glUtil_SetActiveTexture(This->renderer->util, 0);
 			glUtil_SetTexture(This->renderer->util, 0, This);
-			glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+			glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, 0);
 		}
+		BufferObject_Unbind(This->pboPack, GL_PIXEL_PACK_BUFFER);
+		readbuffer = (char*)BufferObject_Map(This->pboPack, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		error = glGetError();
+		if (error == GL_NO_ERROR)
+		{
+			for (i = 0; i < This->levels[level].ddsd.dwHeight; i++)
+				colorconvproc[This->convfunctiondownload](This->levels[level].ddsd.dwWidth,
+					This->levels[level].buffer + (i*outpitch), readbuffer + (i + inpitch));
+		}
+		BufferObject_Unmap(This->pboPack, GL_PIXEL_PACK_BUFFER);
 	}
 	else
 	{
-		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-			This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
+		if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
+		{
+			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
+				This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+			else
+			{
+				glUtil_SetActiveTexture(This->renderer->util, 0);
+				glUtil_SetTexture(This->renderer->util, 0, This);
+				glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+			}
+		}
 		else
 		{
-			glUtil_SetActiveTexture(This->renderer->util, 0);
-			glUtil_SetTexture(This->renderer->util, 0, This);
-			glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
-		}
-		switch (bpp)
-		{
-		case 8:
-			ScaleNearest8(This->levels[level].buffer, This->levels[level].bigbuffer,
-				x, y, bigx, bigy, bigpitch, pitch);
-			break;
-		case 15:
-		case 16:
-			ScaleNearest16(This->levels[level].buffer, This->levels[level].bigbuffer,
-				x, y, bigx, bigy, bigpitch / 2, pitch / 2);
-			break;
-		case 24:
-			ScaleNearest24(This->levels[level].buffer, This->levels[level].bigbuffer,
-				x, y, bigx, bigy, bigpitch, pitch);
-			break;
-		case 32:
-			ScaleNearest32(This->levels[level].buffer, This->levels[level].bigbuffer,
-				x, y, bigx, bigy, bigpitch / 4, pitch / 4);
-			break;
+			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
+				This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
+			else
+			{
+				glUtil_SetActiveTexture(This->renderer->util, 0);
+				glUtil_SetTexture(This->renderer->util, 0, This);
+				glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
+			}
+			switch (bpp)
+			{
+			case 8:
+				ScaleNearest8(This->levels[level].buffer, This->levels[level].bigbuffer,
+					x, y, bigx, bigy, bigpitch, pitch);
+				break;
+			case 15:
+			case 16:
+				ScaleNearest16(This->levels[level].buffer, This->levels[level].bigbuffer,
+					x, y, bigx, bigy, bigpitch / 2, pitch / 2);
+				break;
+			case 24:
+				ScaleNearest24(This->levels[level].buffer, This->levels[level].bigbuffer,
+					x, y, bigx, bigy, bigpitch, pitch);
+				break;
+			case 32:
+				ScaleNearest32(This->levels[level].buffer, This->levels[level].bigbuffer,
+					x, y, bigx, bigy, bigpitch / 4, pitch / 4);
+				break;
+			}
 		}
 	}
 	This->levels[level].dirty &= ~2;
@@ -487,6 +530,9 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 {
 	GLenum error;
 	void *data;
+	int inpitch, outpitch;
+	int i;
+	char *writebuffer;
 	if (dorealloc)
 	{
 		This->levels[level].ddsd.dwWidth = width;
@@ -506,15 +552,79 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 		(This->levels[level].ddsd.dwHeight != This->bigheight)))
 		data = This->levels[level].bigbuffer;
 	else data = This->levels[level].buffer;
-	if (checkerror)
+	if (This->useconv)
 	{
-		do
+		if (!This->pboUnpack)
+			BufferObject_Create(&This->pboUnpack, This->renderer->ext, This->renderer->util);
+		outpitch = NextMultipleOf4(This->levels[level].ddsd.dwWidth * This->internalsize);
+		inpitch = NextMultipleOf4(This->levels[level].ddsd.dwHeight
+			* (NextMultipleOf8(This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount) / 8));
+		if (This->pboUnpack->size < outpitch * This->levels[level].ddsd.dwHeight)
+			BufferObject_SetData(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER,
+				outpitch * This->levels[level].ddsd.dwHeight, NULL, GL_DYNAMIC_DRAW);
+		writebuffer = (char*)BufferObject_Map(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+		for (i = 0; i < This->levels[level].ddsd.dwHeight; i++)
+			colorconvproc[This->convfunctionupload](This->levels[level].ddsd.dwWidth,
+				writebuffer + (i*outpitch), This->levels[level].buffer + (i + inpitch));
+		BufferObject_Unmap(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
+		BufferObject_Bind(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
+		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 		{
-			ClearError();
+			/*if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
+				width, height, 0, This->format, This->type, data);
+			else */This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
+				0, 0, width, height, This->format, This->type, 0);
+		}
+		else
+		{
+			glUtil_SetActiveTexture(util, 0);
+			glUtil_SetTexture(util, 0, This);
+			/*if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+			else */glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, 0);
+		}
+		BufferObject_Unbind(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
+	}
+	else
+	{
+		if (checkerror)
+		{
+			do
+			{
+				ClearError();
+				if (This->renderer->ext->GLEXT_EXT_direct_state_access)
+				{
+					if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level,
+						This->internalformats[0], width, height, 0, This->format, This->type, data);
+					else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
+						0, 0, width, height, This->format, This->type, data);
+				}
+				else
+				{
+					glUtil_SetActiveTexture(util, 0);
+					glUtil_SetTexture(util, 0, This);
+					if (dorealloc) glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+					else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
+				}
+				error = glGetError();
+				if (error != GL_NO_ERROR)
+				{
+					if (This->internalformats[1] == 0)
+					{
+						FIXME("Failed to update texture, cannot find internal format");
+						break;
+					}
+					memmove(&This->internalformats[0], &This->internalformats[1], 7 * sizeof(GLint));
+					This->internalformats[7] = 0;
+				}
+				else break;
+			} while (1);
+		}
+		else
+		{
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 			{
-				if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level,
-					This->internalformats[0], width, height, 0, This->format, This->type, data);
+				if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
+					width, height, 0, This->format, This->type, data);
 				else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
 					0, 0, width, height, This->format, This->type, data);
 			}
@@ -522,41 +632,9 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 			{
 				glUtil_SetActiveTexture(util, 0);
 				glUtil_SetTexture(util, 0, This);
-				if (dorealloc) glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+				if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
 				else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
 			}
-			error = glGetError();
-			if (error != GL_NO_ERROR)
-			{
-				if (This->internalformats[1] == 0)
-				{
-					FIXME("Failed to update texture, cannot find internal format");
-					break;
-				}
-				memmove(&This->internalformats[0], &This->internalformats[1], 7 * sizeof(GLint));
-				This->internalformats[7] = 0;
-			}
-			else break;
-		} while (1);
-	}
-	else
-	{
-		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-		{
-			if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
-				width, height, 0, This->format, This->type, data);
-			else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
-				0, 0, width, height, This->format, This->type, data);
-		}
-		else
-		{
-
-		}
-		{
-			glUtil_SetActiveTexture(util, 0);
-			glUtil_SetTexture(util, 0, This);
-			if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
-			else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
 		}
 	}
 	This->levels[level].dirty &= ~1;
@@ -820,7 +898,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->useconv = TRUE;
 		This->convfunctionupload = 0;
 		This->convfunctiondownload = 1;
+		This->internalsize = 4;  // Store in 8888 texture
 		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_BYTE;
 		This->colororder = 1;
 		This->colorsizes[0] = 7;
@@ -1049,7 +1129,7 @@ void glTexture__FinishCreate(glTexture *This)
 			{
 				if (This->internalformats[1] == 0)
 				{
-					FIXME("Failed to create texture, cannot find internal format");
+					FIXME("Failed to create texture, cannot find internal format\n");
 					break;
 				}
 				memmove(&This->internalformats[0], &This->internalformats[1], 7 * sizeof(GLint));
@@ -1068,6 +1148,8 @@ void glTexture__Destroy(glTexture *This)
 {
 	glRenderer__RemoveTextureFromD3D(This->renderer, This);
 	glDeleteTextures(1, &This->id);
+	if (This->pboPack) BufferObject_Release(This->pboPack);
+	if (This->pboUnpack) BufferObject_Release(This->pboUnpack);
 	free(This);
 }
 

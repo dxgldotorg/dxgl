@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2013 William Feely
+// Copyright (C) 2011-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -241,6 +241,17 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 					for(x = 0; x < ddsd.dwWidth; x++)
 					{
 						buffer16[x+((ddsd.lPitch/2)*y)] = (unsigned short)((x/(ddsd.dwWidth/256.)) + 256*floor((y/(ddsd.dwHeight/256.))));
+					}
+				}
+			}
+			else if ((ddsd.ddpfPixelFormat.dwRBitMask | ddsd.ddpfPixelFormat.dwGBitMask |
+				ddsd.ddpfPixelFormat.dwBBitMask) == 0xFF)
+			{
+				for (y = 0; y < ddsd.dwHeight; y++)
+				{
+					for (x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer16[x + ((ddsd.lPitch/2)*y)] = (unsigned short)((x / (ddsd.dwWidth / 16.)) + 16 * floor((y / (ddsd.dwHeight / 16.))));
 					}
 				}
 			}

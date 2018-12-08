@@ -254,7 +254,7 @@ void ResetModeList(HWND hWnd)
 	error = DirectDrawCreate(NULL, &lpdd, NULL);
 	if (error == DD_OK)
 	{
-		error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES, NULL, GetDlgItem(hWnd, IDC_VIDMODES), EnumModesCallback8);
+		error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES, NULL, GetDlgItem(hWnd, IDC_VIDMODES), EnumModesCallback32);
 		IDirectDraw_Release(lpdd);
 	}
 	SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_SETCURSEL, modenum, 0);
@@ -278,7 +278,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		error = DirectDrawCreate(NULL,&lpdd,NULL);
 		if(error == DD_OK)
 		{
-			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback8);
+			error = lpdd->EnumDisplayModes(DDEDM_REFRESHRATES,NULL,GetDlgItem(hWnd,IDC_VIDMODES),EnumModesCallback32);
 			IDirectDraw_Release(lpdd);
 		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
