@@ -453,8 +453,7 @@ void glTexture__Download(glTexture *This, GLint level)
 		}
 		else return; // Non-primary surfaces should not have scaling
 		inpitch = NextMultipleOf4(This->levels[level].ddsd.dwWidth * This->internalsize);
-		outpitch = NextMultipleOf4(This->levels[level].ddsd.dwHeight 
-			* (NextMultipleOf8(This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount)/8));
+		outpitch = This->levels[level].ddsd.lPitch;
 		if (This->pboPack->size < inpitch * This->levels[level].ddsd.dwHeight)
 			BufferObject_SetData(This->pboPack, GL_PIXEL_PACK_BUFFER,
 				inpitch * This->levels[level].ddsd.dwHeight, NULL, GL_DYNAMIC_READ);
@@ -474,7 +473,7 @@ void glTexture__Download(glTexture *This, GLint level)
 		{
 			for (i = 0; i < This->levels[level].ddsd.dwHeight; i++)
 				colorconvproc[This->convfunctiondownload](This->levels[level].ddsd.dwWidth,
-					This->levels[level].buffer + (i*outpitch), readbuffer + (i + inpitch));
+					This->levels[level].buffer + (i*outpitch), readbuffer + (i * inpitch));
 		}
 		BufferObject_Unmap(This->pboPack, GL_PIXEL_PACK_BUFFER);
 	}
@@ -557,15 +556,14 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 		if (!This->pboUnpack)
 			BufferObject_Create(&This->pboUnpack, This->renderer->ext, This->renderer->util);
 		outpitch = NextMultipleOf4(This->levels[level].ddsd.dwWidth * This->internalsize);
-		inpitch = NextMultipleOf4(This->levels[level].ddsd.dwHeight
-			* (NextMultipleOf8(This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount) / 8));
+		inpitch = This->levels[level].ddsd.lPitch;
 		if (This->pboUnpack->size < outpitch * This->levels[level].ddsd.dwHeight)
 			BufferObject_SetData(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER,
 				outpitch * This->levels[level].ddsd.dwHeight, NULL, GL_DYNAMIC_DRAW);
 		writebuffer = (char*)BufferObject_Map(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 		for (i = 0; i < This->levels[level].ddsd.dwHeight; i++)
 			colorconvproc[This->convfunctionupload](This->levels[level].ddsd.dwWidth,
-				writebuffer + (i*outpitch), This->levels[level].buffer + (i + inpitch));
+				writebuffer + (i*outpitch), This->levels[level].buffer + (i * inpitch));
 		BufferObject_Unmap(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
 		BufferObject_Bind(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
 		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
