@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013 William Feely
+// Copyright (C) 2013-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@ typedef struct
 struct GenShader2D
 {
 	_GENSHADER2D shader;
-	DWORD id;
+	__int64 id;
 };
 
 typedef struct ShaderGen2D
@@ -57,11 +57,11 @@ extern const DWORD rop_texture_usage[256];
 extern const DWORD supported_rops[8];
 extern const DWORD supported_rops_gl2[8];
 
-DWORD PackROPBits(DWORD rop, DWORD flags);
+__int64 PackROPBits(DWORD rop, __int64 flags);
 
 void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shaderman);
 void ShaderGen2D_Delete(ShaderGen2D *gen);
-void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id);
+void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id);
 
 #ifdef __cplusplus
 }

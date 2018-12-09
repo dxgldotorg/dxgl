@@ -32,6 +32,7 @@ using namespace std;
 #include "glRenderer.h"
 #include "../common/version.h"
 #include "hooks.h"
+#include "fourcc.h"
 
 #ifndef DISP_CHANGE_BADDUALVIEW
 #define DISP_CHANGE_BADDUALVIEW -6
@@ -1629,10 +1630,16 @@ HRESULT WINAPI glDirectDraw7::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes
 	TRACE_ENTER(3,14,this,14,lpNumCodes,14,lpCodes);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpNumCodes) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(!lpCodes) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	FIXME("IDirectDraw::GetFourCCCodes: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	*lpNumCodes = GetNumFOURCC();
+	if (lpCodes)
+	{
+		for (int i = 0; i < *lpNumCodes; i++)
+		{
+			lpCodes[i] = dxglfourcc[i];
+		}
+	}
+	TRACE_EXIT(23,DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7::GetGDISurface(LPDIRECTDRAWSURFACE7 FAR *lplpGDIDDSurface)
 {

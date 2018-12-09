@@ -270,6 +270,26 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\ddraw\fourcc.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\ddraw\glClassFactory.cpp"
 				>
 			</File>
@@ -573,6 +593,10 @@
 			</File>
 			<File
 				RelativePath="..\..\ddraw\ddraw.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\ddraw\fourcc.h"
 				>
 			</File>
 			<File

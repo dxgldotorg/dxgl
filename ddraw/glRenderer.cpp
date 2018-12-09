@@ -3353,7 +3353,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	RECT srcrect;
 	RECT destrect, destrect2;
 	This->ddInterface->GetSizes(sizes);
-	DWORD shaderid;
+	unsigned __int64 shaderid;
 	DDSURFACEDESC2 ddsd;
 	ddsd = cmd->dest->levels[cmd->destlevel].ddsd;
 	if (!memcmp(&cmd->destrect, &nullrect, sizeof(RECT)))
@@ -3379,6 +3379,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		if (rop_texture_usage[(cmd->bltfx.dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 	}
 	else shaderid = cmd->flags & 0xF2FAADFF;
+	//TODO:  Add src/dest texture types
 	if (cmd->flags & DDBLT_KEYDEST) usedest = TRUE;
 	if (IsAlphaCKey())
 	{

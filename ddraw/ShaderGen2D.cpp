@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2017 William Feely
+// Copyright (C) 2013-2018 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -55,6 +55,8 @@ Bit 28: (DXGL) Use Clipper
 Bit 29: (DXGL) Source color key range
 Bit 30: (DXGL) Dest. color key range
 Bit 31: reserved for DXGL usage
+Bits 32-39: Texture type input
+Bits 40-47: Texture type output
 AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 */
 
@@ -650,7 +652,7 @@ static const char *op_ROP_float[256] = {
 "pixel = colorsizedest;\n",//FF WHITENESS
 };
 
-DWORD PackROPBits(DWORD rop, DWORD flags)
+__int64 PackROPBits(DWORD rop, __int64 flags)
 {
 	DWORD out = flags & 0xF2FAADFF;
 	if (rop & 0x10000) out |= 1 << 9;
@@ -664,7 +666,7 @@ DWORD PackROPBits(DWORD rop, DWORD flags)
 	return out;
 }
 
-DWORD UnpackROPBits(DWORD flags)
+DWORD UnpackROPBits(__int64 flags)
 {
 	DWORD out = 0;
 	if (flags & (1 << 9)) out |= 1;
@@ -707,7 +709,7 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 	gen->genindex = 0;
 }
 
-void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, DWORD id)
+void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 {
 	STRING tmp;
 	DWORD rop;
