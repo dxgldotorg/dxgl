@@ -74,6 +74,7 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0x7C00,		0x3E0,		0x1F,		0},  // 15 bit 555
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0xF800,		0x7E0,		0x1F,		0},  // 16 bit 565
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		24,		0xFF0000,	0xFF00,		0xFF,		0},  // 24 bit 888
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		24,		0xFF,		0xFF00,		0xFF0000,	0},  // 24 bit 888 RGB
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		32,		0xFF0000,	0xFF00,		0xFF,		0},  // 32 bit 888
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		32,		0xFF,		0xFF00,		0xFF0000,	0},  // 32 bit 888 RGB
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0xE0,		0x1C,		0x3,		0xFF00},  // 16-bit 8332
@@ -864,7 +865,22 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
 		break;
-	case 5: // 32-bit RGB888
+	case 5: // 24-bit BGR888
+		This->internalformats[0] = GL_RGB8;
+		This->internalformats[1] = GL_RGBA8;
+		This->format = GL_RGB;
+		This->type = GL_UNSIGNED_BYTE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 1;
+		This->colorbits[0] = 8;
+		This->colorbits[1] = 8;
+		This->colorbits[2] = 8;
+		This->colorbits[3] = 0;
+		break;
+	case 6: // 32-bit RGB888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -878,7 +894,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
 		break;
-	case 6: // 32-bit BGR888
+	case 7: // 32-bit BGR888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_RGBA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -892,7 +908,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
 		break;
-	case 7: // 16-bit RGBA8332
+	case 8: // 16-bit RGBA8332
 		This->useconv = TRUE;
 		This->convfunctionupload = 0;
 		This->convfunctiondownload = 1;
@@ -910,7 +926,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 2;
 		This->colorbits[3] = 8;
 		break;
-	case 8: // 16-bit RGBA4444
+	case 9: // 16-bit RGBA4444
 		This->internalformats[0] = GL_RGBA4;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -925,7 +941,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 4;
 		This->colorbits[3] = 4;
 		break;
-	case 9: // 16-bit RGBA1555
+	case 10: // 16-bit RGBA1555
 		This->internalformats[0] = GL_RGB5_A1;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -935,7 +951,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 5;
 		This->colorbits[3] = 1;
 		break;
-	case 10: // 32-bit RGBA8888
+	case 11: // 32-bit RGBA8888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -949,7 +965,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 8;
 		break;
-	case 11: // 8-bit Luminance
+	case 12: // 8-bit Luminance
 		This->internalformats[0] = GL_LUMINANCE8;
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
@@ -965,7 +981,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 12: // 8-bit Alpha
+	case 13: // 8-bit Alpha
 		This->internalformats[0] = GL_ALPHA8;
 		This->format = GL_ALPHA;
 		This->type = GL_UNSIGNED_BYTE;
@@ -979,7 +995,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
 		break;
-	case 13: // 16-bit Luminance Alpha
+	case 14: // 16-bit Luminance Alpha
 		This->internalformats[0] = GL_LUMINANCE8_ALPHA8;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_LUMINANCE_ALPHA;
@@ -994,7 +1010,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
 		break;
-	case 14: // 16-bit Z buffer
+	case 15: // 16-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT16;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_SHORT;
@@ -1008,7 +1024,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 15: // 24-bit Z buffer
+	case 16: // 24-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_SHORT;
@@ -1022,7 +1038,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 16: // 32/24 bit Z buffer
+	case 17: // 32/24 bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1036,7 +1052,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 17: // 32-bit Z buffer
+	case 18: // 32-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT32;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1050,7 +1066,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 18: // 32-bit Z/Stencil buffer, depth LSB
+	case 19: // 32-bit Z/Stencil buffer, depth LSB
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
@@ -1064,7 +1080,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
 		break;
-	case 19: // 32-bit Z/Stencil buffer, depth MSB
+	case 20: // 32-bit Z/Stencil buffer, depth MSB
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
