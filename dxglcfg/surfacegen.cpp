@@ -1662,8 +1662,8 @@ static const LPTSTR strFormatTestPatterns[] =
 static const LPTSTR StrFormatTestMethods[] =
 {
 	_T("Unknown"),
-	_T("Blt Vidmem"),
 	_T("Blt Sysmem"),
+	_T("Blt Vidmem"),
 	_T("D3D Quad"),
 	_T("Overlay")
 };
@@ -1725,14 +1725,16 @@ const DDPIXELFORMAT surfaceformats[] =
 
 static const LPTSTR strErrorMessages[] =
 {
-	_T("Unknown error"),
+	_T("Unknown error: "),
 	_T("Error creating src surf: "),
 	_T("Error locking src surf: "),
 	_T("Error getting hdc: "),
 	_T("Error creating dest surf: "),
 	_T("Error blitting src to pri: "),
 	_T("Error blitting src to dest: "),
-	_T("Error blitting dest to pri: ")
+	_T("Error blitting dest to pri: "),
+	_T("Error initializing Direct3D"),
+	_T("Overlays not available yet")
 };
 
 void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud,
@@ -1809,7 +1811,7 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 		_tcscat(buffer, strFormatTestPatterns[testpattern]);
 		_tcscat(buffer, strFormatTestStatus2);
 		if (testmethod < 0) testmethod = 0;
-		if (testmethod > 3) testmethod = 0;
+		if (testmethod > 4) testmethod = 0;
 		_tcscat(buffer, StrFormatTestMethods[testmethod]);
 		TextOutShadow(hdc, posx, posy, buffer, _tcslen(buffer), RGB(0, 0, 192));
 		// List source formats
@@ -1911,13 +1913,16 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 		SetBkColor(hdc, RGB(255, 0, 0));
 		SetTextColor(hdc, RGB(255, 255, 255));
 		if (errorlocation < 0) errorlocation = 0;
-		if (errorlocation > 7) errorlocation = 0;
+		if (errorlocation > 9) errorlocation = 0;
 		posx = 0;
 		posy = charsize.cy * (rows - 1);
 		_tcscpy(buffer, strErrorMessages[errorlocation]);
-		_tcscat(buffer, _T("0x"));
-		_itot(error, number, 16);
-		_tcscat(buffer, number);
+		if ((errorlocation != 8) && (errorlocation != 9))
+		{
+			_tcscat(buffer, _T("0x"));
+			_itot(error, number, 16);
+			_tcscat(buffer, number);
+		}
 		TextOutShadow(hdc, posx, posy, buffer, _tcslen(buffer), RGB(192, 0, 0));
 	}
 	SelectObject(hdc, DefaultFont);

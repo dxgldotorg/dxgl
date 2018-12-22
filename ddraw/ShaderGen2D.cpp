@@ -58,6 +58,20 @@ Bit 31: reserved for DXGL usage
 Bits 32-39: Texture type input
 Bits 40-47: Texture type output
 AND the dwFlags by 0xF2FAADFF before packing ROP index bits
+
+Texture types:
+0x00: Classic DXGL processing
+0x01: 32-bit YUV444, 8-bit component (convert from other formats via software)
+0x10: 8-bit palette
+0x11: 4-bit palette
+0x12: 2-bit palette
+0x13: 1-bit palette
+0x14: 4-bit palette index
+0x15: 2-bit palette index
+0x16: 1-bit palette index
+0x20: (first entry for specific RGB formats)
+0x80: (first entry for specific YUV formats)
+0xC0: (first entry for compressed)
 */
 
 static const char revheader[] =

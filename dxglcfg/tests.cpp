@@ -348,6 +348,9 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 					RunSurfaceFormatTest();
 					break;
 				case VK_TAB:  // Render method
+					testmethod++;
+					if (testmethod > 4) testmethod = 1;
+					RunSurfaceFormatTest();
 					break;
 				}
 			}
@@ -1328,7 +1331,7 @@ void InitTest(int test)
 		lights[0].dvAttenuation1 = 0.4f;
 		error = d3d7dev->SetLight(0, &lights[0]);
 		break;
-	case 13: // Solid cube
+	case 13: // Textured cube
 		MakeCube3D(5, 2);
 		cleartexformats();
 		d3d7dev->EnumTextureFormats(gettexformat, NULL);
@@ -1510,7 +1513,7 @@ void InitTest(int test)
 	case 18: // Surface format test
 		ddsrender->GetSurfaceDesc(&ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 		ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL); // Initial source surface
 		srcformat = 0;
 		destformat = -1;
@@ -2298,11 +2301,25 @@ void RunSurfaceFormatTest()
 {
 	HRESULT error;
 	DDSURFACEDESC2 ddsd;
+	DDSURFACEDESC2 ddsdTexture;
 	DDBLTFX bltfx;
+	D3DTLVERTEX vertices[4];
+	WORD indices[6] = { 0,3,1,3,0,2 };
+	D3DVIEWPORT7 viewport;
+	D3DDEVICEDESC7 d3ddevdesc;
+	DWORD texwidth, texheight;
 	errorlocation = 0;
 	errornumber = 0;
-	if (ddver > 3)ddsd.dwSize = sizeof(DDSURFACEDESC2);
-	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	if (ddver > 3)
+	{
+		ddsd.dwSize = sizeof(DDSURFACEDESC2);
+		ddsdTexture.dwSize = sizeof(DDSURFACEDESC2);
+	}
+	else
+	{
+		ddsd.dwSize = sizeof(DDSURFACEDESC);
+		ddsdTexture.dwSize = sizeof(DDSURFACEDESC);
+	}
 	if (sprites[0].surface)
 	{
 		sprites[0].surface->Release();
@@ -2314,54 +2331,170 @@ void RunSurfaceFormatTest()
 		sprites[1].surface = NULL;
 	}
 	ddsrender->GetSurfaceDesc(&ddsd);
-	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-	if (srcformat > 0)
+	switch (testmethod)
 	{
-		ddsd.dwFlags |= DDSD_PIXELFORMAT;
-		ddsd.ddpfPixelFormat = surfaceformats[srcformat];
-	}
-	error = ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
-	if (error)
-	{
-		errorlocation = 1;
-		errornumber = error;
-		bltfx.dwSize = sizeof(DDBLTFX);
-		bltfx.dwFillColor = 0;
-		ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
-	}
-	else
-	{
-		// FIXME: Select pattern
-		error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-		if(error)
+	case 1:
+	case 2:
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (testmethod == 2) ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+		else ddsd.ddsCaps.dwCaps |= D3DDEBCAPS_SYSTEMMEMORY;
+		if (srcformat > 0)
 		{
-			errorlocation = 2;
+			ddsd.dwFlags |= DDSD_PIXELFORMAT;
+			ddsd.ddpfPixelFormat = surfaceformats[srcformat];
+		}
+		error = ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
+		if (error)
+		{
+			errorlocation = 1;
 			errornumber = error;
 			bltfx.dwSize = sizeof(DDBLTFX);
 			bltfx.dwFillColor = 0;
-			ddsrender->Blt(NULL,NULL,NULL,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx);
-			sprites[0].surface->Release();
-			sprites[0].surface = NULL;
+			ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
 		}
 		else
 		{
-			DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
-			error = sprites[0].surface->Unlock(NULL);
-			if (destformat != -1)
+			// FIXME: Select pattern
+			error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			if (error)
 			{
-				ddsrender->GetSurfaceDesc(&ddsd);
-				ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-				ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-				if (destformat > 0)
+				errorlocation = 2;
+				errornumber = error;
+				bltfx.dwSize = sizeof(DDBLTFX);
+				bltfx.dwFillColor = 0;
+				ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+				sprites[0].surface->Release();
+				sprites[0].surface = NULL;
+			}
+			else
+			{
+				DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
+				error = sprites[0].surface->Unlock(NULL);
+				if (destformat != -1)
 				{
-					ddsd.dwFlags |= DDSD_PIXELFORMAT;
-					ddsd.ddpfPixelFormat = surfaceformats[destformat];
+					ddsrender->GetSurfaceDesc(&ddsd);
+					ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+					ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+					if (destformat > 0)
+					{
+						ddsd.dwFlags |= DDSD_PIXELFORMAT;
+						ddsd.ddpfPixelFormat = surfaceformats[destformat];
+					}
+					error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
+					if (error)
+					{
+						errorlocation = 4;
+						errornumber = error;
+						bltfx.dwSize = sizeof(DDBLTFX);
+						bltfx.dwFillColor = 0;
+						ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+						sprites[0].surface->Release();
+						sprites[0].surface = NULL;
+					}
+					else
+					{
+						error = sprites[1].surface->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+						if (error)
+						{
+							errorlocation = 6;
+							errornumber = error;
+							bltfx.dwSize = sizeof(DDBLTFX);
+							bltfx.dwFillColor = 0;
+							ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+						}
+						else
+						{
+							error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
+							if (error)
+							{
+								errorlocation = 7;
+								errornumber = error;
+								bltfx.dwSize = sizeof(DDBLTFX);
+								bltfx.dwFillColor = 0;
+								ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+							}
+						}
+						sprites[0].surface->Release();
+						sprites[0].surface = NULL;
+						sprites[1].surface->Release();
+						sprites[1].surface = NULL;
+					}
 				}
-				error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
+				else
+				{
+					error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
+					if (error)
+					{
+						errorlocation = 5;
+						errornumber = error;
+						bltfx.dwSize = sizeof(DDBLTFX);
+						bltfx.dwFillColor = 0;
+						ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+					}
+					sprites[0].surface->Release();
+					sprites[0].surface = NULL;
+				}
+			}
+		}
+		break;
+	case 3:
+		if (d3dfail)
+		{
+			errorlocation = 8;
+			errornumber = 1;
+			bltfx.dwSize = sizeof(DDBLTFX);
+			bltfx.dwFillColor = 0;
+			ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+		}
+		else
+		{
+			ZeroMemory(&vertices, 4 * sizeof(D3DVERTEX));
+			vertices[0].sx = 0.0f; vertices[0].sy = 0.0f; vertices[0].sz = 0.0f; vertices[0].rhw = 1.0f;
+			vertices[1].sx = 0.0f; vertices[1].sy = (float)ddsd.dwHeight; vertices[1].sz = 0.0f; vertices[1].rhw = 1.0f;
+			vertices[2].sx = (float)ddsd.dwWidth; vertices[2].sy = 0.0f; vertices[2].sz = 0.0f; vertices[2].rhw = 1.0f;
+			vertices[3].sx = (float)ddsd.dwWidth; vertices[3].sy = (float)ddsd.dwHeight; vertices[3].sz = 0.0f; vertices[3].rhw = 1.0f;
+			vertices[0].tu = 0.0f; vertices[0].tv = 0.0f;
+			vertices[1].tu = 0.0f; vertices[1].tv = 1.0f;
+			vertices[2].tu = 1.0f; vertices[2].tv = 0.0f;
+			vertices[3].tu = 1.0f; vertices[3].tv = 1.0f;
+			vertices[0].dcColor = vertices[1].dcColor = vertices[2].dcColor = vertices[3].dcColor = 0xFFFFFFFF;
+			viewport.dwWidth = ddsd.dwWidth; viewport.dwHeight = ddsd.dwHeight;
+			viewport.dwX = 0; viewport.dwY = 0;
+			viewport.dvMinZ = 0.0f; viewport.dvMaxZ = 1.0f;
+			ZeroMemory(&ddsdTexture, sizeof(DDSURFACEDESC2));
+			ddsdTexture.dwSize = sizeof(DDSURFACEDESC2);
+			ddsdTexture.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_TEXTURESTAGE;
+			if (srcformat > 0)
+			{
+				ddsdTexture.dwFlags |= DDSD_PIXELFORMAT;
+				ddsdTexture.ddpfPixelFormat = surfaceformats[srcformat];
+			}
+			ddsdTexture.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+			ddsdTexture.ddsCaps.dwCaps2 = DDSCAPS2_TEXTUREMANAGE;
+			d3d7dev->GetCaps(&d3ddevdesc);
+			if (d3ddevdesc.dwMaxTextureWidth >= 512) texwidth = 512;
+			else texwidth = d3ddevdesc.dwMaxTextureWidth;
+			if (d3ddevdesc.dwMaxTextureHeight >= 512) texheight = 512;
+			else texheight = d3ddevdesc.dwMaxTextureHeight;
+			ddsdTexture.dwWidth = texwidth;
+			ddsdTexture.dwHeight = texheight;
+			error = ddinterface->CreateSurface(&ddsdTexture, &sprites[0].surface, NULL);
+			if (error)
+			{
+				errorlocation = 1;
+				errornumber = error;
+				bltfx.dwSize = sizeof(DDBLTFX);
+				bltfx.dwFillColor = 0;
+				ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+			}
+			else
+			{
+				// FIXME: Select pattern
+				error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
 				if (error)
 				{
-					errorlocation = 4;
+					errorlocation = 2;
 					errornumber = error;
 					bltfx.dwSize = sizeof(DDBLTFX);
 					bltfx.dwFillColor = 0;
@@ -2371,48 +2504,105 @@ void RunSurfaceFormatTest()
 				}
 				else
 				{
-					error = sprites[1].surface->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-					if (error)
+					DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
+					error = sprites[0].surface->Unlock(NULL);
+					if (destformat != -1)
 					{
-						errorlocation = 6;
-						errornumber = error;
-						bltfx.dwSize = sizeof(DDBLTFX);
-						bltfx.dwFillColor = 0;
-						ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+						ddsrender->GetSurfaceDesc(&ddsd);
+						ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+						ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_3DDEVICE;
+						if (destformat > 0)
+						{
+							ddsd.dwFlags |= DDSD_PIXELFORMAT;
+							ddsd.ddpfPixelFormat = surfaceformats[destformat];
+						}
+						error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
+						if (error)
+						{
+							errorlocation = 4;
+							errornumber = error;
+							bltfx.dwSize = sizeof(DDBLTFX);
+							bltfx.dwFillColor = 0;
+							ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+							sprites[0].surface->Release();
+							sprites[0].surface = NULL;
+						}
+						else
+						{
+							error = 0;
+							d3d7dev->SetRenderTarget((LPDIRECTDRAWSURFACE7)sprites[1].surface->GetSurface(), 0);
+							d3d7dev->SetViewport(&viewport);
+							d3d7dev->SetRenderState(D3DRENDERSTATE_DITHERENABLE, 1);
+							d3d7dev->BeginScene();
+							d3d7dev->SetTexture(0, (LPDIRECTDRAWSURFACE7)sprites[0].surface->GetSurface());
+							d3d7dev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_POINT);
+							d3d7dev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFN_POINT);
+							d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, D3DFVF_TLVERTEX, vertices,
+								4, indices, 6, 0);
+							d3d7dev->EndScene();
+							if (error)
+							{
+								errorlocation = 6;
+								errornumber = error;
+								bltfx.dwSize = sizeof(DDBLTFX);
+								bltfx.dwFillColor = 0;
+								ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+							}
+							else
+							{
+								error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
+								if (error)
+								{
+									errorlocation = 7;
+									errornumber = error;
+									bltfx.dwSize = sizeof(DDBLTFX);
+									bltfx.dwFillColor = 0;
+									ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+								}
+							}
+							sprites[0].surface->Release();
+							sprites[0].surface = NULL;
+							sprites[1].surface->Release();
+							sprites[1].surface = NULL;
+						}
 					}
 					else
 					{
-						error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
+						error = 0;
+						d3d7dev->SetRenderTarget((LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), 0);
+						d3d7dev->SetViewport(&viewport);
+						d3d7dev->SetRenderState(D3DRENDERSTATE_DITHERENABLE, 1);
+						d3d7dev->BeginScene();
+						d3d7dev->SetTexture(0, (LPDIRECTDRAWSURFACE7)sprites[0].surface->GetSurface());
+						d3d7dev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_POINT);
+						d3d7dev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFN_POINT);
+						d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, D3DFVF_TLVERTEX, vertices,
+							4, indices, 6, 0);
+						d3d7dev->EndScene();
 						if (error)
 						{
-							errorlocation = 7;
+							errorlocation = 5;
 							errornumber = error;
 							bltfx.dwSize = sizeof(DDBLTFX);
 							bltfx.dwFillColor = 0;
 							ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
 						}
+						sprites[0].surface->Release();
+						sprites[0].surface = NULL;
 					}
-					sprites[0].surface->Release();
-					sprites[0].surface = NULL;
-					sprites[1].surface->Release();
-					sprites[1].surface = NULL;
 				}
-			}
-			else
-			{
-				error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-				if (error)
-				{
-					errorlocation = 5;
-					errornumber = error;
-					bltfx.dwSize = sizeof(DDBLTFX);
-					bltfx.dwFillColor = 0;
-					ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
-				}
-				sprites[0].surface->Release();
-				sprites[0].surface = NULL;
 			}
 		}
+		break;
+	case 4:
+		errorlocation = 9;
+		errornumber = 1;
+		bltfx.dwSize = sizeof(DDBLTFX);
+		bltfx.dwFillColor = 0;
+		ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+		break;
+	default:
+		break;
 	}
 	DrawFormatTestHUD(ddsrender, srcformat, destformat, showhud, testpattern,
 		testmethod, ddsd.dwWidth, ddsd.dwHeight, errorlocation, errornumber);
@@ -3841,10 +4031,3 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	}
 	return TRUE;
 }
-
-/*
-void DDFlipTestWindow::OnQueryNewPalette(wxQueryNewPaletteEvent& event)
-{
-	//if(bpp == 8) ddsurface->SetPalette
-}
-*/
