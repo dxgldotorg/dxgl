@@ -426,7 +426,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d)
+	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d)
 {
 	ZeroMemory(sprites,16*sizeof(DDSPRITE));
 	if(testnum == 14)
@@ -551,16 +551,19 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		ddsrender->SetPalette(pal);
 	}
 	else pal = NULL;
-	if (is3d )
+	if (is3d)
 	{
 		error = ddinterface->QueryInterface(IID_IDirect3D7, (VOID**)&d3d7);
 		if (FAILED(error)) d3dfail = TRUE;
 		else
 		{
-			error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
+			if(softd3d) error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
+			else error = d3d7->EnumZBufferFormats(IID_IDirect3DHALDevice, zcallback, &ddpfz);
 			error = ddsrender->GetSurfaceDesc(&ddsd);
 			ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
-			ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER | DDSCAPS_VIDEOMEMORY;
+			ddsd.ddsCaps.dwCaps = DDSCAPS_ZBUFFER;
+			if(softd3d) ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
+			else ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
 			memcpy(&ddsd.ddpfPixelFormat, &ddpfz, sizeof(DDPIXELFORMAT));
 			error = ddinterface->CreateSurface(&ddsd, &zbuffer, NULL);
 			if (FAILED(error))
@@ -571,16 +574,28 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 			else
 			{
 				error = ddsrender->AddAttachedSurface(zbuffer);
-				error = d3d7->CreateDevice(IID_IDirect3DHALDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
-				if (error != D3D_OK)
-					error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				if(softd3d) error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				else error = d3d7->CreateDevice(IID_IDirect3DHALDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
 				if (error != D3D_OK)
 				{
-					d3dfail = TRUE;
-					zbuffer->Release();
-					d3d7->Release();
+					if (!softd3d)
+					{
+						error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+						if (error != D3D_OK)
+						{
+							d3dfail = TRUE;
+							zbuffer->Release();
+							d3d7->Release();
+						}
+					}
+					else
+					{
+						d3dfail = TRUE;
+						zbuffer->Release();
+						d3d7->Release();
+					}
 				}
-				else
+				if(error == D3D_OK)
 				{
 					ddsrender->GetSurfaceDesc(&ddsd);
 					D3DVIEWPORT7 vp = { 0,0,ddsd.dwWidth,ddsd.dwHeight,0.0f,1.0f };

@@ -138,17 +138,18 @@
 #define IDC_FULLSCREEN                          2604
 #define IDC_RESIZABLE                           2605
 #define IDC_TESTVSYNC                           2606
-#define IDC_APIVER                              2607
-#define IDC_SPINAPI                             2608
-#define IDC_BUFFERS                             2609
-#define IDC_SPINBACK                            2610
-#define IDC_FRAMERATE                           2611
-#define IDC_SPINFRAME                           2612
-#define IDC_FILTERLABEL                         2613
-#define IDC_FILTER                              2614
-#define IDC_FSAALABEL                           2615
-#define IDC_FSAA                                2616
-#define IDC_TEST                                2617
+#define IDC_SOFTD3D                             2607
+#define IDC_APIVER                              2608
+#define IDC_SPINAPI                             2609
+#define IDC_BUFFERS                             2610
+#define IDC_SPINBACK                            2611
+#define IDC_FRAMERATE                           2612
+#define IDC_SPINFRAME                           2613
+#define IDC_FILTERLABEL                         2614
+#define IDC_FILTER                              2615
+#define IDC_FSAALABEL                           2616
+#define IDC_FSAA                                2617
+#define IDC_TEST                                2618
 
 // Controls - About Tab
 #define IDC_ABOUTTEXT                           2701

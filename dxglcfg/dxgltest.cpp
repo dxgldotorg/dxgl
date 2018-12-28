@@ -241,6 +241,7 @@ int filter = 0;
 int msaa = 0;
 bool fullscreen = true;
 bool resizable = false;
+bool softd3d = false;
 double framerate = 1.00;
 TCHAR frameratestring[33];
 
@@ -319,6 +320,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_TESTVSYNC),TRUE);
+						EnableWindow(GetDlgItem(hWnd,IDC_SOFTD3D),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),TRUE);
 					}
 					else
@@ -331,6 +333,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_TESTVSYNC),FALSE);
+						EnableWindow(GetDlgItem(hWnd,IDC_SOFTD3D),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),FALSE);
 						SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,BST_CHECKED,0);
 						SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,BST_UNCHECKED,0);
@@ -357,13 +360,15 @@ SaveChanges(hDialog);
 				}
 				if (SendDlgItemMessage(hWnd, IDC_RESIZABLE, BM_GETCHECK, 0, 0)) resizable = true;
 				else resizable = false;
+				if (SendDlgItemMessage(hWnd, IDC_SOFTD3D, BM_GETCHECK, 0, 0)) softd3d = true;
+				else softd3d = false;
 				if (buffer < minbuffer) buffer = minbuffer;
 				if (buffer > maxbuffer) buffer = maxbuffer;
 				i = SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETCURSEL, 0, 0);
 				SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETTEXT, i, (LPARAM)tmpstring);
 				TranslateResolutionString(tmpstring, width, height, bpp, refresh);
 				RunDXGLTest(currenttest, width, height, bpp, refresh, buffer, api,
-					filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d);
+					filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d);
 				break;
 			}
 			break;
@@ -427,13 +432,15 @@ Do you want to apply them before running this test?"),
 			}
 			if(SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0)) resizable = true;
 			else resizable = false;
+			if (SendDlgItemMessage(hWnd, IDC_SOFTD3D, BM_GETCHECK, 0, 0)) softd3d = true;
+			else softd3d = false;
 			if (buffer < minbuffer) buffer = minbuffer;
 			if (buffer > maxbuffer) buffer = maxbuffer;
 			i = SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETCURSEL, 0, 0);
 			SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETTEXT,i,(LPARAM)tmpstring);
 			TranslateResolutionString(tmpstring,width,height,bpp,refresh);
 			RunDXGLTest(currenttest, width, height, bpp, refresh, buffer, api,
-				filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d);
+				filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d);
 			break;
 		case IDC_WINDOWED:
 			SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,0,0);

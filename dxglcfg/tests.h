@@ -35,6 +35,6 @@ typedef struct
 } DDSPRITE;
 
 void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d);
+	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d);
 
 #endif //_TESTS_H
