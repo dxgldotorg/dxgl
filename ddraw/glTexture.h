@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ void glTexture_SetPalette(glTexture *This, glTexture *palette, BOOL backend);
 void glTexture_SetStencil(glTexture *This, glTexture *stencil, BOOL backend);
 void glTexture_CreateDummyColor(glTexture *This, BOOL backend);
 void glTexture_DeleteDummyColor(glTexture *This, BOOL backend);
+BOOL glTexture_ValidatePixelFormat(DDPIXELFORMAT *pixelformat);
 void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, struct glRenderer *renderer);
 HRESULT glTexture__SetSurfaceDesc(glTexture *This, LPDDSURFACEDESC2 ddsd);
 void glTexture__Download(glTexture *This, GLint level);

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -400,6 +400,23 @@ void glTexture_DeleteDummyColor(glTexture *This, BOOL backend)
 	if(This->dummycolor) glTexture_Release(This->dummycolor, backend);
 	This->dummycolor = NULL;
 }
+BOOL glTexture_ValidatePixelFormat(DDPIXELFORMAT *pixelformat)
+{
+	int i;
+	int texformat = -1;
+	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
+	for (i = 0; i < numtexformats; i++)
+	{
+		if (!memcmp(&texformats[i], pixelformat, sizeof(DDPIXELFORMAT)))
+		{
+			texformat = i;
+			break;
+		}
+	}
+	if (texformat == -1) return FALSE;
+	else return TRUE;
+}
+
 HRESULT glTexture__SetSurfaceDesc(glTexture *This, LPDDSURFACEDESC2 ddsd)
 {
 	// FIXME:  Implement SetSurfaceDesc fully

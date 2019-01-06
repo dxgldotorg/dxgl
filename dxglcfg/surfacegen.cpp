@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1672,6 +1672,9 @@ static const LPTSTR strSurfaceFormats[] =
 {
 	_T("Primary surface"), // -1
 	_T("Same as primary"), // 0
+	_T("1-bit Palette"),
+	_T("2-bit Palette"),
+	_T("4-bit Palette"),
 	_T("8-bit Palette"),
 	_T("8-bit 332"),
 	_T("15-bit 555"),
@@ -1700,6 +1703,9 @@ const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
 const DDPIXELFORMAT surfaceformats[] =
 {
 	{0,						0,								0,		0,		0,			0,			0,			0},  // reserved
+	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED1,			0,		1,		0,			0,			0,			0},  // 8-bit paletted
+	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED2,			0,		2,		0,			0,			0,			0},  // 8-bit paletted
+	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED4,			0,		4,		0,			0,			0,			0},  // 8-bit paletted
 	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED8,			0,		8,		0,			0,			0,			0},  // 8-bit paletted
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		8,		0xE0,		0x1C,		0x3,		0},  // 8 bit 332
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0x7C00,		0x3E0,		0x1F,		0},  // 15 bit 555

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -284,6 +284,13 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	{
 		ddsd.dwFlags |= DDSD_PIXELFORMAT;
 		memcpy(&ddsd.ddpfPixelFormat, &texture->levels[this->miplevel].ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
+	}
+	if (!glTexture_ValidatePixelFormat(&ddsd.ddpfPixelFormat))
+	{
+		*error = DDERR_INVALIDPIXELFORMAT;
+		TRACE_VAR("*error", 23, DDERR_INVALIDPIXELFORMAT);
+		TRACE_EXIT(-1, 0);
+		return;
 	}
 	if (ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
