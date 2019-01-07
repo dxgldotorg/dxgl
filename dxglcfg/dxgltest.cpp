@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -268,6 +268,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	double f;
 	LPDIRECTDRAW lpdd;
 	HRESULT error;
+	HMODULE hddraw;
 	int width,height,bpp,refresh;
 	switch(Msg)
 	{
@@ -283,6 +284,11 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			IDirectDraw_Release(lpdd);
 		}
 		SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_SETCURSEL,modenum,0);
+		hddraw = GetModuleHandle(_T("ddraw.dll"));
+		if (hddraw)
+		{
+			if (GetProcAddress(hddraw, "IsDXGLDDraw")) DestroyWindow(GetDlgItem(hWnd, IDC_SOFTD3D));
+		}
 		break;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
