@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -557,7 +557,12 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		if (FAILED(error)) d3dfail = TRUE;
 		else
 		{
-			if(softd3d) error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
+			if(softd3d)
+			{
+				error = d3d7->CreateDevice(IID_IDirect3DRefDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				if(error != D3D_OK)
+					error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
+			}
 			else error = d3d7->EnumZBufferFormats(IID_IDirect3DHALDevice, zcallback, &ddpfz);
 			error = ddsrender->GetSurfaceDesc(&ddsd);
 			ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
@@ -580,7 +585,9 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 				{
 					if (!softd3d)
 					{
-						error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+						error = d3d7->CreateDevice(IID_IDirect3DRefDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+						if(error != D3D_OK)
+							error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
 						if (error != D3D_OK)
 						{
 							d3dfail = TRUE;
@@ -2323,6 +2330,8 @@ void RunSurfaceFormatTest()
 	D3DVIEWPORT7 viewport;
 	D3DDEVICEDESC7 d3ddevdesc;
 	DWORD texwidth, texheight;
+	POINT p;
+	RECT srcrect,destrect;
 	errorlocation = 0;
 	errornumber = 0;
 	if (ddver > 3)
@@ -2621,6 +2630,16 @@ void RunSurfaceFormatTest()
 	}
 	DrawFormatTestHUD(ddsrender, srcformat, destformat, showhud, testpattern,
 		testmethod, ddsd.dwWidth, ddsd.dwHeight, errorlocation, errornumber);
+	if (!fullscreen)
+	{
+		p.x = 0;
+		p.y = 0;
+		ClientToScreen(hWnd, &p);
+		GetClientRect(hWnd, &destrect);
+		OffsetRect(&destrect, p.x, p.y);
+		SetRect(&srcrect, 0, 0, width, height);
+		if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
+	}
 }
 
 void RunTestLooped(int test)
