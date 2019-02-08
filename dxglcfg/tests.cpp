@@ -28,6 +28,7 @@
 void InitTest(int test);
 void RunTestTimed(int test);
 void RunTestLooped(int test);
+void RunSurfaceFormatTest();
 
 
 static MultiDirectDraw *ddinterface;
@@ -57,7 +58,7 @@ static int testmethod = 0;
 static BOOL d3dfail = FALSE;
 static int errorlocation;
 static int errornumber;
-void RunSurfaceFormatTest();
+static BOOL softd3d;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -454,6 +455,7 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	::height = height;
 	::bpp = bpp;
 	::refresh = refresh;
+	::softd3d = softd3d;
 	if(fullscreen)::backbuffers = backbuffers;
 	else ::backbuffers = backbuffers = 0;
 	::fps = fps;
@@ -561,6 +563,8 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 			{
 				error = d3d7->CreateDevice(IID_IDirect3DRefDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
 				if(error != D3D_OK)
+					error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+				if(error == D3D_OK)
 					error = d3d7->EnumZBufferFormats(IID_IDirect3DRGBDevice, zcallback, &ddpfz);
 			}
 			else error = d3d7->EnumZBufferFormats(IID_IDirect3DHALDevice, zcallback, &ddpfz);
@@ -587,7 +591,10 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 					{
 						error = d3d7->CreateDevice(IID_IDirect3DRefDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
 						if(error != D3D_OK)
+						{
+							::softd3d = TRUE;
 							error = d3d7->CreateDevice(IID_IDirect3DRGBDevice, (LPDIRECTDRAWSURFACE7)ddsrender->GetSurface(), &d3d7dev);
+						}
 						if (error != D3D_OK)
 						{
 							d3dfail = TRUE;
@@ -2535,6 +2542,8 @@ void RunSurfaceFormatTest()
 						ddsrender->GetSurfaceDesc(&ddsd);
 						ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 						ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_3DDEVICE;
+						if(softd3d) ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
+						else ddsd.ddsCaps.dwCaps2 = DDSCAPS2_TEXTUREMANAGE;
 						if (destformat > 0)
 						{
 							ddsd.dwFlags |= DDSD_PIXELFORMAT;

@@ -69,7 +69,7 @@ static const DDSURFACEDESC2 ddsddummycolor =
 static const int START_TEXFORMATS = __LINE__;
 const DDPIXELFORMAT texformats[] = 
 { // Size					Flags							FOURCC	bits	R/Ymask		G/U/Zmask	B/V/STmask	A/Zmask
-	{sizeof(DDPIXELFORMAT),	DDPF_PALETTEINDEXED8,			0,		8,		0,			0,			0,			0},  // 8-bit paletted
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB|DDPF_PALETTEINDEXED8,	0,		8,		0,			0,			0,			0},  // 8-bit paletted
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		8,		0xE0,		0x1C,		0x3,		0},  // 8 bit 332
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0x7C00,		0x3E0,		0x1F,		0},  // 15 bit 555
 	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0xF800,		0x7E0,		0x1F,		0},  // 16 bit 565
