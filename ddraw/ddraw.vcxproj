@@ -117,7 +117,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>ddraw_donotuse</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -212,8 +211,9 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>ddraw.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(OutDir)libMinHook.x86.lib;$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)..\Debug\libMinHook.x86.lib;$(OutDir)cfgmgr.lib;glu32.lib;opengl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(OutDir)ddraw.lib</ImportLibrary>
+      <OutputFile>$(OutDir)$(TargetName)_nodxgl$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
