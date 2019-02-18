@@ -208,10 +208,44 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 {
 	DWORD x,y;
 	DWORD color;
+	unsigned char value;
 	unsigned short *buffer16 = (unsigned short*) buffer;
 	unsigned long *buffer32 = (unsigned long*) buffer;
 	switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
 	{
+		case 1:
+			for(y = 0; y < ddsd.dwHeight; y++)
+			{
+				for(x = 0; x < (ddsd.dwWidth/8); x++)
+				{
+					value = (unsigned char)((x / (ddsd.dwWidth / 8.)) + 2 * floor((y / (ddsd.dwHeight / 2.))));
+					if (value) value = 0xFF;
+					buffer[x + (ddsd.lPitch*y)] = value;
+				}
+			}
+			break;
+		case 2:
+			for(y = 0; y < ddsd.dwHeight; y++)
+			{
+				for(x = 0; x < (ddsd.dwWidth/4); x++)
+				{
+					value = (unsigned char)((x / (ddsd.dwWidth / 8.)) + 2 * floor((y / (ddsd.dwHeight / 2.))));
+					value |= ((value << 2) | (value << 4) | (value << 6));
+					buffer[x + (ddsd.lPitch*y)] = value;
+				}
+			}
+			break;
+		case 4:
+			for(y = 0; y < ddsd.dwHeight; y++)
+			{
+				for(x = 0; x < (ddsd.dwWidth/2); x++)
+				{
+					value = (unsigned char)((x / (ddsd.dwWidth / 8.)) + 4 * floor((y / (ddsd.dwHeight / 4.))));
+					value |= (value << 4);
+					buffer[x + (ddsd.lPitch*y)] = value;
+				}
+			}
+			break;
 		case 8:
 			for(y = 0; y < ddsd.dwHeight; y++)
 			{

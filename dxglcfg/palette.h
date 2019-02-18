@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -15,4 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-extern const unsigned char DefaultPalette[1024];
+extern const unsigned char DefaultPalette1[8];
+extern const unsigned char DefaultPalette2[16];
+extern const unsigned char DefaultPalette4[64];
+extern const unsigned char DefaultPalette8[1024];

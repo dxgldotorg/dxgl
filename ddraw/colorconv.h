@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2018 William Feely
+// Copyright (C) 2018-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,12 @@ extern "C" {
 typedef void(*COLORCONVPROC) (size_t count, void *dest, void *src);
 extern COLORCONVPROC colorconvproc[];
 
+void pal1topal8(size_t count, DWORD *dest, BYTE *src);
+void pal2topal8(size_t count, DWORD *dest, BYTE *src);
+void pal4topal8(size_t count, WORD *dest, BYTE *src);
+void pal8topal4(size_t count, BYTE *dest, WORD *src);
+void pal8topal2(size_t count, BYTE *dest, DWORD *src);
+void pal8topal1(size_t count, BYTE *dest, DWORD *src);
 void rgba8332torgba8888(size_t count, DWORD *dest, WORD *src);
 void rgba8888torgba8332(size_t count, WORD *dest, DWORD *src);
 void rgb565torgba8888(size_t count, DWORD *dest, WORD *src);
@@ -36,6 +42,7 @@ void rgba8888torgba1555(size_t count, WORD *dest, DWORD *src);
 void rgba4444torgba8888(size_t count, DWORD *dest, WORD *src);
 void rgba8888torgba4444(size_t count, WORD *dest, DWORD *src);
 void uyvytorgbx8888(size_t count, DWORD *dest, DWORD *src);
+void rgbx8888touyvy(size_t count, DWORD *dest, DWORD *src);
 
 #ifdef __cplusplus
 }

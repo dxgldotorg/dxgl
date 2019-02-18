@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1018,6 +1018,10 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 	{
 		if (i == 7) continue;
 		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+		//FIXME:  Remove these line after implementing palette textures
+		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
+		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
+		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
 		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
 		memcpy(&fmt,&::texformats[i],sizeof(DDPIXELFORMAT));
 		result = lpd3dEnumPixelProc(&fmt,lpArg);

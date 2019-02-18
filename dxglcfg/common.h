@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -74,7 +74,10 @@ typedef string tstring;
 #include "Resource.h"
 // DirectX/DXGL headers
 #include "../ddraw/include/ddraw.h"
-extern const unsigned char DefaultPalette[1024];
+extern const unsigned char DefaultPalette1[8];
+extern const unsigned char DefaultPalette2[16];
+extern const unsigned char DefaultPalette4[64];
+extern const unsigned char DefaultPalette8[1024];
 
 #ifdef _UNICODE
 #define _ttof _wtof

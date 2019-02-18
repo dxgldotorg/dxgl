@@ -215,12 +215,19 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		StopTimer();
-		for(int i = 0; i < 16; i++)
+		for (int i = 0; i < 16; i++)
+		{
 			if (sprites[i].surface)
 			{
 				sprites[i].surface->Release();
 				sprites[i].surface = NULL;
 			}
+			if (sprites[i].palette)
+			{
+				sprites[i].palette->Release();
+				sprites[i].palette = NULL;
+			}
+		}
 		for (int i = 0; i < 8; i++)
 		{
 			if (textures[i])
@@ -549,7 +556,12 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	}
 	if(bpp == 8)
 	{
-		ddinterface->CreatePalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256,(LPPALETTEENTRY)&DefaultPalette,&pal,NULL);
+		ddinterface->CreatePalette(DDPCAPS_8BIT|DDPCAPS_ALLOW256,(LPPALETTEENTRY)&DefaultPalette8,&pal,NULL);
+		ddsrender->SetPalette(pal);
+	}
+	else if (bpp == 4)
+	{
+		ddinterface->CreatePalette(DDPCAPS_4BIT, (LPPALETTEENTRY)&DefaultPalette4, &pal, NULL);
 		ddsrender->SetPalette(pal);
 	}
 	else pal = NULL;
@@ -2326,6 +2338,15 @@ void RunTestTimed(int test)
 	}
 }
 
+DWORD PaletteType(DWORD flags)
+{
+	if (flags & DDPF_PALETTEINDEXED1) return 1;
+	else if (flags & DDPF_PALETTEINDEXED2) return 2;
+	else if (flags & DDPF_PALETTEINDEXED4) return 4;
+	else if (flags & DDPF_PALETTEINDEXED8) return 8;
+	else return 0;
+}
+
 void RunSurfaceFormatTest()
 {
 	HRESULT error;
@@ -2356,10 +2377,20 @@ void RunSurfaceFormatTest()
 		sprites[0].surface->Release();
 		sprites[0].surface = NULL;
 	}
+	if (sprites[0].palette)
+	{
+		sprites[0].palette->Release();
+		sprites[0].palette = NULL;
+	}
 	if (sprites[1].surface)
 	{
 		sprites[1].surface->Release();
 		sprites[1].surface = NULL;
+	}
+	if (sprites[1].palette)
+	{
+		sprites[1].palette->Release();
+		sprites[1].palette = NULL;
 	}
 	ddsrender->GetSurfaceDesc(&ddsd);
 	switch (testmethod)
@@ -2386,6 +2417,27 @@ void RunSurfaceFormatTest()
 		}
 		else
 		{
+			switch (PaletteType(ddsd.ddpfPixelFormat.dwFlags))
+			{
+			case 0:
+				break;
+			case 1:
+				ddinterface->CreatePalette(DDPCAPS_1BIT, (LPPALETTEENTRY)&DefaultPalette1, &sprites[0].palette, NULL);
+				sprites[0].surface->SetPalette(sprites[0].palette);
+				break;
+			case 2:
+				ddinterface->CreatePalette(DDPCAPS_2BIT, (LPPALETTEENTRY)&DefaultPalette2, &sprites[0].palette, NULL);
+				sprites[0].surface->SetPalette(sprites[0].palette);
+				break;
+			case 4:
+				ddinterface->CreatePalette(DDPCAPS_4BIT, (LPPALETTEENTRY)&DefaultPalette4, &sprites[0].palette, NULL);
+				sprites[0].surface->SetPalette(sprites[0].palette);
+				break;
+			case 8:
+				ddinterface->CreatePalette(DDPCAPS_8BIT, (LPPALETTEENTRY)&DefaultPalette8, &sprites[0].palette, NULL);
+				sprites[0].surface->SetPalette(sprites[0].palette);
+				break;
+			}
 			// FIXME: Select pattern
 			error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
 			if (error)

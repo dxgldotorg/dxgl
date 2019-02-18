@@ -1580,7 +1580,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 		ddsdMode.dwHeight = primaryy;
 		ddsdMode.dwRefreshRate = primaryrefresh;
 		if(primarybpp == 15) ddsdMode.lPitch = NextMultipleOf4(primaryx * 2);
-			else if(primarybpp == 4) ddsdMode.lPitch = NextMultipleOf4(primaryx / 2);
+			else if(primarybpp == 4) ddsdMode.lPitch = NextMultipleOf2(primaryx / 2);
 			else ddsdMode.lPitch = NextMultipleOf4(primaryx * (primarybpp / 8));
 		if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
 		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
