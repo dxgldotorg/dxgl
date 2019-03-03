@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2016 William Feely
+// Copyright (C) 2015-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -315,6 +315,7 @@ typedef struct glTexture
 	int convfunctionupload;
 	int convfunctiondownload;
 	int internalsize;
+	unsigned char blttype;
 	struct glTexture *palette;
 	struct glTexture *stencil;
 	struct glTexture *dummycolor;
@@ -426,6 +427,7 @@ typedef struct glDirectDrawPalette
 	IUnknown *creator;
 	LPDIRECTDRAWSURFACE7 surface;
 	DXGLTimer *timer;
+	DWORD palsize;
 } glDirectDrawPalette;
 
 // Function pointer table for glDirectDrawPalette

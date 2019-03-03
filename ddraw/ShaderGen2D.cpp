@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2018 William Feely
+// Copyright (C) 2013-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -66,12 +66,12 @@ Texture types:
 0x11: 4-bit palette
 0x12: 2-bit palette
 0x13: 1-bit palette
-0x14: 4-bit palette index
-0x15: 2-bit palette index
-0x16: 1-bit palette index
-0x20: (first entry for specific RGB formats)
-0x80: (first entry for specific YUV formats)
-0xC0: (first entry for compressed)
+0x14: 4-bit palette index (future)
+0x15: 2-bit palette index (future)
+0x16: 1-bit palette index (future)
+0x20: (first entry for specific RGB formats) (future)
+0x80: (first entry for specific YUV formats) (future)
+0xC0: (first entry for compressed)			 (future)
 */
 
 static const char revheader[] =
@@ -99,6 +99,8 @@ static const char unif_srctex[] = "uniform sampler2D srctex;\n";
 static const char unif_desttex[] = "uniform sampler2D desttex;\n";
 static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
 static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
+static const char unif_srcpal[] = "uniform sampler2D srcpal;\n";
+static const char unif_destpal[] = "uniform sampler2D destpal;\n";
 static const char unif_ckeysrc[] = "uniform ivec3 ckeysrc;\n";
 static const char unif_ckeydest[] = "uniform ivec3 ckeydest;\n";
 static const char unif_ckeysrchigh[] = "uniform ivec3 ckeysrchigh;\n";
@@ -118,6 +120,9 @@ static const char var_patternst[] = "vec2 patternst;\n";
 // Operations
 static const char op_src[] = "src = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
 static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_palpixel[] = "vec4 myindex = texture2D(srctex, gl_TexCoord[0].xy);\n\
+vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
+pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
 static const char op_color[] = "pixel = fillcolor;\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
@@ -730,11 +735,14 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	tmp.ptr = NULL;
 	BOOL intproc = FALSE;
 	BOOL usedest = FALSE;
+	unsigned char srctype = (id >> 32) & 0xFF;
+	unsigned char srctype2;
+	unsigned char desttype = (id >> 40) & 0xFF;
 	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
 	gen->genshaders2D[index].shader.fsrc.ptr = NULL;
-	char idstring[22];
-	_snprintf(idstring, 21, "%0.8I32X\n", id);
-	idstring[21] = 0;
+	char idstring[30];
+	_snprintf(idstring, 29, "%0.16I64X\n", id);
+	idstring[29] = 0;
 	// Create vertex shader
 	// Header
 	STRING *vsrc = &gen->genshaders2D[index].shader.vsrc;
@@ -859,6 +867,19 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		String_Append(fsrc, unif_ckeydest);
 		if (id & 0x40000000) String_Append(fsrc, unif_ckeydesthigh);
 	}
+	if (srctype == desttype) srctype2 = 0;
+	else srctype2 = srctype;
+	switch (srctype2)
+	{
+	default:
+		break;
+	case 0x10:
+	case 0x11:
+	case 0x12:
+	case 0x13:
+		String_Append(fsrc, unif_srcpal);
+		break;
+	}
 
 	// Variables
 	String_Append(fsrc, var_pixel);
@@ -877,7 +898,22 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	String_Append(fsrc, mainstart);
 	if (id & 0x10000000) String_Append(fsrc, op_clip);
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
-	else String_Append(fsrc, op_pixel);
+	else
+	{
+		switch (srctype2)
+		{
+		case 0:
+		default:
+			String_Append(fsrc, op_pixel);
+			break;
+		case 0x10:
+		case 0x11:
+		case 0x12:
+		case 0x13:
+			String_Append(fsrc, op_palpixel);
+			break;
+		}
+	}
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, op_src);
 	if (usedest) String_Append(fsrc, op_dest);
 	if (id & DDBLT_KEYSRC)
@@ -966,6 +1002,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	gen->genshaders2D[index].shader.uniforms[10] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizesrc");
 	gen->genshaders2D[index].shader.uniforms[11] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizedest");
 	gen->genshaders2D[index].shader.uniforms[12] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "fillcolor");
-	
+	gen->genshaders2D[index].shader.uniforms[13] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srcpal");
+	gen->genshaders2D[index].shader.uniforms[14] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "destpal");
+
 	gen->genshaders2D[index].id = id;
 }

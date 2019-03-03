@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2018 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -3379,6 +3379,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		if (rop_texture_usage[(cmd->bltfx.dwROP >> 16) & 0xFF] & 4) usepattern = TRUE;
 	}
 	else shaderid = cmd->flags & 0xF2FAADFF;
+	if (cmd->src) shaderid |= ((long long)cmd->src->blttype << 32);
 	//TODO:  Add src/dest texture types
 	if (cmd->flags & DDBLT_KEYDEST) usedest = TRUE;
 	if (IsAlphaCKey())
@@ -3515,6 +3516,22 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		This->ext->glUniform1i(shader->shader.uniforms[4],11);
 		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
+	}
+	switch ((shaderid >> 32) & 0xFF)
+	{
+	case 0x10:
+	case 0x11:
+	case 0x12:
+	case 0x13: // Use palette
+		if (cmd->src->palette)
+		{
+			if (cmd->src->palette->levels[0].dirty & 1) glTexture__Upload(cmd->src->palette, 0);
+			glUtil_SetTexture(This->util, 12, cmd->src->palette);
+			This->ext->glUniform1i(shader->shader.uniforms[13], 12);
+		}
+		break;
+	default:
+		break;
 	}
 	if (cmd->src)
 	{

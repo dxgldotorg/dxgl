@@ -814,6 +814,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->convfunctionupload = 11;
 		This->convfunctiondownload = 14;
 		This->internalsize = 1;  // Store in R8/LUMINANCE8 texture
+		This->blttype = 0x13;
 		if (This->renderer->ext->glver_major >= 3)
 		{
 			This->internalformats[0] = GL_R8;
@@ -840,6 +841,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->convfunctionupload = 12;
 		This->convfunctiondownload = 15;
 		This->internalsize = 1;  // Store in R8/LUMINANCE8 texture
+		This->blttype = 0x12;
 		if (This->renderer->ext->glver_major >= 3)
 		{
 			This->internalformats[0] = GL_R8;
@@ -866,6 +868,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->convfunctionupload = 13;
 		This->convfunctiondownload = 16;
 		This->internalsize = 1;  // Store in R8/LUMINANCE8 texture
+		This->blttype = 0x11;
 		if (This->renderer->ext->glver_major >= 3)
 		{
 			This->internalformats[0] = GL_R8;
@@ -888,6 +891,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 3: // 8-bit palette
+		This->blttype = 0x10;
 		if (This->renderer->ext->glver_major >= 3)
 		{
 			This->internalformats[0] = GL_R8;

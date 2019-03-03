@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2016 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -149,7 +149,7 @@ void ShaderGen3D_ClearShaders(ShaderGen3D *This)
   */
 int __cdecl compshader2D(const GenShader2D *elem1, const  GenShader2D *elem2)
 {
-	return elem1->id - elem2->id;
+	return memcmp(&elem1->id, &elem2->id, sizeof(__int64));
 }
 
 /**
@@ -200,7 +200,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->current_shadertype = 1;
 		GenShader2D key2d;
 		GenShader2D *shader2d;
-		key2d.id = id & 0xFFFFFFFF;
+		key2d.id = id;
 		shader2d = (GenShader2D*)bsearch(&key2d, gen2d->genshaders2D, gen2d->genindex, sizeof(GenShader2D),
 			(int(__cdecl *) (const void *, const void *))compshader2D);
 		if (!shader2d)
@@ -216,7 +216,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 				String_Free(&gen2d->genshaders2D[gen2d->genindex].shader.fsrc);
 				ZeroMemory(&gen2d->genshaders2D[gen2d->genindex], sizeof(GenShader2D));
 			}
-			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id & 0xFFFFFFFF);
+			ShaderGen2D_CreateShader2D(gen2d, gen2d->genindex, id);
 			gen2d->genindex++;
 			if (gen2d->genindex >= gen2d->maxshaders)
 			{

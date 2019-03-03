@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -235,13 +235,16 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 	memcpy(((char *)This->palette)+(dwStartingEntry*entrysize),lpEntries,dwCount*entrysize);
 	if (!(This->flags & DDPCAPS_ALLOW256))
 	{
-		memcpy(&This->palette[0], DefaultPalette, 4);
-		memcpy(&This->palette[255], DefaultPalette + 1020, 4);
+		if (This->flags & DDPCAPS_8BIT)
+		{
+			memcpy(&This->palette[0], DefaultPalette, 4);
+			memcpy(&This->palette[255], DefaultPalette + 1020, 4);
+		}
 	}
 	if (This->texture)
 	{
 		glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
-		memcpy(ddsd.lpSurface, This->palette, 1024);
+		memcpy(ddsd.lpSurface, This->palette, 4 * This->palsize);
 		glTexture_Unlock(This->texture, 0, NULL, FALSE);
 	}
 	if ((This->flags & DDPCAPS_PRIMARYSURFACE) && (This->surface))
@@ -287,7 +290,25 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
 	if (!IsWritablePointer(lplpDDPalette, sizeof(LPDIRECTDRAWPALETTE), FALSE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	if (lpDDColorArray && !IsReadablePointer(lpDDColorArray,256*sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDColorArray)
+	{
+		if (dwFlags & DDPCAPS_8BIT)
+		{
+			if (!IsReadablePointer(lpDDColorArray, 256 * sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		}
+		if (dwFlags & DDPCAPS_4BIT)
+		{
+			if (!IsReadablePointer(lpDDColorArray, 16 * sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		}
+		if (dwFlags & DDPCAPS_2BIT)
+		{
+			if (!IsReadablePointer(lpDDColorArray, 4 * sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		}
+		if (dwFlags & DDPCAPS_1BIT)
+		{
+			if (!IsReadablePointer(lpDDColorArray, 2 * sizeof(PALETTEENTRY))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		}
+	}
 	if (dwFlags & 0xFFFFF000) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDPCAPS_8BIT) && (dwFlags & DDPCAPS_8BITENTRIES)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (((dwFlags & DDPCAPS_1BIT) || (dwFlags & DDPCAPS_2BIT) || (dwFlags & DDPCAPS_4BIT)) && (dwFlags & DDPCAPS_ALLOW256))
@@ -309,15 +330,24 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	}
 	else
 	{
-		if(newpal->flags & DDPCAPS_1BIT)
-			if(newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette,lpDDColorArray,2);
-			else memcpy(newpal->palette,lpDDColorArray,2*sizeof(PALETTEENTRY));
-		else if(newpal->flags & DDPCAPS_2BIT)
-			if(newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette,lpDDColorArray,4);
-			else memcpy(newpal->palette,lpDDColorArray,4*sizeof(PALETTEENTRY));
-		else if(newpal->flags & DDPCAPS_4BIT)
-			if(newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette,lpDDColorArray,16);
-			else memcpy(newpal->palette,lpDDColorArray,16*sizeof(PALETTEENTRY));
+		if (newpal->flags & DDPCAPS_1BIT)
+		{
+			if (newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette, lpDDColorArray, 2);
+			else memcpy(newpal->palette, lpDDColorArray, 2 * sizeof(PALETTEENTRY));
+			newpal->palsize = 2;
+		}
+		else if (newpal->flags & DDPCAPS_2BIT)
+		{
+			if (newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette, lpDDColorArray, 4);
+			else memcpy(newpal->palette, lpDDColorArray, 4 * sizeof(PALETTEENTRY));
+			newpal->palsize = 4;
+		}
+		else if (newpal->flags & DDPCAPS_4BIT)
+		{
+			if (newpal->flags & DDPCAPS_8BITENTRIES) memcpy(newpal->palette, lpDDColorArray, 16);
+			else memcpy(newpal->palette, lpDDColorArray, 16 * sizeof(PALETTEENTRY));
+			newpal->palsize = 16;
+		}
 		else
 		{
 			memcpy(newpal->palette, lpDDColorArray, 256 * sizeof(PALETTEENTRY));
@@ -326,6 +356,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 				memcpy(&newpal->palette[0], DefaultPalette, 4);
 				memcpy(&newpal->palette[255], DefaultPalette + 1020, 4);
 			}
+			newpal->palsize = 256;
 		}
 	}
 	if(lplpDDPalette) *lplpDDPalette = (LPDIRECTDRAWPALETTE)newpal;
@@ -338,8 +369,10 @@ void glDirectDrawPalette_CreateTexture(glDirectDrawPalette *This, struct glRende
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, &ddsd256pal, sizeof(DDSURFACEDESC2));
-	glTexture_Create(&ddsd256pal, &This->texture, renderer, 256, 1, FALSE, FALSE);
+	ddsd.dwWidth = This->palsize;
+	ddsd.lPitch = This->palsize * 4;
+	glTexture_Create(&ddsd, &This->texture, renderer, This->palsize, 1, FALSE, FALSE);
 	glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
-	memcpy(ddsd.lpSurface, This->palette, 1024);
+	memcpy(ddsd.lpSurface, This->palette, (This->palsize * 4));
 	glTexture_Unlock(This->texture, 0, NULL, FALSE);
 }

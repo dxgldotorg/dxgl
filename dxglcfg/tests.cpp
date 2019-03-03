@@ -2477,6 +2477,27 @@ void RunSurfaceFormatTest()
 					}
 					else
 					{
+						switch (PaletteType(ddsd.ddpfPixelFormat.dwFlags))
+						{
+						case 0:
+							break;
+						case 1:
+							ddinterface->CreatePalette(DDPCAPS_1BIT, (LPPALETTEENTRY)&DefaultPalette1, &sprites[1].palette, NULL);
+							sprites[1].surface->SetPalette(sprites[1].palette);
+							break;
+						case 2:
+							ddinterface->CreatePalette(DDPCAPS_2BIT, (LPPALETTEENTRY)&DefaultPalette2, &sprites[1].palette, NULL);
+							sprites[1].surface->SetPalette(sprites[1].palette);
+							break;
+						case 4:
+							ddinterface->CreatePalette(DDPCAPS_4BIT, (LPPALETTEENTRY)&DefaultPalette4, &sprites[1].palette, NULL);
+							sprites[1].surface->SetPalette(sprites[1].palette);
+							break;
+						case 8:
+							ddinterface->CreatePalette(DDPCAPS_8BIT, (LPPALETTEENTRY)&DefaultPalette8, &sprites[1].palette, NULL);
+							sprites[1].surface->SetPalette(sprites[1].palette);
+							break;
+						}
 						error = sprites[1].surface->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
 						if (error)
 						{
