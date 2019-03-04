@@ -1797,6 +1797,9 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDSCL_EXCLUSIVE) && !hWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFE020) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	DWORD winver = GetVersion();
+	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
+	DWORD winverminor = (DWORD)(HIBYTE(LOWORD(winver)));
 	/*if (((hWnd != this->hWnd) && this->hWnd) || (this->hWnd && (dwFlags & DDSCL_NORMAL)))
 	{
 		if (winstyle)
@@ -1877,8 +1880,16 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		GetClientRect(hWnd,&rect);
 		x = rect.right - rect.left;
 		y = rect.bottom - rect.top;
-		internalx = screenx = primaryx = devmode.dmPelsWidth;
-		internaly = screeny = primaryy = devmode.dmPelsHeight;
+		if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
+		{
+			internalx = screenx = primaryx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+			internaly = screeny = primaryy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+		}
+		else
+		{
+			internalx = screenx = primaryx = devmode.dmPelsWidth;
+			internaly = screeny = primaryy = devmode.dmPelsHeight;
+		}
 	}
 	bpp = devmode.dmBitsPerPel;
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;

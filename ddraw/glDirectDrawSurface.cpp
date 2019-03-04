@@ -75,6 +75,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	LONG sizes[6];
 	int i;
 	float xscale, yscale;
+	DWORD winver, winvermajor, winverminor;
 	ddInterface->GetSizes(sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
@@ -184,8 +185,19 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 			}
 			else
 			{
-				fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXSCREEN);
-				fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYSCREEN);
+				winver = GetVersion();
+				winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
+				winverminor = (DWORD)(HIBYTE(LOWORD(winver)));
+				if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
+				{
+					fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+					fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+				}
+				else
+				{
+					fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXSCREEN);
+					fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYSCREEN);
+				}
 				ddsd.dwFlags |= (DDSD_WIDTH | DDSD_HEIGHT);
 				*error = DD_OK;
 			}
