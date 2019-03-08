@@ -160,6 +160,7 @@ typedef struct glRenderer
 	GLsizei fvf_stride;
 	BOOL mode_3d;
 	float postsizex, postsizey;
+	int xoffset, yoffset;
 } glRenderer;
 
 HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait);

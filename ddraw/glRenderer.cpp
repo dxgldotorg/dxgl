@@ -3992,6 +3992,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			viewport[3] = viewrect->bottom;
 			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
 			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
+			OffsetRect(viewrect, 0 - This->xoffset, 0 -	This->yoffset);
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
 			view[2] = (GLfloat)texture->bigheight-(GLfloat)viewrect->top;

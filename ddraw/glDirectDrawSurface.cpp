@@ -192,6 +192,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				{
 					fakex = ddsd.dwWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 					fakey = ddsd.dwHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+					ddInterface->renderer->xoffset = GetSystemMetrics(SM_XVIRTUALSCREEN);
+					ddInterface->renderer->yoffset = GetSystemMetrics(SM_YVIRTUALSCREEN);
 				}
 				else
 				{
@@ -758,9 +760,9 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 {
 	HRESULT error;
 	RECT tmprect;
-	glDirectDrawSurface7 *pattern;
+	glDirectDrawSurface7* pattern;
 	BltCommand cmd;
-	TRACE_ENTER(6,14,this,26,lpDestRect,14,lpDDSrcSurface,26,lpSrcRect,9,dwFlags,14,lpDDBltFx);
+	TRACE_ENTER(6, 14, this, 26, lpDestRect, 14, lpDDSrcSurface, 26, lpSrcRect, 9, dwFlags, 14, lpDDBltFx);
 	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 32, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
@@ -768,7 +770,12 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	ZeroMemory(&cmd, sizeof(BltCommand));
 	cmd.dest = this->texture;
 	cmd.destlevel = this->miplevel;
-	if (lpDestRect) cmd.destrect = *lpDestRect;
+	if (lpDestRect)
+	{
+		cmd.destrect = *lpDestRect;
+		if(!ddInterface->GetFullscreen() && (ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+			OffsetRect(&cmd.destrect, 0 - ddInterface->renderer->xoffset, 0 - ddInterface->renderer->yoffset);
+	}
 	else cmd.destrect = nullrect;
 	if (lpSrcRect) cmd.srcrect = *lpSrcRect;
 	else cmd.srcrect = nullrect;
