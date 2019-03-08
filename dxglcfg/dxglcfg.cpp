@@ -3141,8 +3141,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	{
 	case WM_INITDIALOG:
 		hProgressWnd = NULL;
-		CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, &threadid);
-		while (hProgressWnd == NULL) Sleep(10);
+		/*CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, &threadid);
+		while (hProgressWnd == NULL) Sleep(10);*/
 		hDialog = hWnd;
 		ZeroMemory(&wndclass, sizeof(WNDCLASSEX));
 		wndclass.cbSize = sizeof(WNDCLASSEX);
@@ -3958,8 +3958,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			EnableWindow(GetDlgItem(hTabs[0], IDC_DPISCALE), FALSE);
 		}
 		if(token) CloseHandle(token);
-		SendMessage(hProgressWnd, WM_USER+1, 0, 0);
-		SetForegroundWindow(hWnd);
+		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
+		SetForegroundWindow(hWnd);*/
 		return TRUE;
 	case WM_MEASUREITEM:
 		switch(wParam)
