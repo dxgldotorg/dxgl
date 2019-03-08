@@ -69,6 +69,8 @@ Texture types:
 0x14: 4-bit palette index (future)
 0x15: 2-bit palette index (future)
 0x16: 1-bit palette index (future)
+0x18: 24-bit Depth
+0x19: 24-bit Depth, 8-bit Stencil
 0x20: (first entry for specific RGB formats) (future)
 0x80: (first entry for specific YUV formats) (future)
 0xC0: (first entry for compressed)			 (future)
@@ -123,6 +125,7 @@ static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st
 static const char op_palpixel[] = "vec4 myindex = texture2D(srctex, gl_TexCoord[0].xy);\n\
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
 pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
 static const char op_color[] = "pixel = fillcolor;\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
@@ -911,6 +914,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x12:
 		case 0x13:
 			String_Append(fsrc, op_palpixel);
+			break;
+		case 0x18:
+		case 0x19:
+			String_Append(fsrc, op_pixelmul256);
 			break;
 		}
 	}

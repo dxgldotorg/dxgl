@@ -1140,6 +1140,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->convfunctionupload = 17;
 		This->convfunctiondownload = 18;
 		This->internalsize = 4;
+		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1154,6 +1155,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 20: // 32/24 bit Z buffer
+		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1182,6 +1184,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 22: // 32-bit Z/Stencil buffer, depth LSB
+		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
@@ -1196,6 +1199,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 8;
 		break;
 	case 23: // 32-bit Z/Stencil buffer, depth MSB
+		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
