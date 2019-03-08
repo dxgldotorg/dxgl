@@ -12,8 +12,8 @@
 #define DXGLVERQWORD (((unsigned __int64)DXGLMAJOR<<48)+((unsigned __int64)DXGLMINOR<<32)+((unsigned __int64)DXGLPOINT<<16)+(unsigned __int64)DXGLBUILD)
 #define DXGLVERSTRING $VERSTRING
 
-#define COPYYEAR 2018
-#define COPYYEARSTRING "2018"
+#define COPYYEAR 2019
+#define COPYYEARSTRING "2019"
 
 #define SHADER2DVERSION 1
 #define SHADER3DVERSION 1

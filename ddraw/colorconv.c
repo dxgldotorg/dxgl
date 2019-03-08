@@ -38,6 +38,8 @@ COLORCONVPROC colorconvproc[] =
 	pal8topal1,         // 14
 	pal8topal2,         // 15
 	pal8topal4,         // 16
+	bpp24tobpp32,       // 17
+	bpp32tobpp24,       // 18
 };
 
 __inline unsigned int _1to8(unsigned int input)
@@ -290,4 +292,26 @@ void uyvytorgbx8888(size_t count, DWORD *dest, DWORD *src)
 void rgbx8888touyvy(size_t count, DWORD *dest, DWORD *src)
 {
 
+}
+
+void bpp24tobpp32(size_t count, DWORD *dest, BYTE *src)
+{
+	size_t i;
+	for (i = 0; i < count; i++)
+	{
+		dest[i] = (src[i * 3] | (src[(i * 3) + 1] << 8) | (src[(i * 3) + 2] << 16));
+	}
+}
+
+void bpp32tobpp24(size_t count, BYTE *dest, DWORD *src)
+{
+	size_t i;
+	DWORD in;
+	for (i = 0; i < count; i++)
+	{
+		in = src[i];
+		dest[i * 3] = in & 0xFF;
+		dest[(i * 3) + 1] = (in >> 8) & 0xFF;
+		dest[(i * 3) + 2] = (in >> 16) & 0xFF;
+	}
 }

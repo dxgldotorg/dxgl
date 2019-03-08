@@ -43,6 +43,8 @@ void rgba4444torgba8888(size_t count, DWORD *dest, WORD *src);
 void rgba8888torgba4444(size_t count, WORD *dest, DWORD *src);
 void uyvytorgbx8888(size_t count, DWORD *dest, DWORD *src);
 void rgbx8888touyvy(size_t count, DWORD *dest, DWORD *src);
+void bpp24tobpp32(size_t count, DWORD *dest, BYTE *src);
+void bpp32tobpp24(size_t count, BYTE *dest, DWORD *src);
 
 #ifdef __cplusplus
 }

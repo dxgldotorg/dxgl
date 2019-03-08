@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2019 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -3136,7 +3136,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	HWND hProgressWnd;
 	WNDCLASSEX wndclass;
 	HWND hTempWnd;
-	DWORD threadid;
+	//DWORD threadid;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:

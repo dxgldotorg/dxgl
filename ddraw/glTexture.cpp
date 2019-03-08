@@ -1136,9 +1136,13 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 0;
 		break;
 	case 19: // 24-bit Z buffer
+		This->useconv = TRUE;
+		This->convfunctionupload = 17;
+		This->convfunctiondownload = 18;
+		This->internalsize = 4;
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
-		This->type = GL_UNSIGNED_SHORT;
+		This->type = GL_UNSIGNED_INT;
 		This->colororder = 4;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;
