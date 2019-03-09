@@ -323,6 +323,16 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 					}
 				}
 			}
+			else if ((ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER) && (ddsd.ddpfPixelFormat.dwZBitMask == 0xFFFFFF00))
+			{
+				for (y = 0; y < ddsd.dwHeight; y++)
+				{
+					for (x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer32[x + ((ddsd.lPitch / 4) * y)] = (unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))) << 8;
+					}
+				}
+			}
 			else
 			{
 				for (y = 0; y < ddsd.dwHeight; y++)
@@ -1740,6 +1750,7 @@ static const LPTSTR strSurfaceFormats[] =
 	_T("16-bit Zbuffer"),
 	_T("24-bit Zbuffer"),
 	_T("24-bit Z, 32bit"),
+	_T("24-bit Z,32b.rev"),
 	_T("32-bit Zbuffer"),
 	_T("32-bit Z/stencil"),
 	_T("32-bit Z/st.rev")
@@ -1769,8 +1780,9 @@ const DDPIXELFORMAT surfaceformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ALPHA,						0,		8,		0,			0,			0,			0},  // 8-bit alpha
 	{sizeof(DDPIXELFORMAT),	DDPF_LUMINANCE|DDPF_ALPHAPIXELS,0,		16,		0xFF,		0,			0,			0xFF00},  // 8-bit luminance alpha
 	{sizeof(DDPIXELFORMAT), DDPF_ZBUFFER,					0,		16,		0,			0xFFFF,		0,			0},  // 16 bit Z buffer
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		24,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		24,		0,			0xFFFFFF,	0,			0},  // 24 bit Z buffer
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF,	0,			0},  // 24 bit Z buffer, 32-bit space
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space, reversed
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}   // 32 bit Z buffer with stencil, reversed

@@ -88,8 +88,9 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ALPHA,						0,		8,		0,			0,			0,			0},  // 8-bit alpha
 	{sizeof(DDPIXELFORMAT),	DDPF_LUMINANCE|DDPF_ALPHAPIXELS,0,		16,		0xFF,		0,			0,			0xFF00},  // 8-bit luminance alpha
 	{sizeof(DDPIXELFORMAT), DDPF_ZBUFFER,					0,		16,		0,			0xFFFF,		0,			0},  // 16 bit Z buffer
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		24,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		24,		0,			0xFFFFFF,	0,			0},  // 24 bit Z buffer
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF,	0,			0},  // 24 bit Z buffer, 32-bit space
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space, reversed
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}   // 32 bit Z buffer with stencil, reversed
@@ -1191,7 +1192,22 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 21: // 32-bit Z buffer
+	case 21: // 32/24 bit Z buffer reversed
+		This->internalformats[0] = GL_DEPTH_COMPONENT24;
+		This->format = GL_DEPTH_COMPONENT;
+		This->type = GL_UNSIGNED_INT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
+		This->colororder = 4;
+		This->colorsizes[0] = 16777215;
+		This->colorsizes[1] = 16777215;
+		This->colorsizes[2] = 16777215;
+		This->colorsizes[3] = 16777215;
+		This->colorbits[0] = 24;
+		This->colorbits[1] = 0;
+		This->colorbits[2] = 0;
+		This->colorbits[3] = 0;
+		break;
+	case 22: // 32-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT32;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1206,8 +1222,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
 		break;
-	case 22: // 32-bit Z/Stencil buffer, depth LSB
-		This->blttype = 0x18;
+	case 23: // 32-bit Z/Stencil buffer, depth LSB
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
@@ -1222,7 +1237,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
 		break;
-	case 23: // 32-bit Z/Stencil buffer, depth MSB
+	case 24: // 32-bit Z/Stencil buffer, depth MSB
 		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
