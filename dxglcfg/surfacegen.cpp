@@ -313,11 +313,24 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 			}
 			return;
 		case 32:
-			for(y = 0; y < ddsd.dwHeight; y++)
+			if ((ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER) && (ddsd.ddpfPixelFormat.dwZBitMask == 0xFFFFFFFF))
 			{
-				for(x = 0; x < ddsd.dwWidth; x++)
+				for (y = 0; y < ddsd.dwHeight; y++)
 				{
-					buffer32[x+((ddsd.lPitch/4)*y)] = (unsigned long)((x/(ddsd.dwWidth/4096.)) + 4096*floor((y/(ddsd.dwHeight/4096.))));
+					for (x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer32[x + ((ddsd.lPitch / 4) * y)] = (unsigned long)((x / (ddsd.dwWidth / 65536.)) + 65536 * floor((y / (ddsd.dwHeight / 65536.))));
+					}
+				}
+			}
+			else
+			{
+				for (y = 0; y < ddsd.dwHeight; y++)
+				{
+					for (x = 0; x < ddsd.dwWidth; x++)
+					{
+						buffer32[x + ((ddsd.lPitch / 4) * y)] = (unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.))));
+					}
 				}
 			}
 			return;
