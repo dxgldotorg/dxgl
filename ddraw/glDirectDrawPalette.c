@@ -371,7 +371,7 @@ void glDirectDrawPalette_CreateTexture(glDirectDrawPalette *This, struct glRende
 	memcpy(&ddsd, &ddsd256pal, sizeof(DDSURFACEDESC2));
 	ddsd.dwWidth = This->palsize;
 	ddsd.lPitch = This->palsize * 4;
-	glTexture_Create(&ddsd, &This->texture, renderer, This->palsize, 1, FALSE, FALSE);
+	glTexture_Create(&ddsd, &This->texture, renderer, This->palsize, 1, FALSE, FALSE, 0);
 	glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
 	memcpy(ddsd.lpSurface, This->palette, (This->palsize * 4));
 	glTexture_Unlock(This->texture, 0, NULL, FALSE);

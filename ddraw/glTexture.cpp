@@ -127,7 +127,7 @@ void ShrinkMip(DWORD *x, DWORD *y)
 	*y = max(1, (DWORD)floorf((float)*y / 2.0f));
 }
 
-HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend)
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend, GLenum targetoverride)
 {
 	glTexture *newtexture;
 	if (!texture) return DDERR_INVALIDPARAMS;
@@ -143,6 +143,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	newtexture->useconv = FALSE;
 	newtexture->pboPack = NULL;
 	newtexture->pboUnpack = NULL;
+	newtexture->target = targetoverride;
 	if (bigwidth)
 	{
 		newtexture->bigwidth = bigwidth;
@@ -405,7 +406,7 @@ void glTexture_CreateDummyColor(glTexture *This, BOOL backend)
 	ddsd.dwWidth = This->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = This->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->dummycolor, This->renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, backend);
+	glTexture_Create(&ddsd, &This->dummycolor, This->renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, backend, 0);
 }
 void glTexture_DeleteDummyColor(glTexture *This, BOOL backend)
 {
@@ -489,12 +490,12 @@ void glTexture__Download(glTexture *This, GLint level)
 				inpitch * This->levels[level].ddsd.dwHeight, NULL, GL_DYNAMIC_READ);
 		BufferObject_Bind(This->pboPack, GL_PIXEL_PACK_BUFFER);
 		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-			This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, 0);
+			This->renderer->ext->glGetTextureImageEXT(This->id, This->target, level, This->format, This->type, 0);
 		else
 		{
 			glUtil_SetActiveTexture(This->renderer->util, 0);
 			glUtil_SetTexture(This->renderer->util, 0, This);
-			glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, 0);
+			glGetTexImage(This->target, level, This->format, This->type, 0);
 		}
 		BufferObject_Unbind(This->pboPack, GL_PIXEL_PACK_BUFFER);
 		readbuffer = (char*)BufferObject_Map(This->pboPack, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
@@ -512,23 +513,23 @@ void glTexture__Download(glTexture *This, GLint level)
 		if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
 		{
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-				This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+				This->renderer->ext->glGetTextureImageEXT(This->id, This->target, level, This->format, This->type, This->levels[level].buffer);
 			else
 			{
 				glUtil_SetActiveTexture(This->renderer->util, 0);
 				glUtil_SetTexture(This->renderer->util, 0, This);
-				glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].buffer);
+				glGetTexImage(This->target, level, This->format, This->type, This->levels[level].buffer);
 			}
 		}
 		else
 		{
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
-				This->renderer->ext->glGetTextureImageEXT(This->id, GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
+				This->renderer->ext->glGetTextureImageEXT(This->id, This->target, level, This->format, This->type, This->levels[level].bigbuffer);
 			else
 			{
 				glUtil_SetActiveTexture(This->renderer->util, 0);
 				glUtil_SetTexture(This->renderer->util, 0, This);
-				glGetTexImage(GL_TEXTURE_2D, level, This->format, This->type, This->levels[level].bigbuffer);
+				glGetTexImage(This->target, level, This->format, This->type, This->levels[level].bigbuffer);
 			}
 			switch (bpp)
 			{
@@ -598,17 +599,17 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 		BufferObject_Bind(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
 		if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 		{
-			/*if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
+			/*if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, This->target, level, This->internalformats[0],
 				width, height, 0, This->format, This->type, data);
-			else */This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
+			else */This->renderer->ext->glTextureSubImage2DEXT(This->id, This->target, level,
 				0, 0, width, height, This->format, This->type, 0);
 		}
 		else
 		{
 			glUtil_SetActiveTexture(util, 0);
 			glUtil_SetTexture(util, 0, This);
-			/*if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
-			else */glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, 0);
+			/*if (dorealloc)glTexImage2D(This->target, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+			else */glTexSubImage2D(This->target, level, 0, 0, width, height, This->format, This->type, 0);
 		}
 		BufferObject_Unbind(This->pboUnpack, GL_PIXEL_UNPACK_BUFFER);
 	}
@@ -621,17 +622,17 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 				ClearError();
 				if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 				{
-					if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level,
+					if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, This->target, level,
 						This->internalformats[0], width, height, 0, This->format, This->type, data);
-					else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
+					else This->renderer->ext->glTextureSubImage2DEXT(This->id, This->target, level,
 						0, 0, width, height, This->format, This->type, data);
 				}
 				else
 				{
 					glUtil_SetActiveTexture(util, 0);
 					glUtil_SetTexture(util, 0, This);
-					if (dorealloc) glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
-					else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
+					if (dorealloc) glTexImage2D(This->target, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+					else glTexSubImage2D(This->target, level, 0, 0, width, height, This->format, This->type, data);
 				}
 				error = glGetError();
 				if (error != GL_NO_ERROR)
@@ -651,17 +652,17 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 		{
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 			{
-				if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, GL_TEXTURE_2D, level, This->internalformats[0],
+				if (dorealloc)This->renderer->ext->glTextureImage2DEXT(This->id, This->target, level, This->internalformats[0],
 					width, height, 0, This->format, This->type, data);
-				else This->renderer->ext->glTextureSubImage2DEXT(This->id, GL_TEXTURE_2D, level,
+				else This->renderer->ext->glTextureSubImage2DEXT(This->id, This->target, level,
 					0, 0, width, height, This->format, This->type, data);
 			}
 			else
 			{
 				glUtil_SetActiveTexture(util, 0);
 				glUtil_SetTexture(util, 0, This);
-				if (dorealloc)glTexImage2D(GL_TEXTURE_2D, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
-				else glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width, height, This->format, This->type, data);
+				if (dorealloc)glTexImage2D(This->target, level, This->internalformats[0], width, height, 0, This->format, This->type, data);
+				else glTexSubImage2D(This->target, level, 0, 0, width, height, This->format, This->type, data);
 			}
 		}
 	}
@@ -742,9 +743,9 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 			This->internalformats[7] = 0;
 			ClearError();
 			if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
-				glTexImage2D(GL_TEXTURE_2D, i, This->internalformats[0], This->bigwidth,
+				glTexImage2D(This->target, i, This->internalformats[0], This->bigwidth,
 					This->bigheight, 0, This->format, This->type, This->levels[i].bigbuffer);
-			else glTexImage2D(GL_TEXTURE_2D, i, This->internalformats[0], This->levels[i].ddsd.dwWidth,
+			else glTexImage2D(This->target, i, This->internalformats[0], This->levels[i].ddsd.dwWidth,
 				This->levels[i].ddsd.dwHeight, 0, This->format, This->type, This->levels[i].buffer);
 			error = glGetError();
 			if (error != GL_NO_ERROR)
@@ -826,6 +827,7 @@ void glTexture__FinishCreate(glTexture *This)
 			This->format = GL_LUMINANCE;
 		}
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 1;
 		This->colorsizes[1] = 1;
@@ -853,6 +855,7 @@ void glTexture__FinishCreate(glTexture *This)
 			This->format = GL_LUMINANCE;
 		}
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 3;
 		This->colorsizes[1] = 3;
@@ -880,6 +883,7 @@ void glTexture__FinishCreate(glTexture *This)
 			This->format = GL_LUMINANCE;
 		}
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 15;
 		This->colorsizes[1] = 15;
@@ -903,6 +907,7 @@ void glTexture__FinishCreate(glTexture *This)
 			This->format = GL_LUMINANCE;
 		}
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -919,6 +924,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[2] = GL_RGBA8;
 		This->format = GL_RGB;
 		This->type = GL_UNSIGNED_BYTE_3_3_2;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 7;
 		This->colorsizes[1] = 7;
@@ -934,6 +940,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 31;
 		This->colorsizes[1] = 31;
@@ -950,6 +957,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[2] = GL_RGBA8;
 		This->format = GL_RGB;
 		This->type = GL_UNSIGNED_SHORT_5_6_5;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 31;
 		This->colorsizes[1] = 63;
@@ -965,6 +973,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGR;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -980,6 +989,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_RGB;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -994,6 +1004,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1008,6 +1019,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_RGBA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 0;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1026,6 +1038,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 7;
 		This->colorsizes[1] = 7;
@@ -1041,6 +1054,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_SHORT_4_4_4_4_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 15;
 		This->colorsizes[1] = 15;
@@ -1056,6 +1070,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colorbits[0] = 5;
 		This->colorbits[1] = 5;
 		This->colorbits[2] = 5;
@@ -1066,6 +1081,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1082,6 +1098,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[2] = GL_RGBA8;
 		This->format = GL_LUMINANCE;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 5;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1096,6 +1113,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_ALPHA8;
 		This->format = GL_ALPHA;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 6;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1111,6 +1129,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_LUMINANCE_ALPHA;
 		This->type = GL_UNSIGNED_BYTE;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 7;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
@@ -1125,6 +1144,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH_COMPONENT16;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_SHORT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 65535;
 		This->colorsizes[1] = 65535;
@@ -1144,6 +1164,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;
@@ -1159,6 +1180,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;
@@ -1173,6 +1195,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH_COMPONENT32;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
 		This->colorsizes[0] = 4294967295;
 		This->colorsizes[1] = 4294967295;
@@ -1188,6 +1211,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 7;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;
@@ -1203,6 +1227,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
+		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 7;
 		This->colorsizes[0] = 16777215;
 		This->colorsizes[1] = 16777215;
@@ -1234,11 +1259,11 @@ void glTexture__FinishCreate(glTexture *This)
 		}
 	}
 	This->wraps = This->wrapt = GL_CLAMP_TO_EDGE;
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, This->minfilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, This->magfilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, This->wraps);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, This->wrapt);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, This->miplevel - 1);
+	glTexParameteri(This->target, GL_TEXTURE_MIN_FILTER, This->minfilter);
+	glTexParameteri(This->target, GL_TEXTURE_MAG_FILTER, This->magfilter);
+	glTexParameteri(This->target, GL_TEXTURE_WRAP_S, This->wraps);
+	glTexParameteri(This->target, GL_TEXTURE_WRAP_T, This->wrapt);
+	glTexParameteri(This->target, GL_TEXTURE_MAX_LEVEL, This->miplevel - 1);
 	if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
 	{
 		x = This->bigwidth;
@@ -1254,7 +1279,7 @@ void glTexture__FinishCreate(glTexture *This)
 		do
 		{
 			ClearError();
-			glTexImage2D(GL_TEXTURE_2D, i, This->internalformats[0], x, y, 0, This->format, This->type, NULL);
+			glTexImage2D(This->target, i, This->internalformats[0], x, y, 0, This->format, This->type, NULL);
 			This->levels[i].dirty |= 2;
 			ShrinkMip(&x, &y);
 			error = glGetError();
@@ -1332,14 +1357,14 @@ void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, glRe
 			}
 			else if (renderer->ext->GLEXT_EXT_direct_state_access)
 			{
-				renderer->ext->glTextureParameteriEXT(This->id, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
-				renderer->ext->glTextureParameteriEXT(This->id, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
+				renderer->ext->glTextureParameteriEXT(This->id, This->target, GL_TEXTURE_MAG_FILTER, mag);
+				renderer->ext->glTextureParameteriEXT(This->id, This->target, GL_TEXTURE_MIN_FILTER, min);
 			}
 			else
 			{
 				glUtil_SetTexture(renderer->util, level, This);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
+				glTexParameteri(This->target, GL_TEXTURE_MAG_FILTER, mag);
+				glTexParameteri(This->target, GL_TEXTURE_MIN_FILTER, min);
 			}
 			This->magfilter = mag;
 			This->minfilter = min;
@@ -1347,8 +1372,8 @@ void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, glRe
 		else
 		{
 			glUtil_SetTexture(renderer->util, level, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
+			glTexParameteri(This->target, GL_TEXTURE_MAG_FILTER, mag);
+			glTexParameteri(This->target, GL_TEXTURE_MIN_FILTER, min);
 		}
 	}
 }

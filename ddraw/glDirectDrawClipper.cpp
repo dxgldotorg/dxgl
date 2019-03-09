@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -519,5 +519,5 @@ void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *tex
 	ddsd.dwWidth = texture->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = texture->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->texture, renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, FALSE);
+	glTexture_Create(&ddsd, &This->texture, renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, FALSE, 0);
 }

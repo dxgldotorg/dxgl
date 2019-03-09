@@ -310,6 +310,7 @@ typedef struct glTexture
 	int colororder;
 	GLenum format;
 	GLenum type;
+	GLenum target;
 	BOOL zhasstencil;
 	BOOL useconv;
 	int convfunctionupload;

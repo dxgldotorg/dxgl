@@ -3596,7 +3596,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.dwWidth = x2;
 		ddsd.lPitch = x2 * 4;
 		ddsd.dwHeight = y2;
-		glTexture_Create(&ddsd, &This->backbuffer, This, x2, y2, FALSE, TRUE);
+		glTexture_Create(&ddsd, &This->backbuffer, This, x2, y2, FALSE, TRUE, 0);
 	}
 	if((This->backbuffer->levels[0].ddsd.dwWidth != x2) || (This->backbuffer->levels[0].ddsd.dwHeight != y2))
 	{
@@ -3651,7 +3651,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 		ddsd.dwWidth = x2;
 		ddsd.lPitch = x2 * 4;
 		ddsd.dwHeight = y2;
-		glTexture_Create(&ddsd, &This->backbuffer, This, x2, y2, FALSE, TRUE);
+		glTexture_Create(&ddsd, &This->backbuffer, This, x2, y2, FALSE, TRUE, 0);
 	}
 	if ((This->backbuffer->levels[0].ddsd.dwWidth < x2) || (This->backbuffer->levels[0].ddsd.dwHeight < y2))
 	{

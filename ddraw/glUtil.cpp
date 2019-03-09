@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2017 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -150,18 +150,18 @@ void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z
 	{
 		if(This->currentfbo != fbo) This->ext->glBindFramebuffer(GL_FRAMEBUFFER,fbo->fbo);
 		This->currentfbo = fbo;
-		This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,color->id,level);
+		This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,color->target,color->id,level);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
 			if(!fbo->stencil) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z)This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,z->id,zlevel);
+			if(z)This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,z->target,z->id,zlevel);
 			else This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		else
 		{
 			if(fbo->stencil) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_TEXTURE_2D,0,0);
-			if(z) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,z->id,zlevel);
+			if(z) This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,z->target,z->id,zlevel);
 			else This->ext->glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 		}
 		fbo->stencil = stencil;
@@ -172,14 +172,14 @@ void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z
 	{
 		if (This->currentfbo != fbo) This->ext->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 		This->currentfbo = fbo;
-		This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color->id, level);
+		This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, color->target, color->id, level);
 		fbo->fbcolor = color;
 		if(stencil)
 		{
 			if(z)
 			{
-				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, zlevel);
-				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, zlevel);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, z->target, z->id, zlevel);
+				This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, z->target, z->id, zlevel);
 			}
 			else
 			{
@@ -190,7 +190,7 @@ void glUtil_SetFBOTexture(glUtil *This, FBO *fbo, glTexture *color, glTexture *z
 		else
 		{
 			This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
-			if (z)This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, z->id, zlevel);
+			if (z)This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, z->target, z->id, zlevel);
 			else This->ext->glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 		}
 		fbo->stencil = stencil;
@@ -648,13 +648,22 @@ void glUtil_SetActiveTexture(glUtil *This, int level)
 void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
 {
 	GLuint texname;
+	GLenum target;
 	if (level >= 16) return;
-	if (!texture) texname = 0;
-	else texname = texture->id;
+	if (!texture)
+	{
+		texname = 0;
+		target = GL_TEXTURE_2D;
+	}
+	else
+	{
+		texname = texture->id;
+		target = texture->target;
+	}
 	if (texname != This->textures[level])
 	{
 		glUtil_SetActiveTexture(This, level);
-		glBindTexture(GL_TEXTURE_2D, texname);
+		glBindTexture(target, texname);
 		//This->textures[level] = texname;
 	}
 }

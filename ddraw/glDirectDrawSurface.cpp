@@ -288,7 +288,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		texture = parenttex;
 		glTexture_AddRef(texture);
 	}
-	else glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, hasstencil, FALSE);
+	else glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, hasstencil, FALSE, 0);
 	if (!(ddsd.dwFlags & DDSD_PITCH))
 	{
 		ddsd.dwFlags |= DDSD_PITCH;
