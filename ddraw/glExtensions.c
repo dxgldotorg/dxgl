@@ -35,6 +35,7 @@ void glExtensions_Init(glExtensions *ext)
 	const GLubyte *glversion;
 	const GLubyte *glextensions;
 	BOOL broken_fbo;
+	BOOL broken_texrect;
 	ZeroMemory(ext, sizeof(glExtensions));
 	ext->atimem = FALSE;
 	glversion = glGetString(GL_VERSION);
@@ -130,6 +131,9 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
 		ext->GLEXT_EXT_framebuffer_object = 1;
 	else ext->GLEXT_EXT_framebuffer_object = 0;
+	if (strstr((char*)glextensions, "GL_ARB_texture_rectangle") || (ext->glver_major > 3) ||
+		((ext->glver_major == 3) && (ext->glver_minor == 1))) ext->GLEXT_ARB_texture_rectangle = 1;
+	else ext->GLEXT_ARB_texture_rectangle = 0;
 	if(strstr((char*)glextensions,"GL_NV_packed_depth_stencil")) ext->GLEXT_NV_packed_depth_stencil = 1;
 	else ext->GLEXT_NV_packed_depth_stencil = 0;
 	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) ext->GLEXT_EXT_packed_depth_stencil = 1;
@@ -188,6 +192,8 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		ext->glDeleteFramebuffersEXT = (PFNGLDELETEFRAMEBUFFERSEXTPROC)wglGetProcAddress("glDeleteFramebuffersEXT");
 		broken_fbo = FALSE;
 	}
+	broken_texrect = TRUE;
+	if (ext->GLEXT_ARB_texture_rectangle) broken_texrect = FALSE;
 	if(ext->GLEXT_EXT_direct_state_access)
 	{
 		ext->glTextureParameterfEXT = (PFNGLTEXTUREPARAMETERFEXTPROC)wglGetProcAddress("glTextureParameterfEXT");
@@ -238,6 +244,13 @@ and restart this program.\r\n\r\nThis program will now exit."), _T("Fatal error"
 		else MessageBox(NULL,_T("DXGL requires support for OpenGL Framebuffer Objects to function.\n\n\
 Please contact your graphics card manufacturer for an updated driver.\n\nThis program will now exit."),_T("Fatal error"),
 			MB_OK|MB_ICONERROR);
+		ExitProcess(-1);
+	}
+	if(broken_texrect)
+	{ 
+		MessageBox(NULL, _T("DXGL requires support for OpenGL Rectangle Textures to function.\n\n\
+Please contact your graphics card manufacturer for an updated driver.\n\nThis program will now exit."), _T("Fatal error"),
+MB_OK | MB_ICONERROR);
 		ExitProcess(-1);
 	}
 	ext->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");

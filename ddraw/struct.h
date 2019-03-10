@@ -159,6 +159,7 @@ typedef struct glExtensions
 
 	int GLEXT_ARB_framebuffer_object;
 	int GLEXT_EXT_framebuffer_object;
+	int GLEXT_ARB_texture_rectangle;
 	int GLEXT_NV_packed_depth_stencil;
 	int GLEXT_EXT_packed_depth_stencil;
 	int GLEXT_ARB_depth_buffer_float;
