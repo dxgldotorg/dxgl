@@ -317,6 +317,7 @@ typedef struct glTexture
 	int convfunctionupload;
 	int convfunctiondownload;
 	int internalsize;
+	int packsize;
 	unsigned char blttype;
 	struct glTexture *palette;
 	struct glTexture *stencil;

@@ -93,10 +93,50 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space, reversed
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}   // 32 bit Z buffer with stencil, reversed
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 0,	0,			0,			0,			0},  // UYVY YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 0,	0,			0,			0,			0},  // UYVY YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 0,	0,			0,			0,			0},  // YUY2 YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 0,	0,			0,			0,			0},  // YUY2 YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 0,	0,			0,			0,			0},  // RGBG 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 0,	0,			0,			0,			0},  // GRGB 16-bit pixelformat
 };
 static const int END_TEXFORMATS = __LINE__ - 4;
 int numtexformats;
+
+// Pixel format constants
+#define DXGLPIXELFORMAT_INVALID			-1
+#define DXGLPIXELFORMAT_PAL1			0
+#define DXGLPIXELFORMAT_PAL2			1
+#define DXGLPIXELFORMAT_PAL4			2
+#define DXGLPIXELFORMAT_PAL8			3
+#define DXGLPIXELFORMAT_RGB332			4
+#define DXGLPIXELFORMAT_RGB555			5
+#define DXGLPIXELFORMAT_RGB565			6
+#define DXGLPIXELFORMAT_RGB888			7
+#define DXGLPIXELFORMAT_RGB888_REV		8
+#define DXGLPIXELFORMAT_RGBX8888		9
+#define DXGLPIXELFORMAT_RGBX8888_REV	10
+#define DXGLPIXELFORMAT_RGBA8332		11
+#define DXGLPIXELFORMAT_RGBA4444		12
+#define DXGLPIXELFORMAT_RGBA1555		13
+#define DXGLPIXELFORMAT_RGBA8888		14
+#define DXGLPIXELFORMAT_LUM8			15
+#define DXGLPIXELFORMAT_ALPHA8			16
+#define DXGLPIXELFORMAT_LUM_ALPHA88		17
+#define DXGLPIXELFORMAT_Z16				18
+#define DXGLPIXELFORMAT_Z24				19
+#define DXGLPIXELFORMAT_X8_Z24			20
+#define DXGLPIXELFORMAT_X8_Z24_REV		21
+#define DXGLPIXELFORMAT_Z32				22
+#define DXGLPIXELFORMAT_S8_Z32			23
+#define DXGLPIXELFORMAT_S8_Z32_REV		24
+#define DXGLPIXELFORMAT_FOURCC_UYVY		25
+#define DXGLPIXELFORMAT_FOURCC_UYNV		26
+#define DXGLPIXELFORMAT_FOURCC_YUY2		27
+#define DXGLPIXELFORMAT_FOURCC_YUNV		28
+#define DXGLPIXELFORMAT_FOURCC_RGBG		29
+#define DXGLPIXELFORMAT_FOURCC_GRGB		30
 
 void ClearError()
 {
@@ -226,14 +266,34 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	}
 	else
 	{
-		if (ddsd->ddpfPixelFormat.dwRGBBitCount == 1)
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf8(newtexture->levels[0].ddsd.dwWidth) / 8;
-		else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 2)
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 4;
-		else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 4)
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 2;
-		else newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth *
-			(newtexture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount / 8));
+		if (ddsd->ddpfPixelFormat.dwFlags & DDPF_FOURCC)
+		{
+			switch (ddsd->ddpfPixelFormat.dwFourCC)
+			{
+			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
+			case MAKEFOURCC('U', 'Y', 'N', 'V'):
+			case MAKEFOURCC('Y', 'U', 'Y', '2'):
+			case MAKEFOURCC('Y', 'U', 'N', 'V'):
+			case MAKEFOURCC('R', 'G', 'B', 'G'):
+			case MAKEFOURCC('G', 'R', 'G', 'B'):
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 2);
+				break;
+			default:
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 4);
+				break;
+			}
+		}
+		else
+		{
+			if (ddsd->ddpfPixelFormat.dwRGBBitCount == 1)
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf8(newtexture->levels[0].ddsd.dwWidth) / 8;
+			else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 2)
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 4;
+			else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 4)
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 2;
+			else newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth *
+				(newtexture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount / 8));
+		}
 	}
 	/*if (!(newtexture->levels[0].ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
 	{
@@ -564,6 +624,7 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 	int inpitch, outpitch;
 	int i;
 	char *writebuffer;
+	width = DivCeiling(width, This->packsize);
 	if (dorealloc)
 	{
 		This->levels[level].ddsd.dwWidth = width;
@@ -744,9 +805,9 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 			This->internalformats[7] = 0;
 			ClearError();
 			if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
-				glTexImage2D(This->target, i, This->internalformats[0], This->bigwidth,
+				glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(This->bigwidth, This->packsize),
 					This->bigheight, 0, This->format, This->type, This->levels[i].bigbuffer);
-			else glTexImage2D(This->target, i, This->internalformats[0], This->levels[i].ddsd.dwWidth,
+			else glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(This->levels[i].ddsd.dwWidth, This->packsize),
 				This->levels[i].ddsd.dwHeight, 0, This->format, This->type, This->levels[i].buffer);
 			error = glGetError();
 			if (error != GL_NO_ERROR)
@@ -797,6 +858,7 @@ void glTexture__FinishCreate(glTexture *This)
 {
 	int texformat = -1;
 	int i;
+	int bytes;
 	DWORD x, y;
 	GLenum error;
 	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
@@ -811,7 +873,7 @@ void glTexture__FinishCreate(glTexture *This)
 	ZeroMemory(This->internalformats, 8 * sizeof(GLint));
 	switch (texformat)
 	{
-	case 0: // 1-bit palette
+	case DXGLPIXELFORMAT_PAL1: // 1-bit palette
 		This->useconv = TRUE;
 		This->convfunctionupload = 11;
 		This->convfunctiondownload = 14;
@@ -838,8 +900,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 1: // 2-bit palette
+	case DXGLPIXELFORMAT_PAL2: // 2-bit palette
 		This->useconv = TRUE;
 		This->convfunctionupload = 12;
 		This->convfunctiondownload = 15;
@@ -866,8 +929,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 2: // 4-bit palette
+	case DXGLPIXELFORMAT_PAL4: // 4-bit palette
 		This->useconv = TRUE;
 		This->convfunctionupload = 13;
 		This->convfunctiondownload = 16;
@@ -894,8 +958,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 3: // 8-bit palette
+	case DXGLPIXELFORMAT_PAL8: // 8-bit palette
 		This->blttype = 0x10;
 		if (This->renderer->ext->glver_major >= 3)
 		{
@@ -918,8 +983,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 4: // 8-bit RGB332
+	case DXGLPIXELFORMAT_RGB332: // 8-bit RGB332
 		This->internalformats[0] = GL_R3_G3_B2;
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
@@ -935,8 +1001,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 3;
 		This->colorbits[2] = 2;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 5: // 16-bit RGB555
+	case DXGLPIXELFORMAT_RGB555: // 16-bit RGB555
 		This->internalformats[0] = GL_RGB5_A1;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -951,8 +1018,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 5;
 		This->colorbits[2] = 5;
 		This->colorbits[3] = 1;
+		This->packsize = 1;
 		break;
-	case 6: // 16-bit RGB565
+	case DXGLPIXELFORMAT_RGB565: // 16-bit RGB565
 		This->internalformats[0] = GL_RGB565;
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
@@ -968,8 +1036,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 6;
 		This->colorbits[2] = 5;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 7: // 24-bit RGB888
+	case DXGLPIXELFORMAT_RGB888: // 24-bit RGB888
 		This->internalformats[0] = GL_RGB8;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGR;
@@ -984,14 +1053,15 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 8: // 24-bit BGR888
+	case DXGLPIXELFORMAT_RGB888_REV: // 24-bit BGR888
 		This->internalformats[0] = GL_RGB8;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_RGB;
 		This->type = GL_UNSIGNED_BYTE;
 		if (!This->target) This->target = GL_TEXTURE_2D;
-		This->colororder = 1;
+		This->colororder = 0;
 		This->colorsizes[0] = 255;
 		This->colorsizes[1] = 255;
 		This->colorsizes[2] = 255;
@@ -1000,8 +1070,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 9: // 32-bit RGB888
+	case DXGLPIXELFORMAT_RGBX8888: // 32-bit RGB888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -1015,8 +1086,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 10: // 32-bit BGR888
+	case DXGLPIXELFORMAT_RGBX8888_REV: // 32-bit BGR888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_RGBA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -1030,8 +1102,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 11: // 16-bit RGBA8332
+	case DXGLPIXELFORMAT_RGBA8332: // 16-bit RGBA8332
 		This->useconv = TRUE;
 		This->convfunctionupload = 0;
 		This->convfunctiondownload = 1;
@@ -1049,8 +1122,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 3;
 		This->colorbits[2] = 2;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
-	case 12: // 16-bit RGBA4444
+	case DXGLPIXELFORMAT_RGBA4444: // 16-bit RGBA4444
 		This->internalformats[0] = GL_RGBA4;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -1065,8 +1139,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 4;
 		This->colorbits[2] = 4;
 		This->colorbits[3] = 4;
+		This->packsize = 1;
 		break;
-	case 13: // 16-bit RGBA1555
+	case DXGLPIXELFORMAT_RGBA1555: // 16-bit RGBA1555
 		This->internalformats[0] = GL_RGB5_A1;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -1076,9 +1151,10 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 5;
 		This->colorbits[2] = 5;
 		This->colorbits[3] = 1;
+		This->packsize = 1;
 		break;
-	case -1:
-	case 14: // 32-bit RGBA8888
+	case DXGLPIXELFORMAT_INVALID:
+	case DXGLPIXELFORMAT_RGBA8888: // 32-bit RGBA8888
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -1092,8 +1168,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
-	case 15: // 8-bit Luminance
+	case DXGLPIXELFORMAT_LUM8: // 8-bit Luminance
 		This->internalformats[0] = GL_LUMINANCE8;
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
@@ -1109,8 +1186,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 16: // 8-bit Alpha
+	case DXGLPIXELFORMAT_ALPHA8: // 8-bit Alpha
 		This->internalformats[0] = GL_ALPHA8;
 		This->format = GL_ALPHA;
 		This->type = GL_UNSIGNED_BYTE;
@@ -1124,8 +1202,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
-	case 17: // 16-bit Luminance Alpha
+	case DXGLPIXELFORMAT_LUM_ALPHA88: // 16-bit Luminance Alpha
 		This->internalformats[0] = GL_LUMINANCE8_ALPHA8;
 		This->internalformats[1] = GL_RGBA8;
 		This->format = GL_LUMINANCE_ALPHA;
@@ -1140,8 +1219,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
-	case 18: // 16-bit Z buffer
+	case DXGLPIXELFORMAT_Z16: // 16-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT16;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_SHORT;
@@ -1155,8 +1235,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 19: // 24-bit Z buffer
+	case DXGLPIXELFORMAT_Z24: // 24-bit Z buffer
 		This->useconv = TRUE;
 		This->convfunctionupload = 17;
 		This->convfunctiondownload = 18;
@@ -1175,8 +1256,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 20: // 32/24 bit Z buffer
+	case DXGLPIXELFORMAT_X8_Z24: // 32/24 bit Z buffer
 		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
@@ -1191,8 +1273,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 21: // 32/24 bit Z buffer reversed
+	case DXGLPIXELFORMAT_X8_Z24_REV: // 32/24 bit Z buffer reversed
 		This->internalformats[0] = GL_DEPTH_COMPONENT24;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1206,8 +1289,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 22: // 32-bit Z buffer
+	case DXGLPIXELFORMAT_Z32: // 32-bit Z buffer
 		This->internalformats[0] = GL_DEPTH_COMPONENT32;
 		This->format = GL_DEPTH_COMPONENT;
 		This->type = GL_UNSIGNED_INT;
@@ -1221,8 +1305,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 0;
+		This->packsize = 1;
 		break;
-	case 23: // 32-bit Z/Stencil buffer, depth LSB
+	case DXGLPIXELFORMAT_S8_Z32: // 32-bit Z/Stencil buffer, depth LSB
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
 		This->type = GL_UNSIGNED_INT_24_8;
@@ -1236,8 +1321,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
-	case 24: // 32-bit Z/Stencil buffer, depth MSB
+	case DXGLPIXELFORMAT_S8_Z32_REV: // 32-bit Z/Stencil buffer, depth MSB
 		This->blttype = 0x18;
 		This->internalformats[0] = GL_DEPTH24_STENCIL8;
 		This->format = GL_DEPTH_STENCIL;
@@ -1252,6 +1338,38 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 0;
 		This->colorbits[2] = 0;
 		This->colorbits[3] = 8;
+		This->packsize = 1;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_UYVY:
+	case DXGLPIXELFORMAT_FOURCC_UYNV:
+		This->blttype = 0x80;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->packsize = 2;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_YUY2:
+	case DXGLPIXELFORMAT_FOURCC_YUNV:
+		FIXME("Add YUY2/YUNV mode");
+		This->packsize = 2;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_RGBG:
+		FIXME("Add RGBG mode");
+		This->packsize = 2;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_GRGB:
+		FIXME("Add GRGB mode");
+		This->packsize = 2;
 		break;
 	}
 	glGenTextures(1, &This->id);
@@ -1294,7 +1412,7 @@ void glTexture__FinishCreate(glTexture *This)
 		do
 		{
 			ClearError();
-			glTexImage2D(This->target, i, This->internalformats[0], x, y, 0, This->format, This->type, NULL);
+			glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(x, This->packsize), y, 0, This->format, This->type, NULL);
 			This->levels[i].dirty |= 2;
 			ShrinkMip(&x, &y);
 			error = glGetError();
@@ -1310,11 +1428,28 @@ void glTexture__FinishCreate(glTexture *This)
 			}
 			else break;
 		} while (1);
-		This->levels[i].buffer = (char*)malloc(NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
-			This->levels[i].ddsd.dwWidth) / 8) * This->levels[i].ddsd.dwHeight);
+		if (This->levels[i].ddsd.ddpfPixelFormat.dwFlags & DDPF_FOURCC)
+		{
+			switch (This->levels[i].ddsd.ddpfPixelFormat.dwFourCC)
+			{
+			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
+			case MAKEFOURCC('U', 'Y', 'N', 'V'):
+			case MAKEFOURCC('Y', 'U', 'Y', '2'):
+			case MAKEFOURCC('Y', 'U', 'N', 'V'):
+			case MAKEFOURCC('R', 'G', 'B', 'G'):
+			case MAKEFOURCC('G', 'R', 'G', 'B'):
+				bytes = 2 * This->levels[i].ddsd.dwWidth;
+				break;
+			default:
+				bytes = 4 * This->levels[i].ddsd.dwWidth;
+				break;
+			}
+		}
+		else bytes = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
+			This->levels[i].ddsd.dwWidth) / 8);
+		This->levels[i].buffer = (char*)malloc(bytes * This->levels[i].ddsd.dwHeight);
 		if ((i == 0) && ((This->levels[i].ddsd.dwWidth != This->bigwidth) || (This->levels[i].ddsd.dwHeight != This->bigheight)))
-			This->levels[i].bigbuffer = (char *)malloc(NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
-				This->bigwidth) / 8) * This->bigheight);
+			This->levels[i].bigbuffer = (char *)malloc(bytes * This->bigheight);
 	}
 }
 void glTexture__Destroy(glTexture *This)

@@ -72,7 +72,10 @@ Texture types:
 0x18: 24-bit Depth
 0x19: 24-bit Depth, 8-bit Stencil
 0x20: (first entry for specific RGB formats) (future)
-0x80: (first entry for specific YUV formats) (future)
+0x80: UYVY / UYNV
+0x81: YUY2 / YUNV
+0x82: RGBG
+0x83: GRGB
 0xC0: (first entry for compressed)			 (future)
 */
 

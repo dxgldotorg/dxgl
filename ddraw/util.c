@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2017 William Feely
+// Copyright (C) 2013-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -199,3 +199,9 @@ void UnregisterDXGLTempWindowClass()
 		wndclassdxgltempatom = 0;
 	}
 }
+
+int DivCeiling(int dividend, int divisor)
+{
+	return (dividend / divisor) + (dividend % divisor != 0);
+}
+

@@ -1753,7 +1753,13 @@ static const LPTSTR strSurfaceFormats[] =
 	_T("24-bit Z,32b.rev"),
 	_T("32-bit Zbuffer"),
 	_T("32-bit Z/stencil"),
-	_T("32-bit Z/st.rev")
+	_T("32-bit Z/st.rev"),
+	_T("16-bit UYVY"),
+	_T("16-bit UYNV"),
+	_T("16-bit YUY2"),
+	_T("16-bit YUNV"),
+	_T("16-bit RGBG"),
+	_T("16-bit GRGB"),
 };
 static const int END_SURFACEFORMATS = __LINE__ - 4;
 const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
@@ -1785,7 +1791,13 @@ const DDPIXELFORMAT surfaceformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space, reversed
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0}   // 32 bit Z buffer with stencil, reversed
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 0,	0,			0,			0,			0},  // UYVY YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 0,	0,			0,			0,			0},  // UYVY YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 0,	0,			0,			0,			0},  // YUY2 YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 0,	0,			0,			0,			0},  // YUY2 YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 0,	0,			0,			0,			0},  // RGBG 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 0,	0,			0,			0,			0},  // GRGB 16-bit pixelformat
 };
 
 static const LPTSTR strErrorMessages[] =
