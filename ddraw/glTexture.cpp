@@ -1360,15 +1360,54 @@ void glTexture__FinishCreate(glTexture *This)
 		break;
 	case DXGLPIXELFORMAT_FOURCC_YUY2:
 	case DXGLPIXELFORMAT_FOURCC_YUNV:
-		FIXME("Add YUY2/YUNV mode");
+		This->blttype = 0x81;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
 		This->packsize = 2;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_RGBG:
-		FIXME("Add RGBG mode");
+		This->blttype = 0x82;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
 		This->packsize = 2;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_GRGB:
-		FIXME("Add GRGB mode");
+		This->blttype = 0x83;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
 		This->packsize = 2;
 		break;
 	}
