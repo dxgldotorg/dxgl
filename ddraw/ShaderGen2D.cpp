@@ -83,7 +83,8 @@ static const char revheader[] =
 	"//REV" STR(SHADER2DVERSION) "\n";
 static const char version_110[] = "#version 110\n";
 static const char version_130[] = "#version 130\n";
-static const char ext_shader4[] = "#extension GL_EXT_gpu_shader4 : require";
+static const char ext_shader4[] = "#extension GL_EXT_gpu_shader4 : require\n";
+static const char ext_texrect[] = "#extension GL_ARB_texture_rectangle : require\n";
 static const char vertexshader[] = "//2D Vertex Shader\n";
 static const char fragshader[] = "//2D Fragment Shader\n";
 static const char idheader[] = "//ID: 0x";
@@ -101,7 +102,9 @@ static const char attr_stencilst[] = "attribute vec2 stencilst;\n";
 // Uniforms
 static const char unif_view[] = "uniform vec4 view;\n";
 static const char unif_srctex[] = "uniform sampler2D srctex;\n";
+static const char unif_srctexrect[] = "uniform sampler2DRect srctex;\n";
 static const char unif_desttex[] = "uniform sampler2D desttex;\n";
+static const char unif_desttexrect[] = "uniform sampler2DRect desttex;\n";
 static const char unif_patterntex[] = "uniform sampler2D patterntex;\n";
 static const char unif_stenciltex[] = "uniform sampler2D stenciltex;\n";
 static const char unif_srcpal[] = "uniform sampler2D srcpal;\n";
@@ -124,8 +127,13 @@ static const char var_patternst[] = "vec2 patternst;\n";
 
 // Operations
 static const char op_src[] = "src = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
+static const char op_srcrect[] = "src = ivec4(texture2DRect(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
 static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelrect[] = "pixel = ivec4(texture2DRect(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
 static const char op_palpixel[] = "vec4 myindex = texture2D(srctex, gl_TexCoord[0].xy);\n\
+vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
+pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
+static const char op_palpixelrect[] = "vec4 myindex = texture2DRect(srctex, gl_TexCoord[0].xy);\n\
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
 pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
