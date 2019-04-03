@@ -216,13 +216,13 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1916)
-			strncpy(findptr, "\"VC2017_9\"\n", 13);
+			#elif (_MSC_VER == 1920)
+			strncpy(findptr, "\"VC2019_0\"\n", 13);
 			#elif ((_MSC_VER > 1900) && (_MSC_VER < 1916))
 			#error Please update your Visual Studio 2017 to version 2017.9 before continuing.
-			#elif (_MSC_VER > 1916)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2017.9.")
-			strncpy(findptr, "\"VC2017_9\"\n", 13);
+			#elif (_MSC_VER > 1920)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.0.")
+			strncpy(findptr, "\"VC2019_0\"\n", 13);
 			#else
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
 			#endif

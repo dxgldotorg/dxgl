@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2017 William Feely
+; Copyright (C) 2011-2019 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -36,11 +36,11 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
-!if ${COMPILER} == "VC2017_9"
+!if ${COMPILER} == "VC2019_0"
 !ifdef _DEBUG
-!define SRCDIR "Debug VS2017"
+!define SRCDIR "Debug VS2019"
 !else
-!define SRCDIR "Release VS2017"
+!define SRCDIR "Release VS2019"
 !endif
 !else
 !ifdef _DEBUG
@@ -112,12 +112,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2017_9"
+!else if ${COMPILER} == "VC2019_0"
 !define download_runtime 1
-!define runtime_url http://www.dxgl.org/download/runtimes/vc14.16/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2017.9"
+!define runtime_url http://www.dxgl.org/download/runtimes/vc14.20/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2019"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "F895E1146ACD8A4F01F13A9E94CCF5FB4C0726CE6554FE1AE93EA1FA07A484A074E6FA0AECCF1A22733EA164D49CF993F6E5983A991072DC5968E9561E7DE2DD"
+!define runtime_sha512 "A983C078823E6E80004FD472AAB02D5DDC4D8DC1600DB45F786695CD73CDE57405F3164E960E6CAB627F92AF2AAFAE0E97132A08E564D234F1166A49B88F0A13"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -155,7 +155,7 @@ VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_REVISION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2017 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2019 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
@@ -259,7 +259,7 @@ SectionEnd
 
 
 Function .onInit
-  !if ${COMPILER} == "VC2017_9"
+  !if ${COMPILER} == "VC2019_0"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -312,12 +312,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2017_9"
+  !if ${COMPILER} == "VC2019_0"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.16.27012" $1
+  ${VersionCompare} "$0" "14.20.27508" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
