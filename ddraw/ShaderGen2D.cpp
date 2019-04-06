@@ -61,7 +61,7 @@ AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 
 Texture types:
 0x00: Classic DXGL processing
-0x01: 32-bit YUV444, 8-bit component (convert from other formats via software)
+0x01: Luminance-only (write to red)
 0x10: 8-bit palette
 0x11: 4-bit palette
 0x12: 2-bit palette
@@ -140,6 +140,7 @@ static const char op_palpixelrect[] = "vec4 myindex = texture2DRect(srctex, gl_T
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
 pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_lumpixel[] = "pixel = ivec4(vec4(texture2D(srctex,gl_TexCoord[0].st).rrr,1.0)*vec4(colorsizedest)+.5);\n";
 static const char op_color[] = "pixel = fillcolor;\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
@@ -953,9 +954,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	{
 		switch (srctype2)
 		{
-		case 0:
+		case 0x00:
 		default:
 			String_Append(fsrc, op_pixel);
+			break;
+		case 0x01:
+			String_Append(fsrc, op_lumpixel);
 			break;
 		case 0x10:
 		case 0x11:

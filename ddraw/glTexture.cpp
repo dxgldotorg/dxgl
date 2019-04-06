@@ -1196,14 +1196,23 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 8;
 		This->packsize = 1;
 		break;
-	case DXGLPIXELFORMAT_LUM8: // 8-bit Luminance
-	case DXGLPIXELFORMAT_FOURCC_Y8:
+	case DXGLPIXELFORMAT_FOURCC_Y8:  // 8-bit Y-only
 	case DXGLPIXELFORMAT_FOURCC_Y800:
 	case DXGLPIXELFORMAT_FOURCC_GREY:
-		This->internalformats[0] = GL_LUMINANCE8;
+	case DXGLPIXELFORMAT_LUM8: // 8-bit Luminance
+		This->blttype = 0x01;
+		if (This->renderer->ext->glver_major >= 3 && !(This->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_TEXTURE))
+		{
+			This->internalformats[0] = GL_R8;
+			This->format = GL_RED;
+		}
+		else
+		{
+			This->internalformats[0] = GL_LUMINANCE8;
+			This->format = GL_LUMINANCE;
+		}
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
-		This->format = GL_LUMINANCE;
 		This->type = GL_UNSIGNED_BYTE;
 		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 5;
@@ -1370,8 +1379,17 @@ void glTexture__FinishCreate(glTexture *This)
 		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_Y16:
-		This->internalformats[0] = GL_LUMINANCE16;
-		This->format = GL_LUMINANCE;
+		This->blttype = 0x01;
+		if (This->renderer->ext->glver_major >= 3 && !(This->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_TEXTURE))
+		{
+			This->internalformats[0] = GL_R16;
+			This->format = GL_RED;
+		}
+		else
+		{
+			This->internalformats[0] = GL_LUMINANCE16;
+			This->format = GL_LUMINANCE;
+		}
 		This->type = GL_UNSIGNED_SHORT;
 		if (!This->target) This->target = GL_TEXTURE_2D;
 		This->colororder = 4;
