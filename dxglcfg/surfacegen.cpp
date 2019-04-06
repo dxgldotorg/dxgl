@@ -267,8 +267,8 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 					}
 				}
 			}
-			else if((ddsd.ddpfPixelFormat.dwRBitMask | ddsd.ddpfPixelFormat.dwGBitMask |
-				ddsd.ddpfPixelFormat.dwBBitMask) == 0xFFFF)
+			else if(((ddsd.ddpfPixelFormat.dwRBitMask | ddsd.ddpfPixelFormat.dwGBitMask |
+				ddsd.ddpfPixelFormat.dwBBitMask) == 0xFFFF) || (ddsd.ddpfPixelFormat.dwFlags & DDPF_FOURCC))
 			{
 				for(y = 0; y < ddsd.dwHeight; y++)
 				{
@@ -1754,12 +1754,20 @@ static const LPTSTR strSurfaceFormats[] =
 	_T("32-bit Zbuffer"),
 	_T("32-bit Z/stencil"),
 	_T("32-bit Z/st.rev"),
+	_T("8-bit Y8  "),
+	_T("8-bit Y800"),
+	_T("8-bit GREY"),
+	_T("16-bit Y16 "),
 	_T("16-bit UYVY"),
 	_T("16-bit UYNV"),
+	_T("16-bit Y422"),
 	_T("16-bit YUY2"),
+	_T("16-bit YUYV"),
 	_T("16-bit YUNV"),
+	_T("16-bit YVYU"),
 	_T("16-bit RGBG"),
 	_T("16-bit GRGB"),
+	_T("32-bit AYUV"),
 };
 static const int END_SURFACEFORMATS = __LINE__ - 4;
 const int numsurfaceformats = END_SURFACEFORMATS - START_SURFACEFORMATS;
@@ -1792,12 +1800,20 @@ const DDPIXELFORMAT surfaceformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 0,	0,			0,			0,			0},  // UYVY YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 0,	0,			0,			0,			0},  // UYVY YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 0,	0,			0,			0,			0},  // YUY2 YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 0,	0,			0,			0,			0},  // YUY2 YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 0,	0,			0,			0,			0},  // RGBG 16-bit pixelformat
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 0,	0,			0,			0,			0},  // GRGB 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8',' ',' '), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8','0','0'), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','E','Y'), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','1','6',' '), 16,	0,			0,			0,			0},  // 16-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','4','2','2'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (ADS Tech. alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (dup. of YUY2)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','V','Y','U'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 16,	0,			0,			0,			0},  // RGBG packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 16,	0,			0,			0,			0},  // GRGB packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('A','Y','U','V'), 32,	0,			0,			0,			0},  // AYUV packed YUV surface
 };
 
 static const LPTSTR strErrorMessages[] =

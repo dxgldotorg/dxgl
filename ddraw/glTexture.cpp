@@ -94,12 +94,20 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 0,	0,			0,			0,			0},  // UYVY YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 0,	0,			0,			0,			0},  // UYVY YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 0,	0,			0,			0,			0},  // YUY2 YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 0,	0,			0,			0,			0},  // YUY2 YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 0,	0,			0,			0,			0},  // RGBG 16-bit pixelformat
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 0,	0,			0,			0,			0},  // GRGB 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8',' ',' '), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8','0','0'), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','E','Y'), 8,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','1','6',' '), 16,	0,			0,			0,			0},  // 16-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','4','2','2'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (ADS Tech. alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (dup. of YUY2)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','V','Y','U'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 16,	0,			0,			0,			0},  // RGBG packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 16,	0,			0,			0,			0},  // GRGB packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('A','Y','U','V'), 32,	0,			0,			0,			0},  // AYUV packed YUV surface
 };
 static const int END_TEXFORMATS = __LINE__ - 4;
 int numtexformats;
@@ -131,12 +139,20 @@ int numtexformats;
 #define DXGLPIXELFORMAT_Z32				22
 #define DXGLPIXELFORMAT_S8_Z32			23
 #define DXGLPIXELFORMAT_S8_Z32_REV		24
-#define DXGLPIXELFORMAT_FOURCC_UYVY		25
-#define DXGLPIXELFORMAT_FOURCC_UYNV		26
-#define DXGLPIXELFORMAT_FOURCC_YUY2		27
-#define DXGLPIXELFORMAT_FOURCC_YUNV		28
-#define DXGLPIXELFORMAT_FOURCC_RGBG		29
-#define DXGLPIXELFORMAT_FOURCC_GRGB		30
+#define DXGLPIXELFORMAT_FOURCC_Y8		25
+#define DXGLPIXELFORMAT_FOURCC_Y800		26
+#define DXGLPIXELFORMAT_FOURCC_GREY		27
+#define DXGLPIXELFORMAT_FOURCC_Y16		28
+#define DXGLPIXELFORMAT_FOURCC_UYVY		29
+#define DXGLPIXELFORMAT_FOURCC_UYNV		30
+#define DXGLPIXELFORMAT_FOURCC_Y422		31
+#define DXGLPIXELFORMAT_FOURCC_YUY2		32
+#define DXGLPIXELFORMAT_FOURCC_YUYV		33
+#define DXGLPIXELFORMAT_FOURCC_YUNV		34
+#define DXGLPIXELFORMAT_FOURCC_YVYU		35
+#define DXGLPIXELFORMAT_FOURCC_RGBG		36
+#define DXGLPIXELFORMAT_FOURCC_GRGB		37
+#define DXGLPIXELFORMAT_FOURCC_AYUV		38
 
 void ClearError()
 {
@@ -270,14 +286,24 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 		{
 			switch (ddsd->ddpfPixelFormat.dwFourCC)
 			{
+			case MAKEFOURCC('Y', '8', ' ', ' '):
+			case MAKEFOURCC('Y', '8', '0', '0'):
+			case MAKEFOURCC('G', 'R', 'E', 'Y'):
+				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth);
+				break;
+			case MAKEFOURCC('Y', '1', '6', ' '):
 			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
 			case MAKEFOURCC('U', 'Y', 'N', 'V'):
+			case MAKEFOURCC('Y', '4', '2', '2'):
 			case MAKEFOURCC('Y', 'U', 'Y', '2'):
+			case MAKEFOURCC('Y', 'U', 'Y', 'V'):
 			case MAKEFOURCC('Y', 'U', 'N', 'V'):
+			case MAKEFOURCC('Y', 'V', 'Y', 'U'):
 			case MAKEFOURCC('R', 'G', 'B', 'G'):
 			case MAKEFOURCC('G', 'R', 'G', 'B'):
 				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 2);
 				break;
+			case MAKEFOURCC('A', 'Y', 'U', 'V'):
 			default:
 				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 4);
 				break;
@@ -1171,6 +1197,9 @@ void glTexture__FinishCreate(glTexture *This)
 		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_LUM8: // 8-bit Luminance
+	case DXGLPIXELFORMAT_FOURCC_Y8:
+	case DXGLPIXELFORMAT_FOURCC_Y800:
+	case DXGLPIXELFORMAT_FOURCC_GREY:
 		This->internalformats[0] = GL_LUMINANCE8;
 		This->internalformats[1] = GL_RGB8;
 		This->internalformats[2] = GL_RGBA8;
@@ -1340,8 +1369,25 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[3] = 8;
 		This->packsize = 1;
 		break;
+	case DXGLPIXELFORMAT_FOURCC_Y16:
+		This->internalformats[0] = GL_LUMINANCE16;
+		This->format = GL_LUMINANCE;
+		This->type = GL_UNSIGNED_SHORT;
+		if (!This->target) This->target = GL_TEXTURE_2D;
+		This->colororder = 4;
+		This->colorsizes[0] = 65535;
+		This->colorsizes[1] = 65535;
+		This->colorsizes[2] = 65535;
+		This->colorsizes[3] = 65535;
+		This->colorbits[0] = 16;
+		This->colorbits[1] = 0;
+		This->colorbits[2] = 0;
+		This->colorbits[3] = 0;
+		This->packsize = 1;
+		break;
 	case DXGLPIXELFORMAT_FOURCC_UYVY:
 	case DXGLPIXELFORMAT_FOURCC_UYNV:
+	case DXGLPIXELFORMAT_FOURCC_Y422:
 		This->blttype = 0x80;
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -1359,6 +1405,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->packsize = 2;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_YUY2:
+	case DXGLPIXELFORMAT_FOURCC_YUYV:
 	case DXGLPIXELFORMAT_FOURCC_YUNV:
 		This->blttype = 0x81;
 		This->internalformats[0] = GL_RGBA8;
@@ -1376,7 +1423,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[0] = 8;
 		This->packsize = 2;
 		break;
-	case DXGLPIXELFORMAT_FOURCC_RGBG:
+	case DXGLPIXELFORMAT_FOURCC_YVYU:
 		This->blttype = 0x82;
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
@@ -1393,8 +1440,8 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[0] = 8;
 		This->packsize = 2;
 		break;
-	case DXGLPIXELFORMAT_FOURCC_GRGB:
-		This->blttype = 0x83;
+	case DXGLPIXELFORMAT_FOURCC_RGBG:
+		This->blttype = 0x9E;
 		This->internalformats[0] = GL_RGBA8;
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -1409,6 +1456,40 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[0] = 8;
 		This->colorbits[0] = 8;
 		This->packsize = 2;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_GRGB:
+		This->blttype = 0x9F;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->colorbits[0] = 8;
+		This->packsize = 2;
+		break;
+	case DXGLPIXELFORMAT_FOURCC_AYUV: // 32-bit AYUV
+		This->blttype = 0x83;
+		This->internalformats[0] = GL_RGBA8;
+		This->format = GL_BGRA;
+		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (!This->target) This->target = GL_TEXTURE_2D;
+		This->colororder = 1;
+		This->colorsizes[0] = 255;
+		This->colorsizes[1] = 255;
+		This->colorsizes[2] = 255;
+		This->colorsizes[3] = 255;
+		This->colorbits[0] = 8;
+		This->colorbits[1] = 8;
+		This->colorbits[2] = 8;
+		This->colorbits[3] = 8;
+		This->packsize = 1;
 		break;
 	}
 	glGenTextures(1, &This->id);
@@ -1471,14 +1552,23 @@ void glTexture__FinishCreate(glTexture *This)
 		{
 			switch (This->levels[i].ddsd.ddpfPixelFormat.dwFourCC)
 			{
+			case MAKEFOURCC('Y', '8', ' ', ' '):
+			case MAKEFOURCC('Y', '8', '0', '0'):
+			case MAKEFOURCC('G', 'R', 'E', 'Y'):
+				bytes = NextMultipleOf4(This->levels[i].ddsd.dwWidth);
+			case MAKEFOURCC('Y', '1', '6', ' '):
 			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
 			case MAKEFOURCC('U', 'Y', 'N', 'V'):
+			case MAKEFOURCC('Y', '4', '2', '2'):
 			case MAKEFOURCC('Y', 'U', 'Y', '2'):
+			case MAKEFOURCC('Y', 'U', 'Y', 'V'):
 			case MAKEFOURCC('Y', 'U', 'N', 'V'):
+			case MAKEFOURCC('Y', 'V', 'Y', 'U'):
 			case MAKEFOURCC('R', 'G', 'B', 'G'):
 			case MAKEFOURCC('G', 'R', 'G', 'B'):
-				bytes = 2 * This->levels[i].ddsd.dwWidth;
+				bytes = NextMultipleOf4(2 * This->levels[i].ddsd.dwWidth);
 				break;
+			case MAKEFOURCC('A', 'Y', 'U', 'V'):
 			default:
 				bytes = 4 * This->levels[i].ddsd.dwWidth;
 				break;

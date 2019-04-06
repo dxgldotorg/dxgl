@@ -74,8 +74,11 @@ Texture types:
 0x20: (first entry for specific RGB formats) (future)
 0x80: UYVY / UYNV
 0x81: YUY2 / YUNV
-0x82: RGBG
-0x83: GRGB
+0x82: YVYU
+0x83: AYUV
+0x9E: RGBG
+0x9F: GRGB
+0x84: AYUV
 0xC0: (first entry for compressed)			 (future)
 */
 
@@ -165,6 +168,11 @@ static const char op_ckeydestrange[] = "if((dest.r < ckeydest.r) || (dest.g < ck
 static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;\n";
 
 // Functions
+static const char func_yuvtorgb[] = "";
+static const char func_readuyvy[] = "";
+static const char func_readyuy2[] = "";
+static const char func_readrgbg[] = "";
+static const char func_readgrgb[] = "";
 
 // ROP Operations
 static const char *op_ROP[256] = {
@@ -752,6 +760,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	unsigned char srctype = (id >> 32) & 0xFF;
 	unsigned char srctype2;
 	unsigned char desttype = (id >> 40) & 0xFF;
+	if (srctype == desttype) srctype2 = 0;
+	else srctype2 = srctype;
 	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
 	gen->genshaders2D[index].shader.fsrc.ptr = NULL;
 	char idstring[30];
@@ -856,7 +866,21 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 
 	// Uniforms
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, unif_fillcolor);
-	else String_Append(fsrc, unif_srctex);
+	else
+	{
+		switch (srctype)
+		{
+		case 0x80:
+		case 0x81:
+		case 0x82:
+		case 0x83:
+			String_Append(fsrc, unif_srctexrect);
+			break;
+		default:
+			String_Append(fsrc, unif_srctex);
+			break;
+		}
+	}
 	if (id & DDBLT_KEYDEST) usedest = TRUE;
 	if (id & DDBLT_ROP)
 	{
@@ -881,8 +905,6 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		String_Append(fsrc, unif_ckeydest);
 		if (id & 0x40000000) String_Append(fsrc, unif_ckeydesthigh);
 	}
-	if (srctype == desttype) srctype2 = 0;
-	else srctype2 = srctype;
 	switch (srctype2)
 	{
 	default:
@@ -908,6 +930,21 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	}
 	if (usedest) String_Append(fsrc, var_dest);
 
+	// Functions
+	switch (srctype2)
+	{
+	case 0x80:
+		break;
+	case 0x81:
+		break;
+	case 0x82:
+		break;
+	case 0x83:
+		break;
+	default:
+		break;
+	}
+
 	// Main
 	String_Append(fsrc, mainstart);
 	if (id & 0x10000000) String_Append(fsrc, op_clip);
@@ -929,6 +966,14 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x18:
 		case 0x19:
 			String_Append(fsrc, op_pixelmul256);
+			break;
+		case 0x80:
+			break;
+		case 0x81:
+			break;
+		case 0x82:
+			break;
+		case 0x83:
 			break;
 		}
 	}
