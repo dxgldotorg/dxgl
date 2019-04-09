@@ -71,14 +71,12 @@ Texture types:
 0x16: 1-bit palette index (future)
 0x18: 24-bit Depth
 0x19: 24-bit Depth, 8-bit Stencil
-0x20: (first entry for specific RGB formats) (future)
-0x80: UYVY / UYNV
-0x81: YUY2 / YUNV
+0x20: 16-bit RGBG
+0x21: 16-bit GRGB
+0x80: UYVY / UYNV / Y422
+0x81: YUY2 / YUYV / YUNV
 0x82: YVYU
 0x83: AYUV
-0x9E: RGBG
-0x9F: GRGB
-0x84: AYUV
 0xC0: (first entry for compressed)			 (future)
 */
 
@@ -148,6 +146,7 @@ mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
 pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
 static const char op_destoutdestblend[] = "gl_FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,gl_TexCoord[1].st);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
+static const char op_destoutyuvrgb[] = "gl_FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
 vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
@@ -169,11 +168,24 @@ static const char op_ckeydestrange[] = "if((dest.r < ckeydest.r) || (dest.g < ck
 static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;\n";
 
 // Functions
-static const char func_yuvtorgb[] = "";
-static const char func_readuyvy[] = "";
-static const char func_readyuy2[] = "";
+static const char func_yuvatorgba[] =
+"vec4 yuvatorgba(vec4 yuva)\n\
+{\n\
+	vec4 rgba;\n\
+	yuva.r = 1.1643 * (yuva.r - 0.0625);\n\
+	yuva.g = yuva.g - 0.5;\n\
+	yuva.b = yuva.b - 0.5;\n\
+	rgba.r = yuva.r + (1.5958 * yuva.b);\n\
+	rgba.g = yuva.r - (0.39173 * yuva.g) - (0.8129 * yuva.b);\n\
+	rgba.b = yuva.r + (2.017 * yuva.g);\n\
+	rgba.a = yuva.a;\n\
+	return rgba;\n\
+}\n\n";
 static const char func_readrgbg[] = "";
 static const char func_readgrgb[] = "";
+static const char func_readuyvy[] = "";
+static const char func_readyuyv[] = "";
+static const char func_readyvyu[] = "";
 
 // ROP Operations
 static const char *op_ROP[256] = {
@@ -871,12 +883,14 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	{
 		switch (srctype)
 		{
+		case 0x20:
+		case 0x21:
 		case 0x80:
 		case 0x81:
 		case 0x82:
-		case 0x83:
 			String_Append(fsrc, unif_srctexrect);
 			break;
+		case 0x83:
 		default:
 			String_Append(fsrc, unif_srctex);
 			break;
@@ -934,6 +948,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	// Functions
 	switch (srctype2)
 	{
+	case 0x20:
+		break;
+	case 0x21:
+		break;
 	case 0x80:
 		break;
 	case 0x81:
@@ -941,6 +959,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	case 0x82:
 		break;
 	case 0x83:
+		String_Append(fsrc, func_yuvatorgba);
 		break;
 	default:
 		break;
@@ -954,7 +973,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	{
 		switch (srctype2)
 		{
-		case 0x00:
+		case 0x00:  // Classic RGB
+		case 0x83:  // AYUV
 		default:
 			String_Append(fsrc, op_pixel);
 			break;
@@ -971,13 +991,15 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x19:
 			String_Append(fsrc, op_pixelmul256);
 			break;
+		case 0x20:
+			break;
+		case 0x21:
+			break;
 		case 0x80:
 			break;
 		case 0x81:
 			break;
 		case 0x82:
-			break;
-		case 0x83:
 			break;
 		}
 	}
@@ -1004,7 +1026,18 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	}
 	if (dxglcfg.DebugBlendDestColorKey && (id & DDBLT_KEYDEST))
 		String_Append(fsrc, op_destoutdestblend);
-	else String_Append(fsrc, op_destout);
+	else
+	{
+		switch (srctype2)
+		{
+		case 0x83:
+			String_Append(fsrc, op_destoutyuvrgb);
+			break;
+		default:
+			String_Append(fsrc, op_destout);
+			break;
+		}
+	}
 	String_Append(fsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("2D blitter fragment shader:\n");
