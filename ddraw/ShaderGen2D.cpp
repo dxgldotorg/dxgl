@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+// Contains some GLSL code derived from Nervous Systems ffmpeg-opengl YUV feature,
+// original code from:
+// https://github.com/nervous-systems/ffmpeg-opengl/blob/feature/yuv/vf_genericshader.c
+// Original code was released under the Unlicense and thus dedicated to the public
+// domain, as evidenced by the following repository license:
+// https://github.com/nervous-systems/ffmpeg-opengl/blob/feature/yuv/LICENSE
+
 #include "common.h"
 #include "string.h"
 #include "glExtensions.h"
@@ -60,8 +68,9 @@ Bits 40-47: Texture type output
 AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 
 Texture types:
-0x00: Classic DXGL processing
+0x00: Standard RGBA
 0x01: Luminance-only (write to red)
+0x02: Luminance-only (Calculate Y on Blt)
 0x10: 8-bit palette
 0x11: 4-bit palette
 0x12: 2-bit palette
@@ -92,6 +101,13 @@ static const char idheader[] = "//ID: 0x";
 static const char linefeed[] = "\n";
 static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
+
+// Constants
+static const char const_bt601_coeff[] = 
+"const mat3 bt601_coeff = mat3(1.164,1.164,1.164,0.0,-0.392,2.017,1.596,-0.813,0.0);\n\
+const vec3 yuv_offsets = vec3(-0.0625, -0.5, -0.5);\n";
+
+
 // Attributes
 static const char attr_xy[] = "attribute vec2 xy;\n";
 static const char attr_rgb[] = "attribute vec3 rgb;\n";
@@ -171,15 +187,7 @@ static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .
 static const char func_yuvatorgba[] =
 "vec4 yuvatorgba(vec4 yuva)\n\
 {\n\
-	vec4 rgba;\n\
-	yuva.r = 1.1643 * (yuva.r - 0.0625);\n\
-	yuva.g = yuva.g - 0.5;\n\
-	yuva.b = yuva.b - 0.5;\n\
-	rgba.r = yuva.r + (1.5958 * yuva.b);\n\
-	rgba.g = yuva.r - (0.39173 * yuva.g) - (0.8129 * yuva.b);\n\
-	rgba.b = yuva.r + (2.017 * yuva.g);\n\
-	rgba.a = yuva.a;\n\
-	return rgba;\n\
+	return vec4(vec3(bt601_coeff * (yuva.rgb + yuv_offsets)),yuva.a);\n\
 }\n\n";
 static const char func_readrgbg[] = "";
 static const char func_readgrgb[] = "";
@@ -877,6 +885,21 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	String_Append(fsrc, idheader);
 	String_Append(fsrc, idstring);
 
+	// Constants
+	switch (srctype)
+	{
+	case 0:
+	default:
+		break;
+	case 0x80:
+	case 0x81:
+	case 0x82:
+	case 0x83:
+		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
+		String_Append(fsrc, const_bt601_coeff);
+		break;			
+	}
+
 	// Uniforms
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, unif_fillcolor);
 	else
@@ -979,6 +1002,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			String_Append(fsrc, op_pixel);
 			break;
 		case 0x01:
+		case 0x02:
 			String_Append(fsrc, op_lumpixel);
 			break;
 		case 0x10:
@@ -1028,10 +1052,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		String_Append(fsrc, op_destoutdestblend);
 	else
 	{
-		switch (srctype2)
+		switch (srctype)
 		{
 		case 0x83:
-			String_Append(fsrc, op_destoutyuvrgb);
+			if ((desttype >= 0x80) && (desttype <= 0x83))
+				String_Append(fsrc, op_destout);
+			else String_Append(fsrc, op_destoutyuvrgb);
 			break;
 		default:
 			String_Append(fsrc, op_destout);

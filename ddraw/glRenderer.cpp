@@ -3380,7 +3380,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	}
 	else shaderid = cmd->flags & 0xF2FAADFF;
 	if (cmd->src) shaderid |= ((long long)cmd->src->blttype << 32);
-	//TODO:  Add src/dest texture types
+	if (cmd->dest) shaderid |= ((long long)cmd->dest->blttype << 40);
 	if (cmd->flags & DDBLT_KEYDEST) usedest = TRUE;
 	if (IsAlphaCKey())
 	{
