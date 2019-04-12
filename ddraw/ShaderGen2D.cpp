@@ -106,7 +106,9 @@ static const char mainend[] = "} ";
 static const char const_bt601_coeff[] = 
 "const mat3 bt601_coeff = mat3(1.164,1.164,1.164,0.0,-0.392,2.017,1.596,-0.813,0.0);\n\
 const vec3 yuv_offsets = vec3(-0.0625, -0.5, -0.5);\n";
-
+static const char const_bt601_coeff_inv[] =
+"const mat3 bt601_coeff_inv = mat3(0.2569,-0.1483,.4394,.5044,-.2911,-.3679,.0979,.4394,-.0715);\n\
+const vec3 yuv_offsets_inv = vec3(0.0625, 0.5, 0.5);\n";
 
 // Attributes
 static const char attr_xy[] = "attribute vec2 xy;\n";
@@ -163,6 +165,7 @@ pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
 static const char op_destoutdestblend[] = "gl_FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,gl_TexCoord[1].st);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
 static const char op_destoutyuvrgb[] = "gl_FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
+static const char op_destoutrgbyuv[] = "gl_FragColor = rgbatoyuva(vec4(pixel)/vec4(colorsizedest));\n";
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
 vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
@@ -188,6 +191,11 @@ static const char func_yuvatorgba[] =
 "vec4 yuvatorgba(vec4 yuva)\n\
 {\n\
 	return vec4(vec3(bt601_coeff * (yuva.rgb + yuv_offsets)),yuva.a);\n\
+}\n\n";
+static const char func_rgbatoyuva[] =
+"vec4 rgbatoyuva(vec4 rgba)\n\
+{\n\
+	return vec4(vec3((bt601_coeff_inv * rgba.rgb) + yuv_offsets_inv),rgba.a);\n\
 }\n\n";
 static const char func_readrgbg[] = "";
 static const char func_readgrgb[] = "";
@@ -900,6 +908,17 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		break;			
 	}
 
+	switch (desttype)
+	{
+	case 0:
+	default:
+		break;
+	case 0x83:
+		if ((srctype >= 0x80) && (srctype <= 0x83)) break;
+		String_Append(fsrc, const_bt601_coeff_inv);
+		break;
+	}
+
 	// Uniforms
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, unif_fillcolor);
 	else
@@ -969,7 +988,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	if (usedest) String_Append(fsrc, var_dest);
 
 	// Functions
-	switch (srctype2)
+	switch (srctype)
 	{
 	case 0x20:
 		break;
@@ -982,7 +1001,28 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	case 0x82:
 		break;
 	case 0x83:
+		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
 		String_Append(fsrc, func_yuvatorgba);
+		break;
+	default:
+		break;
+	}
+
+	switch (desttype)
+	{
+	case 0x20:
+		break;
+	case 0x21:
+		break;
+	case 0x80:
+		break;
+	case 0x81:
+		break;
+	case 0x82:
+		break;
+	case 0x83:
+		if ((srctype >= 0x80) && (srctype <= 0x83)) break;
+		String_Append(fsrc, func_rgbatoyuva);
 		break;
 	default:
 		break;
@@ -1054,6 +1094,22 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	{
 		switch (srctype)
 		{
+		case 0x00:
+		case 0x10:
+		case 0x11:
+		case 0x12:
+		case 0x13:
+			switch (desttype)
+			{
+			case 0:
+			default:
+				String_Append(fsrc, op_destout);
+				break;
+			case 0x83:
+				String_Append(fsrc, op_destoutrgbyuv);
+				break;
+			}
+			break;
 		case 0x83:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
