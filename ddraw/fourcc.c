@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2018 William Feely
+// Copyright (C) 2018-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,15 @@
 
 static const int START_FOURCC = __LINE__;
 const DWORD dxglfourcc[] =
-{ 0  // TODO:  Add FourCC codes and remove placeholder
+{
+	MAKEFOURCC('U','Y','V','Y'),
+	MAKEFOURCC('U','Y','N','V'),
+	MAKEFOURCC('Y','4','2','2'),
+	MAKEFOURCC('A','Y','U','V'),
+	MAKEFOURCC('Y','8',' ',' '),
+	MAKEFOURCC('Y','8','0','0'),
+	MAKEFOURCC('G','R','E','Y'),
+	MAKEFOURCC('Y','1','6',' ')
 };
 static const int END_FOURCC = __LINE__ - 4;
 

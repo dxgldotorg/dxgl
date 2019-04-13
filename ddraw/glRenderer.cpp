@@ -3431,10 +3431,20 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
 	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
 	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
-	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
-	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
-	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
-	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	if (cmd->src && (cmd->src->target == GL_TEXTURE_RECTANGLE))
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left;
+		This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right;
+		This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top;
+		This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom;
+	}
+	else
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)ddsdSrc.dwWidth;
+		This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)ddsdSrc.dwWidth;
+		This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)ddsdSrc.dwHeight;
+		This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)ddsdSrc.dwHeight;
+	}
 	if ((cmd->bltfx.dwSize == sizeof(DDBLTFX)) && (cmd->flags & DDBLT_DDFX))
 	{
 		if (cmd->bltfx.dwDDFX & DDBLTFX_MIRRORLEFTRIGHT)
@@ -3677,10 +3687,20 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetTexture(This->util, 8, texture);
 	This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
-	This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->levels[0].ddsd.dwWidth;
-	This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->levels[0].ddsd.dwWidth;
-	This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)texture->levels[0].ddsd.dwHeight;
-	This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)texture->levels[0].ddsd.dwHeight;
+	if (texture->target == GL_TEXTURE_RECTANGLE)
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left;
+		This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right;
+		This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top;
+		This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom;
+	}
+	else
+	{
+		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left / (GLfloat)texture->levels[0].ddsd.dwWidth;
+		This->bltvertices[0].s = This->bltvertices[2].s = (GLfloat)srcrect.right / (GLfloat)texture->levels[0].ddsd.dwWidth;
+		This->bltvertices[0].t = This->bltvertices[1].t = (GLfloat)srcrect.top / (GLfloat)texture->levels[0].ddsd.dwHeight;
+		This->bltvertices[2].t = This->bltvertices[3].t = (GLfloat)srcrect.bottom / (GLfloat)texture->levels[0].ddsd.dwHeight;
+	}
 	This->bltvertices[1].x = This->bltvertices[3].x = (float)x1;
 	This->bltvertices[0].x = This->bltvertices[2].x = (float)x2;
 	This->bltvertices[0].y = This->bltvertices[1].y = (float)y1;

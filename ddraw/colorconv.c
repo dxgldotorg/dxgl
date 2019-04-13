@@ -30,8 +30,8 @@ COLORCONVPROC colorconvproc[] =
 	rgba8888torgba1555, // 6
 	rgba4444torgba8888, // 7
 	rgba8888torgba4444, // 8
-	uyvytorgbx8888,     // 9
-	rgbx8888touyvy,     // 10
+	unpackrg88,         // 9
+	packrg88,           // 10
 	pal1topal8,         // 11
 	pal2topal8,         // 12
 	pal4topal8,         // 13
@@ -270,29 +270,24 @@ __inline DWORD yuvtorgb(DWORD y, DWORD u, DWORD v)
 	return ((DWORD)r << 16) | ((DWORD)g << 8) || (DWORD)b;
 }
 
-void uyvytorgbx8888(size_t count, DWORD *dest, DWORD *src)
+void unpackrg88(size_t count, DWORD *dest, WORD *src)
 {
 	size_t i;
-	DWORD in;
-	DWORD y, u, v;
-	for (i = 0; i < (count << 1); i++)
+	for (i = 0; i < count; i++)
 	{
-		in = src[i];
-		// first pixel
-		y = (src[i] >> 8) & 0xFF;
-		u = src[i] & 0xFF;
-		v = (src[i] >> 16) & 0xFF;
-		dest[i << 1] = yuvtorgb(y, u, v);
-		// second pixel
-		y = (src[i] >> 24) & 0xFF;
-		dest[(i << 1)+1] = yuvtorgb(y, u, v);
+		dest[i] = src[i];
 	}
 }
 
-void rgbx8888touyvy(size_t count, DWORD *dest, DWORD *src)
+void packrg88(size_t count, WORD* dest, DWORD* src)
 {
-
+	size_t i;
+	for (i = 0; i < count; i++)
+	{
+		dest[i] = src[i] & 0xFFFF;
+	}
 }
+
 
 void bpp24tobpp32(size_t count, DWORD *dest, BYTE *src)
 {

@@ -156,6 +156,9 @@ static const char op_palpixelrect[] = "vec4 myindex = texture2DRect(srctex, gl_T
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
 pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_pixeluyvy[] = "pixel = ivec4(readuyvy(srctex)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelyuyv[] = "pixel = ivec4(readyuyv(srctex)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelyvyu[] = "pixel = ivec4(readyvyu(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_lumpixel[] = "pixel = ivec4(vec4(texture2D(srctex,gl_TexCoord[0].st).rrr,1.0)*vec4(colorsizedest)+.5);\n";
 static const char op_color[] = "pixel = fillcolor;\n";
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
@@ -197,11 +200,31 @@ static const char func_rgbatoyuva[] =
 {\n\
 	return vec4(vec3((bt601_coeff_inv * rgba.rgb) + yuv_offsets_inv),rgba.a);\n\
 }\n\n";
-static const char func_readrgbg[] = "";
-static const char func_readgrgb[] = "";
-static const char func_readuyvy[] = "";
-static const char func_readyuyv[] = "";
-static const char func_readyvyu[] = "";
+static const char func_readuyvy_nearest[] = 
+"vec4 readuyvy(sampler2DRect texture)\n\
+{\n\
+	float x = floor(gl_TexCoord[0].s);\n\
+	float y = floor(gl_TexCoord[0].t);\n\
+	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	return vec4(texture2DRect(texture,vec2(x,y)).g,texture2DRect(texture,vec2(x2,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).r,1.0);\n\
+}\n\n";
+static const char func_readyuyv_nearest[] =
+"vec4 readyuyv(sampler2DRect texture)\n\
+{\n\
+	float x = floor(gl_TexCoord[0].s);\n\
+	float y = floor(gl_TexCoord[0].t);\n\
+	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	return vec4(texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2,y)).g,texture2DRect(texture,vec2(x2+1.0,y)).g,1.0);\n\
+}\n\n";
+static const char func_readyvyu_nearest[] =
+"vec4 readyvyu(sampler2DRect texture)\n\
+{\n\
+	float x = floor(gl_TexCoord[0].s);\n\
+	float y = floor(gl_TexCoord[0].t);\n\
+	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	return vec4(texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).g,texture2DRect(texture,vec2(x2,y)).g,1.0);\n\
+}\n\n";
+
 
 // ROP Operations
 static const char *op_ROP[256] = {
@@ -890,6 +913,18 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		else String_Append(fsrc, version_110);
 	}
 	else String_Append(fsrc, version_110);
+	switch (srctype)
+	{
+	default:
+		break;
+	case 0x20:
+	case 0x21:
+	case 0x80:
+	case 0x81:
+	case 0x82:
+		String_Append(fsrc, ext_texrect);
+		break;
+	}
 	String_Append(fsrc, idheader);
 	String_Append(fsrc, idstring);
 
@@ -913,6 +948,9 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	case 0:
 	default:
 		break;
+	case 0x80:
+	case 0x81:
+	case 0x82:
 	case 0x83:
 		if ((srctype >= 0x80) && (srctype <= 0x83)) break;
 		String_Append(fsrc, const_bt601_coeff_inv);
@@ -995,10 +1033,19 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	case 0x21:
 		break;
 	case 0x80:
+		String_Append(fsrc, func_readuyvy_nearest);
+		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
+		String_Append(fsrc, func_yuvatorgba);
 		break;
 	case 0x81:
+		String_Append(fsrc, func_readyuyv_nearest);
+		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
+		String_Append(fsrc, func_yuvatorgba);
 		break;
 	case 0x82:
+		String_Append(fsrc, func_readyvyu_nearest);
+		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
+		String_Append(fsrc, func_yuvatorgba);
 		break;
 	case 0x83:
 		if ((desttype >= 0x80) && (desttype <= 0x83)) break;
@@ -1034,7 +1081,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
 	else
 	{
-		switch (srctype2)
+		switch (srctype)
 		{
 		case 0x00:  // Classic RGB
 		case 0x83:  // AYUV
@@ -1049,7 +1096,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x11:
 		case 0x12:
 		case 0x13:
-			String_Append(fsrc, op_palpixel);
+			if((desttype >= 0x10) && (desttype <= 0x13)) String_Append(fsrc, op_pixel);
+			else String_Append(fsrc, op_palpixel);
 			break;
 		case 0x18:
 		case 0x19:
@@ -1060,6 +1108,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x21:
 			break;
 		case 0x80:
+			String_Append(fsrc, op_pixeluyvy);
 			break;
 		case 0x81:
 			break;
@@ -1109,6 +1158,11 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 				String_Append(fsrc, op_destoutrgbyuv);
 				break;
 			}
+			break;
+		case 0x80:
+			if ((desttype >= 0x80) && (desttype <= 0x83))
+				String_Append(fsrc, op_destout);
+			else String_Append(fsrc, op_destoutyuvrgb);
 			break;
 		case 0x83:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
