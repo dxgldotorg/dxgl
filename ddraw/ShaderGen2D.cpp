@@ -156,6 +156,8 @@ static const char op_palpixelrect[] = "vec4 myindex = texture2DRect(srctex, gl_T
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
 pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelrgbg[] = "pixel = ivec4(readrgbg(srctex)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelgrgb[] = "pixel = ivec4(readgrgb(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixeluyvy[] = "pixel = ivec4(readuyvy(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelyuyv[] = "pixel = ivec4(readyuyv(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelyvyu[] = "pixel = ivec4(readyvyu(srctex)*vec4(colorsizedest)+.5);\n";
@@ -200,7 +202,24 @@ static const char func_rgbatoyuva[] =
 {\n\
 	return vec4(vec3((bt601_coeff_inv * rgba.rgb) + yuv_offsets_inv),rgba.a);\n\
 }\n\n";
-static const char func_readuyvy_nearest[] = 
+
+static const char func_readrgbg_nearest[] =
+"vec4 readrgbg(sampler2DRect texture)\n\
+{\n\
+	float x = floor(gl_TexCoord[0].s);\n\
+	float y = floor(gl_TexCoord[0].t);\n\
+	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	return vec4(texture2DRect(texture,vec2(x2,y)).r,texture2DRect(texture,vec2(x,y)).g,texture2DRect(texture,vec2(x2+1.0,y)).r,1.0);\n\
+}\n\n";
+static const char func_readgrgb_nearest[] =
+"vec4 readgrgb(sampler2DRect texture)\n\
+{\n\
+	float x = floor(gl_TexCoord[0].s);\n\
+	float y = floor(gl_TexCoord[0].t);\n\
+	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	return vec4(texture2DRect(texture,vec2(x2,y)).g,texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).g,1.0);\n\
+}\n\n";
+static const char func_readuyvy_nearest[] =
 "vec4 readuyvy(sampler2DRect texture)\n\
 {\n\
 	float x = floor(gl_TexCoord[0].s);\n\
@@ -1029,8 +1048,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	switch (srctype)
 	{
 	case 0x20:
+		String_Append(fsrc, func_readrgbg_nearest);
 		break;
 	case 0x21:
+		String_Append(fsrc, func_readgrgb_nearest);
 		break;
 	case 0x80:
 		String_Append(fsrc, func_readuyvy_nearest);
@@ -1104,8 +1125,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			String_Append(fsrc, op_pixelmul256);
 			break;
 		case 0x20:
+			String_Append(fsrc, op_pixelrgbg);
 			break;
 		case 0x21:
+			String_Append(fsrc, op_pixelgrgb);
 			break;
 		case 0x80:
 			String_Append(fsrc, op_pixeluyvy);

@@ -33,7 +33,9 @@ const DWORD dxglfourcc[] =
 	MAKEFOURCC('Y','8',' ',' '),
 	MAKEFOURCC('Y','8','0','0'),
 	MAKEFOURCC('G','R','E','Y'),
-	MAKEFOURCC('Y','1','6',' ')
+	MAKEFOURCC('Y','1','6',' '),
+	MAKEFOURCC('R','G','B','G'),
+	MAKEFOURCC('G','R','G','B')
 };
 static const int END_FOURCC = __LINE__ - 4;
 

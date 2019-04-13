@@ -1521,10 +1521,22 @@ void glTexture__FinishCreate(glTexture *This)
 		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_RGBG:
-		This->blttype = 0x9E;
-		This->internalformats[0] = GL_RGBA8;
-		This->format = GL_BGRA;
-		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (This->renderer->ext->glver_major >= 3)
+		{
+			This->internalformats[0] = GL_RG8;
+			This->format = GL_RG;
+		}
+		else
+		{
+			This->useconv = TRUE;
+			This->convfunctionupload = 9;
+			This->convfunctiondownload = 10;
+			This->internalsize = 4;
+			This->internalformats[0] = GL_RGBA8;
+			This->format = GL_RGBA;
+		}
+		This->blttype = 0x20;
+		This->type = GL_UNSIGNED_BYTE;
 		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
@@ -1535,13 +1547,25 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 8;
-		This->packsize = 2;
+		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_GRGB:
-		This->blttype = 0x9F;
-		This->internalformats[0] = GL_RGBA8;
-		This->format = GL_BGRA;
-		This->type = GL_UNSIGNED_INT_8_8_8_8_REV;
+		if (This->renderer->ext->glver_major >= 3)
+		{
+			This->internalformats[0] = GL_RG8;
+			This->format = GL_RG;
+		}
+		else
+		{
+			This->useconv = TRUE;
+			This->convfunctionupload = 9;
+			This->convfunctiondownload = 10;
+			This->internalsize = 4;
+			This->internalformats[0] = GL_RGBA8;
+			This->format = GL_RGBA;
+		}
+		This->blttype = 0x21;
+		This->type = GL_UNSIGNED_BYTE;
 		if (!This->target) This->target = GL_TEXTURE_RECTANGLE;
 		This->colororder = 1;
 		This->colorsizes[0] = 255;
@@ -1552,7 +1576,7 @@ void glTexture__FinishCreate(glTexture *This)
 		This->colorbits[1] = 8;
 		This->colorbits[2] = 8;
 		This->colorbits[3] = 8;
-		This->packsize = 2;
+		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_FOURCC_AYUV: // 32-bit AYUV
 		This->blttype = 0x83;

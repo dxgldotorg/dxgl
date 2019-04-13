@@ -240,6 +240,18 @@ unsigned short EncodeYVYU(unsigned long value, DWORD x)
 	else return (y | (v << 8));
 }
 
+unsigned short EncodeRGBG(unsigned long value, DWORD x)
+{
+	if (x % 2) return ((value & 0xff) | ((value >> 8) & 0xff) << 8);
+	else return (((value >> 16) & 0xff) | ((value >> 8) & 0xff) << 8);
+}
+
+unsigned short EncodeGRGB(unsigned long value, DWORD x)
+{
+	if (x % 2) return (((value >> 8) & 0xff) | (value & 0xff) << 8);
+	else return (((value >> 8) & 0xff) | ((value >> 16) & 0xff) << 8);
+}
+
 unsigned long EncodeAYUV(unsigned long value)
 {
 	short r = (value >> 16) & 0xff;
@@ -368,6 +380,24 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 						for (x = 0; x < ddsd.dwWidth; x++)
 						{
 							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeYVYU((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('R', 'G', 'B', 'G'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeRGBG((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('G', 'R', 'G', 'B'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeGRGB((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
 						}
 					}
 					break;
