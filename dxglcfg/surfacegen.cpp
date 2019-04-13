@@ -216,6 +216,30 @@ unsigned short EncodeUYVY(unsigned long value, DWORD x)
 	else return (u | (y << 8));
 }
 
+unsigned short EncodeYUYV(unsigned long value, DWORD x)
+{
+	short r = (value >> 16) & 0xff;
+	short g = (value >> 8) & 0xff;
+	short b = value & 0xff;
+	unsigned char y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
+	unsigned char u = ((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
+	unsigned char v = ((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
+	if (x % 2) return (y | (v << 8));
+	else return (y | (u << 8));
+}
+
+unsigned short EncodeYVYU(unsigned long value, DWORD x)
+{
+	short r = (value >> 16) & 0xff;
+	short g = (value >> 8) & 0xff;
+	short b = value & 0xff;
+	unsigned char y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
+	unsigned char u = ((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
+	unsigned char v = ((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
+	if (x % 2) return (y | (u << 8));
+	else return (y | (v << 8));
+}
+
 unsigned long EncodeAYUV(unsigned long value)
 {
 	short r = (value >> 16) & 0xff;
@@ -324,6 +348,26 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 						for (x = 0; x < ddsd.dwWidth; x++)
 						{
 							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeUYVY((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('Y', 'U', 'Y', '2'):
+				case MAKEFOURCC('Y', 'U', 'Y', 'V'):
+				case MAKEFOURCC('Y', 'U', 'N', 'V'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeYUYV((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('Y', 'V', 'Y', 'U'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeYVYU((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
 						}
 					}
 					break;

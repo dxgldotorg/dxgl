@@ -1111,8 +1111,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			String_Append(fsrc, op_pixeluyvy);
 			break;
 		case 0x81:
+			String_Append(fsrc, op_pixelyuyv);
 			break;
 		case 0x82:
+			String_Append(fsrc, op_pixelyvyu);
 			break;
 		}
 	}
@@ -1160,6 +1162,16 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			}
 			break;
 		case 0x80:
+			if ((desttype >= 0x80) && (desttype <= 0x83))
+				String_Append(fsrc, op_destout);
+			else String_Append(fsrc, op_destoutyuvrgb);
+			break;
+		case 0x81:
+			if ((desttype >= 0x80) && (desttype <= 0x83))
+				String_Append(fsrc, op_destout);
+			else String_Append(fsrc, op_destoutyuvrgb);
+			break;
+		case 0x82:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
 			else String_Append(fsrc, op_destoutyuvrgb);
