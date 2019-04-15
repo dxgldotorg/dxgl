@@ -327,6 +327,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	{
 		if (dwFlags & 0x800) memcpy(newpal->palette, DefaultPalette, 1024);
 		else return DDERR_INVALIDPARAMS;
+		newpal->palsize = 256;
 	}
 	else
 	{
