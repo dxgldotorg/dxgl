@@ -62,9 +62,10 @@ Bit 27: ROP index bit 7
 Bit 28: (DXGL) Use Clipper
 Bit 29: (DXGL) Source color key range
 Bit 30: (DXGL) Dest. color key range
-Bit 31: reserved for DXGL usage
+Bit 31: (DXGL) Render to screen instead of dest
 Bits 32-39: Texture type input
 Bits 40-47: Texture type output
+Bit 48: if 1, use screen scale for filtering when applicable
 AND the dwFlags by 0xF2FAADFF before packing ROP index bits
 
 Texture types:

@@ -1679,6 +1679,8 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->hDC = NULL;
 	This->hRC = NULL;
 	This->pbo = NULL;
+	This->overlays = NULL;
+	This->overlaycount = 0;
 	This->last_fvf = 0xFFFFFFFF; // Bogus value to force initial FVF change
 	This->mode_3d = FALSE;
 	ZeroMemory(&This->dib, sizeof(DIB));
@@ -2122,7 +2124,7 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
   * @param previous
   *  Texture previously used as primary before a flip
   */
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime)
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
 	/*DrawScreenCmd cmd;
 	cmd.opcode = OP_DRAWSCREEN;
@@ -2138,6 +2140,8 @@ void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *palt
 	This->inputs[2] = (void*)vsync;
 	This->inputs[3] = previous;
 	This->inputs[4] = (void*)settime;
+	This->inputs[5] = overlays;
+	This->inputs[6] = (void*)overlaycount;
 	This->opcode = OP_DRAWSCREEN;
 	SetEvent(This->start);
 	WaitForSingleObject(This->busy,INFINITE);
@@ -2850,6 +2854,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 				glUtil_Release(This->util);
 				free(This->shaders);
 				free(This->ext);
+				if (This->overlays) free(This->overlays);
 				This->ext = NULL;
 				wglMakeCurrent(NULL,NULL);
 				wglDeleteContext(This->hRC);
@@ -2888,7 +2893,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
-				(GLint)This->inputs[2],(glTexture*)This->inputs[3],true,(BOOL)This->inputs[4]);
+				(GLint)This->inputs[2],(glTexture*)This->inputs[3],TRUE,(BOOL)This->inputs[4],
+				(OVERLAY*)This->inputs[5],(int)This->inputs[6]);
 			break;
 		case OP_INITD3D:
 			glRenderer__InitD3D(This,(int)This->inputs[0],(int)This->inputs[1],(int)This->inputs[2]);
@@ -3581,7 +3587,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,FALSE,TRUE);
+		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,FALSE,TRUE,NULL,0);
 	This->outputs[0] = DD_OK;
 	SetEvent(This->busy);
 }
@@ -3955,11 +3961,32 @@ static BOOL WINAPI _UpdateLayeredWindow(HWND hWnd, HDC hdcDst, POINT *pptDst, SI
 	return __UpdateLayeredWindow(hWnd, hdcDst, pptDst, psize, hdcSrc, pptSrc, crKey, pblend, dwFlags);
 }
 
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime)
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
 	int progtype;
 	RECT r, r2;
+	int i;
+	unsigned __int64 shaderid;
+	BltCommand bltcmd;
+	glTexture *primary = texture;
 	BOOL scale512448 = Is512448Scale(This, texture, paltex);
+	if (overlays && overlaycount)
+	{
+		if (!This->overlays)
+		{
+			This->overlays = (OVERLAY *)malloc(overlaycount * sizeof(OVERLAY));
+			This->overlaycount = overlaycount;
+		}
+		else
+		{
+			if (overlaycount != This->overlaycount)
+			{
+				This->overlays = (OVERLAY*)realloc(This->overlays, overlaycount * sizeof(OVERLAY));
+				This->overlaycount = overlaycount;
+			}
+		}
+		memcpy(This->overlays, overlays, overlaycount * sizeof(OVERLAY));
+	}
 	glUtil_BlendEnable(This->util, FALSE);
 	if (previous) previous->levels[0].ddsd.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
 	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
@@ -4104,6 +4131,38 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	glUtil_SetCull(This->util, D3DCULL_NONE);
 	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
+	if (This->overlays)
+	{
+		for (i = 0; i < overlaycount; i++)
+		{
+			if (This->overlays[i].enabled)
+			{
+				bltcmd.flags = 0x80000000;
+				if (overlays[i].flags & DDOVER_DDFX)
+				{
+					if (overlays[i].flags & DDOVER_KEYDEST) bltcmd.flags |= DDBLT_KEYDEST;
+					if (overlays[i].flags & DDOVER_KEYDESTOVERRIDE)
+					{
+						bltcmd.flags |= DDBLT_KEYDESTOVERRIDE;
+						bltcmd.destkey = overlays[i].fx.dckDestColorkey;
+					}
+					if (overlays[i].flags & DDOVER_KEYSRC) bltcmd.flags |= DDBLT_KEYSRC;
+					if (overlays[i].flags & DDOVER_KEYSRCOVERRIDE)
+					{
+						bltcmd.flags |= DDBLT_KEYSRCOVERRIDE;
+						bltcmd.srckey = overlays[i].fx.dckSrcColorkey;
+					}
+				}
+				bltcmd.src = This->overlays[i].texture;
+				bltcmd.srclevel = 0;
+				bltcmd.srcrect = This->overlays[i].srcrect;
+				bltcmd.dest = primary;
+				bltcmd.destlevel = 0;
+				bltcmd.destrect = This->overlays[i].destrect;
+				//FIXME: Finish Blt
+			}
+		}
+	}
 	glFlush();
 	if(This->hWnd) SwapBuffers(This->hDC);
 	else

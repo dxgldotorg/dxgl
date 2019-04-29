@@ -1471,7 +1471,8 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	if (ddCaps.dwSize < sizeof(DDCAPS_DX3)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTDEPTHFILL | DDCAPS_BLTFOURCC |
 		DDCAPS_BLTSTRETCH |	DDCAPS_COLORKEY | DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM |
-		DDCAPS_3D | DDCAPS_CANCLIP | DDCAPS_CANCLIPSTRETCHED | DDCAPS_READSCANLINE;
+		DDCAPS_3D | DDCAPS_CANCLIP | DDCAPS_CANCLIPSTRETCHED | DDCAPS_READSCANLINE |
+		DDCAPS_OVERLAY | DDCAPS_OVERLAYSTRETCH;
 	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED |
 		DDCAPS2_FLIPINTERVAL | DDCAPS2_FLIPNOVSYNC | DDCAPS2_NONLOCALVIDMEM;
 	ddCaps.dwFXCaps = DDFXCAPS_BLTSHRINKX | DDFXCAPS_BLTSHRINKY |
@@ -1484,8 +1485,10 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
 		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE |
 		DDSCAPS_NONLOCALVIDMEM | DDSCAPS_LOCALVIDMEM | DDSCAPS_TEXTURE |
-		DDSCAPS_MIPMAP;
+		DDSCAPS_MIPMAP | DDSCAPS_OVERLAY;
 	ddCaps.ddsCaps.dwCaps2 = DDSCAPS2_MIPMAPSUBLEVEL;
+	ddCaps.dwMinOverlayStretch = 1;
+	ddCaps.dwMaxOverlayStretch = 2147483647;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT | DDCKEYCAPS_DESTBLT;
 	ddCaps.dwZBufferBitDepths = DDBD_16 | DDBD_24 | DDBD_32;
 	ddCaps.dwNumFourCCCodes = GetNumFOURCC();
@@ -1784,7 +1787,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
 		glDD7->internaly = (DWORD)((float)glDD7->internaly * 1.2f);
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
-		glDD7->primary->texture->palette, 0, NULL, FALSE);
+		glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
 }
 extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
@@ -2553,7 +2556,7 @@ HRESULT WINAPI glDirectDraw7::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent)
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lastsync) lastsync = true;
-	else if(primary) primary->RenderScreen(primary->texture,1,NULL,TRUE);
+	else if(primary) primary->RenderScreen(primary->texture,1,NULL,TRUE,NULL,0);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

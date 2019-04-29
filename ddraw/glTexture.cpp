@@ -94,20 +94,20 @@ const DDPIXELFORMAT texformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8',' ',' '), 8,	0,			0,			0,			0},  // 8-bit grayscale
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8','0','0'), 8,	0,			0,			0,			0},  // 8-bit grayscale
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','E','Y'), 8,	0,			0,			0,			0},  // 8-bit grayscale
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','1','6',' '), 16,	0,			0,			0,			0},  // 16-bit grayscale
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','4','2','2'), 16,	0,			0,			0,			0},  // UYVY packed YUV surface (ADS Tech. alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (dup. of YUY2)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface (NVIDIA alias)
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','V','Y','U'), 16,	0,			0,			0,			0},  // YUY2 packed YUV surface
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 16,	0,			0,			0,			0},  // RGBG packed 16-bit pixelformat
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 16,	0,			0,			0,			0},  // GRGB packed 16-bit pixelformat
-	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('A','Y','U','V'), 32,	0,			0,			0,			0},  // AYUV packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8',' ',' '), 0,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8','0','0'), 0,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','E','Y'), 0,	0,			0,			0,			0},  // 8-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','1','6',' '), 0,	0,			0,			0,			0},  // 16-bit grayscale
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','V','Y'), 0,	0,			0,			0,			0},  // UYVY packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('U','Y','N','V'), 0,	0,			0,			0,			0},  // UYVY packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','4','2','2'), 0,	0,			0,			0,			0},  // UYVY packed YUV surface (ADS Tech. alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','2'), 0,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','Y','V'), 0,	0,			0,			0,			0},  // YUY2 packed YUV surface (dup. of YUY2)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','U','N','V'), 0,	0,			0,			0,			0},  // YUY2 packed YUV surface (NVIDIA alias)
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','V','Y','U'), 0,	0,			0,			0,			0},  // YUY2 packed YUV surface
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('R','G','B','G'), 0,	0,			0,			0,			0},  // RGBG packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','G','B'), 0,	0,			0,			0,			0},  // GRGB packed 16-bit pixelformat
+	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('A','Y','U','V'), 0,	0,			0,			0,			0},  // AYUV packed YUV surface
 };
 static const int END_TEXFORMATS = __LINE__ - 4;
 int numtexformats;
@@ -505,6 +505,15 @@ BOOL glTexture_ValidatePixelFormat(DDPIXELFORMAT *pixelformat)
 	int i;
 	int texformat = -1;
 	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
+	DDPIXELFORMAT compformat;
+	if (pixelformat->dwFlags & DDPF_FOURCC)
+	{
+		ZeroMemory(&compformat, sizeof(DDPIXELFORMAT));
+		compformat.dwSize = sizeof(DDPIXELFORMAT);
+		compformat.dwFlags = pixelformat->dwFlags;
+		compformat.dwFourCC = pixelformat->dwFourCC;
+	}
+	else compformat = *pixelformat;
 	for (i = 0; i < numtexformats; i++)
 	{
 		if (!memcmp(&texformats[i], pixelformat, sizeof(DDPIXELFORMAT)))
@@ -888,9 +897,18 @@ void glTexture__FinishCreate(glTexture *This)
 	DWORD x, y;
 	GLenum error;
 	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
+	DDPIXELFORMAT compformat;
+	if (This->levels[0].ddsd.ddpfPixelFormat.dwFlags & DDPF_FOURCC)
+	{
+		ZeroMemory(&compformat, sizeof(DDPIXELFORMAT));
+		compformat.dwSize = sizeof(DDPIXELFORMAT);
+		compformat.dwFlags = This->levels[0].ddsd.ddpfPixelFormat.dwFlags;
+		compformat.dwFourCC = This->levels[0].ddsd.ddpfPixelFormat.dwFourCC;
+	}
+	else compformat = This->levels[0].ddsd.ddpfPixelFormat;
 	for (i = 0; i < numtexformats; i++)
 	{
-		if (!memcmp(&texformats[i], &This->levels[0].ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT)))
+		if (!memcmp(&texformats[i], &compformat, sizeof(DDPIXELFORMAT)))
 		{
 			texformat = i;
 			break;

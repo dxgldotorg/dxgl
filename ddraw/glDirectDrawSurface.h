@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -118,13 +118,16 @@ public:
 	void SetTexture(glTexture *newtexture){ texture = newtexture; };
 	glDirectDrawSurface7 *GetBackbuffer(){return backbuffer;};
 	glDirectDrawSurface7 *GetZBuffer(){return zbuffer;};
-	void RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime);
+	void RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount);
 	// Special ddraw2->ddraw7 api
 	HRESULT WINAPI Unlock2(LPVOID lpSurfaceData);
 	HRESULT GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
 	HRESULT Load(glDirectDrawSurface7 *src);
 	HRESULT GetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData);
 	HRESULT SetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData);
+	HRESULT AddOverlay(OVERLAY *overlay);
+	HRESULT DeleteOverlay(glDirectDrawSurface7 *surface);
+	HRESULT UpdateOverlayTexture(glDirectDrawSurface7 *surface, glTexture *texture);
 	glDirectDrawSurface1 *dds1;
 	glDirectDrawSurface2 *dds2;
 	glDirectDrawSurface3 *dds3;
@@ -152,6 +155,13 @@ public:
 	glDirectDrawSurface7 *backbufferwraparound;
 	DWORD attachcount;
 	glDirectDrawSurface7 *attachparent;
+	BOOL overlayenabled;
+	BOOL overlayset;
+	int overlaycount;
+	int maxoverlays;
+	OVERLAY *overlays;
+	glDirectDrawSurface7 *overlaydest;
+	POINT overlaypos;
 private:
 	int swapinterval;
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
@@ -162,7 +172,6 @@ private:
 	int pagelocked;
 	glDirect3DDevice7 *device1;
 	glDirect3DDevice7 *device;
-	bool overlay;
 	IUnknown *zbuffer_iface;
 	int version;
 	unsigned char *clientbuffer;

@@ -44,7 +44,6 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	TRACE_ENTER(5,14,this,14,lpDD7,14,lpDDSurfaceDesc2,14,error,14,palettein);
 	this->version = version;
 	creator = NULL;
-	overlay = false;
 	hasstencil = false;
 	handle = 0;
 	device = NULL;
@@ -67,6 +66,12 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	zbuffer = NULL;
 	attachcount = 0;
 	attachparent = NULL;
+	overlayenabled = FALSE;
+	overlayset = FALSE;
+	overlaycount = 0;
+	maxoverlays = 0;
+	overlays = NULL;
+	overlaydest = NULL;
 	this->miplevel = miplevel;
 	ddInterface = (glDirectDraw7 *)lpDD7;
 	hRC = ddInterface->renderer->hRC;
@@ -393,6 +398,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 }
 glDirectDrawSurface7::~glDirectDrawSurface7()
 {
+	int i;
 	TRACE_ENTER(1,14,this);
 	AddRef();
 	if (dds1) delete dds1;
@@ -402,6 +408,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (d3dt1) delete d3dt1;
 	if (d3dt2) delete d3dt2;
 	if (gammacontrol) free(gammacontrol);
+	if (overlaydest) overlaydest->DeleteOverlay(this);
 	if (texture) glTexture_Release(texture, FALSE);
 	//if(bitmapinfo) free(bitmapinfo);
 	if (palette)
@@ -423,6 +430,12 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 		if (zbuffer->attachcount) zbuffer->attachcount--;
 		if (!zbuffer->attachcount) zbuffer->attachparent = NULL;
 		zbuffer_iface->Release();
+	}
+	if (overlays)
+	{
+		for (i = 0; i < overlaycount; i++)
+			glTexture_Release(overlays[i].texture, FALSE);
+		free(overlays);
 	}
 	if(miptexture) miptexture->Release();
 	if (device) device->Release(); 
@@ -752,9 +765,8 @@ HRESULT WINAPI glDirectDrawSurface7::AddOverlayDirtyRect(LPRECT lpRect)
 {
 	TRACE_ENTER(2,14,this,26,lpRect);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::AddOverlayDirtyRect: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	TRACE_EXIT(23,DDERR_UNSUPPORTED);
+	return DDERR_UNSUPPORTED;
 }
 HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
@@ -934,6 +946,7 @@ HRESULT WINAPI glDirectDrawSurface7::DeleteAttachedSurface(DWORD dwFlags, LPDIRE
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDSAttachedSurface);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSAttachedSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSAttachedSurface == (LPDIRECTDRAWSURFACE7)zbuffer)
 	{
 		if (zbuffer && dxglcfg.primaryscale && (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
@@ -975,11 +988,30 @@ HRESULT WINAPI glDirectDrawSurface7::EnumAttachedSurfaces(LPVOID lpContext, LPDD
 }
 HRESULT WINAPI glDirectDrawSurface7::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK7 lpfnCallback)
 {
+	int i;
 	TRACE_ENTER(4,14,this,9,dwFlags,14,lpContext,14,lpfnCallback);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::EnumOverlayZOrders: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpfnCallback) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (dwFlags > 1) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (this->overlaycount == 0) TRACE_RET(HRESULT, 23, DD_OK);
+	if (dwFlags == 1)
+	{
+		for (i = this->overlaycount; i > 0; i--)
+		{
+			if (lpfnCallback((LPDIRECTDRAWSURFACE7)this->overlays[i].surface,
+				&((glDirectDrawSurface7*)this->overlays[i].surface)->ddsd, lpContext) == DDENUMRET_CANCEL) break;
+		}
+	}
+	else
+	{
+		for (i = this->overlaycount; i > 0; i--)
+		{
+			if (lpfnCallback((LPDIRECTDRAWSURFACE7)this->overlays[i].surface,
+				&((glDirectDrawSurface7*)this->overlays[i].surface)->ddsd, lpContext) == DDENUMRET_CANCEL) break;
+		}
+	}
+	TRACE_RET(HRESULT, 23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags)
 {
@@ -995,7 +1027,11 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			swapinterval++;
 			ddInterface->lastsync = false;
 		}
-		RenderScreen(texture,swapinterval,previous,TRUE);
+		RenderScreen(texture,swapinterval,previous,TRUE,FALSE,0);
+	}
+	if (ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY)
+	{
+		if (overlaydest) overlaydest->UpdateOverlayTexture(this, this->texture);
 	}
 	TRACE_EXIT(23,ret);
 	return ret;
@@ -1006,7 +1042,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwFlags & 0xF8FFFFC0) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(locked) TRACE_RET(HRESULT,23,DDERR_SURFACEBUSY);
-	if(!overlay && ((dwFlags & DDFLIP_ODD) || (dwFlags & DDFLIP_EVEN))) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if(!(this->ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY) && ((dwFlags & DDFLIP_ODD) || (dwFlags & DDFLIP_EVEN))) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DWORD i;
 	glDirectDrawSurface7 *tmp;
 	if(previous) *previous = this->texture;
@@ -1250,9 +1286,15 @@ HRESULT WINAPI glDirectDrawSurface7::GetOverlayPosition(LPLONG lplX, LPLONG lplY
 {
 	TRACE_ENTER(3,14,this,14,lplX,14,lplY);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::GetOverlayPosition: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!(this->ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY))
+		TRACE_RET(HRESULT, 23, DDERR_NOTAOVERLAYSURFACE);
+	if (!this->overlayenabled) TRACE_RET(HRESULT, 23, DDERR_OVERLAYNOTVISIBLE);
+	if (!this->overlayset) TRACE_RET(HRESULT, 23, DDERR_NOOVERLAYDEST);
+	if (!lplX && !lplY) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lplX) *lplX = this->overlaypos.x;
+	if (lplY) *lplY = this->overlaypos.y;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDPalette)
 {
@@ -1334,10 +1376,10 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	{
 		if (ddInterface->lastsync)
 		{
-			RenderScreen(texture, 1, NULL, TRUE);
+			RenderScreen(texture, 1, NULL, TRUE, FALSE, 0);
 			ddInterface->lastsync = false;
 		}
-		else RenderScreen(texture, 0, NULL, TRUE);
+		else RenderScreen(texture, 0, NULL, TRUE, FALSE, 0);
 	}
 	TRACE_EXIT(23,error);
 	return error;
@@ -1524,9 +1566,14 @@ HRESULT WINAPI glDirectDrawSurface7::SetOverlayPosition(LONG lX, LONG lY)
 {
 	TRACE_ENTER(3,14,this,7,lX,7,lY);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::SetOverlayPosition: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!(this->ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY))
+		TRACE_RET(HRESULT, 23, DDERR_NOTAOVERLAYSURFACE);
+	if (!this->overlayenabled) TRACE_RET(HRESULT, 23, DDERR_OVERLAYNOTVISIBLE);
+	if (!this->overlayset) TRACE_RET(HRESULT, 23, DDERR_NOOVERLAYDEST);
+	this->overlaypos.x = lX;
+	this->overlaypos.y = lY;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
@@ -1574,7 +1621,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		if (!dxglcfg.DebugNoPaletteRedraw)
 		{
 			if(DXGLTimer_CheckLastDraw(&ddInterface->renderer->timer,dxglcfg.HackPaletteDelay))
-				RenderScreen(texture, dxglcfg.HackPaletteVsync, NULL, FALSE);
+				RenderScreen(texture, dxglcfg.HackPaletteVsync, NULL, FALSE, NULL, 0);
 		}
 	}
 	TRACE_EXIT(23,DD_OK);
@@ -1641,11 +1688,20 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 		{
 			if(ddInterface->lastsync)
 			{
-				RenderScreen(texture,1,NULL,TRUE);
+				RenderScreen(texture,1,NULL,TRUE,NULL,0);
 				ddInterface->lastsync = false;
 			}
-			else RenderScreen(texture,0,NULL,TRUE);
+			else RenderScreen(texture,0,NULL,TRUE,NULL,0);
 		}
+	if ((ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY) && overlayenabled)
+	{
+		if (ddInterface->lastsync)
+		{
+			RenderScreen(ddInterface->primary->texture, 1, NULL, TRUE, NULL, 0);
+			ddInterface->lastsync = false;
+		}
+		else RenderScreen(ddInterface->primary->texture, 0, NULL, TRUE, NULL, 0);
+	}
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -1653,17 +1709,43 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::UpdateOverlay: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!(this->ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY)) 
+		TRACE_RET(HRESULT,23,DDERR_NOTAOVERLAYSURFACE);
+	if (!(((glDirectDrawSurface7 *)lpDDDestSurface)->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDSURFACETYPE);
+	if ((dwFlags & DDOVER_SHOW) && (dwFlags & DDOVER_HIDE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	OVERLAY newoverlay;
+	ZeroMemory(&newoverlay, sizeof(OVERLAY));
+	if (lpSrcRect) newoverlay.srcrect = *lpSrcRect;
+	else newoverlay.srcrect = nullrect;
+	if (lpDestRect) newoverlay.destrect = *lpDestRect;
+	else newoverlay.destrect = nullrect;
+	newoverlay.surface = this;
+	newoverlay.texture = this->texture;
+	if (lpDDOverlayFx) newoverlay.fx = *lpDDOverlayFx;
+	newoverlay.flags = dwFlags;
+	if (dwFlags & DDOVER_SHOW)
+	{
+		this->overlayenabled = TRUE;
+		newoverlay.enabled = TRUE;
+	}
+	if (dwFlags & DDOVER_HIDE)
+	{
+		this->overlayenabled = FALSE;
+		newoverlay.enabled = FALSE;
+	}
+	this->overlaydest = (glDirectDrawSurface7 *)lpDDDestSurface;
+	((glDirectDrawSurface7 *)lpDDDestSurface)->AddOverlay(&newoverlay);
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayDisplay(DWORD dwFlags)
 {
 	TRACE_ENTER(2,14,this,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("glDirectDrawSurface7::UpdateOverlayDisplay: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	TRACE_EXIT(23,DDERR_UNSUPPORTED);
+	return DDERR_UNSUPPORTED;
 }
 HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE7 lpDDSReference)
 {
@@ -1674,15 +1756,15 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECT
 	ERR(DDERR_GENERIC);
 }
 
-extern "C" void glDirectDrawSurface7_RenderScreen(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime)
+extern "C" void glDirectDrawSurface7_RenderScreen(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
-	((glDirectDrawSurface7*)surface)->RenderScreen(((glDirectDrawSurface7*)surface)->texture, vsync, NULL, settime);
+	((glDirectDrawSurface7*)surface)->RenderScreen(((glDirectDrawSurface7*)surface)->texture, vsync, NULL, settime, overlays, overlaycount);
 }
 
-void glDirectDrawSurface7::RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime)
+void glDirectDrawSurface7::RenderScreen(glTexture *texture, int vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
 	TRACE_ENTER(3,14,this,14,texture,14,vsync);
-	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, vsync, previous, settime);
+	glRenderer_DrawScreen(ddInterface->renderer,texture, texture->palette, vsync, previous, settime, overlays, overlaycount);
 	TRACE_EXIT(0,0);
 }
 // ddraw 2+ api
@@ -1718,6 +1800,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetSurfaceDesc(LPDDSURFACEDESC2 lpddsd2, DW
 {
 	TRACE_ENTER(3,14,this,14,lpddsd2,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (this->overlayenabled) TRACE_RET(HRESULT, 23, DDERR_SURFACEBUSY);
 	FIXME("glDirectDrawSurface7::SetSurfaceDesc: stub\n");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
@@ -1855,6 +1938,107 @@ HRESULT glDirectDrawSurface7::SetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampDa
 	FIXME("glDirectDrawSurface7::SetGammaRamp: stub\n");
 	TRACE_EXIT(23, DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
+}
+
+HRESULT glDirectDrawSurface7::AddOverlay(OVERLAY *overlay)
+{
+	OVERLAY *tmpptr;
+	int i;
+	if (overlaycount + 1 > maxoverlays)
+	{
+		if (!overlays)
+		{
+			overlays = (OVERLAY*)malloc(16 * sizeof(OVERLAY));
+			if (!overlays) return DDERR_OUTOFMEMORY;
+			maxoverlays = 16;
+		}
+		else
+		{
+			if (maxoverlays == 256) return DDERR_OUTOFCAPS;
+			maxoverlays += 16;
+			tmpptr = (OVERLAY*)realloc(overlays, maxoverlays * sizeof(OVERLAY));
+			if (!tmpptr) return DDERR_OUTOFMEMORY;
+			overlays = tmpptr;
+		}
+	}
+	for (i = 0; i < overlaycount; i++)
+	{
+		if (overlays[i].surface == overlay->surface)
+		{
+			glTexture_Release(overlays[i].texture, FALSE);
+			overlays[i].destrect = overlay->destrect;
+			overlays[i].srcrect = overlay->srcrect;
+			overlays[i].flags = overlay->flags;
+			overlays[i].fx = overlay->fx;
+			overlays[i].surface = overlay->surface;
+			overlays[i].texture = overlay->texture;
+			if (overlay->flags & DDOVER_SHOW) overlays[i].enabled = TRUE;
+			if (overlay->flags & DDOVER_HIDE) overlays[i].enabled = FALSE;
+			memcpy(&overlays[i], overlay, sizeof(OVERLAY));
+			glTexture_AddRef(overlays[i].texture);
+			return DD_OK;
+		}
+	}
+	overlays[overlaycount] = *overlay;
+	glTexture_AddRef(overlays[overlaycount].texture);
+	overlaycount++;
+	if (ddInterface->lastsync)
+	{
+		RenderScreen(ddInterface->primary->texture, 1, NULL, TRUE, overlays, overlaycount);
+		ddInterface->lastsync = false;
+	}
+	else RenderScreen(ddInterface->primary->texture, 0, NULL, TRUE, overlays, overlaycount);
+	return DD_OK;
+}
+
+HRESULT glDirectDrawSurface7::DeleteOverlay(glDirectDrawSurface7 *surface)
+{
+	int i;
+	for (i = 0; i < overlaycount; i++)
+	{
+		if (overlays[i].surface == surface)
+		{
+			glTexture_Release(overlays[i].texture, FALSE);
+			overlaycount--;
+			memmove(&overlays[i], &overlays[i + 1], (overlaycount - i) * sizeof(OVERLAY));
+			if (surface->overlayenabled)
+			{
+				if (ddInterface->lastsync)
+				{
+					RenderScreen(ddInterface->primary->texture, 1, NULL, TRUE, overlays, overlaycount);
+					ddInterface->lastsync = false;
+				}
+				else RenderScreen(ddInterface->primary->texture, 0, NULL, TRUE, overlays, overlaycount);
+			}
+			return DD_OK;
+		}
+	}
+	return DDERR_NOTFOUND;
+}
+
+HRESULT glDirectDrawSurface7::UpdateOverlayTexture(glDirectDrawSurface7 *surface, glTexture *texture)
+{
+	int i;
+	for (i = 0; i < overlaycount; i++)
+	{
+		if (overlays[i].surface == surface)
+		{
+			glTexture_Release(overlays[i].texture, FALSE);
+			overlays[i].texture = texture;
+			glTexture_AddRef(overlays[i].texture);
+			if (surface->overlayenabled)
+			{
+				if (ddInterface->lastsync)
+				{
+					RenderScreen(ddInterface->primary->texture, 1, NULL, TRUE, overlays, overlaycount);
+					ddInterface->lastsync = false;
+				}
+				else RenderScreen(ddInterface->primary->texture, 0, NULL, TRUE, overlays, overlaycount);
+			}
+			return DD_OK;
+		}
+	}
+	return DDERR_NOTFOUND;
 }
 
 // DDRAW1 wrapper
@@ -2148,7 +2332,7 @@ HRESULT WINAPI glDirectDrawSurface1::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,(LPDIRECTDRAWSURFACE7)lpDDDestSurface,lpDestRect,dwFlags,lpDDOverlayFx));
+	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface1*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface1::UpdateOverlayDisplay(DWORD dwFlags)
 {
@@ -2452,7 +2636,7 @@ HRESULT WINAPI glDirectDrawSurface2::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,(LPDIRECTDRAWSURFACE7)lpDDDestSurface,lpDestRect,dwFlags,lpDDOverlayFx));
+	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect, ((glDirectDrawSurface2*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface2::UpdateOverlayDisplay(DWORD dwFlags)
 {
@@ -2781,7 +2965,7 @@ HRESULT WINAPI glDirectDrawSurface3::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,(LPDIRECTDRAWSURFACE7)lpDDDestSurface,lpDestRect,dwFlags,lpDDOverlayFx));
+	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface3*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface3::UpdateOverlayDisplay(DWORD dwFlags)
 {
@@ -3090,7 +3274,7 @@ HRESULT WINAPI glDirectDrawSurface4::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,(LPDIRECTDRAWSURFACE7)lpDDDestSurface,lpDestRect,dwFlags,lpDDOverlayFx));
+	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface4*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface4::UpdateOverlayDisplay(DWORD dwFlags)
 {

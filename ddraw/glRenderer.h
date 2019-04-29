@@ -161,6 +161,8 @@ typedef struct glRenderer
 	BOOL mode_3d;
 	float postsizex, postsizey;
 	int xoffset, yoffset;
+	OVERLAY *overlays;
+	int overlaycount;
 } glRenderer;
 
 HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait);
@@ -172,7 +174,7 @@ void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level)
 void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
 HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd);
 void glRenderer_MakeTexture(glRenderer *This, glTexture *texture);
-void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime);
+void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount);
 void glRenderer_DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y);
 void glRenderer_Flush(glRenderer *This);
@@ -206,7 +208,7 @@ void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level
 void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__Blt(glRenderer *This, BltCommand *cmd);
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture);
-void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime);
+void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime, OVERLAY *overlays, int overlaycount);
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, int y, int progtype, BOOL paletted, BOOL firstpass);
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, RECT destrect, int progtype);

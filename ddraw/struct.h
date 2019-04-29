@@ -326,7 +326,6 @@ typedef struct glTexture
 	BufferObject *pboPack;
 	BufferObject *pboUnpack;
 } glTexture;
-
 // Color orders:
 // 0 - ABGR
 // 1 - ARGB
@@ -336,6 +335,17 @@ typedef struct glTexture
 // 5 - Luminance
 // 6 - Alpha
 // 7 - Luminance Alpha
+
+typedef struct OVERLAY
+{
+	DDOVERLAYFX fx;
+	RECT srcrect;
+	RECT destrect;
+	void *surface;
+	glTexture *texture;
+	DWORD flags;
+	BOOL enabled;
+} OVERLAY;
 
 typedef struct SHADER
 {
