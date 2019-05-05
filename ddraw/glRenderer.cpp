@@ -3395,7 +3395,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	else if (usedest)
 	{
 		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
-		glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, destrect2, PROG_TEXTURE);
+		if(!(cmd->flags & 0x80000000))
+			(This, cmd->dest, destrect, destrect2, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.0f;
 		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.0f;
@@ -3404,15 +3405,19 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = (GenShader2D*)This->shaders->gen3d->current_genshader;
 	glUtil_BlendEnable(This->util, FALSE);
-	do
+	if (cmd->flags & 0x80000000) glUtil_SetFBO(This->util, NULL);
+	else
 	{
-		if (glUtil_SetFBOSurface(This->util, cmd->dest, NULL, cmd->destlevel, 0, TRUE) == GL_FRAMEBUFFER_COMPLETE) break;
-		if (!cmd->dest->internalformats[1]) break;
-		glTexture__Repair(cmd->dest, TRUE);
-		glUtil_SetFBO(This->util, NULL);
-		cmd->dest->levels[cmd->destlevel].fbo.fbcolor = NULL;
-		cmd->dest->levels[cmd->destlevel].fbo.fbz = NULL;
-	} while (1);
+		do
+		{
+			if (glUtil_SetFBOSurface(This->util, cmd->dest, NULL, cmd->destlevel, 0, TRUE) == GL_FRAMEBUFFER_COMPLETE) break;
+			if (!cmd->dest->internalformats[1]) break;
+			glTexture__Repair(cmd->dest, TRUE);
+			glUtil_SetFBO(This->util, NULL);
+			cmd->dest->levels[cmd->destlevel].fbo.fbcolor = NULL;
+			cmd->dest->levels[cmd->destlevel].fbo.fbz = NULL;
+		} while (1);
+	}
 	glUtil_SetViewport(This->util,0,0,cmd->dest->bigwidth,cmd->dest->bigheight);
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
@@ -3435,8 +3440,16 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	else srcrect = cmd->srcrect;
 	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
 	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
-	This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
-	This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
+	if (cmd->flags & 0x80000000)
+	{
+		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight;
+		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight;
+	}
+	else
+	{
+		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
+		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
+	}
 	if (cmd->src && (cmd->src->target == GL_TEXTURE_RECTANGLE))
 	{
 		This->bltvertices[1].s = This->bltvertices[3].s = (GLfloat)srcrect.left;
@@ -3515,7 +3528,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
-		glUtil_SetTexture(This->util, 9, This->backbuffer);
+		if(cmd->flags & 0x80000000)	glUtil_SetTexture(This->util, 9, cmd->dest);
+		else glUtil_SetTexture(This->util, 9, This->backbuffer);
 		This->ext->glUniform1i(shader->shader.uniforms[2], 9);
 	}
 	if (usepattern && (shader->shader.uniforms[3] != -1))
@@ -4133,24 +4147,25 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	if (This->overlays)
 	{
+		ZeroMemory(&bltcmd, sizeof(BltCommand));
 		for (i = 0; i < overlaycount; i++)
 		{
 			if (This->overlays[i].enabled)
 			{
 				bltcmd.flags = 0x80000000;
-				if (overlays[i].flags & DDOVER_DDFX)
+				if (This->overlays[i].flags & DDOVER_DDFX)
 				{
-					if (overlays[i].flags & DDOVER_KEYDEST) bltcmd.flags |= DDBLT_KEYDEST;
-					if (overlays[i].flags & DDOVER_KEYDESTOVERRIDE)
+					if (This->overlays[i].flags & DDOVER_KEYDEST) bltcmd.flags |= DDBLT_KEYDEST;
+					if (This->overlays[i].flags & DDOVER_KEYDESTOVERRIDE)
 					{
 						bltcmd.flags |= DDBLT_KEYDESTOVERRIDE;
-						bltcmd.destkey = overlays[i].fx.dckDestColorkey;
+						bltcmd.destkey = This->overlays[i].fx.dckDestColorkey;
 					}
-					if (overlays[i].flags & DDOVER_KEYSRC) bltcmd.flags |= DDBLT_KEYSRC;
-					if (overlays[i].flags & DDOVER_KEYSRCOVERRIDE)
+					if (This->overlays[i].flags & DDOVER_KEYSRC) bltcmd.flags |= DDBLT_KEYSRC;
+					if (This->overlays[i].flags & DDOVER_KEYSRCOVERRIDE)
 					{
 						bltcmd.flags |= DDBLT_KEYSRCOVERRIDE;
-						bltcmd.srckey = overlays[i].fx.dckSrcColorkey;
+						bltcmd.srckey = This->overlays[i].fx.dckSrcColorkey;
 					}
 				}
 				bltcmd.src = This->overlays[i].texture;
@@ -4159,7 +4174,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 				bltcmd.dest = primary;
 				bltcmd.destlevel = 0;
 				bltcmd.destrect = This->overlays[i].destrect;
-				//FIXME: Finish Blt
+				glRenderer__Blt(This, &bltcmd);
 			}
 		}
 	}
