@@ -106,6 +106,12 @@ int ProcessHeaders(char *path)
 	FILE *filein;
 	FILE *fileout;
 	int revision = GetSVNRev(path);
+	BOOL nosign = FALSE;
+	if (SIGNMODE < 1) nosign = TRUE;
+	if ((SIGNMODE == 1) && DXGLBETA) nosign = TRUE;
+	#ifdef _DEBUG
+	if (SIGNMODE <= 2) nosign = TRUE;
+	#endif
 	strncpy(pathin,path,FILENAME_MAX);
 	pathin[FILENAME_MAX] = 0;
 	strncpy(pathout,path,FILENAME_MAX);
@@ -135,7 +141,7 @@ int ProcessHeaders(char *path)
 		findptr = strstr(buffer,"$MINOR");
 		if(findptr) strncpy(findptr,STR(DXGLMINORVER) "\n",6);
 		findptr = strstr(buffer,"$POINT");
-		if(findptr) strncpy(findptr,STR(DXGLPOINTVER) "\n",6);
+		if(findptr) strncpy(findptr,STR(DXGLPOINTVER) "\n",9);
 		findptr = strstr(buffer,"$REVISION");
 		if(findptr)
 		{
@@ -162,6 +168,12 @@ int ProcessHeaders(char *path)
 		if (DXGLBETA)
 		{
 			if (strstr(buffer, "//#define DXGLBETA")) strcpy(buffer, "#define DXGLBETA");
+		}
+		findptr = strstr(buffer, "$SIGNTOOL");
+		if (findptr)
+		{
+			if (nosign) strncpy(findptr, "0", 10);
+			else strncpy(findptr, "1", 10);
 		}
 		fputs(buffer,fileout);
 	}
@@ -442,13 +454,59 @@ int MakeInstaller(char *path)
 	{
 		int result = MessageBoxA(NULL,"Could not find NSIS, would you like to download it?","NSIS not found",
 			MB_YESNO|MB_ICONERROR);
-		if(result == IDYES) ShellExecuteA(NULL,"open","http://nsis.sourceforge.net/Main_Page",NULL,NULL,SW_SHOWNORMAL);
+		if(result == IDYES) ShellExecuteA(NULL,"open","https://nsis.sourceforge.io/Main_Page",NULL,NULL,SW_SHOWNORMAL);
 		puts("ERROR:  NSIS not found.");
 		return -1;
 	}
 	return 0;
 }
 
+int SignEXE(char *exefile)
+{
+	PROCESS_INFORMATION process;
+	STARTUPINFOA startinfo;
+	const char signtoolsha1path[] = "signtool sign /t http://timestamp.comodoca.com ";
+	const char signtoolsha256path[] = "signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as ";
+	char signpath[MAX_PATH + 80];
+	BOOL nosign = FALSE;
+	if (SIGNMODE < 1) nosign = TRUE;
+	if ((SIGNMODE == 1) && DXGLBETA) nosign = TRUE;
+	#ifdef _DEBUG
+		if (SIGNMODE <= 2) nosign = TRUE;
+	#endif
+	if (nosign)
+	{
+		puts("Skipping file signature.");
+		return 0;
+	}
+	strcpy(&signpath, &signtoolsha1path);
+	strcat(&signpath, "\"");
+	strncat(&signpath, exefile, MAX_PATH);
+	strcat(&signpath, "\"");
+	ZeroMemory(&startinfo, sizeof(STARTUPINFOA));
+	startinfo.cb = sizeof(STARTUPINFOA);
+	if (CreateProcessA(NULL, &signpath, NULL, NULL, FALSE, 0, NULL, NULL, &startinfo, &process))
+	{
+		WaitForSingleObject(process.hProcess, INFINITE);
+		CloseHandle(process.hProcess);
+		CloseHandle(process.hThread);
+		Sleep(15000);
+	}
+	strcpy(&signpath, &signtoolsha256path);
+	strcat(&signpath, "\"");
+	strncat(&signpath, exefile, MAX_PATH);
+	strcat(&signpath, "\"");
+	ZeroMemory(&startinfo, sizeof(STARTUPINFOA));
+	startinfo.cb = sizeof(STARTUPINFOA);
+	if (CreateProcessA(NULL, &signpath, NULL, NULL, FALSE, 0, NULL, NULL, &startinfo, &process))
+	{
+		WaitForSingleObject(process.hProcess, INFINITE);
+		CloseHandle(process.hProcess);
+		CloseHandle(process.hThread);
+		Sleep(15000);
+	}
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -485,6 +543,15 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			return MakeInstaller(argv[2]);
+		}
+		if (!strcmp(argv[1], "sign"))
+		{
+			if (argc < 3)
+			{
+				puts("ERROR:  file specified.");
+				return 1;
+			}
+			return SignEXE(argv[2]);
 		}
 	}
 	else

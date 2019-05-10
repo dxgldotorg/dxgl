@@ -132,6 +132,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug VS2019|Win32'">
     <ClCompile>
@@ -147,6 +150,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
     <ClCompile>
@@ -162,6 +168,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -181,6 +190,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release VS2019|Win32'">
     <ClCompile>
@@ -200,6 +212,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
     <ClCompile>
@@ -219,6 +234,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="dxglcfg.rc" />

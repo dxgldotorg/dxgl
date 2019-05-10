@@ -424,3 +424,10 @@ Section Uninstall
   DeleteRegKey HKLM "Software\DXGL"
   SetAutoClose true
 SectionEnd
+
+!if ${SIGNTOOL} == 1
+!finalize 'signtool sign /t http://timestamp.comodoca.com %1'
+!if ${COMPILER} == "VC2019_0"
+!finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
+!endif
+!endif

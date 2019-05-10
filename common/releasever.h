@@ -12,6 +12,11 @@
 
 #define DXGLSTRVER STR(DXGLMAJORVER) "." STR(DXGLMINORVER) "." STR(DXGLPOINTVER)
 
-
+/* sign modes
+0 - never sign
+1 - sign non-beta only
+2 - sign release only
+3 - sign all */
+#define SIGNMODE 1
 
 #endif //__VERSION_H

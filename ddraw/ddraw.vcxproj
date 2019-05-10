@@ -151,6 +151,9 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug VS2019|Win32'">
     <ClCompile>
@@ -174,6 +177,9 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Trace|Win32'">
     <ClCompile>
@@ -197,6 +203,9 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
     <ClCompile>
@@ -224,6 +233,7 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -252,6 +262,9 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release VS2019|Win32'">
     <ClCompile>
@@ -280,6 +293,9 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">
     <ClCompile>
@@ -310,6 +326,7 @@
     <PreBuildEvent>
       <Message>Create version headers</Message>
     </PreBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ddraw.def" />
