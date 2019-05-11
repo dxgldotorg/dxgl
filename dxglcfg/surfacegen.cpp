@@ -272,6 +272,94 @@ void DrawPalette(DDSURFACEDESC2 ddsd, unsigned char *buffer)  // Palette test
 	unsigned long *buffer32 = (unsigned long*) buffer;
 	switch(ddsd.ddpfPixelFormat.dwRGBBitCount)
 	{
+		case 0:
+			if (ddsd.ddpfPixelFormat.dwFlags & DDPF_FOURCC)
+			{
+				switch (ddsd.ddpfPixelFormat.dwFourCC)
+				{
+				case MAKEFOURCC('Y', '8', ' ', ' '):
+				case MAKEFOURCC('Y', '8', '0', '0'):
+				case MAKEFOURCC('G', 'R', 'E', 'Y'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer[x + (ddsd.lPitch * y)] = (unsigned char)((x / (ddsd.dwWidth / 16.)) + 16 * floor((y / (ddsd.dwHeight / 16.))));
+						}
+					}
+					break;
+				case MAKEFOURCC('Y', '1', '6', ' '):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = (unsigned short)((x / (ddsd.dwWidth / 256.)) + 256 * floor((y / (ddsd.dwHeight / 256.))));
+						}
+					}
+					break;
+				case MAKEFOURCC('U', 'Y', 'V', 'Y'):
+				case MAKEFOURCC('U', 'Y', 'N', 'V'):
+				case MAKEFOURCC('Y', '4', '2', '2'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeUYVY((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('Y', 'U', 'Y', '2'):
+				case MAKEFOURCC('Y', 'U', 'Y', 'V'):
+				case MAKEFOURCC('Y', 'U', 'N', 'V'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeYUYV((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('Y', 'V', 'Y', 'U'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeYVYU((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('R', 'G', 'B', 'G'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeRGBG((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('G', 'R', 'G', 'B'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer16[x + ((ddsd.lPitch / 2) * y)] = EncodeGRGB((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))), x);
+						}
+					}
+					break;
+				case MAKEFOURCC('A', 'Y', 'U', 'V'):
+					for (y = 0; y < ddsd.dwHeight; y++)
+					{
+						for (x = 0; x < ddsd.dwWidth; x++)
+						{
+							buffer32[x + ((ddsd.lPitch / 4) * y)] = EncodeAYUV((unsigned long)((x / (ddsd.dwWidth / 4096.)) + 4096 * floor((y / (ddsd.dwHeight / 4096.)))));
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+			break;
 		case 1:
 			for(y = 0; y < ddsd.dwHeight; y++)
 			{
