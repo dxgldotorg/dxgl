@@ -3396,7 +3396,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 	{
 		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 		if(!(cmd->flags & 0x80000000))
-			(This, cmd->dest, destrect, destrect2, PROG_TEXTURE);
+			glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, destrect2, PROG_TEXTURE);
 		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.0f;
 		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffer->levels[0].ddsd.dwWidth;
 		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.0f;
