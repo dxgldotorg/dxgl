@@ -894,6 +894,7 @@ void glTexture__FinishCreate(glTexture *This)
 	int texformat = -1;
 	int i;
 	int bytes;
+	int bytes2;
 	DWORD x, y;
 	GLenum error;
 	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
@@ -1678,6 +1679,7 @@ void glTexture__FinishCreate(glTexture *This)
 			case MAKEFOURCC('Y', '8', '0', '0'):
 			case MAKEFOURCC('G', 'R', 'E', 'Y'):
 				bytes = NextMultipleOf4(This->levels[i].ddsd.dwWidth);
+				bytes2 = NextMultipleOf4(This->bigwidth);
 			case MAKEFOURCC('Y', '1', '6', ' '):
 			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
 			case MAKEFOURCC('U', 'Y', 'N', 'V'):
@@ -1689,18 +1691,25 @@ void glTexture__FinishCreate(glTexture *This)
 			case MAKEFOURCC('R', 'G', 'B', 'G'):
 			case MAKEFOURCC('G', 'R', 'G', 'B'):
 				bytes = NextMultipleOf4(2 * This->levels[i].ddsd.dwWidth);
+				bytes2 = NextMultipleOf4(2 * This->bigwidth);
 				break;
 			case MAKEFOURCC('A', 'Y', 'U', 'V'):
 			default:
 				bytes = 4 * This->levels[i].ddsd.dwWidth;
+				bytes2 = 4 * This->bigwidth;
 				break;
 			}
 		}
-		else bytes = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
-			This->levels[i].ddsd.dwWidth) / 8);
+		else
+		{
+			bytes = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
+				This->levels[i].ddsd.dwWidth) / 8);
+			bytes2 = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
+				This->bigwidth) / 8);
+		}
 		This->levels[i].buffer = (char*)malloc(bytes * This->levels[i].ddsd.dwHeight);
 		if ((i == 0) && ((This->levels[i].ddsd.dwWidth != This->bigwidth) || (This->levels[i].ddsd.dwHeight != This->bigheight)))
-			This->levels[i].bigbuffer = (char *)malloc(bytes * This->bigheight);
+			This->levels[i].bigbuffer = (char *)malloc(bytes2 * This->bigheight);
 	}
 }
 void glTexture__Destroy(glTexture *This)
