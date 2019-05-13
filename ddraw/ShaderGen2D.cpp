@@ -207,41 +207,41 @@ static const char func_rgbatoyuva[] =
 static const char func_readrgbg_nearest[] =
 "vec4 readrgbg(sampler2DRect texture)\n\
 {\n\
-	float x = floor(gl_TexCoord[0].s);\n\
-	float y = floor(gl_TexCoord[0].t);\n\
-	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	float x = floor(gl_TexCoord[0].s)+0.5;\n\
+	float y = floor(gl_TexCoord[0].t)+0.5;\n\
+	float x2 = (floor(gl_TexCoord[0].s/2.0)*2.0)+0.5;\n\
 	return vec4(texture2DRect(texture,vec2(x2,y)).r,texture2DRect(texture,vec2(x,y)).g,texture2DRect(texture,vec2(x2+1.0,y)).r,1.0);\n\
 }\n\n";
 static const char func_readgrgb_nearest[] =
 "vec4 readgrgb(sampler2DRect texture)\n\
 {\n\
-	float x = floor(gl_TexCoord[0].s);\n\
-	float y = floor(gl_TexCoord[0].t);\n\
-	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	float x = floor(gl_TexCoord[0].s)+0.5;\n\
+	float y = floor(gl_TexCoord[0].t)+0.5;\n\
+	float x2 = (floor(gl_TexCoord[0].s/2.0)*2.0)+0.5;\n\
 	return vec4(texture2DRect(texture,vec2(x2,y)).g,texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).g,1.0);\n\
 }\n\n";
 static const char func_readuyvy_nearest[] =
 "vec4 readuyvy(sampler2DRect texture)\n\
 {\n\
-	float x = floor(gl_TexCoord[0].s);\n\
-	float y = floor(gl_TexCoord[0].t);\n\
-	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	float x = floor(gl_TexCoord[0].s)+0.5;\n\
+	float y = floor(gl_TexCoord[0].t)+0.5;\n\
+	float x2 = (floor(gl_TexCoord[0].s/2.0)*2.0)+0.5;\n\
 	return vec4(texture2DRect(texture,vec2(x,y)).g,texture2DRect(texture,vec2(x2,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).r,1.0);\n\
 }\n\n";
 static const char func_readyuyv_nearest[] =
 "vec4 readyuyv(sampler2DRect texture)\n\
 {\n\
-	float x = floor(gl_TexCoord[0].s);\n\
-	float y = floor(gl_TexCoord[0].t);\n\
-	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	float x = floor(gl_TexCoord[0].s)+0.5;\n\
+	float y = floor(gl_TexCoord[0].t)+0.5;\n\
+	float x2 = (floor(gl_TexCoord[0].s/2.0)*2.0)+0.5;\n\
 	return vec4(texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2,y)).g,texture2DRect(texture,vec2(x2+1.0,y)).g,1.0);\n\
 }\n\n";
 static const char func_readyvyu_nearest[] =
 "vec4 readyvyu(sampler2DRect texture)\n\
 {\n\
-	float x = floor(gl_TexCoord[0].s);\n\
-	float y = floor(gl_TexCoord[0].t);\n\
-	float x2 = floor(gl_TexCoord[0].s/2.0)*2.0;\n\
+	float x = floor(gl_TexCoord[0].s)+0.5;\n\
+	float y = floor(gl_TexCoord[0].t)+0.5;\n\
+	float x2 = (floor(gl_TexCoord[0].s/2.0)*2.0)+0.5;\n\
 	return vec4(texture2DRect(texture,vec2(x,y)).r,texture2DRect(texture,vec2(x2+1.0,y)).g,texture2DRect(texture,vec2(x2,y)).g,1.0);\n\
 }\n\n";
 

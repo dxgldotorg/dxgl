@@ -2803,6 +2803,7 @@ HRESULT WINAPI glDirectDraw1::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
+	else *lplpDDSurface = NULL;
 	TRACE_EXIT(23,err);
 	return err;
 }
@@ -3008,6 +3009,7 @@ HRESULT WINAPI glDirectDraw2::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPD
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
+	else *lplpDDSurface = NULL;
 	TRACE_EXIT(23,err);
 	return err;
 }
@@ -3240,6 +3242,7 @@ HRESULT WINAPI glDirectDraw4::CreateSurface(LPDDSURFACEDESC2 lpDDSurfaceDesc, LP
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
+	else *lplpDDSurface = NULL;
 	TRACE_EXIT(23,err);
 	return err;
 }
