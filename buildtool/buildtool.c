@@ -169,12 +169,6 @@ int ProcessHeaders(char *path)
 		{
 			if (strstr(buffer, "//#define DXGLBETA")) strcpy(buffer, "#define DXGLBETA");
 		}
-		findptr = strstr(buffer, "$SIGNTOOL");
-		if (findptr)
-		{
-			if (nosign) strncpy(findptr, "0", 10);
-			else strncpy(findptr, "1", 10);
-		}
 		fputs(buffer,fileout);
 	}
 	fclose(filein);
@@ -239,6 +233,12 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
 			#endif
 			#endif
+		}
+		findptr = strstr(buffer, "$SIGNTOOL");
+		if (findptr)
+		{
+			if (nosign) strncpy(findptr, "\"0\"", 10);
+			else strncpy(findptr, "\"1\"", 10);
 		}
 		if (DXGLBETA)
 		{
