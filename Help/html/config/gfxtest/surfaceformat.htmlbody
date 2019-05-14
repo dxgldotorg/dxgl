@@ -1,0 +1,12 @@
+<p>
+  <img class="alignnone size-full" src="images/surfaceformat.png" alt="" width="640" height="480" />
+</p>
+<p>
+  This test is designed to display the surface formats currently available to DXGL. As an interactive test, you can select the format to be used as a Blt source or Direct3D texture and the format to act as a render target.
+</p>
+<p>
+  Currently, this test supports Blt() from a video memory surface, Blt() from a system memory surface (there is currently no difference between video and system memory in DXGL), or drawing a Direct3D texture.
+</p>
+<p>
+  Please note that not all combinations of source and destination format are currently supported, and unsupported combinations will result in either no image or distorted colors.
+</p>

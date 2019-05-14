@@ -44,6 +44,7 @@ images\textureshader.png
 images\vertexshader.png
 images\setcursorpos.png
 images\bltrop.png
+images\surfaceformat.png
 html\introduction.html
 html\troubleshooting.html
 html\configuration.html
@@ -130,6 +131,7 @@ html\config\gfxtest\texturestageshaders.html
 html\config\gfxtest\vertexshaders.html
 html\config\gfxtest\setcursorpos.html
 html\config\gfxtest\bltraster.html
+html\config\gfxtest\surfaceformat.html
 html\licenses\crc32.html
 html\licenses\dxgl.html
 html\licenses\inih.html

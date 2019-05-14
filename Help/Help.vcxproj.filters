@@ -651,6 +651,72 @@
     <None Include="html\config\hacks\syncpaletteupdatetovsync.htmlbody">
       <Filter>Help files\html\config\hacks</Filter>
     </None>
+    <None Include="images\bltfast.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\bltrop.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\colorfill-random.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\destkeyoverride.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\drawindexedprimitive.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\drawprimitivetextured.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-saveini.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gdi-pattern.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\gdi-random.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\large-batch-blt.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\mirror-rotate.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\mouse-test.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\palette-8bpp.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\random-noise.jpg">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\rop-patterns.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\setcursorpos.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\srckeyoverride.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\surfaceformat.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\textureshader.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\vertexshader.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="html\config\gfxtest\surfaceformat.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\surfaceformat.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">

@@ -354,6 +354,10 @@
 				<param name="Name" value="Blt background, Raster operation Blt sprites">
 				<param name="Local" value="html\config\gfxtest\bltraster.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Surface/Texture format test">
+				<param name="Local" value="html\config\gfxtest\surfaceformat.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="About Tab">

@@ -57,3 +57,6 @@
 <p>
   <a href="gfxtest/bltraster.html">Blt background, Raster operation Blt sprites</a>
 </p>
+<p>
+  <a href="gfxtest/surfaceformat.html">Surface/Texture format test</a>
+</p>
