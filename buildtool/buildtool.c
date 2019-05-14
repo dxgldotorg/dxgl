@@ -492,6 +492,7 @@ int SignEXE(char *exefile)
 		CloseHandle(process.hThread);
 		Sleep(15000);
 	}
+#if (_MSC_VER >= 1920)
 	strcpy(&signpath, &signtoolsha256path);
 	strcat(&signpath, "\"");
 	strncat(&signpath, exefile, MAX_PATH);
@@ -505,6 +506,7 @@ int SignEXE(char *exefile)
 		CloseHandle(process.hThread);
 		Sleep(15000);
 	}
+#endif
 	return 0;
 }
 
