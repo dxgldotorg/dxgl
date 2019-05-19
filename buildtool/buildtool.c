@@ -237,8 +237,8 @@ int ProcessHeaders(char *path)
 		findptr = strstr(buffer, "$SIGNTOOL");
 		if (findptr)
 		{
-			if (nosign) strncpy(findptr, "\"0\"", 10);
-			else strncpy(findptr, "\"1\"", 10);
+			if (nosign) strncpy(findptr, "\"0\"\n", 10);
+			else strncpy(findptr, "\"1\"\n", 10);
 		}
 		if (DXGLBETA)
 		{
