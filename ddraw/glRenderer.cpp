@@ -2889,7 +2889,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__DeleteTexture(This,(glTexture*)This->inputs[0]);
 			break;
 		case OP_BLT:
-			glRenderer__Blt(This, (BltCommand*)This->inputs[0]);
+			glRenderer__Blt(This, (BltCommand*)This->inputs[0], FALSE);
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
@@ -3350,7 +3350,7 @@ void RotateBlt90(BltVertex *vertices, int times)
 	}
 }
 
-void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 {
 	int rotates = 0;
 	BOOL usedest = FALSE;
@@ -3603,7 +3603,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd)
 		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 		glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,FALSE,TRUE,NULL,0);
 	This->outputs[0] = DD_OK;
-	SetEvent(This->busy);
+	if(!backend) SetEvent(This->busy);
 }
 
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture)
@@ -4174,7 +4174,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 				bltcmd.dest = primary;
 				bltcmd.destlevel = 0;
 				bltcmd.destrect = This->overlays[i].destrect;
-				glRenderer__Blt(This, &bltcmd);
+				glRenderer__Blt(This, &bltcmd, TRUE);
 			}
 		}
 	}

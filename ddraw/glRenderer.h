@@ -206,7 +206,7 @@ void glRenderer__InitCommandBuffer(glRenderer *This, CommandBuffer *cmd, size_t 
 void glRenderer__DeleteCommandBuffer(CommandBuffer *cmd);
 void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
-void glRenderer__Blt(glRenderer *This, BltCommand *cmd);
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend);
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime, OVERLAY *overlays, int overlaycount);
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
