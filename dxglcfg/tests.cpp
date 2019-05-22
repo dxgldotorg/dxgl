@@ -244,7 +244,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		if (d3d7)
 		{
 			d3d7->Release();
-			d3d7dev = NULL;
+			d3d7 = NULL;
 		}
 		if(ddsrender)
 		{
