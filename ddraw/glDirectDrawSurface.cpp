@@ -1976,6 +1976,12 @@ HRESULT glDirectDrawSurface7::AddOverlay(OVERLAY *overlay)
 			if (overlay->flags & DDOVER_HIDE) overlays[i].enabled = FALSE;
 			memcpy(&overlays[i], overlay, sizeof(OVERLAY));
 			glTexture_AddRef(overlays[i].texture);
+			if (ddInterface->lastsync)
+			{
+				RenderScreen(ddInterface->primary->texture, 1, NULL, TRUE, overlays, overlaycount);
+				ddInterface->lastsync = false;
+			}
+			else RenderScreen(ddInterface->primary->texture, 0, NULL, TRUE, overlays, overlaycount);
 			return DD_OK;
 		}
 	}

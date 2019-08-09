@@ -3631,6 +3631,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.lPitch = x2 * 4;
 		ddsd.dwHeight = y2;
 		glTexture_Create(&ddsd, &This->backbuffers[index], This, x2, y2, FALSE, TRUE, 0);
+		glUtil_InitFBO(This->util, &This->backbuffers[index]->levels[0].fbo);
 	}
 	if((This->backbuffers[index]->levels[0].ddsd.dwWidth != x2) || (This->backbuffers[index]->levels[0].ddsd.dwHeight != y2))
 	{
@@ -3641,32 +3642,35 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 		glTexture__SetSurfaceDesc(This->backbuffers[index], &ddsd);
 	}
-	glUtil_SetFBOTextures(This->util,&This->fbo,This->backbuffers[index],NULL,0,0,FALSE);
-	view[0] = view[2] = 0;
-	view[1] = (GLfloat)x2;
-	view[3] = (GLfloat)y2;
-	glUtil_SetViewport(This->util,0,0,x2,y2);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glUtil_SetTexture(This->util,8,*texture);
-	*texture = This->backbuffers[index];
-	if (!paletted && firstpass && (dxglcfg.postfilter == 1))
-		glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
-	else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
-	This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
-	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
-	This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
-	This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
-	This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
-	This->bltvertices[0].x = This->bltvertices[2].x = (float)x2;
-	This->bltvertices[2].y = This->bltvertices[3].y = (float)y2;
-	glUtil_EnableArray(This->util,This->shaders->shaders[progtype].pos,TRUE);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].x);
-	glUtil_EnableArray(This->util,This->shaders->shaders[progtype].texcoord,TRUE);
-	This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord,2,GL_FLOAT,GL_FALSE,sizeof(BltVertex),&This->bltvertices[0].s);
-	glUtil_SetCull(This->util,D3DCULL_NONE);
-	glUtil_SetPolyMode(This->util,D3DFILL_SOLID);
-	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
-	glUtil_SetFBO(This->util, NULL);
+	if (texture)
+	{
+		glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffers[index], NULL, 0, 0, FALSE);
+		view[0] = view[2] = 0;
+		view[1] = (GLfloat)x2;
+		view[3] = (GLfloat)y2;
+		glUtil_SetViewport(This->util, 0, 0, x2, y2);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUtil_SetTexture(This->util, 8, *texture);
+		*texture = This->backbuffers[index];
+		if (!paletted && firstpass && (dxglcfg.postfilter == 1))
+			glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
+		else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
+		This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
+		This->bltvertices[0].s = This->bltvertices[0].t = This->bltvertices[1].t = This->bltvertices[2].s = 1.;
+		This->bltvertices[1].s = This->bltvertices[2].t = This->bltvertices[3].s = This->bltvertices[3].t = 0.;
+		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
+		This->bltvertices[0].x = This->bltvertices[2].x = (float)x2;
+		This->bltvertices[2].y = This->bltvertices[3].y = (float)y2;
+		glUtil_EnableArray(This->util, This->shaders->shaders[progtype].pos, TRUE);
+		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].x);
+		glUtil_EnableArray(This->util, This->shaders->shaders[progtype].texcoord, TRUE);
+		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].s);
+		glUtil_SetCull(This->util, D3DCULL_NONE);
+		glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
+		This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP, 0, 3, 4, GL_UNSIGNED_SHORT, bltindices);
+		glUtil_SetFBO(This->util, NULL);
+	}
 }
 
 void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT srcrect, RECT destrect, int progtype, int index)
@@ -4072,7 +4076,12 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		view[2] = 0;
 		view[3] = (GLfloat)texture->bigheight;
 	}
-	glUtil_SetFBO(This->util, NULL);
+	if (This->overlays)
+	{
+		glRenderer__DrawBackbuffer(This, NULL, viewport[2], viewport[3], 0, FALSE, FALSE, 1);
+		glUtil_SetFBOTexture(This->util, &This->backbuffers[1]->levels[0].fbo, This->backbuffers[1], NULL, 0, 0, FALSE);
+	}
+	else glUtil_SetFBO(This->util, NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(This->ddInterface->GetBPP() == 8)
 	{
@@ -4182,8 +4191,20 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 				glRenderer__Blt(This, &bltcmd, TRUE);
 			}
 		}
+		glUtil_SetFBO(This->util, NULL);
+		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
+		progtype = PROG_TEXTURE;
+		glUtil_SetTexture(This->util, 8, texture);
+		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
+		glUtil_EnableArray(This->util, This->shaders->shaders[progtype].pos, TRUE);
+		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].x);
+		glUtil_EnableArray(This->util, This->shaders->shaders[progtype].texcoord, TRUE);
+		This->ext->glVertexAttribPointer(This->shaders->shaders[progtype].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].s);
+		glUtil_SetCull(This->util, D3DCULL_NONE);
+		glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
+		This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP, 0, 3, 4, GL_UNSIGNED_SHORT, bltindices);
 	}
-	glFlush();
+	if(dxglcfg.SingleBufferDevice) glFlush();
 	if(This->hWnd) SwapBuffers(This->hDC);
 	else
 	{
