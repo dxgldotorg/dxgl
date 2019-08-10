@@ -36,7 +36,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
-!if ${COMPILER} == "VC2019_1"
+!if ${COMPILER} == "VC2019_2"
 !ifdef _DEBUG
 !define SRCDIR "Debug VS2019"
 !else
@@ -112,12 +112,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_1"
+!else if ${COMPILER} == "VC2019_2"
 !define download_runtime 1
-!define runtime_url http://www.dxgl.org/download/runtimes/vc14.21/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2019.1"
+!define runtime_url http://www.dxgl.org/download/runtimes/vc14.22/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2019.2"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "2DE5956C1C55DE35B5863372BBC7C662F2840B03A9D4115FE14A9036BFAC334F415FFBB5E60AD3E59A79C755980216D8D54D027D1AA2E84BA5109B900C9E5629"
+!define runtime_sha512 "9E023DD1258B20D3DD29EB3858282D5E99F86DC980BECB044A867A0AA8C5210EEBB426B3F7D574C3E10B58A72436C7E360C644A64F5653F19AD28B9C96ECD183"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -259,7 +259,7 @@ SectionEnd
 
 
 Function .onInit
-  !if ${COMPILER} == "VC2019_1"
+  !if ${COMPILER} == "VC2019_2"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -312,12 +312,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2019_1"
+  !if ${COMPILER} == "VC2019_2"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.21.27702" $1
+  ${VersionCompare} "$0" "14.22.27821" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -427,7 +427,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_1"
+!if ${COMPILER} == "VC2019_2"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif
