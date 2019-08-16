@@ -21,6 +21,8 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "glDirectDrawClipper.h"
+#include "ddraw.h"
+
 
 ULONG WINAPI glClassFactory::AddRef()
 {

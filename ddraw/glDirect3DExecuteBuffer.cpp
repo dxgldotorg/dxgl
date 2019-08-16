@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "glDirect3DExecuteBuffer.h"
+#include "ddraw.h"
 
 glDirect3DExecuteBuffer::glDirect3DExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc)
 {

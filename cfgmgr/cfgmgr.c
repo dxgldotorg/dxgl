@@ -690,6 +690,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DebugNoPaletteRedraw = ReadBool(hKey, cfg->DebugNoPaletteRedraw, &cfgmask->DebugNoPaletteRedraw, _T("DebugNoPaletteRedraw"));
 	cfg->DebugMaxGLVersionMajor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMajor, &cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	cfg->DebugMaxGLVersionMinor = ReadDWORD(hKey, cfg->DebugMaxGLVersionMinor, &cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
+	cfg->DebugTraceLevel = ReadDWORD(hKey, cfg->DebugTraceLevel, &cfgmask->DebugTraceLevel, _T("DebugTraceLevel"));
 	cfg->HackCrop640480to640400 = ReadBool(hKey, cfg->HackCrop640480to640400, &cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	cfg->HackAutoExpandViewport = ReadDWORDWithObsolete(hKey, cfg->HackAutoExpandViewport, &cfgmask->HackAutoExpandViewport, _T("HackAutoExpandViewport"),
 		1, _T("HackAutoScale512448to640480"));
@@ -859,6 +860,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteBool(hKey, cfg->DebugNoPaletteRedraw, cfgmask->DebugNoPaletteRedraw, _T("DebugNoPaletteRedraw"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMajor, cfgmask->DebugMaxGLVersionMajor, _T("DebugMaxGLVersionMajor"));
 	WriteDWORD(hKey, cfg->DebugMaxGLVersionMinor, cfgmask->DebugMaxGLVersionMinor, _T("DebugMaxGLVersionMinor"));
+	WriteDWORD(hKey, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, _T("DebugTraceLevel"));
 	WriteBool(hKey, cfg->HackCrop640480to640400, cfgmask->HackCrop640480to640400, _T("HackCrop640480to640400"));
 	WriteDWORDDeleteObsolete(hKey, cfg->HackAutoExpandViewport, cfgmask->HackAutoExpandViewport, _T("HackAutoExpandViewport"),
 		1, _T("HackAutoScale512448to640480"));
@@ -1159,6 +1161,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "DebugNoPaletteRedraw")) cfg->DebugNoPaletteRedraw = INIBoolValue(value);
 		if (!_stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
 		if (!_stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
+		if (!_stricmp(name, "DebugTraceLevel")) cfg->DebugTraceLevel = INIIntValue(value);
 	}
 	if (!_stricmp(section, "hacks"))
 	{
@@ -1573,6 +1576,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "DebugNoPaletteRedraw", cfg->DebugNoPaletteRedraw, mask->DebugNoPaletteRedraw, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMajor", cfg->DebugMaxGLVersionMajor, mask->DebugMaxGLVersionMajor, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMinor", cfg->DebugMaxGLVersionMinor, mask->DebugMaxGLVersionMinor, INISECTION_DEBUG);
+	INIWriteBool(file, "DebugTraceLevel", cfg->DebugTraceLevel, mask->DebugTraceLevel, INISECTION_DEBUG);
 	// [hacks]
 	INIWriteBool(file, "HackCrop640480to640400", cfg->HackCrop640480to640400, mask->HackCrop640480to640400, INISECTION_HACKS);
 	INIWriteInt(file, "HackAutoExpandViewport", cfg->HackAutoExpandViewport, mask->HackAutoExpandViewport, INISECTION_HACKS);

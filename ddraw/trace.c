@@ -53,7 +53,6 @@
 30 - D3DLIGHTSTATETYPE
 */
 
-#ifdef _TRACE
 static CRITICAL_SECTION trace_cs;
 static BOOL trace_ready = FALSE;
 static BOOL trace_fail = FALSE;
@@ -1236,4 +1235,3 @@ void trace_sysinfo()
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
 	LeaveCriticalSection(&trace_cs);
 }
-#endif

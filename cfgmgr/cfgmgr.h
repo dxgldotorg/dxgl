@@ -97,6 +97,7 @@ typedef struct
 	BOOL DebugNoPaletteRedraw;
 	DWORD DebugMaxGLVersionMajor;
 	DWORD DebugMaxGLVersionMinor;
+	DWORD DebugTraceLevel;
 	// [hacks]
 	BOOL HackCrop640480to640400;
 	DWORD HackAutoExpandViewport;

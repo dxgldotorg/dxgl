@@ -22,6 +22,8 @@
 #include "glRenderer.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DMaterial.h"
+#include "ddraw.h"
+
 
 glDirect3DMaterial3::glDirect3DMaterial3()
 {

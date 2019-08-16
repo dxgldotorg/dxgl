@@ -25,6 +25,7 @@
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DVertexBuffer.h"
+#include "ddraw.h"
 
 glDirect3DVertexBuffer7::glDirect3DVertexBuffer7(glDirect3D7 *glD3D7, D3DVERTEXBUFFERDESC desc, DWORD flags)
 {

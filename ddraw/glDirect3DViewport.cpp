@@ -26,6 +26,7 @@
 #include "glDirect3DDevice.h"
 #include "glDirect3DMaterial.h"
 #include "glDirect3DViewport.h"
+#include "ddraw.h"
 
 extern "C" {
 

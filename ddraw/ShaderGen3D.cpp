@@ -26,6 +26,8 @@
 #include "ShaderGen2D.h"
 #include "ShaderManager.h"
 #include "../common/version.h"
+#include "ddraw.h"
+
 
 extern "C" {
 

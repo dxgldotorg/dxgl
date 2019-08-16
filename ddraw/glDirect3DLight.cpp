@@ -25,6 +25,7 @@
 #include "glDirect3DLight.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "ddraw.h"
 
 
 
@@ -84,7 +85,8 @@ HRESULT WINAPI glDirect3DLight::Initialize(LPDIRECT3D lpDirect3D)
 }
 
 HRESULT WINAPI glDirect3DLight::QueryInterface(REFIID riid, void** ppvObj)
-{TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
+{
+	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)

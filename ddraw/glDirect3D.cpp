@@ -28,6 +28,7 @@
 #include "glDirect3DViewport.h"
 #include "glDirect3DMaterial.h"
 #include "glDirect3DLight.h"
+#include "ddraw.h"
 
 const D3DDEVICEDESC7 d3ddesc_default = 
 {

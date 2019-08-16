@@ -22,6 +22,7 @@
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
 #pragma warning(disable: 4996)
+#include "ddraw.h"
 
 static const DDSURFACEDESC2 ddsdclipper =
 {

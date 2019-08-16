@@ -20,6 +20,7 @@
 #include "glUtil.h"
 #include "glDirectDrawSurface.h"
 #include "glDirectDrawGammaControl.h"
+#include "ddraw.h"
 
 extern "C" {
 

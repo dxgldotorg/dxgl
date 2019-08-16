@@ -30,7 +30,7 @@ SetCompressor /SOLID lzma
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "DXGL"
 !define PRODUCT_PUBLISHER "William Feely"
-!define PRODUCT_WEB_SITE "https://www.dxgl.org/"
+!define PRODUCT_WEB_SITE "https://dxgl.org/"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"

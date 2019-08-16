@@ -26,9 +26,7 @@
 
 WNDCLASSEXA wndclass;
 bool wndclasscreated = false;
-#ifdef _DEBUG
 bool hotkeyregistered = false;
-#endif
 
 void WaitForObjectAndMessages(HANDLE object)
 {
@@ -73,11 +71,11 @@ DWORD WINAPI glRenderWindow::ThreadEntry(void *entry)
 
 DWORD glRenderWindow::_Entry()
 {
-	char *windowname;
+	char* windowname;
 	if (device) windowname = "DirectDrawDeviceWnd";
 	else windowname = "Renderer";
-    MSG Msg;
-	if(!wndclasscreated)
+	MSG Msg;
+	if (!wndclasscreated)
 	{
 		wndclass.cbSize = sizeof(WNDCLASSEXA);
 		wndclass.style = 0;
@@ -95,28 +93,38 @@ DWORD glRenderWindow::_Entry()
 		wndclasscreated = true;
 	}
 	RECT rectRender;
-	GetClientRect(hParentWnd,&rectRender);
+	GetClientRect(hParentWnd, &rectRender);
 	dead = false;
-	if(hParentWnd)
+	if (hParentWnd)
 	{
-		hWnd = CreateWindowA("DirectDrawDeviceWnd",windowname,WS_CHILD|WS_VISIBLE,0,0,rectRender.right - rectRender.left,
-			rectRender.bottom - rectRender.top,hParentWnd,NULL,wndclass.hInstance,this);
-		SetWindowPos(hWnd,HWND_TOP,0,0,rectRender.right,rectRender.bottom,SWP_SHOWWINDOW);
+		hWnd = CreateWindowA("DirectDrawDeviceWnd", windowname, WS_CHILD | WS_VISIBLE, 0, 0, rectRender.right - rectRender.left,
+			rectRender.bottom - rectRender.top, hParentWnd, NULL, wndclass.hInstance, this);
+		SetWindowPos(hWnd, HWND_TOP, 0, 0, rectRender.right, rectRender.bottom, SWP_SHOWWINDOW);
 	}
 	else
 	{
 		width = GetSystemMetrics(SM_CXSCREEN);
 		height = GetSystemMetrics(SM_CYSCREEN);
-		hWnd = CreateWindowExA(WS_EX_TOOLWINDOW|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST,
-			"DirectDrawDeviceWnd",windowname,WS_POPUP,0,0,width,height,0,0,NULL,this);
-		SetWindowPos(hWnd,HWND_TOP,0,0,width,height,SWP_SHOWWINDOW|SWP_NOACTIVATE);
+		hWnd = CreateWindowExA(WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+			"DirectDrawDeviceWnd", windowname, WS_POPUP, 0, 0, width, height, 0, 0, NULL, this);
+		SetWindowPos(hWnd, HWND_TOP, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 	}
-	#ifdef _DEBUG
-	if(RegisterHotKey(hWnd,1,MOD_CONTROL,VK_CANCEL)) hotkeyregistered = true;
+#ifdef _DEBUG
+	if (RegisterHotKey(hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
 	else
 	{
 		TRACE_STRING("Failed to register hotkey.\n");
 		Beep(120, 1000);
+	}
+#else
+	if (dxglcfg.DebugTraceLevel)
+	{
+		if (RegisterHotKey(hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
+		else
+		{
+			TRACE_STRING("Failed to register hotkey.\n");
+			Beep(120, 1000);
+		}
 	}
 	#endif
 	SetEvent(ReadyEvent);
@@ -138,21 +146,17 @@ glRenderWindow::~glRenderWindow()
 	CloseHandle(hThread);
 }
 
-#ifdef _TRACE
 DWORD WINAPI BeepThread(void *unused)
 {
 	Beep(3600,150);
 	return 0;
 }
-#endif
 
 LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hParent;
 	HCURSOR cursor;
-	#ifdef _TRACE
 	DWORD threadid;
-	#endif
 	switch(msg)
 	{
 	case WM_CREATE:
@@ -187,18 +191,22 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		PostQuitMessage(0);
 		dead = true;
 		return 0;
-	#ifdef _DEBUG
 	case WM_HOTKEY:
-		#ifdef _TRACE
-		trace_end = TRUE;
-		CreateThread(NULL,0,BeepThread,NULL,0,&threadid);
-		UnregisterHotKey(hWnd,1);
-		hotkeyregistered = false;
-		#else
-		Beep(3600,150);
-		DebugBreak();
-		#endif
-	#endif
+		if (dxglcfg.DebugTraceLevel)
+		{
+			trace_end = TRUE;
+			CreateThread(NULL, 0, BeepThread, NULL, 0, &threadid);
+			UnregisterHotKey(hWnd, 1);
+			hotkeyregistered = false;
+			dxglcfg.DebugTraceLevel = 0;
+		}
+		else
+		{
+			#ifdef _DEBUG
+			Beep(3600, 150);
+			DebugBreak();
+			#endif
+		}
 	default:
 		return DefWindowProc(hwnd,msg,wParam,lParam);
 	}

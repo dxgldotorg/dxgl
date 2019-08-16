@@ -24,28 +24,21 @@ extern "C" {
 #endif
 
 
-#ifdef _TRACE
 extern BOOL trace_end;
-#define TRACE_ENTER(paramcount,...) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
-#define TRACE_EXIT(argtype,arg) trace_exit(__FUNCTION__,argtype,(void*)arg)
-#define TRACE_VAR(var,argtype,arg) trace_var(__FUNCTION__,var,argtype,(void*)arg)
-#define TRACE_STRING(str) trace_string(str)
-#define TRACE_SYSINFO() trace_sysinfo() // Must be in thread used by OpenGL.
+#define TRACE_ENTER(paramcount,...) if(dxglcfg.DebugTraceLevel >= 3) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
+#define TRACE_EXIT(argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_exit(__FUNCTION__,argtype,(void*)arg)
+#define TRACE_VAR(var,argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_var(__FUNCTION__,var,argtype,(void*)arg)
+#define TRACE_STRING(str) if(dxglcfg.DebugTraceLevel) trace_string(str)
+#define TRACE_SYSINFO() if(dxglcfg.DebugTraceLevel) trace_sysinfo() // Must be in thread used by OpenGL.
 void trace_enter(const char *function, int paramcount, ...);
 void trace_exit(const char *function, int argtype, void *arg);
 void *trace_ret(const char *function, int argtype, void *arg);
 void trace_var(const char *function, const char *var, int argtype, void *arg);
 void trace_string(const char *str);
 void trace_sysinfo();
-#define TRACE_RET(type, argtype, arg) return (type)trace_ret(__FUNCTION__,argtype,(void*)arg);
-#else
-#define TRACE_ENTER(a,...)
-#define TRACE_EXIT(a,b)
-#define TRACE_VAR(a,b,c)
-#define TRACE_RET(type, argtype, arg) return arg;
-#define TRACE_STRING(str)
-#define TRACE_SYSINFO()
-#endif
+#define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel > 3) \
+return (type)trace_ret(__FUNCTION__,argtype,(void*)arg); \
+else return arg;
 
 #ifdef __cplusplus
 }

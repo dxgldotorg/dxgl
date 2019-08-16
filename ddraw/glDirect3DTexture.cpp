@@ -24,6 +24,7 @@
 #include "glDirectDrawSurface.h"
 #include "glDirect3DTexture.h"
 #include "glDirect3DDevice.h"
+#include "ddraw.h"
 
 glDirect3DTexture2::glDirect3DTexture2(glDirectDrawSurface7 *glDDS7)
 {
