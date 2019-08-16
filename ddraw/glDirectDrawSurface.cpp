@@ -1677,7 +1677,11 @@ HRESULT WINAPI glDirectDrawSurface7::Unlock(LPRECT lpRect)
 {
 	TRACE_ENTER(2,14,this,26,lpRect);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if (!locked) TRACE_RET(HRESULT, 23, DDERR_NOTLOCKED);
+	if (!locked)
+	{
+		this->texture->levels[this->miplevel].dirty |= 1;
+		TRACE_RET(HRESULT, 23, DDERR_NOTLOCKED);
+	}
 	locked--;
 	glTexture_Unlock(this->texture, this->miplevel, lpRect, FALSE);
 	ddsd.lpSurface = NULL;
