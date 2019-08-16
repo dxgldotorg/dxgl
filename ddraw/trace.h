@@ -36,7 +36,7 @@ void *trace_ret(const char *function, int argtype, void *arg);
 void trace_var(const char *function, const char *var, int argtype, void *arg);
 void trace_string(const char *str);
 void trace_sysinfo();
-#define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel > 3) \
+#define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel >= 3) \
 return (type)trace_ret(__FUNCTION__,argtype,(void*)arg); \
 else return arg;
 
