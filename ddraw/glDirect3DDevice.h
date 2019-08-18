@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -67,6 +67,7 @@ public:
 	HRESULT WINAPI EndScene();
 	HRESULT WINAPI EndStateBlock(LPDWORD lpdwBlockHandle);
 	HRESULT WINAPI EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg);
+	HRESULT WINAPI EnumTextureFormats2(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
 	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc);
 	HRESULT WINAPI GetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation);
 	HRESULT WINAPI GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);

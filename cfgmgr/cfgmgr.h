@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2019 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -67,6 +67,7 @@ typedef struct
 	DWORD aspect3d;
 	DWORD LowColorRendering;
 	DWORD EnableDithering;
+	BOOL LimitTextureFormats;
 	// [advanced]
 	DWORD vsync;
 	DWORD TextureFormat;

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2019 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -645,6 +645,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->aspect3d = ReadDWORD(hKey,cfg->aspect3d,&cfgmask->aspect3d,_T("AdjustAspectRatio"));
 	cfg->LowColorRendering = ReadDWORD(hKey, cfg->LowColorRendering, &cfgmask->LowColorRendering, _T("LowColorRendering"));
 	cfg->EnableDithering = ReadDWORD(hKey, cfg->EnableDithering, &cfgmask->EnableDithering, _T("EnableDithering"));
+	cfg->LimitTextureFormats = ReadDWORD(hKey, cfg->LimitTextureFormats, &cfgmask->LimitTextureFormats, _T("LimitTextureFormats"));
 	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -816,6 +817,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey,cfg->aspect3d,cfgmask->aspect3d,_T("AdjustAspectRatio"));
 	WriteDWORD(hKey, cfg->LowColorRendering, cfgmask->LowColorRendering, _T("LowColorRendering"));
 	WriteDWORD(hKey, cfg->EnableDithering, cfgmask->EnableDithering, _T("EnableDithering"));
+	WriteDWORD(hKey, cfg->LimitTextureFormats, cfgmask->LimitTextureFormats, _T("LimitTextureFormats"));
 	WriteDWORD(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -977,6 +979,7 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->WindowWidth = 640;
 	cfg->WindowHeight = 480;
 	cfg->HackPaletteDelay = 30;
+	cfg->LimitTextureFormats = TRUE;
 	if (!cfg->Windows8Detected)
 	{
 		OSVERSIONINFO osver;
@@ -1129,6 +1132,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 		if (!_stricmp(name, "D3DAspect")) cfg->aspect3d = INIIntValue(value);
 		if (!_stricmp(name, "LowColorRendering")) cfg->LowColorRendering = INIIntValue(value);
 		if (!_stricmp(name, "EnableDithering")) cfg->EnableDithering = INIIntValue(value);
+		if (!_stricmp(name, "LimitTextureFormats")) cfg->LimitTextureFormats = INIIntValue(value);
 	}
 	if (!_stricmp(section, "advanced"))
 	{
@@ -1548,6 +1552,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteInt(file, "D3DAspect", cfg->aspect3d, mask->aspect3d, INISECTION_D3D);
 	INIWriteInt(file, "LowColorRendering", cfg->LowColorRendering, mask->LowColorRendering, INISECTION_D3D);
 	INIWriteInt(file, "EnableDithering", cfg->EnableDithering, mask->EnableDithering, INISECTION_D3D);
+	INIWriteBool(file, "LimitTextureFormats", cfg->LimitTextureFormats, mask->LimitTextureFormats, INISECTION_D3D);
 	// [advanced]
 	INIWriteInt(file, "TextureFormat", cfg->TextureFormat, mask->TextureFormat, INISECTION_ADVANCED);
 	INIWriteInt(file, "TexUpload", cfg->TexUpload, mask->TexUpload, INISECTION_ADVANCED);

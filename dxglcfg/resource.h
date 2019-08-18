@@ -102,6 +102,7 @@
 #define IDC_MSAA                                2203
 #define IDC_ASPECT3D                            2204
 #define IDC_DITHERING                           2205
+#define IDC_LIMITTEXFORMATS                     2206
 
 // Controls - Advanced Tab
 #define IDC_TEXTUREFORMAT                       2301

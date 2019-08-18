@@ -1016,7 +1016,7 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 	DDPIXELFORMAT fmt;
 	for(int i = 0; i < numtexformats; i++)
 	{
-		if (i == 7) continue;
+		if (i == 11) continue;
 		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
 		//FIXME:  Remove these line after implementing palette textures
 		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
@@ -1030,6 +1030,35 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBA
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
+
+HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats2(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg)
+{
+	TRACE_ENTER(3, 14, this, 14, lpd3dEnumTextureProc, 14, lpArg);
+	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	HRESULT result;
+	DDSURFACEDESC ddsd;
+	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC);
+	ddsd.dwFlags = DDSD_CAPS | DDSD_PIXELFORMAT;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+	for (int i = 0; i < numtexformats; i++)
+	{
+		if (i == 11) continue;
+		if (::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+		if (::texformats[i].dwFlags & DDPF_FOURCC) continue;
+		//FIXME:  Remove these line after implementing palette textures
+		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
+		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
+		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
+		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
+		memcpy(&ddsd.ddpfPixelFormat, &::texformats[i], sizeof(DDPIXELFORMAT));
+		result = lpd3dEnumTextureProc(&ddsd, lpArg);
+		if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+	}
+	TRACE_EXIT(23, D3D_OK);
+	return D3D_OK;
+}
+
 HRESULT WINAPI glDirect3DDevice7::GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc)
 {
 	TRACE_ENTER(2,14,this,14,lpD3DDevDesc);
@@ -3325,30 +3354,11 @@ HRESULT WINAPI glDirect3DDevice2::EndScene()
 	TRACE_RET(HRESULT,23,glD3DDev7->EndScene());
 }
 
-HRESULT WINAPI EnumTex2(LPDDPIXELFORMAT ddpf, LPVOID lpUserArg)
-{
-	if(ddpf->dwFlags & DDPF_LUMINANCE) return D3DENUMRET_OK;
-	if(ddpf->dwFlags & DDPF_ALPHA) return D3DENUMRET_OK;
-	int *args = (int*)lpUserArg;
-	LPD3DENUMTEXTUREFORMATSCALLBACK callback = (LPD3DENUMTEXTUREFORMATSCALLBACK)args[0];
-	DDSURFACEDESC ddsd;
-	ZeroMemory(&ddsd,sizeof(DDSURFACEDESC));
-	ddsd.dwSize = sizeof(DDSURFACEDESC);
-	ddsd.dwFlags = DDSD_CAPS|DDSD_PIXELFORMAT;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
-	ddsd.ddpfPixelFormat = *ddpf;
-	HRESULT ret = callback(&ddsd,(LPVOID)args[1]);
-	return ret;
-}
-
 HRESULT WINAPI glDirect3DDevice2::EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg)
 {
 	TRACE_ENTER(3,14,this,14,lpd3dEnumTextureProc,14,lpArg);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	LPVOID context[2];
-	context[0] = (LPVOID)lpd3dEnumTextureProc;
-	context[1] = lpArg;
-	TRACE_RET(HRESULT,23,glD3DDev7->EnumTextureFormats(EnumTex2,&context));
+	TRACE_RET(HRESULT, 23, glD3DDev7->EnumTextureFormats2(lpd3dEnumTextureProc, lpArg));
 }
 
 HRESULT WINAPI glDirect3DDevice2::GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc)
@@ -3618,10 +3628,7 @@ HRESULT WINAPI glDirect3DDevice1::EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALL
 {
 	TRACE_ENTER(3,14,this,14,lpd3dEnumTextureProc,14,lpArg);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	LPVOID context[2];
-	context[0] = (LPVOID)lpd3dEnumTextureProc;
-	context[1] = lpArg;
-	TRACE_RET(HRESULT,23,glD3DDev7->EnumTextureFormats(EnumTex2,&context));
+	TRACE_RET(HRESULT, 23, glD3DDev7->EnumTextureFormats2(lpd3dEnumTextureProc, lpArg));
 }
 HRESULT WINAPI glDirect3DDevice1::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
 {

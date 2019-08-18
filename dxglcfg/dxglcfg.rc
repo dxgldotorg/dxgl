@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -102,6 +102,7 @@ FONT 8, "Ms Shell Dlg"
     COMBOBOX        IDC_LOWCOLORRENDER, 7, 68, 102, 64, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
     LTEXT           "Enable dithering", IDC_STATIC, 114, 58, 52, 9, SS_LEFT, WS_EX_LEFT
     COMBOBOX        IDC_DITHERING, 114, 68, 102, 64, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
+	AUTOCHECKBOX    "Limit D3D Texture Formats", IDC_LIMITTEXFORMATS, 7, 86, 99, 8, 0, WS_EX_LEFT
 }
 
 

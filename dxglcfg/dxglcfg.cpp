@@ -1981,6 +1981,12 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
+		case IDC_LIMITTEXFORMATS:
+			cfg->LimitTextureFormats = GetCheck(hWnd, IDC_SINGLEBUFFER, &cfgmask->LimitTextureFormats);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+
 		default:
 			break;
 		}
@@ -2884,6 +2890,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[2], IDC_ASPECT3D, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[2], IDC_LIMITTEXFORMATS, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		// Advanced tab
 		SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[3], IDC_TEXUPLOAD, CB_ADDSTRING, 0, (LPARAM)strdefault);
@@ -2942,6 +2949,7 @@ void RefreshControls(HWND hWnd)
 			SendDlgItemMessage(hTabs[2], IDC_LOWCOLORRENDER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[2], IDC_LIMITTEXFORMATS, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 		// Advanced tab
 		SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[3], IDC_TEXTUREFORMAT, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
@@ -3040,6 +3048,7 @@ void RefreshControls(HWND hWnd)
 	SetCombo(hTabs[2], IDC_ASPECT3D, cfg->aspect3d, cfgmask->aspect3d, tristate);
 	SetCombo(hTabs[2], IDC_LOWCOLORRENDER, cfg->LowColorRendering, cfgmask->LowColorRendering, tristate);
 	SetCombo(hTabs[2], IDC_DITHERING, cfg->EnableDithering, cfgmask->EnableDithering, tristate);
+	SetCheck(hTabs[2], IDC_LIMITTEXFORMATS, cfg->LimitTextureFormats, cfgmask->LimitTextureFormats, tristate);
 	// Advanced tab
 	SetCombo(hTabs[3], IDC_TEXTUREFORMAT, cfg->TextureFormat, cfgmask->TextureFormat, tristate);
 	SetCombo(hTabs[3], IDC_TEXUPLOAD, cfg->TexUpload, cfgmask->TexUpload, tristate);
@@ -3607,6 +3616,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Always enabled, low color"));
 		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[2], IDC_DITHERING, CB_SETCURSEL, cfg->EnableDithering, 0);
+		if (cfg->LimitTextureFormats) SendDlgItemMessage(hTabs[2], IDC_LIMITTEXFORMATS, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[2], IDC_LIMITTEXFORMATS, BM_SETCHECK, BST_UNCHECKED, 0);
+
 		// sort modes
 		_tcscpy(buffer,_T("Use system order"));
 		SendDlgItemMessage(hTabs[0], IDC_SORTMODES, CB_ADDSTRING, 0, (LPARAM)buffer);
