@@ -1008,24 +1008,61 @@ HRESULT WINAPI glDirect3DDevice7::EndStateBlock(LPDWORD lpdwBlockHandle)
 	ERR(DDERR_GENERIC);
 }
 
+// Use EXACTLY one line per entry.  Don't change layout of the list.
+// This list is a subset of the list found in glTexture to be used when limited
+// texture support is enabled.
+static const int START_LIMITEDTEXFORMATS = __LINE__;
+const DDPIXELFORMAT limitedtexformats[] =
+{ // Size					Flags							FOURCC	bits	R/Ymask		G/U/Zmask	B/V/STmask	A/Zmask
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0x7C00,		0x3E0,		0x1F,		0},  // 15 bit 555
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0x7c00,		0x3E0,		0x1F,		0x8000},  // 16-bit 1555
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		16,		0xF800,		0x7E0,		0x1F,		0},  // 16 bit 565
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		16,		0xF00,		0xF0,		0xF,		0xF000},  // 16-bit 4444
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		32,		0xFF0000,	0xFF00,		0xFF,		0},  // 32 bit 888
+	{sizeof(DDPIXELFORMAT), DDPF_RGB|DDPF_ALPHAPIXELS,		0,		32,		0xFF0000,	0xFF00,		0xFF,		0xFF000000},  // 32-bit 8888
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB,						0,		8,		0xE0,		0x1C,		0x3,		0},  // 8 bit 332
+	{sizeof(DDPIXELFORMAT),	DDPF_RGB|DDPF_PALETTEINDEXED8,	0,		8,		0,			0,			0,			0},  // 8-bit paletted
+};
+static const int END_LIMITEDTEXFORMATS = __LINE__ - 4;
+int numlimitedtexformats;
+
+
 HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg)
 {
 	TRACE_ENTER(3,14,this,14,lpd3dEnumPixelProc,14,lpArg);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT result;
 	DDPIXELFORMAT fmt;
-	for(int i = 0; i < numtexformats; i++)
+	if (dxglcfg.LimitTextureFormats >= 2)
 	{
-		if (i == 11) continue;
-		if(::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
-		//FIXME:  Remove these line after implementing palette textures
-		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
-		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
-		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
-		if(::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
-		memcpy(&fmt,&::texformats[i],sizeof(DDPIXELFORMAT));
-		result = lpd3dEnumPixelProc(&fmt,lpArg);
-		if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
+		numlimitedtexformats = END_LIMITEDTEXFORMATS - START_LIMITEDTEXFORMATS;
+		for (int i = 0; i < numlimitedtexformats; i++)
+		{
+			if (limitedtexformats[i].dwFlags & DDPF_ZBUFFER) continue;
+			//FIXME:  Remove this line after implementing palette textures
+			if (limitedtexformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
+			memcpy(&fmt, &limitedtexformats[i], sizeof(DDPIXELFORMAT));
+			result = lpd3dEnumPixelProc(&fmt, lpArg);
+			if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < numtexformats; i++)
+		{
+			//FIXME: Remove this line after implementing RGB3328 textures
+			if (i == 11) continue;
+			// Exclude Z buffer formats
+			if (::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+			//FIXME:  Remove these lines after implementing palette textures
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
+			memcpy(&fmt, &::texformats[i], sizeof(DDPIXELFORMAT));
+			result = lpd3dEnumPixelProc(&fmt, lpArg);
+			if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+		}
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1041,19 +1078,39 @@ HRESULT WINAPI glDirect3DDevice7::EnumTextureFormats2(LPD3DENUMTEXTUREFORMATSCAL
 	ddsd.dwSize = sizeof(DDSURFACEDESC);
 	ddsd.dwFlags = DDSD_CAPS | DDSD_PIXELFORMAT;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
-	for (int i = 0; i < numtexformats; i++)
+	if (dxglcfg.LimitTextureFormats >= 1)
 	{
-		if (i == 11) continue;
-		if (::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
-		if (::texformats[i].dwFlags & DDPF_FOURCC) continue;
-		//FIXME:  Remove these line after implementing palette textures
-		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
-		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
-		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
-		if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
-		memcpy(&ddsd.ddpfPixelFormat, &::texformats[i], sizeof(DDPIXELFORMAT));
-		result = lpd3dEnumTextureProc(&ddsd, lpArg);
-		if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+		numlimitedtexformats = END_LIMITEDTEXFORMATS - START_LIMITEDTEXFORMATS;
+		for (int i = 0; i < numlimitedtexformats; i++)
+		{
+			// Exclude FOURCC formats
+			if (limitedtexformats[i].dwFlags & DDPF_FOURCC) continue;
+			//FIXME:  Remove this line after implementing palette textures
+			if (limitedtexformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
+			memcpy(&ddsd.ddpfPixelFormat, &limitedtexformats[i], sizeof(DDPIXELFORMAT));
+			result = lpd3dEnumTextureProc(&ddsd, lpArg);
+			if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < numtexformats; i++)
+		{
+			//FIXME: Remove this line after implementing RGB3328 textures
+			if (i == 11) continue;
+			// Exclude Z buffer formats
+			if (::texformats[i].dwFlags & DDPF_ZBUFFER) continue;
+			// Exclude FOURCC formats
+			if (::texformats[i].dwFlags & DDPF_FOURCC) continue;
+			//FIXME:  Remove these lines after implementing palette textures
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED1) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED2) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED4) continue;
+			if (::texformats[i].dwFlags & DDPF_PALETTEINDEXED8) continue;
+			memcpy(&ddsd.ddpfPixelFormat, &::texformats[i], sizeof(DDPIXELFORMAT));
+			result = lpd3dEnumTextureProc(&ddsd, lpArg);
+			if (result != D3DENUMRET_OK) TRACE_RET(HRESULT, 23, D3D_OK);
+		}
 	}
 	TRACE_EXIT(23, D3D_OK);
 	return D3D_OK;
