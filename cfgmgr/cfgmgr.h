@@ -67,7 +67,7 @@ typedef struct
 	DWORD aspect3d;
 	DWORD LowColorRendering;
 	DWORD EnableDithering;
-	BOOL LimitTextureFormats;
+	DWORD LimitTextureFormats;
 	// [advanced]
 	DWORD vsync;
 	DWORD TextureFormat;

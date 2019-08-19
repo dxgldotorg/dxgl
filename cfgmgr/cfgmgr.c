@@ -979,7 +979,7 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->WindowWidth = 640;
 	cfg->WindowHeight = 480;
 	cfg->HackPaletteDelay = 30;
-	cfg->LimitTextureFormats = TRUE;
+	cfg->LimitTextureFormats = 1;
 	if (!cfg->Windows8Detected)
 	{
 		OSVERSIONINFO osver;
@@ -1552,7 +1552,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteInt(file, "D3DAspect", cfg->aspect3d, mask->aspect3d, INISECTION_D3D);
 	INIWriteInt(file, "LowColorRendering", cfg->LowColorRendering, mask->LowColorRendering, INISECTION_D3D);
 	INIWriteInt(file, "EnableDithering", cfg->EnableDithering, mask->EnableDithering, INISECTION_D3D);
-	INIWriteBool(file, "LimitTextureFormats", cfg->LimitTextureFormats, mask->LimitTextureFormats, INISECTION_D3D);
+	INIWriteInt(file, "LimitTextureFormats", cfg->LimitTextureFormats, mask->LimitTextureFormats, INISECTION_D3D);
 	// [advanced]
 	INIWriteInt(file, "TextureFormat", cfg->TextureFormat, mask->TextureFormat, INISECTION_ADVANCED);
 	INIWriteInt(file, "TexUpload", cfg->TexUpload, mask->TexUpload, INISECTION_ADVANCED);
