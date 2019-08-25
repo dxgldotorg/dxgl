@@ -12,6 +12,12 @@
 #include "LibSha512.h"
 #include "pluginapi.h"
 #include <intrin.h>
+#ifdef _MSC_VER
+#if (_MSC_VER < 1500)
+#pragma function (memcpy)
+#pragma function (memcmp)
+#endif
+#endif
 #ifndef _TCHAR_DEFINED
 #include <tchar.h>
 #endif

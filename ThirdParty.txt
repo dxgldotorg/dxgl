@@ -216,7 +216,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------------
 
 Installer uses Nullsoft Scriptable Install System; the license for which
-can be viewed at http://nsis.sourceforge.net/License
+can be viewed at https://nsis.sourceforge.io/License
+
+------------------------------------------------------------------------------
+
+Installer plugin utilizes public domain stdint.h from Danny Smith, published
+at https://www.rpi.edu/dept/cis/software/g77-mingw32/include/stdint.h
 
 ------------------------------------------------------------------------------
 

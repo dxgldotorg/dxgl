@@ -35,5 +35,8 @@
     <ClInclude Include="pluginapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stdint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
