@@ -42,6 +42,12 @@ SetCompressor /SOLID lzma
 !else
 !define SRCDIR "Release VS2019"
 !endif
+!else if ${COMPILER} == "VC2005"
+!ifdef _DEBUG
+!define SRCDIR "VS8\Debug"
+!else
+!define SRCDIR "VS8\Release"
+!endif
 !else
 !ifdef _DEBUG
 !define SRCDIR "Debug"
@@ -94,9 +100,18 @@ SetCompressor /SOLID lzma
 !define ROOT_KEY         ${HKEY_CURRENT_USER}
 !define GetVersion       "Kernel32::GetVersion() i"
 
-!if ${COMPILER} == "VC2010"
+!if ${COMPILER} == "VC2005"
 !define download_runtime 1
-!define runtime_url "http://www.dxgl.org/download/runtimes/vc10/vcredist_x86.exe"
+!define runtime_url "http://dxgl.org/download/runtimes/vc8-6195/vcredist_x86.EXE"
+!define runtime_name "Visual C++ 2005"
+!define runtime_filename "vcredist_x86.EXE"
+!define runtime_sha512 "E94B077E054BD8992374D359F3ADC4D1D78D42118D878556715D77182F7D03635850B2B2F06C012CCB7C410E2B3C124CF6508473EFE150D3C51A51857CE1C6B0"
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033
+!define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc8"
+!else if ${COMPILER} == "VC2010"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc10/vcredist_x86.exe"
 !define runtime_name "Visual C++ 2010"
 !define runtime_filename "vcredist_x86.exe"
 !define runtime_sha512 "D2D99E06D49A5990B449CF31D82A33104A6B45164E76FBEB34C43D10BCD25C3622AF52E59A2D4B7F5F45F83C3BA4D23CF1A5FC0C03B3606F42426988E63A9770"
@@ -105,7 +120,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc10"
 !else if ${COMPILER} == "VC2013"
 !define download_runtime 1
-!define runtime_url "http://www.dxgl.org/download/runtimes/vc12/vcredist_x86.exe"
+!define runtime_url "http://dxgl.org/download/runtimes/vc12/vcredist_x86.exe"
 !define runtime_name "Visual C++ 2013"
 !define runtime_filename "vcredist_x86.exe"
 !define runtime_sha512 "729251371ED208898430040FE48CABD286A5671BD7F472A30E9021B68F73B2D49D85A0879920232426B139520F7E21321BA92646985216BF2F733C64E014A71D"
@@ -114,7 +129,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2019_2"
 !define download_runtime 1
-!define runtime_url http://www.dxgl.org/download/runtimes/vc14.22/vc_redist.x86.exe
+!define runtime_url http://dxgl.org/download/runtimes/vc14.22/vc_redist.x86.exe
 !define runtime_name "Visual C++ 2019.2"
 !define runtime_filename "vc_redist.x86.exe"
 !define runtime_sha512 "9E023DD1258B20D3DD29EB3858282D5E99F86DC980BECB044A867A0AA8C5210EEBB426B3F7D574C3E10B58A72436C7E360C644A64F5653F19AD28B9C96ECD183"
@@ -195,7 +210,11 @@ Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
     Delete $TEMP\vcredist_x86.exe
   ${Else}
     DetailPrint "Installing ${runtime_name} Runtime"
+    !if ${COMPILER} == "VC2005"
+    ExecWait '"$TEMP\${runtime_filename}" /q' $0
+    !else
     ExecWait '"$TEMP\${runtime_filename}" /q /norestart' $0
+    !endif
 	${If} $0 != "0"
 	  ${If} $0 == "3010"
 	  SetRebootFlag true
@@ -284,7 +303,7 @@ Function .onInit
 	Please visit https://support.microsoft.com/en-us/kb/976932/ for instructions on upgrading to Service Pack 1."
 	Quit
   ${endif}
-  !else
+  !else if ${COMPILER} == "VC2010"
   ${IfNot} ${AtleastWinXP}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows XP Service Pack 3."
 	Quit
@@ -301,6 +320,10 @@ Function .onInit
     MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Server 2003 must be upgraded to at least Service Pack 1 before you can use DXGL.$\r\
 	Please visit http://web.archive.org/web/20150501080245/https://support.microsoft.com/en-us/kb/889100/ for instructions on upgrading to Service Pack 2."
 	Quit
+  ${EndIf}
+  !else
+  ${IfNot} ${AtleastWin2000}
+    MessageBox MB_OK|MB_ICONEXCLAMATION "This version of DXGL requires at least Windows 2000.  You may attempt to install this build anyway however it is not guaranteed to run."
   ${EndIf}
   !endif
   !ifdef _DEBUG

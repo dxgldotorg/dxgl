@@ -4,6 +4,7 @@
 //  Implementation of SHA512 hash function.
 //  Original author: Tom St Denis, tomstdenis@gmail.com, http://libtom.org
 //  Modified by WaterJuice retaining Public Domain license.
+//  Modified by William Feely for the DXGL installer.
 //
 //  This is free and unencumbered software released into the public domain - June 2013 waterjuice.org
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +14,16 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "LibSha512.h"
-#include <memory.h>
+//#include <memory.h>
+
+// Quick and dirty memcpy
+void *__memcpy(unsigned char *dest, unsigned char *src, size_t size)
+{
+	size_t i;
+	for (i = 0; i < size; i++)
+		dest[i] = src[i];
+	return dest;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  MACROS
@@ -203,7 +213,7 @@ void
         else
         {
            n = MIN( BufferSize, (BLOCK_SIZE - Context->curlen) );
-           memcpy( Context->buf + Context->curlen, Buffer, (size_t)n );
+           __memcpy( Context->buf + Context->curlen, Buffer, (size_t)n );
            Context->curlen += n;
            Buffer = (uint8_t*)Buffer + n;
            BufferSize -= n;

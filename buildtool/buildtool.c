@@ -218,7 +218,9 @@ int ProcessHeaders(char *path)
 		if(findptr)
 		{
 			#ifdef _MSC_VER
-			#if (_MSC_VER == 1600)
+			#if (_MSC_VER == 1400)
+			strncpy(findptr, "\"VC2005\"\n", 13);
+			#elif (_MSC_VER == 1600)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);

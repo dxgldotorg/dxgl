@@ -12,15 +12,21 @@
 #include "LibSha512.h"
 #include "pluginapi.h"
 #include <intrin.h>
-#ifdef _MSC_VER
-#if (_MSC_VER < 1500)
-#pragma function (memcpy)
-#pragma function (memcmp)
-#endif
-#endif
 #ifndef _TCHAR_DEFINED
 #include <tchar.h>
 #endif
+
+// Quick and dirty memcmp
+int __memcmp(unsigned char *ptr1, unsigned char *ptr2, size_t size)
+{
+	size_t i;
+	for (i = 0; i < size; i++)
+	{
+		if (ptr1[i] < ptr2[i]) return -1;
+		if (ptr1[i] > ptr2[i]) return 1;
+	}
+	return 0;
+}
 
 BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 {
@@ -51,7 +57,7 @@ void __declspec(dllexport) CalculateSha512Sum(HWND hwndParent, int string_size,
 	popstring(filename);
 	popstring(comp);
 	Sha512Initialise(&context);
-	file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
+	file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
 		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (!file)
 	{
@@ -76,7 +82,7 @@ void __declspec(dllexport) CalculateSha512Sum(HWND hwndParent, int string_size,
 		buffer[(i * 2) + 1] = hexdigit(sha512.bytes[i] & 0xF);
 	}
 	buffer[512 / 4] = 0;
-	compout = memcmp(buffer, comp, 128);
+	compout = __memcmp(buffer, comp, 128);
 	if (compout)
 	{
 		filename[0] = '0';
@@ -127,28 +133,6 @@ void __declspec(dllexport) IsWine(HWND hwndParent, int string_size,
 	out[1] = out[2] = out[3] = 0;
 	pushstring(out);
 }
-
-// Quick and dirty memcpy
-void *memcpy(unsigned char *dest, unsigned char *src, size_t size)
-{
-	size_t i;
-	for (i = 0; i < size; i++)
-		dest[i] = src[i];
-	return dest;
-}
-
-// Quick and dirty memcmp
-int memcmp(unsigned char *ptr1, unsigned char *ptr2, size_t size)
-{
-	size_t i;
-	for (i = 0; i < size; i++)
-	{
-		if (ptr1[i] < ptr2[i]) return -1;
-		if (ptr1[i] > ptr2[i]) return 1;
-	}
-	return 0;
-}
-
 
 // ASM shift instructions to replace MSVC dependency
 #ifndef _M_X64
