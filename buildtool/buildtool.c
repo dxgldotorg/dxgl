@@ -481,13 +481,13 @@ int SignEXE(char *exefile)
 		puts("Skipping file signature.");
 		return 0;
 	}
-	strcpy(&signpath, &signtoolsha1path);
-	strcat(&signpath, "\"");
-	strncat(&signpath, exefile, MAX_PATH);
-	strcat(&signpath, "\"");
+	strcpy(signpath, signtoolsha1path);
+	strcat(signpath, "\"");
+	strncat(signpath, exefile, MAX_PATH);
+	strcat(signpath, "\"");
 	ZeroMemory(&startinfo, sizeof(STARTUPINFOA));
 	startinfo.cb = sizeof(STARTUPINFOA);
-	if (CreateProcessA(NULL, &signpath, NULL, NULL, FALSE, 0, NULL, NULL, &startinfo, &process))
+	if (CreateProcessA(NULL, signpath, NULL, NULL, FALSE, 0, NULL, NULL, &startinfo, &process))
 	{
 		WaitForSingleObject(process.hProcess, INFINITE);
 		CloseHandle(process.hProcess);

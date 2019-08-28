@@ -160,7 +160,7 @@ BOOL AddCompatFlag(LPTSTR flag)
 			{
 				_tcscat(buffer, _T(" "));
 				_tcscat(buffer, flag);
-				error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(buffer) + 1)*sizeof(TCHAR));
+				error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)buffer, (DWORD)(_tcslen(buffer) + 1)*sizeof(TCHAR));
 				if (error2 == ERROR_SUCCESS) ShowRestartDialog();
 				else
 				{
@@ -171,7 +171,7 @@ BOOL AddCompatFlag(LPTSTR flag)
 		}
 		else if (error2 == ERROR_FILE_NOT_FOUND)
 		{
-			error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)flag, (_tcslen(flag) + 1)*sizeof(TCHAR));
+			error2 = RegSetValueEx(hKey, filename, 0, REG_SZ, (BYTE*)flag, (DWORD)(_tcslen(flag) + 1)*sizeof(TCHAR));
 			if (error2 == ERROR_SUCCESS) ShowRestartDialog();
 			else
 			{
@@ -225,7 +225,7 @@ BOOL DelCompatFlag(LPTSTR flag, BOOL initial)
 				else error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, writekey, 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
-					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
+					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (DWORD)(_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
 					RegCloseKey(hKeyWrite);
 					hKeyWrite = NULL;
 				}
@@ -292,7 +292,7 @@ BOOL DelCompatFlag(LPTSTR flag, BOOL initial)
 				error = RegOpenKeyEx(HKEY_CURRENT_USER, writekey, 0, KEY_WRITE, &hKeyWrite);
 				if (error == ERROR_SUCCESS)
 				{
-					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
+					error = RegSetValueEx(hKeyWrite, filename, 0, REG_SZ, (BYTE*)buffer, (DWORD)(_tcslen(bufferpos + _tcslen(flag)))*sizeof(TCHAR)+sizeof(TCHAR));
 					RegCloseKey(hKeyWrite);
 					hKeyWrite = NULL;
 				}
@@ -352,8 +352,8 @@ BOOL DelCompatFlag(LPTSTR flag, BOOL initial)
 
 void GetDirFromPath(LPTSTR path)
 {
-	int i;
-	int len = _tcslen(path);
+	size_t i;
+	size_t len = _tcslen(path);
 	for(i = len; i > 0; i--)
 	{
 		if((path[i] == '\\') || (path[i] == '/'))
@@ -710,7 +710,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 		error = RegQueryValueEx(hKey,_T("InstallPath"),NULL,&regsz,NULL,&sizeout);
 		if(error == ERROR_FILE_NOT_FOUND)
 			RegSetValueEx(hKey, _T("InstallPath"), 0, REG_SZ,
-				(LPBYTE)path, _tcslen(path) * sizeof(TCHAR));
+				(LPBYTE)path, (DWORD)(_tcslen(path) * sizeof(TCHAR)));
 	}
 	if (global && !cfg->Windows8Detected)
 	{
@@ -759,7 +759,7 @@ void WriteDWORD(HKEY hKey, DWORD value, DWORD mask, LPCTSTR name)
 }
 void WritePath(HKEY hKey, const TCHAR *path, const TCHAR *mask, LPCTSTR name)
 {
-	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(_tcslen(path)+1)*sizeof(TCHAR));
+	if(mask[0]) RegSetValueEx(hKey,name,0,REG_SZ,(BYTE*)path,(DWORD)(_tcslen(path)+1)*sizeof(TCHAR));
 	else RegDeleteValue(hKey,name);
 }
 
@@ -889,7 +889,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	_tcscpy(regkey, regkeybase);
 	_tcscat(regkey, _T("Profiles\\"));
 	_tcscpy(filename, path);
-	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	for (i = (int)_tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
 	_tcscat(regkey, &filename[i]);
 	_tcscat(regkey, _T("-"));
@@ -897,7 +897,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	filename[i] = 0;
 	_tcslwr(filename);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename, _tcslen(filename));
+	Sha256Update(&sha_context, filename, (uint32_t)_tcslen(filename));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -928,11 +928,11 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	TCHAR filename[MAX_PATH + 1];
 	_tcsncpy(pathlwr, path, MAX_PATH);
 	pathlwr[MAX_PATH] = 0;
-	for (i = _tcslen(pathlwr); (i > 0) && (pathlwr[i] != 92) && (pathlwr[i] != 47); i--);
+	for (i = (int)_tcslen(pathlwr); (i > 0) && (pathlwr[i] != 92) && (pathlwr[i] != 47); i--);
 	pathlwr[i] = 0;
 	_tcslwr(pathlwr);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, pathlwr, _tcslen(pathlwr));
+	Sha256Update(&sha_context, pathlwr, (uint32_t)_tcslen(pathlwr));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -943,7 +943,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	_tcscpy(regkey,regkeybase);
 	_tcsncpy(filename,path,MAX_PATH);
 	filename[MAX_PATH] = 0;
-	for(i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
+	for(i = (int)_tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
 	_tcscat(regkey, _T("Profiles\\"));
 	_tcscat(regkey,&filename[i]);
@@ -1200,8 +1200,8 @@ void ReadINI(DXGLCFG *cfg)
 void SetINISection(HANDLE file, int section)
 {
 	char buffer[32];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (section != ini_currentsection)
 	{
 		ini_currentsection = section;
@@ -1234,7 +1234,7 @@ void SetINISection(HANDLE file, int section)
 		default:
 			return;
 		}
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1242,8 +1242,8 @@ void SetINISection(HANDLE file, int section)
 void INIWriteBool(HANDLE file, const char *name, BOOL value, BOOL mask, int section)
 {
 	char buffer[256];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1252,7 +1252,7 @@ void INIWriteBool(HANDLE file, const char *name, BOOL value, BOOL mask, int sect
 		if (value) strcat(buffer, "true");
 		else strcat(buffer, "false");
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1261,8 +1261,8 @@ void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 {
 	char buffer[256];
 	char number[32];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1271,7 +1271,7 @@ void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 		_itoa(value, number, 10);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1280,8 +1280,8 @@ void INIWriteHex(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 {
 	char buffer[256];
 	char number[32];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1290,7 +1290,7 @@ void INIWriteHex(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 		_itoa(value, number, 16);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1300,8 +1300,8 @@ void INIWriteFloat(HANDLE file, const char *name, float value, float mask, int d
 	char buffer[256];
 	char number[32];
 	char floatformat[16];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1315,7 +1315,7 @@ void INIWriteFloat(HANDLE file, const char *name, float value, float mask, int d
 		number[31] = 0;
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1391,8 +1391,8 @@ void INIWriteAspect(HANDLE file, const char *name, float value, float mask, int 
 {
 	char buffer[256];
 	char number[32];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1401,7 +1401,7 @@ void INIWriteAspect(HANDLE file, const char *name, float value, float mask, int 
 		FloatToAspectString(value,number);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1409,8 +1409,8 @@ void INIWriteAspect(HANDLE file, const char *name, float value, float mask, int 
 void INIWriteString(HANDLE file, const char *name, const char *value, DWORD mask, int section)
 {
 	char buffer[512];
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1418,7 +1418,7 @@ void INIWriteString(HANDLE file, const char *name, const char *value, DWORD mask
 		strcat(buffer, "=");
 		strcat(buffer, value);
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1429,8 +1429,8 @@ void INIWriteTCHARString(HANDLE file, const char *name, LPCTSTR value, DWORD mas
 #ifdef _UNICODE
 	char unicodebuffer[MAX_PATH + 1];
 #endif
-	int buffersize;
-	int outsize;
+	DWORD buffersize;
+	DWORD outsize;
 	if (mask)
 	{
 		SetINISection(file, section);
@@ -1443,7 +1443,7 @@ void INIWriteTCHARString(HANDLE file, const char *name, LPCTSTR value, DWORD mas
 		strcat(buffer, value);
 #endif
 		strcat(buffer, "\r\n");
-		buffersize = strlen(buffer);
+		buffersize = (DWORD)strlen(buffer);
 		WriteFile(file, buffer, buffersize, &outsize, NULL);
 	}
 }
@@ -1478,7 +1478,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	}
 	ini_currentsection = INISECTION_NULL;
 	strcpy(buffer, "; DXGL Configuration file\r\n; This file was generated by DXGL Config.\r\n");
-	WriteFile(file, buffer, strlen(buffer), &bytesread, NULL);
+	WriteFile(file, buffer, (DWORD)strlen(buffer), &bytesread, NULL);
 	// [system]
 	if (cfg->NoWriteRegistry) INIWriteBool(file, "NoWriteRegistry", TRUE, TRUE, INISECTION_SYSTEM);
 	if (cfg->OverrideDefaults) INIWriteBool(file, "OverrideDefaults", TRUE, TRUE, INISECTION_SYSTEM);
@@ -1508,7 +1508,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 				sha256string[(i * 2) + 1] = hexdigit(sha256.bytes[i] & 0xF);
 			}
 			strcpy(buffer, "; Do not change the following value!\r\n");
-			WriteFile(file, buffer, strlen(buffer), &bytesread, NULL);
+			WriteFile(file, buffer, (DWORD)strlen(buffer), &bytesread, NULL);
 			INIWriteString(file, "BundledDDrawSHA256", sha256string, 1, INISECTION_SYSTEM);
 		}
 		else MessageBox(hWnd, _T("Cannot read ddraw.dll, skipping SHA-256 checksum"),
@@ -1603,7 +1603,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	TCHAR sha256string[65];
 	TCHAR filename[MAX_PATH+1];
 	TCHAR regkey[MAX_PATH + 80];
-	int i;
+	size_t i;
 	BOOL DPIAwarePM = FALSE;
 	HMODULE hSHCore = NULL;
 	HMODULE hUser32 = NULL;
@@ -1621,7 +1621,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	filename[i] = 0;
 	_tcslwr(filename);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename, _tcslen(filename));
+	Sha256Update(&sha_context, filename, (uint32_t)_tcslen(filename));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -1873,7 +1873,7 @@ void UpgradeDXGLTestToDXGLCfg()
 		{
 			_tcslwr(installpath);
 			Sha256Initialise(&sha_context);
-			Sha256Update(&sha_context, installpath, _tcslen(installpath));
+			Sha256Update(&sha_context, installpath, (uint32_t)_tcslen(installpath));
 			Sha256Finalise(&sha_context, &sha256);
 			for (i = 0; i < (256 / 8); i++)
 			{
@@ -2150,7 +2150,7 @@ ver0to1:
 								}
 								else oldkeys[oldconfigcount].exe_found = TRUE;
 								Sha256Initialise(&sha_context);
-								Sha256Update(&sha_context, oldkeys[oldconfigcount].InstallPathLowercase, length);
+								Sha256Update(&sha_context, oldkeys[oldconfigcount].InstallPathLowercase, (uint32_t)length);
 								Sha256Finalise(&sha_context, &oldkeys[oldconfigcount].PathHash);
 								for (i = 0; i < (256 / 8); i++)
 								{
@@ -2229,7 +2229,7 @@ ver0to1:
 						numvalue++;
 					} while (error == ERROR_SUCCESS);
 					RegSetValueEx(hKeyDest, _T("InstallPath"), 0, REG_SZ, (BYTE*)oldkeys[i].InstallPath,
-						((_tcslen(oldkeys[i].InstallPath) + 1) * sizeof(TCHAR)));
+						(DWORD)((_tcslen(oldkeys[i].InstallPath) + 1) * sizeof(TCHAR)));
 					RegCloseKey(hKeyDest);
 				}
 				RegCloseKey(hKeyProfile);

@@ -632,7 +632,7 @@ void SetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *major
 			*minor = 0;
 			if (tristate)
 			{
-				position = SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault);
+				position = (int)SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault);
 				*majormask = 0;
 				*minormask = 0;
 			}
@@ -762,7 +762,7 @@ void SetText(HWND hWnd, int DlgItem, TCHAR *value, TCHAR *mask, BOOL tristate)
 
 BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 {
-	int check = SendDlgItemMessage(hWnd,DlgItem,BM_GETCHECK,0,0);
+	int check = (int)SendDlgItemMessage(hWnd,DlgItem,BM_GETCHECK,0,0);
 	switch(check)
 	{
 	case BST_CHECKED:
@@ -780,7 +780,7 @@ BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 
 DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 {
-	int value = SendDlgItemMessage(hWnd,DlgItem,CB_GETCURSEL,0,0);
+	int value = (int)SendDlgItemMessage(hWnd,DlgItem,CB_GETCURSEL,0,0);
 	if(value == SendDlgItemMessage(hWnd,DlgItem,CB_FINDSTRING,-1,(LPARAM)strdefault))
 	{
 		*mask = 0;
@@ -795,7 +795,7 @@ DWORD GetCombo(HWND hWnd, int DlgItem, DWORD *mask)
 
 void GetGLCombo(HWND hWnd, int DlgItem, DWORD *major, DWORD *minor, DWORD *majormask, DWORD *minormask)
 {
-	int value = SendDlgItemMessage(hWnd, DlgItem, CB_GETCURSEL, 0, 0);
+	int value = (int)SendDlgItemMessage(hWnd, DlgItem, CB_GETCURSEL, 0, 0);
 	if (value == SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault))
 	{
 		*majormask = 0;
@@ -946,10 +946,10 @@ int GetInteger(HWND hWnd, int dlgitem, int *mask, int defaultnum, BOOL usemask)
 void ProcessResolutionString(LPTSTR input)
 {
 	TCHAR buffer[32];
-	int ptr;
+	size_t ptr;
 	int number[3];
-	int length;
-	int i;
+	size_t length;
+	size_t i;
 	BOOL found = FALSE;
 	BOOL skip = FALSE;
 	length = _tcslen(input);
@@ -1172,7 +1172,7 @@ void GetText(HWND hWnd, int DlgItem, TCHAR *str, TCHAR *mask)
 {
 	GetDlgItemText(hWnd,DlgItem,str,MAX_PATH+1);
 	if(str[0] == 0) mask[0] = 0;
-	else mask[0] = 0xff;
+	else mask[0] = (TCHAR)0xff;
 }
 
 void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate, RECT *r)
@@ -1480,7 +1480,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				if(!cfgmask->AddColorDepths) _tcscpy(combotext, strdefault);
 				else _tcscpy(combotext, colormodes[cfg->AddColorDepths & 31]);
 			}
-			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
+			DrawText(drawitem->hDC, combotext, (int)_tcslen(combotext), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
@@ -1560,7 +1560,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					}
 				}
 			}
-			DrawText(drawitem->hDC, combotext, _tcslen(combotext), &drawitem->rcItem,
+			DrawText(drawitem->hDC, combotext, (int)_tcslen(combotext), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
@@ -1588,7 +1588,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				if (ColorDepth_Dropdown)
 				{
-					cursel = SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETCURSEL, 0, 0);
+					cursel = (DWORD)SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_GETCURSEL, 0, 0);
 					if (cursel == 5)
 					{
 						if (cfgmask->AddColorDepths) cfgmask->AddColorDepths = 0;
@@ -1620,7 +1620,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				if (ExtraModes_Dropdown)
 				{
-					cursel = SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
+					cursel = (DWORD)SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_GETCURSEL, 0, 0);
 					if (cursel == 8)
 					{
 						if (cfgmask->AddModes) cfgmask->AddModes = 0;
@@ -2028,7 +2028,8 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			else if (error != ERROR_SUCCESS)
 			{
 				_tcscpy(errormsg, _T("Error writing .ini file:\r\n"));
-				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errormsg + _tcslen(errormsg), 2048 - _tcslen(errormsg), NULL);
+				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errormsg + _tcslen(errormsg),
+					(DWORD)(2048 - _tcslen(errormsg)), NULL);
 				MessageBox(hWnd, errormsg, _T("Error"), MB_OK | MB_ICONERROR);
 			}
 			else
@@ -2329,7 +2330,7 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		case IDC_DEBUGLIST:
 			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
 			{
-				item = SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETCURSEL, 0, 0);
+				item = (DWORD)SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETCURSEL, 0, 0);
 				ReadDebugItem(item, &debugvalue, &debugmask);
 				if (tristate)
 				{
@@ -2396,7 +2397,7 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, debugvalue, FALSE, !debugmask, &r);
 			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
 			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
-			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
+			DrawText(drawitem->hDC, str, (int)_tcslen(str), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
@@ -2570,7 +2571,7 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 	default:
 		str = strUnknown;
 	}
-	DrawText(hdc, str, _tcslen(str), r, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+	DrawText(hdc, str, (int)_tcslen(str), r, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 }
 
 LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -2688,7 +2689,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		case IDC_HACKSLIST:
 			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
 			{
-				hackstabitem = SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
+				hackstabitem = (DWORD)SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
 				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETITEMRECT, hackstabitem, (LPARAM)&r2);
 				if ((hackstabitem == 3) || (hackstabitem == 6))
 				{
@@ -2740,7 +2741,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
 			drawitem->rcItem.left += 1;
 			SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETTEXT, drawitem->itemID, (LPARAM)str);
-			DrawText(drawitem->hDC, str, _tcslen(str), &drawitem->rcItem,
+			DrawText(drawitem->hDC, str, (int)_tcslen(str), &drawitem->rcItem,
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			drawitem->rcItem.left -= 1;
 			if ((hackstabitem == 3) || (hackstabitem == 6))
@@ -3896,7 +3897,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				break;
 			}
 			// Get exe attributes
-			error = SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
+			error = (LONG)SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
 			apps[appcount - 1].icon = fileinfo.hIcon;
 			apps[appcount - 1].icon_shared = FALSE;
 			verinfosize = GetFileVersionInfoSize(path, NULL);
@@ -3994,7 +3995,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		nm = (LPNMHDR)lParam;
 		if (nm->code == TCN_SELCHANGE)
 		{
-			newtab = SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETCURSEL, 0, 0);
+			newtab = (int)SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETCURSEL, 0, 0);
 			if (newtab != tabopen)
 			{
 				ShowWindow(hTabs[tabopen], SW_HIDE);
@@ -4027,7 +4028,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
 			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
 			DrawText(drawitem->hDC,apps[drawitem->itemID].name,
-				_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
+				(int)_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
 			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
@@ -4067,7 +4068,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		case IDC_APPS:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
 			{
-				cursel = SendDlgItemMessage(hWnd,IDC_APPS,CB_GETCURSEL,0,0);
+				cursel = (DWORD)SendDlgItemMessage(hWnd,IDC_APPS,CB_GETCURSEL,0,0);
 				if(cursel == current_app) break;
 				current_app = cursel;
 				cfg = &apps[current_app].cfg;
@@ -4145,7 +4146,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					else
 					{
 						// Get exe attributes
-						error = SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
+						error = (LONG)SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
 						apps[appcount - 1].icon = fileinfo.hIcon;
 						apps[appcount - 1].icon_shared = FALSE;
 						verinfosize = GetFileVersionInfoSize(path, NULL);
