@@ -126,7 +126,7 @@ typedef struct
 typedef struct
 {
 	TCHAR InstallPath[MAX_PATH + 1];
-	TCHAR InstallPathLowercase[MAX_PATH + 1];
+	WCHAR InstallPathLowercase[MAX_PATH + 1];
 	TCHAR EXEFile[MAX_PATH + 1];
 	TCHAR OldKey[MAX_PATH + 1];
 	TCHAR crc32[9];

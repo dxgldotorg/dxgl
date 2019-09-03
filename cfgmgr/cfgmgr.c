@@ -60,6 +60,28 @@ DXGLCFG defaultmask;
 
 static int ini_currentsection = 0;
 
+void _tchartowchar(WCHAR *dest, TCHAR *src, int length)
+{
+#ifdef _UNICODE
+	wcsncpy(dest,src,length);
+#else
+	int length2 = length;
+	if(length == -1) length2 = strlen(src) + 1;
+	MultiByteToWideChar(CP_ACP,0,src,length,dest,length2);
+#endif
+}
+
+void _wchartotchar(TCHAR *dest, WCHAR *src, int length)
+{
+#ifdef _UNICODE
+	wcsncpy(dest,src,length);
+#else
+	int length2 = length;
+	if(length == -1) length2 = wcslen(src) + 1;
+	WideCharToMultiByte(CP_ACP,0,src,length,dest,length2,NULL,NULL);
+#endif
+}
+
 /**
 * Gets the hexadecimal digit for a number; the number must be less than 16
 * or 0x10.
@@ -883,6 +905,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	TCHAR sha256string[65];
 	TCHAR regkey[MAX_PATH + 80];
 	TCHAR filename[MAX_PATH + 1];
+	WCHAR filename2[MAX_PATH + 1];
 	HKEY hKey;
 	LONG error;
 	int i;
@@ -896,8 +919,9 @@ BOOL CheckProfileExists(LPTSTR path)
 	i--;
 	filename[i] = 0;
 	_tcslwr(filename);
+	_tchartowchar(filename2,filename,-1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename, (uint32_t)_tcslen(filename));
+	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -921,6 +945,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	SHA256_HASH sha256;
 	TCHAR sha256string[65];
 	TCHAR pathlwr[MAX_PATH + 1];
+	WCHAR pathlwr2[MAX_PATH + 1];
 	HKEY hKey;
 	DXGLCFG tmp;
 	TCHAR regkey[MAX_PATH + 80];
@@ -931,8 +956,9 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	for (i = (int)_tcslen(pathlwr); (i > 0) && (pathlwr[i] != 92) && (pathlwr[i] != 47); i--);
 	pathlwr[i] = 0;
 	_tcslwr(pathlwr);
+	_tchartowchar(pathlwr2,pathlwr,-1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, pathlwr, (uint32_t)_tcslen(pathlwr));
+	Sha256Update(&sha_context, pathlwr2, (uint32_t)wcslen(pathlwr2));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -1602,6 +1628,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	SHA256_HASH sha256;
 	TCHAR sha256string[65];
 	TCHAR filename[MAX_PATH+1];
+	WCHAR filename2[MAX_PATH+1];
 	TCHAR regkey[MAX_PATH + 80];
 	size_t i;
 	BOOL DPIAwarePM = FALSE;
@@ -1620,8 +1647,9 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	i--;
 	filename[i] = 0;
 	_tcslwr(filename);
+	_tchartowchar(filename2, filename, -1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename, (uint32_t)_tcslen(filename));
+	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -1850,6 +1878,7 @@ void UpgradeDXGLTestToDXGLCfg()
 	SHA256_HASH sha256;
 	TCHAR sha256string[65];
 	TCHAR installpath[MAX_PATH + 1];
+	WCHAR installpath2[MAX_PATH + 1];
 	TCHAR profilepath[MAX_PATH + 80];
 	TCHAR destpath[MAX_PATH + 80];
 	LONG error;
@@ -1872,8 +1901,9 @@ void UpgradeDXGLTestToDXGLCfg()
 		if (error == ERROR_SUCCESS)
 		{
 			_tcslwr(installpath);
+			_tchartowchar(installpath2, installpath, -1);
 			Sha256Initialise(&sha_context);
-			Sha256Update(&sha_context, installpath, (uint32_t)_tcslen(installpath));
+			Sha256Update(&sha_context, installpath2, (uint32_t)wcslen(installpath2));
 			Sha256Finalise(&sha_context, &sha256);
 			for (i = 0; i < (256 / 8); i++)
 			{
@@ -1956,7 +1986,7 @@ void UpgradeDXGLTestToDXGLCfg()
 /**
   * Checks the registry configuration version and if outdated upgrades to
   * the latest version - currently version 2
-  * Alpha version configuration is assumed to be version 0.
+  * Pre-versioned configuration is assumed to be version 0.
   */
 void UpgradeConfig()
 {
@@ -2108,8 +2138,8 @@ ver0to1:
 							if (length)
 							{
 								_tcsncpy(oldkeys[oldconfigcount].InstallPath, ptr, MAX_PATH);
-								_tcsncpy(oldkeys[oldconfigcount].InstallPathLowercase, ptr, MAX_PATH);
-								_tcslwr(oldkeys[oldconfigcount].InstallPathLowercase);
+								_tchartowchar(oldkeys[oldconfigcount].InstallPathLowercase, ptr, MAX_PATH);
+								wcslwr(oldkeys[oldconfigcount].InstallPathLowercase);
 								_tcsncpy(oldkeys[oldconfigcount].OldKey, subkey, MAX_PATH);
 								if (!_tcscmp(subkey, _T("DXGLTestApp")))
 								{
@@ -2247,7 +2277,7 @@ ver0to1:
 ver1to2:
 	RegCloseKey(hKey);
 	// Version 1 to 2:  Fix an incorrectly written AddColorDepths value
-	if (version >= 2) return; // If version is 2 no need to upgrade.
+	if (version >= 2) goto ver2to3; // If version is 2 check for version 3.
 	// Fix up the global Add color depths
 	_tcscpy(regkey, regkeyglobal);
 	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
@@ -2305,6 +2335,8 @@ ver1to2:
 		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)&sizeout, 4);
 		RegCloseKey(hKey);
 	}
+ver2to3:
+	return;
 }
 
 int ReadINIOptionsCallback(app_ini_options *options, const char *section, const char *name,
