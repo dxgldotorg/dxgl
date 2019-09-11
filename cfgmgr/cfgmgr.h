@@ -113,6 +113,8 @@ typedef struct
 	BOOL ParsedAddColorDepths;
 	BOOL ParsedAddModes;
 	TCHAR regkey[MAX_PATH + 80];
+	// For parsing .ini file
+	TCHAR inipath[MAX_PATH];
 } DXGLCFG;
 
 typedef struct

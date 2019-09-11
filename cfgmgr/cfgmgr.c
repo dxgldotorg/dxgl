@@ -59,14 +59,16 @@ DXGLCFG defaultmask;
 #define INISECTION_HACKS 8
 
 static int ini_currentsection = 0;
+static int ini_depth = 0;
 
 void _tchartowchar(WCHAR *dest, TCHAR *src, int length)
 {
 #ifdef _UNICODE
-	wcsncpy(dest,src,length);
+	if (length == -1) wcscpy(dest, src);
+	else wcsncpy(dest,src,length);
 #else
 	int length2 = length;
-	if(length == -1) length2 = strlen(src) + 1;
+	if(length == -1) length2 = (int)strlen(src) + 1;
 	MultiByteToWideChar(CP_ACP,0,src,length,dest,length2);
 #endif
 }
@@ -74,12 +76,22 @@ void _tchartowchar(WCHAR *dest, TCHAR *src, int length)
 void _wchartotchar(TCHAR *dest, WCHAR *src, int length)
 {
 #ifdef _UNICODE
-	wcsncpy(dest,src,length);
+	if (length == -1) wcscpy(dest, src);
+	else wcsncpy(dest, src, length);
 #else
 	int length2 = length;
-	if(length == -1) length2 = wcslen(src) + 1;
+	if(length == -1) length2 = (int)wcslen(src) + 1;
 	WideCharToMultiByte(CP_ACP,0,src,length,dest,length2,NULL,NULL);
 #endif
+}
+
+void utf8to16(WCHAR* dest, CHAR* src)
+{
+	int sizein;
+	int sizeout;
+	sizein = strlen(src)+1;
+	sizeout = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, src, sizein, NULL, 0);
+	MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, src, sizein, dest, sizeout);
 }
 
 /**
@@ -1074,136 +1086,162 @@ float INIFloatValue(const char *value)
 int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 	const char *value)
 {
+	FILE *file;
+	TCHAR inipath[MAX_PATH + 10];
 #ifdef _UNICODE
 	TCHAR unicode_path[MAX_PATH + 1];
 #endif
-	if (!_stricmp(section, "system"))
+	if (!_stricmp(name, "Include"))
 	{
-		if (!_stricmp(name, "NoWriteRegistry")) cfg->NoWriteRegistry = INIBoolValue(value);
-		if (!_stricmp(name, "OverrideDefaults")) cfg->OverrideDefaults = INIBoolValue(value);
-	}
-	if (!_stricmp(section, "display"))
-	{
-		if (!_stricmp(name, "ScalingMode")) cfg->scaler = INIIntValue(value);
-		if (!_stricmp(name, "FullscreenWindowMode")) cfg->fullmode = INIIntValue(value);
-		if (!_stricmp(name, "ChangeColorDepth")) cfg->colormode = INIBoolValue(value);
-		if (!_stricmp(name, "AllColorDepths"))
+		ini_depth++;
+		if(ini_depth <= 16)
 		{
-			if (!cfg->ParsedAddColorDepths)
+			_tcscpy(inipath, cfg->inipath);
+			_tcscat(inipath, _T("\\"));
+			#ifdef _UNICODE
+			utf8to16(unicode_path, value);
+			_tcsncat(inipath, unicode_path, MAX_PATH);
+			#else
+			_tcscat(inipath, value);
+			#endif
+			file = _tfopen(inipath, _T("r"));
+			if (file)
 			{
-				if (INIBoolValue(value)) cfg->AddColorDepths = 1 | 4 | 16;
-				else cfg->AddColorDepths = 0;
+				ini_parse_file(file, ReadINICallback, cfg);
+				fclose(file);
 			}
 		}
-		if (!_stricmp(name, "AddColorDepths"))
+		ini_depth--;
+	}
+	else {
+		if (!_stricmp(section, "system"))
 		{
-			cfg->ParsedAddColorDepths = TRUE;
-			cfg->AddColorDepths = INIIntValue(value);
+			if (!_stricmp(name, "NoWriteRegistry")) cfg->NoWriteRegistry = INIBoolValue(value);
+			if (!_stricmp(name, "OverrideDefaults")) cfg->OverrideDefaults = INIBoolValue(value);
 		}
-		if (!_stricmp(name, "ExtraModes"))
+		if (!_stricmp(section, "display"))
 		{
-			if (!cfg->ParsedAddModes)
+			if (!_stricmp(name, "ScalingMode")) cfg->scaler = INIIntValue(value);
+			if (!_stricmp(name, "FullscreenWindowMode")) cfg->fullmode = INIIntValue(value);
+			if (!_stricmp(name, "ChangeColorDepth")) cfg->colormode = INIBoolValue(value);
+			if (!_stricmp(name, "AllColorDepths"))
 			{
-				if (INIBoolValue(value)) cfg->AddModes = 7;
-				else cfg->AddModes = 0;
+				if (!cfg->ParsedAddColorDepths)
+				{
+					if (INIBoolValue(value)) cfg->AddColorDepths = 1 | 4 | 16;
+					else cfg->AddColorDepths = 0;
+				}
 			}
+			if (!_stricmp(name, "AddColorDepths"))
+			{
+				cfg->ParsedAddColorDepths = TRUE;
+				cfg->AddColorDepths = INIIntValue(value);
+			}
+			if (!_stricmp(name, "ExtraModes"))
+			{
+				if (!cfg->ParsedAddModes)
+				{
+					if (INIBoolValue(value)) cfg->AddModes = 7;
+					else cfg->AddModes = 0;
+				}
+			}
+			if (!_stricmp(name, "AddModes"))
+			{
+				cfg->ParsedAddModes = TRUE;
+				cfg->AddModes = INIIntValue(value);
+			}
+			if (!_stricmp(name, "SortModes")) cfg->SortModes = INIIntValue(value);
+			if (!_stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
+			if (!_stricmp(name, "CustomResolutionX")) cfg->CustomResolutionX = INIIntValue(value);
+			if (!_stricmp(name, "CustomResolutionY")) cfg->CustomResolutionY = INIIntValue(value);
+			if (!_stricmp(name, "CustomRefresh")) cfg->CustomRefresh = INIIntValue(value);
+			if (!_stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
+			if (!_stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
+			if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
 		}
-		if (!_stricmp(name, "AddModes"))
+		if (!_stricmp(section, "scaling"))
 		{
-			cfg->ParsedAddModes = TRUE;
-			cfg->AddModes = INIIntValue(value);
+			if (!_stricmp(name, "ScalingFilter")) cfg->scalingfilter = INIIntValue(value);
+			if (!_stricmp(name, "BltScale")) cfg->BltScale = INIIntValue(value);
+			// Removed for DXGL 0.5.13 release
+			// if (!_stricmp(name, "BltThreshold")) cfg->BltThreshold = INIIntValue(value);
+			if (!_stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
+			if (!_stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
+			if (!_stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
+			if (!_stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
+			if (!_stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
 		}
-		if (!_stricmp(name, "SortModes")) cfg->SortModes = INIIntValue(value);
-		if (!_stricmp(name, "VSync")) cfg->vsync = INIIntValue(value);
-		if (!_stricmp(name, "CustomResolutionX")) cfg->CustomResolutionX = INIIntValue(value);
-		if (!_stricmp(name, "CustomResolutionY")) cfg->CustomResolutionY = INIIntValue(value);
-		if (!_stricmp(name, "CustomRefresh")) cfg->CustomRefresh = INIIntValue(value);
-		if (!_stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
-		if (!_stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
-		if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
-	}
-	if (!_stricmp(section, "scaling"))
-	{
-		if (!_stricmp(name, "ScalingFilter")) cfg->scalingfilter = INIIntValue(value);
-		if (!_stricmp(name, "BltScale")) cfg->BltScale = INIIntValue(value);
-		// Removed for DXGL 0.5.13 release
-		// if (!_stricmp(name, "BltThreshold")) cfg->BltThreshold = INIIntValue(value);
-		if (!_stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
-		if (!_stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
-		if (!_stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
-		if (!_stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
-		if (!_stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
-	}
-	if (!_stricmp(section, "postprocess"))
-	{
-		if (!_stricmp(name, "PostprocessFilter")) cfg->postfilter = INIIntValue(value);
-		if (!_stricmp(name, "PostprocessScaleX")) cfg->postsizex = INIFloatValue(value);
-		if (!_stricmp(name, "PostprocessScaleY")) cfg->postsizex = INIFloatValue(value);
-		if (!_stricmp(name, "EnableShader")) cfg->EnableShader = INIBoolValue(value);
-		if (!_stricmp(name, "ShaderFile"))
+		if (!_stricmp(section, "postprocess"))
 		{
+			if (!_stricmp(name, "PostprocessFilter")) cfg->postfilter = INIIntValue(value);
+			if (!_stricmp(name, "PostprocessScaleX")) cfg->postsizex = INIFloatValue(value);
+			if (!_stricmp(name, "PostprocessScaleY")) cfg->postsizex = INIFloatValue(value);
+			if (!_stricmp(name, "EnableShader")) cfg->EnableShader = INIBoolValue(value);
+			if (!_stricmp(name, "ShaderFile"))
+			{
 #ifdef _UNICODE
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, value, strlen(value), unicode_path, MAX_PATH);
-			_tcsncpy(cfg->shaderfile, unicode_path, MAX_PATH);
+				utf8to16(unicode_path, value);
+				_tcsncpy(cfg->shaderfile, unicode_path, MAX_PATH);
 #else
-			_tcsncpy(cfg->shaderfile, value, MAX_PATH);
+				_tcsncpy(cfg->shaderfile, value, MAX_PATH);
 #endif
+			}
 		}
-	}
-	if (!_stricmp(section, "d3d"))
-	{
-		if (!_stricmp(name, "TextureFilter")) cfg->texfilter = INIIntValue(value);
-		if (!_stricmp(name, "AnisotropicFiltering")) cfg->anisotropic = INIIntValue(value);
-		if (!_stricmp(name, "Antialiasing")) cfg->msaa = INIHexValue(value);
-		if (!_stricmp(name, "D3DAspect")) cfg->aspect3d = INIIntValue(value);
-		if (!_stricmp(name, "LowColorRendering")) cfg->LowColorRendering = INIIntValue(value);
-		if (!_stricmp(name, "EnableDithering")) cfg->EnableDithering = INIIntValue(value);
-		if (!_stricmp(name, "LimitTextureFormats")) cfg->LimitTextureFormats = INIIntValue(value);
-	}
-	if (!_stricmp(section, "advanced"))
-	{
-		if (!_stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
-		if (!_stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
-		if (!_stricmp(name, "WindowPosition")) cfg->WindowPosition = INIIntValue(value);
-		if (!_stricmp(name, "RememberWindowSize")) cfg->RememberWindowSize = INIBoolValue(value);
-		if (!_stricmp(name, "RememberWindowPosition")) cfg->RememberWindowPosition = INIBoolValue(value);
-		if (!_stricmp(name, "NoResizeWindow")) cfg->NoResizeWindow = INIBoolValue(value);
-		if (!_stricmp(name, "WindowX")) cfg->WindowX = INIIntValue(value);
-		if (!_stricmp(name, "WindowY")) cfg->WindowY = INIIntValue(value);
-		if (!_stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
-		if (!_stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
-		if (!_stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIBoolValue(value);
-		if (!_stricmp(name, "CaptureMouse")) cfg->CaptureMouse = INIBoolValue(value);
-	}
-	if (!_stricmp(section, "debug"))
-	{
-		if (!_stricmp(name, "DebugNoExtFramebuffer")) cfg->DebugNoExtFramebuffer = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoArbFramebuffer")) cfg->DebugNoArbFramebuffer = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoES2Compatibility")) cfg->DebugNoES2Compatibility = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoExtDirectStateAccess")) cfg->DebugNoExtDirectStateAccess = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoArbDirectStateAccess")) cfg->DebugNoArbDirectStateAccess = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoSamplerObjects")) cfg->DebugNoSamplerObjects = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoGpuShader4")) cfg->DebugNoGpuShader4 = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoGLSL130")) cfg->DebugNoGLSL130 = INIBoolValue(value);
-		if (!_stricmp(name, "DebugUploadAfterUnlock")) cfg->DebugUploadAfterUnlock = INIBoolValue(value);
-		if (!_stricmp(name, "DebugBlendDestColorKey")) cfg->DebugBlendDestColorKey = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoMouseHooks")) cfg->DebugNoMouseHooks = INIBoolValue(value);
-		if (!_stricmp(name, "DebugNoPaletteRedraw")) cfg->DebugNoPaletteRedraw = INIBoolValue(value);
-		if (!_stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
-		if (!_stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
-		if (!_stricmp(name, "DebugTraceLevel")) cfg->DebugTraceLevel = INIIntValue(value);
-	}
-	if (!_stricmp(section, "hacks"))
-	{
-		if (!_stricmp(name, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
-		if (!_stricmp(name, "HackAutoExpandViewport")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
-		if (!_stricmp(name, "HackAutoScale512448to640480")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
-		if (!_stricmp(name, "HackAutoExpandViewportCompare")) cfg->HackAutoExpandViewportCompare = INIIntValue(value);
-		if (!_stricmp(name, "HackAutoExpandViewportValue")) cfg->HackAutoExpandViewportValue = INIHexValue(value);
-		if (!_stricmp(name, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
-		if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
-		if (!_stricmp(name, "HackPaletteDelay")) cfg->HackPaletteDelay = INIIntValue(value);
-		if (!_stricmp(name, "HackPaletteVsync")) cfg->HackPaletteVsync = INIBoolValue(value);
+		if (!_stricmp(section, "d3d"))
+		{
+			if (!_stricmp(name, "TextureFilter")) cfg->texfilter = INIIntValue(value);
+			if (!_stricmp(name, "AnisotropicFiltering")) cfg->anisotropic = INIIntValue(value);
+			if (!_stricmp(name, "Antialiasing")) cfg->msaa = INIHexValue(value);
+			if (!_stricmp(name, "D3DAspect")) cfg->aspect3d = INIIntValue(value);
+			if (!_stricmp(name, "LowColorRendering")) cfg->LowColorRendering = INIIntValue(value);
+			if (!_stricmp(name, "EnableDithering")) cfg->EnableDithering = INIIntValue(value);
+			if (!_stricmp(name, "LimitTextureFormats")) cfg->LimitTextureFormats = INIIntValue(value);
+		}
+		if (!_stricmp(section, "advanced"))
+		{
+			if (!_stricmp(name, "TextureFormat")) cfg->TextureFormat = INIIntValue(value);
+			if (!_stricmp(name, "TexUpload")) cfg->TexUpload = INIIntValue(value);
+			if (!_stricmp(name, "WindowPosition")) cfg->WindowPosition = INIIntValue(value);
+			if (!_stricmp(name, "RememberWindowSize")) cfg->RememberWindowSize = INIBoolValue(value);
+			if (!_stricmp(name, "RememberWindowPosition")) cfg->RememberWindowPosition = INIBoolValue(value);
+			if (!_stricmp(name, "NoResizeWindow")) cfg->NoResizeWindow = INIBoolValue(value);
+			if (!_stricmp(name, "WindowX")) cfg->WindowX = INIIntValue(value);
+			if (!_stricmp(name, "WindowY")) cfg->WindowY = INIIntValue(value);
+			if (!_stricmp(name, "WindowWidth")) cfg->WindowWidth = INIIntValue(value);
+			if (!_stricmp(name, "WindowHeight")) cfg->WindowHeight = INIIntValue(value);
+			if (!_stricmp(name, "WindowMaximized")) cfg->WindowMaximized = INIBoolValue(value);
+			if (!_stricmp(name, "CaptureMouse")) cfg->CaptureMouse = INIBoolValue(value);
+		}
+		if (!_stricmp(section, "debug"))
+		{
+			if (!_stricmp(name, "DebugNoExtFramebuffer")) cfg->DebugNoExtFramebuffer = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoArbFramebuffer")) cfg->DebugNoArbFramebuffer = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoES2Compatibility")) cfg->DebugNoES2Compatibility = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoExtDirectStateAccess")) cfg->DebugNoExtDirectStateAccess = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoArbDirectStateAccess")) cfg->DebugNoArbDirectStateAccess = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoSamplerObjects")) cfg->DebugNoSamplerObjects = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoGpuShader4")) cfg->DebugNoGpuShader4 = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoGLSL130")) cfg->DebugNoGLSL130 = INIBoolValue(value);
+			if (!_stricmp(name, "DebugUploadAfterUnlock")) cfg->DebugUploadAfterUnlock = INIBoolValue(value);
+			if (!_stricmp(name, "DebugBlendDestColorKey")) cfg->DebugBlendDestColorKey = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoMouseHooks")) cfg->DebugNoMouseHooks = INIBoolValue(value);
+			if (!_stricmp(name, "DebugNoPaletteRedraw")) cfg->DebugNoPaletteRedraw = INIBoolValue(value);
+			if (!_stricmp(name, "DebugMaxGLVersionMajor")) cfg->DebugMaxGLVersionMajor = INIIntValue(value);
+			if (!_stricmp(name, "DebugMaxGLVersionMinor")) cfg->DebugMaxGLVersionMinor = INIIntValue(value);
+			if (!_stricmp(name, "DebugTraceLevel")) cfg->DebugTraceLevel = INIIntValue(value);
+		}
+		if (!_stricmp(section, "hacks"))
+		{
+			if (!_stricmp(name, "HackCrop640480to640400")) cfg->HackCrop640480to640400 = INIBoolValue(value);
+			if (!_stricmp(name, "HackAutoExpandViewport")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
+			if (!_stricmp(name, "HackAutoScale512448to640480")) cfg->HackAutoExpandViewport = INIIntBoolValue(value);
+			if (!_stricmp(name, "HackAutoExpandViewportCompare")) cfg->HackAutoExpandViewportCompare = INIIntValue(value);
+			if (!_stricmp(name, "HackAutoExpandViewportValue")) cfg->HackAutoExpandViewportValue = INIHexValue(value);
+			if (!_stricmp(name, "HackNoTVRefresh")) cfg->HackNoTVRefresh = INIBoolValue(value);
+			if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
+			if (!_stricmp(name, "HackPaletteDelay")) cfg->HackPaletteDelay = INIIntValue(value);
+			if (!_stricmp(name, "HackPaletteVsync")) cfg->HackPaletteVsync = INIBoolValue(value);
+		}
 	}
 	return 1;
 }
@@ -1212,14 +1250,27 @@ void ReadINI(DXGLCFG *cfg)
 {
 	FILE *file;
 	TCHAR inipath[MAX_PATH + 10];
+	ini_depth = 0;
 	GetModuleFileName(NULL, inipath, MAX_PATH);
 	GetDirFromPath(inipath);
-	_tcscat(inipath, _T("\\dxgl.ini"));
+	_tcscpy(cfg->inipath, inipath);
+	_tcscat(inipath, _T("\\dxgl.cfg"));
 	file = _tfopen(inipath, _T("r"));
 	if (file)
 	{
 		ini_parse_file(file, ReadINICallback, cfg);
 		fclose(file);
+	}
+	else
+	{
+		GetDirFromPath(inipath);
+		_tcscat(inipath, _T("\\dxgl.ini"));
+		file = _tfopen(inipath, _T("r"));
+		if (file)
+		{
+			ini_parse_file(file, ReadINICallback, cfg);
+			fclose(file);
+		}
 	}
 }
 
@@ -2336,6 +2387,8 @@ ver1to2:
 		RegCloseKey(hKey);
 	}
 ver2to3:
+	// Transfer profiles to pre-migrate path
+	
 	return;
 }
 
