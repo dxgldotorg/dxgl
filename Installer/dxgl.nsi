@@ -48,6 +48,12 @@ SetCompressor /SOLID lzma
 !else
 !define SRCDIR "VS8\Release"
 !endif
+!else if ${COMPILER} == "VC2008"
+!ifdef _DEBUG
+!define SRCDIR "VS9\Debug"
+!else
+!define SRCDIR "VS9\Release"
+!endif
 !else
 !ifdef _DEBUG
 !define SRCDIR "Debug"
@@ -109,6 +115,15 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc8"
+!else if ${COMPILER} == "VC2008"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc9-6161/vcredist_x86.exe"
+!define runtime_name "Visual C++ 2008"
+!define runtime_filename "vcredist_x86.exe"
+!define runtime_sha512 "BF630667C87B8F10EF85B61F2F379D7CE24124618B999BABFEC8E2DF424EB494B8F1BF0977580810DFF5124D4DBDEC9539FF53E0DC14625C076FA34DFE44E3F2"
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\VC\Servicing\9.0\RED\1033
+!define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc9"
 !else if ${COMPILER} == "VC2010"
 !define download_runtime 1
 !define runtime_url "http://dxgl.org/download/runtimes/vc10/vcredist_x86.exe"
@@ -211,6 +226,8 @@ Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
   ${Else}
     DetailPrint "Installing ${runtime_name} Runtime"
     !if ${COMPILER} == "VC2005"
+    ExecWait '"$TEMP\${runtime_filename}" /q' $0
+    !else if ${COMPILER} == "VC2008"
     ExecWait '"$TEMP\${runtime_filename}" /q' $0
     !else
     ExecWait '"$TEMP\${runtime_filename}" /q /norestart' $0
@@ -320,6 +337,11 @@ Function .onInit
     MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Server 2003 must be upgraded to at least Service Pack 1 before you can use DXGL.$\r\
 	Please visit http://web.archive.org/web/20150501080245/https://support.microsoft.com/en-us/kb/889100/ for instructions on upgrading to Service Pack 2."
 	Quit
+  ${EndIf}
+  !else if ${COMPILER} == "VC2008"
+  ${IfNot} ${AtleastWin2000}
+    MessageBox MB_OK|MB_ICONEXCLAMATION "This version of DXGL requires at least Windows 2000."
+    Quit
   ${EndIf}
   !else
   ${IfNot} ${AtleastWin2000}
