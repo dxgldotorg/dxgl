@@ -251,8 +251,11 @@ SectionEnd
 !endif
 
 Section -PostInstall
-  ExecWait '"$INSTDIR\dxglcfg.exe" upgrade'
+  CreateDirectory $INSTDIR\Temp
+  CopyFiles $INSTDIR\dxglcfg.exe $INSTDIR\Temp
+  ExecWait '"$INSTDIR\Temp\dxglcfg.exe" upgrade'
   ExecWait '"$INSTDIR\dxglcfg.exe" profile_install'
+  RMDir /r /REBOOTOK $INSTDIR\Temp
 SectionEnd
 
 Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE

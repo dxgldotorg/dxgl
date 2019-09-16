@@ -41,10 +41,11 @@
 typedef LONG LSTATUS;
 #endif
 
-TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
-TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
-TCHAR regkeybase[] = _T("Software\\DXGL\\");
-TCHAR regkeydxgl[] = _T("Software\\DXGL");
+static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
+static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
+static const TCHAR regkeyprofilesmigrated[] = _T("Software\\DXGL\\ProfilesMigrated\\");
+static const TCHAR regkeybase[] = _T("Software\\DXGL\\");
+static const TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
 DXGLCFG defaultmask;
 
@@ -73,7 +74,7 @@ void _tchartowchar(WCHAR *dest, TCHAR *src, int length)
 #endif
 }
 
-void _wchartotchar(TCHAR *dest, WCHAR *src, int length)
+void _wchartotchar(TCHAR *dest, const WCHAR *src, int length)
 {
 #ifdef _UNICODE
 	if (length == -1) wcscpy(dest, src);
@@ -85,7 +86,7 @@ void _wchartotchar(TCHAR *dest, WCHAR *src, int length)
 #endif
 }
 
-void utf8to16(WCHAR* dest, CHAR* src)
+void utf8to16(WCHAR* dest, const CHAR* src)
 {
 	int sizein;
 	int sizeout;
@@ -933,7 +934,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	_tcslwr(filename);
 	_tchartowchar(filename2,filename,-1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2));
+	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2) * sizeof(WCHAR));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -970,7 +971,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	_tcslwr(pathlwr);
 	_tchartowchar(pathlwr2,pathlwr,-1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, pathlwr2, (uint32_t)wcslen(pathlwr2));
+	Sha256Update(&sha_context, pathlwr2, (uint32_t)wcslen(pathlwr2) * sizeof(WCHAR));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -1700,7 +1701,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	_tcslwr(filename);
 	_tchartowchar(filename2, filename, -1);
 	Sha256Initialise(&sha_context);
-	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2));
+	Sha256Update(&sha_context, filename2, (uint32_t)wcslen(filename2) * sizeof(WCHAR));
 	Sha256Finalise(&sha_context, &sha256);
 	for (i = 0; i < (256 / 8); i++)
 	{
@@ -1954,7 +1955,7 @@ void UpgradeDXGLTestToDXGLCfg()
 			_tcslwr(installpath);
 			_tchartowchar(installpath2, installpath, -1);
 			Sha256Initialise(&sha_context);
-			Sha256Update(&sha_context, installpath2, (uint32_t)wcslen(installpath2));
+			Sha256Update(&sha_context, installpath2, (uint32_t)wcslen(installpath2) * sizeof(WCHAR));
 			Sha256Finalise(&sha_context, &sha256);
 			for (i = 0; i < (256 / 8); i++)
 			{
@@ -2046,6 +2047,7 @@ void UpgradeConfig()
 	HKEY hKey;
 	HKEY hKeyProfile;
 	HKEY hKeyDest;
+	HKEY hKeyProfileDest;
 	TCHAR regkey[MAX_PATH + 24];
 	TCHAR subkey[MAX_PATH];
 	TCHAR exepath[(MAX_PATH * 2) + 1];
@@ -2058,6 +2060,7 @@ void UpgradeConfig()
 	DWORD olddirsize = 1024;
 	TCHAR *olddir = NULL;
 	DWORD oldvaluesize = 1024;
+	WCHAR dir_unicode[MAX_PATH];
 	TCHAR *oldvalue = NULL;
 	TCHAR *ptr;
 	size_t length;
@@ -2065,6 +2068,8 @@ void UpgradeConfig()
 	DWORD regtype;
 	DWORD sizeout, sizeout2;
 	Sha256Context sha_context;
+	SHA256_HASH PathHash;
+	TCHAR PathHashString[65];
 	LONG error;
 	LONG error2;
 	DWORD i;
@@ -2387,8 +2392,216 @@ ver1to2:
 		RegCloseKey(hKey);
 	}
 ver2to3:
+	// Version 2 to 3:  Fix profile path hashes
+	if (version >= 3) return;
 	// Transfer profiles to pre-migrate path
-	
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkeyprofiles, 0, NULL, 0, KEY_READ, NULL, &hKey, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegCreateKeyEx(HKEY_CURRENT_USER, regkeyprofilesmigrated, 0, NULL, 0, KEY_ALL_ACCESS,
+			NULL, &hKeyDest, NULL);
+		if (error == ERROR_SUCCESS)
+		{
+			olddirsize = 1024;
+			oldvaluesize = 1024;
+			olddir = malloc(olddirsize * 2);
+			oldvalue = malloc(oldvaluesize);
+			keyindex = 0;
+			do
+			{
+				sizeout = MAX_PATH;
+				error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
+					NULL, NULL, NULL, NULL);
+				keyindex++;
+				if (error == ERROR_SUCCESS)
+				{
+					error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_READ, &hKeyProfile);
+					if (error2 == ERROR_SUCCESS)
+					{
+						// Rename subkey
+						sizeout = MAX_PATH;
+						regtype = REG_SZ;
+						error2 = RegQueryValueEx(hKeyProfile, _T("InstallPath"), NULL, &regtype, (LPBYTE)olddir, &sizeout);
+						if (error2 == ERROR_SUCCESS)
+						{
+							_tcslwr(olddir);
+							_tchartowchar(dir_unicode, olddir, MAX_PATH);
+							Sha256Initialise(&sha_context);
+							Sha256Update(&sha_context, dir_unicode, (uint32_t)wcslen(dir_unicode) * sizeof(WCHAR));
+							Sha256Finalise(&sha_context, &PathHash);
+							for (i = 0; i < (256 / 8); i++)
+							{
+								PathHashString[i * 2] = (TCHAR)hexdigit(PathHash.bytes[i] >> 4);
+								PathHashString[(i * 2) + 1] = (TCHAR)hexdigit(PathHash.bytes[i] & 0xF);
+							}
+							PathHashString[256 / 4] = 0;
+							ptr = _tcsrchr(subkey, '-');
+							_tcscpy(ptr + 1, PathHashString);
+						}
+						error2 = RegCreateKeyEx(hKeyDest, subkey, 0, NULL, 0, KEY_ALL_ACCESS,
+							NULL, &hKeyProfileDest, NULL);
+						if (error2 == ERROR_SUCCESS)
+						{
+							numvalue = 0;
+							do
+							{
+								sizeout = olddirsize;
+								sizeout2 = oldvaluesize;
+								error2 = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
+								if (error2 == ERROR_MORE_DATA)
+								{
+									if (sizeout > olddirsize)
+									{
+										olddirsize = sizeout;
+										olddir = realloc(olddir, olddirsize * 2);
+										if (!olddir)
+										{
+											MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+											ExitProcess(error2);
+										}
+									}
+									if (sizeout2 > oldvaluesize)
+									{
+										oldvaluesize = sizeout2;
+										oldvalue = realloc(oldvalue, oldvaluesize);
+										if (!oldvalue)
+										{
+											MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+											ExitProcess(error2);
+										}
+									}
+									sizeout = olddirsize;
+									sizeout2 = oldvaluesize;
+									error2 = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
+								}
+								if (error2 == ERROR_SUCCESS)
+								{
+									RegSetValueEx(hKeyProfileDest, olddir, 0, regtype, (BYTE*)oldvalue, sizeout2);
+								}
+								numvalue++;
+							} while (error2 == ERROR_SUCCESS);
+							RegCloseKey(hKeyProfileDest);
+						}
+						RegCloseKey(hKeyProfile);
+					}
+				}
+			} while (error == ERROR_SUCCESS);
+			RegCloseKey(hKeyDest);
+			free(olddir);
+			free(oldvalue);
+		}
+		// Delete source keys
+		do
+		{
+			sizeout = MAX_PATH;
+			error = RegEnumKeyEx(hKey, 0, subkey, &sizeout,
+				NULL, NULL, NULL, NULL);
+			if (error == ERROR_SUCCESS)
+			{
+				error2 = RegDeleteKey(hKey, subkey);
+				if (error2 != ERROR_SUCCESS) break;
+			}
+		} while (error == ERROR_SUCCESS);
+		RegCloseKey(hKey);
+	}
+	// Migrate keys to new names
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkeyprofilesmigrated, 0, NULL, 0, KEY_READ, NULL, &hKey, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegCreateKeyEx(HKEY_CURRENT_USER, regkeyprofiles, 0, NULL, 0, KEY_ALL_ACCESS,
+			NULL, &hKeyDest, NULL);
+		if (error == ERROR_SUCCESS)
+		{
+			olddirsize = 1024;
+			oldvaluesize = 1024;
+			olddir = malloc(olddirsize * 2);
+			oldvalue = malloc(oldvaluesize);
+			keyindex = 0;
+			do
+			{
+				sizeout = MAX_PATH;
+				error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
+					NULL, NULL, NULL, NULL);
+				keyindex++;
+				if (error == ERROR_SUCCESS)
+				{
+					error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_READ, &hKeyProfile);
+					if (error2 == ERROR_SUCCESS)
+					{
+						error2 = RegCreateKeyEx(hKeyDest, subkey, 0, NULL, 0, KEY_ALL_ACCESS,
+							NULL, &hKeyProfileDest, NULL);
+						if (error2 == ERROR_SUCCESS)
+						{
+							numvalue = 0;
+							do
+							{
+								sizeout = olddirsize;
+								sizeout2 = oldvaluesize;
+								error2 = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
+								if (error2 == ERROR_MORE_DATA)
+								{
+									if (sizeout > olddirsize)
+									{
+										olddirsize = sizeout;
+										olddir = realloc(olddir, olddirsize * 2);
+										if (!olddir)
+										{
+											MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+											ExitProcess(error2);
+										}
+									}
+									if (sizeout2 > oldvaluesize)
+									{
+										oldvaluesize = sizeout2;
+										oldvalue = realloc(oldvalue, oldvaluesize);
+										if (!oldvalue)
+										{
+											MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+											ExitProcess(error2);
+										}
+									}
+									sizeout = olddirsize;
+									sizeout2 = oldvaluesize;
+									error2 = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
+								}
+								if (error2 == ERROR_SUCCESS)
+								{
+									RegSetValueEx(hKeyProfileDest, olddir, 0, regtype, (BYTE*)oldvalue, sizeout2);
+								}
+								numvalue++;
+							} while (error2 == ERROR_SUCCESS);
+							RegCloseKey(hKeyProfileDest);
+						}
+						RegCloseKey(hKeyProfile);
+					}
+				}
+			} while (error == ERROR_SUCCESS);
+			RegCloseKey(hKeyDest);
+			free(olddir);
+			free(oldvalue);
+		}
+		// Delete temporary keys
+		do
+		{
+			sizeout = MAX_PATH;
+			error = RegEnumKeyEx(hKey, 0, subkey, &sizeout,
+				NULL, NULL, NULL, NULL);
+			if (error == ERROR_SUCCESS)
+			{
+				error2 = RegDeleteKey(hKey, subkey);
+				if (error2 != ERROR_SUCCESS) break;
+			}
+		} while (error == ERROR_SUCCESS);
+		RegCloseKey(hKey);
+		RegDeleteKey(HKEY_CURRENT_USER, regkeyprofilesmigrated);
+	}
+	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		sizeout = 3;
+		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)& sizeout, 4);
+		RegCloseKey(hKey);
+	}
 	return;
 }
 
