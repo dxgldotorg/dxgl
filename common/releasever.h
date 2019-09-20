@@ -5,7 +5,7 @@
 #define DXGLMAJORVER 0
 #define DXGLMINORVER 5
 #define DXGLPOINTVER 17
-#define DXGLBETA 1
+#define DXGLBETA 0
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
@@ -17,6 +17,6 @@
 1 - sign non-beta only
 2 - sign release only
 3 - sign all */
-#define SIGNMODE 1
+#define SIGNMODE 0
 
 #endif //__VERSION_H
