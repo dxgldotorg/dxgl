@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2018 William Feely
+// Copyright (C) 2012-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,173 @@
 #include <tchar.h>
 #include "../common/releasever.h"
 
+typedef struct
+{
+	int major;
+	int minor;
+	int point;
+	int build;
+	BOOL beta;
+	char verstring[MAX_PATH];
+	char revision[41];
+	char branch[MAX_PATH];
+} DXGLVER;
 
+BOOL IsWOW64()
+{
+#ifdef _WIN64
+	return TRUE;
+#else
+	BOOL is64;
+	BOOL(__stdcall * _IsWow64Process)(HANDLE hProcess, PBOOL Wow64Process);
+	_IsWow64Process = (BOOL(__stdcall *)(HANDLE, PBOOL))
+		GetProcAddress(GetModuleHandle(_T("kernel32.dll")), "IsWow64Process");
+	if (_IsWow64Process)
+	{
+		if (!_IsWow64Process(GetCurrentProcess(), &is64)) return FALSE;
+		else return is64;
+	}
+	else return FALSE;
+#endif
+}
+
+static const char git_install_path[] = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Git_is1";
+
+int GetGitVersion(char *path, DXGLVER *version)
+{
+	char pathbase[FILENAME_MAX + 1];
+	char pathin[FILENAME_MAX + 1];
+	char pathout[FILENAME_MAX + 1];
+	char workingpath[MAX_PATH];
+	char repopath[MAX_PATH + 4];
+	HKEY hKey;
+	BOOL foundgit = FALSE;
+	char gitpath[(MAX_PATH + 1) * 4];
+	char gitcmd[(MAX_PATH + 1) * 4];
+	DWORD buffersize = MAX_PATH + 1;
+	BOOL is64;
+	FILE *pipe;
+	char buffer[4096];
+#ifdef _WIN64
+	is64 = TRUE;
+#else
+	is64 = IsWOW64();
+#endif
+	strncpy(pathbase, path, FILENAME_MAX);
+	strncpy(pathin, path, FILENAME_MAX);
+	pathin[FILENAME_MAX] = 0;
+	strncpy(pathout, path, FILENAME_MAX);
+	pathout[FILENAME_MAX] = 0;
+	pathbase[strlen(pathbase) - 7] = 0;
+	strncat(pathin, "\\rev.in", FILENAME_MAX - strlen(pathin));
+	pathin[FILENAME_MAX] = 0;
+	strncat(pathout, "\\rev", FILENAME_MAX - strlen(pathin));
+	pathout[FILENAME_MAX] = 0;
+	if (is64)
+	{
+		// User X64 registry
+		if (RegOpenKeyExA(HKEY_CURRENT_USER, git_install_path, 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+		{
+			// System X64 registry
+			if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, git_install_path, 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+			{
+				// User IA-32 registry
+				if (RegOpenKeyExA(HKEY_CURRENT_USER, git_install_path, 0, KEY_READ | KEY_WOW64_32KEY, &hKey) != ERROR_SUCCESS)
+				{
+					// System IA-32 registry
+					if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, git_install_path, 0, KEY_READ | KEY_WOW64_32KEY, &hKey) != ERROR_SUCCESS)
+						hKey = 0;						
+				}
+			}
+		}
+
+	}
+	else
+	{
+		// User registry
+		if (RegOpenKeyExA(HKEY_CURRENT_USER, git_install_path, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+		{
+			// System registry
+			if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, git_install_path, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+				hKey = 0;
+		}
+	}
+	if (hKey)
+	{
+		if (RegQueryValueExA(hKey, "InstallLocation", NULL, NULL, (LPBYTE)gitpath, &buffersize) == ERROR_SUCCESS)
+		{
+			foundgit = TRUE;
+			GetCurrentDirectoryA(MAX_PATH, workingpath);
+			strcpy(repopath, path);
+			strcat(repopath, "\\..");
+			SetCurrentDirectoryA(repopath);
+			strcat(gitpath, "bin\\git.exe ");
+			strcpy(gitcmd, "\"");
+			strcat(gitcmd, gitpath);
+			strcat(gitcmd, "\" rev-parse HEAD");
+			pipe = _popen(gitcmd, "r");
+			if (pipe)
+			{
+				fgets(buffer, 4096, pipe);
+				_pclose(pipe);
+				if(strrchr(buffer, '\n')) *(strrchr(buffer, '\n')) = 0;
+				buffer[40] = 0; // Buffer overrun protection
+				strcpy(version->revision, buffer);
+				strcpy(gitcmd, "\"");
+				strcat(gitcmd, gitpath);
+				strcat(gitcmd, "\" describe --always --long --dirty");
+				pipe = _popen(gitcmd, "r");
+				if (pipe)
+				{
+					fgets(buffer, 4096, pipe);
+					_pclose(pipe);
+					if (strrchr(buffer, '\n')) *(strrchr(buffer, '\n')) = 0;
+					buffer[MAX_PATH] = 0; // Buffer overrun protection
+					strcpy(version->verstring, buffer);
+				}
+				else
+				{
+					MessageBoxA(NULL, "Unexpected Git error", "Fatal Error", MB_OK | MB_ICONERROR);
+					ExitProcess(1);
+				}
+				strcpy(gitcmd, "\"");
+				strcat(gitcmd, gitpath);
+				strcat(gitcmd, "\" rev-parse --abbrev-ref HEAD");
+				pipe = _popen(gitcmd, "r");
+				if (pipe)
+				{
+					fgets(buffer, 4096, pipe);
+					_pclose(pipe);
+					if (strrchr(buffer, '\n')) *(strrchr(buffer, '\n')) = 0;
+					buffer[MAX_PATH] = 0; // Buffer overrun protection
+					strcpy(version->branch, buffer);
+				}
+				else
+				{
+					MessageBoxA(NULL, "Unexpected Git error", "Fatal Error", MB_OK | MB_ICONERROR);
+					ExitProcess(1);
+				}
+			}
+			else foundgit = FALSE;
+			if (!foundgit)
+			{
+				int result = MessageBoxA(NULL, "Could not find Git for Windows, would you like to download it?", "git.exe not found",
+					MB_YESNO | MB_ICONWARNING);
+				if (result == IDYES)
+				{
+					puts("ERROR:  Please try again after installing Git for Windows.");
+					ShellExecuteA(NULL, "open", "https://git-scm.com/download/win", NULL, NULL, SW_SHOWNORMAL);
+					exit(-1);
+				}
+				else return 0;
+			}
+			SetCurrentDirectoryA(workingpath);
+		}
+	}
+	return 1;
+}
+
+/* No longer used after migration to Git
 int GetSVNRev(char *path)
 {
 	char pathbase[FILENAME_MAX+1];
@@ -87,12 +253,67 @@ int GetSVNRev(char *path)
 		if(result == IDYES)
 		{
 			puts("ERROR:  Please try again after installing TortoiseSVN.");
-			ShellExecuteA(NULL,"open","http://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
+			ShellExecuteA(NULL,"open","https://tortoisesvn.net/",NULL,NULL,SW_SHOWNORMAL);
 			exit(-1);
 		}
 		else return 0;
 	}
 	return 0;
+} */
+
+void ParseVersion(DXGLVER *version, BOOL git)
+{
+	char numstring[16];
+	char *findptr;
+	char *findptr2;
+	if (git)
+	{
+		ZeroMemory(numstring, 16);
+		findptr = strchr(version->verstring, '.');
+		if (findptr)
+		{
+			strncpy(numstring, version->verstring,
+				((INT_PTR)findptr - (INT_PTR)version->verstring < 16 ?
+				(INT_PTR)findptr - (INT_PTR)&version->verstring : 15));
+			version->major = atoi(numstring);
+			ZeroMemory(numstring, 16);
+			findptr++;
+			findptr2 = strchr(findptr, '.');
+			if (findptr2)
+			{
+				strncpy(numstring, findptr,
+					((INT_PTR)findptr2 - (INT_PTR)findptr < 16 ? (INT_PTR)findptr2 - (INT_PTR)findptr : 15));
+				version->minor = atoi(numstring);
+				ZeroMemory(numstring, 16);
+				findptr2++;
+				findptr = strchr(findptr2, '-');
+				if (findptr)
+				{
+					strncpy(numstring, findptr2,
+						((INT_PTR)findptr - (INT_PTR)findptr2 < 16 ? (INT_PTR)findptr - (INT_PTR)findptr2 : 15));
+					version->build = atoi(numstring);
+					ZeroMemory(numstring, 16);
+					findptr++;
+					findptr2 = strchr(findptr, '-');
+					if (findptr2)
+					{
+						strncpy(numstring, findptr,
+							((INT_PTR)findptr2 - (INT_PTR)findptr < 16 ? (INT_PTR)findptr2 - (INT_PTR)findptr : 15));
+						version->build = atoi(numstring);
+						if (version->build != 0) version->beta = TRUE;
+						else version->beta = FALSE;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		version->beta = FALSE;
+		strcpy(version->branch, "Non-Git");
+		strcpy(version->revision, "");
+		strcpy(version->verstring, "0.5.17-0-Non-Git");
+	}
 }
 
 int ProcessHeaders(char *path)
@@ -100,15 +321,23 @@ int ProcessHeaders(char *path)
 	char pathin[FILENAME_MAX+1];
 	char pathout[FILENAME_MAX+1];
 	char buffer[1024];
-	char verbuffer[36];
+	char verbuffer[MAX_PATH];
 	char numstring[16];
 	char *findptr;
+	char *findptr2;
 	FILE *filein;
 	FILE *fileout;
-	int revision = GetSVNRev(path);
+	DXGLVER version;
+	//int revision = GetSVNRev(path);
 	BOOL nosign = FALSE;
+	version.build = 0;
+	version.major = 0;
+	version.minor = 5;
+	version.point = 17;
+	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
+	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
-	if ((SIGNMODE == 1) && DXGLBETA) nosign = TRUE;
+	if ((SIGNMODE == 1) && version.beta) nosign = TRUE;
 	#ifdef _DEBUG
 	if (SIGNMODE <= 2) nosign = TRUE;
 	#endif
@@ -137,35 +366,71 @@ int ProcessHeaders(char *path)
 	while(fgets(buffer,1024,filein))
 	{
 		findptr = strstr(buffer,"$MAJOR");
-		if(findptr) strncpy(findptr,STR(DXGLMAJORVER) "\n",6);
+		if (findptr)
+		{
+			_itoa(version.major, verbuffer, 10);
+			strcat(verbuffer, "\n");
+			strncpy(findptr, verbuffer, 9);
+		}
 		findptr = strstr(buffer,"$MINOR");
-		if(findptr) strncpy(findptr,STR(DXGLMINORVER) "\n",6);
+		if (findptr)
+		{
+			_itoa(version.minor, verbuffer, 10);
+			strcat(verbuffer, "\n");
+			strncpy(findptr, verbuffer, 9);
+		}
 		findptr = strstr(buffer,"$POINT");
-		if(findptr) strncpy(findptr,STR(DXGLPOINTVER) "\n",9);
-		findptr = strstr(buffer,"$REVISION");
+		if (findptr)
+		{
+			_itoa(version.point, verbuffer, 10);
+			strcat(verbuffer, "\n");
+			strncpy(findptr, verbuffer, 9);
+		}
+		findptr = strstr(buffer,"$BUILD");
 		if(findptr)
 		{
-			_itoa(revision,verbuffer,10);
+			_itoa(version.build,verbuffer,10);
 			strcat(verbuffer,"\n");
 			strncpy(findptr,verbuffer,9);
+		}
+		findptr = strstr(buffer, "$BRANCH");
+		if (findptr)
+		{
+			strcpy(findptr, version.branch);
+			strcat(findptr, "\n");
+		}
+		findptr = strstr(buffer, "$REVISION");
+		if (findptr)
+		{
+			strcpy(findptr, version.revision);
+			strcat(findptr, "\n");
 		}
 		findptr = strstr(buffer,"$VERSTRING");
 		if(findptr)
 		{
-			if(revision)
+			if (version.beta)
 			{
 				strcpy(verbuffer, "\"");
-				strcat(verbuffer,DXGLSTRVER);
-				strcat(verbuffer," r");
-				_itoa(revision,numstring,10);
-				strcat(verbuffer,numstring);
-				if (DXGLBETA) strcat(verbuffer, " Prerelease");
-				strcat(verbuffer,"\"");
-				strncpy(findptr,verbuffer,38);
+				strcat(verbuffer, version.verstring);
+				strcat(verbuffer, "\"\n");
+				strcpy(findptr, verbuffer);
 			}
-			else strncpy(findptr,"\"" DXGLSTRVER "\"\n",15);
+			else
+			{
+				strcpy(verbuffer, "\"");
+				_itoa(version.major, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, ".");
+				_itoa(version.minor, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, ".");
+				_itoa(version.point, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, "\"\n");
+				strcpy(findptr, verbuffer);
+			}
 		}
-		if (DXGLBETA)
+		if (version.beta)
 		{
 			if (strstr(buffer, "//#define DXGLBETA")) strcpy(buffer, "#define DXGLBETA");
 		}
@@ -199,16 +464,61 @@ int ProcessHeaders(char *path)
 	}
 	while(fgets(buffer,1024,filein))
 	{
+		findptr = strstr(buffer, "$PRODUCTVERNUMBER");
+		if (findptr)
+		{
+			strcpy(verbuffer, "\"");
+			itoa(version.major, numstring, 10);
+			strcat(verbuffer, numstring);
+			strcat(verbuffer, ".");
+			itoa(version.minor, numstring, 10);
+			strcat(verbuffer, numstring);
+			strcat(verbuffer, ".");
+			itoa(version.point, numstring, 10);
+			strcat(verbuffer, numstring);
+			strcat(verbuffer, ".");
+			itoa(version.build, numstring, 10);
+			strcat(verbuffer, numstring);
+			strcat(verbuffer, "\"\n");
+			strcpy(findptr, verbuffer);
+		}
 		findptr = strstr(buffer,"$PRODUCTVERSTRING");
-		if (findptr) strncpy(findptr, "\"" DXGLSTRVER "\"\n", 15);
+		if (findptr)
+		{
+			if (version.beta)
+			{
+				strcpy(verbuffer, "\"");
+				strcat(verbuffer, version.verstring);
+				strcat(verbuffer, "\"\n");
+				strcpy(findptr, verbuffer);
+			}
+			else
+			{
+				strcpy(verbuffer, "\"");
+				_itoa(version.major, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, ".");
+				_itoa(version.minor, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, ".");
+				_itoa(version.point, numstring, 10);
+				strcat(verbuffer, numstring);
+				strcat(verbuffer, "\"\n");
+				strcpy(findptr, verbuffer);
+			}
+		}
 		findptr = strstr(buffer,"$PRODUCTREVISION");
 		if(findptr)
 		{
-			if(revision)
+			if(version.beta)
 			{
 				strcpy(verbuffer,"\"");
-				_itoa(revision,numstring,10);
-				strcat(verbuffer,numstring);
+				findptr2 = strchr(version.verstring, '-');
+				if (findptr2)
+				{
+					findptr2++;
+					strcat(verbuffer, findptr2);
+				}
 				strcat(verbuffer,"\"\n");
 				strncpy(findptr,verbuffer,17);
 			}
@@ -230,7 +540,7 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2019_2\"\n", 13);
 			#elif ((_MSC_VER > 1900) && (_MSC_VER < 1916))
 			#error Please update your Visual Studio 2017 to Update 9 before continuing.
-			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1922)
+			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1922))
 			#error Please update your Visual Studio 2019 to Update 2 before continuing.
 			#elif (_MSC_VER > 1922)
 			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.2.")
@@ -246,7 +556,7 @@ int ProcessHeaders(char *path)
 			if (nosign) strncpy(findptr, "\"0\"\n", 10);
 			else strncpy(findptr, "\"1\"\n", 10);
 		}
-		if (DXGLBETA)
+		if (version.beta)
 		{
 			if(strstr(buffer,";!define _BETA")) strcpy(buffer,"!define _BETA\n");
 		}
@@ -467,16 +777,23 @@ int MakeInstaller(char *path)
 	return 0;
 }
 
-int SignEXE(char *exefile)
+int SignEXE(char *exefile, char *path)
 {
 	PROCESS_INFORMATION process;
 	STARTUPINFOA startinfo;
 	const char signtoolsha1path[] = "signtool sign /t http://timestamp.comodoca.com ";
 	const char signtoolsha256path[] = "signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as ";
 	char signpath[MAX_PATH + 80];
+	DXGLVER version;
 	BOOL nosign = FALSE;
+	version.build = 0;
+	version.major = 0;
+	version.minor = 5;
+	version.point = 17;
+	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
+	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
-	if ((SIGNMODE == 1) && DXGLBETA) nosign = TRUE;
+	if ((SIGNMODE == 1) && version.beta) nosign = TRUE;
 	#ifdef _DEBUG
 		if (SIGNMODE <= 2) nosign = TRUE;
 	#endif
@@ -518,8 +835,7 @@ int SignEXE(char *exefile)
 
 int main(int argc, char *argv[])
 {
-	fputs("DXGL Build Tool, version ", stdout);
-	puts(DXGLSTRVER);
+	puts("DXGL Build Tool");
 #ifdef _DEBUG
 	puts("Debug version.");
 #endif
@@ -556,10 +872,15 @@ int main(int argc, char *argv[])
 		{
 			if (argc < 3)
 			{
-				puts("ERROR:  file specified.");
+				puts("ERROR: No file specified.");
 				return 1;
 			}
-			return SignEXE(argv[2]);
+			else if (argc < 4)
+			{
+				puts("ERROR:  No working directory specified.");
+				return 1;
+			}
+			return SignEXE(argv[2], argv[3]);
 		}
 	}
 	else

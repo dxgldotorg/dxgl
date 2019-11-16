@@ -136,7 +136,7 @@
       <Message>Create version headers</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug VS2019|Win32'">
@@ -162,7 +162,7 @@
       <Message>Create version headers</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"  "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
@@ -221,7 +221,7 @@
       <Message>Create version headers</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"  "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release VS2019|Win32'">
@@ -252,7 +252,7 @@
       <Message>Create version headers</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"  "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">

@@ -2,15 +2,18 @@
 #ifndef __VERSION_H
 #define __VERSION_H
 
+/* Removed due to transition to Git - Git tags will set the version number
 #define DXGLMAJORVER 0
 #define DXGLMINORVER 5
 #define DXGLPOINTVER 17
 #define DXGLBETA 0
 
+
 #define STR2(x) #x
 #define STR(x) STR2(x)
 
 #define DXGLSTRVER STR(DXGLMAJORVER) "." STR(DXGLMINORVER) "." STR(DXGLPOINTVER)
+*/
 
 /* sign modes
 0 - never sign

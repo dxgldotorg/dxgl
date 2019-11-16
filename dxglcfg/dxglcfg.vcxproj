@@ -133,7 +133,7 @@
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug VS2019|Win32'">
@@ -151,7 +151,7 @@
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug no DXGL|Win32'">
@@ -191,7 +191,7 @@
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release VS2019|Win32'">
@@ -213,7 +213,7 @@
       <AdditionalDependencies>winmm.lib;$(OutDir)cfgmgr.lib;opengl32.lib;Comctl32.lib;Version.lib;Htmlhelp.lib;$(OutDir)ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)"</Command>
+      <Command>"$(OutDir)buildtool.exe" sign "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)common"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release no DXGL|Win32'">

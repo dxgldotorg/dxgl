@@ -1,0 +1,100 @@
+*.user
+/.vs
+/Debug VS2019
+/Debug
+/Help/Debug VS2019
+/Help/Debug
+/Help/Release VS2019
+/Help/Release
+/Help/dxgl.chm
+/Installer/Debug VS2019
+/Installer/Debug
+/Installer/Release VS2019
+/Installer/Release
+/Release VS2019
+/Release
+/buildtool/Debug VS2019
+/buildtool/Debug
+/buildtool/Release VS2019
+/buildtool/Release
+/cfgmgr/Debug VS2019
+/cfgmgr/Debug
+/cfgmgr/Release VS2019
+/cfgmgr/Release
+/common/Debug VS2019
+/common/Debug
+/common/Release VS2019
+/common/Release
+/common/version.h
+/common/version.nsh
+/ddraw/Debug VS2019
+/ddraw/Debug
+/ddraw/Release VS2019
+/ddraw/Release
+/dxgl-nsis/Debug VS2019
+/dxgl-nsis/Debug
+/dxgl-nsis/Release VS2019
+/dxgl-nsis/Release
+/dxglcfg-old/Debug VS2019
+/dxglcfg-old/Debug
+/dxglcfg-old/Release VS2019
+/dxglcfg-old/Release
+/dxglcfg/Debug VS2019
+/dxglcfg/Debug
+/dxglcfg/Release VS2019
+/dxglcfg/Release
+/vs8/Help/Debug
+/vs8/Help/Release
+/vs8/Installer/Debug
+/vs8/Installer/Release
+/vs8/buildtool/Debug No DXGL
+/vs8/buildtool/Debug
+/vs8/buildtool/Release
+/vs8/cfgmgr/Debug No DXGL
+/vs8/cfgmgr/Debug
+/vs8/cfgmgr/Release
+/vs8/common/Debug No DXGL
+/vs8/common/Release
+/vs8/ddraw/Debug No DXGL
+/vs8/ddraw/Debug
+/vs8/ddraw/Release
+/vs8/debug no dxgl
+/vs8/debug
+/vs8/dxgl-nsis/Debug
+/vs8/dxgl-nsis/Release
+/vs8/*.ncb
+/vs8/*.suo
+/vs8/dxglcfg/Debug No DXGL
+/vs8/dxglcfg/Debug
+/vs8/dxglcfg/Release
+/vs8/libMinHook/Debug No DXGL
+/vs8/libMinHook/Debug
+/vs8/libMinHook/Release
+/vs8/release
+/vs9/Debug No DXGL
+/vs9/Debug
+/vs9/Help/Debug
+/vs9/Help/Release
+/vs9/Installer/Debug
+/vs9/Installer/Release
+/vs9/Release
+/vs9/buildtool/Debug No DXGL
+/vs9/buildtool/Debug
+/vs9/buildtool/Release
+/vs9/cfgmgr/Debug No DXGL
+/vs9/cfgmgr/Debug
+/vs9/cfgmgr/Release
+/vs9/common/Release
+/vs9/ddraw/Debug No DXGL
+/vs9/ddraw/Debug
+/vs9/ddraw/Release
+/vs9/dxgl-nsis/Debug
+/vs9/dxgl-nsis/Release
+/vs9/*.ncb
+/vs9/*.suo
+/vs9/dxglcfg/Debug No DXGL
+/vs9/dxglcfg/Debug
+/vs9/dxglcfg/Release
+/vs9/libMinHook/Debug No DXGL
+/vs9/libMinHook/Debug
+/vs9/libMinHook/Release
