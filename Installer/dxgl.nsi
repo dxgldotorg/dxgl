@@ -36,7 +36,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
-!if ${COMPILER} == "VC2019_2"
+!if ${COMPILER} == "VC2019_3"
 !ifdef _DEBUG
 !define SRCDIR "Debug VS2019"
 !else
@@ -142,12 +142,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_2"
+!else if ${COMPILER} == "VC2019_3"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.22/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2019.2"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.23/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2019.3"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "9E023DD1258B20D3DD29EB3858282D5E99F86DC980BECB044A867A0AA8C5210EEBB426B3F7D574C3E10B58A72436C7E360C644A64F5653F19AD28B9C96ECD183"
+!define runtime_sha512 "740FE01920043559C85484624E58A9AD028FE960206DDC56D180AC579C83901E9237095EB085FBA3EA1B66CD6BB85DD61D333D266662E643DF07EE4A2CC19678"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -163,18 +163,10 @@ Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
 !else
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 !endif
-!ifdef _BETA
-!ifdef _DEBUG
-OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32-Debug${PRODUCT_SUFFIX}.exe"
-!else
-OutFile "DXGL-${PRODUCT_VERSION}-Pre-${PRODUCT_REVISION}-win32${PRODUCT_SUFFIX}.exe"
-!endif
-!else
 !ifdef _DEBUG
 OutFile "DXGL-${PRODUCT_VERSION}-win32-Debug${PRODUCT_SUFFIX}.exe"
 !else
 OutFile "DXGL-${PRODUCT_VERSION}-win32${PRODUCT_SUFFIX}.exe"
-!endif
 !endif
 InstallDir "$PROGRAMFILES\DXGL"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
@@ -298,7 +290,7 @@ SectionEnd
 
 
 Function .onInit
-  !if ${COMPILER} == "VC2019_2"
+  !if ${COMPILER} == "VC2019_3"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -360,12 +352,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2019_2"
+  !if ${COMPILER} == "VC2019_3"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.22.27821" $1
+  ${VersionCompare} "$0" "14.23.27820" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -475,7 +467,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_2"
+!if ${COMPILER} == "VC2019_3"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif

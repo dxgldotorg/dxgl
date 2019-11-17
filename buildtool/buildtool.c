@@ -507,23 +507,6 @@ int ProcessHeaders(char *path)
 				strcpy(findptr, verbuffer);
 			}
 		}
-		findptr = strstr(buffer,"$PRODUCTREVISION");
-		if(findptr)
-		{
-			if(version.beta)
-			{
-				strcpy(verbuffer,"\"");
-				findptr2 = strchr(version.verstring, '-');
-				if (findptr2)
-				{
-					findptr2++;
-					strcat(verbuffer, findptr2);
-				}
-				strcat(verbuffer,"\"\n");
-				strncpy(findptr,verbuffer,17);
-			}
-			else strncpy(findptr,"\"\"\n",17);
-		}
 		findptr = strstr(buffer, "$COMPILERTYPE");
 		if(findptr)
 		{
@@ -536,15 +519,15 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1922)
-			strncpy(findptr, "\"VC2019_2\"\n", 13);
+			#elif (_MSC_VER == 1923)
+			strncpy(findptr, "\"VC2019_3\"\n", 13);
 			#elif ((_MSC_VER > 1900) && (_MSC_VER < 1916))
 			#error Please update your Visual Studio 2017 to Update 9 before continuing.
 			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1922))
 			#error Please update your Visual Studio 2019 to Update 2 before continuing.
-			#elif (_MSC_VER > 1922)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.2.")
-			strncpy(findptr, "\"VC2019_2\"\n", 13);
+			#elif (_MSC_VER > 1923)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.3.")
+			strncpy(findptr, "\"VC2019_3\"\n", 13);
 			#else
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
 			#endif
