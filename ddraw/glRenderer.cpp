@@ -3360,6 +3360,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	BOOL usedest = FALSE;
 	BOOL usepattern = FALSE;
 	LONG sizes[6];
+	GLfloat xoffset, yoffset, xmul, ymul;
 	RECT srcrect;
 	RECT destrect, destrect2;
 	This->ddInterface->GetSizes(sizes);
@@ -3409,7 +3410,11 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = (GenShader2D*)This->shaders->gen3d->current_genshader;
 	glUtil_BlendEnable(This->util, FALSE);
-	if (cmd->flags & 0x80000000) glUtil_SetFBO(This->util, NULL);
+	if (cmd->flags & 0x80000000)
+	{
+		glUtil_SetFBO(This->util, NULL);
+		glUtil_SetViewport(This->util, 0, 0, sizes[4], sizes[5]);
+	}
 	else
 	{
 		do
@@ -3421,8 +3426,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 			cmd->dest->levels[cmd->destlevel].fbo.fbcolor = NULL;
 			cmd->dest->levels[cmd->destlevel].fbo.fbz = NULL;
 		} while (1);
+		glUtil_SetViewport(This->util, 0, 0, cmd->dest->bigwidth, cmd->dest->bigheight);
 	}
-	glUtil_SetViewport(This->util,0,0,cmd->dest->bigwidth,cmd->dest->bigheight);
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
 	ZeroMemory(&ddsdSrc, sizeof(DDSURFACEDESC2));
@@ -3442,15 +3447,21 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		srcrect.bottom = ddsdSrc.dwHeight;
 	}
 	else srcrect = cmd->srcrect;
-	This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
-	This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
 	if (cmd->flags & 0x80000000)
 	{
-		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)destrect.top;
-		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)destrect.bottom;
+		xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
+		ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
+		xoffset = ((GLfloat)sizes[4] - (GLfloat)sizes[0]) / 2.0f;
+		yoffset = ((GLfloat)sizes[5] - (GLfloat)sizes[1]) / 2.0f;
+		This->bltvertices[1].x = This->bltvertices[3].x = ((GLfloat)destrect.left * xmul) + xoffset;
+		This->bltvertices[0].x = This->bltvertices[2].x = ((GLfloat)destrect.right * xmul) + xoffset;
+		This->bltvertices[0].y = This->bltvertices[1].y = ((GLfloat)destrect.top * ymul) + yoffset;
+		This->bltvertices[2].y = This->bltvertices[3].y = ((GLfloat)destrect.bottom * ymul) + yoffset;
 	}
 	else
 	{
+		This->bltvertices[1].x = This->bltvertices[3].x = (GLfloat)destrect.left;
+		This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)destrect.right;
 		This->bltvertices[0].y = This->bltvertices[1].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.top;
 		This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)ddsd.dwHeight - (GLfloat)destrect.bottom;
 	}
@@ -3578,7 +3589,9 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		}
 	}
 	else glUtil_SetTexture(This->util,8,NULL);
-	This->ext->glUniform4f(shader->shader.uniforms[0], 0,
+	if (cmd->flags & 0x80000000) This->ext->glUniform4f(shader->shader.uniforms[0], 0,
+		(GLfloat)sizes[4], 0, (GLfloat)sizes[5]);
+	else This->ext->glUniform4f(shader->shader.uniforms[0], 0,
 		(GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwWidth, 0, (GLfloat)cmd->dest->levels[cmd->destlevel].ddsd.dwHeight);
 	if (cmd->src) This->ext->glUniform4i(shader->shader.uniforms[10], cmd->src->colorsizes[0], cmd->src->colorsizes[1],
 		cmd->src->colorsizes[2], cmd->src->colorsizes[3]);
