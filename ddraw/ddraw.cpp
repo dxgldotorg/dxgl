@@ -554,10 +554,10 @@ DDRAW_API void WINAPI ReleaseDDThreadLock()
 }
 
 /// Stub for function found in system ddraw.dll
-DDRAW_API void WINAPI SetAppCompatData()
+DDRAW_API void WINAPI SetAppCompatData(int a, int b)
 {
-	TRACE_ENTER(0);
-	FIXME("SetAppCompatData: stub\n");
+	TRACE_ENTER(2,9,a,9,b);
+	DEBUG("SetAppCompatData not implemented\n");
 	TRACE_EXIT(0,0);
 }
 

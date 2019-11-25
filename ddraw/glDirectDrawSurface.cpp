@@ -1027,7 +1027,7 @@ HRESULT WINAPI glDirectDrawSurface7::Flip(LPDIRECTDRAWSURFACE7 lpDDSurfaceTarget
 			swapinterval++;
 			ddInterface->lastsync = false;
 		}
-		RenderScreen(texture,swapinterval,previous,TRUE,FALSE,0);
+		RenderScreen(texture,swapinterval,previous,TRUE,NULL,0);
 	}
 	if (ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY)
 	{
@@ -1376,10 +1376,10 @@ HRESULT WINAPI glDirectDrawSurface7::ReleaseDC(HDC hDC)
 	{
 		if (ddInterface->lastsync)
 		{
-			RenderScreen(texture, 1, NULL, TRUE, FALSE, 0);
+			RenderScreen(texture, 1, NULL, TRUE, NULL, 0);
 			ddInterface->lastsync = false;
 		}
-		else RenderScreen(texture, 0, NULL, TRUE, FALSE, 0);
+		else RenderScreen(texture, 0, NULL, TRUE, NULL, 0);
 	}
 	TRACE_EXIT(23,error);
 	return error;
@@ -1524,39 +1524,59 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 {
 	TRACE_ENTER(3,14,this,9,dwFlags,14,lpDDColorKey);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpDDColorKey) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	CKEY key;
-	key.enabled = true;
+	if (lpDDColorKey) key.enabled = true;
+	else key.enabled = false;
 	if(dwFlags & DDCKEY_COLORSPACE) key.colorspace = true;
 	else key.colorspace = false;
 	key.key = *lpDDColorKey;
 	if(dwFlags & DDCKEY_SRCBLT)
 	{
-		ddsd.dwFlags |= DDSD_CKSRCBLT;
 		colorkey[0] = key;
-		ddsd.ddckCKSrcBlt = *lpDDColorKey;
-		if (!key.colorspace) ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (lpDDColorKey)
+		{
+			ddsd.dwFlags |= DDSD_CKSRCBLT;
+			ddsd.ddckCKSrcBlt = *lpDDColorKey;
+			if (!key.colorspace) ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		}
+		else ddsd.dwFlags &= ~DDSD_CKSRCBLT;
 	}
 	if(dwFlags & DDCKEY_DESTBLT)
 	{
-		ddsd.dwFlags |= DDSD_CKDESTBLT;
 		colorkey[1] = key;
-		ddsd.ddckCKDestBlt = *lpDDColorKey;
-		if (!key.colorspace) ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (lpDDColorKey)
+		{
+			ddsd.dwFlags |= DDSD_CKDESTBLT;
+			ddsd.ddckCKDestBlt = *lpDDColorKey;
+			if (!key.colorspace) ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		}
+		else ddsd.dwFlags &= ~DDSD_CKDESTBLT;
 	}
 	if(dwFlags & DDCKEY_SRCOVERLAY)
 	{
-		ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
 		colorkey[2] = key;
-		ddsd.ddckCKSrcOverlay = *lpDDColorKey;
-		if (!key.colorspace) ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (lpDDColorKey)
+		{
+			ddsd.dwFlags |= DDSD_CKSRCOVERLAY;
+			ddsd.ddckCKSrcOverlay = *lpDDColorKey;
+			if (!key.colorspace) ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		}
+		else ddsd.dwFlags &= ~DDSD_CKSRCOVERLAY;
 	}
 	if(dwFlags & DDCKEY_DESTOVERLAY)
 	{
-		ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
 		colorkey[3] = key;
-		ddsd.ddckCKDestOverlay = *lpDDColorKey;
-		if (!key.colorspace) ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		if (lpDDColorKey)
+		{
+			ddsd.dwFlags |= DDSD_CKDESTOVERLAY;
+			ddsd.ddckCKDestOverlay = *lpDDColorKey;
+			if (!key.colorspace) ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
+		}
+		else ddsd.dwFlags &= ~DDSD_CKDESTOVERLAY;
+		if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			RenderScreen(texture, 0, NULL, FALSE, 0, 0);
+		}
 	}
 	glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	TRACE_EXIT(23,DD_OK);
