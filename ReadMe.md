@@ -19,9 +19,6 @@ Due to a bug found in the method used to uniquely identify profile paths, DXGL 0
 
 The “Configuration Version” registry value in HKEY_CURRENT_USER\SOFTWARE\DXGL will be incremented to 3 in order to indicate this fix has been applied.  If you need to migrate more version 2 profiles, change “Configuration Version” to 2 and re-run the installer.
 
-## GitHub Notice
-If you downloaded the DXGL source code from GitHub, please note that when compiling DXGL, the version number will not indicate the revision number.  This issue is also present when compiling from a zipped source code distribution from the dxgl.org, www.dxgl.info, or www.williamfeely.info website.
-
 ## System Requirements
 
 * Windows Vista (with SP2), 7 (with SP1), 8, 8.1, or 10 (standard build)
@@ -49,7 +46,7 @@ If you downloaded the DXGL source code from GitHub, please note that when compil
 These instructions assume that you do not have any of the required software installed. If you already have any or all of this software installed and set up, skip those steps.
 
 * Install Visual Studio 2019 Community at https://visualstudio.microsoft.com/
-* Install TortoiseSVN from https://tortoisesvn.net/
+* Install Git for Windows at https://git-scm.com/download/win (should have already been installed to check out the repo)
 * Install HTML Help Workshop from https://www.microsoft.com/en-us/download/details.aspx?id=21138
 * Install NSIS from https://nsis.sourceforge.io/Main_Page
 * Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F7 to build.
@@ -76,7 +73,7 @@ What works:
 What partially works:
 
 * 3D graphics are only partially supported.
-* Overlay support is currently in development and not yet enabled.
+* Overlay support is currently in development and has limited functionality.
 
 What doesn't work:
 
@@ -87,15 +84,9 @@ What doesn't work:
 Run the installer.  When the installer completes, open DXGL Config and add your program files to the config program.
 To uninstall, go to the Add/Remove Programs or Programs and Features control panel and uninstall.
 
-## SVN
+## GitHub
 
-SVN readonly access is available at:
-https://dxgl.org/svn/dxgl/
-Alternate URL at:
-https://dxgl.org:8443/svn/dxgl/
-
-There is a Mediawiki-based SVN log at:
-https://dxgl.org/wiki/Special:Code/DXGL
+Source code for DXGL is available at https://github.com/dxgldotorg/dxgl
 
 ## AppDB
 
@@ -115,7 +106,6 @@ You must create a forum account to post content.  For bug reports, please refer 
 
 ## Bug reports
 
-Bug reports are managed by a Bugzilla system available at:
-https://www.dxgl.info/bugzilla/
-
-A user account needs to be created at this site to post bug reports.
+Please report bugs via the GitHub Issues system:
+https://github.com/dxgldotorg/dxgl/issues
+A GitHub account is required to file issues.
