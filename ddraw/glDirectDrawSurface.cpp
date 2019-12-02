@@ -1736,12 +1736,35 @@ HRESULT WINAPI glDirectDrawSurface7::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDDestSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!(this->ddsd.ddsCaps.dwCaps & DDSCAPS_OVERLAY)) 
 		TRACE_RET(HRESULT,23,DDERR_NOTAOVERLAYSURFACE);
 	if (!(((glDirectDrawSurface7 *)lpDDDestSurface)->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDSURFACETYPE);
 	if ((dwFlags & DDOVER_SHOW) && (dwFlags & DDOVER_HIDE))
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if((dwFlags & DDOVER_DDFX) && !lpDDOverlayFx)
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpDDOverlayFx)
+	{
+		if (lpDDOverlayFx->dwSize != sizeof(DDOVERLAYFX))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if(!lpDDOverlayFx->dwFlags)
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	}
+	if(dwFlags & 0xFF040000) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (lpSrcRect)
+	{
+		if((lpSrcRect->left < 0) ||	(lpSrcRect->right > this->ddsd.dwWidth) ||
+			(lpSrcRect->top < 0) ||	(lpSrcRect->bottom > this->ddsd.dwHeight) ||
+			(lpSrcRect->right < lpSrcRect->left) || (lpSrcRect->bottom < lpSrcRect->top))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	}
+	if (lpDestRect)
+	{
+		if((lpDestRect->right < lpDestRect->left) || (lpDestRect->bottom < lpDestRect->top))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	}
 	OVERLAY newoverlay;
 	ZeroMemory(&newoverlay, sizeof(OVERLAY));
 	if (lpSrcRect) newoverlay.srcrect = *lpSrcRect;
@@ -2365,6 +2388,7 @@ HRESULT WINAPI glDirectDrawSurface1::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDDestSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface1*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface1::UpdateOverlayDisplay(DWORD dwFlags)
@@ -2669,6 +2693,7 @@ HRESULT WINAPI glDirectDrawSurface2::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDDestSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect, ((glDirectDrawSurface2*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface2::UpdateOverlayDisplay(DWORD dwFlags)
@@ -2998,6 +3023,7 @@ HRESULT WINAPI glDirectDrawSurface3::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDDestSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface3*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface3::UpdateOverlayDisplay(DWORD dwFlags)
@@ -3307,6 +3333,7 @@ HRESULT WINAPI glDirectDrawSurface4::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRA
 {
 	TRACE_ENTER(6,14,this,26,lpSrcRect,14,lpDDDestSurface,26,lpDestRect,9,dwFlags,14,lpDDOverlayFx);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDDestSurface) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glDDS7->UpdateOverlay(lpSrcRect,((glDirectDrawSurface4*)lpDDDestSurface)->glDDS7,lpDestRect,dwFlags,lpDDOverlayFx));
 }
 HRESULT WINAPI glDirectDrawSurface4::UpdateOverlayDisplay(DWORD dwFlags)
