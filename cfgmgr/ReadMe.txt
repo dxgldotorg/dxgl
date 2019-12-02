@@ -382,9 +382,15 @@ Valid settings:
 
 Member SingleBufferDevice
 INI Entry SingleBufferDevice
-INI Group advanced
+INI Group display
 REG_DWORD HKCU\DXGL\Profiles\<app>\SingleBufferDevice
 If true, do not use double buffering in OpenGL.
+
+Member UseSetDisplayConfig
+INI Entry UseSetDisplayConfig
+INI Group display
+REG_DWORD HKCU\DXGL\Profiles\<app>\UseSetDisplayConfig
+If true, use SetDisplayConfig to change video mode.
 
 Member WindowPosition
 INI Entry WindowPosition

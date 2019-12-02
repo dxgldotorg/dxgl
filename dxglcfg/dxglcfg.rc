@@ -81,6 +81,7 @@ FONT 8, "Ms Shell Dlg"
     PUSHBUTTON      "Select", IDC_SETMODE, 187, 94, 29, 14, 0, WS_EX_LEFT
     AUTOCHECKBOX    "Change display color depth", IDC_COLOR, 7, 113, 100, 10, 0, WS_EX_LEFT
     AUTOCHECKBOX    "Single buffered display", IDC_SINGLEBUFFER, 114, 114, 87, 8, 0, WS_EX_LEFT
+	AUTOCHECKBOX    "Use SetDisplayConfig API", IDC_SETDISPLAYCONFIG, 221, 114, 97, 8, WS_DISABLED, WS_EX_LEFT
 }
 
 

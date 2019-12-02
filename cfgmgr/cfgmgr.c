@@ -696,6 +696,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->CustomRefresh = ReadDWORD(hKey, cfg->CustomRefresh, &cfgmask->CustomRefresh, _T("CustomRefresh"));
 	cfg->DisplayMultiplierX = ReadFloat(hKey, cfg->DisplayMultiplierX, &cfgmask->DisplayMultiplierX, _T("DisplayMultiplierX"));
 	cfg->DisplayMultiplierY = ReadFloat(hKey, cfg->DisplayMultiplierY, &cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
+	cfg->UseSetDisplayConfig = ReadBool(hKey, cfg->UseSetDisplayConfig, &cfgmask->UseSetDisplayConfig, _T("UseSetDisplayConfig"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
@@ -866,6 +867,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->CustomRefresh, cfgmask->CustomRefresh, _T("CustomRefresh"));
 	WriteFloat(hKey, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX, _T("DisplayMultiplierX"));
 	WriteFloat(hKey, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
+	WriteBool(hKey, cfg->UseSetDisplayConfig, cfgmask->UseSetDisplayConfig, _T("UseSetDisplayConfig"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
@@ -1159,6 +1161,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "DisplayMultiplierX")) cfg->DisplayMultiplierX = INIFloatValue(value);
 			if (!_stricmp(name, "DisplayMultiplierY")) cfg->DisplayMultiplierY = INIFloatValue(value);
 			if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
+			if (!_stricmp(name, "UseSetDisplayConfig")) cfg->UseSetDisplayConfig = INIBoolValue(value);
 		}
 		if (!_stricmp(section, "scaling"))
 		{
@@ -1607,6 +1610,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteFloat(file, "DisplayMultiplierX", cfg->DisplayMultiplierX, mask->DisplayMultiplierX, 4, INISECTION_DISPLAY);
 	INIWriteFloat(file, "DisplayMultiplierY", cfg->DisplayMultiplierY, mask->DisplayMultiplierY, 4, INISECTION_DISPLAY);
 	INIWriteInt(file, "SingleBufferDevice", cfg->SingleBufferDevice, mask->SingleBufferDevice, INISECTION_DISPLAY);
+	INIWriteBool(file, "UseSetDisplayConfig", cfg->UseSetDisplayConfig, mask->UseSetDisplayConfig, INISECTION_DISPLAY);
 	// [scaling]
 	INIWriteInt(file, "ScalingFilter", cfg->scalingfilter, mask->scalingfilter, INISECTION_SCALING);
 	INIWriteInt(file, "BltScale", cfg->BltScale, mask->BltScale, INISECTION_SCALING);

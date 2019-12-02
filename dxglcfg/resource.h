@@ -78,6 +78,7 @@
 #define IDC_SETMODE                             2017
 #define IDC_COLOR                               2018
 #define IDC_SINGLEBUFFER                        2019
+#define IDC_SETDISPLAYCONFIG                    2020
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101

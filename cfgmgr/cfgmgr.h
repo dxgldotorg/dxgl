@@ -44,6 +44,7 @@ typedef struct
 	DWORD CustomRefresh;
 	float DisplayMultiplierX;
 	float DisplayMultiplierY;
+	BOOL UseSetDisplayConfig;
 	// [scaling]
 	DWORD scalingfilter;
 	DWORD BltScale;

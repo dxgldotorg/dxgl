@@ -38,6 +38,11 @@ using namespace std;
 #define DISP_CHANGE_BADDUALVIEW -6
 #endif
 
+LONG SetVidMode(LPCTSTR devname, DEVMODE *mode, DWORD flags)
+{
+	return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+}
+
 const DDDEVICEIDENTIFIER2 devid_default = {
 	"ddraw.dll",
 	"DXGL DDraw Wrapper",
@@ -1760,7 +1765,7 @@ HRESULT WINAPI glDirectDraw7::RestoreDisplayMode()
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(oldmode.dmSize != 0)
 	{
-		ChangeDisplaySettingsEx(NULL,&oldmode,NULL,0,NULL);
+		SetVidMode(NULL,&oldmode,0);
 	}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1773,7 +1778,7 @@ extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 	{
 		if((This->currmode.dmPelsWidth == 640) && (This->currmode.dmPelsHeight == 480)
 			&& dxglcfg.HackCrop640480to640400) Try640400Mode(NULL, &This->currmode, CDS_FULLSCREEN, NULL);
-		else ChangeDisplaySettingsEx(NULL, &This->currmode, NULL, CDS_FULLSCREEN, NULL);
+		else SetVidMode(NULL, &This->currmode, CDS_FULLSCREEN);
 	}
 	TRACE_EXIT(0, 0);
 }
@@ -1986,19 +1991,19 @@ LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
 	LONG error;
 	DEVMODE newmode = *mode;
 	newmode.dmPelsHeight = 400;
-	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	error = SetVidMode(devname, &newmode, flags);
 	if (error == DISP_CHANGE_SUCCESSFUL) return error;
 	// Try setting refresh to 70
 	newmode.dmDisplayFrequency = 70;
-	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	error = SetVidMode(devname, &newmode, flags);
 	if (error == DISP_CHANGE_SUCCESSFUL) return error;
 	// Try without refresh
 	newmode.dmFields &= (DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFLAGS | DM_POSITION);
-	error = ChangeDisplaySettingsEx(devname, &newmode, NULL, flags, NULL);
+	error = SetVidMode(devname, &newmode, flags);
 	if (error == DISP_CHANGE_SUCCESSFUL) return error;
 	// Finally try the original mode
 	if(crop400) *crop400 = FALSE;
-	return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+	return SetVidMode(devname, mode, flags);
 }
 
 HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
@@ -2080,7 +2085,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			flags = 0;
 			if (fullscreen) flags |= CDS_FULLSCREEN;
 			if (crop400) error = Try640400Mode(NULL, &newmode, flags, &crop400);
-			else error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			else error = SetVidMode(NULL, &newmode, flags);
 			switch (error)
 			{
 			case DISP_CHANGE_SUCCESSFUL:
@@ -2254,12 +2259,12 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			flags = 0;
 			if (fullscreen) flags |= CDS_FULLSCREEN;
 			if (crop400) error = Try640400Mode(NULL, &newmode, flags, &crop400);
-			else error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			else error = SetVidMode(NULL, &newmode, flags);
 			if (error != DISP_CHANGE_SUCCESSFUL)
 			{
 				newmode2 = FindClosestMode(newmode);
 				if (crop400) error = Try640400Mode(NULL, &newmode2, flags, &crop400);
-				else error = ChangeDisplaySettingsEx(NULL, &newmode2, NULL, flags, NULL);
+				else error = SetVidMode(NULL, &newmode2, flags);
 			}
 			else newmode2 = newmode;
 			if (crop400) newmode2.dmPelsHeight = 400;
@@ -2485,7 +2490,7 @@ HRESULT WINAPI glDirectDraw7::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWOR
 			else newmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 			flags = 0;
 			if (fullscreen) flags |= CDS_FULLSCREEN;
-			error = ChangeDisplaySettingsEx(NULL, &newmode, NULL, flags, NULL);
+			error = SetVidMode(NULL, &newmode, flags);
 			if (error == DISP_CHANGE_SUCCESSFUL) currmode = newmode;
 			primaryx = dwWidth;
 			internalx = screenx = currmode.dmPelsWidth;
