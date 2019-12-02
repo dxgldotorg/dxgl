@@ -1540,6 +1540,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 			if (!key.colorspace) ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 		}
 		else ddsd.dwFlags &= ~DDSD_CKSRCBLT;
+		glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	}
 	if(dwFlags & DDCKEY_DESTBLT)
 	{
@@ -1551,6 +1552,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 			if (!key.colorspace) ddsd.ddckCKDestBlt.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 		}
 		else ddsd.dwFlags &= ~DDSD_CKDESTBLT;
+		glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	}
 	if(dwFlags & DDCKEY_SRCOVERLAY)
 	{
@@ -1562,6 +1564,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 			if (!key.colorspace) ddsd.ddckCKSrcOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 		}
 		else ddsd.dwFlags &= ~DDSD_CKSRCOVERLAY;
+		glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	}
 	if(dwFlags & DDCKEY_DESTOVERLAY)
 	{
@@ -1573,12 +1576,12 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 			if (!key.colorspace) ddsd.ddckCKDestOverlay.dwColorSpaceHighValue = lpDDColorKey->dwColorSpaceLowValue;
 		}
 		else ddsd.dwFlags &= ~DDSD_CKDESTOVERLAY;
+		glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 		if (this->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
 			RenderScreen(texture, 0, NULL, FALSE, 0, 0);
 		}
 	}
-	glRenderer_SetTextureColorKey(this->ddInterface->renderer, this->texture, dwFlags, lpDDColorKey, this->miplevel);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

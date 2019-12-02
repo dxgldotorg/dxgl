@@ -4200,7 +4200,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	if (This->overlays)
 	{
 		ZeroMemory(&bltcmd, sizeof(BltCommand));
-		for (i = 0; i < overlaycount; i++)
+		for (i = 0; i < This->overlaycount; i++)
 		{
 			if (This->overlays[i].enabled)
 			{
