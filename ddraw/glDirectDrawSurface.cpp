@@ -1529,7 +1529,7 @@ HRESULT WINAPI glDirectDrawSurface7::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpD
 	else key.enabled = false;
 	if(dwFlags & DDCKEY_COLORSPACE) key.colorspace = true;
 	else key.colorspace = false;
-	key.key = *lpDDColorKey;
+	if(lpDDColorKey) key.key = *lpDDColorKey;
 	if(dwFlags & DDCKEY_SRCBLT)
 	{
 		colorkey[0] = key;
