@@ -2954,7 +2954,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__MakeTexturePrimary(This, (glTexture*)This->inputs[0], (glTexture*)This->inputs[1], (DWORD)This->inputs[2]);
 			break;
 		case OP_DXGLBREAK:
-			glRenderer__DXGLBreak(This);
+			glRenderer__DXGLBreak(This, TRUE);
 			break;
 		case OP_ENDCOMMAND:
 			glRenderer__EndCommand(This, (BOOL)This->inputs[0]);
@@ -3399,13 +3399,22 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	}
 	else if (usedest)
 	{
-		ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
-		if(!(cmd->flags & 0x80000000))
+		if (cmd->flags & 0x80000000)
+		{
+			This->bltvertices[1].dests = This->bltvertices[3].dests = (GLfloat)(destrect.left) / (GLfloat)cmd->dest->levels[0].ddsd.dwWidth;
+			This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right) / (GLfloat)cmd->dest->levels[0].ddsd.dwWidth;
+			This->bltvertices[0].destt = This->bltvertices[1].destt = (GLfloat)(destrect.top) / (GLfloat)cmd->dest->levels[0].ddsd.dwHeight;
+			This->bltvertices[2].destt = This->bltvertices[3].destt = (GLfloat)(destrect.bottom) / (GLfloat)cmd->dest->levels[0].ddsd.dwHeight;
+		}
+		else
+		{
+			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 			glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, destrect2, PROG_TEXTURE, 0);
-		This->bltvertices[1].dests = This->bltvertices[3].dests = 0.0f;
-		This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwWidth;
-		This->bltvertices[0].destt = This->bltvertices[1].destt = 1.0f;
-		This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0f - ((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwHeight);
+			This->bltvertices[1].dests = This->bltvertices[3].dests = 0.0f;
+			This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwWidth;
+			This->bltvertices[0].destt = This->bltvertices[1].destt = 1.0f;
+			This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0f - ((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwHeight);
+		}
 	}
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
 	GenShader2D *shader = (GenShader2D*)This->shaders->gen3d->current_genshader;
@@ -3523,7 +3532,28 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		}
 	}
 	if (!(cmd->flags & DDBLT_COLORFILL)) This->ext->glUniform1i(shader->shader.uniforms[1], 8);
-	if ((cmd->flags & DDBLT_KEYDEST) && (This && ((cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)
+	if (cmd->flags & 0x80000000)
+	{
+		if ((cmd->flags & DDBLT_KEYDEST) && (This && ((cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTOVERLAY)
+			|| (cmd->flags & DDBLT_KEYDESTOVERRIDE))))
+		{
+			if (cmd->flags & DDBLT_KEYDESTOVERRIDE)
+			{
+				SetColorKeyUniform(cmd->bltfx.ddckDestColorkey.dwColorSpaceLowValue, cmd->dest->colorsizes,
+					cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
+				if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->bltfx.ddckDestColorkey.dwColorSpaceHighValue, cmd->dest->colorsizes,
+					cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
+			}
+			else
+			{
+				SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestOverlay.dwColorSpaceLowValue, cmd->dest->colorsizes,
+					cmd->dest->colororder, shader->shader.uniforms[6], cmd->dest->colorbits, This->ext);
+				if (cmd->flags & 0x40000000) SetColorKeyUniform(cmd->dest->levels[cmd->destlevel].ddsd.ddckCKDestOverlay.dwColorSpaceHighValue, cmd->dest->colorsizes,
+					cmd->dest->colororder, shader->shader.uniforms[8], cmd->dest->colorbits, This->ext);
+			}
+		}
+	}
+	else if ((cmd->flags & DDBLT_KEYDEST) && (This && ((cmd->dest->levels[cmd->destlevel].ddsd.dwFlags & DDSD_CKDESTBLT)
 		|| (cmd->flags & DDBLT_KEYDESTOVERRIDE))))
 	{
 		if (cmd->flags & DDBLT_KEYDESTOVERRIDE)
@@ -4190,13 +4220,17 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 						bltcmd.srckey = This->overlays[i].fx.dckSrcColorkey;
 					}
 				}
+				if (primary->levels[0].ddsd.dwFlags & DDSD_CKDESTOVERLAY)
+				{
+					bltcmd.flags |= DDBLT_KEYDEST;
+				}
 				shaderid = bltcmd.flags;
 				shaderid |= ((long long)This->overlays[i].texture->blttype << 32);
 				shaderid |= ((long long)texture->blttype << 40);
 				bltcmd.src = This->overlays[i].texture;
 				bltcmd.srclevel = 0;
 				bltcmd.srcrect = This->overlays[i].srcrect;
-				bltcmd.dest = texture;
+				bltcmd.dest = primary;
 				bltcmd.destlevel = 0;
 				bltcmd.destrect = This->overlays[i].destrect;
 				glRenderer__Blt(This, &bltcmd, TRUE);
@@ -5536,10 +5570,10 @@ void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glText
 	SetEvent(This->busy);
 }
 
-void glRenderer__DXGLBreak(glRenderer *This)
+void glRenderer__DXGLBreak(glRenderer *This, BOOL setbusy)
 {
 	if (This->ext->GLEXT_GREMEDY_frame_terminator) This->ext->glFrameTerminatorGREMEDY();
-	SetEvent(This->busy);
+	if(setbusy) SetEvent(This->busy);
 }
 
 void glRenderer__EndCommand(glRenderer *This, BOOL wait)

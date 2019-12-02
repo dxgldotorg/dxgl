@@ -243,7 +243,7 @@ void glRenderer__SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer__SetDepthComp(glRenderer *This);
-void glRenderer__DXGLBreak(glRenderer *This);
+void glRenderer__DXGLBreak(glRenderer *This, BOOL setbusy);
 void glRenderer__EndCommand(glRenderer *This, BOOL wait);
 void glRenderer__SetMode3D(glRenderer *This, BOOL enabled);
 
