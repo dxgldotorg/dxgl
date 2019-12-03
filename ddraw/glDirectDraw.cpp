@@ -1602,7 +1602,7 @@ HRESULT WINAPI glDirectDraw7::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELC
 	ddCaps.dwMinOverlayStretch = 1;
 	ddCaps.dwMaxOverlayStretch = 2147483647;
 	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT | DDCKEYCAPS_DESTBLT | 
-		DDCKEYCAPS_SRCOVERLAY | DDCKEYCAPS_DESTOVERLAY;
+		/*DDCKEYCAPS_SRCOVERLAY | */DDCKEYCAPS_DESTOVERLAY;
 	ddCaps.dwZBufferBitDepths = DDBD_16 | DDBD_24 | DDBD_32;
 	ddCaps.dwNumFourCCCodes = GetNumFOURCC();
 	BOOL fullrop = FALSE;

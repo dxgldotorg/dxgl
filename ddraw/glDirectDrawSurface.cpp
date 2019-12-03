@@ -409,6 +409,13 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (d3dt2) delete d3dt2;
 	if (gammacontrol) free(gammacontrol);
 	if (overlaydest) overlaydest->DeleteOverlay(this);
+	if (overlays)
+	{
+		for (i = 0; i < overlaycount; i++)
+			glTexture_Release(overlays[i].texture, FALSE);
+		free(overlays);
+		RenderScreen(this->texture, 0, NULL, FALSE, NULL, -1);
+	}
 	if (texture) glTexture_Release(texture, FALSE);
 	//if(bitmapinfo) free(bitmapinfo);
 	if (palette)
@@ -430,12 +437,6 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 		if (zbuffer->attachcount) zbuffer->attachcount--;
 		if (!zbuffer->attachcount) zbuffer->attachparent = NULL;
 		zbuffer_iface->Release();
-	}
-	if (overlays)
-	{
-		for (i = 0; i < overlaycount; i++)
-			glTexture_Release(overlays[i].texture, FALSE);
-		free(overlays);
 	}
 	if(miptexture) miptexture->Release();
 	if (device) device->Release(); 

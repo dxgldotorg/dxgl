@@ -4053,6 +4053,11 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		}
 		memcpy(This->overlays, overlays, overlaycount * sizeof(OVERLAY));
 	}
+	if (overlaycount == -1)
+	{
+		ZeroMemory(This->overlays, This->overlaycount * sizeof(OVERLAY));
+		This->overlaycount = 0;
+	}
 	glUtil_BlendEnable(This->util, FALSE);
 	if (previous) previous->levels[0].ddsd.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
 	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
