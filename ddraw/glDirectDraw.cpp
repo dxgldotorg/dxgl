@@ -33,14 +33,121 @@ using namespace std;
 #include "../common/version.h"
 #include "hooks.h"
 #include "fourcc.h"
+#ifndef SDC_APPLY
+#include "include/mingw-setdisplayconfig.h"
+#endif
 
 #ifndef DISP_CHANGE_BADDUALVIEW
 #define DISP_CHANGE_BADDUALVIEW -6
 #endif
 
+BOOL NoSetDisplayConfig = FALSE;
+LONG (WINAPI *_GetDisplayConfigBufferSizes)(UINT32 flags, UINT32 *numPathArrayElements,
+	UINT32 *numModeInfoArrayElements) = NULL;
+LONG (WINAPI *_QueryDisplayConfig)(UINT32 flags, UINT32 *numPathArrayElements,
+	DISPLAYCONFIG_PATH_INFO *pathArray, UINT32 *numModeInfoArrayElements,
+	DISPLAYCONFIG_MODE_INFO *modeInfoArray, DISPLAYCONFIG_TOPOLOGY_ID *currentTopologyId) = NULL;
+LONG (WINAPI *_SetDisplayConfig)(UINT32 numPathArrayElements, DISPLAYCONFIG_PATH_INFO *pathArray,
+	UINT32 numModeInfoArrayElements, DISPLAYCONFIG_MODE_INFO *modeInfoArray, UINT32 flags) = NULL;
+
 LONG SetVidMode(LPCTSTR devname, DEVMODE *mode, DWORD flags)
 {
-	return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+	DEVMODE currmode;
+	HMODULE hUser32;
+	UINT32 numPathArrayElements = 0;
+	UINT32 numModeInfoArrayElements = 0;
+	DISPLAYCONFIG_PATH_INFO *pathArray;
+	DISPLAYCONFIG_MODE_INFO *modeInfoArray;
+	LONG error;
+	int i;
+	if (dxglcfg.UseSetDisplayConfig)
+	{
+		currmode.dmSize = sizeof(DEVMODE);
+		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &currmode);
+		if (mode->dmDisplayFrequency &&
+			(mode->dmDisplayFrequency != currmode.dmDisplayFrequency)) // Mismatched refresh
+			return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+		if(NoSetDisplayConfig) return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+		else
+		{
+			hUser32 = GetModuleHandle(_T("user32.dll"));
+			if (!hUser32) NoSetDisplayConfig = TRUE;
+			if (!NoSetDisplayConfig)
+			{
+				_GetDisplayConfigBufferSizes = (LONG(WINAPI*)(UINT32, UINT32*, UINT32*))
+					GetProcAddress(hUser32, "GetDisplayConfigBufferSizes");
+				if (!_GetDisplayConfigBufferSizes) NoSetDisplayConfig = TRUE;
+			}
+			if (!NoSetDisplayConfig)
+			{
+				_QueryDisplayConfig = (LONG(WINAPI*)(UINT32, UINT32*, DISPLAYCONFIG_PATH_INFO*,
+					UINT32*, DISPLAYCONFIG_MODE_INFO*, DISPLAYCONFIG_TOPOLOGY_ID*))
+					GetProcAddress(hUser32, "QueryDisplayConfig");
+				if (!_QueryDisplayConfig) NoSetDisplayConfig = TRUE;
+			}
+			if (!NoSetDisplayConfig)
+			{
+				_SetDisplayConfig = (LONG(WINAPI*)(UINT32, DISPLAYCONFIG_PATH_INFO*, UINT32,
+					DISPLAYCONFIG_MODE_INFO*, UINT32))
+					GetProcAddress(hUser32, "SetDisplayConfig");
+				if (!_SetDisplayConfig) NoSetDisplayConfig = TRUE;
+			}
+			if (!NoSetDisplayConfig)
+			{
+				error = _GetDisplayConfigBufferSizes(QDC_ALL_PATHS, &numPathArrayElements, &numModeInfoArrayElements);
+				if (error != ERROR_SUCCESS) NoSetDisplayConfig = TRUE;
+				if (!NoSetDisplayConfig)
+				{
+					pathArray = (DISPLAYCONFIG_PATH_INFO*)malloc(numPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+					if(!pathArray) NoSetDisplayConfig = TRUE;
+					if (!NoSetDisplayConfig)
+					{
+						modeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(numModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+						if (!modeInfoArray)
+						{
+							free(pathArray);
+							NoSetDisplayConfig = TRUE;
+						}
+						if (!NoSetDisplayConfig)
+						{
+							ZeroMemory(pathArray, numPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+							ZeroMemory(modeInfoArray, numModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+							_QueryDisplayConfig(QDC_ALL_PATHS, &numPathArrayElements, pathArray, &numModeInfoArrayElements, modeInfoArray, NULL);
+							i = pathArray[0].sourceInfo.modeInfoIdx;
+							modeInfoArray[i].sourceMode.width = mode->dmPelsWidth;
+							modeInfoArray[i].sourceMode.height = mode->dmPelsHeight;
+							switch (mode->dmBitsPerPel)
+							{
+							case 32:
+							default:
+								modeInfoArray[i].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+								break;
+							case 24:
+								modeInfoArray[i].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_24BPP;
+								break;
+							case 16:
+							case 15:
+								modeInfoArray[i].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_16BPP;
+								break;
+							case 8:
+								modeInfoArray[i].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
+								break;
+							}
+							error = _SetDisplayConfig(numPathArrayElements, pathArray, numModeInfoArrayElements, modeInfoArray,
+								SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES | SDC_SAVE_TO_DATABASE);
+							free(pathArray);
+							free(modeInfoArray);
+							if (error == ERROR_SUCCESS) return DISP_CHANGE_SUCCESSFUL;
+							else return DISP_CHANGE_BADMODE;
+						}
+					}
+				}
+			}
+			else return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+			if(NoSetDisplayConfig) return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
+		}
+	}
+	else return ChangeDisplaySettingsEx(devname, mode, NULL, flags, NULL);
 }
 
 const DDDEVICEIDENTIFIER2 devid_default = {

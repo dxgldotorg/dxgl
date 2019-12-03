@@ -946,6 +946,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\ddraw\include\mingw-setdisplayconfig.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\ddraw\include\winedef.h"
 					>
 				</File>

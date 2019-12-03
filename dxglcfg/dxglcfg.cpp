@@ -3376,7 +3376,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// use SetDisplayConfig
 		if (cfg->UseSetDisplayConfig) SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETCHECK, BST_UNCHECKED, 0);
-		if (osver.dwMajorVersion >= 6) EnableWindow(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG), TRUE);
+		if ((osver.dwMajorVersion > 6) || ((osver.dwMajorVersion) == 6 && (osver.dwMinorVersion >= 1)))
+			EnableWindow(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG), TRUE);
 		// postprocess scaling filter
 		_tcscpy(buffer, _T("Nearest"));
 		SendDlgItemMessage(hTabs[1], IDC_POSTSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);

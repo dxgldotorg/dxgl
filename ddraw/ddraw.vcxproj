@@ -321,6 +321,7 @@
     <ClInclude Include="include\ddraw.h" />
     <ClInclude Include="include\GL\glext.h" />
     <ClInclude Include="include\GL\wglext.h" />
+    <ClInclude Include="include\mingw-setdisplayconfig.h" />
     <ClInclude Include="include\winedef.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="BufferObject.h" />
