@@ -3391,7 +3391,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	}
 	else shaderid = cmd->flags & 0xF2FAADFF;
 	if (cmd->src) shaderid |= ((long long)cmd->src->blttype << 32);
-	if (cmd->dest) shaderid |= ((long long)cmd->dest->blttype << 40);
+	if (!(cmd->flags & 0x80000000) && cmd->dest)
+		shaderid |= ((long long)cmd->dest->blttype << 40);
 	if (cmd->flags & DDBLT_KEYDEST) usedest = TRUE;
 	if (IsAlphaCKey())
 	{

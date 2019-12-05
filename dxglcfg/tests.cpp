@@ -382,7 +382,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		RunTestTimed(testnum);
 		break;
 	case WM_MOVE:
-		if ((testnum == 18) && testrunning) RunSurfaceFormatTest();
+		if ((testnum == 18) && testrunning && !fullscreen) RunSurfaceFormatTest();
 		break;
 	case WM_SIZE:
 		paintwnd = false;
@@ -2814,6 +2814,7 @@ void RunSurfaceFormatTest()
 				destrect.top = 0;
 				destrect.bottom = ddsd.dwHeight;
 			}
+			else
 			{
 				p.x = 0;
 				p.y = 0;

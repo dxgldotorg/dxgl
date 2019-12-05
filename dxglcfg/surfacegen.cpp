@@ -2192,50 +2192,53 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 			}
 			posy += charsize.cy;
 		}
-		// List destination formats
-		posy = formatposy;
-		SetBkMode(hdc, TRANSPARENT);
-		formatrows = rows - (formatposy / charsize.cy) - 1;
-		if (formatrows >= numsurfaceformats)
+		if (testmethod != 4)
 		{
-			formatfirst = -1;
-			formatlast = numsurfaceformats - 1;
-		}
-		else
-		{
-			if (destformat < formatrows / 2)
+			// List destination formats
+			posy = formatposy;
+			SetBkMode(hdc, TRANSPARENT);
+			formatrows = rows - (formatposy / charsize.cy) - 1;
+			if (formatrows >= numsurfaceformats)
 			{
-				formatfirst = 0;
-				formatlast = formatrows;
-			}
-			else if (destformat + 2 > (numsurfaceformats - (formatrows / 2)))
-			{
+				formatfirst = -1;
 				formatlast = numsurfaceformats - 1;
-				formatfirst = formatlast - (formatrows);
 			}
 			else
 			{
-				formatfirst = destformat - (formatrows / 2);
-				formatlast = destformat + (formatrows / 2) + (formatrows % 2);
+				if (destformat < formatrows / 2)
+				{
+					formatfirst = 0;
+					formatlast = formatrows;
+				}
+				else if (destformat + 2 > (numsurfaceformats - (formatrows / 2)))
+				{
+					formatlast = numsurfaceformats - 1;
+					formatfirst = formatlast - (formatrows);
+				}
+				else
+				{
+					formatfirst = destformat - (formatrows / 2);
+					formatlast = destformat + (formatrows / 2) + (formatrows % 2);
+				}
 			}
-		}
-		for (i = formatfirst; i < formatlast; i++)
-		{
-			if (i == destformat)
+			for (i = formatfirst; i < formatlast; i++)
 			{
-				posx = (cols / 2) * charsize.cx;
-				SetTextColor(hdc, RGB(255, 255, 255));
-				TextOutShadow(hdc, posx, posy, _T("-->"), 3, RGB(0, 0, 192));
-				posx = ((cols / 2) + 3) * charsize.cx;
-				TextOutShadow(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]), RGB(0, 0, 192));
+				if (i == destformat)
+				{
+					posx = (cols / 2) * charsize.cx;
+					SetTextColor(hdc, RGB(255, 255, 255));
+					TextOutShadow(hdc, posx, posy, _T("-->"), 3, RGB(0, 0, 192));
+					posx = ((cols / 2) + 3) * charsize.cx;
+					TextOutShadow(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]), RGB(0, 0, 192));
+				}
+				else
+				{
+					SetTextColor(hdc, RGB(192, 192, 192));
+					posx = ((cols / 2) + 3) * charsize.cx;
+					TextOut(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]));
+				}
+				posy += charsize.cy;
 			}
-			else
-			{
-				SetTextColor(hdc, RGB(192, 192, 192));
-				posx = ((cols / 2) + 3) * charsize.cx;
-				TextOut(hdc, posx, posy, strSurfaceFormats[i + 1], _tcslen(strSurfaceFormats[i + 1]));
-			}
-			posy += charsize.cy;
 		}
 	}
 	// Display error if present
