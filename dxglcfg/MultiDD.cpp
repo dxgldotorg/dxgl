@@ -700,3 +700,22 @@ HRESULT MultiDirectDrawSurface::QueryInterface(REFIID riid, void** ppvObj)
 		return DDERR_GENERIC;
 	}
 }
+
+HRESULT MultiDirectDrawSurface::UpdateOverlay(LPRECT lpSrcRect, MultiDirectDrawSurface *lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx)
+{
+	switch (version)
+	{
+	case 1:
+		return dds1->UpdateOverlay(lpSrcRect, lpDDDestSurface->dds1, lpDestRect, dwFlags, lpDDOverlayFx);
+	case 2:
+		return dds2->UpdateOverlay(lpSrcRect, lpDDDestSurface->dds2, lpDestRect, dwFlags, lpDDOverlayFx);
+	case 3:
+		return dds3->UpdateOverlay(lpSrcRect, lpDDDestSurface->dds3, lpDestRect, dwFlags, lpDDOverlayFx);
+	case 4:
+		return dds4->UpdateOverlay(lpSrcRect, lpDDDestSurface->dds4, lpDestRect, dwFlags, lpDDOverlayFx);
+	case 7:
+		return dds7->UpdateOverlay(lpSrcRect, lpDDDestSurface->dds7, lpDestRect, dwFlags, lpDDOverlayFx);
+	default:
+		return DDERR_GENERIC;
+	}
+}

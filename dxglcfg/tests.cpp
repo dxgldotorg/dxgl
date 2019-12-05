@@ -31,14 +31,16 @@ void RunTestLooped(int test);
 void RunSurfaceFormatTest();
 
 
-static MultiDirectDraw *ddinterface;
-static MultiDirectDrawSurface *ddsurface;
-static MultiDirectDrawSurface *ddsrender;
-static MultiDirectDrawSurface *zbuffer;
-static MultiDirectDrawSurface *textures[8];
-static IDirectDrawPalette *pal;
-static IDirect3D7 *d3d7;
-static IDirect3DDevice7 *d3d7dev;
+static MultiDirectDraw *ddinterface = NULL;
+static MultiDirectDrawSurface *ddsurface = NULL;
+static MultiDirectDrawSurface *ddsrender = NULL;
+static MultiDirectDrawSurface *zbuffer = NULL;
+static MultiDirectDrawSurface *textures[8] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL };
+static MultiDirectDrawSurface *overlay = NULL;
+static IDirectDrawPalette *pal = NULL;
+static IDirectDrawPalette *overlaypalette = NULL;
+static IDirect3D7 *d3d7 = NULL;
+static IDirect3DDevice7 *d3d7dev = NULL;
 D3DMATERIAL7 material;
 static LPDIRECTDRAWCLIPPER ddclipper;
 static int width,height,bpp,refresh,backbuffers;
@@ -59,6 +61,7 @@ static BOOL d3dfail = FALSE;
 static int errorlocation;
 static int errornumber;
 static BOOL softd3d;
+static BOOL testrunning = FALSE;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -214,6 +217,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		DestroyWindow(hWnd);
 		break;
 	case WM_DESTROY:
+		testrunning = FALSE;
 		StopTimer();
 		for (int i = 0; i < 16; i++)
 		{
@@ -245,6 +249,16 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 			d3d7->Release();
 			d3d7 = NULL;
+		}
+		if (overlay)
+		{
+			overlay->Release();
+			overlay = NULL;
+		}
+		if (overlaypalette)
+		{
+			overlaypalette->Release();
+			overlaypalette = NULL;
 		}
 		if(ddsrender)
 		{
@@ -366,6 +380,9 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_APP:
 		RunTestTimed(testnum);
+		break;
+	case WM_MOVE:
+		if ((testnum == 18) && testrunning) RunSurfaceFormatTest();
 		break;
 	case WM_SIZE:
 		paintwnd = false;
@@ -1569,6 +1586,7 @@ void InitTest(int test)
 	default:
 		break;
 	}
+	testrunning = TRUE;
 }
 
 void RunTestTimed(int test)
@@ -2360,6 +2378,8 @@ void RunSurfaceFormatTest()
 	DWORD texwidth, texheight;
 	POINT p;
 	RECT srcrect,destrect;
+	DDCAPS_DX7 caps[2];
+	DDCOLORKEY keycolor;
 	errorlocation = 0;
 	errornumber = 0;
 	if (ddver > 3)
@@ -2392,6 +2412,17 @@ void RunSurfaceFormatTest()
 		sprites[1].palette->Release();
 		sprites[1].palette = NULL;
 	}
+	if (overlay)
+	{
+		overlay->UpdateOverlay(NULL, ddsurface, NULL, DDOVER_HIDE, NULL);
+		overlay->Release();
+		overlay = NULL;
+	}
+	if (overlaypalette)
+	{
+		overlaypalette->Release();
+		overlaypalette = NULL;
+	}
 	ddsrender->GetSurfaceDesc(&ddsd);
 	switch (testmethod)
 	{
@@ -2407,7 +2438,7 @@ void RunSurfaceFormatTest()
 			ddsd.ddpfPixelFormat = surfaceformats[srcformat];
 		}
 		error = ddinterface->CreateSurface(&ddsd, &sprites[0].surface, NULL);
-		if (error)
+		if (error != DD_OK)
 		{
 			errorlocation = 1;
 			errornumber = error;
@@ -2440,7 +2471,7 @@ void RunSurfaceFormatTest()
 			}
 			// FIXME: Select pattern
 			error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-			if (error)
+			if (error != DD_OK)
 			{
 				errorlocation = 2;
 				errornumber = error;
@@ -2465,7 +2496,7 @@ void RunSurfaceFormatTest()
 						ddsd.ddpfPixelFormat = surfaceformats[destformat];
 					}
 					error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
-					if (error)
+					if (error != DD_OK)
 					{
 						errorlocation = 4;
 						errornumber = error;
@@ -2499,7 +2530,7 @@ void RunSurfaceFormatTest()
 							break;
 						}
 						error = sprites[1].surface->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-						if (error)
+						if (error != DD_OK)
 						{
 							errorlocation = 6;
 							errornumber = error;
@@ -2510,7 +2541,7 @@ void RunSurfaceFormatTest()
 						else
 						{
 							error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
-							if (error)
+							if (error != DD_OK)
 							{
 								errorlocation = 7;
 								errornumber = error;
@@ -2528,7 +2559,7 @@ void RunSurfaceFormatTest()
 				else
 				{
 					error = ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
-					if (error)
+					if (error != DD_OK)
 					{
 						errorlocation = 5;
 						errornumber = error;
@@ -2584,7 +2615,7 @@ void RunSurfaceFormatTest()
 			ddsdTexture.dwWidth = texwidth;
 			ddsdTexture.dwHeight = texheight;
 			error = ddinterface->CreateSurface(&ddsdTexture, &sprites[0].surface, NULL);
-			if (error)
+			if (error != DD_OK)
 			{
 				errorlocation = 1;
 				errornumber = error;
@@ -2596,7 +2627,7 @@ void RunSurfaceFormatTest()
 			{
 				// FIXME: Select pattern
 				error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-				if (error)
+				if (error != DD_OK)
 				{
 					errorlocation = 2;
 					errornumber = error;
@@ -2623,7 +2654,7 @@ void RunSurfaceFormatTest()
 							ddsd.ddpfPixelFormat = surfaceformats[destformat];
 						}
 						error = ddinterface->CreateSurface(&ddsd, &sprites[1].surface, NULL);
-						if (error)
+						if (error != DD_OK)
 						{
 							errorlocation = 4;
 							errornumber = error;
@@ -2646,7 +2677,7 @@ void RunSurfaceFormatTest()
 							d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, D3DFVF_TLVERTEX, vertices,
 								4, indices, 6, 0);
 							d3d7dev->EndScene();
-							if (error)
+							if (error != DD_OK)
 							{
 								errorlocation = 6;
 								errornumber = error;
@@ -2657,7 +2688,7 @@ void RunSurfaceFormatTest()
 							else
 							{
 								error = ddsrender->Blt(NULL, sprites[1].surface, NULL, DDBLT_WAIT, NULL);
-								if (error)
+								if (error != DD_OK)
 								{
 									errorlocation = 7;
 									errornumber = error;
@@ -2685,7 +2716,7 @@ void RunSurfaceFormatTest()
 						d3d7dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, D3DFVF_TLVERTEX, vertices,
 							4, indices, 6, 0);
 						d3d7dev->EndScene();
-						if (error)
+						if (error != DD_OK)
 						{
 							errorlocation = 5;
 							errornumber = error;
@@ -2701,15 +2732,118 @@ void RunSurfaceFormatTest()
 		}
 		break;
 	case 4:
-		errorlocation = 9;
-		errornumber = 1;
-		bltfx.dwSize = sizeof(DDBLTFX);
-		bltfx.dwFillColor = 0;
-		ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+		caps[0].dwSize = caps[1].dwSize = sizeof(DDCAPS_DX7);
+		ddinterface->GetCaps(&caps[0], &caps[1]);
+		if(((caps[0].dwCaps & DDCAPS_OVERLAY) && (caps[0].dwCKeyCaps & DDCKEYCAPS_DESTOVERLAY)) ||
+			((caps[1].dwCaps & DDCAPS_OVERLAY) && (caps[1].dwCKeyCaps & DDCKEYCAPS_DESTOVERLAY)))
+		{
+			bltfx.dwSize = sizeof(DDBLTFX);
+			switch (bpp)
+			{
+			case 8:
+				keycolor.dwColorSpaceHighValue = 0x41;
+				break;
+			case 15:
+				keycolor.dwColorSpaceHighValue = 0x401;
+				break;
+			case 16:
+				keycolor.dwColorSpaceHighValue = 0x801;
+				break;
+			case 24:
+			case 32:
+				keycolor.dwColorSpaceHighValue = 0x10001;
+				break;
+			}
+			keycolor.dwColorSpaceLowValue = keycolor.dwColorSpaceHighValue;
+			bltfx.dwFillColor = keycolor.dwColorSpaceHighValue;
+			ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+			ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
+			ddsd.ddsCaps.dwCaps = DDSCAPS_OVERLAY;
+			ddsd.dwHeight = 480;
+			ddsd.dwWidth = 720;
+			if (srcformat > 0) ddsd.ddpfPixelFormat = surfaceformats[srcformat];
+			error = ddinterface->CreateSurface(&ddsd, &overlay, NULL);
+			if (error != DD_OK)
+			{
+				errorlocation = 10;
+				errornumber = error;
+			}
+			else
+			{
+				switch (PaletteType(ddsd.ddpfPixelFormat.dwFlags))
+				{
+				case 0:
+					break;
+				case 1:
+					ddinterface->CreatePalette(DDPCAPS_1BIT, (LPPALETTEENTRY)&DefaultPalette1, &overlaypalette, NULL);
+					overlay->SetPalette(overlaypalette);
+					break;
+				case 2:
+					ddinterface->CreatePalette(DDPCAPS_2BIT, (LPPALETTEENTRY)&DefaultPalette2, &overlaypalette, NULL);
+					overlay->SetPalette(overlaypalette);
+					break;
+				case 4:
+					ddinterface->CreatePalette(DDPCAPS_4BIT, (LPPALETTEENTRY)&DefaultPalette4, &overlaypalette, NULL);
+					overlay->SetPalette(overlaypalette);
+					break;
+				case 8:
+					ddinterface->CreatePalette(DDPCAPS_8BIT, (LPPALETTEENTRY)&DefaultPalette8, &overlaypalette, NULL);
+					overlay->SetPalette(overlaypalette);
+					break;
+				}
+			}
+			// FIXME: Select pattern
+			error = overlay->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			if (error != DD_OK)
+			{
+				errorlocation = 2;
+				errornumber = error;
+				overlay->Release();
+				overlay = NULL;
+			}
+			else
+			{
+				DrawPalette(ddsd, (unsigned char *)ddsd.lpSurface);
+				error = overlay->Unlock(NULL);
+			}
+			if (fullscreen)
+			{
+				ddsurface->GetSurfaceDesc(&ddsd);
+				destrect.left = 0;
+				destrect.right = ddsd.dwWidth;
+				destrect.top = 0;
+				destrect.bottom = ddsd.dwHeight;
+			}
+			{
+				p.x = 0;
+				p.y = 0;
+				ClientToScreen(hWnd, &p);
+				GetClientRect(hWnd, &destrect);
+				OffsetRect(&destrect, p.x, p.y);
+			}
+			ddsurface->SetColorKey(DDCKEY_DESTOVERLAY, &keycolor);
+			error = overlay->UpdateOverlay(NULL, ddsurface, &destrect, DDOVER_SHOW, NULL);
+			if (error != DD_OK)
+			{
+				errorlocation = 11;
+				errornumber = error;
+				overlay->Release();
+				overlay = NULL;
+			}
+		}
+		else
+		{
+			errorlocation = 9;
+			errornumber = 1;
+			bltfx.dwSize = sizeof(DDBLTFX);
+			bltfx.dwFillColor = 0;
+			ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+		}
 		break;
 	default:
 		break;
 	}
+	ddsrender->GetSurfaceDesc(&ddsd);
 	DrawFormatTestHUD(ddsrender, srcformat, destformat, showhud, testpattern,
 		testmethod, ddsd.dwWidth, ddsd.dwHeight, errorlocation, errornumber);
 	if (!fullscreen)

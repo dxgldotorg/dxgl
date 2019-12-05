@@ -2064,7 +2064,9 @@ static const LPTSTR strErrorMessages[] =
 	_T("Error blitting src to dest: "),
 	_T("Error blitting dest to pri: "),
 	_T("Error initializing Direct3D"),
-	_T("Overlays not available yet")
+	_T("No overlay support detected"),
+	_T("Error creating overlay: "),
+	_T("Error setting overlay: ")
 };
 
 void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud,
@@ -2243,7 +2245,7 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 		SetBkColor(hdc, RGB(255, 0, 0));
 		SetTextColor(hdc, RGB(255, 255, 255));
 		if (errorlocation < 0) errorlocation = 0;
-		if (errorlocation > 9) errorlocation = 0;
+		if (errorlocation > 11) errorlocation = 0;
 		posx = 0;
 		posy = charsize.cy * (rows - 1);
 		_tcscpy(buffer, strErrorMessages[errorlocation]);
