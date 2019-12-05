@@ -62,7 +62,7 @@ Bit 27: ROP index bit 7
 Bit 28: (DXGL) Use Clipper
 Bit 29: (DXGL) Source color key range
 Bit 30: (DXGL) Dest. color key range
-Bit 31: (DXGL) Render to screen instead of dest
+Bit 31: (DXGL) Overlay display mode
 Bits 32-39: Texture type input
 Bits 40-47: Texture type output
 Bit 48: if 1, use screen scale for filtering when applicable
@@ -139,6 +139,7 @@ static const char unif_colorsizedest[] = "uniform ivec4 colorsizedest;\n";
 static const char unif_fillcolor[] = "uniform ivec4 fillcolor;\n";
 
 // Variables
+static const char var_color[] = "vec4 color;\n";
 static const char var_dest[] = "ivec4 dest;\n";
 static const char var_pattern[] = "ivec4 pattern;\n";
 static const char var_pixel[] = "ivec4 pixel;\n";
@@ -146,8 +147,26 @@ static const char var_src[] = "ivec4 src;\n";
 static const char var_patternst[] = "vec2 patternst;\n";
 
 // Operations
+// Non-integer color sampler
+static const char op_color[] = "color = texture2D(srctex,gl_TexCoord[0].st);\n";
+static const char op_colorrect[] = "color = texture2DRect(srctex,gl_TexCoord[0].st);\n";
+static const char op_palcolor[] = "color = texture2D(srcpal,vec2(((texture2D(srctex,\n\
+gl_TexCoord[0].xy).x *(255.0 / 256.0)) + (0.5 / 256.0)), 0.5)); \n";
+static const char op_palcolorrect[] = "color = texture2DRect(srcpal,vec2(((texture2D(srctex,\n\
+gl_TexCoord[0].xy).x *(255.0 / 256.0)) + (0.5 / 256.0)), 0.5)); \n";
+static const char op_colormul256[] = "color = vec4(256.0)*texture2D(srctex,gl_TexCoord[0].st);\n";
+static const char op_colorrgbg[] = "color = readrgbg(srctex);\n";
+static const char op_colorgrgb[] = "color = readgrgb(srctex);\n";
+static const char op_coloruyvy[] = "color = readuyvy(srctex);\n";
+static const char op_coloryuyv[] = "color = readyuyv(srctex);\n";
+static const char op_coloryvyu[] = "color = readyvyu(srctex);\n";
+static const char op_lumcolor[] = "color = vec4(texture2D(srctex,gl_TexCoord[0].st).rrr,1.0);\n";
+
+// Color key source sampler
 static const char op_src[] = "src = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
 static const char op_srcrect[] = "src = ivec4(texture2DRect(srctex,gl_TexCoord[0].st)*vec4(colorsizesrc)+.5);\n";
+
+// Pixel sampler
 static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelrect[] = "pixel = ivec4(texture2DRect(srctex,gl_TexCoord[0].st)*vec4(colorsizedest)+.5);\n";
 static const char op_palpixel[] = "vec4 myindex = texture2D(srctex, gl_TexCoord[0].xy);\n\
@@ -163,15 +182,23 @@ static const char op_pixeluyvy[] = "pixel = ivec4(readuyvy(srctex)*vec4(colorsiz
 static const char op_pixelyuyv[] = "pixel = ivec4(readyuyv(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelyvyu[] = "pixel = ivec4(readyvyu(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_lumpixel[] = "pixel = ivec4(vec4(texture2D(srctex,gl_TexCoord[0].st).rrr,1.0)*vec4(colorsizedest)+.5);\n";
-static const char op_color[] = "pixel = fillcolor;\n";
+static const char op_fillcolor[] = "pixel = fillcolor;\n";
+
+// Destination sampler
 static const char op_dest[] = "dest = ivec4(texture2D(desttex,gl_TexCoord[1].st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
 mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
 pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
+
+//Outputs
 static const char op_destoutdestblend[] = "gl_FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,gl_TexCoord[1].st);\n";
 static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
+static const char op_destoutcolor[] = "gl_FragColor = color;\n";
 static const char op_destoutyuvrgb[] = "gl_FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
+static const char op_destoutyuvrgbcolor[] = "gl_FragColor = yuvatorgba(vec4(color));\n";
 static const char op_destoutrgbyuv[] = "gl_FragColor = rgbatoyuva(vec4(pixel)/vec4(colorsizedest));\n";
+
+// Vertex processing
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
 mat4 proj = mat4(\n\
 vec4(2.0 / (view[1] - view[0]), 0, 0, 0),\n\
@@ -181,15 +208,21 @@ vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
 -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
 gl_Position    = proj * xyzw;\n";
 static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
+
+// Vertex shader texcoords
 static const char op_texcoord0[] = "gl_TexCoord[0] = vec4(srcst,0.0,1.0);\n";
 static const char op_texcoord1[] = "gl_TexCoord[1] = vec4(destst,0.0,1.0);\n";
 static const char op_texcoord3[] = "gl_TexCoord[3] = vec4(stencilst,0.0,1.0);\n";
+
+// Color key
 static const char op_ckeysrc[] = "if(src.rgb == ckeysrc) discard;\n";
 static const char op_ckeydest[] = "if(dest.rgb != ckeydest) discard;\n";
 static const char op_ckeysrcrange[] = "if(!((src.r < ckeysrc.r) || (src.g < ckeysrc.g) || (src.b < ckeysrc.b) ||\
    (src.r > ckeysrchigh.r) || (src.g > ckeysrchigh.g) || (src.b > ckeysrchigh.b))) discard;\n";
 static const char op_ckeydestrange[] = "if((dest.r < ckeydest.r) || (dest.g < ckeydest.g) || (dest.b < ckeydest.b) ||\
    (dest.r > ckeydesthigh.r) || (dest.g > ckeydesthigh.g) || (dest.b > ckeydesthigh.b)) discard;\n";
+
+// Clipper
 static const char op_clip[] = "if(texture2D(stenciltex, gl_TexCoord[3].st).r < .5) discard;\n";
 
 // Functions
@@ -1033,7 +1066,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	}
 
 	// Variables
-	String_Append(fsrc, var_pixel);
+	if (id & 0x80000000) String_Append(fsrc, var_color);
+	else String_Append(fsrc, var_pixel);
 	if (id & DDBLT_KEYSRC) String_Append(fsrc, var_src);
 	if (id & DDBLT_ROP)
 	{
@@ -1100,7 +1134,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	// Main
 	String_Append(fsrc, mainstart);
 	if (id & 0x10000000) String_Append(fsrc, op_clip);
-	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_color);
+	if (id & DDBLT_COLORFILL) String_Append(fsrc, op_fillcolor);
 	else
 	{
 		switch (srctype)
@@ -1108,37 +1142,49 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x00:  // Classic RGB
 		case 0x83:  // AYUV
 		default:
-			String_Append(fsrc, op_pixel);
+			if (id & 0x80000000) String_Append(fsrc, op_color);
+			else String_Append(fsrc, op_pixel);
 			break;
 		case 0x01:
 		case 0x02:
-			String_Append(fsrc, op_lumpixel);
+			if (id & 0x80000000) String_Append(fsrc, op_lumcolor);
+			else String_Append(fsrc, op_lumpixel);
 			break;
 		case 0x10:
 		case 0x11:
 		case 0x12:
 		case 0x13:
-			if((desttype >= 0x10) && (desttype <= 0x13)) String_Append(fsrc, op_pixel);
-			else String_Append(fsrc, op_palpixel);
+			if (id & 0x80000000) String_Append(fsrc, op_palcolor);
+			else
+			{
+				if ((desttype >= 0x10) && (desttype <= 0x13)) String_Append(fsrc, op_pixel);
+				else String_Append(fsrc, op_palpixel);
+			}
 			break;
 		case 0x18:
 		case 0x19:
-			String_Append(fsrc, op_pixelmul256);
+			if (id & 0x80000000) String_Append(fsrc, op_colormul256);
+			else String_Append(fsrc, op_pixelmul256);
 			break;
 		case 0x20:
-			String_Append(fsrc, op_pixelrgbg);
+			if (id & 0x80000000) String_Append(fsrc, op_colorrgbg);
+			else String_Append(fsrc, op_pixelrgbg);
 			break;
 		case 0x21:
-			String_Append(fsrc, op_pixelgrgb);
+			if (id & 0x80000000) String_Append(fsrc, op_colorgrgb);
+			else String_Append(fsrc, op_pixelgrgb);
 			break;
 		case 0x80:
-			String_Append(fsrc, op_pixeluyvy);
+			if (id & 0x80000000) String_Append(fsrc, op_coloruyvy);
+			else String_Append(fsrc, op_pixeluyvy);
 			break;
 		case 0x81:
-			String_Append(fsrc, op_pixelyuyv);
+			if (id & 0x80000000) String_Append(fsrc, op_coloryuyv);
+			else String_Append(fsrc, op_pixelyuyv);
 			break;
 		case 0x82:
-			String_Append(fsrc, op_pixelyvyu);
+			if (id & 0x80000000) String_Append(fsrc, op_coloryvyu);
+			else String_Append(fsrc, op_pixelyvyu);
 			break;
 		}
 	}
@@ -1178,7 +1224,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			{
 			case 0:
 			default:
-				String_Append(fsrc, op_destout);
+				if (id & 0x80000000) String_Append(fsrc, op_destoutcolor);
+				else String_Append(fsrc, op_destout);
 				break;
 			case 0x83:
 				String_Append(fsrc, op_destoutrgbyuv);
@@ -1188,25 +1235,42 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		case 0x80:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
-			else String_Append(fsrc, op_destoutyuvrgb);
+			else
+			{
+				if (id & 0x80000000) String_Append(fsrc, op_destoutyuvrgbcolor);
+				else String_Append(fsrc, op_destoutyuvrgb);
+			}
 			break;
 		case 0x81:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
-			else String_Append(fsrc, op_destoutyuvrgb);
+			else
+			{
+				if (id & 0x80000000) String_Append(fsrc, op_destoutyuvrgbcolor);
+				else String_Append(fsrc, op_destoutyuvrgb);
+			}
 			break;
 		case 0x82:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
-			else String_Append(fsrc, op_destoutyuvrgb);
+			else
+			{
+				if (id & 0x80000000) String_Append(fsrc, op_destoutyuvrgbcolor);
+				else String_Append(fsrc, op_destoutyuvrgb);
+			}
 			break;
 		case 0x83:
 			if ((desttype >= 0x80) && (desttype <= 0x83))
 				String_Append(fsrc, op_destout);
-			else String_Append(fsrc, op_destoutyuvrgb);
+			else
+			{
+				if (id & 0x80000000) String_Append(fsrc, op_destoutyuvrgbcolor);
+				else String_Append(fsrc, op_destoutyuvrgb);
+			}
 			break;
 		default:
-			String_Append(fsrc, op_destout);
+			if (id & 0x80000000)String_Append(fsrc, op_destoutcolor);
+			else String_Append(fsrc, op_destout);
 			break;
 		}
 	}
