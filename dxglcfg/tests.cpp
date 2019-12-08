@@ -2791,45 +2791,45 @@ void RunSurfaceFormatTest()
 					overlay->SetPalette(overlaypalette);
 					break;
 				}
-			}
-			// FIXME: Select pattern
-			error = overlay->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-			if (error != DD_OK)
-			{
-				errorlocation = 2;
-				errornumber = error;
-				overlay->Release();
-				overlay = NULL;
-			}
-			else
-			{
-				DrawPalette(ddsd, (unsigned char *)ddsd.lpSurface);
-				error = overlay->Unlock(NULL);
-			}
-			if (fullscreen)
-			{
-				ddsurface->GetSurfaceDesc(&ddsd);
-				destrect.left = 0;
-				destrect.right = ddsd.dwWidth;
-				destrect.top = 0;
-				destrect.bottom = ddsd.dwHeight;
-			}
-			else
-			{
-				p.x = 0;
-				p.y = 0;
-				ClientToScreen(hWnd, &p);
-				GetClientRect(hWnd, &destrect);
-				OffsetRect(&destrect, p.x, p.y);
-			}
-			ddsurface->SetColorKey(DDCKEY_DESTOVERLAY, &keycolor);
-			error = overlay->UpdateOverlay(NULL, ddsurface, &destrect, DDOVER_SHOW, NULL);
-			if (error != DD_OK)
-			{
-				errorlocation = 11;
-				errornumber = error;
-				overlay->Release();
-				overlay = NULL;
+				// FIXME: Select pattern
+				error = overlay->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+				if (error != DD_OK)
+				{
+					errorlocation = 2;
+					errornumber = error;
+					overlay->Release();
+					overlay = NULL;
+				}
+				else
+				{
+					DrawPalette(ddsd, (unsigned char *)ddsd.lpSurface);
+					error = overlay->Unlock(NULL);
+				}
+				if (fullscreen)
+				{
+					ddsurface->GetSurfaceDesc(&ddsd);
+					destrect.left = 0;
+					destrect.right = ddsd.dwWidth;
+					destrect.top = 0;
+					destrect.bottom = ddsd.dwHeight;
+				}
+				else
+				{
+					p.x = 0;
+					p.y = 0;
+					ClientToScreen(hWnd, &p);
+					GetClientRect(hWnd, &destrect);
+					OffsetRect(&destrect, p.x, p.y);
+				}
+				ddsurface->SetColorKey(DDCKEY_DESTOVERLAY, &keycolor);
+				error = overlay->UpdateOverlay(NULL, ddsurface, &destrect, DDOVER_SHOW, NULL);
+				if (error != DD_OK)
+				{
+					errorlocation = 11;
+					errornumber = error;
+					overlay->Release();
+					overlay = NULL;
+				}
 			}
 		}
 		else
