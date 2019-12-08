@@ -3363,6 +3363,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	GLfloat xoffset, yoffset, xmul, ymul;
 	RECT srcrect;
 	RECT destrect, destrect2;
+	RECT wndrect;
 	This->ddInterface->GetSizes(sizes);
 	unsigned __int64 shaderid;
 	DDSURFACEDESC2 ddsd;
@@ -3459,14 +3460,31 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	else srcrect = cmd->srcrect;
 	if (cmd->flags & 0x80000000)
 	{
-		xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
-		ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
-		xoffset = ((GLfloat)sizes[4] - (GLfloat)sizes[0]) / 2.0f;
-		yoffset = ((GLfloat)sizes[5] - (GLfloat)sizes[1]) / 2.0f;
-		This->bltvertices[1].x = This->bltvertices[3].x = ((GLfloat)destrect.left * xmul) + xoffset;
-		This->bltvertices[0].x = This->bltvertices[2].x = ((GLfloat)destrect.right * xmul) + xoffset;
-		This->bltvertices[0].y = This->bltvertices[1].y = ((GLfloat)destrect.top * ymul) + yoffset;
-		This->bltvertices[2].y = This->bltvertices[3].y = ((GLfloat)destrect.bottom * ymul) + yoffset;
+		if (This->ddInterface->GetFullscreen())
+		{
+			xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
+			ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
+			xoffset = ((GLfloat)sizes[4] - (GLfloat)sizes[0]) / 2.0f;
+			yoffset = ((GLfloat)sizes[5] - (GLfloat)sizes[1]) / 2.0f;
+			This->bltvertices[1].x = This->bltvertices[3].x = ((GLfloat)destrect.left * xmul) + xoffset;
+			This->bltvertices[0].x = This->bltvertices[2].x = ((GLfloat)destrect.right * xmul) + xoffset;
+			This->bltvertices[0].y = This->bltvertices[1].y = ((GLfloat)destrect.top * ymul) + yoffset;
+			This->bltvertices[2].y = This->bltvertices[3].y = ((GLfloat)destrect.bottom * ymul) + yoffset;
+		}
+		else
+		{
+			xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
+			ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
+			GetClientRect(This->hWnd, &wndrect);
+			ClientToScreen(This->hWnd, (LPPOINT)&wndrect.left);
+			ClientToScreen(This->hWnd, (LPPOINT)&wndrect.right);
+			xoffset = (GLfloat)wndrect.left;
+			yoffset = (GLfloat)sizes[1] - wndrect.bottom;
+			This->bltvertices[1].x = This->bltvertices[3].x = ((GLfloat)destrect.left * xmul) - xoffset;
+			This->bltvertices[0].x = This->bltvertices[2].x = ((GLfloat)destrect.right * xmul) - xoffset;
+			This->bltvertices[0].y = This->bltvertices[1].y = ((GLfloat)destrect.top * ymul) + yoffset;
+			This->bltvertices[2].y = This->bltvertices[3].y = ((GLfloat)destrect.bottom * ymul) + yoffset;
+		}
 	}
 	else
 	{
