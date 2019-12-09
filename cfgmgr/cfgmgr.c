@@ -684,6 +684,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
+	cfg->WindowScaleX = ReadFloat(hKey, cfg->WindowScaleX, &cfgmask->WindowScaleX, _T("WindowScaleX"));
+	cfg->WindowScaleY = ReadFloat(hKey, cfg->WindowScaleY, &cfgmask->WindowScaleY, _T("WindowScaleY"));
 	cfg->EnableShader = ReadBool(hKey, cfg->EnableShader, &cfgmask->EnableShader, _T("EnableShader"));
 	ReadPath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	cfg->SortModes = ReadDWORD(hKey,cfg->SortModes,&cfgmask->SortModes,_T("SortModes"));
@@ -834,6 +836,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	defaultmask.DisplayMultiplierY = 1.0f;
 	defaultmask.primaryscalex = 1.0f;
 	defaultmask.primaryscaley = 1.0f;
+	defaultmask.WindowScaleX = 1.0f;
+	defaultmask.WindowScaleY = 1.0f;
 	WriteDWORD(hKey,cfg->scaler,cfgmask->scaler,_T("ScalingMode"));
 	WriteDWORD(hKey, cfg->fullmode, cfgmask->fullmode, _T("FullscreenWindowMode"));
 	WriteBool(hKey,cfg->colormode,cfgmask->colormode,_T("ChangeColorDepth"));
@@ -857,6 +861,8 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
+	WriteFloat(hKey, cfg->WindowScaleX, cfgmask->WindowScaleX, _T("WindowScaleX"));
+	WriteFloat(hKey, cfg->WindowScaleY, cfgmask->WindowScaleY, _T("WindowScaleY"));
 	WriteBool(hKey, cfg->EnableShader, cfgmask->EnableShader, _T("EnableShader"));
 	WritePath(hKey,cfg->shaderfile,cfgmask->shaderfile,_T("ShaderFile"));
 	WriteDWORD(hKey,cfg->SortModes,cfgmask->SortModes,_T("SortModes"));
@@ -1012,6 +1018,8 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->DisplayMultiplierY = 1.0f;
 	cfg->primaryscalex = 1.0f;
 	cfg->primaryscaley = 1.0f;
+	cfg->WindowScaleX = 1.0f;
+	cfg->WindowScaleY = 1.0f;
 	// Removed for DXGL 0.5.13 release
 	// cfg->BltThreshold = 127;
 	cfg->WindowPosition = 1;
@@ -1172,6 +1180,8 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "AdjustPrimaryResolution")) cfg->primaryscale = INIIntValue(value);
 			if (!_stricmp(name, "PrimaryScaleX")) cfg->primaryscalex = INIFloatValue(value);
 			if (!_stricmp(name, "PrimaryScaleY")) cfg->primaryscaley = INIFloatValue(value);
+			if (!_stricmp(name, "WindowScaleX")) cfg->WindowScaleX = INIFloatValue(value);
+			if (!_stricmp(name, "WindowScaleY")) cfg->WindowScaleY = INIFloatValue(value);
 			if (!_stricmp(name, "ScreenAspect")) cfg->aspect = INIAspectValue(value);
 			if (!_stricmp(name, "DPIScale")) cfg->DPIScale = INIIntValue(value);
 		}
@@ -1619,6 +1629,8 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteInt(file, "AdjustPrimaryResolution", cfg->primaryscale, mask->primaryscale, INISECTION_SCALING);
 	INIWriteFloat(file, "PrimaryScaleX", cfg->primaryscalex, mask->primaryscalex, 4, INISECTION_SCALING);
 	INIWriteFloat(file, "PrimaryScaleY", cfg->primaryscaley, mask->primaryscaley, 4, INISECTION_SCALING);
+	INIWriteFloat(file, "WindowScaleX", cfg->WindowScaleX, mask->WindowScaleX, 4, INISECTION_SCALING);
+	INIWriteFloat(file, "WindowScaleY", cfg->WindowScaleY, mask->WindowScaleY, 4, INISECTION_SCALING);
 	INIWriteAspect(file, "ScreenAspect", cfg->aspect, mask->aspect, INISECTION_SCALING);
 	INIWriteInt(file, "DPIScale", cfg->DPIScale, mask->DPIScale, INISECTION_SCALING);
 	// [postprocess]

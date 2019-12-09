@@ -53,6 +53,8 @@ typedef struct
 	DWORD primaryscale;
 	float primaryscalex;
 	float primaryscaley;
+	float WindowScaleX;
+	float WindowScaleY;
 	float aspect;
 	DWORD DPIScale;
 	// [postprocess]

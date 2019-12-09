@@ -493,15 +493,15 @@ void FloatToAspect(float f, LPTSTR aspect)
 #endif
 }
 
-void FloatToScale(float x, float y, LPTSTR scale)
+void FloatToScale(float x, float y, LPTSTR scale, float default)
 {
 	TCHAR numberx[8];
 	TCHAR numbery[8];
-	if (_isnan(x)) x = 0.0f; //Handle NAN condition
-	if (_isnan(y)) y = 0.0f;
+	if (_isnan(x)) x = default; //Handle NAN condition
+	if (_isnan(y)) y = default;
 	// Too low number, round to "Auto"
-	if (x < 0.25f) x = 0.0f;
-	if (y < 0.25f) y = 0.0f;
+	if (x < 0.25f) x = default;
+	if (y < 0.25f) y = default;
 	// Too high number, round to 16
 	if (x > 16.0f) x = 16.0f;
 	if (y > 16.0f) y = 16.0f;
@@ -738,6 +738,21 @@ void SetAspectCombo(HWND hWnd, int DlgItem, float value, DWORD mask, BOOL trista
 	}
 }
 
+void SetWindowScaleCombo(HWND hWnd, int DlgItem, float x, float y, DWORD maskx, DWORD masky, BOOL tristate)
+{
+	TCHAR buffer[32];
+	if (tristate && !maskx && !masky)
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+	else
+	{
+		FloatToScale(x, y, buffer, 1.0f);
+		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
+		SetDlgItemText(hWnd, DlgItem, buffer);
+	}
+}
+
 void SetPostScaleCombo(HWND hWnd, int DlgItem, float x, float y, DWORD maskx, DWORD masky, BOOL tristate)
 {
 	TCHAR buffer[32];
@@ -746,7 +761,7 @@ void SetPostScaleCombo(HWND hWnd, int DlgItem, float x, float y, DWORD maskx, DW
 			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 	else
 	{
-		FloatToScale(x, y, buffer);
+		FloatToScale(x, y, buffer, 0.0f);
 		SendDlgItemMessage(hWnd, DlgItem, CB_SETCURSEL,
 			SendDlgItemMessage(hWnd, DlgItem, CB_FINDSTRING, -1, (LPARAM)buffer), 0);
 		SetDlgItemText(hWnd, DlgItem, buffer);
@@ -1083,6 +1098,47 @@ void GetResolution(HWND hWnd, int dlgitem, DXGLCFG *cfg, DXGLCFG *cfgmask)
 	TCHAR input[104];
 	SendDlgItemMessage(hWnd, dlgitem, WM_GETTEXT, 104, (LPARAM)input);
 	ProcessResolutionString(input);
+}
+
+void GetWindowScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx, float *masky)
+{
+	TCHAR buffer[32];
+	TCHAR *ptr;
+	GetDlgItemText(hWnd, DlgItem, buffer, 31);
+	buffer[31] = 0;
+	if (!_tcscmp(buffer, strdefault))
+	{
+		*maskx = 0.0f;
+		*masky = 0.0f;
+		*x = 0.0f;
+		*y = 0.0f;
+		return;
+	}
+	else
+	{
+		*maskx = 1.0f;
+		*masky = 1.0f;
+		// Check for certain characters
+		ptr = _tcsstr(buffer, _T("x"));
+		if (!ptr) ptr = _tcsstr(buffer, _T("X"));
+		if (!ptr) ptr = _tcsstr(buffer, _T(","));
+		if (!ptr) ptr = _tcsstr(buffer, _T("-"));
+		if (!ptr) ptr = _tcsstr(buffer, _T(":"));
+		if (ptr)
+		{
+			*ptr = 0;
+			*x = (float)_ttof(buffer);
+			*y = (float)_ttof(ptr + 1);
+			if ((*x >= 0.25f) && (*y < 0.25f)) *y = *x;
+			return;
+		}
+		else
+		{
+			*x = (float)_ttof(buffer);
+			*y = (float)_ttof(buffer);
+			return;
+		}
+	}
 }
 
 void GetPostScaleCombo(HWND hWnd, int DlgItem, float *x, float *y, float *maskx, float *masky)
@@ -1771,6 +1827,26 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			cfg->fullmode = GetCombo(hWnd, IDC_FULLMODE, &cfgmask->fullmode);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			break;
+		case IDC_WINDOWSCALE:
+			if (HIWORD(wParam) == CBN_KILLFOCUS)
+			{
+				GetWindowScaleCombo(hWnd, IDC_WINDOWSCALE, &cfg->WindowScaleX, &cfg->WindowScaleY,
+					&cfgmask->WindowScaleX, &cfgmask->WindowScaleY);
+				SetWindowScaleCombo(hWnd, IDC_WINDOWSCALE, cfg->WindowScaleX, cfg->WindowScaleY,
+					(DWORD)cfgmask->WindowScaleX, (DWORD)cfgmask->WindowScaleY, tristate);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				modelistdirty = TRUE;
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				GetWindowScaleCombo(hWnd, IDC_WINDOWSCALE, &cfg->WindowScaleX, &cfg->WindowScaleY,
+					&cfgmask->WindowScaleX, &cfgmask->WindowScaleY);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+				modelistdirty = TRUE;
+			}
 			break;
 		case IDC_COLOR:
 			cfg->colormode = GetCheck(hWnd, IDC_COLOR, &cfgmask->colormode);
@@ -2882,6 +2958,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
@@ -2932,6 +3009,8 @@ void RefreshControls(HWND hWnd)
 			SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
@@ -3019,6 +3098,8 @@ void RefreshControls(HWND hWnd)
 	SetFloat3place(hTabs[0], IDC_FIXEDSCALEX, cfg->DisplayMultiplierX, cfgmask->DisplayMultiplierX);
 	SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 	SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
+	SetWindowScaleCombo(hTabs[0], IDC_WINDOWSCALE, cfg->WindowScaleX, cfg->WindowScaleY,
+		(DWORD)cfgmask->WindowScaleX, (DWORD)cfgmask->WindowScaleY, tristate);
 	// Effects tab
 	SetCombo(hTabs[1], IDC_POSTSCALE, cfg->postfilter, cfgmask->postfilter, tristate);
 	SetPostScaleCombo(hTabs[1], IDC_POSTSCALESIZE, cfg->postsizex, cfg->postsizey,
@@ -3345,6 +3426,17 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SetFloat3place(hTabs[0], IDC_FIXEDSCALEY, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY);
 		// custom resolution
 		SetResolution(hTabs[0], IDC_CUSTOMMODE, cfg, cfgmask);
+		// window scale
+		_tcscpy(buffer, _T("1x"));
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("2x"));
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("3x"));
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("4x"));
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SetWindowScaleCombo(hTabs[0], IDC_WINDOWSCALE, cfg->WindowScaleX, cfg->WindowScaleY,
+			(DWORD)cfgmask->WindowScaleX, (DWORD)cfgmask->WindowScaleY, tristate);
 		// fullscreen window mode
 		_tcscpy(buffer, _T("Exclusive fullscreen"));
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)buffer);

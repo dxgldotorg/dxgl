@@ -76,9 +76,10 @@
 #define IDC_CUSTOMMODELABEL                     2015
 #define IDC_CUSTOMMODE                          2016
 #define IDC_SETMODE                             2017
-#define IDC_COLOR                               2018
-#define IDC_SINGLEBUFFER                        2019
-#define IDC_SETDISPLAYCONFIG                    2020
+#define IDC_WINDOWSCALE                         2018
+#define IDC_COLOR                               2019
+#define IDC_SINGLEBUFFER                        2020
+#define IDC_SETDISPLAYCONFIG                    2021
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101
