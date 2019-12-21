@@ -1079,7 +1079,7 @@ glDirectDraw7::~glDirectDraw7()
 	TRACE_ENTER(1,14,this);
 	if(initialized)
 	{
-		if (fullscreen) UninstallDXGLFullscreenHook(hWnd);
+		UninstallDXGLHook(hWnd);
 		RestoreDisplayMode();
 		if (clippers)
 		{
@@ -1930,7 +1930,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 			SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 		}
 	}*/  // Currently breaks The Settlers IV
-	if (this->hWnd && fullscreen) UninstallDXGLFullscreenHook(this->hWnd);
+	if (this->hWnd) UninstallDXGLHook(this->hWnd);
 	this->hWnd = hWnd;
 	if (!winstyle && !winstyleex)
 	{
@@ -2014,7 +2014,7 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
-	if (fullscreen) InstallDXGLFullscreenHook(hWnd,this);
+	InstallDXGLHook(hWnd,this);
 	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

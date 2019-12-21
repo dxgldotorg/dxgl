@@ -36,8 +36,8 @@ BOOL IsCallerOpenGL(BYTE *returnaddress);
 void InitHooks();
 void ShutdownHooks();
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
-void UninstallDXGLFullscreenHook(HWND hWnd);
+void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
+void UninstallDXGLHook(HWND hWnd);
 
 LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong);
 LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);

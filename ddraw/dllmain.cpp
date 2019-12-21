@@ -31,7 +31,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	case DLL_PROCESS_ATTACH:
 		if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 		if (!hook_cs.LockCount && !hook_cs.OwningThread) InitializeCriticalSection(&hook_cs);
-		InitHooks();
 		GetCurrentConfig(&dxglcfg, TRUE);
 		break;
 	case DLL_THREAD_ATTACH:

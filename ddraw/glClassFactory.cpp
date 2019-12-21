@@ -22,6 +22,7 @@
 #include "glUtil.h"
 #include "glDirectDrawClipper.h"
 #include "ddraw.h"
+#include "hooks.h"
 
 
 ULONG WINAPI glClassFactory::AddRef()
@@ -71,6 +72,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	if(pUnkOuter != NULL) TRACE_RET(HRESULT,23,CLASS_E_NOAGGREGATION);
 	if(riid == IID_IDirectDraw)
 	{
+		InitHooks();
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw,ppvObject);
 		glDD7->Release();
@@ -80,6 +82,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	}
 	if(riid == IID_IDirectDraw2)
 	{
+		InitHooks();
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw2,ppvObject);
 		glDD7->Release();
@@ -89,6 +92,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	}
 	if(riid == IID_IDirectDraw4)
 	{
+		InitHooks();
 		glDD7 = new glDirectDraw7;
 		glDD7->QueryInterface(IID_IDirectDraw4,ppvObject);
 		glDD7->Release();
@@ -98,6 +102,7 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	}
 	if(riid == IID_IDirectDraw7)
 	{
+		InitHooks();
 		*ppvObject = new glDirectDraw7();
 		TRACE_VAR("*ppvObject",14,*ppvObject);
 		TRACE_EXIT(23,S_OK);

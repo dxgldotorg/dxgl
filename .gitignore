@@ -99,3 +99,10 @@
 /vs9/libMinHook/Debug
 /vs9/libMinHook/Release
 /*.suo
+/Debug no DXGL
+/buildtool/Debug no DXGL
+/cfgmgr/Debug no DXGL
+/common/Debug no DXGL
+/ddraw/Debug no DXGL
+/dxglcfg/Debug no DXGL
+/dxglcfg-old/Debug no DXGL

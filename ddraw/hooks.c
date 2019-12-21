@@ -40,11 +40,12 @@ static int hwndhook_max = 0;
 CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
 static BOOL hooks_init = FALSE;
 
+// Window management
 LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
 LONG(WINAPI *_SetWindowLongW)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
 LONG(WINAPI *_GetWindowLongA)(HWND hWnd, int nIndex) = NULL;
 LONG(WINAPI *_GetWindowLongW)(HWND hWnd, int nIndex) = NULL;
-#ifdef _M_X64
+#ifdef _M_X64 // 64-bit only, 32-bit uses macros
 LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong) = NULL;
 LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong) = NULL;
 LONG_PTR(WINAPI *_GetWindowLongPtrA)(HWND hWnd, int nIndex) = NULL;
@@ -55,9 +56,12 @@ LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
 #define _GetWindowLongPtrA   _GetWindowLongA
 #define _GetWindowLongPtrW   _GetWindowLongW
 #endif
+
+// Mouse pointer
 BOOL(WINAPI *_GetCursorPos)(LPPOINT point) = NULL;
 BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
 HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
+
 UINT wndhook_count = 0;
 static BOOL keyctrlalt = FALSE;
 static BOOL cursorclipped = FALSE;
@@ -253,7 +257,7 @@ void DisableWindowLongHooks(BOOL force)
 	LeaveCriticalSection(&hook_cs);
 }
 
-void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
+void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 {
 	WNDPROC wndproc;
 	HWND_HOOK *wndhook = GetWndHook(hWnd);
@@ -267,7 +271,7 @@ void InstallDXGLFullscreenHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
 	EnableWindowLongHooks();
 }
-void UninstallDXGLFullscreenHook(HWND hWnd)
+void UninstallDXGLHook(HWND hWnd)
 {
 	HWND_HOOK *wndhook = GetWndHook(hWnd);
 	if (!wndhook) return;
@@ -306,7 +310,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			ClipCursor(NULL);
 			cursorclipped = FALSE;
 		}
-		UninstallDXGLFullscreenHook(hWnd);
+		UninstallDXGLHook(hWnd);
 		break;
 	case WM_MOVE:
 	case WM_KILLFOCUS:
@@ -705,43 +709,54 @@ BOOL WINAPI HookGetCursorPos(LPPOINT point)
 	if (!wndhook) {
 		return _GetCursorPos(point);
 	}
-	error = _GetCursorPos(&pt);
-	if (!error) return error;
-	if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >=2) && (dxglcfg.fullmode <= 4)))
-		&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+
+	if (wndhook->lpDD7)
 	{
-		oldx = pt.x;
-		oldy = pt.y;
-		if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+		if (glDirectDraw7_GetFullscreen(wndhook->lpDD7))
 		{
-			pt.x = 0;
-			pt.y = 0;
-			ClientToScreen(wndhook->hwnd, &pt);
-			oldx -= pt.x;
-			oldy -= pt.y;
+			error = _GetCursorPos(&pt);
+			if (!error) return error;
+			if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+				&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+			{
+				oldx = pt.x;
+				oldy = pt.y;
+				if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+				{
+					pt.x = 0;
+					pt.y = 0;
+					ClientToScreen(wndhook->hwnd, &pt);
+					oldx -= pt.x;
+					oldy -= pt.y;
+				}
+				glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+				mulx = (float)sizes[2] / (float)sizes[0];
+				muly = (float)sizes[3] / (float)sizes[1];
+				translatex = (sizes[4] - sizes[0]) / 2;
+				translatey = (sizes[5] - sizes[1]) / 2;
+				oldx -= translatex;
+				oldy -= translatey;
+				oldx = (int)((float)oldx * mulx);
+				oldy = (int)((float)oldy * muly);
+				if (oldx < 0) oldx = 0;
+				if (oldy < 0) oldy = 0;
+				if (oldx >= sizes[2]) oldx = sizes[2] - 1;
+				if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+				point->x = oldx;
+				point->y = oldy;
+				return error;
+			}
+			else
+			{
+				point->x = pt.x;
+				point->y = pt.y;
+				return error;
+			}
 		}
-		glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
-		mulx = (float)sizes[2] / (float)sizes[0];
-		muly = (float)sizes[3] / (float)sizes[1];
-		translatex = (sizes[4] - sizes[0]) / 2;
-		translatey = (sizes[5] - sizes[1]) / 2;
-		oldx -= translatex;
-		oldy -= translatey;
-		oldx = (int)((float)oldx * mulx);
-		oldy = (int)((float)oldy * muly);
-		if (oldx < 0) oldx = 0;
-		if (oldy < 0) oldy = 0;
-		if (oldx >= sizes[2]) oldx = sizes[2] - 1;
-		if (oldy >= sizes[3]) oldy = sizes[3] - 1;
-		point->x = oldx;
-		point->y = oldy;
-		return error;
-	}
-	else
-	{
-		point->x = pt.x;
-		point->y = pt.y;
-		return error;
+		else
+		{
+			return _GetCursorPos(point);
+		}
 	}
 }
 

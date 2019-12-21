@@ -162,6 +162,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		TRACE_EXIT(23, ret);
 		return ret;
 	}
+	InitHooks();
 	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
@@ -226,6 +227,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 {
 	TRACE_ENTER(4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	InitHooks();
 	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
