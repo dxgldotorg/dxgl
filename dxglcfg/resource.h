@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 #define IDD_VERTEXSHADER                        104
 #define IDD_MODELIST                            105
 #define IDD_SAVEINI                             106
+#define IDD_WINDOWSTYLE                         107
 
 // Tabs
 #define IDD_DISPLAY                             201
@@ -266,12 +267,76 @@
 #define IDC_LIGHTTHETA                          3040
 #define IDC_LIGHTPHI                            3041
 
+// Controls - Window style test dialog
+#define IDC_WSMAXIMIZEBOX                       3100
+#define IDC_WSMINIMIZEBOX                       3101
+#define IDC_WSTHICKFRAME                        3102
+#define IDC_WSSYSMENU                           3103
+#define IDC_WSHSCROLL                           3104
+#define IDC_WSVSCROLL                           3105
+#define IDC_WSDLGFRAME                          3106
+#define IDC_WSBORDER                            3107
+#define IDC_WSCAPTION                           3108
+#define IDC_WSMAXIMIZE                          3109
+#define IDC_WSCLIPCHILDREN                      3110
+#define IDC_WSCLIPSIBLINGS                      3111
+#define IDC_WSDISABLED                          3112
+#define IDC_WSVISIBLE                           3113
+#define IDC_WSMINIMIZE                          3114
+#define IDC_WSCHILD                             3115
+#define IDC_WSPOPUP                             3116
+#define IDC_WSOVERLAPPEDWINDOW                  3117
+#define IDC_WSPOPUPWINDOW                       3118
+#define IDC_MENUBAR                             3119
+#define IDC_BTNMINIMIZE                         3120
+#define IDC_BTNMAXIMIZE                         3121
+#define IDC_BTNRESTORE                          3122
+#define IDC_BTNSHOW                             3123
+#define IDC_BTNHIDE                             3124
+#define IDC_BTNDISABLE                          3125
+#define IDC_BTNENABLE                           3126
+#define IDC_WSEXDLGMODALFRAME                   3127
+#define IDC_WSEXNOPARENTNOTIFY                  3128
+#define IDC_WSEXTOPMOST                         3129
+#define IDC_WSEXACCEPTFILES                     3130
+#define IDC_WSEXTRANSPARENT                     3131
+#define IDC_WSEXMDICHILD                        3132
+#define IDC_WSEXTOOLWINDOW                      3133
+#define IDC_WSEXWINDOWEDGE                      3134
+#define IDC_WSEXCLIENTEDGE                      3135
+#define IDC_WSEXCONTEXTHELP                     3136
+#define IDC_WSEXRIGHT                           3137
+#define IDC_WSEXRTLREADING                      3138
+#define IDC_WSEXLEFTSCROLLBAR                   3139
+#define IDC_WSEXCONTROLPARENT                   3140
+#define IDC_WSEXSTATICEDGE                      3141
+#define IDC_WSEXAPPWINDOW                       3142
+#define IDC_WSEXLAYERED                         3143
+#define IDC_WSEXNOINHERITLAYOUT                 3144
+#define IDC_WSEXNOREDIRECTIONBITMAP             3145
+#define IDC_WSEXLAYOUTRTL                       3146
+#define IDC_WSEXCOMPOSITED                      3147
+#define IDC_WSEXNOACTIVATE                      3148
+#define IDC_WSEXOVERLAPPEDWINDOW                3149
+#define IDC_WSEXPALETTEWINDOW                   3150
+#define IDC_WINDOWSTATUS                        3151
+#define IDC_WINDOWRESIZEX                       3152
+#define IDC_WINDOWRESIZEY                       3153
+#define IDC_WINDOWMOVEX                         3154
+#define IDC_WINDOWMOVEY                         3155
+#define IDC_RESIZEWINDOW                        3156
+#define IDC_RESIZECLIENT                        3157
+#define IDC_MOVEWINDOW                          3158
+#define IDC_MOVECLIENT                          3159
+#define IDC_MOVESIZE                            3160
+#define IDC_MOVESIZECLIENT                      3161
+
 // Controls - Mode list dialog
-#define IDC_MODELIST                            3101
+#define IDC_MODELIST                            3201
 
 // Controls - Save .ini file dialog
-#define IDC_NOWRITEREGISTRY                     3201
-#define IDC_OVERRIDEREGISTRY                    3202
-#define IDC_NOOVERWRITE                         3203
-#define IDC_SAVESHA256                          3204
-#define IDC_NOUNINSTALL                         3205
+#define IDC_NOWRITEREGISTRY                     3301
+#define IDC_OVERRIDEREGISTRY                    3302
+#define IDC_NOOVERWRITE                         3303
+#define IDC_SAVESHA256                          3304
+#define IDC_NOUNINSTALL                         3305

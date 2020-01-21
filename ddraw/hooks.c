@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014-2015 William Feely
+// Copyright (C) 2014-2020 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -323,7 +323,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_ACTIVATEAPP:
 		if (!wParam)
 		{
-			if (dxglcfg.fullmode < 2)
+			if (dxglcfg.fullmode < 2 && glDirectDraw7_GetFullscreen(lpDD7))
 			{
 				ShowWindow(hWnd, SW_MINIMIZE);
 				if (lpDD7) IDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
@@ -333,93 +333,96 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_STYLECHANGED:
 		style = (STYLESTRUCT*)lParam;
 		if (style->styleNew == style->styleOld) break;
-		if (wParam == GWL_STYLE)
+		if (glDirectDraw7_GetFullscreen(lpDD7))
 		{
-			switch (dxglcfg.fullmode)
+			if (wParam == GWL_STYLE)
 			{
-			case 0:
-				// Fix exclusive fullscreen mode
-				if (lpDD7)
+				switch (dxglcfg.fullmode)
 				{
-					glDirectDraw7_GetSizes(lpDD7, sizes);
-					GetWindowRect(hWnd, &r1);
-					GetClientRect(hWnd, &r2);
-					winstyle = GetWindowLong(hWnd, GWL_STYLE);
-					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-					if (!(winstyle & WS_POPUP)) fixstyle = TRUE;
-					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER)) fixstyle = TRUE;
-					if (winstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
-					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
-					if (fixstyle)
+				case 0:
+					// Fix exclusive fullscreen mode
+					if (lpDD7)
 					{
-						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+						glDirectDraw7_GetSizes(lpDD7, sizes);
+						GetWindowRect(hWnd, &r1);
+						GetClientRect(hWnd, &r2);
+						winstyle = GetWindowLong(hWnd, GWL_STYLE);
+						exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+						if (!(winstyle & WS_POPUP)) fixstyle = TRUE;
+						if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER)) fixstyle = TRUE;
+						if (winstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+						if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+						if (fixstyle)
+						{
+							SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+							SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+							SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+						}
 					}
-				}
-				break;
-			case 1:
-				// Fix non-exclusive fullscreen mode
-			case 4:
-				// Fix borderless window mode
-			case 5:
-				// Fix scaled borderless window mode
-				if (lpDD7)
-				{
-					glDirectDraw7_GetSizes(lpDD7, sizes);
-					GetWindowRect(hWnd, &r1);
-					GetClientRect(hWnd, &r2);
-					winstyle = GetWindowLong(hWnd, GWL_STYLE);
-					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-					if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP)) fixstyle = TRUE;
-					if (exstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
-					if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
-					if (fixstyle)
+					break;
+				case 1:
+					// Fix non-exclusive fullscreen mode
+				case 4:
+					// Fix borderless window mode
+				case 5:
+					// Fix scaled borderless window mode
+					if (lpDD7)
 					{
-						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
-						SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+						glDirectDraw7_GetSizes(lpDD7, sizes);
+						GetWindowRect(hWnd, &r1);
+						GetClientRect(hWnd, &r2);
+						winstyle = GetWindowLong(hWnd, GWL_STYLE);
+						exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+						if (winstyle & (WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP)) fixstyle = TRUE;
+						if (exstyle & (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)) fixstyle = TRUE;
+						if (!((r1.left == 0) && (r1.top == 0) && (r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+						if (fixstyle)
+						{
+							SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+							SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+							SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+						}
 					}
-				}
-				break;
-			case 2:
-				// Fix non-resizable window mode
-				if (lpDD7)
-				{
-					glDirectDraw7_GetSizes(lpDD7, sizes);
-					GetClientRect(hWnd, &r2);
-					winstyle = GetWindowLong(hWnd, GWL_STYLE);
-					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-					if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
-					if (!(winstyle & (WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)))) fixstyle = TRUE;
-					if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
-					if (!((r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
-					if (fixstyle)
+					break;
+				case 2:
+					// Fix non-resizable window mode
+					if (lpDD7)
 					{
-						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
-						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
-						SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+						glDirectDraw7_GetSizes(lpDD7, sizes);
+						GetClientRect(hWnd, &r2);
+						winstyle = GetWindowLong(hWnd, GWL_STYLE);
+						exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+						if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
+						if (!(winstyle & (WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)))) fixstyle = TRUE;
+						if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
+						if (!((r2.right == sizes[4]) && (r2.bottom == sizes[5]))) fixstyle = TRUE;
+						if (fixstyle)
+						{
+							SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
+							SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
+							SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+						}
 					}
-				}
-				break;
-			case 3:
-				// Fix resizable window mode
-				if (lpDD7)
-				{
-					glDirectDraw7_GetSizes(lpDD7, sizes);
-					GetClientRect(hWnd, &r2);
-					winstyle = GetWindowLong(hWnd, GWL_STYLE);
-					exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-					if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
-					if (!(winstyle & WS_OVERLAPPEDWINDOW)) fixstyle = TRUE;
-					if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
-					if (fixstyle)
+					break;
+				case 3:
+					// Fix resizable window mode
+					if (lpDD7)
 					{
-						SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
-						SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
+						glDirectDraw7_GetSizes(lpDD7, sizes);
+						GetClientRect(hWnd, &r2);
+						winstyle = GetWindowLong(hWnd, GWL_STYLE);
+						exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+						if (winstyle & (WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP)) fixstyle = TRUE;
+						if (!(winstyle & WS_OVERLAPPEDWINDOW)) fixstyle = TRUE;
+						if (!(exstyle & WS_EX_APPWINDOW)) fixstyle = TRUE;
+						if (fixstyle)
+						{
+							SetWindowLongPtrA(hWnd, GWL_EXSTYLE, exstyle | WS_EX_APPWINDOW);
+							SetWindowLongPtrA(hWnd, GWL_STYLE, (winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
+						}
 					}
+					break;
 				}
-				break;
 			}
 		}
 		break;

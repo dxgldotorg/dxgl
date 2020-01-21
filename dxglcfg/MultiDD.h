@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -136,6 +136,7 @@ public:
 	HRESULT GetLOD(LPDWORD lpdwMaxLOD);
 	// Internal functions
 	LPVOID GetSurface();
+	int GetVersion() { return version; }
 private:
 	int version;
 	ULONG refcount;

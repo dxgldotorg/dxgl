@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -2265,5 +2265,63 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 	SetTextColor(hdc, oldcolor);
 	SetBkColor(hdc, oldbkcolor);
 	SetBkMode(hdc, oldbk);
+	surface->ReleaseDC(hdc);
+}
+
+void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd)
+{
+	HDC hdc;
+	HRESULT err;
+	COLORREF oldcolor;
+	COLORREF oldbkcolor;
+	HFONT DefaultFont;
+	HFONT newfont;
+	RECT r;
+	TCHAR buffer[256];
+	TCHAR number[34];
+	SIZE charsize;
+	int rows, cols;
+	DDSURFACEDESC2 ddsd;
+	int x, y;
+	int posx, posy;
+	int i;
+	DDBLTFX bltfx;
+	bltfx.dwSize = sizeof(DDBLTFX);
+	bltfx.dwFillColor = 0;
+	surface->Blt(NULL, NULL, NULL, DDBLT_COLORFILL, &bltfx);
+	err = surface->GetDC(&hdc);
+	if (FAILED(err)) return;
+	if(surface->GetVersion() > 3) ddsd.dwSize = sizeof(DDSURFACEDESC2);
+	else ddsd.dwSize = sizeof(DDSURFACEDESC);
+	surface->GetSurfaceDesc(&ddsd);
+	x = ddsd.dwWidth;
+	y = ddsd.dwHeight;
+	if (y < 350)
+	{
+		newfont = CreateFont(-8, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+	}
+	else if ((x > 1024) && (y > 600))
+	{
+		newfont = CreateFont(-16, -12, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+	}
+	else
+	{
+		newfont = CreateFont(-12, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
+			CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, _T("Terminal"));
+	}
+	DefaultFont = (HFONT)SelectObject(hdc, newfont);
+	GetTextExtentPoint(hdc, _T("A"), 1, &charsize);
+	rows = y / charsize.cy;
+	cols = x / charsize.cx;
+	oldcolor = SetTextColor(hdc, RGB(255, 255, 255));
+	oldbkcolor = SetBkColor(hdc, RGB(0, 0, 255));
+	TextOutShadow(hdc, 0, 0, _T("Window API coordinates test"), 27, 0);
+
+	SetTextColor(hdc, oldcolor);
+	SetBkColor(hdc, oldbkcolor);
+	SelectObject(hdc, DefaultFont);
+	DeleteObject(newfont);
 	surface->ReleaseDC(hdc);
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -24,11 +24,15 @@
 #define D3D_OVERLOADS
 #include "../ddraw/include/d3d.h"
 #include <WindowsX.h>
+#ifndef WS_EX_NOREDIRECTIONBITMAP
+#define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
+#endif
 
 void InitTest(int test);
 void RunTestTimed(int test);
 void RunTestLooped(int test);
 void RunSurfaceFormatTest();
+void RunWindowAPITest();
 
 
 static MultiDirectDraw *ddinterface = NULL;
@@ -47,9 +51,10 @@ static int width,height,bpp,refresh,backbuffers;
 static double fps;
 static bool fullscreen,resizable;
 static HWND hWnd;
+static HWND hDlg = NULL;
 static int testnum;
 static unsigned int randnum;
-static int testtypes[] = {0,1,0,1,0,1,0,0,-1,1,0,0,0,0,0,0,0,0,2};
+static int testtypes[] = {0,1,0,1,0,1,0,0,-1,1,0,0,0,0,0,0,0,0,2,0};
 static DWORD counter;
 static DWORD hotspotx,hotspoty;
 static int srcformat = 0;
@@ -62,6 +67,10 @@ static int errorlocation;
 static int errornumber;
 static BOOL softd3d;
 static BOOL testrunning = FALSE;
+static BOOL in_dxgltest = FALSE;
+LONG_PTR wndstyle;
+LONG_PTR exstyle;
+HANDLE testthread;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -77,7 +86,6 @@ struct COLORVERTEX
 	D3DVALUE tu;
 	D3DVALUE tv;
 public:
-	COLORVERTEX() {};
 	COLORVERTEX(const D3DVECTOR& v, const D3DVECTOR& n, D3DCOLOR _color,
 		D3DCOLOR _specular, D3DVALUE _tu, D3DVALUE _tv)
 	{
@@ -217,6 +225,11 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		DestroyWindow(hWnd);
 		break;
 	case WM_DESTROY:
+		if (hDlg)
+		{
+			DestroyWindow(hDlg);
+			hDlg = NULL;
+		}
 		testrunning = FALSE;
 		StopTimer();
 		for (int i = 0; i < 16; i++)
@@ -428,7 +441,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
 	}
-	return FALSE;
+	return 0;
 }
 
 static int ddtestnum;
@@ -449,19 +462,29 @@ static HRESULT WINAPI zcallback(DDPIXELFORMAT *ddpf, VOID *context)
 
 INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK WindowStyleProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+DWORD WINAPI WindowStyleTestThread(LPVOID param);
 
 void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d)
+	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d, HWND parent)
 {
+	if (in_dxgltest)
+	{
+		MessageBox(parent, _T("Please close the current test before beginning a new one."), _T("Test already running"), MB_OK | MB_ICONWARNING);
+		return;
+	}
+	in_dxgltest = TRUE;
 	ZeroMemory(sprites,16*sizeof(DDSPRITE));
 	if(testnum == 14)
 	{
 		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_TEXSHADER),NULL,TexShader7Proc);
+		in_dxgltest = FALSE;
 		return;
 	}
 	if(testnum == 15)
 	{
 		DialogBox(GetModuleHandle(NULL),MAKEINTRESOURCE(IDD_VERTEXSHADER),NULL,VertexShader7Proc);
+		in_dxgltest = FALSE;
 		return;
 	}
 	DDSURFACEDESC2 ddsd;
@@ -505,6 +528,7 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	if(!RegisterClassEx(&wc))
 	{
 		MessageBox(NULL,_T("Can not register window class"),_T("Error"),MB_ICONEXCLAMATION|MB_OK);
+		in_dxgltest = FALSE;
 		return;
 	}
 	if(resizable)
@@ -540,8 +564,8 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 		if(backbuffers)ddsd.dwFlags |= DDSD_BACKBUFFERCOUNT;
 		ddsd.dwBackBufferCount = backbuffers;
 		if(backbuffers) ddsd.ddsCaps.dwCaps |= DDSCAPS_FLIP | DDSCAPS_COMPLEX;
-		if(is3d) ddsd.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE;
 	}
+	if (is3d) ddsd.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE;
 	error = ddinterface->CreateSurface(&ddsd,&ddsurface,NULL);
 	if(FAILED(error))
 	{
@@ -690,6 +714,7 @@ void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int b
 	}
 	UnregisterClass(wndclassname,hinstance);
 	StopTimer();
+	in_dxgltest = FALSE;
 }
 
 void MakeCube3D(float size, int detail)
@@ -974,6 +999,7 @@ void InitTest(int test)
 	POINT p;
 	DDCOLORKEY colorkey;
 	DDBLTFX bltfx;
+	HANDLE threadevent;
 	void *bmppointer;
 	int i;
 	const DWORD colormasks[7] = { 0xFF0000, 0xFF00, 0xFFFF00, 0xFF, 0xFF00FF, 0xFFFF, 0xFFFFFF };
@@ -1583,6 +1609,14 @@ void InitTest(int test)
 		error = sprites[0].surface->Unlock(NULL);
 		ddsrender->Blt(NULL, sprites[0].surface, NULL, DDBLT_WAIT, NULL);
 		DrawFormatTestHUD(ddsrender, 0, -1, 1, 1, 1, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
+		break;
+	case 19:
+		DrawWindowAPITest(ddsrender, hWnd);
+		//threadevent = CreateEvent(NULL, TRUE, FALSE, _T("WindowStyleTestStartupEvent"));
+		//testthread = CreateThread(NULL, 0, WindowStyleTestThread, &threadevent, 0, NULL);
+		//WaitForSingleObject(threadevent, INFINITE);
+		CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_WINDOWSTYLE), NULL, WindowStyleProc);
+		break;
 	default:
 		break;
 	}
@@ -2857,6 +2891,11 @@ void RunSurfaceFormatTest()
 		SetRect(&srcrect, 0, 0, width, height);
 		if (ddsurface && ddsrender)error = ddsurface->Blt(&destrect, ddsrender, &srcrect, DDBLT_WAIT, NULL);
 	}
+}
+
+void RunWindowAPITest()
+{
+	DrawWindowAPITest(ddsrender, hWnd);
 }
 
 void RunTestLooped(int test)
@@ -4277,6 +4316,243 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	case WM_APP:
 		RunTestTimed(testnum);
 		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void SetWindowStyleCheckboxes(LONG_PTR wndstyle, LONG_PTR exstyle, HWND hwnd)
+{
+	// Standard styles
+	if (wndstyle & WS_MAXIMIZEBOX) SendDlgItemMessage(hwnd, IDC_WSMAXIMIZEBOX, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSMAXIMIZEBOX, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_MINIMIZEBOX) SendDlgItemMessage(hwnd, IDC_WSMINIMIZEBOX, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSMINIMIZEBOX, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_THICKFRAME) SendDlgItemMessage(hwnd, IDC_WSTHICKFRAME, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSTHICKFRAME, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_SYSMENU) SendDlgItemMessage(hwnd, IDC_WSSYSMENU, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSSYSMENU, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_HSCROLL) SendDlgItemMessage(hwnd, IDC_WSHSCROLL, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSHSCROLL, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_VSCROLL) SendDlgItemMessage(hwnd, IDC_WSVSCROLL, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSVSCROLL, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_DLGFRAME) SendDlgItemMessage(hwnd, IDC_WSDLGFRAME, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSDLGFRAME, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_BORDER) SendDlgItemMessage(hwnd, IDC_WSBORDER, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSBORDER, BM_SETCHECK, BST_UNCHECKED, 0);
+	if ((wndstyle & WS_CAPTION) == WS_CAPTION) SendDlgItemMessage(hwnd, IDC_WSCAPTION, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSCAPTION, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_MAXIMIZE) SendDlgItemMessage(hwnd, IDC_WSMAXIMIZE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSMAXIMIZE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_CLIPCHILDREN) SendDlgItemMessage(hwnd, IDC_WSCLIPCHILDREN, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSCLIPCHILDREN, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_CLIPSIBLINGS) SendDlgItemMessage(hwnd, IDC_WSCLIPSIBLINGS, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSCLIPSIBLINGS, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_DISABLED) SendDlgItemMessage(hwnd, IDC_WSDISABLED, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSDISABLED, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_VISIBLE) SendDlgItemMessage(hwnd, IDC_WSVISIBLE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSVISIBLE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_MINIMIZE) SendDlgItemMessage(hwnd, IDC_WSMINIMIZE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSMINIMIZE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_CHILD) SendDlgItemMessage(hwnd, IDC_WSCHILD, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSCHILD, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (wndstyle & WS_POPUP) SendDlgItemMessage(hwnd, IDC_WSPOPUP, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSPOPUP, BM_SETCHECK, BST_UNCHECKED, 0);
+	if ((wndstyle & WS_OVERLAPPEDWINDOW) == WS_OVERLAPPEDWINDOW)
+		SendDlgItemMessage(hwnd, IDC_WSOVERLAPPEDWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSOVERLAPPEDWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	if ((wndstyle & WS_POPUPWINDOW) == WS_POPUPWINDOW)
+		SendDlgItemMessage(hwnd, IDC_WSPOPUPWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSPOPUPWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	// Extended styles
+	if (exstyle & WS_EX_DLGMODALFRAME) SendDlgItemMessage(hwnd, IDC_WSEXDLGMODALFRAME, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXDLGMODALFRAME, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_NOPARENTNOTIFY) SendDlgItemMessage(hwnd, IDC_WSEXNOPARENTNOTIFY, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXNOPARENTNOTIFY, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_TOPMOST) SendDlgItemMessage(hwnd, IDC_WSEXTOPMOST, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXTOPMOST, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_ACCEPTFILES) SendDlgItemMessage(hwnd, IDC_WSEXACCEPTFILES, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXACCEPTFILES, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_TRANSPARENT) SendDlgItemMessage(hwnd, IDC_WSEXTRANSPARENT, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXTRANSPARENT, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_MDICHILD) SendDlgItemMessage(hwnd, IDC_WSEXMDICHILD, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXMDICHILD, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_TOOLWINDOW) SendDlgItemMessage(hwnd, IDC_WSEXTOOLWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXTOOLWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_WINDOWEDGE) SendDlgItemMessage(hwnd, IDC_WSEXWINDOWEDGE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXWINDOWEDGE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_CLIENTEDGE) SendDlgItemMessage(hwnd, IDC_WSEXCLIENTEDGE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXCLIENTEDGE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_CONTEXTHELP) SendDlgItemMessage(hwnd, IDC_WSEXCONTEXTHELP, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXCONTEXTHELP, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_RIGHT) SendDlgItemMessage(hwnd, IDC_WSEXRIGHT, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXRIGHT, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_RTLREADING) SendDlgItemMessage(hwnd, IDC_WSEXRTLREADING, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXRTLREADING, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_LEFTSCROLLBAR) SendDlgItemMessage(hwnd, IDC_WSEXLEFTSCROLLBAR, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXLEFTSCROLLBAR, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_CONTROLPARENT) SendDlgItemMessage(hwnd, IDC_WSEXCONTROLPARENT, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXCONTROLPARENT, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_STATICEDGE) SendDlgItemMessage(hwnd, IDC_WSEXSTATICEDGE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXSTATICEDGE, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_APPWINDOW) SendDlgItemMessage(hwnd, IDC_WSEXAPPWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXAPPWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_LAYERED) SendDlgItemMessage(hwnd, IDC_WSEXLAYERED, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXLAYERED, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_NOINHERITLAYOUT) SendDlgItemMessage(hwnd, IDC_WSEXNOINHERITLAYOUT, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXNOINHERITLAYOUT, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_NOREDIRECTIONBITMAP) SendDlgItemMessage(hwnd, IDC_WSEXNOREDIRECTIONBITMAP, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXNOREDIRECTIONBITMAP, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_LAYOUTRTL) SendDlgItemMessage(hwnd, IDC_WSEXLAYOUTRTL, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXLAYOUTRTL, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_COMPOSITED) SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_UNCHECKED, 0);
+	if (exstyle & WS_EX_NOACTIVATE) SendDlgItemMessage(hwnd, IDC_WSEXNOACTIVATE, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_UNCHECKED, 0);
+	if ((exstyle & WS_EX_OVERLAPPEDWINDOW) == WS_EX_OVERLAPPEDWINDOW)
+		SendDlgItemMessage(hwnd, IDC_WSEXOVERLAPPEDWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXOVERLAPPEDWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	if((exstyle & WS_EX_PALETTEWINDOW) == WS_EX_PALETTEWINDOW)
+		SendDlgItemMessage(hwnd, IDC_WSEXPALETTEWINDOW, BM_SETCHECK, BST_CHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXPALETTEWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
+}
+
+void UpdateTestWindowStyle()
+{
+	SetWindowLongPtr(hWnd, GWL_STYLE, wndstyle);
+	SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
+	wndstyle = GetWindowLongPtr(hWnd, GWL_STYLE);
+}
+
+DWORD WINAPI WindowStyleTestThread(LPVOID param)
+{
+	HANDLE *event = (HANDLE *)param;
+	DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_WINDOWSTYLE), NULL, WindowStyleProc, (LPARAM)param);
+	return 0;
+}
+
+INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		hDlg = hwnd;
+		wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+		exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+		SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+		//SetEvent(*(HANDLE*)lParam);
+		return TRUE;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDC_WSMAXIMIZEBOX:
+			if (SendDlgItemMessage(hwnd, IDC_WSMAXIMIZEBOX, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_MAXIMIZEBOX;
+			else wndstyle &= ~WS_MAXIMIZEBOX;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSMINIMIZEBOX:
+			if (SendDlgItemMessage(hwnd, IDC_WSMINIMIZEBOX, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_MINIMIZEBOX;
+			else wndstyle &= ~WS_MINIMIZEBOX;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSTHICKFRAME:
+			if (SendDlgItemMessage(hwnd, IDC_WSTHICKFRAME, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_THICKFRAME;
+			else wndstyle &= ~WS_THICKFRAME;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSSYSMENU:
+			if (SendDlgItemMessage(hwnd, IDC_WSSYSMENU, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_SYSMENU;
+			else wndstyle &= ~WS_SYSMENU;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSHSCROLL:
+			if (SendDlgItemMessage(hwnd, IDC_WSHSCROLL, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_HSCROLL;
+			else wndstyle &= ~WS_HSCROLL;
+			UpdateTestWindowStyle();
+			return TRUE;
+		case IDC_WSVSCROLL:
+			if (SendDlgItemMessage(hwnd, IDC_WSVSCROLL, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_VSCROLL;
+			else wndstyle &= ~WS_VSCROLL;
+			UpdateTestWindowStyle();
+			return TRUE;
+		case IDC_WSDLGFRAME:
+			if (SendDlgItemMessage(hwnd, IDC_WSDLGFRAME, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_DLGFRAME;
+			else wndstyle &= ~WS_DLGFRAME;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSBORDER:
+			if (SendDlgItemMessage(hwnd, IDC_WSBORDER, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_BORDER;
+			else wndstyle &= ~WS_BORDER;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSCAPTION:
+			if (SendDlgItemMessage(hwnd, IDC_WSCAPTION, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_CAPTION;
+			else wndstyle &= ~WS_CAPTION;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSCLIPCHILDREN:
+			if (SendDlgItemMessage(hwnd, IDC_WSCLIPCHILDREN, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_CLIPCHILDREN;
+			else wndstyle &= ~WS_CLIPCHILDREN;
+			UpdateTestWindowStyle();
+			return TRUE;
+		case IDC_WSCLIPSIBLINGS:
+			if (SendDlgItemMessage(hwnd, IDC_WSCLIPSIBLINGS, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_CLIPSIBLINGS;
+			else wndstyle &= ~WS_CLIPSIBLINGS;
+			UpdateTestWindowStyle();
+			return TRUE;
+		case IDC_WSCHILD:
+			if (SendDlgItemMessage(hwnd, IDC_WSCHILD, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_CHILD;
+			else wndstyle &= ~WS_CHILD;
+			UpdateTestWindowStyle();
+			return TRUE;
+		case IDC_WSPOPUP:
+			if (SendDlgItemMessage(hwnd, IDC_WSPOPUP, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_POPUP;
+			else wndstyle &= ~WS_POPUP;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSOVERLAPPEDWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSOVERLAPPEDWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_OVERLAPPEDWINDOW;
+			else wndstyle &= ~WS_OVERLAPPEDWINDOW;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_WSPOPUPWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSPOPUPWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				wndstyle |= WS_POPUPWINDOW;
+			else wndstyle &= ~WS_POPUPWINDOW;
+			UpdateTestWindowStyle();
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDCANCEL:
+			hDlg = NULL;
+			if (hWnd) SendMessage(hWnd, WM_CLOSE, 0, 0);
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		return FALSE;
 	default:
 		return FALSE;
 	}

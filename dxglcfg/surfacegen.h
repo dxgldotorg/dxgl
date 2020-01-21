@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,7 @@ void DrawRotatedBlt(MultiDirectDrawSurface *primary, DDSPRITE *sprites);
 void DrawColorKeyCompPatterns(DDSURFACEDESC2 ddsd, unsigned char *buffer, int bpp, int index);
 void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destformat, int showhud,
 	int testpattern, int testmethod, int x, int y, int errorlocation, HRESULT error);
+void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd);
 extern const DDPIXELFORMAT surfaceformats[];
 extern const int numsurfaceformats;
 

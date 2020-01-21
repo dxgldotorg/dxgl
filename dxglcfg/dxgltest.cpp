@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -224,7 +224,8 @@ const TEST_ITEM Tests[] =
 	{7,		7,		0,		0,		TRUE,		60.0,		TRUE,	TRUE,		TRUE,		_T("Vertex shaders (Interactive, DX7)")},
 	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("SetCursorPos Test")},
 	{1,		7,		0,		1,		TRUE,		60.0,		FALSE,	FALSE,		FALSE,		_T("Blt Background, Raster operation Blt sprites")},
-	{7,		7,		1,		1,		FALSE,		0.0,		TRUE,	TRUE,		FALSE,		_T("Surface/Texture format test")}
+	{7,		7,		1,		1,		FALSE,		0.0,		TRUE,	TRUE,		FALSE,		_T("Surface/Texture format test")},
+	{7,		7,		0,		0,		FALSE,		0.0,		FALSE,	FALSE,		FALSE,		_T("Window API test (Interactive)")}
 };
 const int END_TESTS = __LINE__ - 4;
 const int numtests = END_TESTS - START_TESTS;
@@ -316,7 +317,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					maxbuffer = Tests[i].buffermax;
 					fps_enabled = Tests[i].usesfps;
 					if(Tests[i].usesfps) framerate = Tests[i].defaultfps;
-					if((i != 14) && (i != 15))
+					if((i != 14) && (i != 15) && (i != 19))
 					{
 						EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
@@ -331,16 +332,24 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					}
 					else
 					{
+						if (i == 19)
+						{
+							EnableWindow(GetDlgItem(hWnd, IDC_RESIZABLE), TRUE);
+							EnableWindow(GetDlgItem(hWnd, IDC_VIDMODES), TRUE);
+						}
+						else
+						{
+							EnableWindow(GetDlgItem(hWnd, IDC_RESIZABLE), FALSE);
+							EnableWindow(GetDlgItem(hWnd, IDC_VIDMODES), FALSE);
+						}
 						EnableWindow(GetDlgItem(hWnd,IDC_BUFFERS),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_APIVER),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_FRAMERATE),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_TEST),TRUE);
 						EnableWindow(GetDlgItem(hWnd,IDC_WINDOWED),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_FULLSCREEN),FALSE);
-						EnableWindow(GetDlgItem(hWnd,IDC_RESIZABLE),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_TESTVSYNC),FALSE);
 						EnableWindow(GetDlgItem(hWnd,IDC_SOFTD3D),FALSE);
-						EnableWindow(GetDlgItem(hWnd,IDC_VIDMODES),FALSE);
 						SendDlgItemMessage(hWnd,IDC_WINDOWED,BM_SETCHECK,BST_CHECKED,0);
 						SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,BST_UNCHECKED,0);
 						fullscreen = false;
@@ -374,7 +383,7 @@ SaveChanges(hDialog);
 				SendDlgItemMessage(hWnd, IDC_VIDMODES, LB_GETTEXT, i, (LPARAM)tmpstring);
 				TranslateResolutionString(tmpstring, width, height, bpp, refresh);
 				RunDXGLTest(currenttest, width, height, bpp, refresh, buffer, api,
-					filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d);
+					filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d, hDialog);
 				break;
 			}
 			break;
@@ -446,7 +455,7 @@ Do you want to apply them before running this test?"),
 			SendDlgItemMessage(hWnd,IDC_VIDMODES,LB_GETTEXT,i,(LPARAM)tmpstring);
 			TranslateResolutionString(tmpstring,width,height,bpp,refresh);
 			RunDXGLTest(currenttest, width, height, bpp, refresh, buffer, api,
-				filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d);
+				filter, msaa, framerate, fullscreen, resizable, Tests[currenttest].is3d, softd3d, hDialog);
 			break;
 		case IDC_WINDOWED:
 			SendDlgItemMessage(hWnd,IDC_FULLSCREEN,BM_SETCHECK,0,0);

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -36,6 +36,6 @@ typedef struct
 } DDSPRITE;
 
 void RunDXGLTest(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
-	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d);
+	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d, HWND parent);
 
 #endif //_TESTS_H
