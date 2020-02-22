@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2015 William Feely
+// Copyright (C) 2011-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -68,7 +68,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "FileDescription", "DXGL DDraw Library"
             VALUE "FileVersion", DXGLVERSTRING
             VALUE "InternalName", "DXGL"
-            VALUE "LegalCopyright", "Copyright (C) 2011-2017 William Feely"
+            VALUE "LegalCopyright", "Copyright © 2011-2020 William Feely"
             VALUE "OriginalFilename", "DDraw.dll"
             VALUE "ProductName", "DXGL"
             VALUE "ProductVersion", DXGLVERSTRING

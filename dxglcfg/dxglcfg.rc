@@ -27,6 +27,21 @@
 
 
 //
+// Menu resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDM_TESTMENU MENU
+{
+    POPUP "File"
+    {
+        MENUITEM "Close", IDM_FI_CLOSE
+    }
+}
+
+
+
+
+//
 // Dialog resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
@@ -638,7 +653,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "FileDescription", "DXGL Configuration Program"
             VALUE "FileVersion", "DXGLVERSTRING"
             VALUE "InternalName", "DXGL"
-            VALUE "LegalCopyright", "Copyright © 2011-2017 William Feely"
+            VALUE "LegalCopyright", "Copyright © 2011-2020 William Feely"
             VALUE "OriginalFilename", "dxglcfg.exe"
             VALUE "ProductName", "DXGL"
             VALUE "ProductVersion", "DXGLVERSTRING"

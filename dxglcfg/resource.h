@@ -44,6 +44,10 @@
 #define IDI_STAR                                303
 #define IDI_X16                                 304
 
+// Menus
+#define IDM_TESTMENU                            400
+#define IDM_FI_CLOSE                            410
+
 // Controls - DXGL Config Dialog
 #define IDC_APPLY                               1000
 #define IDC_APPS                                1001

@@ -68,9 +68,10 @@ static int errornumber;
 static BOOL softd3d;
 static BOOL testrunning = FALSE;
 static BOOL in_dxgltest = FALSE;
-LONG_PTR wndstyle;
-LONG_PTR exstyle;
-HANDLE testthread;
+static LONG_PTR wndstyle;
+static LONG_PTR exstyle;
+static HANDLE testthread;
+static HMENU hmenu = NULL;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -227,8 +228,14 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		if (hDlg)
 		{
-			DestroyWindow(hDlg);
+			SendMessage(hDlg, WM_COMMAND, IDCANCEL, 0);
 			hDlg = NULL;
+		}
+		if (hmenu)
+		{
+			SetMenu(hWnd, NULL);
+			DestroyMenu(hmenu);
+			hmenu = NULL;
 		}
 		testrunning = FALSE;
 		StopTimer();
@@ -396,8 +403,10 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOVE:
 		if ((testnum == 18) && testrunning && !fullscreen) RunSurfaceFormatTest();
+		if (hDlg) PostMessage(hDlg, WM_APP+1, 0, 0);
 		break;
 	case WM_SIZE:
+		if (hDlg) PostMessage(hDlg, WM_APP, 0, 0);
 		paintwnd = false;
 	case WM_PAINT:
 		if(paintwnd) BeginPaint(hWnd,&paintstruct);
@@ -437,6 +446,9 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		for (i = 7; i > 0; i--)
 			lastmouselparam[i] = lastmouselparam[i-1];
 		lastmouselparam[0] = lParam;
+		break;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDM_FI_CLOSE) SendMessage(hWnd, WM_CLOSE, 0, 0);
 		break;
 	default:
 		return DefWindowProc(hWnd,Msg,wParam,lParam);
@@ -1612,10 +1624,9 @@ void InitTest(int test)
 		break;
 	case 19:
 		DrawWindowAPITest(ddsrender, hWnd);
-		//threadevent = CreateEvent(NULL, TRUE, FALSE, _T("WindowStyleTestStartupEvent"));
-		//testthread = CreateThread(NULL, 0, WindowStyleTestThread, &threadevent, 0, NULL);
-		//WaitForSingleObject(threadevent, INFINITE);
-		CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_WINDOWSTYLE), NULL, WindowStyleProc);
+		threadevent = CreateEvent(NULL, TRUE, FALSE, _T("WindowStyleTestStartupEvent"));
+		testthread = CreateThread(NULL, 0, WindowStyleTestThread, &threadevent, 0, NULL);
+		WaitForSingleObject(threadevent, INFINITE);
 		break;
 	default:
 		break;
@@ -4409,7 +4420,7 @@ void SetWindowStyleCheckboxes(LONG_PTR wndstyle, LONG_PTR exstyle, HWND hwnd)
 	if (exstyle & WS_EX_COMPOSITED) SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_CHECKED, 0);
 	else SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_UNCHECKED, 0);
 	if (exstyle & WS_EX_NOACTIVATE) SendDlgItemMessage(hwnd, IDC_WSEXNOACTIVATE, BM_SETCHECK, BST_CHECKED, 0);
-	else SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_SETCHECK, BST_UNCHECKED, 0);
+	else SendDlgItemMessage(hwnd, IDC_WSEXNOACTIVATE, BM_SETCHECK, BST_UNCHECKED, 0);
 	if ((exstyle & WS_EX_OVERLAPPEDWINDOW) == WS_EX_OVERLAPPEDWINDOW)
 		SendDlgItemMessage(hwnd, IDC_WSEXOVERLAPPEDWINDOW, BM_SETCHECK, BST_CHECKED, 0);
 	else SendDlgItemMessage(hwnd, IDC_WSEXOVERLAPPEDWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -4418,11 +4429,65 @@ void SetWindowStyleCheckboxes(LONG_PTR wndstyle, LONG_PTR exstyle, HWND hwnd)
 	else SendDlgItemMessage(hwnd, IDC_WSEXPALETTEWINDOW, BM_SETCHECK, BST_UNCHECKED, 0);
 }
 
+void SetWindowStyleSizes(HWND hwnd)
+{
+	TCHAR buffer[1024];
+	TCHAR number[16];
+	RECT wndrect;
+	RECT clientrect;
+	GetWindowRect(hWnd, &wndrect);
+	GetClientRect(hWnd, &clientrect);
+	_tcscpy(buffer, _T("Window Rect "));
+	_itot(wndrect.right-wndrect.left, number, 10);
+	SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEX, WM_SETTEXT, 0, (LPARAM)number);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("x"));
+	_itot(wndrect.bottom - wndrect.top, number, 10);
+	SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEY, WM_SETTEXT, 0, (LPARAM)number);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("@"));
+	_itot(wndrect.left, number, 10);
+	SendDlgItemMessage(hwnd, IDC_WINDOWMOVEX, WM_SETTEXT, 0, (LPARAM)number);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T(","));
+	_itot(wndrect.top, number, 10);
+	SendDlgItemMessage(hwnd, IDC_WINDOWMOVEY, WM_SETTEXT, 0, (LPARAM)number);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("\r\n"));
+	_tcscat(buffer, _T("Client Rect "));
+	_itot(clientrect.right - clientrect.left, number, 10);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("x"));
+	_itot(clientrect.bottom - clientrect.top, number, 10);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("@"));
+	_itot(clientrect.left, number, 10);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T(","));
+	_itot(clientrect.top, number, 10);
+	_tcscat(buffer, number);
+	_tcscat(buffer, _T("\r\n"));
+	SendDlgItemMessage(hwnd, IDC_WINDOWSTATUS, WM_SETTEXT, 0, (LPARAM)buffer);
+}
+
 void UpdateTestWindowStyle()
 {
 	SetWindowLongPtr(hWnd, GWL_STYLE, wndstyle);
 	SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
 	wndstyle = GetWindowLongPtr(hWnd, GWL_STYLE);
+	exstyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+	if (hDlg) SetWindowStyleCheckboxes(wndstyle, exstyle, hDlg);
+	if (hDlg) SetWindowStyleSizes(hDlg);
+}
+
+void UpdateTestWindowExStyle()
+{
+	SetWindowLongPtr(hWnd, GWL_EXSTYLE, exstyle);
+	SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
+	wndstyle = GetWindowLongPtr(hWnd, GWL_STYLE);
+	exstyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+	if (hDlg) SetWindowStyleCheckboxes(wndstyle, exstyle, hDlg);
+	if (hDlg) SetWindowStyleSizes(hDlg);
 }
 
 DWORD WINAPI WindowStyleTestThread(LPVOID param)
@@ -4434,6 +4499,9 @@ DWORD WINAPI WindowStyleTestThread(LPVOID param)
 
 INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	int x, y, w, h;
+	RECT r;
+	TCHAR buffer[128];
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -4441,38 +4509,43 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		wndstyle = GetWindowLong(hWnd, GWL_STYLE);
 		exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
 		SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
-		//SetEvent(*(HANDLE*)lParam);
+		SetWindowStyleSizes(hwnd);
+		SetEvent(*(HANDLE*)lParam);
+		return TRUE;
+	case WM_APP:
+		wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+		exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+		SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+	case WM_APP + 1:
+		SetWindowStyleSizes(hwnd);
 		return TRUE;
 	case WM_COMMAND:
 		switch (wParam)
 		{
+			// Standard styles
 		case IDC_WSMAXIMIZEBOX:
 			if (SendDlgItemMessage(hwnd, IDC_WSMAXIMIZEBOX, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_MAXIMIZEBOX;
 			else wndstyle &= ~WS_MAXIMIZEBOX;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSMINIMIZEBOX:
 			if (SendDlgItemMessage(hwnd, IDC_WSMINIMIZEBOX, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_MINIMIZEBOX;
 			else wndstyle &= ~WS_MINIMIZEBOX;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSTHICKFRAME:
 			if (SendDlgItemMessage(hwnd, IDC_WSTHICKFRAME, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_THICKFRAME;
 			else wndstyle &= ~WS_THICKFRAME;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSSYSMENU:
 			if (SendDlgItemMessage(hwnd, IDC_WSSYSMENU, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_SYSMENU;
 			else wndstyle &= ~WS_SYSMENU;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSHSCROLL:
 			if (SendDlgItemMessage(hwnd, IDC_WSHSCROLL, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -4491,21 +4564,18 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				wndstyle |= WS_DLGFRAME;
 			else wndstyle &= ~WS_DLGFRAME;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSBORDER:
 			if (SendDlgItemMessage(hwnd, IDC_WSBORDER, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_BORDER;
 			else wndstyle &= ~WS_BORDER;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSCAPTION:
 			if (SendDlgItemMessage(hwnd, IDC_WSCAPTION, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_CAPTION;
 			else wndstyle &= ~WS_CAPTION;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSCLIPCHILDREN:
 			if (SendDlgItemMessage(hwnd, IDC_WSCLIPCHILDREN, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -4530,22 +4600,306 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				wndstyle |= WS_POPUP;
 			else wndstyle &= ~WS_POPUP;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSOVERLAPPEDWINDOW:
 			if (SendDlgItemMessage(hwnd, IDC_WSOVERLAPPEDWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_OVERLAPPEDWINDOW;
 			else wndstyle &= ~WS_OVERLAPPEDWINDOW;
 			UpdateTestWindowStyle();
-			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
 		case IDC_WSPOPUPWINDOW:
 			if (SendDlgItemMessage(hwnd, IDC_WSPOPUPWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				wndstyle |= WS_POPUPWINDOW;
 			else wndstyle &= ~WS_POPUPWINDOW;
 			UpdateTestWindowStyle();
+			return TRUE;
+			// Enable menu
+		case IDC_MENUBAR:
+			if (SendDlgItemMessage(hwnd, IDC_MENUBAR, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			{
+				if (!hmenu) hmenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDM_TESTMENU));
+				SetMenu(hWnd, hmenu);
+			}
+			else
+			{
+				SetMenu(hWnd, NULL);
+				if (hmenu)
+				{
+					DestroyMenu(hmenu);
+					hmenu = NULL;
+				}
+			}
+			return TRUE;
+			// Standard controls
+		case IDC_BTNMINIMIZE:
+			ShowWindow(hWnd, SW_MINIMIZE);
+			return TRUE;
+		case IDC_BTNMAXIMIZE:
+			ShowWindow(hWnd, SW_MAXIMIZE);
+			return TRUE;
+		case IDC_BTNRESTORE:
+			ShowWindow(hWnd, SW_RESTORE);
+			return TRUE;
+		case IDC_BTNSHOW:
+			ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+			wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+			exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
 			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 			return TRUE;
+		case IDC_BTNHIDE:
+			ShowWindow(hWnd, SW_HIDE);
+			wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+			exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_BTNDISABLE:
+			EnableWindow(hWnd, FALSE);
+			wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+			exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+		case IDC_BTNENABLE:
+			EnableWindow(hWnd, TRUE);
+			wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+			exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+			SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
+			return TRUE;
+			// Extended styles
+		case IDC_WSEXDLGMODALFRAME:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXDLGMODALFRAME, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_DLGMODALFRAME;
+			else exstyle &= ~WS_EX_DLGMODALFRAME;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXNOPARENTNOTIFY:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXNOPARENTNOTIFY, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_NOPARENTNOTIFY;
+			else exstyle &= ~WS_EX_NOPARENTNOTIFY;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXTOPMOST:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXTOPMOST, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			{
+				exstyle |= WS_EX_TOPMOST;
+				SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+			}
+			else
+			{
+				exstyle &= ~WS_EX_TOPMOST;
+				SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+				SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXACCEPTFILES:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXACCEPTFILES, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_ACCEPTFILES;
+			else exstyle &= ~WS_EX_ACCEPTFILES;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXTRANSPARENT:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXTRANSPARENT, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_TRANSPARENT;
+			else exstyle &= ~WS_EX_TRANSPARENT;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXMDICHILD:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXMDICHILD, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_MDICHILD;
+			else exstyle &= ~WS_EX_MDICHILD;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXTOOLWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXTOOLWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_TOOLWINDOW;
+			else exstyle &= ~WS_EX_TOOLWINDOW;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXWINDOWEDGE:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXWINDOWEDGE, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_WINDOWEDGE;
+			else exstyle &= ~WS_EX_WINDOWEDGE;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXCLIENTEDGE:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXCLIENTEDGE, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_CLIENTEDGE;
+			else exstyle &= ~WS_EX_CLIENTEDGE;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXCONTEXTHELP:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXCONTEXTHELP, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_CONTEXTHELP;
+			else exstyle &= ~WS_EX_CONTEXTHELP;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXRIGHT:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXRIGHT, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_RIGHT;
+			else exstyle &= ~WS_EX_RIGHT;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXRTLREADING:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXRTLREADING, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_RTLREADING;
+			else exstyle &= ~WS_EX_RTLREADING;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXLEFTSCROLLBAR:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXLEFTSCROLLBAR, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_LEFTSCROLLBAR;
+			else exstyle &= ~WS_EX_LEFTSCROLLBAR;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXCONTROLPARENT:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXCONTROLPARENT, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_CONTROLPARENT;
+			else exstyle &= ~WS_EX_CONTROLPARENT;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXSTATICEDGE:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXSTATICEDGE, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_STATICEDGE;
+			else exstyle &= ~WS_EX_STATICEDGE;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXAPPWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXAPPWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_APPWINDOW;
+			else exstyle &= ~WS_EX_APPWINDOW;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXLAYERED:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXLAYERED, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_LAYERED;
+			else exstyle &= ~WS_EX_LAYERED;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXNOINHERITLAYOUT:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXNOINHERITLAYOUT, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_NOINHERITLAYOUT;
+			else exstyle &= ~WS_EX_NOINHERITLAYOUT;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXNOREDIRECTIONBITMAP:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXNOREDIRECTIONBITMAP, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_NOREDIRECTIONBITMAP;
+			else exstyle &= ~WS_EX_NOREDIRECTIONBITMAP;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXLAYOUTRTL:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXLAYOUTRTL, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_LAYOUTRTL;
+			else exstyle &= ~WS_EX_LAYOUTRTL;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXCOMPOSITED:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXCOMPOSITED, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_COMPOSITED;
+			else exstyle &= ~WS_EX_COMPOSITED;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXNOACTIVATE:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXNOACTIVATE, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_NOACTIVATE;
+			else exstyle &= ~WS_EX_NOACTIVATE;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXOVERLAPPEDWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXOVERLAPPEDWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				exstyle |= WS_EX_OVERLAPPEDWINDOW;
+			else exstyle &= ~WS_EX_OVERLAPPEDWINDOW;
+			UpdateTestWindowExStyle();
+			return TRUE;
+		case IDC_WSEXPALETTEWINDOW:
+			if (SendDlgItemMessage(hwnd, IDC_WSEXPALETTEWINDOW, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			{
+				exstyle |= WS_EX_PALETTEWINDOW;
+				SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			else
+			{
+				exstyle &= ~WS_EX_PALETTEWINDOW;
+				SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+				SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			UpdateTestWindowExStyle();
+			return TRUE;
+			// Window move/size buttons
+		case IDC_RESIZEWINDOW:
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			w = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			h = _ttoi(buffer);
+			SetWindowPos(hWnd, NULL, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+		case IDC_MOVEWINDOW:
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			x = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			y = _ttoi(buffer);
+			SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+		case IDC_MOVESIZE:
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			x = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			y = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			w = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			h = _ttoi(buffer);
+			SetWindowPos(hWnd, NULL, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+		case IDC_RESIZECLIENT:
+			r.top = 0;
+			r.left = 0;
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.right = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.bottom = _ttoi(buffer);
+			AdjustWindowRectEx(&r, wndstyle, (BOOL)hmenu, exstyle);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right-r.left, r.bottom-r.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+		case IDC_MOVECLIENT:
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.left = _ttoi(buffer);
+			r.right = r.left + 1000;
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.top = _ttoi(buffer);
+			r.bottom = r.top + 1000;
+			AdjustWindowRectEx(&r, wndstyle, (BOOL)hmenu, exstyle);
+			SetWindowPos(hWnd, NULL, r.left, r.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+		case IDC_MOVESIZECLIENT:
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.left = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWMOVEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.top = _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEX, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.right = r.left + _ttoi(buffer);
+			SendDlgItemMessage(hwnd, IDC_WINDOWRESIZEY, WM_GETTEXT, 128, (LPARAM)buffer);
+			buffer[127] = 0;
+			r.bottom = r.top + _ttoi(buffer);
+			AdjustWindowRectEx(&r, wndstyle, (BOOL)hmenu, exstyle);
+			SetWindowPos(hWnd, NULL, r.left, r.top, r.right, r.bottom, SWP_NOZORDER | SWP_NOACTIVATE);
+			return TRUE;
+			// Close the dialog
 		case IDCANCEL:
 			hDlg = NULL;
 			if (hWnd) SendMessage(hWnd, WM_CLOSE, 0, 0);
