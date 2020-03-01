@@ -599,16 +599,19 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		if (wParam != SIZE_MINIMIZED)
 		{
-			if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7 && (dxglcfg.scaler != 0))
+			if (glDirectDraw7_GetFullscreen(lpDD7))
 			{
-				glDirectDraw7_GetSizes(lpDD7, sizes);
-				if ((LOWORD(lParam) == sizes[4]) && (HIWORD(lParam) == sizes[5])) break;
-				SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
-				glDirectDraw7_SetWindowSize(lpDD7, sizes[4], sizes[5]);
-			}
-			if (dxglcfg.fullmode == 3)
-			{
-				if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
+				if (((dxglcfg.fullmode == 0) || (dxglcfg.fullmode == 1)) && lpDD7 && (dxglcfg.scaler != 0))
+				{
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					if ((LOWORD(lParam) == sizes[4]) && (HIWORD(lParam) == sizes[5])) break;
+					SetWindowPos(hWnd, NULL, 0, 0, sizes[4], sizes[5], SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
+					glDirectDraw7_SetWindowSize(lpDD7, sizes[4], sizes[5]);
+				}
+				if (dxglcfg.fullmode == 3)
+				{
+					if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
+				}
 			}
 		}
 		break;
