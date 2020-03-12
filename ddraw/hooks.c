@@ -62,12 +62,20 @@ BOOL(WINAPI *_GetCursorPos)(LPPOINT point) = NULL;
 BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
 HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
 
+// Display geometry
+BOOL(WINAPI *_EnumDisplaySettingsA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode);
+BOOL(WINAPI *_EnumDisplaySettingsW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode);
+BOOL(WINAPI *_EnumDisplaySettingsExA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode, DWORD dwFlags);
+BOOL(WINAPI *_EnumDisplaySettingsExW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags);
+int(WINAPI *_GetSystemMetrics)(int nIndex);
+
 UINT wndhook_count = 0;
 static BOOL keyctrlalt = FALSE;
 static BOOL cursorclipped = FALSE;
 static RECT rcOldClip;
 static RECT rcClip;
 static RECT rcWindow;
+static BOOL windowscalehook = FALSE;
 
 int hwndhookcmp(const HWND_HOOK *key, const HWND_HOOK *cmp)
 {
@@ -179,9 +187,17 @@ void InitHooks()
 	MH_CreateHook(&GetWindowLongPtrA, HookGetWindowLongPtrA, (LPVOID*)&_GetWindowLongPtrA);
 	MH_CreateHook(&GetWindowLongPtrW, HookGetWindowLongPtrW, (LPVOID*)&_GetWindowLongPtrW);
 #endif
+
 	MH_CreateHook(&GetCursorPos, HookGetCursorPos, (LPVOID*)&_GetCursorPos);
 	MH_CreateHook(&SetCursorPos, HookSetCursorPos, (LPVOID*)&_SetCursorPos);
 	MH_CreateHook(&SetCursor, HookSetCursor, (LPVOID*)&_SetCursor);
+
+	MH_CreateHook(&EnumDisplaySettingsA, HookEnumDisplaySettingsA, (LPVOID*)&_EnumDisplaySettingsA);
+	MH_CreateHook(&EnumDisplaySettingsW, HookEnumDisplaySettingsW, (LPVOID*)&_EnumDisplaySettingsW);
+	MH_CreateHook(&EnumDisplaySettingsExA, HookEnumDisplaySettingsExA, (LPVOID*)&_EnumDisplaySettingsExA);
+	MH_CreateHook(&EnumDisplaySettingsExW, HookEnumDisplaySettingsExW, (LPVOID*)&_EnumDisplaySettingsExW);
+	MH_CreateHook(&GetSystemMetrics, HookGetSystemMetrics, (LPVOID*)&_GetSystemMetrics);
+
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
 }
@@ -200,16 +216,24 @@ void ShutdownHooks()
 	MH_RemoveHook(&GetWindowLongPtrA);
 	MH_RemoveHook(&GetWindowLongPtrW);
 #endif
+
 	MH_RemoveHook(&GetCursorPos);
 	MH_RemoveHook(&SetCursorPos);
 	MH_RemoveHook(&SetCursor);
+
+	MH_RemoveHook(&EnumDisplaySettingsA);
+	MH_RemoveHook(&EnumDisplaySettingsW);
+	MH_RemoveHook(&EnumDisplaySettingsExA);
+	MH_RemoveHook(&EnumDisplaySettingsExW);
+	MH_RemoveHook(&GetSystemMetrics);
+
 	MH_Uninitialize();
 	wndhook_count = 0;
 	hooks_init = FALSE;
 	LeaveCriticalSection(&hook_cs);
 }
 
-void EnableWindowLongHooks()
+void EnableDXGLHooks()
 {
 	EnterCriticalSection(&hook_cs);
 	wndhook_count++;
@@ -225,14 +249,21 @@ void EnableWindowLongHooks()
 		MH_EnableHook(&GetWindowLongPtrA);
 		MH_EnableHook(&GetWindowLongPtrW);
 #endif
+
 		MH_EnableHook(&GetCursorPos);
 		MH_EnableHook(&SetCursorPos);
 		MH_EnableHook(&SetCursor);
+
+		MH_EnableHook(&EnumDisplaySettingsA);
+		MH_EnableHook(&EnumDisplaySettingsW);
+		MH_EnableHook(&EnumDisplaySettingsExA);
+		MH_EnableHook(&EnumDisplaySettingsExW);
+		MH_EnableHook(&GetSystemMetrics);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
 
-void DisableWindowLongHooks(BOOL force)
+void DisableDXGLHooks(BOOL force)
 {
 	if (!wndhook_count) return;
 	EnterCriticalSection(&hook_cs);
@@ -250,11 +281,23 @@ void DisableWindowLongHooks(BOOL force)
 		MH_DisableHook(&GetWindowLongPtrA);
 		MH_DisableHook(&GetWindowLongPtrW);
 #endif
+
 		MH_DisableHook(&GetCursorPos);
 		MH_DisableHook(&SetCursorPos);
 		MH_DisableHook(&SetCursor);
+
+		MH_DisableHook(&EnumDisplaySettingsA);
+		MH_DisableHook(&EnumDisplaySettingsW);
+		MH_DisableHook(&EnumDisplaySettingsExA);
+		MH_DisableHook(&EnumDisplaySettingsExW);
+		MH_DisableHook(&GetSystemMetrics);
 	}
 	LeaveCriticalSection(&hook_cs);
+}
+
+void EnableWindowScaleHook(BOOL enable)
+{
+	windowscalehook = enable;
 }
 
 void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
@@ -269,7 +312,7 @@ void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 	wndproc = (WNDPROC)_GetWindowLongPtrA(hWnd, GWLP_WNDPROC);
 	SetHookWndProc(hWnd, wndproc, lpDD7, FALSE, FALSE);
 	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
-	EnableWindowLongHooks();
+	EnableDXGLHooks();
 }
 void UninstallDXGLHook(HWND hWnd)
 {
@@ -277,7 +320,7 @@ void UninstallDXGLHook(HWND hWnd)
 	if (!wndhook) return;
 	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)wndhook->wndproc);
 	SetHookWndProc(hWnd, NULL, NULL, FALSE, TRUE);
-	DisableWindowLongHooks(FALSE);
+	DisableDXGLHooks(FALSE);
 }
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -828,4 +871,68 @@ HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 	}
 
 	return prevCursor;
+}
+
+BOOL WINAPI HookEnumDisplaySettingsA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode)
+{
+	BOOL ret = _EnumDisplaySettingsA(lpszDeviceName, iModeNum, lpDevMode);
+	if (!ret) return ret;
+	if (windowscalehook && (iModeNum == ENUM_CURRENT_SETTINGS))
+	{
+		lpDevMode->dmPelsWidth = (DWORD)((float)lpDevMode->dmPelsWidth / dxglcfg.WindowScaleX);
+		lpDevMode->dmPelsHeight = (DWORD)((float)lpDevMode->dmPelsHeight / dxglcfg.WindowScaleY);
+	}
+	return ret;
+}
+BOOL WINAPI HookEnumDisplaySettingsW(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode)
+{
+	BOOL ret = _EnumDisplaySettingsW(lpszDeviceName, iModeNum, lpDevMode);
+	if (!ret) return ret;
+	if (windowscalehook && (iModeNum == ENUM_CURRENT_SETTINGS))
+	{
+		lpDevMode->dmPelsWidth = (DWORD)((float)lpDevMode->dmPelsWidth / dxglcfg.WindowScaleX);
+		lpDevMode->dmPelsHeight = (DWORD)((float)lpDevMode->dmPelsHeight / dxglcfg.WindowScaleY);
+	}
+	return ret;
+}
+BOOL WINAPI HookEnumDisplaySettingsExA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode, DWORD dwFlags)
+{
+	BOOL ret = _EnumDisplaySettingsExA(lpszDeviceName, iModeNum, lpDevMode, dwFlags);
+	if (!ret) return ret;
+	if (windowscalehook && (iModeNum == ENUM_CURRENT_SETTINGS))
+	{
+		lpDevMode->dmPelsWidth = (DWORD)((float)lpDevMode->dmPelsWidth / dxglcfg.WindowScaleX);
+		lpDevMode->dmPelsHeight = (DWORD)((float)lpDevMode->dmPelsHeight / dxglcfg.WindowScaleY);
+	}
+	return ret;
+}
+BOOL WINAPI HookEnumDisplaySettingsExW(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags)
+{
+	BOOL ret = _EnumDisplaySettingsExW(lpszDeviceName, iModeNum, lpDevMode, dwFlags);
+	if (!ret) return ret;
+	if (windowscalehook && (iModeNum == ENUM_CURRENT_SETTINGS))
+	{
+		lpDevMode->dmPelsWidth = (DWORD)((float)lpDevMode->dmPelsWidth / dxglcfg.WindowScaleX);
+		lpDevMode->dmPelsHeight = (DWORD)((float)lpDevMode->dmPelsHeight / dxglcfg.WindowScaleY);
+	}
+	return ret;
+}
+int WINAPI HookGetSystemMetrics(int nIndex)
+{
+	int ret = _GetSystemMetrics(nIndex);
+	if (windowscalehook)
+	{
+		switch (nIndex)
+		{
+		default:
+			return ret;
+		case SM_CXSCREEN:
+		case SM_CXVIRTUALSCREEN:
+			return (int)((float)ret / dxglcfg.WindowScaleX);
+		case SM_CYSCREEN:
+		case SM_CYVIRTUALSCREEN:
+			return (int)((float)ret / dxglcfg.WindowScaleY);
+		}
+	}
+	else return ret;
 }

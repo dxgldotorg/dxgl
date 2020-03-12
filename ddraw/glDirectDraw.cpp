@@ -1981,6 +1981,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETDEVICEWINDOW unsupported\n");
 	if(dwFlags & DDSCL_SETFOCUSWINDOW)
 		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETFOCUSWINDOW unsupported\n");
+	InstallDXGLHook(hWnd, this);
+	EnableWindowScaleHook(FALSE);
 	DEVMODE devmode;
 	ZeroMemory(&devmode,sizeof(DEVMODE));
 	devmode.dmSize = sizeof(DEVMODE);
@@ -2001,20 +2003,22 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		y = rect.bottom - rect.top;
 		if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
 		{
-			internalx = screenx = primaryx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-			internaly = screeny = primaryy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+			screenx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+			screeny = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 		}
 		else
-		{
-			internalx = screenx = primaryx = devmode.dmPelsWidth;
-			internaly = screeny = primaryy = devmode.dmPelsHeight;
+		{ // Windows versions below 4.1 don't support multi-monitor
+			screenx = devmode.dmPelsWidth;
+			screeny = devmode.dmPelsHeight;
 		}
+		internalx = primaryx = (DWORD)((float)screenx / dxglcfg.WindowScaleX);
+		internaly = primaryy = (DWORD)((float)screeny / dxglcfg.WindowScaleY);
+		EnableWindowScaleHook(TRUE);
 	}
 	bpp = devmode.dmBitsPerPel;
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
 	primarybpp = bpp;
 	InitGL(x,y,bpp,fullscreen,internalrefresh,hWnd,this,devwnd);
-	InstallDXGLHook(hWnd,this);
 	cooplevel = dwFlags;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

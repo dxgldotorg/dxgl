@@ -38,6 +38,7 @@ void ShutdownHooks();
 LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
 void UninstallDXGLHook(HWND hWnd);
+void EnableWindowScaleHook(BOOL enable);
 
 LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong);
 LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);
@@ -52,6 +53,12 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex);
 BOOL WINAPI HookGetCursorPos(LPPOINT point);
 BOOL WINAPI HookSetCursorPos(int x, int y);
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor);
+BOOL WINAPI HookEnumDisplaySettingsA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode);
+BOOL WINAPI HookEnumDisplaySettingsW(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode);
+BOOL WINAPI HookEnumDisplaySettingsExA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode, DWORD dwFlags);
+BOOL WINAPI HookEnumDisplaySettingsExW(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags);
+int WINAPI HookGetSystemMetrics(int nIndex);
+
 
 #ifdef __cplusplus
 }
