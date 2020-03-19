@@ -2268,7 +2268,31 @@ void DrawFormatTestHUD(MultiDirectDrawSurface *surface, int srcformat, int destf
 	surface->ReleaseDC(hdc);
 }
 
-void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd)
+void recttostring(RECT *r, LPTSTR str)
+{
+	TCHAR buffer[16];
+	_tcscpy(str, _T("{"));
+	_itot(r->left, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T(","));
+	_itot(r->top, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T(","));
+	_itot(r->right, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T(","));
+	_itot(r->bottom, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T("} ("));
+	_itot(r->right - r->left, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T("x"));
+	_itot(r->bottom - r->top, buffer, 10);
+	_tcscat(str, buffer);
+	_tcscat(str, _T(")"));
+}
+
+void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd, HMENU hmenu)
 {
 	HDC hdc;
 	HRESULT err;
@@ -2276,6 +2300,7 @@ void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd)
 	COLORREF oldbkcolor;
 	HFONT DefaultFont;
 	HFONT newfont;
+	HBRUSH rectbrush;
 	RECT r;
 	TCHAR buffer[256];
 	TCHAR number[34];
@@ -2296,6 +2321,9 @@ void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd)
 	surface->GetSurfaceDesc(&ddsd);
 	x = ddsd.dwWidth;
 	y = ddsd.dwHeight;
+	r.left = r.top = 0;
+	r.right = x;
+	r.bottom = y;
 	if (y < 350)
 	{
 		newfont = CreateFont(-8, -8, 0, 0, 0, 0, 0, 0, OEM_CHARSET, OUT_DEVICE_PRECIS,
@@ -2317,11 +2345,32 @@ void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd)
 	cols = x / charsize.cx;
 	oldcolor = SetTextColor(hdc, RGB(255, 255, 255));
 	oldbkcolor = SetBkColor(hdc, RGB(0, 0, 255));
-	TextOutShadow(hdc, 0, 0, _T("Window API coordinates test"), 27, 0);
-
+	rectbrush = CreateSolidBrush(RGB(0, 255, 0));
+	FrameRect(hdc, &r, rectbrush);
+	TextOutShadow(hdc, 1, 1, _T("Window API coordinates test"), 27, 0);
+	TextOutShadow(hdc, 1, 1 + charsize.cy, _T("Green rectangle should be visible"), 33, 0);
+	SetBkColor(hdc, RGB(0, 0, 0));
+	_tcscpy(buffer, _T("GetWindowRect() = "));
+	GetWindowRect(hwnd, &r);
+	recttostring(&r, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (2 * charsize.cy), buffer, _tcslen(buffer));
+	_tcscpy(buffer, _T("GetClientRect() = "));
+	GetClientRect(hwnd, &r);
+	recttostring(&r, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (3 * charsize.cy), buffer, _tcslen(buffer));
+	_tcscpy(buffer, _T("AdjustWindowRect(client rect) = "));
+	AdjustWindowRect(&r, GetWindowLong(hwnd, GWL_STYLE), (BOOL)hmenu);
+	recttostring(&r, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (4 * charsize.cy), buffer, _tcslen(buffer));
+	GetClientRect(hwnd, &r);
+	_tcscpy(buffer, _T("AdjustWindowRectEx(client rect) = "));
+	AdjustWindowRectEx(&r, GetWindowLong(hwnd, GWL_STYLE), (BOOL)hmenu, GetWindowLong(hwnd, GWL_EXSTYLE));
+	recttostring(&r, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (5 * charsize.cy), buffer, _tcslen(buffer));
 	SetTextColor(hdc, oldcolor);
 	SetBkColor(hdc, oldbkcolor);
 	SelectObject(hdc, DefaultFont);
 	DeleteObject(newfont);
+	DeleteObject(rectbrush);
 	surface->ReleaseDC(hdc);
 }

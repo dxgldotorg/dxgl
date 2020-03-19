@@ -69,6 +69,13 @@ BOOL(WINAPI *_EnumDisplaySettingsExA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPD
 BOOL(WINAPI *_EnumDisplaySettingsExW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags);
 int(WINAPI *_GetSystemMetrics)(int nIndex);
 
+// Window geometry
+BOOL(WINAPI *_GetClientRect)(HWND hWnd, LPRECT lpRect);
+BOOL(WINAPI *_GetWindowRect)(HWND hWnd, LPRECT lpRect);
+BOOL(WINAPI *_ClientToScreen)(HWND hWnd, LPPOINT lpPoint);
+BOOL(WINAPI *_MoveWindow)(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
+BOOL(WINAPI* _SetWindowPos)(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+
 UINT wndhook_count = 0;
 static BOOL keyctrlalt = FALSE;
 static BOOL cursorclipped = FALSE;
@@ -198,6 +205,10 @@ void InitHooks()
 	MH_CreateHook(&EnumDisplaySettingsExW, HookEnumDisplaySettingsExW, (LPVOID*)&_EnumDisplaySettingsExW);
 	MH_CreateHook(&GetSystemMetrics, HookGetSystemMetrics, (LPVOID*)&_GetSystemMetrics);
 
+	MH_CreateHook(&GetClientRect, HookGetClientRect, (LPVOID*)&_GetClientRect);
+	MH_CreateHook(&GetWindowRect, HookGetWindowRect, (LPVOID*)&_GetWindowRect);
+	MH_CreateHook(&ClientToScreen, HookClientToScreen, (LPVOID*)&_ClientToScreen);
+
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
 }
@@ -226,6 +237,10 @@ void ShutdownHooks()
 	MH_RemoveHook(&EnumDisplaySettingsExA);
 	MH_RemoveHook(&EnumDisplaySettingsExW);
 	MH_RemoveHook(&GetSystemMetrics);
+
+	MH_RemoveHook(&GetClientRect);
+	MH_RemoveHook(&GetWindowRect);
+	MH_RemoveHook(&ClientToScreen);
 
 	MH_Uninitialize();
 	wndhook_count = 0;
@@ -259,6 +274,10 @@ void EnableDXGLHooks()
 		MH_EnableHook(&EnumDisplaySettingsExA);
 		MH_EnableHook(&EnumDisplaySettingsExW);
 		MH_EnableHook(&GetSystemMetrics);
+
+		MH_EnableHook(&GetClientRect);
+		MH_EnableHook(&GetWindowRect);
+		MH_EnableHook(&ClientToScreen);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -291,6 +310,10 @@ void DisableDXGLHooks(BOOL force)
 		MH_DisableHook(&EnumDisplaySettingsExA);
 		MH_DisableHook(&EnumDisplaySettingsExW);
 		MH_DisableHook(&GetSystemMetrics);
+
+		MH_DisableHook(&GetClientRect);
+		MH_DisableHook(&GetWindowRect);
+		MH_DisableHook(&ClientToScreen);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -936,3 +959,65 @@ int WINAPI HookGetSystemMetrics(int nIndex)
 	}
 	else return ret;
 }
+
+BOOL WINAPI HookGetClientRect(HWND hWnd, LPRECT lpRect)
+{
+	BOOL ret;
+	HWND_HOOK* wndhook;
+	wndhook = GetWndHook(hWnd);
+	if (!windowscalehook) return _GetClientRect(hWnd, lpRect);
+	if (!wndhook) return _GetClientRect(hWnd, lpRect);
+	ret = _GetClientRect(hWnd, lpRect);
+	if (lpRect)
+	{
+		lpRect->right = (LONG)((float)lpRect->right / dxglcfg.WindowScaleX);
+		lpRect->bottom = (LONG)((float)lpRect->bottom / dxglcfg.WindowScaleY);
+	}
+	return ret;
+}
+BOOL WINAPI HookGetWindowRect(HWND hWnd, LPRECT lpRect)
+{
+	RECT wndrect, clientrect, wndborder;
+	LONG wndstyle, exstyle;
+	HMENU menu;
+	BOOL ret;
+	POINT pt;
+	HWND_HOOK *wndhook;
+	if (!windowscalehook) return _GetWindowRect(hWnd, lpRect);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _GetWindowRect(hWnd, lpRect);
+	if (!_GetClientRect(hWnd, &clientrect)) return FALSE;
+	ret = _GetWindowRect(hWnd, &wndrect);
+	if (!ret) return FALSE;
+	wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+	exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+	menu = GetMenu(hWnd);
+	ZeroMemory(&wndborder, sizeof(RECT));
+	AdjustWindowRectEx(&wndborder, wndstyle, menu, exstyle);
+	ZeroMemory(&pt, sizeof(POINT));
+	ClientToScreen(hWnd, &pt);
+	clientrect.right = (LONG)((float)clientrect.right / dxglcfg.WindowScaleX);
+	clientrect.bottom = (LONG)((float)clientrect.bottom / dxglcfg.WindowScaleY);
+	OffsetRect(&clientrect, pt.x, pt.y);
+	clientrect.left += wndborder.left;
+	clientrect.top += wndborder.top;
+	clientrect.right += wndborder.right;
+	clientrect.bottom += wndborder.bottom;
+	memcpy(lpRect, &clientrect, sizeof(RECT));
+	return ret;
+}
+BOOL WINAPI HookClientToScreen(HWND hWnd, LPPOINT lpPoint)
+{
+	BOOL ret;
+	HWND_HOOK *wndhook;
+	if (!windowscalehook) return _ClientToScreen(hWnd, lpPoint);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _ClientToScreen(hWnd, lpPoint);
+	ret = _ClientToScreen(hWnd, lpPoint);
+	if (!ret) return FALSE;
+	lpPoint->x = (LONG)((float)lpPoint->x / dxglcfg.WindowScaleX);
+	lpPoint->y = (LONG)((float)lpPoint->y / dxglcfg.WindowScaleY);
+	return ret;
+}
+BOOL WINAPI HookMoveWindow(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
+BOOL WINAPI HookSetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);

@@ -403,6 +403,11 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOVE:
 		if ((testnum == 18) && testrunning && !fullscreen) RunSurfaceFormatTest();
+		if ((testnum == 19) && testrunning)
+		{
+			RunWindowAPITest();
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
 		if (hDlg) PostMessage(hDlg, WM_APP+1, 0, 0);
 		break;
 	case WM_SIZE:
@@ -410,6 +415,8 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		paintwnd = false;
 	case WM_PAINT:
 		if(paintwnd) BeginPaint(hWnd,&paintstruct);
+		if ((testnum == 19) && testrunning) RunWindowAPITest();
+		if(testrunning)
 		if(!fullscreen)
 		{
 			p.x = 0;
@@ -1623,7 +1630,7 @@ void InitTest(int test)
 		DrawFormatTestHUD(ddsrender, 0, -1, 1, 1, 1, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
 		break;
 	case 19:
-		DrawWindowAPITest(ddsrender, hWnd);
+		DrawWindowAPITest(ddsrender, hWnd, hmenu);
 		threadevent = CreateEvent(NULL, TRUE, FALSE, _T("WindowStyleTestStartupEvent"));
 		testthread = CreateThread(NULL, 0, WindowStyleTestThread, &threadevent, 0, NULL);
 		WaitForSingleObject(threadevent, INFINITE);
@@ -2906,7 +2913,7 @@ void RunSurfaceFormatTest()
 
 void RunWindowAPITest()
 {
-	DrawWindowAPITest(ddsrender, hWnd);
+	DrawWindowAPITest(ddsrender, hWnd, hmenu);
 }
 
 void RunTestLooped(int test)

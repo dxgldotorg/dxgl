@@ -2013,7 +2013,8 @@ HRESULT WINAPI glDirectDraw7::SetCooperativeLevel(HWND hWnd, DWORD dwFlags)
 		}
 		internalx = primaryx = (DWORD)((float)screenx / dxglcfg.WindowScaleX);
 		internaly = primaryy = (DWORD)((float)screeny / dxglcfg.WindowScaleY);
-		EnableWindowScaleHook(TRUE);
+		if((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+			EnableWindowScaleHook(TRUE);
 	}
 	bpp = devmode.dmBitsPerPel;
 	internalrefresh = primaryrefresh = screenrefresh = devmode.dmDisplayFrequency;
