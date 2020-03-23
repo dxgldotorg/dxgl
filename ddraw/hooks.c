@@ -208,6 +208,8 @@ void InitHooks()
 	MH_CreateHook(&GetClientRect, HookGetClientRect, (LPVOID*)&_GetClientRect);
 	MH_CreateHook(&GetWindowRect, HookGetWindowRect, (LPVOID*)&_GetWindowRect);
 	MH_CreateHook(&ClientToScreen, HookClientToScreen, (LPVOID*)&_ClientToScreen);
+	MH_CreateHook(&MoveWindow, HookMoveWindow, (LPVOID*)&_MoveWindow);
+	MH_CreateHook(&SetWindowPos, HookSetWindowPos, (LPVOID*)&_SetWindowPos);
 
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
@@ -241,6 +243,8 @@ void ShutdownHooks()
 	MH_RemoveHook(&GetClientRect);
 	MH_RemoveHook(&GetWindowRect);
 	MH_RemoveHook(&ClientToScreen);
+	MH_RemoveHook(&MoveWindow);
+	MH_RemoveHook(&SetWindowPos);
 
 	MH_Uninitialize();
 	wndhook_count = 0;
@@ -278,6 +282,8 @@ void EnableDXGLHooks()
 		MH_EnableHook(&GetClientRect);
 		MH_EnableHook(&GetWindowRect);
 		MH_EnableHook(&ClientToScreen);
+		MH_EnableHook(&MoveWindow);
+		MH_EnableHook(&SetWindowPos);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -314,6 +320,8 @@ void DisableDXGLHooks(BOOL force)
 		MH_DisableHook(&GetClientRect);
 		MH_DisableHook(&GetWindowRect);
 		MH_DisableHook(&ClientToScreen);
+		MH_DisableHook(&MoveWindow);
+		MH_DisableHook(&SetWindowPos);
 	}
 	LeaveCriticalSection(&hook_cs);
 }
@@ -1019,5 +1027,74 @@ BOOL WINAPI HookClientToScreen(HWND hWnd, LPPOINT lpPoint)
 	lpPoint->y = (LONG)((float)lpPoint->y / dxglcfg.WindowScaleY);
 	return ret;
 }
-BOOL WINAPI HookMoveWindow(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
-BOOL WINAPI HookSetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+
+BOOL WINAPI HookMoveWindow(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint)
+{
+	RECT wndrect, wndborder;
+	LONG wndstyle, exstyle;
+	HMENU menu;
+	BOOL ret;
+	HWND_HOOK *wndhook;
+	if (!windowscalehook) return _MoveWindow(hWnd, X, Y, nWidth, nHeight, bRepaint);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return _MoveWindow(hWnd, X, Y, nWidth, nHeight, bRepaint);
+	if (!IsWindow(hWnd)) return FALSE;
+	wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+	exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+	menu = GetMenu(hWnd);
+	ZeroMemory(&wndborder, sizeof(RECT));
+	AdjustWindowRectEx(&wndborder, wndstyle, menu, exstyle);
+	wndrect.left = X;
+	wndrect.right = X + nWidth;
+	wndrect.top = Y;
+	wndrect.bottom = Y + nHeight;
+	wndrect.left -= wndborder.left;
+	wndrect.top -= wndborder.top;
+	wndrect.right -= wndborder.right;
+	wndrect.bottom -= wndborder.bottom;
+	wndrect.left = (LONG)((float)wndrect.left * dxglcfg.WindowScaleX);
+	wndrect.top = (LONG)((float)wndrect.top * dxglcfg.WindowScaleY);
+	wndrect.right = (LONG)((float)wndrect.right * dxglcfg.WindowScaleX);
+	wndrect.bottom = (LONG)((float)wndrect.bottom * dxglcfg.WindowScaleY);
+	wndrect.left += wndborder.left;
+	wndrect.top += wndborder.top;
+	wndrect.right += wndborder.right;
+	wndrect.bottom += wndborder.bottom;
+	return _MoveWindow(hWnd, wndrect.left, wndrect.top, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, bRepaint);
+}
+BOOL WINAPI HookSetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
+{
+	RECT wndrect, wndborder;
+	LONG wndstyle, exstyle;
+	HMENU menu;
+	BOOL ret;
+	HWND_HOOK *wndhook;
+	if (!windowscalehook) return _SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+	wndhook = GetWndHook(hWnd);
+	if (!wndhook) return  _SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+	if((uFlags & SWP_NOSIZE) && (uFlags & SWP_NOMOVE))
+		return  _SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+	if (!IsWindow(hWnd)) return FALSE;
+	wndstyle = GetWindowLong(hWnd, GWL_STYLE);
+	exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+	menu = GetMenu(hWnd);
+	ZeroMemory(&wndborder, sizeof(RECT));
+	AdjustWindowRectEx(&wndborder, wndstyle, menu, exstyle);
+	wndrect.left = X;
+	wndrect.right = X + cx;
+	wndrect.top = Y;
+	wndrect.bottom = Y + cy;
+	wndrect.left -= wndborder.left;
+	wndrect.top -= wndborder.top;
+	wndrect.right -= wndborder.right;
+	wndrect.bottom -= wndborder.bottom;
+	wndrect.left = (LONG)((float)wndrect.left * dxglcfg.WindowScaleX);
+	wndrect.top = (LONG)((float)wndrect.top * dxglcfg.WindowScaleY);
+	wndrect.right = (LONG)((float)wndrect.right * dxglcfg.WindowScaleX);
+	wndrect.bottom = (LONG)((float)wndrect.bottom * dxglcfg.WindowScaleY);
+	wndrect.left += wndborder.left;
+	wndrect.top += wndborder.top;
+	wndrect.right += wndborder.right;
+	wndrect.bottom += wndborder.bottom;
+	return _SetWindowPos(hWnd, hWndInsertAfter, wndrect.left, wndrect.top, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, uFlags);
+}
