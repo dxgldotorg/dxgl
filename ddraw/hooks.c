@@ -862,7 +862,15 @@ BOOL WINAPI HookGetCursorPos(LPPOINT point)
 		}
 		else
 		{
-			return _GetCursorPos(point);
+			if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+			{
+				error = _GetCursorPos(&pt);
+				if (!error) return error;
+				point->x = (LONG)((float)pt.x / dxglcfg.WindowScaleX);
+				point->y = (LONG)((float)pt.y / dxglcfg.WindowScaleY);
+				return error;
+			}
+			else return _GetCursorPos(point);
 		}
 	}
 }
@@ -908,7 +916,12 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 		}
 		return _SetCursorPos(oldx, oldy);
 	}
-	else return _SetCursorPos(x, y);
+	else
+	{
+		if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+			return _SetCursorPos((int)((float)x * dxglcfg.WindowScaleX), (int)((float)y * dxglcfg.WindowScaleY));
+		else return _SetCursorPos(x, y);
+	}
 }
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 {
