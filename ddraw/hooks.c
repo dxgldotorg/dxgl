@@ -559,6 +559,15 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				newpos = oldx + (oldy << 16);
 				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
 			}
+			else if (!glDirectDraw7_GetFullscreen(lpDD7) && ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f)))
+			{
+				oldx = LOWORD(lParam);
+				oldy = HIWORD(lParam);
+				oldx = (int)((float)oldx / dxglcfg.WindowScaleX);
+				oldy = (int)((float)oldy / dxglcfg.WindowScaleY);
+				newpos = oldx + (oldy << 16);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
+			}
 			else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 		}
 		else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
@@ -629,6 +638,15 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				newpos = oldx + (oldy << 16);
 				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
 			}
+			else if (!glDirectDraw7_GetFullscreen(lpDD7) && ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f)))
+			{
+				oldx = LOWORD(lParam);
+				oldy = HIWORD(lParam);
+				oldx = (int)((float)oldx / dxglcfg.WindowScaleX);
+				oldy = (int)((float)oldy / dxglcfg.WindowScaleY);
+				newpos = oldx + (oldy << 16);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
+			}
 			else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 		}
 		else return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
@@ -659,6 +677,15 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				if (oldy < 0) oldy = 0;
 				if (oldx >= sizes[2]) oldx = sizes[2] - 1;
 				if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+				newpos = oldx + (oldy << 16);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
+			}
+			else if (!glDirectDraw7_GetFullscreen(lpDD7) && ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f)))
+			{
+				oldx = LOWORD(lParam);
+				oldy = HIWORD(lParam);
+				oldx = (int)((float)oldx / dxglcfg.WindowScaleX);
+				oldy = (int)((float)oldy / dxglcfg.WindowScaleY);
 				newpos = oldx + (oldy << 16);
 				return CallWindowProc(parentproc, hWnd, uMsg, wParam, newpos);
 			}

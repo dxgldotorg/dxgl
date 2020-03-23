@@ -19,6 +19,7 @@
 #include "glDirectDraw.h"
 #include "glRenderWindow.h"
 #include "ddraw.h"
+#include "hooks.h"
 
 #ifndef WM_MOUSEHWHEEL
 #define WM_MOUSEHWHEEL 0x020E
