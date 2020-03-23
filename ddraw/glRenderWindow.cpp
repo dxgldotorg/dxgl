@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012 William Feely
+// Copyright (C) 2012-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ DWORD glRenderWindow::_Entry()
 		wndclasscreated = true;
 	}
 	RECT rectRender;
-	GetClientRect(hParentWnd, &rectRender);
+	_GetClientRect(hParentWnd, &rectRender);
 	dead = false;
 	if (hParentWnd)
 	{

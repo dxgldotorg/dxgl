@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014-2015 William Feely
+// Copyright (C) 2014-2020 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -39,6 +39,43 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7);
 void UninstallDXGLHook(HWND hWnd);
 void EnableWindowScaleHook(BOOL enable);
+
+// Window management
+extern LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong);
+extern LONG(WINAPI *_SetWindowLongW)(HWND hWnd, int nIndex, LONG dwNewLong);
+extern LONG(WINAPI *_GetWindowLongA)(HWND hWnd, int nIndex);
+extern LONG(WINAPI *_GetWindowLongW)(HWND hWnd, int nIndex);
+#ifdef _M_X64 // 64-bit only, 32-bit uses macros
+extern LONG_PTR(WINAPI *_SetWindowLongPtrA)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+extern LONG_PTR(WINAPI *_SetWindowLongPtrW)(HWND hWnd, int nIndex, LONG_PTR dwNewLong);
+extern LONG_PTR(WINAPI *_GetWindowLongPtrA)(HWND hWnd, int nIndex);
+extern LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex);
+#else
+#define _SetWindowLongPtrA   _SetWindowLongA
+#define _SetWindowLongPtrW   _SetWindowLongW
+#define _GetWindowLongPtrA   _GetWindowLongA
+#define _GetWindowLongPtrW   _GetWindowLongW
+#endif
+
+// Mouse pointer
+extern BOOL(WINAPI *_GetCursorPos)(LPPOINT point);
+extern BOOL(WINAPI *_SetCursorPos)(int X, int Y);
+extern HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor);
+
+// Display geometry
+extern BOOL(WINAPI *_EnumDisplaySettingsA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode);
+extern BOOL(WINAPI *_EnumDisplaySettingsW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode);
+extern BOOL(WINAPI *_EnumDisplaySettingsExA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode, DWORD dwFlags);
+extern BOOL(WINAPI *_EnumDisplaySettingsExW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags);
+extern int(WINAPI *_GetSystemMetrics)(int nIndex);
+
+// Window geometry
+extern BOOL(WINAPI *_GetClientRect)(HWND hWnd, LPRECT lpRect);
+extern BOOL(WINAPI *_GetWindowRect)(HWND hWnd, LPRECT lpRect);
+extern BOOL(WINAPI *_ClientToScreen)(HWND hWnd, LPPOINT lpPoint);
+extern BOOL(WINAPI *_MoveWindow)(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
+extern BOOL(WINAPI* _SetWindowPos)(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+
 
 LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong);
 LONG WINAPI HookSetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);

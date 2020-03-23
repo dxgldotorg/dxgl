@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2019 William Feely
+// Copyright (C) 2012-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,7 @@
 #include "matrix.h"
 #include "util.h"
 #include <stdarg.h>
+#include "hooks.h"
 
 extern "C" {
 
@@ -2098,7 +2099,7 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 		((cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 		!(cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 	{
-		GetClientRect(This->hWnd,&r);
+		_GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)) != 0)
 			SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
@@ -4082,7 +4083,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
 	if((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
-		GetClientRect(This->hWnd,&r);
+		_GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
 		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
@@ -4130,6 +4131,13 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
 			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
 			OffsetRect(viewrect, 0 - This->xoffset, 0 -	This->yoffset);
+			if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+			{
+				viewrect->left = (LONG)((float)viewrect->left / dxglcfg.WindowScaleX);
+				viewrect->top = (LONG)((float)viewrect->top / dxglcfg.WindowScaleY);
+				viewrect->right = (LONG)((float)viewrect->right / dxglcfg.WindowScaleX);
+				viewrect->bottom = (LONG)((float)viewrect->bottom / dxglcfg.WindowScaleY);
+			}
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
 			view[2] = (GLfloat)texture->bigheight-(GLfloat)viewrect->top;
