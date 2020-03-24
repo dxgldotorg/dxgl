@@ -312,7 +312,7 @@ void ParseVersion(DXGLVER *version, BOOL git)
 		version->beta = FALSE;
 		strcpy(version->branch, "Non-Git");
 		strcpy(version->revision, "");
-		strcpy(version->verstring, "0.5.17-0-Non-Git");
+		strcpy(version->verstring, "0.5.18-0-Non-Git");
 	}
 }
 
@@ -333,7 +333,7 @@ int ProcessHeaders(char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 17;
+	version.point = 18;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
@@ -770,7 +770,7 @@ int SignEXE(char *exefile, char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 17;
+	version.point = 18;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
