@@ -72,6 +72,7 @@ static LONG_PTR wndstyle;
 static LONG_PTR exstyle;
 static HANDLE testthread;
 static HMENU hmenu = NULL;
+static LPARAM windowpos, windowsize;
 
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
@@ -402,6 +403,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		RunTestTimed(testnum);
 		break;
 	case WM_MOVE:
+		windowpos = lParam;
 		if ((testnum == 18) && testrunning && !fullscreen) RunSurfaceFormatTest();
 		if ((testnum == 19) && testrunning)
 		{
@@ -411,6 +413,7 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		if (hDlg) PostMessage(hDlg, WM_APP+1, 0, 0);
 		break;
 	case WM_SIZE:
+		windowsize = lParam;
 		if (hDlg) PostMessage(hDlg, WM_APP, 0, 0);
 		paintwnd = false;
 	case WM_PAINT:
@@ -1630,7 +1633,7 @@ void InitTest(int test)
 		DrawFormatTestHUD(ddsrender, 0, -1, 1, 1, 1, ddsd.dwWidth, ddsd.dwHeight, 0, DD_OK);
 		break;
 	case 19:
-		DrawWindowAPITest(ddsrender, hWnd, hmenu);
+		DrawWindowAPITest(ddsrender, hWnd, hmenu, windowpos, windowsize);
 		threadevent = CreateEvent(NULL, TRUE, FALSE, _T("WindowStyleTestStartupEvent"));
 		testthread = CreateThread(NULL, 0, WindowStyleTestThread, &threadevent, 0, NULL);
 		WaitForSingleObject(threadevent, INFINITE);
@@ -2913,7 +2916,7 @@ void RunSurfaceFormatTest()
 
 void RunWindowAPITest()
 {
-	DrawWindowAPITest(ddsrender, hWnd, hmenu);
+	DrawWindowAPITest(ddsrender, hWnd, hmenu, windowpos, windowsize);
 }
 
 void RunTestLooped(int test)

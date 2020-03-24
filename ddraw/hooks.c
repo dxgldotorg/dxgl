@@ -387,6 +387,21 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		UninstallDXGLHook(hWnd);
 		break;
 	case WM_MOVE:
+		if (cursorclipped)
+		{
+			ClipCursor(NULL);
+			cursorclipped = FALSE;
+		}
+		if (lpDD7)
+		{
+			if (!glDirectDraw7_GetFullscreen(lpDD7) && ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f)))
+			{
+				pt.x = (LONG)((float)(LOWORD(lParam)) / dxglcfg.WindowScaleX);
+				pt.y = (LONG)((float)(HIWORD(lParam)) / dxglcfg.WindowScaleY);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, MAKELONG(pt.x, pt.y));
+			}
+		}
+		break;
 	case WM_KILLFOCUS:
 		if (cursorclipped)
 		{
@@ -713,6 +728,15 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				{
 					if (lpDD7) glDirectDraw7_SetWindowSize(lpDD7, LOWORD(lParam), HIWORD(lParam));
 				}
+			}
+		}
+		if (lpDD7)
+		{
+			if (!glDirectDraw7_GetFullscreen(lpDD7) && ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f)))
+			{
+				pt.x = (LONG)((float)(LOWORD(lParam)) / dxglcfg.WindowScaleX);
+				pt.y = (LONG)((float)(HIWORD(lParam)) / dxglcfg.WindowScaleY);
+				return CallWindowProc(parentproc, hWnd, uMsg, wParam, MAKELONG(pt.x, pt.y));
 			}
 		}
 		break;

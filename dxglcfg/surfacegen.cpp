@@ -2292,7 +2292,25 @@ void recttostring(RECT *r, LPTSTR str)
 	_tcscat(str, _T(")"));
 }
 
-void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd, HMENU hmenu)
+void postostring(LPARAM pos, LPTSTR str)
+{
+	TCHAR buffer[16];
+	_itot(LOWORD(pos), str, 10);
+	_tcscat(str, _T(","));
+	_itot(HIWORD(pos), buffer, 10);
+	_tcscat(str, buffer);
+}
+
+void sizetostring(LPARAM pos, LPTSTR str)
+{
+	TCHAR buffer[16];
+	_itot(LOWORD(pos), str, 10);
+	_tcscat(str, _T("x"));
+	_itot(HIWORD(pos), buffer, 10);
+	_tcscat(str, buffer);
+}
+
+void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd, HMENU hmenu, LPARAM windowpos, LPARAM windowsize)
 {
 	HDC hdc;
 	HRESULT err;
@@ -2367,6 +2385,12 @@ void DrawWindowAPITest(MultiDirectDrawSurface *surface, HWND hwnd, HMENU hmenu)
 	AdjustWindowRectEx(&r, GetWindowLong(hwnd, GWL_STYLE), (BOOL)hmenu, GetWindowLong(hwnd, GWL_EXSTYLE));
 	recttostring(&r, buffer + _tcslen(buffer));
 	TextOut(hdc, 1, 1 + (5 * charsize.cy), buffer, _tcslen(buffer));
+	_tcscpy(buffer, _T("Last WM_MOVE = "));
+	postostring(windowpos, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (6 * charsize.cy), buffer, _tcslen(buffer));
+	_tcscpy(buffer, _T("Last WM_SIZE = "));
+	sizetostring(windowsize, buffer + _tcslen(buffer));
+	TextOut(hdc, 1, 1 + (7 * charsize.cy), buffer, _tcslen(buffer));
 	SetTextColor(hdc, oldcolor);
 	SetBkColor(hdc, oldbkcolor);
 	SelectObject(hdc, DefaultFont);
