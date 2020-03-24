@@ -1,0 +1,8 @@
+<p>Limits the surface formats exposed as Direct3D texture formats.  This may help prevent buffer overruns in older applications that expect a limited number of texture formats.  Default is to limit formats in Direct3D 5.0 and lower APIs.</p>
+<p>The following options are available:</p>
+<h3>Disabled</h3>
+<p>Exposes all supported pixel formats as texture formats.</p>
+<h3>Enabled for DX5 and below</h3>
+<p>Exposes all supported pixel formats when using Direct3D 6.0 or above APIs; when Direct3D 5.0 or below APIs exposes a limited subset of supported pixel formats.</p>
+<h3>Enabled always</h3>
+<p>Always exposes a limited set of supported pixel formats to Direct3D APIs.  This setting is not recommended.</p>

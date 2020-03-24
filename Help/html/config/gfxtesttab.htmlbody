@@ -60,3 +60,6 @@
 <p>
   <a href="gfxtest/surfaceformat.html">Surface/Texture format test</a>
 </p>
+<p>
+  <a href="gfxtest/windowapitest.html">Window API test</a>
+</p>

@@ -149,6 +149,8 @@
     <None Include="html\config\3dgraphics\antialiasing.htmltitle" />
     <None Include="html\config\3dgraphics\enabledithering.htmlbody" />
     <None Include="html\config\3dgraphics\enabledithering.htmltitle" />
+    <None Include="html\config\3dgraphics\limitd3dtextureformats.htmlbody" />
+    <None Include="html\config\3dgraphics\limitd3dtextureformats.htmltitle" />
     <None Include="html\config\3dgraphics\lowcolorrendering.htmlbody" />
     <None Include="html\config\3dgraphics\lowcolorrendering.htmltitle" />
     <None Include="html\config\3dgraphics\rendereraspectratio.htmlbody" />
@@ -231,6 +233,8 @@
     <None Include="html\config\display\scalingmethod.htmltitle" />
     <None Include="html\config\display\screenaspectratio.htmlbody" />
     <None Include="html\config\display\screenaspectratio.htmltitle" />
+    <None Include="html\config\display\setdisplayconfig.htmlbody" />
+    <None Include="html\config\display\setdisplayconfig.htmltitle" />
     <None Include="html\config\display\singlebuffereddisplay.htmlbody" />
     <None Include="html\config\display\singlebuffereddisplay.htmltitle" />
     <None Include="html\config\display\sortvideomodes.htmlbody" />
@@ -239,6 +243,8 @@
     <None Include="html\config\display\verticalsync.htmltitle" />
     <None Include="html\config\display\videomode.htmlbody" />
     <None Include="html\config\display\videomode.htmltitle" />
+    <None Include="html\config\display\windowmodescaling.htmlbody" />
+    <None Include="html\config\display\windowmodescaling.htmltitle" />
     <None Include="html\config\effectstab.htmlbody" />
     <None Include="html\config\effectstab.htmltitle" />
     <None Include="html\config\effects\bltscalingfilter.htmlbody" />
@@ -288,6 +294,8 @@
     <None Include="html\config\gfxtest\texturestageshaders.htmltitle" />
     <None Include="html\config\gfxtest\vertexshaders.htmlbody" />
     <None Include="html\config\gfxtest\vertexshaders.htmltitle" />
+    <None Include="html\config\gfxtest\windowapitest.htmlbody" />
+    <None Include="html\config\gfxtest\windowapitest.htmltitle" />
     <None Include="html\config\hackstab.htmlbody" />
     <None Include="html\config\hackstab.htmltitle" />
     <None Include="html\config\hacks\automaticexpandcomparisonmethod.htmlbody" />
@@ -359,6 +367,8 @@
     <None Include="images\surfaceformat.png" />
     <None Include="images\textureshader.png" />
     <None Include="images\vertexshader.png" />
+    <None Include="images\windowapitest1.png" />
+    <None Include="images\windowapitest2.png" />
     <None Include="Index.hhk" />
     <None Include="template.html" />
     <None Include="toc.hhc" />

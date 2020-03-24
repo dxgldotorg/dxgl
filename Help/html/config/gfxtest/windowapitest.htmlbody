@@ -1,0 +1,8 @@
+<p>
+  <img class="alignnone size-full" src="images/windowapitest1.png" alt="" width="646" height="505" />
+  <br />
+  <img class="alignnone size-fill" src="images/windowapitest2.png" alt="" width="578" height="407" />
+</p>
+<p>The Window API test displays status regarding the size and position of the DirectDraw window, and opens a dialog allowing you to manipulate the characteristics of the window.</p>
+<p>The numbers displayed within the window should represent the geometry of the window, and the green border should be just inside the border of the window. If windowed mode scaling is enabled, the numbers should be scaled accordingly.</p>
+<p>Use the dialog box to manipulate the style, position, and size of the test window.</p>

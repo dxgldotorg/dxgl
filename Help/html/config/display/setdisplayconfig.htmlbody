@@ -1,0 +1,2 @@
+<p>Uses the SetDisplayConfig() API in Windows if available to switch fullscreen modes.  In Windows 10, this can cause display modes to change instantly without causing the display to flicker.</p>
+<p>Note that if the application crashes, the display mode will not be automatically restored to its previous settings.</p>

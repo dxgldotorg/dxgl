@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2019 William Feely
+// Copyright (C) 2012-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -519,13 +519,13 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1924)
-			strncpy(findptr, "\"VC2019_4\"\n", 13);
-			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1924))
-			#error Please update your Visual Studio 2019 to Update 4 before continuing.
-			#elif (_MSC_VER > 1924)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.4.")
-			strncpy(findptr, "\"VC2019_4\"\n", 13);
+			#elif (_MSC_VER == 1925)
+			strncpy(findptr, "\"VC2019_5\"\n", 13);
+			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1925))
+			#error Please update your Visual Studio 2019 to Update 5 before continuing.
+			#elif (_MSC_VER > 1925)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.5.")
+			strncpy(findptr, "\"VC2019_5\"\n", 13);
 			#else
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
 			#endif

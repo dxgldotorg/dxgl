@@ -71,8 +71,16 @@
 				<param name="Local" value="html\config\display\changedisplaycolordepth.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Windowed mode scaling">
+				<param name="Local" value="html\config\display\windowmodescaling.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Single buffered display">
 				<param name="Local" value="html\config\display\singlebuffereddisplay.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Use SetDisplayConfig API">
+				<param name="Local" value="html\config\display\setdisplayconfig.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -125,6 +133,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Enable dithering">
 				<param name="Local" value="html\config\3dgraphics\enabledithering.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Limit D3D Texture Formats">
+				<param name="Local" value="html\config\3dgraphics\limitd3dtextureformats.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -357,6 +369,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Surface/Texture format test">
 				<param name="Local" value="html\config\gfxtest\surfaceformat.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Window API test">
+				<param name="Local" value="html\config\gfxtest\windowapitest.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">

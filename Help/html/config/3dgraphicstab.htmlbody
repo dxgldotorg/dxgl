@@ -20,3 +20,6 @@
 <p>
   <a href="3dgraphics/enabledithering.html">Enable dithering</a>
 </p>
+<p>
+  <a href="3dgraphics/limitd3dtextureformats.html">Limit D3D Texture Formats</a>
+</p>

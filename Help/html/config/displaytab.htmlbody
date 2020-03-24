@@ -42,5 +42,11 @@
   <a href="display/changedisplaycolordepth.html">Change display color depth</a>
 </p>
 <p>
+  <a href="display/windowmodescaling.html">Windowed mode scaling</a>
+</p>
+<p>
   <a href="display/singlebuffereddisplay.html">Single buffered display</a>
+</p>
+<p>
+  <a href="display/setdisplayconfig.html">Use SetDisplayConfig API</a>
 </p>

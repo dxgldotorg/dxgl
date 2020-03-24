@@ -1,0 +1,2 @@
+<p>Selects the scaling amount used when a DirectDraw application is in windowed mode.</p>
+<p>This mode is currently experimental and will not work with all applications, and graphics drawn using GDI or another API other than DirectDraw will not be scaled.</p>

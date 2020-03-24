@@ -45,6 +45,8 @@ images\vertexshader.png
 images\setcursorpos.png
 images\bltrop.png
 images\surfaceformat.png
+images\windowapitest1.png
+images\windowapitest2.png
 html\introduction.html
 html\troubleshooting.html
 html\configuration.html
@@ -69,7 +71,9 @@ html\config\display\screenaspectratio.html
 html\config\display\singlebuffereddisplay.html
 html\config\display\sortvideomodes.html
 html\config\display\verticalsync.html
+html\config\display\windowmodescaling.html
 html\config\display\videomode.html
+html\config\display\setdisplayconfig.html
 html\config\effects\bltscalingfilter.html
 html\config\effects\postprocessinputmultiplier.html
 html\config\effects\postprocessscaler.html
@@ -80,6 +84,7 @@ html\config\3dgraphics\enabledithering.html
 html\config\3dgraphics\lowcolorrendering.html
 html\config\3dgraphics\rendereraspectratio.html
 html\config\3dgraphics\texturefilter.html
+html\config\3dgraphics\limitd3dtextureformats.html
 html\config\advanced\defaultwindowposition.html
 html\config\advanced\dontautosizewindow.html
 html\config\advanced\installationpath.html
@@ -132,6 +137,7 @@ html\config\gfxtest\vertexshaders.html
 html\config\gfxtest\setcursorpos.html
 html\config\gfxtest\bltraster.html
 html\config\gfxtest\surfaceformat.html
+html\config\gfxtest\windowapitest.html
 html\licenses\crc32.html
 html\licenses\dxgl.html
 html\licenses\inih.html

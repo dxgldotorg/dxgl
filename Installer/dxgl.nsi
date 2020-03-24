@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2019 William Feely
+; Copyright (C) 2011-2020 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !include "..\common\version.nsh"
 
-!if ${COMPILER} == "VC2019_4"
+!if ${COMPILER} == "VC2019_5"
 !ifdef _DEBUG
 !define SRCDIR "Debug VS2019"
 !else
@@ -142,12 +142,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_4"
+!else if ${COMPILER} == "VC2019_5"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.24/VC_redist.x86.exe
-!define runtime_name "Visual C++ 2019.4"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.25/VC_redist.x86.exe
+!define runtime_name "Visual C++ 2019.5"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "2FDA8ABC77B6ED9E98A2B120628E4E3B9458F2B18998C836EEC1DE82642244FE55234C7E52D6036D8B75C4B707A24F12FA639CC92D4234E94ED604A259D651E4"
+!define runtime_sha512 "114BCA1ECD17E419AD617A1A4341E607250BCB02626CDC0670EB60BE734BBAD1F3C84E38F077AF9A32A6B1607B8CE6E4B3641C0FAEFAA779C0FEC0D3AC022DAC"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -290,7 +290,7 @@ SectionEnd
 
 
 Function .onInit
-  !if ${COMPILER} == "VC2019_4"
+  !if ${COMPILER} == "VC2019_5"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -352,12 +352,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2019_4"
+  !if ${COMPILER} == "VC2019_5"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.24.28127" $1
+  ${VersionCompare} "$0" "14.25.28508" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -467,7 +467,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_4"
+!if ${COMPILER} == "VC2019_5"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif

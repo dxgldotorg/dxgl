@@ -717,6 +717,36 @@
     <None Include="html\config\gfxtest\surfaceformat.htmlbody">
       <Filter>Help files\html\config\gfxtest</Filter>
     </None>
+    <None Include="html\config\display\windowmodescaling.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\windowmodescaling.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\setdisplayconfig.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\setdisplayconfig.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\3dgraphics\limitd3dtextureformats.htmltitle">
+      <Filter>Help files\html\config\3dgraphics</Filter>
+    </None>
+    <None Include="html\config\3dgraphics\limitd3dtextureformats.htmlbody">
+      <Filter>Help files\html\config\3dgraphics</Filter>
+    </None>
+    <None Include="html\config\gfxtest\windowapitest.htmltitle">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="html\config\gfxtest\windowapitest.htmlbody">
+      <Filter>Help files\html\config\gfxtest</Filter>
+    </None>
+    <None Include="images\windowapitest1.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\windowapitest2.png">
+      <Filter>Help files\images</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">
