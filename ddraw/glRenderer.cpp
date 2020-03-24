@@ -3474,13 +3474,13 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		}
 		else
 		{
-			xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
-			ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
-			GetClientRect(This->hWnd, &wndrect);
+			xmul = ((GLfloat)sizes[0] / (GLfloat)sizes[2]) * dxglcfg.WindowScaleX;
+			ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3] * dxglcfg.WindowScaleY;
+			_GetClientRect(This->hWnd, &wndrect);
 			ClientToScreen(This->hWnd, (LPPOINT)&wndrect.left);
 			ClientToScreen(This->hWnd, (LPPOINT)&wndrect.right);
-			xoffset = (GLfloat)wndrect.left;
-			yoffset = (GLfloat)sizes[1] - wndrect.bottom;
+			xoffset = (GLfloat)wndrect.left * dxglcfg.WindowScaleX;
+			yoffset = ((GLfloat)sizes[1] - wndrect.bottom) * dxglcfg.WindowScaleY;
 			This->bltvertices[1].x = This->bltvertices[3].x = ((GLfloat)destrect.left * xmul) - xoffset;
 			This->bltvertices[0].x = This->bltvertices[2].x = ((GLfloat)destrect.right * xmul) - xoffset;
 			This->bltvertices[0].y = This->bltvertices[1].y = ((GLfloat)destrect.top * ymul) + yoffset;
