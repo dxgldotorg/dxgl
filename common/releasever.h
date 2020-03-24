@@ -20,6 +20,6 @@
 1 - sign non-beta only
 2 - sign release only
 3 - sign all */
-#define SIGNMODE 0
+#define SIGNMODE 1
 
 #endif //__VERSION_H
