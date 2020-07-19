@@ -362,6 +362,12 @@ static const char unif_key[] = "uniform ivec3 keyX;\n";
 static const char unif_keybits[] = "uniform ivec4 keybitsX;\n";
 static const char unif_world[] = "uniform mat4 matWorld;\n";
 static const char unif_ditherbits[] = "uniform ivec4 ditherbits;\n";
+
+static const char unif_material[] = "uniform vec4 mtlambient;\n\
+uniform vec4 mtldiffuse;\n\
+uniform vec4 mtlspecular;\n\
+uniform vec4 mtlemission;\n\
+uniform float mtlshininess;\n";
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -393,9 +399,9 @@ ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "gl_FrontColor = (gl_FrontMaterial.diffuse * diffuse) + (gl_FrontMaterial.ambient * ambient)\n\
-+ (gl_FrontMaterial.specular * specular) + gl_FrontMaterial.emission;\n\
-gl_FrontSecondaryColor = (gl_FrontMaterial.specular * specular);\n";
+static const char op_colorout[] = "gl_FrontColor = (mtldiffuse * diffuse) + (mtlambient * ambient)\n\
++ (mtlspecular * specular) + mtlemission;\n\
+gl_FrontSecondaryColor = (mtlspecular * specular);\n";
 static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
@@ -435,14 +441,14 @@ vec3 dir = normalize(-light.direction);\n\
 ambient += light.ambient;\n\
 float NdotL = max(dot(N,dir),0.0);\n\
 diffuse += light.diffuse*NdotL;\n\
-if((NdotL > 0.0) && (gl_FrontMaterial.shininess != 0.0))\n\
+if((NdotL > 0.0) && (mtlshininess != 0.0))\n\
 {\n\
 vec3 eye = vec3(0.0,0.0,1.0);\n\
 vec3 P = vec3(gl_ModelViewMatrix*xyzw);\n\
 vec3 L = normalize(-light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
-specular += (pow(NdotHV,float(gl_FrontMaterial.shininess))*light.specular);\n\
+specular += (pow(NdotHV,float(mtlshininess))*light.specular);\n\
 ambient += light.ambient;\n\
 }\n\
 }\n";
@@ -460,7 +466,7 @@ float NdotV = max(0.0,dot(N,V));\n\
 float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
 float pf;\n\
 if(NdotV == 0.0) pf = 0.0;\n\
-else if(gl_FrontMaterial.shininess > 0.0) pf = pow(NdotHV,gl_FrontMaterial.shininess);\n\
+else if(mtlshininess > 0.0) pf = pow(NdotHV,mtlshininess);\n\
 else pf = 0.0;\n\
 diffuse += light.diffuse*NdotV*attenuation;\n\
 specular += light.specular*pf*attenuation;\n\
@@ -477,7 +483,7 @@ float NdotV = max(0.0,dot(N,V));\n\
 float NdotHV = max(0.0,dot(N,normalize(V+vec3(0.0,0.0,1.0))));\n\
 float pf;\n\
 if(NdotV == 0.0) pf = 0.0;\n\
-else if(gl_FrontMaterial.shininess > 0.0) pf = pow(NdotHV,gl_FrontMaterial.shininess);\n\
+else if(mtlshininess > 0.0) pf = pow(NdotHV,mtlshininess);\n\
 else pf = 0.0;\n\
 float spotangle = dot(-V,normalize(light.direction));\n\
 if(spotangle < cos(light.phi * (180.0/3.14159265)))\n\
@@ -619,6 +625,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	{
 		String_Append(vsrc, lightstruct);
 		String_Append(vsrc, unif_world);
+		String_Append(vsrc, unif_material);
 		String_Assign(&tmp, unif_light);
 		for(i = 0; i < numlights; i++)
 		{
@@ -655,8 +662,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	else String_Append(vsrc, op_transform);
 	if((id>>49)&1) String_Append(vsrc, op_normalize);
 	else String_Append(vsrc, op_normalpassthru);
-	const char *colorargs[] = {"gl_FrontMaterial.diffuse","gl_FrontMaterial.ambient","gl_FrontMaterial.specular",
-		"gl_FrontMaterial.emission","rgba0.bgra","rgba1.bgra"};
+	const char *colorargs[] = {"mtldiffuse","mtlambient","mtlspecular",
+		"mtlemission","rgba0.bgra","rgba1.bgra"};
 	if(numlights)
 	{
 		String_Append(vsrc, op_resetcolor);
@@ -1489,7 +1496,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		unifkeybits[7] = i + '0';
 		This->genshaders[index].shader.uniforms[153 + i] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, unifkeybits);
 	}
-
+	This->genshaders[index].shader.uniforms[161] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlambient");
+	This->genshaders[index].shader.uniforms[162] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtldiffuse");
+	This->genshaders[index].shader.uniforms[163] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlspecular");
+	This->genshaders[index].shader.uniforms[164] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlemission");
+	This->genshaders[index].shader.uniforms[165] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlshininess");
 	This->genshaders[index].id = id;
 	for (int i = 0; i < 8; i++)
 		This->genshaders[index].texids[i] = texstate[i];

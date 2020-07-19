@@ -411,27 +411,22 @@ void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4],GLfloat diffuse[4],GLfl
 	if(memcmp(ambient,This->materialambient,4*sizeof(GLfloat)))
 	{
 		memcpy(This->materialambient, ambient, 4 * sizeof(GLfloat));
-		glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
 	}
 	if (memcmp(diffuse, This->materialdiffuse, 4 * sizeof(GLfloat)))
 	{
 		memcpy(This->materialdiffuse, diffuse, 4 * sizeof(GLfloat));
-		glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 	}
 	if (memcmp(specular, This->materialspecular, 4 * sizeof(GLfloat)))
 	{
 		memcpy(This->materialspecular, specular, 4 * sizeof(GLfloat));
-		glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
 	}
 	if (memcmp(emission, This->materialemission, 4 * sizeof(GLfloat)))
 	{
 		memcpy(This->materialemission, emission, 4 * sizeof(GLfloat));
-		glMaterialfv(GL_FRONT,GL_EMISSION,emission);
 	}
 	if (shininess != This->materialshininess)
 	{
 		This->materialshininess = shininess;
-		glMaterialf(GL_FRONT,GL_SHININESS,shininess);
 	}
 }
 

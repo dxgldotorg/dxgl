@@ -4734,6 +4734,7 @@ void glRenderer__DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum m
 void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags)
 {
+	BOOL haslights = FALSE;
 	bool transformed;
 	int i;
 	glTexture *ztexture = NULL;
@@ -4866,6 +4867,7 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 	{
 		if(This->lights[i].dltType)
 		{
+			haslights = TRUE;
 			if(prog->uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[0],1,false,
 				(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD]);
 			if(prog->uniforms[20+(i*12)] != -1)
@@ -4898,7 +4900,14 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 		}
 		lightindex++;
 	}
-
+	if (haslights)
+	{
+		This->ext->glUniform4fv(prog->uniforms[161], 1, This->util->materialambient);
+		This->ext->glUniform4fv(prog->uniforms[162], 1, This->util->materialdiffuse);
+		This->ext->glUniform4fv(prog->uniforms[163], 1, This->util->materialspecular);
+		This->ext->glUniform4fv(prog->uniforms[164], 1, This->util->materialemission);
+		This->ext->glUniform1f(prog->uniforms[165], This->util->materialshininess);
+	}
 	DWORD ambient = This->renderstate[D3DRENDERSTATE_AMBIENT];
 	if (prog->uniforms[136] != -1)
 		This->ext->glUniform4f(prog->uniforms[136], (GLfloat)RGBA_GETRED(ambient),
