@@ -1704,7 +1704,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 		if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
 		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 			lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
-		memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+		memcpy(&lpDDSurfaceDesc2->dwSize+1,&ddsdMode.dwSize+1,lpDDSurfaceDesc2->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -1745,7 +1745,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 		lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
-	memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+	memcpy(&lpDDSurfaceDesc2->dwSize+1,&ddsdMode.dwSize+1,lpDDSurfaceDesc2->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
