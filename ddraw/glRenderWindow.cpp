@@ -79,7 +79,7 @@ DWORD glRenderWindow::_Entry()
 	if (!wndclasscreated)
 	{
 		wndclass.cbSize = sizeof(WNDCLASSEXA);
-		wndclass.style = 0;
+		wndclass.style = CS_DBLCLKS;
 		wndclass.lpfnWndProc = RenderWndProc;
 		wndclass.cbClsExtra = 0;
 		wndclass.cbWndExtra = 0;
