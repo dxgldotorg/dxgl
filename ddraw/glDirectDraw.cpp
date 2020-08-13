@@ -874,6 +874,7 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC2));
 	ddmode.dwSize = sizeof(DDSURFACEDESC2);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
+	ddmode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	if (!_isnan(dxglcfg.postsizex) && !_isnan(dxglcfg.postsizey) &&
 		(dxglcfg.postsizex > 0.25f) && (dxglcfg.postsizey > 0.25f) &&
 		(dxglcfg.postsizex != 1.0f) && (dxglcfg.postsizey != 1.0f) &&
@@ -1663,6 +1664,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
 	ddsdMode.dwFlags = DDSD_REFRESHRATE | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsdMode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB;
 	DEVMODE currmode;
 	ZeroMemory(&currmode,sizeof(DEVMODE));
