@@ -293,7 +293,16 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		texture = parenttex;
 		glTexture_AddRef(texture);
 	}
-	else glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, hasstencil, FALSE, 0);
+	else
+	{
+		*error = glTexture_Create(&ddsd, &texture, ddInterface->renderer, fakex, fakey, hasstencil, FALSE, 0);
+		if (*error != DD_OK)
+		{
+			TRACE_VAR("*error",23,*error);
+			TRACE_EXIT(-1,0);
+			return;
+		}
+	}
 	if (!(ddsd.dwFlags & DDSD_PITCH))
 	{
 		ddsd.dwFlags |= DDSD_PITCH;
@@ -1331,7 +1340,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetSurfaceDesc(LPDDSURFACEDESC2 lpDDSurface
 	TRACE_ENTER(2,14,this,14,lpDDSurfaceDesc);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	memcpy(lpDDSurfaceDesc,&ddsd,lpDDSurfaceDesc->dwSize);
+	memcpy(&lpDDSurfaceDesc->dwSize+1,&ddsd.dwSize+1,lpDDSurfaceDesc->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1354,6 +1363,7 @@ HRESULT WINAPI glDirectDrawSurface7::Lock(LPRECT lpDestRect, LPDDSURFACEDESC2 lp
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(locked) TRACE_RET(HRESULT,23,DDERR_SURFACEBUSY);
 	HRESULT error = glTexture_Lock(this->texture, this->miplevel, lpDestRect, lpDDSurfaceDesc, dwFlags, FALSE);
 	if (SUCCEEDED(error))
@@ -2333,9 +2343,11 @@ HRESULT WINAPI glDirectDrawSurface1::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 	ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -2638,9 +2650,11 @@ HRESULT WINAPI glDirectDrawSurface2::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 	ddsd.dwSize = sizeof(DDSURFACEDESC);
@@ -2968,9 +2982,11 @@ HRESULT WINAPI glDirectDrawSurface3::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpD
 {
 	TRACE_ENTER(5,14,this,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
+	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	HRESULT ret = glDDS7->Lock(lpDestRect, &ddsd, dwFlags, hEvent);
 	if (ret != DD_OK) TRACE_RET(HRESULT, 23, ret);
 	ddsd.dwSize = sizeof(DDSURFACEDESC);

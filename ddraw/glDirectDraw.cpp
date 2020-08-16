@@ -874,6 +874,7 @@ HRESULT EnumDisplayModes2(DWORD dwFlags, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOI
 	ZeroMemory(&ddmode,sizeof(DDSURFACEDESC2));
 	ddmode.dwSize = sizeof(DDSURFACEDESC2);
 	ddmode.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_REFRESHRATE;
+	ddmode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	if (!_isnan(dxglcfg.postsizex) && !_isnan(dxglcfg.postsizey) &&
 		(dxglcfg.postsizex > 0.25f) && (dxglcfg.postsizey > 0.25f) &&
 		(dxglcfg.postsizex != 1.0f) && (dxglcfg.postsizey != 1.0f) &&
@@ -1663,6 +1664,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	ZeroMemory(&ddsdMode, sizeof(DDSURFACEDESC2));
 	ddsdMode.dwSize = sizeof(DDSURFACEDESC2);
 	ddsdMode.dwFlags = DDSD_REFRESHRATE | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_WIDTH | DDSD_HEIGHT;
+	ddsdMode.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	ddsdMode.ddpfPixelFormat.dwFlags = DDPF_RGB;
 	DEVMODE currmode;
 	ZeroMemory(&currmode,sizeof(DEVMODE));
@@ -1704,7 +1706,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 		if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) ERR(DDERR_INVALIDPARAMS);
 		if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 			lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
-		memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+		memcpy(&lpDDSurfaceDesc2->dwSize+1,&ddsdMode.dwSize+1,lpDDSurfaceDesc2->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
@@ -1745,7 +1747,7 @@ HRESULT WINAPI glDirectDraw7::GetDisplayMode(LPDDSURFACEDESC2 lpDDSurfaceDesc2)
 	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize > sizeof(DDSURFACEDESC2))
 		lpDDSurfaceDesc2->dwSize = sizeof(DDSURFACEDESC2);
-	memcpy(lpDDSurfaceDesc2,&ddsdMode,lpDDSurfaceDesc2->dwSize);
+	memcpy(&lpDDSurfaceDesc2->dwSize+1,&ddsdMode.dwSize+1,lpDDSurfaceDesc2->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
