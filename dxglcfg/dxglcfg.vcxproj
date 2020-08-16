@@ -30,7 +30,7 @@
     <ProjectGuid>{C59AC409-F7D0-4153-9874-184CA00D537B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>dxglcfg</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
