@@ -386,6 +386,7 @@ vec3 N;\n";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
+static const char var_fogfragcoord[] = "varying float fogfragcoord;\n";
 static const char var_fogfactorpixel[] = "float fogfactor;\n";
 static const char var_keycomp[] = "ivec4 keycomp;\n";
 // Constants
@@ -427,13 +428,13 @@ static const char op_texpassthru2str[] = "vec4(strX,1);\n";
 static const char op_texpassthru2strq[] = "strqX;\n";
 static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
 static const char op_fogcoordstandardpixel[] = "float fogcoord = gl_FragCoord.z / gl_FragCoord.w;\n";
-static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(matModelView*xyzw).z;\n";
+static const char op_fogcoordstandard[] = "fogfragcoord = abs(matModelView*xyzw).z;\n";
 static const char op_fogcoordrange[] = "vec4 eyepos = matModelView*xyzw;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
-gl_FogFragCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
-static const char op_foglinear[] = "fogfactor = (fogend - gl_FogFragCoord) / (fogend - fogstart);\n";
-static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * fogdensity);\n";
-static const char op_fogexp2[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
+fogfragcoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
+static const char op_foglinear[] = "fogfactor = (fogend - fogfragcoord) / (fogend - fogstart);\n";
+static const char op_fogexp[] = "fogfactor = 1.0 / exp(fogfragcoord * fogdensity);\n";
+static const char op_fogexp2[] = "fogfactor = 1.0 / exp(fogfragcoord * fogfragcoord *\n\
 fogdensity * fogdensity);\n";
 static const char op_foglinearpixel[] = "fogfactor = (fogend - fogcoord) / (fogend - fogstart);\n";
 static const char op_fogexppixel[] = "fogfactor = 1.0 / exp(fogcoord * fogdensity);\n";
@@ -656,6 +657,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(vsrc, unif_fogstart);
 		String_Append(vsrc, unif_fogend);
 		String_Append(vsrc, unif_fogdensity);
+		String_Append(vsrc, var_fogfragcoord);
 	}
 	// Variables
 	String_Append(vsrc, var_common);
@@ -880,6 +882,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(fsrc, unif_fogstart);
 		String_Append(fsrc, unif_fogend);
 		String_Append(fsrc, unif_fogdensity);
+		String_Append(fsrc, var_fogfragcoord);
 	}
 	// Variables
 	String_Append(fsrc, var_color);
