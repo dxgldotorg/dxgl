@@ -360,7 +360,11 @@ uniform float maxz;\n";
 static const char unif_alpharef[] = "uniform int alpharef;\n";
 static const char unif_key[] = "uniform ivec3 keyX;\n";
 static const char unif_keybits[] = "uniform ivec4 keybitsX;\n";
+
 static const char unif_world[] = "uniform mat4 matWorld;\n";
+static const char unif_modelview[] = "uniform mat4 matModelView;\n";
+static const char unif_projection[] = "uniform mat4 matProjection;\n";
+static const char unif_normal[] = "uniform mat3 matNormal;\n";
 static const char unif_ditherbits[] = "uniform ivec4 ditherbits;\n";
 
 static const char unif_material[] = "uniform vec4 mtlambient;\n\
@@ -388,10 +392,10 @@ static const char const_threshold[] = "mat4 threshold = mat4(\n\
 
 // Operations
 static const char op_transform[] = "xyzw = vec4(xyz,1.0);\n\
-vec4 pos = gl_ModelViewProjectionMatrix*xyzw;\n\
+vec4 pos = matProjection*matModelView*xyzw;\n\
 gl_Position = vec4(pos.x,-pos.y,pos.z,pos.w);\n";
-static const char op_normalize[] = "N = normalize(gl_NormalMatrix*nxyz);\n";
-static const char op_normalpassthru[] = "N = gl_NormalMatrix*nxyz;\n";
+static const char op_normalize[] = "N = normalize(matNormal*nxyz);\n";
+static const char op_normalpassthru[] = "N = matNormal*nxyz;\n";
 static const char op_tlvertex[] = "gl_Position = vec4(((xyz.x-xoffset)/(width/2.0)-1.0)/rhw,\
 ((xyz.y-yoffset)/(height/2.0)-1.0)/rhw,xyz.z/rhw,1.0/rhw);\n";
 static const char op_resetcolor[] = "diffuse = specular = vec4(0.0);\n\
@@ -417,8 +421,8 @@ static const char op_texpassthru2str[] = "vec4(strX,1);\n";
 static const char op_texpassthru2strq[] = "strqX;\n";
 static const char op_texpassthru2null[] = "vec4(0,0,0,1);\n";
 static const char op_fogcoordstandardpixel[] = "float fogcoord = gl_FragCoord.z / gl_FragCoord.w;\n";
-static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(gl_ModelViewMatrix*xyzw).z;\n";
-static const char op_fogcoordrange[] = "vec4 eyepos = gl_ModelViewMatrix*xyzw;\n\
+static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(matModelView*xyzw).z;\n";
+static const char op_fogcoordrange[] = "vec4 eyepos = matModelView*xyzw;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
 gl_FogFragCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
 static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - gl_Fog.start);\n";
@@ -444,7 +448,7 @@ diffuse += light.diffuse*NdotL;\n\
 if((NdotL > 0.0) && (mtlshininess != 0.0))\n\
 {\n\
 vec3 eye = vec3(0.0,0.0,1.0);\n\
-vec3 P = vec3(gl_ModelViewMatrix*xyzw);\n\
+vec3 P = vec3(matModelView*xyzw);\n\
 vec3 L = normalize(-light.direction.xyz - P);\n\
 vec3 V = normalize(eye - P);\n\
 NdotHV = max(dot(N,L+V),0.0);\n\
@@ -625,6 +629,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	{
 		String_Append(vsrc, lightstruct);
 		String_Append(vsrc, unif_world);
+		String_Append(vsrc, unif_normal);
 		String_Append(vsrc, unif_material);
 		String_Assign(&tmp, unif_light);
 		for(i = 0; i < numlights; i++)
@@ -633,7 +638,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			String_Append(vsrc, tmp.ptr);
 		}
 	}
-	
+	if (numlights || !((id >> 50) & 1) || vertexfog)
+	{
+		String_Append(vsrc, unif_modelview);
+		String_Append(vsrc, unif_projection);
+	}
 	// Variables
 	String_Append(vsrc, var_common);
 	String_Append(vsrc, var_xyzw);
@@ -1437,8 +1446,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		attrSTRQ[4] = i + '0';
 		This->genshaders[index].shader.attribs[i + 34] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog, attrSTRQ);
 	}
-	This->genshaders[index].shader.uniforms[0] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matWorld");
 	// Uniforms
+	This->genshaders[index].shader.uniforms[0] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matWorld");
+	This->genshaders[index].shader.uniforms[1] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matModelView");
+	This->genshaders[index].shader.uniforms[2] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matProjection");
+	This->genshaders[index].shader.uniforms[3] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "matNormal");
 	// TODO: 4-14 world1-3 and texture0-7
 	char uniflight[] = "lightX.            ";
 	for(int i = 0; i < 8; i++)

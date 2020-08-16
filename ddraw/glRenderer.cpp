@@ -3056,7 +3056,6 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	glUtil_SetDepthRange(This->util,0.0,1.0);
 	glUtil_DepthWrite(This->util,TRUE);
 	glUtil_DepthTest(This->util,FALSE);
-	glUtil_MatrixMode(This->util,GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
 	glUtil_SetDepthComp(This->util,GL_LESS);
@@ -4416,8 +4415,6 @@ void glRenderer__InitD3D(glRenderer *This, int zbuffer, int x, int y)
 	glUtil_SetDepthComp(This->util, GL_LEQUAL);
 	GLfloat identity[16];
 	__gluMakeIdentityf(identity);
-	glUtil_SetMatrix(This->util, GL_MODELVIEW, identity, identity, NULL);
-	glUtil_SetMatrix(This->util, GL_PROJECTION, identity, NULL, NULL);
 	for (int i = 0; i < 24; i++)
 		memcpy(&This->transform[i], identity, sizeof(D3DMATRIX));
 	GLfloat one[4] = {1,1,1,1};
@@ -4854,10 +4851,6 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 
 		}
 	}
-	glUtil_SetMatrix(This->util, GL_MODELVIEW, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_VIEW],
-		(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD],NULL);
-	glUtil_SetMatrix(This->util, GL_PROJECTION, (GLfloat*)&This->transform[D3DTRANSFORMSTATE_PROJECTION], NULL, NULL);
-
 	glUtil_SetMaterial(This->util, (GLfloat*)&This->material.ambient, (GLfloat*)&This->material.diffuse, (GLfloat*)&This->material.specular,
 		(GLfloat*)&This->material.emissive, This->material.power);
 
@@ -4868,8 +4861,6 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 		if(This->lights[i].dltType)
 		{
 			haslights = TRUE;
-			if(prog->uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[0],1,false,
-				(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD]);
 			if(prog->uniforms[20+(i*12)] != -1)
 				This->ext->glUniform4fv(prog->uniforms[20+(i*12)],1,(GLfloat*)&This->lights[i].dcvDiffuse);
 			if(prog->uniforms[21+(i*12)] != -1)
@@ -4902,12 +4893,20 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 	}
 	if (haslights)
 	{
+		if (prog->uniforms[0] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[0], 1, false,
+			(GLfloat*)&This->transform[D3DTRANSFORMSTATE_WORLD]);
 		This->ext->glUniform4fv(prog->uniforms[161], 1, This->util->materialambient);
 		This->ext->glUniform4fv(prog->uniforms[162], 1, This->util->materialdiffuse);
 		This->ext->glUniform4fv(prog->uniforms[163], 1, This->util->materialspecular);
 		This->ext->glUniform4fv(prog->uniforms[164], 1, This->util->materialemission);
 		This->ext->glUniform1f(prog->uniforms[165], This->util->materialshininess);
 	}
+	if(prog->uniforms[1] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[1], 1, false,
+		(GLfloat*)&This->transform[4]);
+	if (prog->uniforms[2] != -1) This->ext->glUniformMatrix4fv(prog->uniforms[2], 1, false,
+		(GLfloat*)&This->transform[D3DTRANSFORMSTATE_PROJECTION]);
+	if (prog->uniforms[3] != -1) This->ext->glUniformMatrix3fv(prog->uniforms[3], 1, true,
+		(GLfloat*)&This->transform[5]);
 	DWORD ambient = This->renderstate[D3DRENDERSTATE_AMBIENT];
 	if (prog->uniforms[136] != -1)
 		This->ext->glUniform4f(prog->uniforms[136], (GLfloat)RGBA_GETRED(ambient),
@@ -5418,12 +5417,25 @@ void glRenderer__SetTextureStageState(glRenderer *This, DWORD dwStage, D3DTEXTUR
 
 void glRenderer__SetTransform(glRenderer *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)
 {
+	int x, y;
+	GLfloat temp[16];
+	GLfloat* out;
 	if (dtstTransformStateType > 23)
 	{
 		SetEvent(This->busy);
 		return;
 	}
 	memcpy(&This->transform[dtstTransformStateType], lpD3DMatrix, sizeof(D3DMATRIX));
+	if ((dtstTransformStateType == D3DTRANSFORMSTATE_WORLD) || (dtstTransformStateType == D3DTRANSFORMSTATE_VIEW))
+	{
+		__gluMultMatricesf((const GLfloat *)&This->transform[D3DTRANSFORMSTATE_WORLD],
+			(const GLfloat *)&This->transform[D3DTRANSFORMSTATE_VIEW], (GLfloat *)&This->transform[4]);
+		__gluInvertMatrixf((const GLfloat *)&This->transform[4], (GLfloat*)&temp);
+		out = (GLfloat *)&This->transform[5];
+		for (y = 0; y < 3; y++)
+			for (x = 0; x < 3; x++)
+				out[x + (y * 3)] = temp[x + (y * 4)];
+	}
 	SetEvent(This->busy);
 }
 

@@ -381,31 +381,6 @@ void glUtil_SetScissor(glUtil *This, BOOL enabled, GLint x, GLint y, GLsizei wid
 	}
 }
 
-void glUtil_MatrixMode(glUtil *This, GLenum mode)
-{
-	if (mode != This->matrixmode)
-	{
-		This->matrixmode = mode;
-		glMatrixMode(mode);
-	}
-}
-
-void glUtil_SetMatrix(glUtil *This, GLenum mode, GLfloat *mat1, GLfloat *mat2, BOOL *dirty)
-{
-	if(This->ext->GLEXT_EXT_direct_state_access)
-	{
-		This->ext->glMatrixLoadfEXT(mode, mat1);
-		if (mode == GL_MODELVIEW) This->ext->glMatrixMultfEXT(mode, mat2);
-	}
-	else
-	{
-		glUtil_MatrixMode(This, mode);
-		glLoadMatrixf(mat1);
-		if(mode == GL_MODELVIEW) glMultMatrixf(mat2);
-	}
-	if(dirty) *dirty = FALSE;
-}
-
 void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4],GLfloat diffuse[4],GLfloat specular[4],GLfloat emission[4],GLfloat shininess)
 {
 	if(memcmp(ambient,This->materialambient,4*sizeof(GLfloat)))

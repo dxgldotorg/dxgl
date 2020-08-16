@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2017 William Feely
+// Copyright (C) 2012-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -182,7 +182,6 @@ void glRenderer_SetWnd(glRenderer *This, int width, int height, int bpp, int ful
 HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd);
 HRESULT glRenderer_DrawPrimitives(glRenderer *This, RenderTarget *target, GLenum mode, GLVERTEX *vertices, int *texformats, DWORD count, LPWORD indices,
 	DWORD indexcount, DWORD flags);
-//void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
 void glRenderer_UpdateClipper(glRenderer *This, glTexture *stencil, GLushort *indices, BltVertex *vertices,
 	GLsizei count, GLsizei width, GLsizei height);
 unsigned int glRenderer_GetScanLine(glRenderer *This);

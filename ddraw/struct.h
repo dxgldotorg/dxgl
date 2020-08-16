@@ -130,8 +130,6 @@ typedef struct glExtensions
 	void (APIENTRY *glTextureSubImage2DEXT)(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset,
 		GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 	void (APIENTRY *glGetTextureImageEXT)(GLuint texture, GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels);
-	void (APIENTRY *glMatrixLoadfEXT)(GLenum mode, const GLfloat *m);
-	void (APIENTRY *glMatrixMultfEXT)(GLenum mode, const GLfloat *m);
 	void (APIENTRY *glNamedBufferDataEXT)(GLuint buffer, GLsizeiptr size, const void *data, GLenum usage);
 	void* (APIENTRY *glMapNamedBufferEXT)(GLuint buffer, GLenum access);
 	GLboolean(APIENTRY *glUnmapNamedBufferEXT)(GLuint buffer);

@@ -43,8 +43,6 @@ void glUtil_SetDepthComp(glUtil *This, GLenum comp);
 void glUtil_DepthWrite(glUtil *This, DWORD enabled);
 void glUtil_DepthTest(glUtil *This, DWORD enabled);
 void glUtil_SetScissor(glUtil *This, BOOL enabled, GLint x, GLint y, GLsizei width, GLsizei height);
-void glUtil_SetMatrix(glUtil *This, GLenum mode, GLfloat *mat1, GLfloat *mat2, BOOL *dirty);
-void glUtil_MatrixMode(glUtil *This, GLenum mode);
 void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4], GLfloat diffuse[4], GLfloat specular[4], GLfloat emission[4], GLfloat shininess);
 void glUtil_SetViewport(glUtil *This, GLint x, GLint y, GLsizei width, GLsizei height);
 void glUtil_SetDepthRange(glUtil *This, GLclampd rangenear, GLclampd rangefar);
