@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2019 William Feely
+// Copyright (C) 2012-2020 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -372,6 +372,12 @@ uniform vec4 mtldiffuse;\n\
 uniform vec4 mtlspecular;\n\
 uniform vec4 mtlemission;\n\
 uniform float mtlshininess;\n";
+
+static const char unif_fogcolor[] = "uniform vec4 fogcolor;\n";
+static const char unif_fogstart[] = "uniform float fogstart;\n";
+static const char unif_fogend[] = "uniform float fogend;\n";
+static const char unif_fogdensity[] = "uniform float fogdensity;\n";
+
 // Variables
 static const char var_common[] = "vec4 diffuse;\n\
 vec4 specular;\n\
@@ -425,17 +431,17 @@ static const char op_fogcoordstandard[] = "gl_FogFragCoord = abs(matModelView*xy
 static const char op_fogcoordrange[] = "vec4 eyepos = matModelView*xyzw;\n\
 vec3 eyepos3 = eyepos.xyz / eyepos.w;\n\
 gl_FogFragCoord = sqrt((eyepos3.x * eyepos3.x) + (eyepos3.y * eyepos3.y) + (eyepos3.z * eyepos3.z));\n";
-static const char op_foglinear[] = "fogfactor = (gl_Fog.end - gl_FogFragCoord) / (gl_Fog.end - gl_Fog.start);\n";
-static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_Fog.density);\n";
+static const char op_foglinear[] = "fogfactor = (fogend - gl_FogFragCoord) / (fogend - fogstart);\n";
+static const char op_fogexp[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * fogdensity);\n";
 static const char op_fogexp2[] = "fogfactor = 1.0 / exp(gl_FogFragCoord * gl_FogFragCoord *\n\
-gl_Fog.density * gl_Fog.density);\n";
-static const char op_foglinearpixel[] = "fogfactor = (gl_Fog.end - fogcoord) / (gl_Fog.end - gl_Fog.start);\n";
-static const char op_fogexppixel[] = "fogfactor = 1.0 / exp(fogcoord * gl_Fog.density);\n";
+fogdensity * fogdensity);\n";
+static const char op_foglinearpixel[] = "fogfactor = (fogend - fogcoord) / (fogend - fogstart);\n";
+static const char op_fogexppixel[] = "fogfactor = 1.0 / exp(fogcoord * fogdensity);\n";
 static const char op_fogexp2pixel[] = "fogfactor = 1.0 / exp(fogcoord * fogcoord *\n\
-gl_Fog.density * gl_Fog.density);\n";
+fogdensity * fogdensity);\n";
 static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
-static const char op_fogblend[] = "color = mix(gl_Fog.color,color,fogfactor);\n";
-static const char op_fogassign[] = "color = gl_Fog.color;\n";
+static const char op_fogblend[] = "color = mix(fogcolor,color,fogfactor);\n";
+static const char op_fogassign[] = "color = fogcolor;\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -638,10 +644,18 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			String_Append(vsrc, tmp.ptr);
 		}
 	}
+	else if (!((id >> 49) & 1)) String_Append(vsrc, unif_normal);
 	if (numlights || !((id >> 50) & 1) || vertexfog)
 	{
 		String_Append(vsrc, unif_modelview);
 		String_Append(vsrc, unif_projection);
+	}
+	if (vertexfog || pixelfog)
+	{
+		String_Append(vsrc, unif_fogcolor);
+		String_Append(vsrc, unif_fogstart);
+		String_Append(vsrc, unif_fogend);
+		String_Append(vsrc, unif_fogdensity);
 	}
 	// Variables
 	String_Append(vsrc, var_common);
@@ -860,6 +874,13 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	}
 	if((id>>2)&1) String_Append(fsrc, unif_alpharef);
 	if (dither) String_Append(fsrc, unif_ditherbits);
+	if (vertexfog || pixelfog)
+	{
+		String_Append(fsrc, unif_fogcolor);
+		String_Append(fsrc, unif_fogstart);
+		String_Append(fsrc, unif_fogend);
+		String_Append(fsrc, unif_fogdensity);
+	}
 	// Variables
 	String_Append(fsrc, var_color);
 	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
@@ -1513,6 +1534,12 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	This->genshaders[index].shader.uniforms[163] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlspecular");
 	This->genshaders[index].shader.uniforms[164] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlemission");
 	This->genshaders[index].shader.uniforms[165] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "mtlshininess");
+
+	This->genshaders[index].shader.uniforms[166] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "fogcolor");
+	This->genshaders[index].shader.uniforms[167] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "fogstart");
+	This->genshaders[index].shader.uniforms[168] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "fogend");
+	This->genshaders[index].shader.uniforms[169] = This->ext->glGetUniformLocation(This->genshaders[index].shader.prog, "fogdensity");
+
 	This->genshaders[index].id = id;
 	for (int i = 0; i < 8; i++)
 		This->genshaders[index].texids[i] = texstate[i];

@@ -4949,6 +4949,10 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 	if(prog->uniforms[140]!= -1) This->ext->glUniform1f(prog->uniforms[140],(GLfloat)This->viewport.dwY);
 	if(prog->uniforms[141]!= -1) This->ext->glUniform1i(prog->uniforms[141],This->renderstate[D3DRENDERSTATE_ALPHAREF]);
 	if(prog->uniforms[150]!= -1) This->ext->glUniform4iv(prog->uniforms[150],1,(GLint*)target->target->colorbits);
+	if (prog->uniforms[166] != -1) This->ext->glUniform4fv(prog->uniforms[166], 1, This->fogcolorfloat);
+	if (prog->uniforms[167] != -1) This->ext->glUniform1f(prog->uniforms[167], This->fogstart);
+	if (prog->uniforms[168] != -1) This->ext->glUniform1f(prog->uniforms[168], This->fogend);
+	if (prog->uniforms[169] != -1) This->ext->glUniform1f(prog->uniforms[169], This->fogdensity);
 	do
 	{
 		if (glUtil_SetFBOSurface(This->util, target->target, ztexture,
@@ -5502,33 +5506,28 @@ void glRenderer__SetFogColor(glRenderer *This, DWORD color)
 {
 	if (color == This->fogcolor) return;
 	This->fogcolor = color;
-	GLfloat colors[4];
-	colors[0] = (GLfloat)((color >> 16) & 255) / 255.0f;
-	colors[1] = (GLfloat)((color >> 8) & 255) / 255.0f;
-	colors[2] = (GLfloat)(color & 255) / 255.0f;
-	colors[3] = (GLfloat)((color >> 24) & 255) / 255.0f;
-	glFogfv(GL_FOG_COLOR, colors);
+	This->fogcolorfloat[0] = (GLfloat)((color >> 16) & 255) / 255.0f;
+	This->fogcolorfloat[1] = (GLfloat)((color >> 8) & 255) / 255.0f;
+	This->fogcolorfloat[2] = (GLfloat)(color & 255) / 255.0f;
+	This->fogcolorfloat[3] = (GLfloat)((color >> 24) & 255) / 255.0f;
 }
 
 void glRenderer__SetFogStart(glRenderer *This, GLfloat start)
 {
 	if (start == This->fogstart) return;
 	This->fogstart = start;
-	glFogf(GL_FOG_START, start);
 }
 
 void glRenderer__SetFogEnd(glRenderer *This, GLfloat end)
 {
 	if (end == This->fogend) return;
 	This->fogend = end;
-	glFogf(GL_FOG_END, end);
 }
 
 void glRenderer__SetFogDensity(glRenderer *This, GLfloat density)
 {
 	if (density == This->fogdensity) return;
 	This->fogdensity = density;
-	glFogf(GL_FOG_DENSITY, density);
 }
 
 void glRenderer__SetDepthComp(glRenderer *This)

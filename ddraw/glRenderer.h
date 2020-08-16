@@ -138,6 +138,7 @@ typedef struct glRenderer
 	DXGLTimer timer;
 	glTexture *backbuffers[16];
 	DWORD fogcolor;
+	GLfloat fogcolorfloat[4];
 	GLfloat fogstart;
 	GLfloat fogend;
 	GLfloat fogdensity;
