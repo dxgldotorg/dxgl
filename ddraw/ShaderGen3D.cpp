@@ -313,6 +313,17 @@ static const char header[] =
 	"//REV" STR(SHADER3DVERSION) "\n";
 static const char ver110[] = "#version 110\n";
 static const char ver120[] = "#version 120\n";
+static const char ver130[] = "#version 130\n";
+static const char ver140[] = "#version 140\n";
+static const char ver150[] = "#version 150\n";
+static const char ver330[] = "#version 330\n";
+static const char ver400[] = "#version 400\n";
+static const char ver410[] = "#version 410\n";
+static const char ver420[] = "#version 420\n";
+static const char ver430[] = "#version 430\n";
+static const char ver440[] = "#version 440\n";
+static const char ver450[] = "#version 450\n";
+static const char ver460[] = "#version 460\n";
 static const char vertexshader[] = "//Vertex Shader\n";
 static const char fragshader[] = "//Fragment Shader\n";
 static const char idheader[] = "//ID: 0x";
