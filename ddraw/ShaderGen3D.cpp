@@ -388,6 +388,8 @@ static const char var_xyzw[] = "vec4 xyzw;\n";
 static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
 static const char var_fogfragcoord[] = "varying float fogfragcoord;\n";
 static const char var_fogfactorpixel[] = "float fogfactor;\n";
+static const char var_colors[] = "varying vec4 vertcolor;\n\
+varying vec4 vertcolor2;\n";
 static const char var_keycomp[] = "ivec4 keycomp;\n";
 // Constants
 static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
@@ -410,15 +412,15 @@ ambient = ambientcolor / 255.0;\n";
 static const char op_dirlight[] = "DirLight(lightX);\n";
 static const char op_pointlight[] = "PointLight(lightX);\n";
 static const char op_spotlight[] = "SpotLight(lightX);\n";
-static const char op_colorout[] = "gl_FrontColor = (mtldiffuse * diffuse) + (mtlambient * ambient)\n\
+static const char op_colorout[] = "vertcolor = (mtldiffuse * diffuse) + (mtlambient * ambient)\n\
 + (mtlspecular * specular) + mtlemission;\n\
-gl_FrontSecondaryColor = (mtlspecular * specular);\n";
-static const char op_colorvert[] = "gl_FrontColor = rgba0.bgra;\n";
-static const char op_color2vert[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
-static const char op_colorwhite[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
+vertcolor2 = (mtlspecular * specular);\n";
+static const char op_colorvert[] = "vertcolor = rgba0.bgra;\n";
+static const char op_color2vert[] = "vertcolor2 = rgba1.bgra;\n";
+static const char op_colorwhite[] = "vertcolor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_dither[] = "color = dither(color);\n";
-static const char op_colorfragin[] = "color = gl_Color;\n";
+static const char op_colorfragin[] = "color = vertcolor;\n";
 static const char op_colorkeyin[] = "keycomp = ivec4(texture2DProj(texX,gl_TexCoord[Y])*vec4(keybitsZ)+.5);\n";
 static const char op_colorkey[] = "if(keycomp.rgb == keyX) discard;\n";
 static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
@@ -661,6 +663,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	}
 	// Variables
 	String_Append(vsrc, var_common);
+	String_Append(vsrc, var_colors);
 	String_Append(vsrc, var_xyzw);
 	if(vertexfog && !pixelfog) String_Append(vsrc, var_fogfactorvertex);
 
@@ -723,7 +726,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			bool hascolor2 = false;
 			if((id>>36)&1) hascolor2 = true;
 			int matcolor;
-			String_Append(vsrc, "gl_FrontColor = (");
+			String_Append(vsrc, "vertcolor = (");
 			matcolor = ((id>>23)&3);
 			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
 			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
@@ -886,6 +889,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	}
 	// Variables
 	String_Append(fsrc, var_color);
+	String_Append(fsrc, var_colors);
 	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
@@ -903,8 +907,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	int args[4];
 	bool texfail;
 	bool alphadisabled = false;
-	const char *blendargs[] = {"color","gl_Color","texture2DProj(texX,gl_TexCoord[Y])",
-		"","texfactor","gl_SecondaryColor","vec3(1,1,1)","1",".rgb",".a",".aaa"};
+	const char *blendargs[] = {"color","vertcolor","texture2DProj(texX,gl_TexCoord[Y])",
+		"","texfactor","vertcolor2","vec3(1,1,1)","1",".rgb",".a",".aaa"};
 	bool usecolorkey = false;
 	if((id>>13)&1) usecolorkey = true;
 	for(i = 0; i < 8; i++)
@@ -1081,9 +1085,9 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDDIFFUSEALPHA:
 			String_Append(fsrc, "color.rgb = ");
 			String_Append(fsrc, arg1.ptr);
-			String_Append(fsrc, " * gl_Color.a + ");
+			String_Append(fsrc, " * vertcolor.a + ");
 			String_Append(fsrc, arg2.ptr);
-			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
+			String_Append(fsrc, " * (1.0-vertcolor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
@@ -1286,9 +1290,9 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDDIFFUSEALPHA:
 			String_Append(fsrc, "color.a = ");
 			String_Append(fsrc, arg1.ptr);
-			String_Append(fsrc, " * gl_Color.a + ");
+			String_Append(fsrc, " * vertcolor.a + ");
 			String_Append(fsrc, arg2.ptr);
-			String_Append(fsrc, " * (1.0-gl_Color.a);\n");
+			String_Append(fsrc, " * (1.0-vertcolor.a);\n");
 			break;
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
