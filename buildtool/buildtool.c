@@ -519,13 +519,13 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1926)
-			strncpy(findptr, "\"VC2019_6\"\n", 13);
-			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1926))
-			#error Please update your Visual Studio 2019 to Update 6 before continuing.
-			#elif (_MSC_VER > 1926)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.6.")
-			strncpy(findptr, "\"VC2019_6\"\n", 13);
+			#elif (_MSC_VER == 1927)
+			strncpy(findptr, "\"VC2019_7\"\n", 13);
+			#elif ((_MSC_VER >= 1920) && (_MSC_VER < 1927))
+			#error Please update your Visual Studio 2019 to Update 7 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
+			#elif (_MSC_VER > 1927)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2019.7.")
+			strncpy(findptr, "\"VC2019_7\"\n", 13);
 			#else
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
 			#endif
