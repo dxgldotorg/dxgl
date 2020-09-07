@@ -556,12 +556,12 @@ void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode)
 		{
 		case D3DSHADE_FLAT:
 		case 4:
-			glShadeModel(GL_FLAT);
+			if(This->ext->glver_major < 3) glShadeModel(GL_FLAT);
 			break;
 		case D3DSHADE_GOURAUD:
 		case D3DSHADE_PHONG:
 		default:
-			glShadeModel(GL_SMOOTH);
+			if (This->ext->glver_major < 3) glShadeModel(GL_SMOOTH);
 			break;
 		}
 	}
