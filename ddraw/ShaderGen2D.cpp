@@ -156,9 +156,15 @@ static const char var_pattern[] = "ivec4 pattern;\n";
 static const char var_pixel[] = "ivec4 pixel;\n";
 static const char var_src[] = "ivec4 src;\n";
 static const char var_patternst[] = "vec2 patternst;\n";
+static const char var_fragcolor[] = "vec4 FragColor;\n";
+
+// Varyings
 static const char var_texcoord[] = "varying vec2 texcoord;\n";
 static const char var_destcoord[] = "varying vec2 destcoord;\n";
 static const char var_stencilcoord[] = "varying vec2 stencilcoord;\n";
+
+//Outputs
+static const char out_fragcolor[] = "out vec4 FragColor;\n";
 
 // Operations
 // Non-integer color sampler
@@ -205,12 +211,13 @@ mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
 pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
 
 //Outputs
-static const char op_destoutdestblend[] = "gl_FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,destcoord.st);\n";
-static const char op_destout[] = "gl_FragColor = vec4(pixel)/vec4(colorsizedest);\n";
-static const char op_destoutcolor[] = "gl_FragColor = color;\n";
-static const char op_destoutyuvrgb[] = "gl_FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
-static const char op_destoutyuvrgbcolor[] = "gl_FragColor = yuvatorgba(vec4(color));\n";
-static const char op_destoutrgbyuv[] = "gl_FragColor = rgbatoyuva(vec4(pixel)/vec4(colorsizedest));\n";
+static const char op_destoutdestblend[] = "FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,destcoord.st);\n";
+static const char op_destout[] = "FragColor = vec4(pixel)/vec4(colorsizedest);\n";
+static const char op_destoutcolor[] = "FragColor = color;\n";
+static const char op_destoutyuvrgb[] = "FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
+static const char op_destoutyuvrgbcolor[] = "FragColor = yuvatorgba(vec4(color));\n";
+static const char op_destoutrgbyuv[] = "FragColor = rgbatoyuva(vec4(pixel)/vec4(colorsizedest));\n";
+static const char op_destoutgl2[] = "gl_FragColor = FragColor;\n";
 
 // Vertex processing
 static const char op_vertex[] = "vec4 xyzw = vec4(xy[0],xy[1],0,1);\n\
@@ -221,7 +228,6 @@ vec4(0, 0, -2.0, 0),\n\
 vec4(-(view[1] + view[0]) / (view[1] - view[0]),\n\
 -(view[2] + view[3]) / (view[2] - view[3]), -1 , 1));\n\
 gl_Position    = proj * xyzw;\n";
-static const char op_vertcolorrgb[] = "gl_FrontColor = vec4(rgb,1.0);\n";
 
 // Vertex shader texcoords
 static const char op_texcoord0[] = "texcoord = srcst;\n";
@@ -869,6 +875,45 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 	gen->genindex = 0;
 }
 
+/**
+  * Adds an attribute to the shader.
+  * @param str
+  *  String to append
+  * @param var
+  *  Variable to append
+  * @param glver
+  *  Major GL version
+  */
+void append_attr(STRING* str, const char* var, int glver)
+{
+	if (glver >= 3) String_Append(str, "in ");
+	else String_Append(str, "attribute ");
+	String_Append(str, var);
+}
+
+/**
+  * Adds a varying variable to the shader.
+  * @param str
+  *  String to append
+  * @param var
+  *  Variable to append
+  * @param glver
+  *  Major GL version
+  * @parm fs
+  *  True if fragment shader
+  */
+void append_varying(STRING* str, const char* var, int glver, BOOL fs, BOOL smooth)
+{
+	if (glver >= 3)
+	{
+		if (!smooth) String_Append(str, "flat ");
+		if (fs) String_Append(str, "in ");
+		else String_Append(str, "out ");
+	}
+	else String_Append(str, "varying ");
+	String_Append(str, var);
+}
+
 void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 {
 	STRING tmp;
@@ -893,20 +938,29 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	if (id & DDBLT_ROP)
 	{
 		rop = UnpackROPBits(id);
-		if ((gen->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130)
+		if (gen->ext->glver_major >= 3)
 		{
 			String_Append(vsrc, version_130);
-			intproc = TRUE;
+			if (dxglcfg.DebugNoGLSL130)
+			{
+				if (gen->ext->GLEXT_EXT_gpu_shader4) intproc = true;
+			}
+			else intproc = true;
 		}
 		else if (gen->ext->GLEXT_EXT_gpu_shader4)
 		{
 			String_Append(vsrc, version_110);
 			String_Append(vsrc, ext_shader4);
-			intproc = TRUE;
+			intproc = true;
 		}
 		else String_Append(vsrc, version_110);
 	}
-	else String_Append(vsrc, version_110);
+	else
+	{
+		if (gen->ext->glver_major >= 3)
+			String_Append(vsrc, version_130);
+		else String_Append(vsrc, version_110);
+	}
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
 
@@ -971,10 +1025,14 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	String_Append(fsrc, revheader);
 	if (id & DDBLT_ROP)
 	{
-		if ((gen->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130)
+		if (gen->ext->glver_major >= 3)
 		{
 			String_Append(fsrc, version_130);
-			intproc = true;
+			if (dxglcfg.DebugNoGLSL130)
+			{
+				if (gen->ext->GLEXT_EXT_gpu_shader4) intproc = true;
+			}
+			else intproc = true;
 		}
 		else if (gen->ext->GLEXT_EXT_gpu_shader4)
 		{
@@ -984,7 +1042,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 		else String_Append(fsrc, version_110);
 	}
-	else String_Append(fsrc, version_110);
+	else
+	{
+		if (gen->ext->glver_major >= 3)
+			String_Append(fsrc, version_130);
+		else String_Append(fsrc, version_110);
+	}
 	switch (srctype)
 	{
 	default:
@@ -1100,6 +1163,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, var_texcoord);
 	if (usedest) String_Append(fsrc, var_destcoord);
 	if (id & 0x10000000) String_Append(fsrc, var_stencilcoord);
+	if (gen->ext->glver_major >= 3) String_Append(fsrc, out_fragcolor);
+	else String_Append(fsrc, var_fragcolor);
 
 	// Functions
 	switch (srctype)
@@ -1296,6 +1361,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			break;
 		}
 	}
+	if (gen->ext->glver_major < 3) String_Append(fsrc, op_destoutgl2);
 	String_Append(fsrc, mainend);
 #ifdef _DEBUG
 	OutputDebugStringA("2D blitter fragment shader:\n");
