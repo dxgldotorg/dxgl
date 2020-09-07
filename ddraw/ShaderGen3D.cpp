@@ -331,18 +331,18 @@ static const char linefeed[] = "\n";
 static const char mainstart[] = "void main()\n{\n";
 static const char mainend[] = "} ";
 // Attributes
-static const char attr_xyz[] = "attribute vec3 xyz;\n";
-static const char attr_rhw[] = "attribute float rhw;\n";
-static const char attr_nxyz[] = "attribute vec3 nxyz;\n";
-static const char attr_blend[] = "attribute float blendX;\n";
-static const char attr_rgba[] = "attribute vec4 rgbaX;\n";
-static const char attr_s[] = "attribute float sX;\n";
+static const char attr_xyz[] = "vec3 xyz;\n";
+static const char attr_rhw[] = "float rhw;\n";
+static const char attr_nxyz[] = "vec3 nxyz;\n";
+static const char attr_blend[] = "float blendX;\n";
+static const char attr_rgba[] = "vec4 rgbaX;\n";
+static const char attr_s[] = "float sX;\n";
 static const char conv_s[] = "vec4 strqX = vec4(sX,0,0,1);\n";
-static const char attr_st[] = "attribute vec2 stX;\n";
+static const char attr_st[] = "vec2 stX;\n";
 static const char conv_st[] = "vec4 strqX = vec4(stX[0],stX[1],0,1);\n";
-static const char attr_str[] = "attribute vec3 strX;\n";
+static const char attr_str[] = "vec3 strX;\n";
 static const char conv_str[] = "vec4 strqX = vec4(strX[0],strX[1],strX[2],1);\n";
-static const char attr_strq[] = "attribute vec4 strqX;\n";
+static const char attr_strq[] = "vec4 strqX;\n";
 // Uniforms
 static const char lightstruct[] = "struct Light\n\
 {\n\
@@ -396,12 +396,15 @@ vec4 ambient;\n\
 vec3 N;\n";
 static const char var_color[] = "vec4 color;\n";
 static const char var_xyzw[] = "vec4 xyzw;\n";
-static const char var_fogfactorvertex[] = "varying float fogfactor;\n";
-static const char var_fogfragcoord[] = "varying float fogfragcoord;\n";
-static const char var_fogfactorpixel[] = "float fogfactor;\n";
-static const char var_colors[] = "varying vec4 vertcolor;\n\
-varying vec4 vertcolor2;\n";
 static const char var_keycomp[] = "ivec4 keycomp;\n";
+static const char var_fogfactorpixel[] = "float fogfactor;\n";
+
+// Varyings
+static const char var_fogfactorvertex[] = "float fogfactor;\n";
+static const char var_fogfragcoord[] = "float fogfragcoord;\n";
+static const char var_colors1[] = "vec4 vertcolor;\n";
+static const char var_colors2[] = "vec4 vertcolor2;\n";
+
 // Constants
 static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
 static const char const_threshold[] = "mat4 threshold = mat4(\n\
@@ -426,9 +429,15 @@ static const char op_spotlight[] = "SpotLight(lightX);\n";
 static const char op_colorout[] = "vertcolor = (mtldiffuse * diffuse) + (mtlambient * ambient)\n\
 + (mtlspecular * specular) + mtlemission;\n\
 vertcolor2 = (mtlspecular * specular);\n";
+static const char op_colorout_gl2[] = "gl_FrontColor = (mtldiffuse * diffuse) + (mtlambient * ambient)\n\
++ (mtlspecular * specular) + mtlemission;\n\
+gl_FrontSecondaryColor = (mtlspecular * specular);\n";
 static const char op_colorvert[] = "vertcolor = rgba0.bgra;\n";
+static const char op_colorvert_gl2[] = "gl_FrontColor = rgba0.bgra;\n";
 static const char op_color2vert[] = "vertcolor2 = rgba1.bgra;\n";
+static const char op_color2vert_gl2[] = "gl_FrontSecondaryColor = rgba1.bgra;\n";
 static const char op_colorwhite[] = "vertcolor = vec4(1.0,1.0,1.0,1.0);\n";
+static const char op_colorwhite_gl2[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_dither[] = "color = dither(color);\n";
 static const char op_colorfragin[] = "color = vertcolor;\n";
@@ -456,6 +465,8 @@ fogdensity * fogdensity);\n";
 static const char op_fogclamp[] = "fogfactor = clamp(fogfactor,0.0,1.0);\n";
 static const char op_fogblend[] = "color = mix(fogcolor,color,fogfactor);\n";
 static const char op_fogassign[] = "color = fogcolor;\n";
+static const char op_colorsgl2[] = "vertcolor = gl_Color;\n\
+vertcolor2 = gl_SecondaryColor;\n";
 
 // Functions
 static const char func_dirlight[] = "void DirLight(in Light light)\n\
@@ -540,6 +551,44 @@ static const char func_dither[] = "vec4 dither(vec4 color2)\n\
 	return color;\n\
 }\n";
 
+/**
+  * Adds an attribute to the shader.
+  * @param str
+  *  String to append
+  * @param var
+  *  Variable to append
+  * @param glver
+  *  Major GL version
+  */
+void append_attr(STRING *str, const char *var, int glver)
+{
+	if (glver >= 3) String_Append(str, "in ");
+	else String_Append(str, "attribute ");
+	String_Append(str, var);
+}
+
+/**
+  * Adds a varying variable to the shader.
+  * @param str
+  *  String to append
+  * @param var
+  *  Variable to append
+  * @param glver
+  *  Major GL version
+  * @parm fs
+  *  True if fragment shader
+  */
+void append_varying(STRING* str, const char* var, int glver, BOOL fs, BOOL smooth)
+{
+	if (glver >= 3)
+	{
+		if (!smooth) String_Append(str, "flat ");
+		if (fs) String_Append(str, "in ");
+		else String_Append(str, "out ");
+	}
+	else String_Append(str, "varying ");
+	String_Append(str, var);
+}
 
 /**
   * Creates an OpenGL shader program
@@ -585,25 +634,27 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	//Header
 	STRING *vsrc = &This->genshaders[index].shader.vsrc;
 	String_Append(vsrc, header);
-	String_Append(vsrc, ver110);
+	if(This->ext->glver_major >= 3)
+		String_Append(vsrc, ver130);
+	else String_Append(vsrc, ver110);
 	String_Append(vsrc, vertexshader);
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
 	// Attributes
-	String_Append(vsrc, attr_xyz);
-	if((id>>50)&1) String_Append(vsrc, attr_rhw);
+	append_attr(vsrc, attr_xyz, This->ext->glver_major);
+	if((id>>50)&1) append_attr(vsrc, attr_rhw, This->ext->glver_major);
 	String_Assign(&tmp, attr_rgba);
 	if((id>>35)&1)
 	{
-		tmp.ptr[19] = '0';
-		String_Append(vsrc, tmp.ptr);
+		tmp.ptr[9] = '0';
+		append_attr(vsrc, tmp.ptr, This->ext->glver_major);
 	}
 	if((id>>36)&1)
 	{
-		tmp.ptr[19] = '1';
-		String_Append(vsrc, tmp.ptr);
+		tmp.ptr[9] = '1';
+		append_attr(vsrc, tmp.ptr, This->ext->glver_major);
 	}
-	if((id>>37)&1) String_Append(vsrc, attr_nxyz);
+	if((id>>37)&1) append_attr(vsrc, attr_nxyz, This->ext->glver_major);
 	else String_Append(vsrc, const_nxyz);
 	count = (id>>46)&7;
 	if(count)
@@ -611,8 +662,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Assign(&tmp,attr_blend);
 		for(i = 0; i < count; i++)
 		{
-			tmp.ptr[21] = *(_itoa(i,idstring,10));
-			String_Append(vsrc, tmp.ptr);
+			tmp.ptr[11] = *(_itoa(i,idstring,10));
+			append_attr(vsrc, tmp.ptr, This->ext->glver_major);
 		}
 	}
 	for(i = 0; i < numtex; i++)
@@ -621,22 +672,22 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		{
 		case 0:
 			String_Assign(&tmp,attr_s);
-			tmp.ptr[16] = *(_itoa(i,idstring,10));
+			tmp.ptr[6] = *(_itoa(i,idstring,10));
 			break;
 		case 1:
 			String_Assign(&tmp, attr_st);
-			tmp.ptr[17] = *(_itoa(i,idstring,10));
+			tmp.ptr[7] = *(_itoa(i,idstring,10));
 			break;
 		case 2:
 			String_Assign(&tmp, attr_str);
-			tmp.ptr[18] = *(_itoa(i,idstring,10));
+			tmp.ptr[8] = *(_itoa(i,idstring,10));
 			break;
 		case 3:
 			String_Assign(&tmp, attr_strq);
-			tmp.ptr[19] = *(_itoa(i,idstring,10));
+			tmp.ptr[9] = *(_itoa(i,idstring,10));
 			break;
 		}
-		String_Append(vsrc, tmp.ptr);
+		append_attr(vsrc, tmp.ptr, This->ext->glver_major);
 	}
 
 	// Uniforms
@@ -670,13 +721,17 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(vsrc, unif_fogstart);
 		String_Append(vsrc, unif_fogend);
 		String_Append(vsrc, unif_fogdensity);
-		String_Append(vsrc, var_fogfragcoord);
+		append_varying(vsrc, var_fogfragcoord, This->ext->glver_major, FALSE, FALSE);
 	}
 	// Variables
 	String_Append(vsrc, var_common);
-	String_Append(vsrc, var_colors);
+	if (This->ext->glver_major >= 3)
+	{
+		append_varying(vsrc, var_colors1, This->ext->glver_major, FALSE, id & 1);
+		append_varying(vsrc, var_colors2, This->ext->glver_major, FALSE, id & 1);
+	}
 	String_Append(vsrc, var_xyzw);
-	if(vertexfog && !pixelfog) String_Append(vsrc, var_fogfactorvertex);
+	if(vertexfog && !pixelfog) append_varying(vsrc, var_fogfactorvertex, This->ext->glver_major, FALSE, FALSE);
 
 	// Functions
 	if(numlights)
@@ -737,7 +792,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			bool hascolor2 = false;
 			if((id>>36)&1) hascolor2 = true;
 			int matcolor;
-			String_Append(vsrc, "vertcolor = (");
+			if(This->ext->glver_major < 3) String_Append(vsrc, "gl_FrontColor = (");
+			else String_Append(vsrc, "vertcolor = (");
 			matcolor = ((id>>23)&3);
 			if((matcolor == D3DMCS_COLOR1) && hascolor1) String_Append(vsrc, colorargs[4]);
 			else if((matcolor == D3DMCS_COLOR2) && hascolor2) String_Append(vsrc, colorargs[5]);
@@ -759,13 +815,29 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			else String_Append(vsrc, colorargs[3]);
 			String_Append(vsrc, ";\n");
 		}
-		else String_Append(vsrc, op_colorout);
+		else
+		{
+			if(This->ext->glver_major < 3) String_Append(vsrc, op_colorout_gl2);
+			else String_Append(vsrc, op_colorout);
+		}
 	}
 	else
 	{
-		if((id>>35)&1) String_Append(vsrc, op_colorvert);
-		else String_Append(vsrc, op_colorwhite);
-		if((id>>36)&1) String_Append(vsrc, op_color2vert);
+		if ((id >> 35) & 1)
+		{
+			if (This->ext->glver_major < 3) String_Append(vsrc, op_colorvert_gl2);
+			else String_Append(vsrc, op_colorvert);
+		}
+		else
+		{
+			if (This->ext->glver_major < 3) String_Append(vsrc, op_colorwhite_gl2);
+			else String_Append(vsrc, op_colorwhite);
+		}
+		if ((id >> 36) & 1)
+		{
+			if (This->ext->glver_major < 3) String_Append(vsrc, op_color2vert_gl2);
+			else String_Append(vsrc, op_color2vert);
+		}
 	}
 	int texindex;
 	for(i = 0; i < 8; i++)
@@ -858,7 +930,9 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	if ((id>>62)&1)	dither = true;
 	STRING *fsrc = &This->genshaders[index].shader.fsrc;
 	String_Append(fsrc, header);
-	String_Append(fsrc, ver110);
+	if (This->ext->glver_major >= 3)
+		String_Append(fsrc, ver130);
+	else String_Append(fsrc, ver110);
 	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;
@@ -896,12 +970,21 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(fsrc, unif_fogstart);
 		String_Append(fsrc, unif_fogend);
 		String_Append(fsrc, unif_fogdensity);
-		String_Append(fsrc, var_fogfragcoord);
+		append_varying(fsrc, var_fogfragcoord, This->ext->glver_major, TRUE, FALSE);
 	}
 	// Variables
 	String_Append(fsrc, var_color);
-	String_Append(fsrc, var_colors);
-	if(vertexfog && !pixelfog) String_Append(fsrc, var_fogfactorvertex);
+	if (This->ext->glver_major >= 3)
+	{
+		append_varying(fsrc, var_colors1, This->ext->glver_major, TRUE, id & 1);
+		append_varying(fsrc, var_colors2, This->ext->glver_major, TRUE, id & 1);
+	}
+	else
+	{
+		String_Append(fsrc, var_colors1);
+		String_Append(fsrc, var_colors2);
+	}
+	if(vertexfog && !pixelfog) append_varying(fsrc, var_fogfactorvertex, This->ext->glver_major, TRUE, FALSE);
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
 	if (haskey) String_Append(fsrc, var_keycomp);
@@ -909,6 +992,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	if (dither) String_Append(fsrc, func_dither);
 	// Main
 	String_Append(fsrc, mainstart);
+	if (This->ext->glver_major < 3) String_Append(fsrc, op_colorsgl2);
 	String_Append(fsrc, op_colorfragin);
 	STRING arg1,arg2;
 	STRING texarg;
