@@ -405,6 +405,9 @@ static const char var_fogfragcoord[] = "float fogfragcoord;\n";
 static const char var_colors1[] = "vec4 vertcolor;\n";
 static const char var_colors2[] = "vec4 vertcolor2;\n";
 
+// Outputs
+static const char out_fragcolor[] = "out vec4 FragColor;\n";
+
 // Constants
 static const char const_nxyz[] = "const vec3 nxyz = vec3(0,0,0);\n";
 static const char const_threshold[] = "mat4 threshold = mat4(\n\
@@ -439,6 +442,7 @@ static const char op_color2vert_gl2[] = "gl_FrontSecondaryColor = rgba1.bgra;\n"
 static const char op_colorwhite[] = "vertcolor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorwhite_gl2[] = "gl_FrontColor = vec4(1.0,1.0,1.0,1.0);\n";
 static const char op_colorfragout[] = "gl_FragColor = color;\n";
+static const char op_colorfragout_gl3[] = "FragColor = color;\n";
 static const char op_dither[] = "color = dither(color);\n";
 static const char op_colorfragin[] = "color = vertcolor;\n";
 static const char op_colorkeyin[] = "keycomp = ivec4(texture2DProj(texX,gl_TexCoord[Y])*vec4(keybitsZ)+.5);\n";
@@ -988,6 +992,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
 	if (haskey) String_Append(fsrc, var_keycomp);
+	// Outputs
+	if (This->ext->glver_major >= 3) String_Append(fsrc, out_fragcolor);
 	// Functions
 	if (dither) String_Append(fsrc, func_dither);
 	// Main
@@ -1439,22 +1445,22 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			String_Append(fsrc, "discard;\n");
 			break;
 		case 1:
-			String_Append(fsrc, "if(int(color.a * 255.5) >= alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) >= alpharef) discard;\n");
 			break;
 		case 2:
-			String_Append(fsrc, "if(int(color.a * 255.5) != alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) != alpharef) discard;\n");
 			break;
 		case 3:
-			String_Append(fsrc, "if(int(color.a * 255.5) > alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) > alpharef) discard;\n");
 			break;
 		case 4:
-			String_Append(fsrc, "if(int(color.a * 255.5) <= alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) <= alpharef) discard;\n");
 			break;
 		case 5:
-			String_Append(fsrc, "if(int(color.a * 255.5) == alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) == alpharef) discard;\n");
 			break;
 		case 6:
-			String_Append(fsrc, "if(int(color.a * 255.5) < alpharef) discard;");
+			String_Append(fsrc, "if(int(color.a * 255.5) < alpharef) discard;\n");
 			break;
 		case 7:
 		default:
@@ -1482,7 +1488,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	}
 	//if(((id>>61)&1) && !vertexfog && !pixelfog) String_Append(fsrc, op_fogassign);
 	if (dither) String_Append(fsrc,op_dither);
-	String_Append(fsrc, op_colorfragout);
+	if (This->ext->glver_major >= 3) String_Append(fsrc, op_colorfragout_gl3);
+	else String_Append(fsrc, op_colorfragout);
 	String_Append(fsrc, mainend);
 	String_Free(&tmp);
 	String_Free(&arg1);
