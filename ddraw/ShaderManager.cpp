@@ -54,7 +54,7 @@ in vec4 TexCoord0;\n\
 out vec4 FragColor;\n\
 void main()\n\
 {\n\
-	FragColor = texture2D( tex0, TexCoord0.st);\n\
+	FragColor = texture( tex0, TexCoord0.st);\n\
 }";
 
 const char frag_Pal256[] =  "\
@@ -75,9 +75,9 @@ in vec4 TexCoord0;\n\
 out vec4 FragColor;\n\
 void main()\n\
 {\n\
-	vec4 myindex = texture2D(tex0, TexCoord0.xy);\n\
+	vec4 myindex = texture(tex0, TexCoord0.xy);\n\
 	vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
-	vec4 texel = texture2D(pal, index);\n\
+	vec4 texel = texture(pal, index);\n\
 	FragColor = texel;\n\
 }";
 
@@ -116,7 +116,7 @@ ivec4 pixel;\n\
 out vec4 FragColor;\n\
 void main()\n\
 {\n\
-	pixel = ivec4(texture2D(tex0, TexCoord0.st)*vec4(colorsize) + .5);\n\
+	pixel = ivec4(texture(tex0, TexCoord0.st)*vec4(colorsize) + .5);\n\
 	if (pixel.rgb == ckey) pixel.a = 0;\n\
 	else pixel.a = colorsize.a;\n\
 	FragColor = vec4(pixel) / vec4(colorsize);\n\
@@ -144,7 +144,7 @@ ivec4 pixel;\n\
 out vec4 FragColor;\n\
 void main()\n\
 {\n\
-	pixel = ivec4(texture2D(tex0, TexCoord0.st)*vec4(colorsize) + .5);\n\
+	pixel = ivec4(texture(tex0, TexCoord0.st)*vec4(colorsize) + .5);\n\
 	if (pixel.rgb != ckey) pixel.a = 0;\n\
 	else pixel.a = colorsize.a;\n\
 	FragColor = vec4(pixel) / vec4(colorsize);\n\

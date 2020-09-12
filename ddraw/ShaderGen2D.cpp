@@ -123,12 +123,12 @@ static const char const_bt601_coeff_inv[] =
 const vec3 yuv_offsets_inv = vec3(0.0625, 0.5, 0.5);\n";
 
 // Attributes
-static const char attr_xy[] = "attribute vec2 xy;\n";
-static const char attr_rgb[] = "attribute vec3 rgb;\n";
-static const char attr_rgba[] = "attribute vec4 rgba;\n";
-static const char attr_srcst[] = "attribute vec2 srcst;\n";
-static const char attr_destst[] = "attribute vec2 destst;\n";
-static const char attr_stencilst[] = "attribute vec2 stencilst;\n";
+static const char attr_xy[] = "vec2 xy;\n";
+static const char attr_rgb[] = "vec3 rgb;\n";
+static const char attr_rgba[] = "vec4 rgba;\n";
+static const char attr_srcst[] = "vec2 srcst;\n";
+static const char attr_destst[] = "vec2 destst;\n";
+static const char attr_stencilst[] = "vec2 stencilst;\n";
 
 // Uniforms
 static const char unif_view[] = "uniform vec4 view;\n";
@@ -159,59 +159,59 @@ static const char var_patternst[] = "vec2 patternst;\n";
 static const char var_fragcolor[] = "vec4 FragColor;\n";
 
 // Varyings
-static const char var_texcoord[] = "varying vec2 texcoord;\n";
-static const char var_destcoord[] = "varying vec2 destcoord;\n";
-static const char var_stencilcoord[] = "varying vec2 stencilcoord;\n";
+static const char var_texcoord[] = "vec2 texcoord;\n";
+static const char var_destcoord[] = "vec2 destcoord;\n";
+static const char var_stencilcoord[] = "vec2 stencilcoord;\n";
 
 //Outputs
 static const char out_fragcolor[] = "out vec4 FragColor;\n";
 
 // Operations
 // Non-integer color sampler
-static const char op_color[] = "color = texture2D(srctex,texcoord.st);\n";
-static const char op_colorrect[] = "color = texture2DRect(srctex,texcoord.st);\n";
-static const char op_palcolor[] = "color = texture2D(srcpal,vec2(((texture2D(srctex,\n\
+static const char op_color[] = "color = tex2d(srctex,texcoord.st);\n";
+static const char op_colorrect[] = "color = tex2drect(srctex,texcoord.st);\n";
+static const char op_palcolor[] = "color = tex2d(srcpal,vec2(((tex2d(srctex,\n\
 texcoord.xy).x *(255.0 / 256.0)) + (0.5 / 256.0)), 0.5)); \n";
-static const char op_palcolorrect[] = "color = texture2DRect(srcpal,vec2(((texture2D(srctex,\n\
+static const char op_palcolorrect[] = "color = tex2drect(srcpal,vec2(((tex2d(srctex,\n\
 texcoord.xy).x *(255.0 / 256.0)) + (0.5 / 256.0)), 0.5)); \n";
-static const char op_colormul256[] = "color = vec4(256.0)*texture2D(srctex,texcoord.st);\n";
+static const char op_colormul256[] = "color = vec4(256.0)*tex2d(srctex,texcoord.st);\n";
 static const char op_colorrgbg[] = "color = readrgbg(srctex);\n";
 static const char op_colorgrgb[] = "color = readgrgb(srctex);\n";
 static const char op_coloruyvy[] = "color = readuyvy(srctex);\n";
 static const char op_coloryuyv[] = "color = readyuyv(srctex);\n";
 static const char op_coloryvyu[] = "color = readyvyu(srctex);\n";
-static const char op_lumcolor[] = "color = vec4(texture2D(srctex,texcoord.st).rrr,1.0);\n";
+static const char op_lumcolor[] = "color = vec4(tex2d(srctex,texcoord.st).rrr,1.0);\n";
 
 // Color key source sampler
-static const char op_src[] = "src = ivec4(texture2D(srctex,texcoord.st)*vec4(colorsizesrc)+.5);\n";
-static const char op_srcrect[] = "src = ivec4(texture2DRect(srctex,texcoord.st)*vec4(colorsizesrc)+.5);\n";
+static const char op_src[] = "src = ivec4(tex2d(srctex,texcoord.st)*vec4(colorsizesrc)+.5);\n";
+static const char op_srcrect[] = "src = ivec4(tex2drect(srctex,texcoord.st)*vec4(colorsizesrc)+.5);\n";
 
 // Pixel sampler
-static const char op_pixel[] = "pixel = ivec4(texture2D(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
-static const char op_pixelrect[] = "pixel = ivec4(texture2DRect(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
-static const char op_palpixel[] = "vec4 myindex = texture2D(srctex, texcoord.xy);\n\
+static const char op_pixel[] = "pixel = ivec4(tex2d(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelrect[] = "pixel = ivec4(tex2drect(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
+static const char op_palpixel[] = "vec4 myindex = tex2d(srctex, texcoord.xy);\n\
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
-pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
-static const char op_palpixelrect[] = "vec4 myindex = texture2DRect(srctex, texcoord.xy);\n\
+pixel = ivec4(tex2d(srcpal, index)*vec4(colorsizedest)+.5);\n";
+static const char op_palpixelrect[] = "vec4 myindex = tex2drect(srctex, texcoord.xy);\n\
 vec2 index = vec2(((myindex.x*(255.0/256.0))+(0.5/256.0)),0.5);\n\
-pixel = ivec4(texture2D(srcpal, index)*vec4(colorsizedest)+.5);\n";
-static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*texture2D(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
+pixel = ivec4(tex2d(srcpal, index)*vec4(colorsizedest)+.5);\n";
+static const char op_pixelmul256[] = "pixel = ivec4(vec4(256.0)*tex2d(srctex,texcoord.st)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelrgbg[] = "pixel = ivec4(readrgbg(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelgrgb[] = "pixel = ivec4(readgrgb(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixeluyvy[] = "pixel = ivec4(readuyvy(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelyuyv[] = "pixel = ivec4(readyuyv(srctex)*vec4(colorsizedest)+.5);\n";
 static const char op_pixelyvyu[] = "pixel = ivec4(readyvyu(srctex)*vec4(colorsizedest)+.5);\n";
-static const char op_lumpixel[] = "pixel = ivec4(vec4(texture2D(srctex,texcoord.st).rrr,1.0)*vec4(colorsizedest)+.5);\n";
+static const char op_lumpixel[] = "pixel = ivec4(vec4(tex2d(srctex,texcoord.st).rrr,1.0)*vec4(colorsizedest)+.5);\n";
 static const char op_fillcolor[] = "pixel = fillcolor;\n";
 
 // Destination sampler
-static const char op_dest[] = "dest = ivec4(texture2D(desttex,destcoord.st)*vec4(colorsizedest)+.5);\n";
+static const char op_dest[] = "dest = ivec4(tex2d(desttex,destcoord.st)*vec4(colorsizedest)+.5);\n";
 static const char op_pattern[] = "patternst = vec2(mod(gl_FragCoord.x,float(patternsize.x))/float(patternsize.x),\n\
 mod(gl_FragCoord.y, float(patternsize.y)) / float(patternsize.y));\n\
-pattern = ivec4(texture2D(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
+pattern = ivec4(tex2d(patterntex,patternst)*vec4(colorsizedest)+.5);\n";
 
 //Outputs
-static const char op_destoutdestblend[] = "FragColor = (vec4(pixel)/vec4(colorsizedest)) * texture2D(desttex,destcoord.st);\n";
+static const char op_destoutdestblend[] = "FragColor = (vec4(pixel)/vec4(colorsizedest)) * tex2d(desttex,destcoord.st);\n";
 static const char op_destout[] = "FragColor = vec4(pixel)/vec4(colorsizedest);\n";
 static const char op_destoutcolor[] = "FragColor = color;\n";
 static const char op_destoutyuvrgb[] = "FragColor = yuvatorgba(vec4(pixel)/vec4(colorsizedest));\n";
@@ -243,9 +243,31 @@ static const char op_ckeydestrange[] = "if((dest.r < ckeydest.r) || (dest.g < ck
    (dest.r > ckeydesthigh.r) || (dest.g > ckeydesthigh.g) || (dest.b > ckeydesthigh.b)) discard;\n";
 
 // Clipper
-static const char op_clip[] = "if(texture2D(stenciltex, stencilcoord.st).r < .5) discard;\n";
+static const char op_clip[] = "if(tex2d(stenciltex, stencilcoord.st).r < .5) discard;\n";
 
 // Functions
+static const char func_tex2d_gl2[] =
+"vec4 tex2d(sampler2D tex, vec2 coord)\n\
+{\n\
+    return texture2D(tex,coord);\n\
+}\n\n";
+static const char func_tex2d_gl3[] =
+"vec4 tex2d(sampler2D tex, vec2 coord)\n\
+{\n\
+    return texture(tex,coord);\n\
+}\n\n";
+static const char func_tex2drect_gl2[] =
+"vec4 tex2drect(sampler2DRect tex, vec2 coord)\n\
+{\n\
+    return texture2DRect(tex,coord);\n\
+}\n\n";
+static const char func_tex2drect_gl3[] =
+"vec4 tex2drect(sampler2DRect tex, vec2 coord)\n\
+{\n\
+    return texture(tex,coord);\n\
+}\n\n";
+
+
 static const char func_yuvatorgba[] =
 "vec4 yuvatorgba(vec4 yuva)\n\
 {\n\
@@ -914,6 +936,73 @@ void append_varying(STRING* str, const char* var, int glver, BOOL fs, BOOL smoot
 	String_Append(str, var);
 }
 
+void glslver(STRING* str, int major, int minor)
+{
+	switch (major)
+	{
+	case 2:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_110);
+			break;
+		case 1:
+		default:
+			String_Append(str, version_120);
+		}
+		break;
+	case 3:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_130);
+			break;
+		case 1:
+			String_Append(str, version_140);
+			break;
+		case 2:
+			String_Append(str, version_150);
+			break;
+		case 3:
+		default:
+			String_Append(str, version_330);
+			break;
+		}
+		break;
+	case 4:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_400);
+			break;
+		case 1:
+			String_Append(str, version_410);
+			break;
+		case 2:
+			String_Append(str, version_420);
+			break;
+		case 3:
+			String_Append(str, version_430);
+			break;
+		case 4:
+			String_Append(str, version_440);
+			break;
+		case 5:
+			String_Append(str, version_450);
+			break;
+		case 6:
+		default:
+			String_Append(str, version_460);
+			break;
+		}
+		break;
+	default:
+		if (major > 4) String_Append(str, version_460);
+		else String_Append(str, version_110);
+		break;
+	}
+}
+
 void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 {
 	STRING tmp;
@@ -935,12 +1024,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	// Header
 	STRING *vsrc = &gen->genshaders2D[index].shader.vsrc;
 	String_Append(vsrc, revheader);
+	glslver(vsrc, gen->ext->glver_major, gen->ext->glver_minor);
 	if (id & DDBLT_ROP)
 	{
 		rop = UnpackROPBits(id);
 		if (gen->ext->glver_major >= 3)
 		{
-			String_Append(vsrc, version_130);
 			if (dxglcfg.DebugNoGLSL130)
 			{
 				if (gen->ext->GLEXT_EXT_gpu_shader4) intproc = true;
@@ -949,39 +1038,31 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 		else if (gen->ext->GLEXT_EXT_gpu_shader4)
 		{
-			String_Append(vsrc, version_110);
 			String_Append(vsrc, ext_shader4);
 			intproc = true;
 		}
-		else String_Append(vsrc, version_110);
-	}
-	else
-	{
-		if (gen->ext->glver_major >= 3)
-			String_Append(vsrc, version_130);
-		else String_Append(vsrc, version_110);
 	}
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
 
 	// Attributes
-	String_Append(vsrc, attr_xy);
-	if (!(id & DDBLT_COLORFILL)) String_Append(vsrc, attr_srcst);
+	append_attr(vsrc, attr_xy, gen->ext->glver_major);
+	if (!(id & DDBLT_COLORFILL)) append_attr(vsrc, attr_srcst, gen->ext->glver_major);
 	if (id & DDBLT_ROP)
 	{
 		if (rop_texture_usage[rop] & 2) usedest = TRUE;
 	}
 	if (id & DDBLT_KEYDEST) usedest = TRUE;
-	if (usedest) String_Append(vsrc, attr_destst);
-	if (id & 0x10000000) String_Append(vsrc, attr_stencilst);
+	if (usedest) append_attr(vsrc, attr_destst, gen->ext->glver_major);
+	if (id & 0x10000000) append_attr(vsrc, attr_stencilst, gen->ext->glver_major);
 
 	// Uniforms
 	String_Append(vsrc, unif_view);
 
 	// Variables
-	if (!(id & DDBLT_COLORFILL)) String_Append(vsrc, var_texcoord);
-	if (usedest) String_Append(vsrc, var_destcoord);
-	if (id & 0x10000000) String_Append(vsrc, var_stencilcoord);
+	if (!(id & DDBLT_COLORFILL)) append_varying(vsrc, var_texcoord, gen->ext->glver_major, FALSE, TRUE);
+	if (usedest) append_varying(vsrc, var_destcoord, gen->ext->glver_major, FALSE, TRUE);
+	if (id & 0x10000000) append_varying(vsrc, var_stencilcoord, gen->ext->glver_major, FALSE, TRUE);
 
 	// Main
 	String_Append(vsrc, mainstart);
@@ -1023,11 +1104,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	// Create fragment shader
 	STRING *fsrc = &gen->genshaders2D[index].shader.fsrc;
 	String_Append(fsrc, revheader);
+	glslver(fsrc, gen->ext->glver_major, gen->ext->glver_minor);
 	if (id & DDBLT_ROP)
 	{
+		rop = UnpackROPBits(id);
 		if (gen->ext->glver_major >= 3)
 		{
-			String_Append(fsrc, version_130);
 			if (dxglcfg.DebugNoGLSL130)
 			{
 				if (gen->ext->GLEXT_EXT_gpu_shader4) intproc = true;
@@ -1036,17 +1118,9 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 		else if (gen->ext->GLEXT_EXT_gpu_shader4)
 		{
-			String_Append(fsrc, version_110);
 			String_Append(fsrc, ext_shader4);
 			intproc = true;
 		}
-		else String_Append(fsrc, version_110);
-	}
-	else
-	{
-		if (gen->ext->glver_major >= 3)
-			String_Append(fsrc, version_130);
-		else String_Append(fsrc, version_110);
 	}
 	switch (srctype)
 	{
@@ -1160,13 +1234,23 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 	}
 	if (usedest) String_Append(fsrc, var_dest);
-	if (!(id & DDBLT_COLORFILL)) String_Append(fsrc, var_texcoord);
-	if (usedest) String_Append(fsrc, var_destcoord);
-	if (id & 0x10000000) String_Append(fsrc, var_stencilcoord);
+	if (!(id & DDBLT_COLORFILL)) append_varying(fsrc, var_texcoord, gen->ext->glver_major, TRUE, TRUE);
+	if (usedest) append_varying(fsrc, var_destcoord, gen->ext->glver_major, TRUE, TRUE);
+	if (id & 0x10000000) append_varying(fsrc, var_stencilcoord, gen->ext->glver_major, TRUE, TRUE);
 	if (gen->ext->glver_major >= 3) String_Append(fsrc, out_fragcolor);
 	else String_Append(fsrc, var_fragcolor);
 
 	// Functions
+	if (gen->ext->glver_major >= 3)
+	{
+		String_Append(fsrc, func_tex2d_gl3);
+		String_Append(fsrc, func_tex2drect_gl3);
+	}
+	else
+	{
+		String_Append(fsrc, func_tex2d_gl2);
+		String_Append(fsrc, func_tex2drect_gl2);
+	}
 	switch (srctype)
 	{
 	case 0x20:

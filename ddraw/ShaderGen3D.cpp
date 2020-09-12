@@ -725,7 +725,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(vsrc, unif_fogstart);
 		String_Append(vsrc, unif_fogend);
 		String_Append(vsrc, unif_fogdensity);
-		append_varying(vsrc, var_fogfragcoord, This->ext->glver_major, FALSE, FALSE);
+		append_varying(vsrc, var_fogfragcoord, This->ext->glver_major, FALSE, TRUE);
 	}
 	// Variables
 	String_Append(vsrc, var_common);
@@ -735,7 +735,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		append_varying(vsrc, var_colors2, This->ext->glver_major, FALSE, id & 1);
 	}
 	String_Append(vsrc, var_xyzw);
-	if(vertexfog && !pixelfog) append_varying(vsrc, var_fogfactorvertex, This->ext->glver_major, FALSE, FALSE);
+	if(vertexfog && !pixelfog) append_varying(vsrc, var_fogfactorvertex, This->ext->glver_major, FALSE, TRUE);
 
 	// Functions
 	if(numlights)
@@ -974,7 +974,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(fsrc, unif_fogstart);
 		String_Append(fsrc, unif_fogend);
 		String_Append(fsrc, unif_fogdensity);
-		append_varying(fsrc, var_fogfragcoord, This->ext->glver_major, TRUE, FALSE);
+		append_varying(fsrc, var_fogfragcoord, This->ext->glver_major, TRUE, TRUE);
 	}
 	// Variables
 	String_Append(fsrc, var_color);
@@ -988,7 +988,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		String_Append(fsrc, var_colors1);
 		String_Append(fsrc, var_colors2);
 	}
-	if(vertexfog && !pixelfog) append_varying(fsrc, var_fogfactorvertex, This->ext->glver_major, TRUE, FALSE);
+	if(vertexfog && !pixelfog) append_varying(fsrc, var_fogfactorvertex, This->ext->glver_major, TRUE, TRUE);
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
 	if (haskey) String_Append(fsrc, var_keycomp);
