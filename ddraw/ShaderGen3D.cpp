@@ -311,19 +311,19 @@ GLuint ShaderGen3D_GetProgram(ShaderGen3D *This)
 
 static const char header[] =
 	"//REV" STR(SHADER3DVERSION) "\n";
-static const char ver110[] = "#version 110\n";
-static const char ver120[] = "#version 120\n";
-static const char ver130[] = "#version 130\n";
-static const char ver140[] = "#version 140\n";
-static const char ver150[] = "#version 150\n";
-static const char ver330[] = "#version 330\n";
-static const char ver400[] = "#version 400\n";
-static const char ver410[] = "#version 410\n";
-static const char ver420[] = "#version 420\n";
-static const char ver430[] = "#version 430\n";
-static const char ver440[] = "#version 440\n";
-static const char ver450[] = "#version 450\n";
-static const char ver460[] = "#version 460\n";
+static const char version_110[] = "#version 110\n";
+static const char version_120[] = "#version 120\n";
+static const char version_130[] = "#version 130\n";
+static const char version_140[] = "#version 140\n";
+static const char version_150[] = "#version 150 core\n";
+static const char version_330[] = "#version 330 core\n";
+static const char version_400[] = "#version 400 core\n";
+static const char version_410[] = "#version 410 core\n";
+static const char version_420[] = "#version 420 core\n";
+static const char version_430[] = "#version 430 core\n";
+static const char version_440[] = "#version 440 core\n";
+static const char version_450[] = "#version 450 core\n";
+static const char version_460[] = "#version 460 core\n";
 static const char vertexshader[] = "//Vertex Shader\n";
 static const char fragshader[] = "//Fragment Shader\n";
 static const char idheader[] = "//ID: 0x";
@@ -596,6 +596,82 @@ void append_varying(STRING* str, const char* var, int glver, BOOL fs, BOOL smoot
 }
 
 /**
+  * Appends the GLSL version string to the shader.
+  * @param str
+  *  String to append
+  * @param major
+  *  Major OpenGL version
+  * @param minor
+  *  Minor OpenGL version
+  */
+static void glslver(STRING* str, int major, int minor)
+{
+	switch (major)
+	{
+	case 2:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_110);
+			break;
+		case 1:
+		default:
+			String_Append(str, version_120);
+		}
+		break;
+	case 3:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_130);
+			break;
+		case 1:
+			String_Append(str, version_140);
+			break;
+		case 2:
+			String_Append(str, version_150);
+			break;
+		case 3:
+		default:
+			String_Append(str, version_330);
+			break;
+		}
+		break;
+	case 4:
+		switch (minor)
+		{
+		case 0:
+			String_Append(str, version_400);
+			break;
+		case 1:
+			String_Append(str, version_410);
+			break;
+		case 2:
+			String_Append(str, version_420);
+			break;
+		case 3:
+			String_Append(str, version_430);
+			break;
+		case 4:
+			String_Append(str, version_440);
+			break;
+		case 5:
+			String_Append(str, version_450);
+			break;
+		case 6:
+		default:
+			String_Append(str, version_460);
+			break;
+		}
+		break;
+	default:
+		if (major > 4) String_Append(str, version_460);
+		else String_Append(str, version_110);
+		break;
+	}
+}
+
+/**
   * Creates an OpenGL shader program
   * @param This
   *  Pointer to ShaderGen3D structure
@@ -639,9 +715,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	//Header
 	STRING *vsrc = &This->genshaders[index].shader.vsrc;
 	String_Append(vsrc, header);
-	if(This->ext->glver_major >= 3)
-		String_Append(vsrc, ver130);
-	else String_Append(vsrc, ver110);
+	glslver(vsrc, This->ext->glver_major, This->ext->glver_minor);
 	String_Append(vsrc, vertexshader);
 	String_Append(vsrc, idheader);
 	String_Append(vsrc, idstring);
@@ -941,9 +1015,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	if ((id>>62)&1)	dither = true;
 	STRING *fsrc = &This->genshaders[index].shader.fsrc;
 	String_Append(fsrc, header);
-	if (This->ext->glver_major >= 3)
-		String_Append(fsrc, ver130);
-	else String_Append(fsrc, ver110);
+	glslver(fsrc, This->ext->glver_major, This->ext->glver_minor);
 	String_Append(fsrc, fragshader);
 	_snprintf(idstring,21,"%0.16I64X\n",id);
 	idstring[21] = 0;

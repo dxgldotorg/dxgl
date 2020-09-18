@@ -96,15 +96,15 @@ static const char version_110[] = "#version 110\n";
 static const char version_120[] = "#version 120\n";
 static const char version_130[] = "#version 130\n";
 static const char version_140[] = "#version 140\n";
-static const char version_150[] = "#version 150\n";
-static const char version_330[] = "#version 330\n";
-static const char version_400[] = "#version 400\n";
-static const char version_410[] = "#version 410\n";
-static const char version_420[] = "#version 420\n";
-static const char version_430[] = "#version 430\n";
-static const char version_440[] = "#version 440\n";
-static const char version_450[] = "#version 450\n";
-static const char version_460[] = "#version 460\n";
+static const char version_150[] = "#version 150 core\n";
+static const char version_330[] = "#version 330 core\n";
+static const char version_400[] = "#version 400 core\n";
+static const char version_410[] = "#version 410 core\n";
+static const char version_420[] = "#version 420 core\n";
+static const char version_430[] = "#version 430 core\n";
+static const char version_440[] = "#version 440 core\n";
+static const char version_450[] = "#version 450 core\n";
+static const char version_460[] = "#version 460 core\n";
 static const char ext_shader4[] = "#extension GL_EXT_gpu_shader4 : require\n";
 static const char ext_texrect[] = "#extension GL_ARB_texture_rectangle : require\n";
 static const char vertexshader[] = "//2D Vertex Shader\n";
@@ -936,7 +936,7 @@ void append_varying(STRING* str, const char* var, int glver, BOOL fs, BOOL smoot
 	String_Append(str, var);
 }
 
-void glslver(STRING* str, int major, int minor)
+static void glslver(STRING* str, int major, int minor)
 {
 	switch (major)
 	{

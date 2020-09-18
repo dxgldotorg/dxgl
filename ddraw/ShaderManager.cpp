@@ -31,15 +31,15 @@ static const char version_110[] = "#version 110\n";
 static const char version_120[] = "#version 120\n";
 static const char version_130[] = "#version 130\n";
 static const char version_140[] = "#version 140\n";
-static const char version_150[] = "#version 150\n";
-static const char version_330[] = "#version 330\n";
-static const char version_400[] = "#version 400\n";
-static const char version_410[] = "#version 410\n";
-static const char version_420[] = "#version 420\n";
-static const char version_430[] = "#version 430\n";
-static const char version_440[] = "#version 440\n";
-static const char version_450[] = "#version 450\n";
-static const char version_460[] = "#version 460\n";
+static const char version_150[] = "#version 150 core\n";
+static const char version_330[] = "#version 330 core\n";
+static const char version_400[] = "#version 400 core\n";
+static const char version_410[] = "#version 410 core\n";
+static const char version_420[] = "#version 420 core\n";
+static const char version_430[] = "#version 430 core\n";
+static const char version_440[] = "#version 440 core\n";
+static const char version_450[] = "#version 450 core\n";
+static const char version_460[] = "#version 460 core\n";
 	
 const char frag_Texture[] = "\
 uniform sampler2D tex0;\n\
@@ -209,7 +209,7 @@ const SHADER shader_template_gl3[] =
 };
 
 
-void glslver(STRING* str, int major, int minor)
+static void glslver(STRING* str, int major, int minor)
 {
 	switch (major)
 	{
