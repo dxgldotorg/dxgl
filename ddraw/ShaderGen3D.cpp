@@ -404,6 +404,7 @@ static const char var_fogfactorvertex[] = "float fogfactor;\n";
 static const char var_fogfragcoord[] = "float fogfragcoord;\n";
 static const char var_colors1[] = "vec4 vertcolor;\n";
 static const char var_colors2[] = "vec4 vertcolor2;\n";
+static const char var_texcoord[] = "vec4 texcoordX;\n";
 
 // Outputs
 static const char out_fragcolor[] = "out vec4 FragColor;\n";
@@ -445,9 +446,9 @@ static const char op_colorfragout[] = "gl_FragColor = color;\n";
 static const char op_colorfragout_gl3[] = "FragColor = color;\n";
 static const char op_dither[] = "color = dither(color);\n";
 static const char op_colorfragin[] = "color = vertcolor;\n";
-static const char op_colorkeyin[] = "keycomp = ivec4(texture2DProj(texX,gl_TexCoord[Y])*vec4(keybitsZ)+.5);\n";
+static const char op_colorkeyin[] = "keycomp = ivec4(texture2DProj(texX,texcoordY)*vec4(keybitsZ)+.5);\n";
 static const char op_colorkey[] = "if(keycomp.rgb == keyX) discard;\n";
-static const char op_texpassthru1[] = "gl_TexCoord[x] = ";
+static const char op_texpassthru1[] = "texcoordX = ";
 static const char op_texpassthru2s[] = "vec4(sX,0,0,1);\n";
 static const char op_texpassthru2st[] = "vec4(stX,0,1);\n";
 static const char op_texpassthru2str[] = "vec4(strX,1);\n";
@@ -736,6 +737,12 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	}
 	String_Append(vsrc, var_xyzw);
 	if(vertexfog && !pixelfog) append_varying(vsrc, var_fogfactorvertex, This->ext->glver_major, FALSE, TRUE);
+	for (i = 0; i < numtex; i++)
+	{
+		String_Assign(&tmp, var_texcoord);
+		tmp.ptr[13] = i + '0';
+		append_varying(vsrc, tmp.ptr, This->ext->glver_major, FALSE, TRUE);
+	}
 
 	// Functions
 	if(numlights)
@@ -853,7 +860,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		else
 		{
 			String_Assign(&tmp,op_texpassthru1);
-			tmp.ptr[12] = *(_itoa(i,idstring,10));
+			tmp.ptr[8] = *(_itoa(i,idstring,10));
 			String_Append(vsrc, tmp.ptr);
 			texindex = (texstate[i]>>34)&3;
 			switch ((texstate[texindex] >> 51) & 3)
@@ -992,6 +999,12 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	if(pixelfog) String_Append(fsrc, var_fogfactorpixel);
 	if (dither) String_Append(fsrc, const_threshold);
 	if (haskey) String_Append(fsrc, var_keycomp);
+	for (i = 0; i < numtex; i++)
+	{
+		String_Assign(&tmp, var_texcoord);
+		tmp.ptr[13] = i + '0';
+		append_varying(fsrc, tmp.ptr, This->ext->glver_major, TRUE, TRUE);
+	}
 	// Outputs
 	if (This->ext->glver_major >= 3) String_Append(fsrc, out_fragcolor);
 	// Functions
@@ -1008,7 +1021,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	int args[4];
 	bool texfail;
 	bool alphadisabled = false;
-	const char *blendargs[] = {"color","vertcolor","texture2DProj(texX,gl_TexCoord[Y])",
+	const char *blendargs[] = {"color","vertcolor","texture2DProj(texX,texcoordY)",
 		"","texfactor","vertcolor2","vec3(1,1,1)","1",".rgb",".a",".aaa"};
 	bool usecolorkey = false;
 	if((id>>13)&1) usecolorkey = true;
@@ -1026,8 +1039,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 			{
 				String_Assign(&arg1, op_colorkeyin);
 				arg1.ptr[33] = *(_itoa(i, idstring, 10));
-				arg1.ptr[47] = *(_itoa((texstate[i] >> 34) & 7, idstring, 10));
-				arg1.ptr[63] = *(_itoa(i, idstring, 10));
+				arg1.ptr[43] = *(_itoa((texstate[i] >> 34) & 7, idstring, 10));
+				arg1.ptr[58] = *(_itoa(i, idstring, 10));
 				String_Append(fsrc, arg1.ptr);
 				String_Assign(&arg1, op_colorkey);
 				arg1.ptr[21] = *(_itoa(i,idstring,10));
@@ -1050,7 +1063,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 				{
 					String_Assign(&arg1, blendargs[2]);
 					arg1.ptr[17] = *(_itoa(i,idstring,10));
-					arg1.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+					arg1.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1086,7 +1099,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 				{
 					String_Assign(&arg2, blendargs[2]);
 					arg2.ptr[17] = *(_itoa(i,idstring,10));
-					arg2.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+					arg2.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1193,7 +1206,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+			texarg.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
@@ -1214,7 +1227,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+			texarg.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.rgb = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
@@ -1252,7 +1265,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 					String_Assign(&arg1, blendargs[2]);
 					String_Append(&arg1, blendargs[9]);
 					arg1.ptr[17] = *(_itoa(i,idstring,10));
-					arg1.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+					arg1.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1291,7 +1304,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 					String_Assign(&arg2, blendargs[2]);
 					String_Append(&arg2, blendargs[9]);
 					arg2.ptr[17] = *(_itoa(i,idstring,10));
-					arg2.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+					arg2.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 				}
 				else texfail = true;
 				break;
@@ -1398,7 +1411,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDTEXTUREALPHA:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+			texarg.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " * ");
@@ -1419,7 +1432,7 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		case D3DTOP_BLENDTEXTUREALPHAPM:
 			String_Assign(&texarg, blendargs[2]);
 			texarg.ptr[17] = *(_itoa(i,idstring,10));
-			texarg.ptr[31] = *(_itoa((texstate[i]>>34)&7,idstring,10));
+			texarg.ptr[27] = *(_itoa((texstate[i]>>34)&7,idstring,10));
 			String_Append(fsrc, "color.a = ");
 			String_Append(fsrc, arg1.ptr);
 			String_Append(fsrc, " + ");
