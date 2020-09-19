@@ -23,6 +23,7 @@
 static HINSTANCE hinstance;
 bool gradientavailable;
 BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
+BOOL(WINAPI* IsDXGLDDraw)() = NULL; 
 extern BOOL modelistdirty;
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
@@ -144,7 +145,6 @@ int dllboxes[] = {
 INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HMODULE mod_ddraw;
-	BOOL (WINAPI *IsDXGLDDraw)();
 	int i;
 	tstring ver;
 	switch(Msg)
@@ -152,7 +152,7 @@ INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		mod_ddraw = LoadLibrary(_T("ddraw.dll"));
-		if(mod_ddraw) IsDXGLDDraw = GetProcAddress(mod_ddraw,"IsDXGLDDraw");
+		if(mod_ddraw) IsDXGLDDraw = (BOOL(WINAPI*)())GetProcAddress(mod_ddraw,"IsDXGLDDraw");
 		if(IsDXGLDDraw)	SetWindowText(GetDlgItem(hWnd,IDC_DDTYPE),_T("DXGL"));
 		else SetWindowText(GetDlgItem(hWnd,IDC_DDTYPE),_T("System"));
 		if(mod_ddraw) FreeLibrary(mod_ddraw);

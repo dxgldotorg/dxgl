@@ -544,6 +544,9 @@ int ProcessHeaders(char *path)
 #ifdef _DEBUG
 		if(strstr(buffer,";!define _DEBUG")) strcpy(buffer,"!define _DEBUG\n");
 #endif
+#ifdef _M_X64
+		if (strstr(buffer, ";!define _CPU_X64")) strcpy(buffer, "!define _CPU_X64\n");
+#endif
 		fputs(buffer,fileout);
 	}
 	fclose(filein);
@@ -689,7 +692,11 @@ int MakeHelp(char *path)
 		puts("Error processing HTML files.");
 		return -1;
 	}
+	#ifdef _M_X64
+	if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\HTML Help Workshop", 0, KEY_READ|KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS)
+	#else
 	if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\HTML Help Workshop", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+	#endif
 	{
 		if(RegQueryValueExA(hKey,"InstallDir",NULL,NULL,(LPBYTE)hhcpath,&buffersize) == ERROR_SUCCESS)
 		{
@@ -728,7 +735,11 @@ int MakeInstaller(char *path)
 	DWORD buffersize = MAX_PATH+1;
 	PROCESS_INFORMATION process;
 	STARTUPINFOA startinfo;
+	#ifdef _M_X64
+	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\NSIS", 0, KEY_READ|KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS)
+	#else
 	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\NSIS", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+	#endif
 	{
 		if(RegQueryValueExA(hKey,"",NULL,NULL,(LPBYTE)nsispath,&buffersize) == ERROR_SUCCESS)
 		{

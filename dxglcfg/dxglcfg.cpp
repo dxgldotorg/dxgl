@@ -3276,8 +3276,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps[0].icon = LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_STAR));
 		apps[0].icon_shared = TRUE;
 		apps[0].path[0] = 0;
-		SetClassLong(hWnd,GCL_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
-		SetClassLong(hWnd,GCL_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
+		SetClassLongPtr(hWnd,GCLP_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
+		SetClassLongPtr(hWnd,GCLP_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
 		// create temporary gl context to get AA and AF settings.
 		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&mode);

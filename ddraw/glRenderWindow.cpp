@@ -165,7 +165,7 @@ LRESULT glRenderWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		return 0;
 	case WM_SETCURSOR:
 		hParent = GetParent(hwnd);
-		cursor = (HCURSOR)GetClassLong(hParent,GCL_HCURSOR);
+		cursor = (HCURSOR)GetClassLongPtr(hParent,GCLP_HCURSOR);
 		SetCursor(cursor);
 		return SendMessage(hParent,msg,wParam,lParam);
 	case WM_MOUSEMOVE:

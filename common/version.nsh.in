@@ -4,3 +4,4 @@
 !define SIGNTOOL $SIGNTOOL
 ;!define _BETA
 ;!define _DEBUG
+;!define _CPU_X64

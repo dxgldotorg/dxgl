@@ -744,6 +744,9 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 }
 
+#ifdef _WIN64
+#define GWL_WNDPROC GWLP_WNDPROC
+#endif
 
 LONG WINAPI HookSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong)
 {
@@ -778,12 +781,12 @@ LONG WINAPI HookGetWindowLongA(HWND hWnd, int nIndex)
 LONG WINAPI HookGetWindowLongW(HWND hWnd, int nIndex)
 {
 	HWND_HOOK *wndhook;
-	if (nIndex != GWL_WNDPROC) return _GetWindowLongW(hWnd, nIndex);
+	if (nIndex != GWLP_WNDPROC) return _GetWindowLongW(hWnd, nIndex);
 	wndhook = GetWndHook(hWnd);
 	if (!wndhook) return _GetWindowLongW(hWnd, nIndex);
 	return (LONG)wndhook->wndproc;
 }
-#ifdef _M_X64
+#ifdef _WIN64
 LONG_PTR WINAPI HookSetWindowLongPtrA(HWND hWnd, int nIndex, LONG_PTR dwNewLong)
 {
 	LONG_PTR oldproc;
@@ -822,7 +825,7 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex)
 	if (!wndhook) return _GetWindowLongPtrW(hWnd, nIndex);
 	return (LONG_PTR)wndhook->wndproc;
 }
-#endif
+#endif //_WIN64
 BOOL WINAPI HookGetCursorPos(LPPOINT point)
 {
 	HWND_HOOK *wndhook;

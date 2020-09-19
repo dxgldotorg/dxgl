@@ -26,39 +26,69 @@ SetCompressor /SOLID lzma
 !include 'LogicLib.nsh'
 !include "WordFunc.nsh"
 !include 'x64.nsh'
+!include "..\common\version.nsh"
 
-; HM NIS Edit Wizard helper defines
+; Product name is different for x64
+!ifdef _CPU_X64
+!define PRODUCT_NAME "DXGL x64"
+!define SMDIR "DXGL x64"
+!else
 !define PRODUCT_NAME "DXGL"
+!define SMDIR "DXGL"
+!endif
 !define PRODUCT_PUBLISHER "William Feely"
 !define PRODUCT_WEB_SITE "https://dxgl.org/"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
-!include "..\common\version.nsh"
 
 !if ${COMPILER} == "VC2019_7"
 !ifdef _DEBUG
+!define PLUGINDIR "Debug VS2019"
+!ifdef _CPU_X64
+!define SRCDIR "x64\Debug VS2019"
+!else
 !define SRCDIR "Debug VS2019"
+!endif
+!else
+!define PLUGINDIR "Release VS2019"
+!ifdef _CPU_X64
+!define SRCDIR "x64\Release VS2019"
 !else
 !define SRCDIR "Release VS2019"
 !endif
+!endif
 !else if ${COMPILER} == "VC2005"
 !ifdef _DEBUG
+!define PLUGINDIR "VS8\Debug"
 !define SRCDIR "VS8\Debug"
 !else
+!define PLUGINDIR "VS8\Release"
 !define SRCDIR "VS8\Release"
 !endif
 !else if ${COMPILER} == "VC2008"
 !ifdef _DEBUG
+!define PLUGINDIR "VS9\Debug"
 !define SRCDIR "VS9\Debug"
 !else
+!define PLUGINDIR "VS9\Release"
 !define SRCDIR "VS9\Release"
 !endif
 !else
 !ifdef _DEBUG
+!define PLUGINDIR "Debug"
+!ifdef _CPU_X64
+!define SRCDIR "x64\Debug"
+!else
 !define SRCDIR "Debug"
+!endif
+!else
+!define PLUGINDIR "Release"
+!ifdef _CPU_X64
+!define SRCDIR "x64\Release"
 !else
 !define SRCDIR "Release"
+!endif
 !endif
 !endif
 
@@ -106,6 +136,59 @@ SetCompressor /SOLID lzma
 !define ROOT_KEY         ${HKEY_CURRENT_USER}
 !define GetVersion       "Kernel32::GetVersion() i"
 
+!ifdef _CPU_X64
+!define PRODUCT_PLATFORM "x64"
+!if ${COMPILER} == "VC2005"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc8-6195/vcredist_x64.EXE"
+!define runtime_name "Visual C++ 2005 x64"
+!define runtime_filename "vcredist_x64.EXE"
+!define runtime_sha512 "F8E15363E34DB5B5445C41EEA4DD80B2F682642CB8F1046F30EA4FB5F4F51B0B604F7BCB3000A35A7D3BA1D1BCC07DF9B25E4533170C65640B2D137C19916736"
+!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033
+!define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc8"
+!else if ${COMPILER} == "VC2008"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc9-6161/vcredist_x64.exe"
+!define runtime_name "Visual C++ 2008 x64"
+!define runtime_filename "vcredist_x64.exe"
+!define runtime_sha512 "B890D83D36F3681A690828D8926139B4F13F8D2FCD258581542CF2FB7DCE5D7E7E477731C9545A54A476ED5C2AAAC44CE12D2C3D9B99C2C1C04A5AB4EE20C4B8"
+!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\VC\Servicing\9.0\RED\1033
+!define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc9"
+!else if ${COMPILER} == "VC2010"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc10/vcredist_x64.exe"
+!define runtime_name "Visual C++ 2010 x64"
+!define runtime_filename "vcredist_x64.exe"
+!define runtime_sha512 "24B56B5D9B48D75BAF53A98E007ACE3E7D68FBD5FA55B75AE1A2C08DD466D20B13041F80E84FDB64B825F070843F9247DABA681EFF16BAF99A4B14EA99F5CFD6"
+!define runtime_regkey SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x64
+!define runtime_regvalue Installed
+!define PRODUCT_SUFFIX "-msvc10"
+!else if ${COMPILER} == "VC2013"
+!define download_runtime 1
+!define runtime_url "http://dxgl.org/download/runtimes/vc12/vcredist_x64.exe"
+!define runtime_name "Visual C++ 2013 x64"
+!define runtime_filename "vcredist_x64.exe"
+!define runtime_sha512 "3A55DCE14BBD455808BD939A5008B67C9C7111CAB61B1339528308022E587726954F8C55A597C6974DC543964BDB6532FE433556FBEEAF9F8CB4D95F2BBFFC12"
+!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
+!define runtime_regvalue Install
+!define PRODUCT_SUFFIX "-msvc12"
+!else if ${COMPILER} == "VC2019_7"
+!define download_runtime 1
+!define runtime_url http://dxgl.org/download/runtimes/vc14.27/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2019.7 x64"
+!define runtime_filename "vc_redist.x64.exe"
+!define runtime_sha512 "AE3860A060BE483C9FCBCF6A41F561FAF2CD681F39138DD13A563E3F39CF4B4F41E7C0F7B58BC8B585B2728245025BE4B198F06634A97FA98847258272F9F59B"
+!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
+!define runtime_regvalue Install
+!define runtime_regvalue2 Version
+!define PRODUCT_SUFFIX ""
+!else
+!define download_runtime 0
+!endif
+!else
+!define PRODUCT_PLATFORM "win32"
 !if ${COMPILER} == "VC2005"
 !define download_runtime 1
 !define runtime_url "http://dxgl.org/download/runtimes/vc8-6195/vcredist_x86.EXE"
@@ -155,8 +238,9 @@ SetCompressor /SOLID lzma
 !else
 !define download_runtime 0
 !endif
+!endif
 
-!addplugindir "..\${SRCDIR}"
+!addplugindir "..\${PLUGINDIR}"
 
 !ifdef _DEBUG
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
@@ -164,11 +248,15 @@ Name "${PRODUCT_NAME} ${PRODUCT_VERSION} DEBUG BUILD"
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 !endif
 !ifdef _DEBUG
-OutFile "DXGL-${PRODUCT_VERSION}-win32-Debug${PRODUCT_SUFFIX}.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}-Debug${PRODUCT_SUFFIX}.exe"
 !else
-OutFile "DXGL-${PRODUCT_VERSION}-win32${PRODUCT_SUFFIX}.exe"
+OutFile "DXGL-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}${PRODUCT_SUFFIX}.exe"
 !endif
+!ifdef _CPU_X64
+InstallDir "$PROGRAMFILES64\DXGL"
+!else
 InstallDir "$PROGRAMFILES\DXGL"
+!endif
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
@@ -188,19 +276,23 @@ Section "DXGL Components (required)" SEC01
   SetOverwrite ifnewer
   Delete "$INSTDIR\dxgltest.exe"
   CreateDirectory "$SMPROGRAMS\DXGL"
-  Delete "$SMPROGRAMS\DXGL\DXGL Test.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
   File "..\${SRCDIR}\dxglcfg.exe"
-  CreateShortCut "$SMPROGRAMS\DXGL\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
   File "..\${SRCDIR}\ddraw.dll"
   File /oname=ReadMe.txt "..\ReadMe.md"
   File "..\ThirdParty.txt"
-  CreateShortCut "$SMPROGRAMS\DXGL\Third-party Credits.lnk" "$INSTDIR\ThirdParty.txt"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Third-party Credits.lnk" "$INSTDIR\ThirdParty.txt"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
-  CreateShortCut "$SMPROGRAMS\DXGL\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   File "..\dxgl-example.ini"
-  CreateShortCut "$SMPROGRAMS\DXGL\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
+  !ifdef _CPU_X64
+  WriteRegStr HKLM "Software\DXGL" "InstallDirx64" "$INSTDIR"
+  !else
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
+  !endif
 SectionEnd
 
 !ifndef _DEBUG
@@ -259,9 +351,11 @@ SectionEnd
 Section "Fix DDraw COM registration" SEC_COMFIX
   DetailPrint "Setting DDraw Runtime path in registry"
   WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
+  !ifndef _CPU_X64
   ${If} ${RunningX64}
   SetRegView 32
   ${EndIf}
+  !endif
   WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "" "ddraw.dll"
   WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "ThreadingModel" "Both"
   WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "" "ddraw.dll"
@@ -272,8 +366,8 @@ SectionEnd
 
 Section -AdditionalIcons
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-  CreateShortCut "$SMPROGRAMS\DXGL\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
-  CreateShortCut "$SMPROGRAMS\DXGL\Uninstall.lnk" "$INSTDIR\uninst.exe"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Uninstall.lnk" "$INSTDIR\uninst.exe"
 SectionEnd
 
 Section -Post
@@ -290,6 +384,12 @@ SectionEnd
 
 
 Function .onInit
+  !ifdef _CPU_X64
+  ${IfNot} ${RunningX64}
+    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires an x64 version of Windows."
+	Quit
+  ${EndIf}
+  !endif
   !if ${COMPILER} == "VC2019_7"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
@@ -438,12 +538,14 @@ Section Uninstall
   Delete "$INSTDIR\dxgl.chm"
   Delete "$INSTDIR\dxgl-example.ini"
 
-  Delete "$SMPROGRAMS\DXGL\Uninstall.lnk"
-  Delete "$SMPROGRAMS\DXGL\Website.lnk"
-  Delete "$SMPROGRAMS\DXGL\Configure DXGL.lnk"
-  Delete "$SMPROGRAMS\DXGL\DXGL Test.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Uninstall.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Website.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Third-party Credits.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk"
 
-  RMDir "$SMPROGRAMS\DXGL"
+  RMDir "$SMPROGRAMS\${SMDIR}"
   RMDir "$INSTDIR"
 
   ReadRegDWORD $0 HKLM "Software\DXGL" "WineDLLOverride"

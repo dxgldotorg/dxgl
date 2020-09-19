@@ -107,3 +107,12 @@
 /dxglcfg/Debug no DXGL
 /dxglcfg-old/Debug no DXGL
 /vs8/common/Debug
+/Installer/x64
+/x64
+/Help/x64
+/dxglcfg-old/x64
+/dxglcfg/x64
+/ddraw/x64
+/common/x64
+/cfgmgr/x64
+/buildtool/x64
