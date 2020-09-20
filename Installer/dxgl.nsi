@@ -289,7 +289,7 @@ Section "DXGL Components (required)" SEC01
   File "..\dxgl-example.ini"
   CreateShortCut "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
   !ifdef _CPU_X64
-  WriteRegStr HKLM "Software\DXGL" "InstallDirx64" "$INSTDIR"
+  WriteRegStr HKLM "Software\DXGL" "InstallDir_x64" "$INSTDIR"
   !else
   WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
   !endif

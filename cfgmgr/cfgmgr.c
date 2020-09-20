@@ -41,9 +41,19 @@
 typedef LONG LSTATUS;
 #endif
 
+#ifdef _M_X64
+static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global_x64");
+static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles_x64\\");
+static const TCHAR profilesname[] = _T("Profiles_x64\\");
+static const TCHAR configversion[] = _T("Configuration Version x64");
+static const TCHAR regkeyprofilesmigrated[] = _T("Software\\DXGL\\ProfilesMigrated_x64\\");
+#else
 static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
+static const TCHAR profilesname[] = _T("Profiles\\");
+static const TCHAR configversion[] = _T("Configuration Version");
 static const TCHAR regkeyprofilesmigrated[] = _T("Software\\DXGL\\ProfilesMigrated\\");
+#endif
 static const TCHAR regkeybase[] = _T("Software\\DXGL\\");
 static const TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
@@ -931,7 +941,7 @@ BOOL CheckProfileExists(LPTSTR path)
 	LONG error;
 	int i;
 	_tcscpy(regkey, regkeybase);
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscat(regkey, profilesname);
 	_tcscpy(filename, path);
 	for (i = (int)_tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
@@ -992,7 +1002,7 @@ LPTSTR MakeNewConfig(LPTSTR path)
 	filename[MAX_PATH] = 0;
 	for(i = (int)_tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscat(regkey, profilesname);
 	_tcscat(regkey,&filename[i]);
 	_tcscat(regkey,_T("-"));
 	_tcscat(regkey,sha256string);
@@ -1707,7 +1717,7 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	BOOL(WINAPI *_SetProcessDPIAware)();
 	GetModuleFileName(NULL, filename, MAX_PATH);
 	_tcscpy(regkey, regkeybase);
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscat(regkey, profilesname);
 	for (i = _tcslen(filename); (i > 0) && (filename[i] != 92) && (filename[i] != 47); i--);
 	i++;
 	_tcscat(regkey, &filename[i]);
@@ -1888,7 +1898,7 @@ void GetConfig(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR name)
 	HKEY hKey;
 	TCHAR regkey[MAX_PATH + 80];
 	_tcscpy(regkey,regkeybase);
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscat(regkey, profilesname);
 	_tcsncat(regkey, name, MAX_PATH);
 	ZeroMemory(cfg,sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
@@ -1909,7 +1919,7 @@ void SetConfig(const DXGLCFG *cfg, const DXGLCFG *mask, LPCTSTR name)
 	HKEY hKey;
 	TCHAR regkey[MAX_PATH + 80];
 	_tcscpy(regkey, regkeybase);
-	_tcscat(regkey, _T("Profiles\\"));
+	_tcscat(regkey, profilesname);
 	_tcsncat(regkey, name, MAX_PATH);
 	RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
 	WriteSettings(hKey,cfg,mask);
@@ -1965,7 +1975,11 @@ void UpgradeDXGLTestToDXGLCfg()
 	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if (error == ERROR_SUCCESS)
 	{
+		#ifdef _M_X64
+		error = RegQueryValueEx(hKeyInstall, _T("InstallDir_x64"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		#else
 		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		#endif
 		if (error == ERROR_SUCCESS)
 		{
 			_tcslwr(installpath);
@@ -1979,9 +1993,15 @@ void UpgradeDXGLTestToDXGLCfg()
 				sha256string[(i * 2) + 1] = (TCHAR)hexdigit(sha256.bytes[i] & 0xF);
 			}
 			sha256string[256 / 4] = 0;
+			#ifdef _M_X64
+			_tcscpy(profilepath, _T("Software\\DXGL\\Profiles_x64\\dxgltest.exe-"));
+			_tcscat(profilepath, sha256string);
+			_tcscpy(destpath, _T("Software\\DXGL\\Profiles_x64\\dxglcfg.exe-"));
+			#else
 			_tcscpy(profilepath, _T("Software\\DXGL\\Profiles\\dxgltest.exe-"));
 			_tcscat(profilepath, sha256string);
 			_tcscpy(destpath, _T("Software\\DXGL\\Profiles\\dxglcfg.exe-"));
+			#endif
 			_tcscat(destpath, sha256string);
 			error = RegOpenKeyEx(HKEY_CURRENT_USER, profilepath, 0, KEY_READ, &hKeyProfile);
 			if (error == ERROR_SUCCESS)
@@ -2099,7 +2119,7 @@ void UpgradeConfig()
 	}
 	sizeout = 4;
 	regtype = REG_DWORD;
-	error = RegQueryValueEx(hKey, _T("Configuration Version"), NULL, &regtype, (LPBYTE)&version, &sizeout);
+	error = RegQueryValueEx(hKey, configversion, NULL, &regtype, (LPBYTE)&version, &sizeout);
 	if (error != ERROR_SUCCESS) version = 0;  // Version is 0 if not set (alpha didn't have version)
 	if (regtype != REG_DWORD) version = 0; // Is the key the wrong type?
 	if (version >= 1) goto ver1to2;  // If version is 1 check for version 2.
@@ -2284,7 +2304,7 @@ ver0to1:
 			error = RegOpenKeyEx(hKey, oldkeys[i].OldKey, 0, KEY_READ, &hKeyProfile);
 			if (error == ERROR_SUCCESS)
 			{
-				_tcscpy(exepath, _T("Profiles\\"));
+				_tcscpy(exepath, profilesname);
 				_tcscat(exepath, oldkeys[i].EXEFile);
 				_tcscat(exepath, _T("-"));
 				_tcscat(exepath, oldkeys[i].PathHashString);
@@ -2345,7 +2365,7 @@ ver0to1:
 	if(olddir) free(olddir);
 	if(oldvalue) free(oldvalue);
 	sizeout = 1;
-	RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)&sizeout, 4);
+	RegSetValueEx(hKey, configversion, 0, REG_DWORD, (BYTE*)&sizeout, 4);
 ver1to2:
 	RegCloseKey(hKey);
 	// Version 1 to 2:  Fix an incorrectly written AddColorDepths value
@@ -2404,7 +2424,7 @@ ver1to2:
 	if (error == ERROR_SUCCESS)
 	{
 		sizeout = 2;
-		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)&sizeout, 4);
+		RegSetValueEx(hKey, configversion, 0, REG_DWORD, (BYTE*)&sizeout, 4);
 		RegCloseKey(hKey);
 	}
 ver2to3:
@@ -2615,7 +2635,7 @@ ver2to3:
 	if (error == ERROR_SUCCESS)
 	{
 		sizeout = 3;
-		RegSetValueEx(hKey, _T("Configuration Version"), 0, REG_DWORD, (BYTE*)& sizeout, 4);
+		RegSetValueEx(hKey, configversion, 0, REG_DWORD, (BYTE*)& sizeout, 4);
 		RegCloseKey(hKey);
 	}
 	return;

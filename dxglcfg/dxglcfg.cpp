@@ -71,6 +71,19 @@ HWND hDialog = NULL;
 static BOOL EditInterlock = FALSE;
 static DWORD hackstabitem = 0xFFFFFFFF;
 static BOOL createdialoglock = FALSE;
+#ifdef _M_X64
+static const TCHAR installdir[] = _T("InstallDir_x64");
+static const TCHAR regglobal[] = _T("Global_x64");
+static const TCHAR profilespath[] = _T("Software\\DXGL\\Profiles_x64");
+static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles_x64\\");
+static const TCHAR dxglcfgname[] = _T("DXGL Config (x64)");
+#else
+static const TCHAR installdir[] = _T("InstallDir");
+static const TCHAR regglobal[] = _T("Global");
+static const TCHAR profilespath[] = _T("Software\\DXGL\\Profiles");
+static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
+static const TCHAR dxglcfgname[] = _T("DXGL Config");
+#endif
 
 
 typedef struct
@@ -178,7 +191,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 		if (error == ERROR_SUCCESS)
 		{
 			dxgl_installdir = TRUE;
-			error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+			error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 			if (error == ERROR_SUCCESS) installed = TRUE;
 		}
 		if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -269,7 +282,7 @@ DirectDraw library in your game folder."), _T("Error"), MB_OK | MB_ICONERROR);
 					if (MessageBox(hwnd, _T("A custom DirectDraw library has been detected in \
 your game folder.  Would you like to replace it with DXGL?\r\n\r\n\
 Warning:  Installing DXGL will remove any customizations that the existing custom DirectDraw \
-library may have."), _T("DXGL Config"), MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
+library may have."), dxglcfgname, MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
 					{
 						error = CopyFile(srcpath, destpath, FALSE);
 						goto error_loop;
@@ -321,7 +334,7 @@ DWORD DelApp(LPCTSTR path, BOOL admin, HWND hwnd)
 	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if(error == ERROR_SUCCESS)
 	{
-		error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
+		error = RegQueryValueEx(hKeyInstall,installdir,NULL,NULL,(LPBYTE)installpath,&sizeout);
 		if(error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if(hKeyInstall) RegCloseKey(hKeyInstall);
@@ -3253,7 +3266,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		wndclass.lpszClassName = _T("DXGLConfigDlgPosition");
 		RegisterClassEx(&wndclass);
 		GetWindowRect(hWnd, &r);
-		hTempWnd = CreateWindow(_T("DXGLConfigDlgPosition"), _T("DXGL Config"),
+		hTempWnd = CreateWindow(_T("DXGLConfigDlgPosition"), dxglcfgname,
 			DS_3DLOOK | DS_CONTEXTHELP | DS_SHELLFONT | WS_CAPTION | WS_SYSMENU,
 			CW_USEDEFAULT, CW_USEDEFAULT, r.right-r.left,r.bottom-r.top,NULL,NULL,
 			GetModuleHandle(NULL), NULL);
@@ -3267,7 +3280,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps[0].name = (TCHAR*)malloc(7 * sizeof(TCHAR));
 		_tcscpy(apps[0].name,_T("Global"));
 		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
-		_tcscpy(apps[0].regkey,_T("Global"));
+		_tcscpy(apps[0].regkey,regglobal);
 		GetGlobalConfigWithMask(&apps[0].cfg, &apps[0].mask, FALSE);
 		cfg = &apps[0].cfg;
 		cfgmask = &apps[0].mask;
@@ -3922,10 +3935,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
 		if (error == ERROR_SUCCESS)
 		{
-			if (RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
+			if (RegQueryValueEx(hKey, installdir, NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
 			{
 				installpath = (LPTSTR)malloc(keysize);
-				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &keysize);
+				error = RegQueryValueEx(hKey, installdir, NULL, NULL, (LPBYTE)installpath, &keysize);
 				if (error != ERROR_SUCCESS)
 				{
 					free(installpath);
@@ -3940,7 +3953,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		appcount = 1;
 		regbuffersize = 1024;
 		regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-		RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+		RegCreateKeyEx(HKEY_CURRENT_USER, profilespath, 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
 		RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 		keysize++;
 		keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
@@ -4206,7 +4219,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				{
 					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
 					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 24) * sizeof(TCHAR));
-					_tcscpy(newkey2, _T("Software\\DXGL\\Profiles\\"));
+					_tcscpy(newkey2, profilespath2);
 					_tcscat(newkey2, newkey);
 					appcount++;
 					if (appcount > maxapps)
@@ -4311,7 +4324,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
 				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return FALSE;
 			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 24)*sizeof(TCHAR));
-			_tcscpy(regpath, _T("Software\\DXGL\\Profiles\\"));
+			_tcscpy(regpath, profilespath2);
 			_tcscat(regpath, apps[current_app].regkey);
 			regkey = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 1) * sizeof(TCHAR));
 			_tcscpy(regkey, apps[current_app].regkey);
@@ -4386,7 +4399,7 @@ void UpgradeDXGL()
 	UpgradeConfig();
 	regbuffersize = 1024;
 	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-	RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, profilespath, 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
 	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 	keysize++;
 	keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
@@ -4396,7 +4409,7 @@ void UpgradeDXGL()
 	{
 		dxgl_installdir = TRUE;
 		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
-		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -4491,7 +4504,7 @@ void UninstallDXGL(TCHAR uninstall)
 	UpgradeConfig();  // Just to make sure the registry format is correct
 	regbuffersize = 1024;
 	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, KEY_ALL_ACCESS, &hKeyBase);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, profilespath, 0, KEY_ALL_ACCESS, &hKeyBase);
 	if (error != ERROR_SUCCESS) return;
 	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 	keysize++;
@@ -4502,7 +4515,7 @@ void UninstallDXGL(TCHAR uninstall)
 	{
 		dxgl_installdir = TRUE;
 		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
-		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -4581,8 +4594,13 @@ void UninstallDXGL(TCHAR uninstall)
 			RegDeleteKey(hKeyBase, keyname);
 		}
 		RegCloseKey(hKeyBase);
+		#ifdef _M_X64
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles_x64"));
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Global_x64"));
+		#else
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"));
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Global"));
+		#endif
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL"));
 	}
 	else RegCloseKey(hKeyBase);
@@ -4670,7 +4688,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Find DXGL Config window
-		hWnd = FindWindow(NULL, _T("DXGL Config"));
+		hWnd = FindWindow(NULL, dxglcfgname);
 		// Focus DXGL Config window
 		if (hWnd) SetForegroundWindow(hWnd);
 		return 0;

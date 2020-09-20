@@ -58,6 +58,17 @@ BOOL msaa = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
+#ifdef _M_X64
+static const TCHAR installdir[] = _T("InstallDir_x64");
+static const TCHAR regglobal[] = _T("Global_x64");
+static const TCHAR profilespath[] = _T("Software\\DXGL\\Profiles_x64");
+static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles_x64\\");
+#else
+static const TCHAR installdir[] = _T("InstallDir");
+static const TCHAR regglobal[] = _T("Global");
+static const TCHAR profilespath[] = _T("Software\\DXGL\\Profiles");
+static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
+#endif
 
 typedef struct
 {
@@ -105,7 +116,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 		if (error == ERROR_SUCCESS)
 		{
 			dxgl_installdir = TRUE;
-			error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+			error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 			if (error == ERROR_SUCCESS) installed = TRUE;
 		}
 		if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -248,7 +259,7 @@ DWORD DelApp(LPCTSTR path, BOOL admin, HWND hwnd)
 	LONG error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if(error == ERROR_SUCCESS)
 	{
-		error = RegQueryValueEx(hKeyInstall,_T("InstallDir"),NULL,NULL,(LPBYTE)installpath,&sizeout);
+		error = RegQueryValueEx(hKeyInstall,installdir,NULL,NULL,(LPBYTE)installpath,&sizeout);
 		if(error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if(hKeyInstall) RegCloseKey(hKeyInstall);
@@ -722,7 +733,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps[0].name = (TCHAR*)malloc(7 * sizeof(TCHAR));
 		_tcscpy(apps[0].name,_T("Global"));
 		apps[0].regkey = (TCHAR*)malloc(7 * sizeof(TCHAR));
-		_tcscpy(apps[0].regkey,_T("Global"));
+		_tcscpy(apps[0].regkey,regglobal);
 		UpgradeConfig();
 		GetGlobalConfig(&apps[0].cfg, FALSE);
 		cfg = &apps[0].cfg;
@@ -1003,10 +1014,10 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
 		if (error == ERROR_SUCCESS)
 		{
-			if (RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
+			if (RegQueryValueEx(hKey, installdir, NULL, NULL, NULL, &keysize) == ERROR_SUCCESS)
 			{
 				installpath = (LPTSTR)malloc(keysize);
-				error = RegQueryValueEx(hKey, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &keysize);
+				error = RegQueryValueEx(hKey, installdir, NULL, NULL, (LPBYTE)installpath, &keysize);
 				if (error != ERROR_SUCCESS)
 				{
 					free(installpath);
@@ -1021,7 +1032,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		appcount = 1;
 		regbuffersize = 1024;
 		regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-		RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+		RegCreateKeyEx(HKEY_CURRENT_USER, profilespath, 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
 		RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 		keysize++;
 		keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
@@ -1474,7 +1485,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				{
 					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
 					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 24) * sizeof(TCHAR));
-					_tcscpy(newkey2, _T("Software\\DXGL\\Profiles\\"));
+					_tcscpy(newkey2, profilespath2);
 					_tcscat(newkey2, newkey);
 					appcount++;
 					if (appcount > maxapps)
@@ -1579,7 +1590,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
 				_T("Confirmation"),MB_YESNO|MB_ICONQUESTION) != IDYES) return FALSE;
 			regpath = (LPTSTR)malloc((_tcslen(apps[current_app].regkey) + 15)*sizeof(TCHAR));
-			_tcscpy(regpath, _T("Software\\DXGL\\Profiles\\"));
+			_tcscpy(regpath, profilespath2);
 			_tcscat(regpath, apps[current_app].regkey);
 			regkey = (LPTSTR)malloc(_tcslen(apps[current_app].regkey));
 			_tcscpy(regkey, apps[current_app].regkey);
@@ -1647,7 +1658,7 @@ void UpgradeDXGL()
 	UpgradeConfig();
 	regbuffersize = 1024;
 	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-	RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, profilespath, 0, NULL, 0, KEY_READ, NULL, &hKeyBase, NULL);
 	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 	keysize++;
 	keyname = (LPTSTR)malloc(keysize * sizeof(TCHAR));
@@ -1657,7 +1668,7 @@ void UpgradeDXGL()
 	{
 		dxgl_installdir = TRUE;
 		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
-		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -1752,7 +1763,7 @@ void UninstallDXGL(TCHAR uninstall)
 	UpgradeConfig();  // Just to make sure the registry format is correct
 	regbuffersize = 1024;
 	regbuffer = (LPTSTR)malloc(regbuffersize * sizeof(TCHAR));
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"), 0, KEY_ALL_ACCESS, &hKeyBase);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, profilespath, 0, KEY_ALL_ACCESS, &hKeyBase);
 	if (error != ERROR_SUCCESS) return;
 	RegQueryInfoKey(hKeyBase, NULL, NULL, NULL, NULL, &keysize, NULL, NULL, NULL, NULL, NULL, NULL);
 	keysize++;
@@ -1763,7 +1774,7 @@ void UninstallDXGL(TCHAR uninstall)
 	{
 		dxgl_installdir = TRUE;
 		sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
-		error = RegQueryValueEx(hKeyInstall, _T("InstallDir"), NULL, NULL, (LPBYTE)installpath, &sizeout);
+		error = RegQueryValueEx(hKeyInstall, installdir, NULL, NULL, (LPBYTE)installpath, &sizeout);
 		if (error == ERROR_SUCCESS) installed = TRUE;
 	}
 	if (hKeyInstall) RegCloseKey(hKeyInstall);
@@ -1842,8 +1853,13 @@ void UninstallDXGL(TCHAR uninstall)
 			RegDeleteKey(hKeyBase, keyname);
 		}
 		RegCloseKey(hKeyBase);
+		#ifdef _M_X64
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles_x64"));
+		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Global_x64"));
+		#else
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Profiles"));
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL\\Global"));
+		#endif
 		RegDeleteKey(HKEY_CURRENT_USER, _T("Software\\DXGL"));
 	}
 	else RegCloseKey(hKeyBase);
