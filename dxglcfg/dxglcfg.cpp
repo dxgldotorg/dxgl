@@ -178,6 +178,98 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 	DWORD exitcode;
 	app_ini_options inioptions;
 	HMODULE hmod;
+	HANDLE exefile;
+	LPCTSTR errmsg;
+	DWORD fileptr;
+	DWORD bytesread;
+	BYTE header[16];
+	BYTE *headerptr;
+	#ifdef _M_X64
+	const WORD machine = 0x8664;
+	#else
+	const WORD machine = 0x014c;
+	#endif
+	exefile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (exefile == INVALID_HANDLE_VALUE)
+	{
+		exitcode = GetLastError();
+		_tcscpy(command, _T("Failed to open file:\r\n"));
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			command+_tcslen(command), MAX_PATH, NULL);
+		MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+		return exitcode;
+	}
+	else
+	{
+		if (SetFilePointer(exefile, 0x3C, NULL, FILE_BEGIN) != 0x3C)
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		if (!ReadFile(exefile, &fileptr, 4, &bytesread, NULL))
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		if (SetFilePointer(exefile, fileptr, NULL, FILE_BEGIN) != fileptr)
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		if (!ReadFile(exefile,header,16,&bytesread,NULL))
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		headerptr = header;
+		if (*(DWORD*)headerptr != 0x4550)
+		{
+			CloseHandle(exefile);
+			MessageBox(hwnd, _T("Selected program is not a Windows PE executable."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			return ERROR_INVALID_PARAMETER;
+		}
+		headerptr = header + 4;
+		if (*(WORD*)headerptr != machine)
+		{
+			CloseHandle(exefile);
+			#ifdef _M_X64
+			MessageBox(hwnd, _T("Platform of selected program is not x64.  Please use the 32-bit version of DXGL to add 32-bit programs."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			#else
+			MessageBox(hwnd, _T("Platform of selected program is not x86.  Please use the 64-bit version of DXGL to add 64-bit programs."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			#endif
+			return ERROR_INVALID_PARAMETER;
+		}
+		CloseHandle(exefile);
+	}
 	if (copyfile)
 	{
 		DWORD sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
