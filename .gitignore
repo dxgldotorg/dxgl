@@ -84,6 +84,7 @@
 /vs9/cfgmgr/Debug No DXGL
 /vs9/cfgmgr/Debug
 /vs9/cfgmgr/Release
+/vs9/common/Debug
 /vs9/common/Release
 /vs9/ddraw/Debug No DXGL
 /vs9/ddraw/Debug
@@ -116,3 +117,15 @@
 /common/x64
 /cfgmgr/x64
 /buildtool/x64
+/vs9/Help/x64
+/vs9/Installer/x64
+/vs9/libMinHook/x64
+/vs9/dxglcfg/x64
+/vs9/ddraw/x64
+/vs9/common/x64
+/vs9/cfgmgr/x64
+/vs9/buildtool/x64
+/vs9/x64
+/ipch
+/dxgl.sdf
+/dxgl.opensdf
