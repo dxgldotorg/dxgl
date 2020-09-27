@@ -129,3 +129,12 @@
 /ipch
 /dxgl.sdf
 /dxgl.opensdf
+/vs8/Help/x64
+/vs8/Installer/x64
+/vs8/libMinHook/x64
+/vs8/buildtool/x64
+/vs8/cfgmgr/x64
+/vs8/common/x64
+/vs8/ddraw/x64
+/vs8/dxglcfg/x64
+/vs8/x64
