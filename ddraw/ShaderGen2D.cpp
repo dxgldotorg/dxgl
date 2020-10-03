@@ -945,10 +945,12 @@ static void glslver(STRING* str, int major, int minor)
 		{
 		case 0:
 			String_Append(str, version_110);
+			String_Append(str, ext_texrect);
 			break;
 		case 1:
 		default:
 			String_Append(str, version_120);
+			String_Append(str, ext_texrect);
 		}
 		break;
 	case 3:
@@ -956,6 +958,7 @@ static void glslver(STRING* str, int major, int minor)
 		{
 		case 0:
 			String_Append(str, version_130);
+			String_Append(str, ext_texrect);
 			break;
 		case 1:
 			String_Append(str, version_140);
@@ -1131,7 +1134,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	case 0x80:
 	case 0x81:
 	case 0x82:
-		String_Append(fsrc, ext_texrect);
+//		String_Append(fsrc, ext_texrect);
 		break;
 	}
 	String_Append(fsrc, idheader);
