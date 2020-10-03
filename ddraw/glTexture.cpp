@@ -1066,9 +1066,17 @@ void glTexture__FinishCreate(glTexture *This)
 		This->packsize = 1;
 		break;
 	case DXGLPIXELFORMAT_RGB565: // 16-bit RGB565
-		This->internalformats[0] = GL_RGB565;
-		This->internalformats[1] = GL_RGB8;
-		This->internalformats[2] = GL_RGBA8;
+		if (This->renderer->ext->GLEXT_ARB_ES2_compatibility)
+		{
+			This->internalformats[0] = GL_RGB565;
+			This->internalformats[1] = GL_RGB8;
+			This->internalformats[2] = GL_RGBA8;
+		}
+		else
+		{
+			This->internalformats[0] = GL_RGB8;
+			This->internalformats[1] = GL_RGBA8;
+		}
 		This->format = GL_RGB;
 		This->type = GL_UNSIGNED_SHORT_5_6_5;
 		if (!This->target) This->target = GL_TEXTURE_2D;
