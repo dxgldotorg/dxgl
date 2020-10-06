@@ -254,7 +254,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 BOOL WINAPI DDEnumA(GUID FAR *guid, LPSTR lpDriverDescription, LPSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
 	TRACE_ENTER(5,24,guid,15,lpDriverDescription,15,lpDriverName,14,lpContext,13,hMonitor);
-	int *context = (int *)lpContext;
+	INT_PTR *context = (INT_PTR *)lpContext;
 	LPDDENUMCALLBACKA callback = (LPDDENUMCALLBACKA)context[0];
 	BOOL ret =  callback(guid,lpDriverDescription,lpDriverName,(LPVOID)context[1]);
 	TRACE_EXIT(22,ret);
@@ -331,7 +331,7 @@ HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpConte
 BOOL WINAPI DDEnumExA(GUID FAR *guid, LPWSTR lpDriverDescription, LPWSTR lpDriverName, LPVOID lpContext, HMONITOR hMonitor)
 {
 	TRACE_ENTER(5,24,guid,16,lpDriverDescription,16,lpDriverName,14,lpContext,13,hMonitor);
-	int *context = (int *)lpContext;
+	INT_PTR *context = (INT_PTR *)lpContext;
 	LPDDENUMCALLBACKEXA callback = (LPDDENUMCALLBACKEXA)context[0];
 	CHAR desc[MAX_PATH];
 	CHAR driver[MAX_PATH];

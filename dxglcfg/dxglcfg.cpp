@@ -4776,7 +4776,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
+	#ifdef _M_X64
+	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex_x64"));
+	#else
 	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex"));
+	#endif
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Find DXGL Config window

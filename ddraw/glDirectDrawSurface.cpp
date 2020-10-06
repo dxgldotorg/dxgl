@@ -1099,7 +1099,7 @@ HRESULT glDirectDrawSurface7::Flip2(LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverri
 			textures[i+1] = tmp->texture;
 		}
 		glTexture *tmptex = textures[0];
-		memmove(textures,&textures[1],ddsd.dwBackBufferCount*sizeof(GLuint));
+		memmove(textures,&textures[1],ddsd.dwBackBufferCount*sizeof(glTexture*));
 		textures[ddsd.dwBackBufferCount] = tmptex;
 		tmp = this;
 		this->SetTexture(textures[0]);
