@@ -283,7 +283,7 @@ Section "DXGL Components (required)" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   Delete "$INSTDIR\dxgltest.exe"
-  CreateDirectory "$SMPROGRAMS\DXGL"
+  CreateDirectory "$SMPROGRAMS\${SMDIR}"
   Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
   File "..\${SRCDIR}\dxglcfg.exe"
   !ifdef _CPU_X64
