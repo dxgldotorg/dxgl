@@ -278,7 +278,11 @@ Section "DXGL Components (required)" SEC01
   CreateDirectory "$SMPROGRAMS\DXGL"
   Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
   File "..\${SRCDIR}\dxglcfg.exe"
+  !ifdef _CPU_X64
+  CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL (x64).lnk" "$INSTDIR\dxglcfg.exe"
+  !else
   CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
+  !endif
   File "..\${SRCDIR}\ddraw.dll"
   File /oname=ReadMe.txt "..\ReadMe.md"
   File "..\ThirdParty.txt"
@@ -541,6 +545,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\${SMDIR}\Uninstall.lnk"
   Delete "$SMPROGRAMS\${SMDIR}\Website.lnk"
   Delete "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk"
+  Delete "$SMPROGRAMS\${SMDIR}\Configure DXGL (x64).lnk"
   Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
   Delete "$SMPROGRAMS\${SMDIR}\Third-party Credits.lnk"
   Delete "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk"
