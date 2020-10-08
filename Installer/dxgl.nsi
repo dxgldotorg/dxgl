@@ -38,7 +38,11 @@ SetCompressor /SOLID lzma
 !endif
 !define PRODUCT_PUBLISHER "William Feely"
 !define PRODUCT_WEB_SITE "https://dxgl.org/"
+!ifdef _CPU_X64
+!define PRODUCT_DIR_REGKEY "Software\DXGL"
+!else
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\dxglcfg.exe"
+!endif
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
@@ -257,7 +261,11 @@ InstallDir "$PROGRAMFILES64\DXGL"
 !else
 InstallDir "$PROGRAMFILES\DXGL"
 !endif
+!ifdef _CPU_X64
+InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" "InstallDir_x64"
+!else
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
+!endif
 ShowInstDetails show
 ShowUnInstDetails show
 
@@ -376,7 +384,9 @@ SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
+  !ifndef _CPU_X64
   WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\dxglcfg.exe"
+  !endif
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\dxglcfg.exe"
@@ -567,7 +577,9 @@ Section Uninstall
   ${EndIf}
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
+  !ifndef _CPU_X64
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
+  !endif
   DeleteRegKey HKLM "Software\DXGL"
   SetAutoClose true
 SectionEnd
