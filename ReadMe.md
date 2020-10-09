@@ -1,5 +1,5 @@
 <!--Please enable Word Wrap in Notepad to view this document.-->
-# DXGL 0.5.18
+# DXGL 0.5.19
 https://dxgl.org
 
 ## Introduction
@@ -17,7 +17,7 @@ The “Configuration Version” registry value in HKEY_CURRENT_USER\SOFTWARE\DXG
 ### DXGL 0.5.17
 Due to a bug found in the method used to uniquely identify profile paths, DXGL 0.5.17 and above will perform a one-time renaming of the profile registry keys.  These new profiles will no longer be compatible with DXGL 0.5.16 or below.
 
-The “Configuration Version” registry value in HKEY_CURRENT_USER\SOFTWARE\DXGL will be incremented to 3 in order to indicate this fix has been applied.  If you need to migrate more version 2 profiles, change “Configuration Version” to 2 and re-run the installer.
+The “Configuration Version” (“Configuration Version x64” for the x64 version) registry value in HKEY_CURRENT_USER\SOFTWARE\DXGL will be incremented to 3 in order to indicate this fix has been applied.  If you need to migrate more version 2 profiles, change “Configuration Version” to 2 and re-run the installer.
 
 ## System Requirements
 
@@ -32,6 +32,9 @@ The “Configuration Version” registry value in HKEY_CURRENT_USER\SOFTWARE\DXG
 * The standard build requires a SSE2-capable processor; older processors require the legacy build.
 * For the standard build, Visual C++ 2019 x86 runtime, available at https://aka.ms/vs/16/release/vc_redist.x86.exe (note this link may track visitors) (will be installed if not present)
 * For the legacy build, Visual C++ 2010 x86 runtime, available at https://www.microsoft.com/en-us/download/details.aspx?id=8328 (will be installed if not present)
+
+## 64-bit Build Notice
+The 64-bit build of DXGL is intended solely for targeting 64-bit DirectDraw programs.  For usage with 32-bit programs, please download the 32-bit build.  The 32- and 64-bit versions of DXGL install in separate folders and Start Menu entries, and have separate profiles.  The configuration program will not create profiles for mismatched platforms; you can only add profiles for 64-bit programs in the 64-bit build, and 32-bit programs in the 32-bit build.
 
 ## Build Requirements
 * For the legacy build, Visual Studio 2010 or Visual C++ 2010 Express Edition with Service Pack 1.
@@ -49,7 +52,7 @@ These instructions assume that you do not have any of the required software inst
 * Install Git for Windows at https://git-scm.com/download/win (should have already been installed to check out the repo)
 * Install HTML Help Workshop from https://www.microsoft.com/en-us/download/details.aspx?id=21138
 * Install NSIS from https://nsis.sourceforge.io/Main_Page
-* Open the dxgl.sln file, select your build configuration (Debug or Release) in the toolbar, and press F7 to build.
+* Open the dxgl.sln file, select your build configuration (Debug or Release) and platform (Win32 or x64) in the toolbar, and press F7 to build.
 
 ## Debug tracing
 The Debug Trace build has been removed from the project files for DXGL.  Instead, DXGL now supports debug tracing files in all builds.  To enable tracing in DXGL create a file named dxgl.cfg or dxgl.ini in you game folder and add the following to it:
@@ -68,7 +71,7 @@ What works:
 * Fullscreen and windowed modes.
 * Basic Blt() functionality
 * 8-bit color emulated with GLSL shader
-* Packed-pixel YUV surfaces (currently only supported by Blt() to an RGB surface)
+* Packed-pixel YUV surfaces
 
 What partially works:
 
