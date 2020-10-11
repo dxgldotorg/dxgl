@@ -1200,6 +1200,10 @@ void glTexture__FinishCreate(glTexture *This)
 		This->format = GL_BGRA;
 		This->type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		if (!This->target) This->target = GL_TEXTURE_2D;
+		This->colorsizes[0] = 31;
+		This->colorsizes[1] = 31;
+		This->colorsizes[2] = 31;
+		This->colorsizes[3] = 1;
 		This->colorbits[0] = 5;
 		This->colorbits[1] = 5;
 		This->colorbits[2] = 5;
