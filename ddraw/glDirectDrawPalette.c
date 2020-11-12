@@ -197,7 +197,7 @@ HRESULT WINAPI glDirectDrawPalette_GetEntries(glDirectDrawPalette *This, DWORD d
 	TRACE_ENTER(5, 14, This, 9, dwFlags, 8, dwBase, 8, dwNumEntries, 14, lpEntries);
 	if (dwFlags) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if (!IsWritablePointer(lpEntries, dwNumEntries * 4, FALSE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lpEntries, dwNumEntries * 4, TRUE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(This->flags & DDPCAPS_1BIT) allentries=2;
 	if(This->flags & DDPCAPS_2BIT) allentries=4;
 	if(This->flags & DDPCAPS_4BIT) allentries=16;
@@ -289,7 +289,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 {
 	glDirectDrawPalette *newpal;
 	TRACE_ENTER(3,9,dwFlags,14,lpDDColorArray,14,lplpDDPalette);
-	if (!IsWritablePointer(lplpDDPalette, sizeof(LPDIRECTDRAWPALETTE), FALSE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDPalette, sizeof(LPDIRECTDRAWPALETTE), TRUE)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (lpDDColorArray)
 	{
 		if (dwFlags & DDPCAPS_8BIT)

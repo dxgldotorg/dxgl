@@ -109,7 +109,7 @@ BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 TCHAR strdefaultshort[] = _T("(default)");
 HWND hTab;
-HWND hTabs[8];
+HWND hTabs[9];
 static int tabopen;
 BOOL modelistdirty = FALSE;
 
@@ -2951,6 +2951,27 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
+LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch(Msg)
+	{
+	case WM_INITDIALOG:
+		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_TRACING:
+			cfg->DebugTraceLevel = GetCombo(hWnd, IDC_TRACING, &cfgmask->DebugTraceLevel);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		}
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
 
 LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -3091,6 +3112,8 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 		// Debug tab
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		// Tracing tab
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)strdefault);
 	}
 	else if (!current_app && tristate)
 	{
@@ -3155,8 +3178,11 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 		SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 		// Debug tab
-		SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_DELETESTRING,
-			SendDlgItemMessage(hTabs[3], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		// Tracing tab
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 	}
 	// Read settings into controls
 	// Display tab
@@ -3267,6 +3293,8 @@ void RefreshControls(HWND hWnd)
 		UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, hackstabitem);
 	else UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 	RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
+	// Tracing tab
+	SetCombo(hTabs[6], IDC_TRACING, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, tristate);
 }
 
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -3447,10 +3475,12 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 4, (LPARAM)&tab);
 		tab.pszText = _T("Hacks");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 5, (LPARAM)&tab);
-		tab.pszText = _T("Graphics Tests");
+		tab.pszText = _T("Tracing");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 6, (LPARAM)&tab);
-		tab.pszText = _T("About");
+		tab.pszText = _T("Graphics Tests");
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 7, (LPARAM)&tab);
+		tab.pszText = _T("About");
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 8, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		createdialoglock = TRUE;
 		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, (DLGPROC)DisplayTabCallback);
@@ -3459,8 +3489,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, (DLGPROC)AdvancedTabCallback);
 		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, (DLGPROC)DebugTabCallback);
 		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, (DLGPROC)HacksTabCallback);
-		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hTab, (DLGPROC)TestTabCallback);
-		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
+		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TRACING), hTab, (DLGPROC)TracingTabCallback);
+		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hTab, (DLGPROC)TestTabCallback);
+		hTabs[8] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
 		createdialoglock = FALSE;
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
@@ -3471,6 +3502,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		ShowWindow(hTabs[5], SW_HIDE);
 		ShowWindow(hTabs[6], SW_HIDE);
 		ShowWindow(hTabs[7], SW_HIDE);
+		ShowWindow(hTabs[8], SW_HIDE);
 		tabopen = 0;
 
 		// Load global settings.
@@ -4002,6 +4034,19 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		// Auto expand viewport hack value
 		SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+		// Tracing
+		_tcscpy(buffer, _T("Disabled"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Errors only"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Information"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Full API trace"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_SETCURSEL, cfg->DebugTraceLevel, 0);
+#ifndef _M_X64
+		DestroyWindow(GetDlgItem(hTabs[6], IDC_TRACEX64NOTICE));
+#endif
 		// About text
 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
 		_tcscat(abouttext, _T(DXGLVERSTRING));
@@ -4021,7 +4066,7 @@ Lesser General Public License for more details.\r\n\
 You should have received a copy of the GNU Lesser General Public\r\n\
 License along with this library; if not, write to the Free Software\r\n\
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA"));
-		SendDlgItemMessage(hTabs[7], IDC_ABOUTTEXT, WM_SETTEXT, 0, (LPARAM)abouttext);
+		SendDlgItemMessage(hTabs[8], IDC_ABOUTTEXT, WM_SETTEXT, 0, (LPARAM)abouttext);
 		// Check install path
 		installpath = NULL;
 		error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKey);
@@ -4273,7 +4318,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			return TRUE;
 		case IDC_APPLY:
 			SaveChanges(hWnd);
-			if(modelistdirty) ResetModeList(hTabs[6]);
+			if(modelistdirty) ResetModeList(hTabs[7]);
 			return TRUE;
 		case IDC_APPS:
 			if(HIWORD(wParam) == CBN_SELCHANGE)

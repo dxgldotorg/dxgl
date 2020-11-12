@@ -35,8 +35,9 @@
 #define IDD_ADVANCED                            204
 #define IDD_DEBUG                               205
 #define IDD_HACKS                               206
-#define IDD_TESTGFX                             207
-#define IDD_ABOUT                               208
+#define IDD_TRACING                             207
+#define IDD_TESTGFX                             208
+#define IDD_ABOUT                               209
 
 // Icons
 #define IDI_DXGL                                301
@@ -344,3 +345,7 @@
 #define IDC_NOOVERWRITE                         3303
 #define IDC_SAVESHA256                          3304
 #define IDC_NOUNINSTALL                         3305
+
+// Controls - Tracing tab
+#define IDC_TRACING                             3401
+#define IDC_TRACEX64NOTICE                      3402
