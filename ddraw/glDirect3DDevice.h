@@ -67,7 +67,6 @@ public:
 	HRESULT WINAPI EndScene();
 	HRESULT WINAPI EndStateBlock(LPDWORD lpdwBlockHandle);
 	HRESULT WINAPI EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK lpd3dEnumPixelProc, LPVOID lpArg);
-	HRESULT WINAPI EnumTextureFormats2(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
 	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC7 lpD3DDevDesc);
 	HRESULT WINAPI GetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation);
 	HRESULT WINAPI GetClipStatus(LPD3DCLIPSTATUS lpD3DClipStatus);
@@ -106,6 +105,7 @@ public:
 	D3DTEXTUREHANDLE AddTexture(glDirectDrawSurface7* texture);
 	HRESULT AddViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 	HRESULT DeleteViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
+	HRESULT WINAPI EnumTextureFormats2(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
 	HRESULT NextViewport(LPDIRECT3DVIEWPORT3 lpDirect3DViewport, LPDIRECT3DVIEWPORT3 *lplpAnotherViewport, DWORD dwFlags);
 	HRESULT GetCurrentViewport(LPDIRECT3DVIEWPORT3 *lplpd3dViewport);
 	HRESULT SetCurrentViewport(LPDIRECT3DVIEWPORT3 lpd3dViewport);
@@ -311,37 +311,74 @@ private:
 	glDirect3DDevice7 *glD3DDev7;
 };
 
-class glDirect3DDevice1 : public IDirect3DDevice
+struct glDirect3DDevice1Vtbl;
+
+// Structure for glDirect3DDevice1, emulates IDirect3DDevice
+typedef struct glDirect3DDevice1
 {
-public:
-	glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7);
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport);
-	HRESULT WINAPI BeginScene();
-	HRESULT WINAPI CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
-		IUnknown* pUnkOuter);
-	HRESULT WINAPI CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle);
-	HRESULT WINAPI DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle);
-	HRESULT WINAPI DeleteViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport);
-	HRESULT WINAPI EndScene();
-	HRESULT WINAPI EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
-	HRESULT WINAPI Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags);
-	HRESULT WINAPI GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
-	HRESULT WINAPI GetDirect3D(LPDIRECT3D* lpD3D);
-	HRESULT WINAPI GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix);
-	HRESULT WINAPI GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec); 
-	HRESULT WINAPI GetStats(LPD3DSTATS lpD3DStats);
-	HRESULT WINAPI Initialize(LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc); 
-	HRESULT WINAPI NextViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT* lplpDirect3DViewport, DWORD dwFlags);
-	HRESULT WINAPI Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags, 
-		LPD3DRECT lpRect);
-	HRESULT WINAPI SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
-	HRESULT WINAPI SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
-	glDirect3DDevice7 *GetGLD3DDev7(){ return glD3DDev7; }
-private:
+	struct glDirect3DDevice1Vtbl *lpVtbl;
+
 	glDirect3DDevice7 *glD3DDev7;
+} glDirect3DDevice1;
+
+// Function pointer table for glDirect3DDevice1
+typedef struct glDirect3DDevice1Vtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirect3DDevice1 *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI  *AddRef)(glDirect3DDevice1 *This);
+	ULONG(WINAPI * Release)(glDirect3DDevice1 *This);
+
+	HRESULT(WINAPI *Initialize)(glDirect3DDevice1 *This, LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc);
+	HRESULT(WINAPI *GetCaps)(glDirect3DDevice1 *This, LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
+	HRESULT(WINAPI *SwapTextureHandles)(glDirect3DDevice1 *This, LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
+	HRESULT(WINAPI *CreateExecuteBuffer)(glDirect3DDevice1 *This, LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
+		IUnknown* pUnkOuter);
+	HRESULT(WINAPI *GetStats)(glDirect3DDevice1 *This, LPD3DSTATS lpD3DStats);
+	HRESULT(WINAPI *Execute)(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags);
+	HRESULT(WINAPI *AddViewport)(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport);
+	HRESULT(WINAPI *DeleteViewport)(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport);
+	HRESULT(WINAPI *NextViewport)(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT* lplpDirect3DViewport, DWORD dwFlags);
+	HRESULT(WINAPI *Pick)(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags,
+		LPD3DRECT lpRect);
+	HRESULT(WINAPI *GetPickRecords)(glDirect3DDevice1 *This, LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec);
+	HRESULT(WINAPI *EnumTextureFormats)(glDirect3DDevice1 *This, LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
+	HRESULT(WINAPI *CreateMatrix)(glDirect3DDevice1 *This, LPD3DMATRIXHANDLE lpD3DMatHandle);
+	HRESULT(WINAPI *SetMatrix)(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT(WINAPI *GetMatrix)(glDirect3DDevice1 *This, D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix);
+	HRESULT(WINAPI *DeleteMatrix)(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle);
+	HRESULT(WINAPI *BeginScene)(glDirect3DDevice1 *This);
+	HRESULT(WINAPI *EndScene)(glDirect3DDevice1 *This);
+	HRESULT(WINAPI *GetDirect3D)(glDirect3DDevice1 *This, LPDIRECT3D *lpD3D);
 };
+
+struct glDirect3D1Vtbl;
+
+HRESULT glDirect3DDevice1_Create(glDirect3DDevice7 *glD3DDev7, glDirect3DDevice1 **newdev);
+
+HRESULT WINAPI glDirect3DDevice1_QueryInterface(glDirect3DDevice1 *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirect3DDevice1_AddRef(glDirect3DDevice1 *This);
+ULONG WINAPI glDirect3DDevice1_Release(glDirect3DDevice1 *This);
+HRESULT WINAPI glDirect3DDevice1_AddViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport);
+HRESULT WINAPI glDirect3DDevice1_BeginScene(glDirect3DDevice1 *This);
+HRESULT WINAPI glDirect3DDevice1_CreateExecuteBuffer(glDirect3DDevice1 *This, LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
+	IUnknown* pUnkOuter);
+HRESULT WINAPI glDirect3DDevice1_CreateMatrix(glDirect3DDevice1 *This, LPD3DMATRIXHANDLE lpD3DMatHandle);
+HRESULT WINAPI glDirect3DDevice1_DeleteMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle);
+HRESULT WINAPI glDirect3DDevice1_DeleteViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport);
+HRESULT WINAPI glDirect3DDevice1_EndScene(glDirect3DDevice1 *This);
+HRESULT WINAPI glDirect3DDevice1_EnumTextureFormats(glDirect3DDevice1 *This, LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);
+HRESULT WINAPI glDirect3DDevice1_Execute(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags);
+HRESULT WINAPI glDirect3DDevice1_GetCaps(glDirect3DDevice1 *This, LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc);
+HRESULT WINAPI glDirect3DDevice1_GetDirect3D(glDirect3DDevice1 *This, LPDIRECT3D* lpD3D);
+HRESULT WINAPI glDirect3DDevice1_GetMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix);
+HRESULT WINAPI glDirect3DDevice1_GetPickRecords(glDirect3DDevice1 *This, LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec);
+HRESULT WINAPI glDirect3DDevice1_GetStats(glDirect3DDevice1 *This, LPD3DSTATS lpD3DStats);
+HRESULT WINAPI glDirect3DDevice1_Initialize(glDirect3DDevice1 *This, LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc);
+HRESULT WINAPI glDirect3DDevice1_NextViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT* lplpDirect3DViewport, DWORD dwFlags);
+HRESULT WINAPI glDirect3DDevice1_Pick(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags,
+	LPD3DRECT lpRect);
+HRESULT WINAPI glDirect3DDevice1_SetMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix);
+HRESULT WINAPI glDirect3DDevice1_SwapTextureHandles(glDirect3DDevice1 *This, LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2);
+
 
 #endif //__GLDIRECT3DDEVICE_H

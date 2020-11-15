@@ -296,7 +296,7 @@ HRESULT WINAPI glDirect3DMaterial1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice,
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice1 *glD3DDev1 = (glDirect3DDevice1*)lpDirect3DDevice;
-	glDirect3DDevice3 *glD3DDev3 = glD3DDev1->GetGLD3DDev7()->glD3DDev3;
+	glDirect3DDevice3 *glD3DDev3 = glD3DDev1->glD3DDev7->glD3DDev3;
 	HRESULT ret = glD3DM3->GetHandle(glD3DDev3,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;

@@ -364,7 +364,7 @@ glDirect3DDevice7::glDirect3DDevice7(REFCLSID rclsid, glDirect3D7 *glD3D7, glDir
 	glRenderer_InitD3D(renderer,zbuffer,glDDS7->ddsd.dwWidth,glDDS7->ddsd.dwHeight);
 	glD3DDev3 = new glDirect3DDevice3(this);
 	glD3DDev2 = new glDirect3DDevice2(this);
-	glD3DDev1 = new glDirect3DDevice1(this);
+	glDirect3DDevice1_Create(this, &glD3DDev1);
 	this->creator = creator;
 	error = D3D_OK;
 	TRACE_EXIT(-1,0);
@@ -408,7 +408,7 @@ glDirect3DDevice7::~glDirect3DDevice7()
 	if(matrices) free(matrices);
 	if (glD3DDev3) delete glD3DDev3;
 	if (glD3DDev2) delete glD3DDev2;
-	if (glD3DDev1) delete glD3DDev1;
+	if (glD3DDev1) free(glD3DDev1);
 	glD3D7->Release();
 	if(!creator) glDDS7->Release();
 	TRACE_EXIT(-1,0);
@@ -477,7 +477,7 @@ HRESULT WINAPI glDirect3DDevice7::QueryInterface(REFIID riid, void** ppvObj)
 		if (riid == IID_IDirect3DDevice)
 		{
 			*ppvObj = glD3DDev1;
-			glD3DDev1->AddRef();
+			glDirect3DDevice1_AddRef(glD3DDev1);
 			if (!dx5init)
 			{
 				InitDX5();
@@ -3590,121 +3590,150 @@ HRESULT WINAPI glDirect3DDevice2::Vertex(LPVOID lpVertexType)
 }
 
 // IDirect3DDevice wrapper
-glDirect3DDevice1::glDirect3DDevice1(glDirect3DDevice7 *glD3DDev7)
+glDirect3DDevice1Vtbl glDirect3DDevice1_iface =
 {
-	TRACE_ENTER(2,14,this,14,glD3DDev7);
-	this->glD3DDev7 = glD3DDev7;
-	TRACE_EXIT(-1,0);
+	glDirect3DDevice1_QueryInterface,
+	glDirect3DDevice1_AddRef,
+	glDirect3DDevice1_Release,
+	glDirect3DDevice1_Initialize,
+	glDirect3DDevice1_GetCaps,
+	glDirect3DDevice1_SwapTextureHandles,
+	glDirect3DDevice1_CreateExecuteBuffer,
+	glDirect3DDevice1_GetStats,
+	glDirect3DDevice1_Execute,
+	glDirect3DDevice1_AddViewport,
+	glDirect3DDevice1_DeleteViewport,
+	glDirect3DDevice1_NextViewport,
+	glDirect3DDevice1_Pick,
+	glDirect3DDevice1_GetPickRecords,
+	glDirect3DDevice1_EnumTextureFormats,
+	glDirect3DDevice1_CreateMatrix,
+	glDirect3DDevice1_SetMatrix,
+	glDirect3DDevice1_GetMatrix,
+	glDirect3DDevice1_DeleteMatrix,
+	glDirect3DDevice1_BeginScene,
+	glDirect3DDevice1_EndScene,
+	glDirect3DDevice1_GetDirect3D
+};
+
+HRESULT glDirect3DDevice1_Create(glDirect3DDevice7 *glD3DDev7, glDirect3DDevice1 **newdev)
+{ 
+	TRACE_ENTER(1, 14, glD3DDev7);
+	*newdev = (glDirect3DDevice1*)malloc(sizeof(glDirect3DDevice1));
+	if (!(*newdev)) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	(*newdev)->glD3DDev7 = glD3DDev7;
+	(*newdev)->lpVtbl = &glDirect3DDevice1_iface;
+	TRACE_EXIT(23, D3D_OK);
 }
 
-HRESULT WINAPI glDirect3DDevice1::QueryInterface(REFIID riid, void** ppvObj)
+HRESULT WINAPI glDirect3DDevice1_QueryInterface(glDirect3DDevice1 *This, REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
-		this->AddRef();
-		*ppvObj = this;
+		glDirect3DDevice1_AddRef(This);
+		*ppvObj = This;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glD3DDev7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,This->glD3DDev7->QueryInterface(riid,ppvObj));
 }
 
-ULONG WINAPI glDirect3DDevice1::AddRef()
+ULONG WINAPI glDirect3DDevice1_AddRef(glDirect3DDevice1 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glD3DDev7->AddRef());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glD3DDev7->AddRef());
 }
 
-ULONG WINAPI glDirect3DDevice1::Release()
+ULONG WINAPI glDirect3DDevice1_Release(glDirect3DDevice1 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glD3DDev7->Release());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glD3DDev7->Release());
 }
 
-HRESULT WINAPI glDirect3DDevice1::AddViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport)
+HRESULT WINAPI glDirect3DDevice1_AddViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport)
 {
-	TRACE_ENTER(2,14,this,14,lpDirect3DViewport);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpDirect3DViewport);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->AddViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	HRESULT ret = This->glD3DDev7->AddViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
 	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
-HRESULT WINAPI glDirect3DDevice1::BeginScene()
+HRESULT WINAPI glDirect3DDevice1_BeginScene(glDirect3DDevice1 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->BeginScene());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->BeginScene());
 }
-HRESULT WINAPI glDirect3DDevice1::CreateExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc,
+HRESULT WINAPI glDirect3DDevice1_CreateExecuteBuffer(glDirect3DDevice1 *This, LPD3DEXECUTEBUFFERDESC lpDesc,
 		LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,	IUnknown* pUnkOuter)
 {
-	TRACE_ENTER(4,14,this,14,lpDesc,14,lplpDirect3DExecuteBuffer,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->CreateExecuteBuffer(lpDesc,lplpDirect3DExecuteBuffer,pUnkOuter));
+	TRACE_ENTER(4,14,This,14,lpDesc,14,lplpDirect3DExecuteBuffer,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->CreateExecuteBuffer(lpDesc,lplpDirect3DExecuteBuffer,pUnkOuter));
 }
-HRESULT WINAPI glDirect3DDevice1::CreateMatrix(LPD3DMATRIXHANDLE lpD3DMatHandle)
+HRESULT WINAPI glDirect3DDevice1_CreateMatrix(glDirect3DDevice1 *This, LPD3DMATRIXHANDLE lpD3DMatHandle)
 {
-	TRACE_ENTER(2,14,this,14,lpD3DMatHandle);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->CreateMatrix(lpD3DMatHandle));
+	TRACE_ENTER(2,14,This,14,lpD3DMatHandle);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->CreateMatrix(lpD3DMatHandle));
 }
-HRESULT WINAPI glDirect3DDevice1::DeleteMatrix(D3DMATRIXHANDLE d3dMatHandle)
+HRESULT WINAPI glDirect3DDevice1_DeleteMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle)
 {
-	TRACE_ENTER(2,14,this,9,d3dMatHandle);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->DeleteMatrix(d3dMatHandle));
+	TRACE_ENTER(2,14,This,9,d3dMatHandle);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->DeleteMatrix(d3dMatHandle));
 }
-HRESULT WINAPI glDirect3DDevice1::DeleteViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport)
+HRESULT WINAPI glDirect3DDevice1_DeleteViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport)
 {
-	TRACE_ENTER(2,14,this,14,lpDirect3DViewport);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpDirect3DViewport);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDirect3DViewport) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
 	lpDirect3DViewport->QueryInterface(IID_IDirect3DViewport3,(void**)&glD3DV3);
-	HRESULT ret = glD3DDev7->DeleteViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
+	HRESULT ret = This->glD3DDev7->DeleteViewport((LPDIRECT3DVIEWPORT3)glD3DV3);
 	glDirect3DViewport3_Release(glD3DV3);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
-HRESULT WINAPI glDirect3DDevice1::EndScene()
+HRESULT WINAPI glDirect3DDevice1_EndScene(glDirect3DDevice1 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->EndScene());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->EndScene());
 }
-HRESULT WINAPI glDirect3DDevice1::EnumTextureFormats(LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg)
+HRESULT WINAPI glDirect3DDevice1_EnumTextureFormats(glDirect3DDevice1 *This, LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg)
 {
-	TRACE_ENTER(3,14,this,14,lpd3dEnumTextureProc,14,lpArg);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, glD3DDev7->EnumTextureFormats2(lpd3dEnumTextureProc, lpArg));
+	TRACE_ENTER(3,14,This,14,lpd3dEnumTextureProc,14,lpArg);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT, 23, This->glD3DDev7->EnumTextureFormats2(lpd3dEnumTextureProc, lpArg));
 }
-HRESULT WINAPI glDirect3DDevice1::Execute(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
+HRESULT WINAPI glDirect3DDevice1_Execute(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport, DWORD dwFlags)
 {
-	TRACE_ENTER(4,14,this,14,lpDirect3DExecuteBuffer,14,lpDirect3DViewport,9,dwFlags);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->Execute(lpDirect3DExecuteBuffer,lpDirect3DViewport,dwFlags));
+	TRACE_ENTER(4,14,This,14,lpDirect3DExecuteBuffer,14,lpDirect3DViewport,9,dwFlags);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->Execute(lpDirect3DExecuteBuffer,lpDirect3DViewport,dwFlags));
 }
-HRESULT WINAPI glDirect3DDevice1::GetCaps(LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc)
+HRESULT WINAPI glDirect3DDevice1_GetCaps(glDirect3DDevice1 *This, LPD3DDEVICEDESC lpD3DHWDevDesc, LPD3DDEVICEDESC lpD3DHELDevDesc)
 {
-	TRACE_ENTER(3,14,this,14,lpD3DHWDevDesc,14,lpD3DHELDevDesc);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->GetCaps3(lpD3DHWDevDesc,lpD3DHELDevDesc));
+	TRACE_ENTER(3,14,This,14,lpD3DHWDevDesc,14,lpD3DHELDevDesc);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->GetCaps3(lpD3DHWDevDesc,lpD3DHELDevDesc));
 }
-HRESULT WINAPI glDirect3DDevice1::GetDirect3D(LPDIRECT3D* lpD3D)
+HRESULT WINAPI glDirect3DDevice1_GetDirect3D(glDirect3DDevice1 *This, LPDIRECT3D* lpD3D)
 {
-	TRACE_ENTER(2,14,this,14,lpD3D);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpD3D);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	LPDIRECT3D7 d3d7;
-	HRESULT err = glD3DDev7->GetDirect3D(&d3d7);
+	HRESULT err = This->glD3DDev7->GetDirect3D(&d3d7);
 	if(!d3d7) TRACE_RET(HRESULT,23,err);
 	d3d7->QueryInterface(IID_IDirect3D,(void**)lpD3D);
 	d3d7->Release();
@@ -3713,68 +3742,68 @@ HRESULT WINAPI glDirect3DDevice1::GetDirect3D(LPDIRECT3D* lpD3D)
 	return err;
 }
 
-HRESULT WINAPI glDirect3DDevice1::GetMatrix(D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix)
+HRESULT WINAPI glDirect3DDevice1_GetMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE lpD3DMatHandle, LPD3DMATRIX lpD3DMatrix)
 {
-	TRACE_ENTER(3,14,this,9,lpD3DMatHandle,14,lpD3DMatrix);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->GetMatrix(lpD3DMatHandle,lpD3DMatrix));
+	TRACE_ENTER(3,14,This,9,lpD3DMatHandle,14,lpD3DMatrix);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->GetMatrix(lpD3DMatHandle,lpD3DMatrix));
 }
 
-HRESULT WINAPI glDirect3DDevice1::GetPickRecords(LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec)
+HRESULT WINAPI glDirect3DDevice1_GetPickRecords(glDirect3DDevice1 *This, LPDWORD lpCount, LPD3DPICKRECORD lpD3DPickRec)
 {
-	TRACE_ENTER(3,14,this,14,lpCount,14,lpD3DPickRec);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->GetPickRecords(lpCount,lpD3DPickRec));
+	TRACE_ENTER(3,14,This,14,lpCount,14,lpD3DPickRec);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->GetPickRecords(lpCount,lpD3DPickRec));
 }
 
-HRESULT WINAPI glDirect3DDevice1::GetStats(LPD3DSTATS lpD3DStats)
+HRESULT WINAPI glDirect3DDevice1_GetStats(glDirect3DDevice1 *This, LPD3DSTATS lpD3DStats)
 {
-	TRACE_ENTER(2,14,this,14,lpD3DStats);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->GetStats(lpD3DStats));
+	TRACE_ENTER(2,14,This,14,lpD3DStats);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->GetStats(lpD3DStats));
 }
 
-HRESULT WINAPI glDirect3DDevice1::Initialize(LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc)
+HRESULT WINAPI glDirect3DDevice1_Initialize(glDirect3DDevice1 *This, LPDIRECT3D lpd3d, LPGUID lpGUID, LPD3DDEVICEDESC lpd3ddvdesc)
 {
-	TRACE_ENTER(4,14,this,14,lpd3d,24,lpGUID,14,lpd3ddvdesc);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,14,lpd3d,24,lpGUID,14,lpd3ddvdesc);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 }
-HRESULT WINAPI glDirect3DDevice1::NextViewport(LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT *lplpDirect3DViewport, DWORD dwFlags)
+HRESULT WINAPI glDirect3DDevice1_NextViewport(glDirect3DDevice1 *This, LPDIRECT3DVIEWPORT lpDirect3DViewport, LPDIRECT3DVIEWPORT *lplpDirect3DViewport, DWORD dwFlags)
 {
-	TRACE_ENTER(4,14,this,14,lpDirect3DViewport,14,lplpDirect3DViewport,9,dwFlags);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,14,lpDirect3DViewport,14,lplpDirect3DViewport,9,dwFlags);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lplpDirect3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	FIXME("glDirect3DDevice1::NextViewport: stub");
 	TRACE_EXIT(23,DDERR_GENERIC);
 	ERR(DDERR_GENERIC);
 }
-HRESULT WINAPI glDirect3DDevice1::Pick(LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport,
+HRESULT WINAPI glDirect3DDevice1_Pick(glDirect3DDevice1 *This, LPDIRECT3DEXECUTEBUFFER lpDirect3DExecuteBuffer, LPDIRECT3DVIEWPORT lpDirect3DViewport,
 	DWORD dwFlags, LPD3DRECT lpRect)
 {
-	TRACE_ENTER(5,14,this,14,lpDirect3DExecuteBuffer,14,lpDirect3DViewport,9,dwFlags,26,lpRect);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->Pick(lpDirect3DExecuteBuffer, lpDirect3DViewport, dwFlags, lpRect));
+	TRACE_ENTER(5,14,This,14,lpDirect3DExecuteBuffer,14,lpDirect3DViewport,9,dwFlags,26,lpRect);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->Pick(lpDirect3DExecuteBuffer, lpDirect3DViewport, dwFlags, lpRect));
 }
 
-HRESULT WINAPI glDirect3DDevice1::SetMatrix(D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix)
+HRESULT WINAPI glDirect3DDevice1_SetMatrix(glDirect3DDevice1 *This, D3DMATRIXHANDLE d3dMatHandle, LPD3DMATRIX lpD3DMatrix)
 {
-	TRACE_ENTER(3,14,this,9,d3dMatHandle,14,lpD3DMatrix);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3DDev7->SetMatrix(d3dMatHandle,lpD3DMatrix));
+	TRACE_ENTER(3,14,This,9,d3dMatHandle,14,lpD3DMatrix);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3DDev7->SetMatrix(d3dMatHandle,lpD3DMatrix));
 }
 
-HRESULT WINAPI glDirect3DDevice1::SwapTextureHandles(LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2)
+HRESULT WINAPI glDirect3DDevice1_SwapTextureHandles(glDirect3DDevice1 *This, LPDIRECT3DTEXTURE lpD3DTex1, LPDIRECT3DTEXTURE lpD3DTex2)
 {
-	TRACE_ENTER(3,14,this,14,lpD3DTex1,14,lpD3DTex2);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lpD3DTex1,14,lpD3DTex2);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DTex1) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpD3DTex2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DTEXTURE2 tex1, tex2;
 	lpD3DTex1->QueryInterface(IID_IDirect3DTexture2,(void**)&tex1);
 	lpD3DTex2->QueryInterface(IID_IDirect3DTexture2,(void**)&tex2);
-	HRESULT ret = glD3DDev7->SwapTextureHandles(tex1,tex2);
+	HRESULT ret = This->glD3DDev7->SwapTextureHandles(tex1,tex2);
 	tex2->Release();
 	tex1->Release();
 	TRACE_EXIT(23,ret);
