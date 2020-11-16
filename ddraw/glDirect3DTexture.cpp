@@ -67,7 +67,7 @@ HRESULT WINAPI glDirect3DTexture2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2
 	TRACE_ENTER(3,14,this,14,lpDirect3DDevice2,14,lpHandle);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice2*)lpDirect3DDevice2)->GetGLD3DDev7();
+	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice2*)lpDirect3DDevice2)->glD3DDev7;
 	HRESULT ret = glDDS7->GetHandle(glD3DDev7,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
