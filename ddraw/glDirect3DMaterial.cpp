@@ -122,13 +122,13 @@ HRESULT WINAPI glDirect3DMaterial3::GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice
 	glDirect3DDevice3 *dev3 = (glDirect3DDevice3*)lpDirect3DDevice;
 	if(handle)
 	{
-		if(device != dev3->GetGLD3DDev7()) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+		if(device != dev3->glD3DDev7) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 		*lpHandle = handle;
 		TRACE_VAR("*lpHandle",9,*lpHandle);
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
-	device = dev3->GetGLD3DDev7();
+	device = dev3->glD3DDev7;
 	handle = device->AddMaterial(this);
 	if(handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	*lpHandle = handle;
@@ -236,7 +236,7 @@ HRESULT WINAPI glDirect3DMaterial2::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice
 	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice2 *glD3DDev2 = (glDirect3DDevice2*)lpDirect3DDevice;
 	glDirect3DDevice3 *glD3DDev3 = glD3DDev2->glD3DDev7->glD3DDev3;
-	HRESULT ret = glD3DM3->GetHandle(glD3DDev3,lpHandle);
+	HRESULT ret = glD3DM3->GetHandle((LPDIRECT3DDEVICE3)glD3DDev3,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -297,7 +297,7 @@ HRESULT WINAPI glDirect3DMaterial1::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice,
 	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice1 *glD3DDev1 = (glDirect3DDevice1*)lpDirect3DDevice;
 	glDirect3DDevice3 *glD3DDev3 = glD3DDev1->glD3DDev7->glD3DDev3;
-	HRESULT ret = glD3DM3->GetHandle(glD3DDev3,lpHandle);
+	HRESULT ret = glD3DM3->GetHandle((LPDIRECT3DDEVICE3)glD3DDev3,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
