@@ -254,14 +254,15 @@ HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMate
 }
 HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
 {
+	HRESULT ret;
 	TRACE_ENTER(4,14,this,14,lpVBDesc,14,lplpD3DVertexBuffer,9,dwFlags);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DVertexBuffer) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpVBDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpD3DVertexBuffer = (LPDIRECT3DVERTEXBUFFER7)new glDirect3DVertexBuffer7(this,*lpVBDesc,dwFlags);
+	ret = glDirect3DVertexBuffer7_Create(this, *lpVBDesc, dwFlags, (glDirect3DVertexBuffer7**)lplpD3DVertexBuffer);
 	TRACE_VAR("*lplpD3DVertexBuffer",14,*lplpD3DVertexBuffer);
-	TRACE_EXIT(23,D3D_OK);
-	return D3D_OK;
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirect3D7::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter)
 {
@@ -555,21 +556,16 @@ HRESULT WINAPI glDirect3D3::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMate
 }
 HRESULT WINAPI glDirect3D3::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter)
 {
+	HRESULT ret;
 	TRACE_ENTER(5,14,this,14,lpVBDesc,14,lplpD3DVertexBuffer,9,dwFlags,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	LPDIRECT3DVERTEXBUFFER7 lpD3DVB7;
-	HRESULT err = glD3D7->CreateVertexBuffer(lpVBDesc,&lpD3DVB7,dwFlags);
-	if(err == D3D_OK)
-	{
-		lpD3DVB7->QueryInterface(IID_IDirect3DVertexBuffer,(LPVOID*)lplpD3DVertexBuffer);
-		lpD3DVB7->Release();
-		TRACE_VAR("*lplpD3DVertexBuffer",14,*lplpD3DVertexBuffer);
-		TRACE_EXIT(23,D3D_OK);
-		return D3D_OK;
-	}
-	TRACE_EXIT(23,err);
-	return err;
+	if (!lplpD3DVertexBuffer) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!lpVBDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	ret = glDirect3DVertexBuffer1_Create(this, *lpVBDesc, dwFlags, (glDirect3DVertexBuffer7**)lplpD3DVertexBuffer);
+	TRACE_VAR("*lplpD3DVertexBuffer", 14, *lplpD3DVertexBuffer);
+	TRACE_EXIT(23, ret);
+	return ret;
 }
 HRESULT WINAPI glDirect3D3::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter)
 {

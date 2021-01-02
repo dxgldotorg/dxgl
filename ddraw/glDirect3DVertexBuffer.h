@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2012 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,28 +19,47 @@
 #ifndef __GLDIRECT3DVERTEXBUFFER_H
 #define __GLDIRECT3DVERTEXBUFFER_H
 
-class glDirect3DVertexBuffer7 : public IDirect3DVertexBuffer7
+struct glDirect3DVertexBuffer7Vtbl;
+
+typedef struct glDirect3DVertexBuffer7
 {
-public:
-	glDirect3DVertexBuffer7(glDirect3D7 *glD3DD7, D3DVERTEXBUFFERDESC desc, DWORD flags);
-	virtual ~glDirect3DVertexBuffer7();
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI GetVertexBufferDesc(LPD3DVERTEXBUFFERDESC lpVBDesc);
-	HRESULT WINAPI Lock(DWORD dwFlags, LPVOID* lplpData, LPDWORD lpdwSize); 
-	HRESULT WINAPI Optimize(LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
-	HRESULT WINAPI ProcessVertices(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount, 
-		LPDIRECT3DVERTEXBUFFER7 lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
-	HRESULT WINAPI ProcessVerticesStrided(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
-		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
-	HRESULT WINAPI Unlock();
-private:
+	glDirect3DVertexBuffer7Vtbl *lpVtbl;
 	glDirect3D7 *glD3D7;
+	int version;
 	ULONG refcount;
 	D3DVERTEXBUFFERDESC vbdesc;
 	DWORD flags;
-};
+} glDirect3DVertexBuffer7;
+
+typedef struct glDirect3DVertexBuffer7Vtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirect3DVertexBuffer7 *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirect3DVertexBuffer7 *This);
+	ULONG(WINAPI *Release)(glDirect3DVertexBuffer7 *This);
+	HRESULT(WINAPI *Lock)(glDirect3DVertexBuffer7 *This, DWORD dwFlags, LPVOID* lplpData, LPDWORD lpdwSize);
+	HRESULT(WINAPI *Unlock)(glDirect3DVertexBuffer7 *This);
+	HRESULT(WINAPI *ProcessVertices)(glDirect3DVertexBuffer7 *This, DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
+		LPDIRECT3DVERTEXBUFFER7 lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+	HRESULT(WINAPI *GetVertexBufferDesc)(glDirect3DVertexBuffer7 *This, LPD3DVERTEXBUFFERDESC lpVBDesc);
+	HRESULT(WINAPI *Optimize)(glDirect3DVertexBuffer7 *This, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+	HRESULT(WINAPI *ProcessVerticesStrided)(glDirect3DVertexBuffer7 *This, DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
+		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+} glDirect3DVertexBuffer7Vtbl;
+
+HRESULT glDirect3DVertexBuffer7_Create(glDirect3D7 *glD3D7, D3DVERTEXBUFFERDESC desc, DWORD flags, glDirect3DVertexBuffer7 **buffer);
+HRESULT glDirect3DVertexBuffer1_Create(glDirect3D3 *glD3D3, D3DVERTEXBUFFERDESC desc, DWORD flags, glDirect3DVertexBuffer7 **buffer);
+void glDirect3DVertexBuffer7_Destroy(glDirect3DVertexBuffer7 *This);
+HRESULT WINAPI glDirect3DVertexBuffer7_QueryInterface(glDirect3DVertexBuffer7 *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirect3DVertexBuffer7_AddRef(glDirect3DVertexBuffer7 *This);
+ULONG WINAPI glDirect3DVertexBuffer7_Release(glDirect3DVertexBuffer7 *This);
+HRESULT WINAPI glDirect3DVertexBuffer7_GetVertexBufferDesc(glDirect3DVertexBuffer7 *This, LPD3DVERTEXBUFFERDESC lpVBDesc);
+HRESULT WINAPI glDirect3DVertexBuffer7_Lock(glDirect3DVertexBuffer7 *This, DWORD dwFlags, LPVOID* lplpData, LPDWORD lpdwSize);
+HRESULT WINAPI glDirect3DVertexBuffer7_Optimize(glDirect3DVertexBuffer7 *This, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+HRESULT WINAPI glDirect3DVertexBuffer7_ProcessVertices(glDirect3DVertexBuffer7 *This, DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
+		LPDIRECT3DVERTEXBUFFER7 lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+HRESULT WINAPI glDirect3DVertexBuffer7_ProcessVerticesStrided(glDirect3DVertexBuffer7 *This, DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
+		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
+HRESULT WINAPI glDirect3DVertexBuffer7_Unlock(glDirect3DVertexBuffer7 *This);
 
 
 class glDirect3DVertexBuffer1 : public IDirect3DVertexBuffer
@@ -61,6 +80,5 @@ public:
 private:
 	glDirect3DVertexBuffer7 *glD3DVB7;
 };
-
 
 #endif //__GLDIRECT3DVERTEXBUFFER_H

@@ -3155,7 +3155,7 @@ HRESULT WINAPI glDirect3DDevice3_DrawIndexedPrimitiveVB(glDirect3DDevice3 *This,
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpd3dVertexBuffer) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23,glDirect3DDevice7_DrawIndexedPrimitiveVB(This->glD3DDev7, d3dptPrimitiveType,
-		((glDirect3DVertexBuffer1*)lpd3dVertexBuffer)->GetGLD3DVB7(),0,-1,lpwIndices,dwIndexCount,dwFlags));
+		(LPDIRECT3DVERTEXBUFFER7)lpd3dVertexBuffer,0,-1,lpwIndices,dwIndexCount,dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice3_DrawPrimitive(glDirect3DDevice3 *This, D3DPRIMITIVETYPE dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpVertices,
@@ -3180,8 +3180,8 @@ HRESULT WINAPI glDirect3DDevice3_DrawPrimitiveVB(glDirect3DDevice3 *This, D3DPRI
 	TRACE_ENTER(6,14,This,8,d3dptPrimitiveType,14,lpd3dVertexBuffer,8,dwStartVertex,8,dwNumVertices,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpd3dVertexBuffer) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDirect3DDevice7_DrawPrimitiveVB(This->glD3DDev7, d3dptPrimitiveType,((glDirect3DVertexBuffer1*)lpd3dVertexBuffer)->GetGLD3DVB7(),
-		dwStartVertex,dwNumVertices,dwFlags));
+	TRACE_RET(HRESULT, 23, glDirect3DDevice7_DrawPrimitiveVB(This->glD3DDev7, d3dptPrimitiveType, (LPDIRECT3DVERTEXBUFFER7)lpd3dVertexBuffer,
+		dwStartVertex, dwNumVertices, dwFlags));
 }
 HRESULT WINAPI glDirect3DDevice3_End(glDirect3DDevice3 *This, DWORD dwFlags)
 {
