@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2020 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -139,12 +139,12 @@ FONT 8, "Ms Shell Dlg"
 		COMBOBOX        IDC_TEXTUREFORMAT, 7, 17, 102, 64, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
 		LTEXT           "Texture access method", IDC_STATIC, 114, 7, 76, 8, SS_LEFT, WS_EX_LEFT
 		COMBOBOX        IDC_TEXUPLOAD, 114, 17, 102, 64, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
-		LTEXT           "Remembered window size", IDC_STATIC, 114, 58, 83, 9, SS_LEFT, WS_EX_LEFT
+		LTEXT           "Remembered window size", IDC_STATIC, 114, 58, 85, 9, SS_LEFT, WS_EX_LEFT
 		LTEXT           "Default window position", IDC_STATIC, 7, 32, 76, 9, SS_LEFT, WS_EX_LEFT
 		COMBOBOX        IDC_WINDOWPOS, 7, 43, 102, 64, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
 		AUTOCHECKBOX    "Remember window position", IDC_REMEMBERWINDOWPOS, 114, 38, 102, 8, 0, WS_EX_LEFT
 		AUTOCHECKBOX    "Remember window size", IDC_REMEMBERWINDOWSIZE, 114, 48, 90, 8, 0, WS_EX_LEFT
-		LTEXT           "Remembered window position", IDC_STATIC, 7, 58, 95, 9, SS_LEFT, WS_EX_LEFT
+		LTEXT           "Remembered window position", IDC_STATIC, 7, 58, 97, 9, SS_LEFT, WS_EX_LEFT
 		LTEXT           "X", IDC_STATIC, 7, 72, 8, 9, SS_LEFT, WS_EX_LEFT
 		EDITTEXT        IDC_WINDOWX, 15, 69, 40, 14, ES_AUTOHSCROLL, WS_EX_LEFT
 		LTEXT           "Y", IDC_STATIC, 57, 72, 8, 9, SS_LEFT, WS_EX_LEFT

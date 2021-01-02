@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2020 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
 
 #ifdef __cplusplus
 class glDirectDraw7;
-class glDirect3DDevice7;
+struct glDirect3DDevice7;
 class glDirectDrawSurface7;
 class glRenderWindow;
 extern "C" {

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,7 @@ class glDirectDrawSurface3;
 class glDirectDrawSurface4;
 class glDirect3DTexture2;
 class glDirect3DTexture1;
-class glDirect3DDevice7;
+struct glDirect3DDevice7;
 struct glDirectDrawGammaControl;
 class glDirectDrawSurface7 : public IDirectDrawSurface7
 {

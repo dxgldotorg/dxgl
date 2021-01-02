@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -159,10 +159,10 @@ HRESULT WINAPI glDirect3DLight::SetLight(LPD3DLIGHT lpLight)
 	{
 		if((((LPD3DLIGHT2)lpLight)->dwFlags & D3DLIGHT_ACTIVE) || lpLight->dwSize == sizeof(D3DLIGHT))
 		{
-			device->SetLight(index,&light);
-			device->LightEnable(index,TRUE);
+			glDirect3DDevice7_SetLight(device, index,&light);
+			glDirect3DDevice7_LightEnable(device, index,TRUE);
 		}
-		else device->LightEnable(index,FALSE);
+		else glDirect3DDevice7_LightEnable(device, index,FALSE);
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -184,7 +184,7 @@ void glDirect3DLight::Sync()
 		TRACE_EXIT(0,0);
 		return;
 	}
-	device->SetLight(index,&light);
-	device->LightEnable(index,TRUE);
+	glDirect3DDevice7_SetLight(device, index, &light);
+	glDirect3DDevice7_LightEnable(device, index, TRUE);
 	TRACE_EXIT(0,0);
 }

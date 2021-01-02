@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2014 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ glDirect3DMaterial3::glDirect3DMaterial3()
 glDirect3DMaterial3::~glDirect3DMaterial3()
 {
 	TRACE_ENTER(1,14,this);
-	if(device) device->Release();
+	if(device) glDirect3DDevice7_Release(device);
 	delete glD3DM2;
 	delete glD3DM1;
 	TRACE_EXIT(-1,0);
@@ -129,7 +129,7 @@ HRESULT WINAPI glDirect3DMaterial3::GetHandle(LPDIRECT3DDEVICE3 lpDirect3DDevice
 		return D3D_OK;
 	}
 	device = dev3->glD3DDev7;
-	handle = device->AddMaterial(this);
+	handle = glDirect3DDevice7_AddMaterial(device, this);
 	if(handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	*lpHandle = handle;
 	TRACE_VAR("*lpHandle",9,*lpHandle);
@@ -189,7 +189,7 @@ void glDirect3DMaterial3::Sync()
 	mat7.specular = material.specular;
 	mat7.emissive = material.emissive;
 	mat7.power = material.power;
-	device->SetMaterial(&mat7);
+	glDirect3DDevice7_SetMaterial(device, &mat7);
 	TRACE_EXIT(0,0);
 }
 

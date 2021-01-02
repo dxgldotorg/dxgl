@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -448,7 +448,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 		zbuffer_iface->Release();
 	}
 	if(miptexture) miptexture->Release();
-	if (device) device->Release(); 
+	if (device) glDirect3DDevice7_Release(device); 
 	if (device1) delete device1;
 	ddInterface->DeleteSurface(this);
 	if (creator) creator->Release();
@@ -539,19 +539,18 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			glDirect3D7 *tmpd3d;
 			ddInterface->QueryInterface(IID_IDirect3D7,(void**)&tmpd3d);
 			if(!tmpd3d) TRACE_RET(HRESULT,23,E_NOINTERFACE);
-			device1 = new glDirect3DDevice7(riid, tmpd3d, this, dds1, 1);
-			if (FAILED(device1->err()))
+			ret = glDirect3DDevice7_Create(riid, tmpd3d, this, dds1, 1, &device);
+			if (FAILED(ret))
 			{
-				ret = device1->err();
-				delete device1;
+				if(device1) free(device1);
 				tmpd3d->Release();
 				TRACE_EXIT(23, ret);
 				return ret;
 			}
 			*ppvObj = device1->glD3DDev1;
 			glDirect3DDevice1_AddRef(device1->glD3DDev1);
-			device1->InitDX5();
-			device1->InitDX2();
+			glDirect3DDevice7_InitDX5(device1);
+			glDirect3DDevice7_InitDX2(device1);
 			tmpd3d->Release();
 			TRACE_VAR("*ppvObj",14,*ppvObj);
 			TRACE_EXIT(23,DD_OK);
@@ -1960,9 +1959,9 @@ HRESULT glDirectDrawSurface7::GetHandle(glDirect3DDevice7 *glD3DDev7, LPD3DTEXTU
 		return D3D_OK;
 	}
 	device = glD3DDev7;
-	handle = device->AddTexture(this);
+	handle = glDirect3DDevice7_AddTexture(device, this);
 	if(handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	device->AddRef();
+	glDirect3DDevice7_AddRef(device);
 	*lpHandle = handle;
 	TRACE_VAR("*lpHandle",9,*lpHandle);
 	TRACE_EXIT(23,D3D_OK);

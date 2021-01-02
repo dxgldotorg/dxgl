@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -124,7 +124,7 @@ ULONG WINAPI glDirect3DViewport3_Release(glDirect3DViewport3 *This)
 	ret = This->refcount;
 	if (This->refcount == 0)
 	{
-		if (This->device) This->device->Release();
+		if (This->device) glDirect3DDevice7_Release(This->device);
 		if (This->backZ) This->backZ->Release();
 		for (int i = 0; i < 8; i++)
 		{
@@ -166,7 +166,7 @@ HRESULT WINAPI glDirect3DViewport3_Clear(glDirect3DViewport3 *This, DWORD dwCoun
 	if(!This->device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
 	D3DCOLORVALUE bgcolor = {0.0,0.0,0.0,0.0};
 	if(This->device->materials[This->background]) bgcolor = This->device->materials[This->background]->material.diffuse;
-	TRACE_RET(HRESULT,23,This->device->Clear(dwCount,lpRects,dwFlags,d3dcvtod3dcolor(bgcolor),0.0,0));
+	TRACE_RET(HRESULT,23,glDirect3DDevice7_Clear(This->device,dwCount,lpRects,dwFlags,d3dcvtod3dcolor(bgcolor),0.0,0));
 }
 
 HRESULT WINAPI glDirect3DViewport3_Clear2(glDirect3DViewport3 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
@@ -174,7 +174,7 @@ HRESULT WINAPI glDirect3DViewport3_Clear2(glDirect3DViewport3 *This, DWORD dwCou
 	TRACE_ENTER(7,14,This,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
-	TRACE_RET(HRESULT,23,This->device->Clear(dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
+	TRACE_RET(HRESULT,23,glDirect3DDevice7_Clear(This->device,dwCount,lpRects,dwFlags,dwColor,dvZ,dwStencil));
 }
 
 HRESULT WINAPI glDirect3DViewport3_DeleteLight(glDirect3DViewport3 *This, LPDIRECT3DLIGHT lpDirect3DLight)
@@ -410,8 +410,8 @@ void glDirect3DViewport3_Sync(glDirect3DViewport3 *This)
 	vp7.dwWidth = This->viewport.dwWidth;
 	vp7.dvMinZ = This->viewport.dvMinZ;
 	vp7.dvMaxZ = This->viewport.dvMaxZ;
-	This->device->SetViewport(&vp7);
-	This->device->SetScale(This->viewport1.dvScaleX,This->viewport1.dvScaleY);
+	glDirect3DDevice7_SetViewport(This->device,&vp7);
+	glDirect3DDevice7_SetScale(This->device,This->viewport1.dvScaleX,This->viewport1.dvScaleY);
 	TRACE_EXIT(0,0);
 }
 
@@ -425,10 +425,10 @@ void glDirect3DViewport3_SyncLights(glDirect3DViewport3 *This)
 		{
 			This->lights[i]->SetDevice(This->device,i);
 			This->lights[i]->GetLight7(&light);
-			This->device->SetLight(i,&light);
-			This->device->LightEnable(i,TRUE);
+			glDirect3DDevice7_SetLight(This->device,i,&light);
+			glDirect3DDevice7_LightEnable(This->device,i,TRUE);
 		}
-		else This->device->LightEnable(i,FALSE);
+		else glDirect3DDevice7_LightEnable(This->device,i,FALSE);
 	}
 	TRACE_EXIT(0,0);
 }

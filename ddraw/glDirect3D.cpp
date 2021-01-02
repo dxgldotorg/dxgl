@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -217,12 +217,11 @@ HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, 
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret;
-	glDirect3DDevice7 *glD3DDev7 = new glDirect3DDevice7(rclsid,this,(glDirectDrawSurface7*)lpDDS,NULL,version);
-	if(!glD3DDev7) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	if(FAILED(glD3DDev7->err()))
+	glDirect3DDevice7 *glD3DDev7 = NULL;
+	ret = glDirect3DDevice7_Create(rclsid, this, (glDirectDrawSurface7*)lpDDS, NULL, version, &glD3DDev7);
+	if(FAILED(ret))
 	{
-		ret = glD3DDev7->err();
-		delete glD3DDev7;
+		if (glD3DDev7) free(glD3DDev7);
 		TRACE_EXIT(23,ret);
 		return ret;
 	}
