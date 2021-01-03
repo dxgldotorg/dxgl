@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013 William Feely
+// Copyright (C) 2013-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,31 +19,46 @@
 #ifndef __GLDIRECT3DEXECUTEBUFFER_H
 #define __GLDIRECT3DEXECUTEBUFFER_H
 
-class glDirect3DExecuteBuffer : public IDirect3DExecuteBuffer
+struct glDirect3DExecuteBufferVtbl;
 
+typedef struct glDirect3DExecuteBuffer
 {
-public:
-	glDirect3DExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc);
-	virtual ~glDirect3DExecuteBuffer();
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI GetExecuteData(LPD3DEXECUTEDATA lpData);
-	HRESULT WINAPI Initialize(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DEXECUTEBUFFERDESC lpDesc);
-	HRESULT WINAPI Lock(LPD3DEXECUTEBUFFERDESC lpDesc);
-	HRESULT WINAPI Optimize(DWORD dwDummy);
-	HRESULT WINAPI SetExecuteData(LPD3DEXECUTEDATA lpData);
-	HRESULT WINAPI Unlock();
-	HRESULT WINAPI Validate(LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved);
-	HRESULT ExecuteLock(LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData);
-	HRESULT ExecuteUnlock(LPD3DEXECUTEDATA lpData);
-private:
+	glDirect3DExecuteBufferVtbl *lpVtbl;
 	ULONG refcount;
 	D3DEXECUTEBUFFERDESC desc;
 	D3DEXECUTEDATA datadesc;
 	unsigned char *data;
 	bool locked;
 	bool inuse;
-};
+} glDirect3DExecuteBuffer;
+
+typedef struct glDirect3DExecuteBufferVtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirect3DExecuteBuffer *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirect3DExecuteBuffer *This);
+	ULONG(WINAPI *Release)(glDirect3DExecuteBuffer *This);
+	HRESULT(WINAPI *Initialize)(glDirect3DExecuteBuffer *This, LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DEXECUTEBUFFERDESC lpDesc);
+	HRESULT(WINAPI *Lock)(glDirect3DExecuteBuffer *This, LPD3DEXECUTEBUFFERDESC lpDesc);
+	HRESULT(WINAPI *Unlock)(glDirect3DExecuteBuffer *This);
+	HRESULT(WINAPI *GetExecuteData)(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData);
+	HRESULT(WINAPI *SetExecuteData)(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData);
+	HRESULT(WINAPI *Validate)(glDirect3DExecuteBuffer *This, LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved);
+	HRESULT(WINAPI *Optimize)(glDirect3DExecuteBuffer *This, DWORD dwDummy);
+} glDirect3DExecuteBufferVtbl;
+
+HRESULT glDirect3DExecuteBuffer_Create(LPD3DEXECUTEBUFFERDESC lpDesc, glDirect3DExecuteBuffer **buffer);
+void glDirect3DExecuteBuffer_Destroy(glDirect3DExecuteBuffer *This);
+HRESULT WINAPI glDirect3DExecuteBuffer_QueryInterface(glDirect3DExecuteBuffer *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirect3DExecuteBuffer_AddRef(glDirect3DExecuteBuffer *This);
+ULONG WINAPI glDirect3DExecuteBuffer_Release(glDirect3DExecuteBuffer *This);
+HRESULT WINAPI glDirect3DExecuteBuffer_GetExecuteData(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData);
+HRESULT WINAPI glDirect3DExecuteBuffer_Initialize(glDirect3DExecuteBuffer *This, LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DEXECUTEBUFFERDESC lpDesc);
+HRESULT WINAPI glDirect3DExecuteBuffer_Lock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEBUFFERDESC lpDesc);
+HRESULT WINAPI glDirect3DExecuteBuffer_Optimize(glDirect3DExecuteBuffer *This, DWORD dwDummy);
+HRESULT WINAPI glDirect3DExecuteBuffer_SetExecuteData(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData);
+HRESULT WINAPI glDirect3DExecuteBuffer_Unlock(glDirect3DExecuteBuffer *This);
+HRESULT WINAPI glDirect3DExecuteBuffer_Validate(glDirect3DExecuteBuffer *This, LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved);
+HRESULT glDirect3DExecuteBuffer_ExecuteLock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData);
+HRESULT glDirect3DExecuteBuffer_ExecuteUnlock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData);
 
 #endif //__GLDIRECT3DEXECUTEBUFFER_H

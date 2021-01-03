@@ -2358,6 +2358,7 @@ HRESULT glDirect3DDevice7_SetMatrix(glDirect3DDevice7 *This, D3DMATRIXHANDLE d3d
 HRESULT glDirect3DDevice7_CreateExecuteBuffer(glDirect3DDevice7 *This, LPD3DEXECUTEBUFFERDESC lpDesc, LPDIRECT3DEXECUTEBUFFER* lplpDirect3DExecuteBuffer,
 	IUnknown* pUnkOuter)
 {
+	HRESULT error;
 	TRACE_ENTER(4,14,This,14,lpDesc,14,lplpDirect3DExecuteBuffer,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -2365,11 +2366,10 @@ HRESULT glDirect3DDevice7_CreateExecuteBuffer(glDirect3DDevice7 *This, LPD3DEXEC
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDesc->dwSize != sizeof(D3DEXECUTEBUFFERDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!(lpDesc->dwFlags & D3DDEB_BUFSIZE)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpDirect3DExecuteBuffer = new glDirect3DExecuteBuffer(lpDesc);
-	if(!*lplpDirect3DExecuteBuffer) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+	error = glDirect3DExecuteBuffer_Create(lpDesc, (glDirect3DExecuteBuffer**)lplpDirect3DExecuteBuffer);
 	TRACE_VAR("*lplpDirect3DExecuteBuffer",14,*lplpDirect3DExecuteBuffer);
-	TRACE_EXIT(23,D3D_OK);
-	return D3D_OK;
+	TRACE_EXIT(23,error);
+	return error;
 }
 
 BOOL ExpandBuffer(void **buffer, DWORD *size, DWORD increment)
@@ -2723,7 +2723,7 @@ HRESULT glDirect3DDevice7_Execute(glDirect3DDevice7 *This, LPDIRECT3DEXECUTEBUFF
 	vp->Release();
 	D3DEXECUTEBUFFERDESC desc;
 	D3DEXECUTEDATA data;
-	HRESULT err = ((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer)->ExecuteLock(&desc,&data);
+	HRESULT err = glDirect3DExecuteBuffer_ExecuteLock((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer, &desc, &data);
 	if(FAILED(err)) TRACE_RET(HRESULT,23,err);
 	unsigned char *opptr = (unsigned char *)desc.lpData + data.dwInstructionOffset;
 	unsigned char *in_vertptr = (unsigned char *)desc.lpData + data.dwVertexOffset;
@@ -2974,7 +2974,7 @@ HRESULT glDirect3DDevice7_Execute(glDirect3DDevice7 *This, LPDIRECT3DEXECUTEBUFF
 		}
 		if(ebExit) break;
 	}
-	((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer)->ExecuteUnlock(&data);
+	glDirect3DExecuteBuffer_ExecuteUnlock((glDirect3DExecuteBuffer*)lpDirect3DExecuteBuffer, &data);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013 William Feely
+// Copyright (C) 2013-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,38 +19,56 @@
 #include "glDirect3DExecuteBuffer.h"
 #include "ddraw.h"
 
-glDirect3DExecuteBuffer::glDirect3DExecuteBuffer(LPD3DEXECUTEBUFFERDESC lpDesc)
+glDirect3DExecuteBufferVtbl glDirect3DExecuteBuffer_iface =
 {
-	TRACE_ENTER(2,14,this,14,lpDesc);
-	refcount = 1;
-	locked = false;
-	inuse = false;
-	data = NULL;
-	desc = *lpDesc;
-	if(!(desc.dwFlags & D3DDEB_CAPS))
+	glDirect3DExecuteBuffer_QueryInterface,
+	glDirect3DExecuteBuffer_AddRef,
+	glDirect3DExecuteBuffer_Release,
+	glDirect3DExecuteBuffer_Initialize,
+	glDirect3DExecuteBuffer_Lock,
+	glDirect3DExecuteBuffer_Unlock,
+	glDirect3DExecuteBuffer_SetExecuteData,
+	glDirect3DExecuteBuffer_GetExecuteData,
+	glDirect3DExecuteBuffer_Validate,
+	glDirect3DExecuteBuffer_Optimize
+};
+
+HRESULT glDirect3DExecuteBuffer_Create(LPD3DEXECUTEBUFFERDESC lpDesc, glDirect3DExecuteBuffer **buffer)
+{
+	TRACE_ENTER(2, 14, lpDesc, 14, buffer);
+	glDirect3DExecuteBuffer *This = (glDirect3DExecuteBuffer*)malloc(sizeof(glDirect3DExecuteBuffer));
+	if (!This) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+	This->lpVtbl = &glDirect3DExecuteBuffer_iface;
+	This->refcount = 1;
+	This->locked = FALSE;
+	This->inuse = FALSE;
+	This->data = NULL;
+	This->desc = *lpDesc;
+	if(!(This->desc.dwFlags & D3DDEB_CAPS))
 	{
-		desc.dwFlags |= D3DDEB_CAPS;
-		desc.dwCaps = D3DDEBCAPS_MEM;
+		This->desc.dwFlags |= D3DDEB_CAPS;
+		This->desc.dwCaps = D3DDEBCAPS_MEM;
 	}
-	ZeroMemory(&datadesc,sizeof(D3DEXECUTEDATA));
-	datadesc.dwSize = sizeof(D3DEXECUTEDATA);
-	TRACE_EXIT(-1,0);
+	ZeroMemory(&This->datadesc,sizeof(D3DEXECUTEDATA));
+	This->datadesc.dwSize = sizeof(D3DEXECUTEDATA);
+	TRACE_EXIT(0,0);
 }
-glDirect3DExecuteBuffer::~glDirect3DExecuteBuffer()
+void glDirect3DExecuteBuffer_Destroy(glDirect3DExecuteBuffer *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(data) free(data);
-	TRACE_EXIT(-1,0);
+	TRACE_ENTER(1,14,This);
+	if(This->data) free(This->data);
+	free(This);
+	TRACE_EXIT(0,0);
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::QueryInterface(REFIID riid, void** ppvObj)
+HRESULT WINAPI glDirect3DExecuteBuffer_QueryInterface(glDirect3DExecuteBuffer *This, REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3DExecuteBuffer))
 	{
-		this->AddRef();
-		*ppvObj = this;
+		glDirect3DExecuteBuffer_AddRef(This);
+		*ppvObj = This;
 		TRACE_EXIT(23,D3D_OK);
 		return D3D_OK;
 	}
@@ -58,140 +76,140 @@ HRESULT WINAPI glDirect3DExecuteBuffer::QueryInterface(REFIID riid, void** ppvOb
 	return E_NOINTERFACE;
 }
 
-ULONG WINAPI glDirect3DExecuteBuffer::AddRef()
+ULONG WINAPI glDirect3DExecuteBuffer_AddRef(glDirect3DExecuteBuffer *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	InterlockedIncrement(&This->refcount);
+	TRACE_EXIT(8,This->refcount);
+	return This->refcount;
 }
 
-ULONG WINAPI glDirect3DExecuteBuffer::Release()
+ULONG WINAPI glDirect3DExecuteBuffer_Release(glDirect3DExecuteBuffer *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
+	InterlockedDecrement(&This->refcount);
+	ret = This->refcount;
+	if(This->refcount == 0) glDirect3DExecuteBuffer_Destroy(This);
 	TRACE_EXIT(8,ret);
 	return ret;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::GetExecuteData(LPD3DEXECUTEDATA lpData)
+HRESULT WINAPI glDirect3DExecuteBuffer_GetExecuteData(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData)
 {
-	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpData);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
+	if(This->locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
 	if(lpData->dwSize < sizeof(D3DEXECUTEDATA)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	memcpy(lpData,&datadesc,sizeof(D3DEXECUTEDATA));
+	memcpy(lpData,&This->datadesc,sizeof(D3DEXECUTEDATA));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::Initialize(LPDIRECT3DDEVICE lpDirect3DDevice,
+HRESULT WINAPI glDirect3DExecuteBuffer_Initialize(glDirect3DExecuteBuffer *This, LPDIRECT3DDEVICE lpDirect3DDevice,
 	LPD3DEXECUTEBUFFERDESC lpDesc)
 {
-	TRACE_ENTER(3,14,this,14,lpDirect3DDevice,14,lpDesc);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lpDirect3DDevice,14,lpDesc);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_ALREADYINITIALIZED);
 	return DDERR_ALREADYINITIALIZED;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::Lock(LPD3DEXECUTEBUFFERDESC lpDesc)
+HRESULT WINAPI glDirect3DExecuteBuffer_Lock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEBUFFERDESC lpDesc)
 {
-	TRACE_ENTER(2,14,this,14,lpDesc);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpDesc);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDesc->dwSize < sizeof(D3DEXECUTEBUFFERDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(inuse) TRACE_RET(HRESULT,23,DDERR_WASSTILLDRAWING);
-	if(locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
-	desc.dwCaps = lpDesc->dwCaps;
-	desc.dwFlags |= D3DDEB_LPDATA;
-	if(!data)
+	if(This->inuse) TRACE_RET(HRESULT,23,DDERR_WASSTILLDRAWING);
+	if(This->locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
+	This->desc.dwCaps = lpDesc->dwCaps;
+	This->desc.dwFlags |= D3DDEB_LPDATA;
+	if(!This->data)
 	{
-		data = (unsigned char *)malloc(desc.dwBufferSize);
-		if(!data) return DDERR_OUTOFMEMORY;
+		This->data = (unsigned char *)malloc(This->desc.dwBufferSize);
+		if(!This->data) return DDERR_OUTOFMEMORY;
 	}
-	desc.lpData = data;
-	memcpy(lpDesc,&desc,sizeof(D3DEXECUTEBUFFERDESC));
-	locked = true;
+	This->desc.lpData = This->data;
+	memcpy(lpDesc,&This->desc,sizeof(D3DEXECUTEBUFFERDESC));
+	This->locked = TRUE;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::Optimize(DWORD dwDummy)
+HRESULT WINAPI glDirect3DExecuteBuffer_Optimize(glDirect3DExecuteBuffer *This, DWORD dwDummy)
 {
-	TRACE_ENTER(2,14,this,9,dwDummy);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,9,dwDummy);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::SetExecuteData(LPD3DEXECUTEDATA lpData)
+HRESULT WINAPI glDirect3DExecuteBuffer_SetExecuteData(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData)
 {
-	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpData);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpData->dwSize != sizeof(D3DEXECUTEDATA)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	memcpy(&datadesc,lpData,sizeof(D3DEXECUTEDATA));
+	memcpy(&This->datadesc,lpData,sizeof(D3DEXECUTEDATA));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::Unlock()
+HRESULT WINAPI glDirect3DExecuteBuffer_Unlock(glDirect3DExecuteBuffer *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(inuse) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
-	if(!locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
-	locked = false;
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(This->inuse) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
+	if(!This->locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
+	This->locked = FALSE;
 	TRACE_RET(HRESULT,23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3DExecuteBuffer::Validate(LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved)
+HRESULT WINAPI glDirect3DExecuteBuffer_Validate(glDirect3DExecuteBuffer *This, LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved)
 {
-	TRACE_ENTER(5,14,this,14,lpdwOffset,14,lpFunc,14,lpUserArg,9,dwReserved);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(5,14,This,14,lpdwOffset,14,lpFunc,14,lpUserArg,9,dwReserved);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_EXIT(23,DDERR_UNSUPPORTED);
 	return DDERR_UNSUPPORTED;
 }
 
-HRESULT glDirect3DExecuteBuffer::ExecuteLock(LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData)
+HRESULT glDirect3DExecuteBuffer_ExecuteLock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEBUFFERDESC lpDesc,LPD3DEXECUTEDATA lpData)
 {
-	TRACE_ENTER(3,14,this,14,lpDesc,14,lpData);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(inuse) TRACE_RET(HRESULT,23,DDERR_WASSTILLDRAWING);
-	if(locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
+	TRACE_ENTER(3,14,This,14,lpDesc,14,lpData);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(This->inuse) TRACE_RET(HRESULT,23,DDERR_WASSTILLDRAWING);
+	if(This->locked) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_LOCKED);
 	if(!lpDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	desc.dwFlags |= D3DDEB_LPDATA;
-	if(!data)
+	This->desc.dwFlags |= D3DDEB_LPDATA;
+	if(!This->data)
 	{
-		data = (unsigned char *)malloc(desc.dwBufferSize);
-		if(!data) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+		This->data = (unsigned char *)malloc(This->desc.dwBufferSize);
+		if(!This->data) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	}
-	desc.lpData = data;
-	memcpy(lpDesc,&desc,sizeof(D3DEXECUTEBUFFERDESC));
-	memcpy(lpData,&datadesc,sizeof(D3DEXECUTEDATA));
-	locked = true;
-	inuse = true;
+	This->desc.lpData = This->data;
+	memcpy(lpDesc,&This->desc,sizeof(D3DEXECUTEBUFFERDESC));
+	memcpy(lpData,&This->datadesc,sizeof(D3DEXECUTEDATA));
+	This->locked = TRUE;
+	This->inuse = TRUE;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT glDirect3DExecuteBuffer::ExecuteUnlock(LPD3DEXECUTEDATA lpData)
+HRESULT glDirect3DExecuteBuffer_ExecuteUnlock(glDirect3DExecuteBuffer *This, LPD3DEXECUTEDATA lpData)
 {
-	TRACE_ENTER(2,14,this,14,lpData);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(2,14,This,14,lpData);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(!inuse) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
-	inuse = false;
-	locked = false;
-	memcpy(&datadesc,lpData,sizeof(D3DEXECUTEDATA));
+	if(!This->inuse) TRACE_RET(HRESULT,23,D3DERR_EXECUTE_NOT_LOCKED);
+	This->inuse = FALSE;
+	This->locked = FALSE;
+	memcpy(&This->datadesc,lpData,sizeof(D3DEXECUTEDATA));
 	TRACE_RET(HRESULT,23,D3D_OK);
 	return D3D_OK;
 }

@@ -45,6 +45,7 @@ HRESULT glDirect3DVertexBuffer7_Create(glDirect3D7 *glD3D7, D3DVERTEXBUFFERDESC 
 	TRACE_ENTER(4, 14, glD3D7, 14, &desc, 9, flags, 14, buffer);
 	glDirect3DVertexBuffer7 *This = (glDirect3DVertexBuffer7*)malloc(sizeof(glDirect3DVertexBuffer7));
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	This->lpVtbl = &glDirect3DVertexBuffer7_iface;
 	This->glD3D7 = glD3D7;
 	This->glD3D7->AddRef();
 	This->refcount = 1;
@@ -61,6 +62,7 @@ HRESULT glDirect3DVertexBuffer1_Create(glDirect3D3 *glD3D3, D3DVERTEXBUFFERDESC 
 	TRACE_ENTER(4, 14, glD3D3, 14, &desc, 9, flags, 14, buffer);
 	glDirect3DVertexBuffer7 *This = (glDirect3DVertexBuffer7*)malloc(sizeof(glDirect3DVertexBuffer7));
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	This->lpVtbl = &glDirect3DVertexBuffer7_iface;
 	This->glD3D7 = glD3D3->glD3D7;
 	This->glD3D7->AddRef();
 	This->refcount = 1;
