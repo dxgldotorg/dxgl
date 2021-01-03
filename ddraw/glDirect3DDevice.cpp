@@ -3362,7 +3362,7 @@ HRESULT WINAPI glDirect3DDevice3_SetTexture(glDirect3DDevice3 *This, DWORD dwSta
 	TRACE_ENTER(3,14,This,8,dwStage,14,lpTexture);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	glDirectDrawSurface7 *dds7;
-	if(lpTexture) dds7 = ((glDirect3DTexture2*)lpTexture)->GetDDS7();
+	if(lpTexture) dds7 = ((glDirect3DTexture2*)lpTexture)->glDDS7;
 	else dds7 = NULL;
 	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetTexture(This->glD3DDev7, dwStage,dds7));
 }

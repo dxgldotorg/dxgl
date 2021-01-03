@@ -59,8 +59,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	dds2 = new glDirectDrawSurface2(this);
 	dds3 = new glDirectDrawSurface3(this);
 	dds4 = new glDirectDrawSurface4(this);
-	d3dt2 = new glDirect3DTexture2(this);
-	d3dt1 = new glDirect3DTexture1(this);
+	glDirect3DTexture2_Create(this, &d3dt2);
+	glDirect3DTexture1_Create(this, &d3dt1);
 	glDirectDrawGammaControl_Create(this, (LPDIRECTDRAWGAMMACONTROL*)&gammacontrol);
 	clientbuffer = NULL;
 	zbuffer = NULL;
@@ -414,8 +414,8 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if (dds2) delete dds2;
 	if (dds3) delete dds3;
 	if (dds4) delete dds4;
-	if (d3dt1) delete d3dt1;
-	if (d3dt2) delete d3dt2;
+	if (d3dt1) free(d3dt1);
+	if (d3dt2) free(d3dt2);
 	if (gammacontrol) free(gammacontrol);
 	if (overlaydest) overlaydest->DeleteOverlay(this);
 	if (overlays)
@@ -502,7 +502,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DTexture2)
 	{
-		d3dt2->AddRef();
+		glDirect3DTexture2_AddRef(d3dt2);
 		*ppvObj = d3dt2;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
@@ -510,7 +510,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 	}
 	if(riid == IID_IDirect3DTexture)
 	{
-		d3dt1->AddRef();
+		glDirect3DTexture1_AddRef(d3dt1);
 		*ppvObj = d3dt1;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
