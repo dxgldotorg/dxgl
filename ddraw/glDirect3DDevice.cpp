@@ -443,8 +443,8 @@ void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This)
 	{
 		if(This->materials[i])
 		{
-			This->materials[i]->unbind();
-			This->materials[i]->Release();
+			glDirect3DMaterial3_unbind(This->materials[i]);
+			glDirect3DMaterial3_Release(This->materials[i]);
 		}
 	}
 	for(int i = 0; i < This->viewportcount; i++)
@@ -1932,7 +1932,7 @@ D3DMATERIALHANDLE glDirect3DDevice7_AddMaterial(glDirect3DDevice7 *This, glDirec
 {
 	TRACE_ENTER(2,14,This,14,material);
 	This->materials[This->materialcount] = material;
-	material->AddRef();
+	glDirect3DMaterial3_AddRef(material);
 	This->materialcount++;
 	if(This->materialcount >= This->maxmaterials)
 	{
@@ -1944,7 +1944,7 @@ D3DMATERIALHANDLE glDirect3DDevice7_AddMaterial(glDirect3DDevice7 *This, glDirec
 			This->maxmaterials -= 32;
 			This->materialcount--;
 			This->materials[This->materialcount] = NULL;
-			material->Release();
+			glDirect3DMaterial3_Release(material);
 			TRACE_EXIT(9,0xFFFFFFFF);
 			return 0xFFFFFFFF;
 		}
@@ -2194,8 +2194,8 @@ HRESULT glDirect3DDevice7_SetLightState(glDirect3DDevice7 *This, D3DLIGHTSTATETY
 			if(This->materials[dwLightState] == This->currentmaterial) TRACE_RET(HRESULT,23,D3D_OK);
 			if(This->materials[dwLightState])
 			{
-				if(This->currentmaterial)This->currentmaterial->SetCurrent(false);
-				This->materials[dwLightState]->SetCurrent(true);
+				if(This->currentmaterial)glDirect3DMaterial3_SetCurrent(This->currentmaterial, FALSE);
+				glDirect3DMaterial3_SetCurrent(This->materials[dwLightState], TRUE);
 				This->currentmaterial = This->materials[dwLightState];
 			}
 		}

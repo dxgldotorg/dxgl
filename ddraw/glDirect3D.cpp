@@ -243,14 +243,15 @@ HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnk
 }
 HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {
+	HRESULT ret;
 	TRACE_ENTER(3,14,this,14,lplpDirect3DMaterial,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DMaterial) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpDirect3DMaterial = new glDirect3DMaterial3();
+	ret = glDirect3DMaterial3_Create((glDirect3DMaterial3**)lplpDirect3DMaterial);
 	TRACE_VAR("*lplpDirect3DMaterial",14,*lplpDirect3DMaterial);
-	TRACE_EXIT(23,D3D_OK);
-	return D3D_OK;
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
 {
@@ -671,8 +672,8 @@ HRESULT WINAPI glDirect3D2::CreateMaterial(LPDIRECT3DMATERIAL2* lplpDirect3DMate
 	glDirect3DMaterial3 *glD3DM3;
 	HRESULT error = glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
-	glD3DM3->QueryInterface(IID_IDirect3DMaterial2,(void**)lplpDirect3DMaterial2);
-	glD3DM3->Release();
+	glDirect3DMaterial3_QueryInterface(glD3DM3,IID_IDirect3DMaterial2,(void**)lplpDirect3DMaterial2);
+	glDirect3DMaterial3_Release(glD3DM3);
 	TRACE_VAR("*lplpDirect3DMaterial2",14,*lplpDirect3DMaterial2);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -758,8 +759,8 @@ HRESULT WINAPI glDirect3D1::CreateMaterial(LPDIRECT3DMATERIAL* lplpDirect3DMater
 	glDirect3DMaterial3 *glD3DM3;
 	HRESULT error = glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
-	glD3DM3->QueryInterface(IID_IDirect3DMaterial,(void**)lplpDirect3DMaterial);
-	glD3DM3->Release();
+	glDirect3DMaterial3_QueryInterface(glD3DM3,IID_IDirect3DMaterial,(void**)lplpDirect3DMaterial);
+	glDirect3DMaterial3_Release(glD3DM3);
 	TRACE_VAR("*lplpDirect3DMaterial",14,*lplpDirect3DMaterial);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

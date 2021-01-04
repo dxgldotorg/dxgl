@@ -33,8 +33,8 @@ class glDirectDrawSurface1;
 class glDirectDrawSurface2;
 class glDirectDrawSurface3;
 class glDirectDrawSurface4;
-class glDirect3DTexture2;
-class glDirect3DTexture1;
+struct glDirect3DTexture2;
+struct glDirect3DTexture1;
 struct glDirect3DDevice7;
 struct glDirectDrawGammaControl;
 class glDirectDrawSurface7 : public IDirectDrawSurface7

@@ -30,7 +30,7 @@ struct D3D1MATRIX
 
 class glDirect3DLight;
 class glDirectDrawSurface7;
-class glDirect3DMaterial3;
+struct glDirect3DMaterial3;
 struct glDirect3DViewport3;
 struct glDirect3DDevice3;
 struct glDirect3DDevice2;
