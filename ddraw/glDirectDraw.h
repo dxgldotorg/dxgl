@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@ struct glDirectDrawClipper;
 class glDirect3D7;
 class glDirect3D3;
 class glDirect3D2;
-class glDirect3D1;
+struct glDirect3D1;
 struct glRenderer;
 
 struct D3DDevice

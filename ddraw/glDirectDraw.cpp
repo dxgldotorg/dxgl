@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2020 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1017,7 +1017,7 @@ glDirectDraw7::glDirectDraw7()
 	glD3D7 = new glDirect3D7(this);
 	glD3D3 = new glDirect3D3(glD3D7);
 	glD3D2 = new glDirect3D2(glD3D7);
-	glD3D1 = new glDirect3D1(glD3D7);
+	glDirect3D1_Create(glD3D7, &glD3D1);
 	clippers = NULL;
 	surfaces = NULL;
 	initialized = false;
@@ -1040,7 +1040,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 	glD3D7 = new glDirect3D7(this);
 	glD3D3 = new glDirect3D3(glD3D7);
 	glD3D2 = new glDirect3D2(glD3D7);
-	glD3D1 = new glDirect3D1(glD3D7);
+	glDirect3D1_Create(glD3D7, &glD3D1);
 	if (((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID, sizeof(GUID)))
 	{
 		error = DDERR_INVALIDPARAMS ;
@@ -1113,7 +1113,7 @@ glDirectDraw7::~glDirectDraw7()
 	if (glD3D7) delete glD3D7;
 	if (glD3D3) delete glD3D3;
 	if (glD3D2) delete glD3D2;
-	if (glD3D1) delete glD3D1;
+	if (glD3D1) free(glD3D1);
 	DeleteDirectDraw();
 	TRACE_EXIT(-1,0);
 }
