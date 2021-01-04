@@ -28,7 +28,7 @@ struct D3D1MATRIX
 	D3DMATRIX matrix;
 };
 
-class glDirect3DLight;
+struct glDirect3DLight;
 class glDirectDrawSurface7;
 struct glDirect3DMaterial3;
 struct glDirect3DViewport3;

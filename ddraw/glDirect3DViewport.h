@@ -20,7 +20,7 @@
 #define __GLDIRECT3DVIEWPORT_H
 
 #ifdef __cplusplus
-class glDirect3DLight;
+struct glDirect3DLight;
 struct glDirect3DDevice7;
 class glDirectDrawSurface7;
 extern "C" {

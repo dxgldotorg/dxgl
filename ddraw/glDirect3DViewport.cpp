@@ -128,7 +128,7 @@ ULONG WINAPI glDirect3DViewport3_Release(glDirect3DViewport3 *This)
 		if (This->backZ) This->backZ->Release();
 		for (int i = 0; i < 8; i++)
 		{
-			if (This->lights[i]) This->lights[i]->Release();
+			if (This->lights[i]) glDirect3DLight_Release(This->lights[i]);
 		}
 		free(This);
 	}
@@ -145,12 +145,12 @@ HRESULT WINAPI glDirect3DViewport3_AddLight(glDirect3DViewport3 *This, LPDIRECT3
 	{
 		if(!This->lights[i])
 		{
-			if(This->lights[i] == lpDirect3DLight) return D3D_OK;
+			if(This->lights[i] == (glDirect3DLight*)lpDirect3DLight) return D3D_OK;
 			This->lights[i] = (glDirect3DLight*)lpDirect3DLight;
-			This->lights[i]->AddRef();
+			glDirect3DLight_AddRef(This->lights[i]);
 			This->lights[i]->viewport = This;
-			if(This->device) This->lights[i]->SetDevice(This->device,i);
-			This->lights[i]->Sync();
+			if(This->device) glDirect3DLight_SetDevice(This->lights[i],This->device,i);
+			glDirect3DLight_Sync(This->lights[i]);
 			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
 		}
@@ -184,10 +184,10 @@ HRESULT WINAPI glDirect3DViewport3_DeleteLight(glDirect3DViewport3 *This, LPDIRE
 	if(!lpDirect3DLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	for(int i = 0; i < 8; i++)
 	{
-		if(This->lights[i] == lpDirect3DLight)
+		if(This->lights[i] == (glDirect3DLight*)lpDirect3DLight)
 		{
-			This->lights[i]->Release();
-			This->lights[i]->SetDevice(NULL,0);
+			glDirect3DLight_Release(This->lights[i]);
+			glDirect3DLight_SetDevice(This->lights[i], NULL, 0);
 			This->lights[i] = NULL;
 			TRACE_EXIT(23,D3D_OK);
 			return D3D_OK;
@@ -423,12 +423,12 @@ void glDirect3DViewport3_SyncLights(glDirect3DViewport3 *This)
 	{
 		if(This->lights[i])
 		{
-			This->lights[i]->SetDevice(This->device,i);
-			This->lights[i]->GetLight7(&light);
-			glDirect3DDevice7_SetLight(This->device,i,&light);
-			glDirect3DDevice7_LightEnable(This->device,i,TRUE);
+			glDirect3DLight_SetDevice(This->lights[i], This->device, i);
+			glDirect3DLight_GetLight7(This->lights[i] , &light);
+			glDirect3DDevice7_SetLight(This->device, i, &light);
+			glDirect3DDevice7_LightEnable(This->device, i, TRUE);
 		}
-		else glDirect3DDevice7_LightEnable(This->device,i,FALSE);
+		else glDirect3DDevice7_LightEnable(This->device, i, FALSE);
 	}
 	TRACE_EXIT(0,0);
 }

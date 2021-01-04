@@ -232,14 +232,15 @@ HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, 
 }
 HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
 {
+	HRESULT ret;
 	TRACE_ENTER(3,14,this,14,lplpDirect3DLight,14,pUnkOuter);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpDirect3DLight = new glDirect3DLight();
+	ret = glDirect3DLight_CreateNoLight((glDirect3DLight**)lplpDirect3DLight);
 	TRACE_VAR("*lplpDirect3DLight",14,*lplpDirect3DLight);
-	TRACE_EXIT(23,D3D_OK);
-	return D3D_OK;
+	TRACE_EXIT(23,ret);
+	return ret;
 }
 HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {

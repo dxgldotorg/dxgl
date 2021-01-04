@@ -1232,7 +1232,7 @@ HRESULT WINAPI glDirect3DDevice7_GetLight(glDirect3DDevice7 *This, DWORD dwLight
 	if(!lpLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwLightIndex >= This->lightsmax) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!This->lights[dwLightIndex]) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	This->lights[dwLightIndex]->GetLight7(lpLight);
+	glDirect3DLight_GetLight7(This->lights[dwLightIndex], lpLight);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1513,7 +1513,7 @@ HRESULT WINAPI glDirect3DDevice7_SetLight(glDirect3DDevice7 *This, DWORD dwLight
 		if(!ExpandLightBuffer(&This->lights,&This->lightsmax,dwLightIndex+1)) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
 	}
 	if(!This->lights[dwLightIndex]) This->lights[dwLightIndex] = new glDirect3DLight;
-	This->lights[dwLightIndex]->SetLight7(lpLight);
+	glDirect3DLight_SetLight7(This->lights[dwLightIndex], lpLight);
 	for (int i = 0; i < 8; i++)
 	{
 		if (This->gllights[i] == dwLightIndex)
