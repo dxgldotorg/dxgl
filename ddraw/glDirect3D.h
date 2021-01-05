@@ -23,8 +23,8 @@ extern const D3DDEVICEDESC7 d3ddesc_default;
 extern const D3DDEVICEDESC d3ddesc3_default;
 class glDirectDraw7;
 
-class glDirect3D3;
-class glDirect3D2;
+struct glDirect3D3;
+struct glDirect3D2;
 struct glDirect3D1;
 
 class glDirect3D7 : public IDirect3D7
@@ -48,25 +48,41 @@ public:
 	HRESULT CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version);
 };
 
-class glDirect3D3 : public IDirect3D3
+struct glDirect3D3Vtbl;
+typedef struct glDirect3D3
 {
-public:
-	glDirect3D3(glDirect3D7 *glD3D7);
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter);
-	HRESULT WINAPI CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
-	HRESULT WINAPI CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter);
-	HRESULT WINAPI CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter);
-	HRESULT WINAPI CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter);
-	HRESULT WINAPI EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
-	HRESULT WINAPI EnumZBufferFormats(REFCLSID riidDevice,  LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
-	HRESULT WINAPI EvictManagedTextures();
-	HRESULT WINAPI FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
+	glDirect3D3Vtbl *lpVtbl;
 	glDirect3D7 *glD3D7;
-private:
+} glDirect3D3;
+typedef struct glDirect3D3Vtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirect3D3 *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirect3D3 *This);
+	ULONG(WINAPI *Release)(glDirect3D3 *This);
+	HRESULT(WINAPI *EnumDevices)(glDirect3D3 *This, LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
+	HRESULT(WINAPI *CreateLight)(glDirect3D3 *This, LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
+	HRESULT(WINAPI *CreateMaterial)(glDirect3D3 *This, LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter);
+	HRESULT(WINAPI *CreateViewport)(glDirect3D3 *This, LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter);
+	HRESULT(WINAPI *FindDevice)(glDirect3D3 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
+	HRESULT(WINAPI *CreateDevice)(glDirect3D3 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter);
+	HRESULT(WINAPI *CreateVertexBuffer)(glDirect3D3 *This, LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter);
+	HRESULT(WINAPI *EnumZBufferFormats)(glDirect3D3 *This, REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
+	HRESULT(WINAPI *EvictManagedTextures)(glDirect3D3 *This);
 };
+
+HRESULT glDirect3D3_Create(glDirect3D7 *glD3D7, glDirect3D3 **glD3D3);
+HRESULT WINAPI glDirect3D3_QueryInterface(glDirect3D3 *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirect3D3_AddRef(glDirect3D3 *This);
+ULONG WINAPI glDirect3D3_Release(glDirect3D3 *This);
+HRESULT WINAPI glDirect3D3_CreateDevice(glDirect3D3 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter);
+HRESULT WINAPI glDirect3D3_CreateLight(glDirect3D3 *This, LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter);
+HRESULT WINAPI glDirect3D3_CreateMaterial(glDirect3D3 *This, LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter);
+HRESULT WINAPI glDirect3D3_CreateVertexBuffer(glDirect3D3 *This, LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter);
+HRESULT WINAPI glDirect3D3_CreateViewport(glDirect3D3 *This, LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter);
+HRESULT WINAPI glDirect3D3_EnumDevices(glDirect3D3 *This, LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg);
+HRESULT WINAPI glDirect3D3_EnumZBufferFormats(glDirect3D3 *This, REFCLSID riidDevice,  LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
+HRESULT WINAPI glDirect3D3_EvictManagedTextures(glDirect3D3 *This);
+HRESULT WINAPI glDirect3D3_FindDevice(glDirect3D3 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR);
 
 struct glDirect3D2Vtbl;
 typedef struct glDirect3D2

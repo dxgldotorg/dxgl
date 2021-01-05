@@ -1015,7 +1015,7 @@ glDirectDraw7::glDirectDraw7()
 	glDD2 = new glDirectDraw2(this);
 	glDD4 = new glDirectDraw4(this);
 	glD3D7 = new glDirect3D7(this);
-	glD3D3 = new glDirect3D3(glD3D7);
+	glDirect3D3_Create(glD3D7, &glD3D3);
 	glDirect3D2_Create(glD3D7, &glD3D2);
 	glDirect3D1_Create(glD3D7, &glD3D1);
 	clippers = NULL;
@@ -1038,7 +1038,7 @@ glDirectDraw7::glDirectDraw7(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter)
 	glDD2 = new glDirectDraw2(this);
 	glDD4 = new glDirectDraw4(this);
 	glD3D7 = new glDirect3D7(this);
-	glD3D3 = new glDirect3D3(glD3D7);
+	glDirect3D3_Create(glD3D7, &glD3D3);
 	glDirect3D2_Create(glD3D7, &glD3D2);
 	glDirect3D1_Create(glD3D7, &glD3D1);
 	if (((ULONG_PTR)lpGUID > 2) && !IsReadablePointer(lpGUID, sizeof(GUID)))
@@ -1111,7 +1111,7 @@ glDirectDraw7::~glDirectDraw7()
 	if (glDD2) delete glDD2;
 	if (glDD4) delete glDD4;
 	if (glD3D7) delete glD3D7;
-	if (glD3D3) delete glD3D3;
+	if (glD3D3) free(glD3D3);
 	if (glD3D2) free(glD3D2);
 	if (glD3D1) free(glD3D1);
 	DeleteDirectDraw();
