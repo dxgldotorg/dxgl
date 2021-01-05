@@ -602,50 +602,67 @@ HRESULT WINAPI glDirect3D3::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 	TRACE_RET(HRESULT,23,glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
 }
 
-
-glDirect3D2::glDirect3D2(glDirect3D7 *glD3D7)
+glDirect3D2Vtbl glDirect3D2_impl =
 {
-	TRACE_ENTER(2,14,this,14,glD3D7);
-	this->glD3D7 = glD3D7;
-	TRACE_EXIT(-1,0);
+	glDirect3D2_QueryInterface,
+	glDirect3D2_AddRef,
+	glDirect3D2_Release,
+	glDirect3D2_EnumDevices,
+	glDirect3D2_CreateLight,
+	glDirect3D2_CreateMaterial,
+	glDirect3D2_CreateViewport,
+	glDirect3D2_FindDevice,
+	glDirect3D2_CreateDevice
+};
+
+HRESULT glDirect3D2_Create(glDirect3D7 *glD3D7, glDirect3D2 **glD3D2)
+{
+	TRACE_ENTER(2, 14, glD3D7, 14, glD3D2);
+	glDirect3D2 *This = (glDirect3D2*)malloc(sizeof(glDirect3D2));
+	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	This->lpVtbl = &glDirect3D2_impl;
+	This->glD3D7 = glD3D7;
+	*glD3D2 = This;
+	TRACE_EXIT(23, D3D_OK);
+	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3D2::QueryInterface(REFIID riid, void** ppvObj)
+HRESULT WINAPI glDirect3D2_QueryInterface(glDirect3D2 *This, REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(riid == IID_IUnknown)
 	{
-		this->AddRef();
-		*ppvObj = this;
+		glDirect3D2_AddRef(This);
+		*ppvObj = This;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_ENTER(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glD3D7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT, 23, This->glD3D7->QueryInterface(riid, ppvObj));
 }
 
-ULONG WINAPI glDirect3D2::AddRef()
+ULONG WINAPI glDirect3D2_AddRef(glDirect3D2 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glD3D7->glDD7->AddRef1());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->AddRef1());
 }
 
-ULONG WINAPI glDirect3D2::Release()
+ULONG WINAPI glDirect3D2_Release(glDirect3D2 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glD3D7->glDD7->Release1());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->Release1());
 }
 
-HRESULT WINAPI glDirect3D2::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice)
+HRESULT WINAPI glDirect3D2_CreateDevice(glDirect3D2 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice)
 {
-	TRACE_ENTER(4,14,this,24,&rclsid,14,lpDDS,14,lplpD3DDevice);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,24,&rclsid,14,lpDDS,14,lplpD3DDevice);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
-	HRESULT err = glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
+	HRESULT err = This->glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice2,(LPVOID*)lplpD3DDevice);
@@ -658,20 +675,20 @@ HRESULT WINAPI glDirect3D2::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lp
 	return err;
 }
 
-HRESULT WINAPI glDirect3D2::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D2_CreateLight(glDirect3D2 *This, LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
 {
-	TRACE_ENTER(3,14,this,14,lplpDirect3DLight,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter));
+	TRACE_ENTER(3,14,This,14,lplpDirect3DLight,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter));
 }
 
-HRESULT WINAPI glDirect3D2::CreateMaterial(LPDIRECT3DMATERIAL2* lplpDirect3DMaterial2, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D2_CreateMaterial(glDirect3D2 *This, LPDIRECT3DMATERIAL2* lplpDirect3DMaterial2, IUnknown* pUnkOuter)
 {
-	TRACE_ENTER(3,14,this,14,lplpDirect3DMaterial2,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lplpDirect3DMaterial2,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DMaterial2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DMaterial3 *glD3DM3;
-	HRESULT error = glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
+	HRESULT error = This->glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DMaterial3_QueryInterface(glD3DM3,IID_IDirect3DMaterial2,(void**)lplpDirect3DMaterial2);
 	glDirect3DMaterial3_Release(glD3DM3);
@@ -680,13 +697,13 @@ HRESULT WINAPI glDirect3D2::CreateMaterial(LPDIRECT3DMATERIAL2* lplpDirect3DMate
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3D2::CreateViewport(LPDIRECT3DVIEWPORT2* lplpD3DViewport2, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D2_CreateViewport(glDirect3D2 *This, LPDIRECT3DVIEWPORT2* lplpD3DViewport2, IUnknown* pUnkOuter)
 {
-	TRACE_ENTER(3,14,this,14,lplpD3DViewport2,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lplpD3DViewport2,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DViewport2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
-	HRESULT error = glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
+	HRESULT error = This->glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DViewport3_QueryInterface(glD3DV3,IID_IDirect3DViewport2,(void**)lplpD3DViewport2);
 	glDirect3DViewport3_Release(glD3DV3);
@@ -695,18 +712,18 @@ HRESULT WINAPI glDirect3D2::CreateViewport(LPDIRECT3DVIEWPORT2* lplpD3DViewport2
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3D2::EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
+HRESULT WINAPI glDirect3D2_EnumDevices(glDirect3D2 *This, LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
 {
-	TRACE_ENTER(3,14,this,14,lpEnumDevicesCallback,14,lpUserArg);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg));
+	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg));
 }
 
-HRESULT WINAPI glDirect3D2::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
+HRESULT WINAPI glDirect3D2_FindDevice(glDirect3D2 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
 {
-	TRACE_ENTER(3,14,this,14,lpD3DFDS,14,lpD3DFDR);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
+	TRACE_ENTER(3,14,This,14,lpD3DFDS,14,lpD3DFDR);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT,23,This->glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
 }
 
 glDirect3D1Vtbl glDirect3D1_impl =
@@ -729,6 +746,7 @@ HRESULT glDirect3D1_Create(glDirect3D7 *glD3D7, glDirect3D1 **glD3D1)
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	This->lpVtbl = &glDirect3D1_impl;
 	This->glD3D7 = glD3D7;
+	*glD3D1 = This;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -737,7 +755,7 @@ HRESULT WINAPI glDirect3D1_QueryInterface(glDirect3D1 *This, REFIID riid, void**
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(riid == IID_IUnknown)
+	if((riid == IID_IUnknown) || (riid == IID_IDirect3D))
 	{
 		glDirect3D1_AddRef(This);
 		*ppvObj = This;
