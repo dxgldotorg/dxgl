@@ -195,6 +195,7 @@ HRESULT glDirect3D7_Create(glDirectDraw7 *gl_DD7, glDirect3D7 **glD3D7)
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	This->lpVtbl = &glDirect3D7_impl;
 	This->glDD7 = gl_DD7;
+	*glD3D7 = This;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
