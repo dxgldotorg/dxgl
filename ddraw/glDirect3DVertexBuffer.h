@@ -61,24 +61,4 @@ HRESULT WINAPI glDirect3DVertexBuffer7_ProcessVerticesStrided(glDirect3DVertexBu
 		LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags);
 HRESULT WINAPI glDirect3DVertexBuffer7_Unlock(glDirect3DVertexBuffer7 *This);
 
-
-class glDirect3DVertexBuffer1 : public IDirect3DVertexBuffer
-{
-public:
-	glDirect3DVertexBuffer1(glDirect3DVertexBuffer7 *glD3DVB7);
-	virtual ~glDirect3DVertexBuffer1();
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI GetVertexBufferDesc(LPD3DVERTEXBUFFERDESC lpVBDesc); 
-	HRESULT WINAPI Lock(DWORD dwFlags, LPVOID* lplpData, LPDWORD lpdwSize);
-	HRESULT WINAPI Optimize(LPDIRECT3DDEVICE3 lpD3DDevice,DWORD dwFlags); 
-	HRESULT WINAPI ProcessVertices(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount,
-		LPDIRECT3DVERTEXBUFFER lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE3 lpD3DDevice, DWORD dwFlags);
-	HRESULT WINAPI Unlock();
-	glDirect3DVertexBuffer7 *GetGLD3DVB7(){return glD3DVB7;}
-private:
-	glDirect3DVertexBuffer7 *glD3DVB7;
-};
-
 #endif //__GLDIRECT3DVERTEXBUFFER_H

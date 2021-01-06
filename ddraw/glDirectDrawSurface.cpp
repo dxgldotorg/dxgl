@@ -543,7 +543,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			if (FAILED(ret))
 			{
 				if(device1) free(device1);
-				tmpd3d->Release();
+				glDirect3D7_Release(tmpd3d);
 				TRACE_EXIT(23, ret);
 				return ret;
 			}
@@ -551,7 +551,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 			glDirect3DDevice1_AddRef(device1->glD3DDev1);
 			glDirect3DDevice7_InitDX5(device1);
 			glDirect3DDevice7_InitDX2(device1);
-			tmpd3d->Release();
+			glDirect3D7_Release(tmpd3d);
 			TRACE_VAR("*ppvObj",14,*ppvObj);
 			TRACE_EXIT(23,DD_OK);
 			return DD_OK;

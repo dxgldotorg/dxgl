@@ -391,7 +391,7 @@ HRESULT glDirect3DDevice7_Create(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectD
 	This->modelview_dirty = false;
 	This->projection_dirty = false;
 	This->glD3D7 = glD3D7;
-	glD3D7->AddRef();
+	glDirect3D7_AddRef(glD3D7);
 	This->glDDS7 = glDDS7;
 	if(!creator) glDDS7->AddRef();
 	This->renderer = This->glD3D7->glDD7->renderer;
@@ -470,7 +470,7 @@ void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This)
 	if (This->glD3DDev3) free(This->glD3DDev3);
 	if (This->glD3DDev2) free(This->glD3DDev2);
 	if (This->glD3DDev1) free(This->glD3DDev1);
-	This->glD3D7->Release();
+	glDirect3D7_Release(This->glD3D7);
 	if(!This->creator) This->glDDS7->Release();
 	free(This);
 	TRACE_EXIT(0,0);
@@ -1211,8 +1211,8 @@ HRESULT WINAPI glDirect3DDevice7_GetDirect3D(glDirect3DDevice7 *This, LPDIRECT3D
 	TRACE_ENTER(2,14,This,14,lplpD3D);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3D) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	*lplpD3D = This->glD3D7;
-	This->glD3D7->AddRef();
+	*lplpD3D = (LPDIRECT3D7)This->glD3D7;
+	glDirect3D7_AddRef(This->glD3D7);
 	TRACE_VAR("*lplpD3D",14,*lplpD3D);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

@@ -23,7 +23,7 @@
 
 class glDirectDrawSurface7;
 struct glDirectDrawClipper;
-class glDirect3D7;
+struct glDirect3D7;
 struct glDirect3D3;
 struct glDirect3D2;
 struct glDirect3D1;

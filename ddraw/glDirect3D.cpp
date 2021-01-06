@@ -177,48 +177,63 @@ const D3DDEVICEDESC d3ddesc3_default =
 	d3ddesc_default.wMaxSimultaneousTextures
 };
 
-glDirect3D7::glDirect3D7(glDirectDraw7 *gl_DD7)
+glDirect3D7Vtbl glDirect3D7_impl =
 {
-	TRACE_ENTER(1,14,this,14,gl_DD7);
-	glDD7 = gl_DD7;
-	TRACE_EXIT(-1, 0);
+	glDirect3D7_QueryInterface,
+	glDirect3D7_AddRef,
+	glDirect3D7_Release,
+	glDirect3D7_EnumDevices,
+	glDirect3D7_CreateDevice,
+	glDirect3D7_EnumZBufferFormats,
+	glDirect3D7_EvictManagedTextures
+};
+
+HRESULT glDirect3D7_Create(glDirectDraw7 *gl_DD7, glDirect3D7 **glD3D7)
+{
+	TRACE_ENTER(1,14,gl_DD7,14,glD3D7);
+	glDirect3D7 *This = (glDirect3D7*)malloc(sizeof(glDirect3D7));
+	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+	This->lpVtbl = &glDirect3D7_impl;
+	This->glDD7 = gl_DD7;
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 
-ULONG WINAPI glDirect3D7::AddRef()
+ULONG WINAPI glDirect3D7_AddRef(glDirect3D7 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glDD7->AddRef());
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glDD7->AddRef());
 }
-ULONG WINAPI glDirect3D7::Release()
+ULONG WINAPI glDirect3D7_Release(glDirect3D7 *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, glDD7->Release());
-}
-
-HRESULT WINAPI glDirect3D7::QueryInterface(REFIID riid, void** ppvObj)
-{
-	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, glDD7->QueryInterface(riid, ppvObj));
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	TRACE_RET(ULONG, 8, This->glDD7->Release());
 }
 
-HRESULT WINAPI glDirect3D7::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
+HRESULT WINAPI glDirect3D7_QueryInterface(glDirect3D7 *This, REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(4, 14, this, 24, &rclsid, 14, lpDDS, 14, lplpD3DDevice);
-	if (!this) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, CreateDevice2(rclsid, lpDDS, lplpD3DDevice, 7));
+	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT, 23, This->glDD7->QueryInterface(riid, ppvObj));
 }
 
-HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version)
+HRESULT WINAPI glDirect3D7_CreateDevice(glDirect3D7 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
 {
-	TRACE_ENTER(5,14,this,24,&rclsid,14,lpDDS,14,lplpD3DDevice,11,version);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4, 14, This, 24, &rclsid, 14, lpDDS, 14, lplpD3DDevice);
+	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	TRACE_RET(HRESULT, 23, glDirect3D7_CreateDevice2(This, rclsid, lpDDS, lplpD3DDevice, 7));
+}
+
+HRESULT glDirect3D7_CreateDevice2(glDirect3D7 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice, int version)
+{
+	TRACE_ENTER(5,14,This,24,&rclsid,14,lpDDS,14,lplpD3DDevice,11,version);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret;
 	glDirect3DDevice7 *glD3DDev7 = NULL;
-	ret = glDirect3DDevice7_Create(rclsid, this, (glDirectDrawSurface7*)lpDDS, NULL, version, &glD3DDev7);
+	ret = glDirect3DDevice7_Create(rclsid, This, (glDirectDrawSurface7*)lpDDS, NULL, version, &glD3DDev7);
 	if(FAILED(ret))
 	{
 		if (glD3DDev7) free(glD3DDev7);
@@ -230,11 +245,11 @@ HRESULT glDirect3D7::CreateDevice2(REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, 
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
-HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D7_CreateLight(glDirect3D7 *This, LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
 {
 	HRESULT ret;
-	TRACE_ENTER(3,14,this,14,lplpDirect3DLight,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lplpDirect3DLight,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DLight) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	ret = glDirect3DLight_CreateNoLight((glDirect3DLight**)lplpDirect3DLight);
@@ -242,11 +257,11 @@ HRESULT WINAPI glDirect3D7::CreateLight(LPDIRECT3DLIGHT* lplpDirect3DLight, IUnk
 	TRACE_EXIT(23,ret);
 	return ret;
 }
-HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D7_CreateMaterial(glDirect3D7 *This, LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {
 	HRESULT ret;
-	TRACE_ENTER(3,14,this,14,lplpDirect3DMaterial,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lplpDirect3DMaterial,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DMaterial) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	ret = glDirect3DMaterial3_Create((glDirect3DMaterial3**)lplpDirect3DMaterial);
@@ -254,22 +269,22 @@ HRESULT WINAPI glDirect3D7::CreateMaterial(LPDIRECT3DMATERIAL3* lplpDirect3DMate
 	TRACE_EXIT(23,ret);
 	return ret;
 }
-HRESULT WINAPI glDirect3D7::CreateVertexBuffer(LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
+HRESULT WINAPI glDirect3D7_CreateVertexBuffer(glDirect3D7 *This, LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags)
 {
 	HRESULT ret;
-	TRACE_ENTER(4,14,this,14,lpVBDesc,14,lplpD3DVertexBuffer,9,dwFlags);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,14,lpVBDesc,14,lplpD3DVertexBuffer,9,dwFlags);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DVertexBuffer) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpVBDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	ret = glDirect3DVertexBuffer7_Create(this, *lpVBDesc, dwFlags, (glDirect3DVertexBuffer7**)lplpD3DVertexBuffer);
+	ret = glDirect3DVertexBuffer7_Create(This, *lpVBDesc, dwFlags, (glDirect3DVertexBuffer7**)lplpD3DVertexBuffer);
 	TRACE_VAR("*lplpD3DVertexBuffer",14,*lplpD3DVertexBuffer);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
-HRESULT WINAPI glDirect3D7::CreateViewport(LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter)
+HRESULT WINAPI glDirect3D7_CreateViewport(glDirect3D7 *This, LPDIRECT3DVIEWPORT3* lplpD3DViewport, IUnknown* pUnkOuter)
 {
-	TRACE_ENTER(3,14,this,14,lplpD3DViewport,14,pUnkOuter);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lplpD3DViewport,14,pUnkOuter);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret = glDirect3DViewport3_Create(lplpD3DViewport);
@@ -307,14 +322,14 @@ void FixCapsTexture(D3DDEVICEDESC7 *d3ddesc, D3DDEVICEDESC *d3ddesc3, glRenderer
 	}
 }
 
-HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
+HRESULT WINAPI glDirect3D7_EnumDevices(glDirect3D7 *This, LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg)
 {
-	TRACE_ENTER(3,14,this,14,lpEnumDevicesCallback,14,lpUserArg);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
-	D3DDEVICEDESC7 desc = glDD7->d3ddesc;
+	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	D3DDEVICEDESC7 desc = This->glDD7->d3ddesc;
 	for(int i = 0; i < 3; i++)
 	{
 		switch(i)
@@ -331,33 +346,33 @@ HRESULT WINAPI glDirect3D7::EnumDevices(LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesC
 			desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
 			break;
 		}
-		result = lpEnumDevicesCallback(glDD7->stored_devices[i].name,glDD7->stored_devices[i].devname,&desc,lpUserArg);
+		result = lpEnumDevicesCallback(This->glDD7->stored_devices[i].name,This->glDD7->stored_devices[i].devname,&desc,lpUserArg);
 		if(result != D3DENUMRET_OK) break;
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3D7::EnumDevices3(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
+HRESULT WINAPI glDirect3D7_EnumDevices3(glDirect3D7 *This, LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
 {
-	TRACE_ENTER(3,14,this,14,lpEnumDevicesCallback,14,lpUserArg);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
-	D3DDEVICEDESC desc = glDD7->d3ddesc3;
+	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	D3DDEVICEDESC desc = This->glDD7->d3ddesc3;
 	GUID guid = IID_IDirect3DRGBDevice;
-	result = lpEnumDevicesCallback(&guid,glDD7->stored_devices[0].name,glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,This->glDD7->stored_devices[0].name,This->glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
 	if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
 	guid = IID_IDirect3DHALDevice;
-	result = lpEnumDevicesCallback(&guid,glDD7->stored_devices[1].name,glDD7->stored_devices[1].devname,&desc,&desc,lpUserArg);
+	result = lpEnumDevicesCallback(&guid,This->glDD7->stored_devices[1].name,This->glDD7->stored_devices[1].devname,&desc,&desc,lpUserArg);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
-HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext)
+HRESULT WINAPI glDirect3D7_EnumZBufferFormats(glDirect3D7 *This, REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext)
 {
-	TRACE_ENTER(4,14,this,24,&riidDevice,14,lpEnumCallback,14,lpContext);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,24,&riidDevice,14,lpEnumCallback,14,lpContext);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	DDPIXELFORMAT ddpf;
 	ZeroMemory(&ddpf,sizeof(DDPIXELFORMAT));
 	ddpf.dwSize = sizeof(DDPIXELFORMAT);
@@ -372,9 +387,9 @@ HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIX
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	ddpf.dwZBitMask = 0xffffffff;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
-	if (glDD7->renderer)
+	if (This->glDD7->renderer)
 	{
-		if (glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
+		if (This->glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || This->glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
 		{
 			ddpf.dwZBufferBitDepth = 32;
 			ddpf.dwStencilBitDepth = 8;
@@ -389,80 +404,80 @@ HRESULT WINAPI glDirect3D7::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIX
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
-HRESULT WINAPI glDirect3D7::EvictManagedTextures()
+HRESULT WINAPI glDirect3D7_EvictManagedTextures(glDirect3D7 *This)
 {
-	TRACE_ENTER(1,14,this);
+	TRACE_ENTER(1,14,This);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
 
-HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
+HRESULT WINAPI glDirect3D7_FindDevice(glDirect3D7 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
 {
-	TRACE_ENTER(3,14,this,14,lpD3DFDS,14,lpD3DFDR);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(3,14,This,14,lpD3DFDS,14,lpD3DFDR);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DFDS) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpD3DFDR) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDR->dwSize < sizeof(D3DFINDDEVICERESULT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDS->dwSize < sizeof(D3DFINDDEVICESEARCH)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	FixCapsTexture(&glDD7->d3ddesc, &glDD7->d3ddesc3, glDD7->renderer);
+	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
 	bool found = true;
 	GUID guid = IID_IDirect3DHALDevice;
 	if((lpD3DFDS->dwFlags & D3DFDS_LINES) || (lpD3DFDS->dwFlags & D3DFDS_TRIANGLES))
 	{
 		if(lpD3DFDS->dwFlags & D3DFDS_ALPHACMPCAPS)
 		{
-			if((glDD7->d3ddesc.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
+			if((This->glDD7->d3ddesc.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_DSTBLENDCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwDestBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_MISCCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwMiscCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_RASTERCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwRasterCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SHADECAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwShadeCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SRCBLENDCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREBLENDCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTURECAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREFILTERCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps) found = false;
 		}
 		if(lpD3DFDS->dwCaps & D3DFDS_ZCMPCAPS)
 		{
-			if ((glDD7->d3ddesc.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
+			if ((This->glDD7->d3ddesc.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwZCmpCaps) found = false;
 		}
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_COLORMODEL)
 	{
-		if ((glDD7->d3ddesc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
+		if ((This->glDD7->d3ddesc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_GUID)
 	{
@@ -480,8 +495,8 @@ HRESULT WINAPI glDirect3D7::FindDevice(LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFIND
 		else if(!lpD3DFDS->bHardware) guid = IID_IDirect3DRGBDevice;
 	}
 	if(!found) TRACE_RET(HRESULT,23,DDERR_NOTFOUND);
-	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = glDD7->d3ddesc3;
-	else lpD3DFDR->ddHwDesc = glDD7->d3ddesc3;
+	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = This->glDD7->d3ddesc3;
+	else lpD3DFDR->ddHwDesc = This->glDD7->d3ddesc3;
 	lpD3DFDR->guid = guid;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -529,7 +544,7 @@ HRESULT WINAPI glDirect3D3_QueryInterface(glDirect3D3 *This, REFIID riid, void**
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,This->glD3D7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDirect3D7_QueryInterface(This->glD3D7, riid,ppvObj));
 }
 
 ULONG WINAPI glDirect3D3_AddRef(glDirect3D3 *This)
@@ -552,7 +567,7 @@ HRESULT WINAPI glDirect3D3_CreateDevice(glDirect3D3 *This, REFCLSID rclsid, LPDI
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
-	HRESULT err = This->glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface4*)lpDDS)->GetDDS7(),&lpD3DDev7,3);
+	HRESULT err = glDirect3D7_CreateDevice2(This->glD3D7, rclsid,((glDirectDrawSurface4*)lpDDS)->GetDDS7(),&lpD3DDev7,3);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice3,(LPVOID*)lplpD3DDevice);
@@ -569,13 +584,13 @@ HRESULT WINAPI glDirect3D3_CreateLight(glDirect3D3 *This, LPDIRECT3DLIGHT* lplpD
 {
 	TRACE_ENTER(3,14,This,14,lplpDirect3DLight,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter));
+	TRACE_RET(HRESULT,23,glDirect3D7_CreateLight(This->glD3D7, lplpDirect3DLight,pUnkOuter));
 }
 HRESULT WINAPI glDirect3D3_CreateMaterial(glDirect3D3 *This, LPDIRECT3DMATERIAL3* lplpDirect3DMaterial, IUnknown* pUnkOuter)
 {
 	TRACE_ENTER(3,14,This,14,lplpDirect3DMaterial,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->CreateMaterial(lplpDirect3DMaterial,pUnkOuter));
+	TRACE_RET(HRESULT,23,glDirect3D7_CreateMaterial(This->glD3D7, lplpDirect3DMaterial,pUnkOuter));
 }
 HRESULT WINAPI glDirect3D3_CreateVertexBuffer(glDirect3D3 *This, LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER* lplpD3DVertexBuffer, DWORD dwFlags, LPUNKNOWN pUnkOuter)
 {
@@ -594,33 +609,33 @@ HRESULT WINAPI glDirect3D3_CreateViewport(glDirect3D3 *This, LPDIRECT3DVIEWPORT3
 {
 	TRACE_ENTER(3,14,This,14,lplpD3DViewport,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->CreateViewport(lplpD3DViewport,pUnkOuter));
+	TRACE_RET(HRESULT,23,glDirect3D7_CreateViewport(This->glD3D7, lplpD3DViewport,pUnkOuter));
 }
 
 HRESULT WINAPI glDirect3D3_EnumDevices(glDirect3D3 *This, LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg)
 {
 	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg));
+	TRACE_RET(HRESULT,23,glDirect3D7_EnumDevices3(This->glD3D7, lpEnumDevicesCallback,lpUserArg));
 }
 
 HRESULT WINAPI glDirect3D3_EnumZBufferFormats(glDirect3D3 *This, REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext)
 {
 	TRACE_ENTER(4,14,This,24,&riidDevice,14,lpEnumCallback,14,lpContext);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->EnumZBufferFormats(riidDevice,lpEnumCallback,lpContext));
+	TRACE_RET(HRESULT,23,glDirect3D7_EnumZBufferFormats(This->glD3D7, riidDevice,lpEnumCallback,lpContext));
 }
 HRESULT WINAPI glDirect3D3_EvictManagedTextures(glDirect3D3 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->EvictManagedTextures());
+	TRACE_RET(HRESULT,23,glDirect3D7_EvictManagedTextures(This->glD3D7));
 }
 HRESULT WINAPI glDirect3D3_FindDevice(glDirect3D3 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
 {
 	TRACE_ENTER(3,14,This,14,lpD3DFDS,14,lpD3DFDR);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
+	TRACE_RET(HRESULT,23,glDirect3D7_FindDevice(This->glD3D7, lpD3DFDS,lpD3DFDR));
 }
 
 glDirect3D2Vtbl glDirect3D2_impl =
@@ -660,7 +675,7 @@ HRESULT WINAPI glDirect3D2_QueryInterface(glDirect3D2 *This, REFIID riid, void**
 		TRACE_ENTER(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT, 23, This->glD3D7->QueryInterface(riid, ppvObj));
+	TRACE_RET(HRESULT, 23, glDirect3D7_QueryInterface(This->glD3D7, riid, ppvObj));
 }
 
 ULONG WINAPI glDirect3D2_AddRef(glDirect3D2 *This)
@@ -683,7 +698,7 @@ HRESULT WINAPI glDirect3D2_CreateDevice(glDirect3D2 *This, REFCLSID rclsid, LPDI
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
-	HRESULT err = This->glD3D7->CreateDevice2(rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
+	HRESULT err = glDirect3D7_CreateDevice2(This->glD3D7, rclsid,((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice2,(LPVOID*)lplpD3DDevice);
@@ -700,7 +715,7 @@ HRESULT WINAPI glDirect3D2_CreateLight(glDirect3D2 *This, LPDIRECT3DLIGHT* lplpD
 {
 	TRACE_ENTER(3,14,This,14,lplpDirect3DLight,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter));
+	TRACE_RET(HRESULT,23,glDirect3D7_CreateLight(This->glD3D7, lplpDirect3DLight,pUnkOuter));
 }
 
 HRESULT WINAPI glDirect3D2_CreateMaterial(glDirect3D2 *This, LPDIRECT3DMATERIAL2* lplpDirect3DMaterial2, IUnknown* pUnkOuter)
@@ -709,7 +724,7 @@ HRESULT WINAPI glDirect3D2_CreateMaterial(glDirect3D2 *This, LPDIRECT3DMATERIAL2
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DMaterial2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DMaterial3 *glD3DM3;
-	HRESULT error = This->glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
+	HRESULT error = glDirect3D7_CreateMaterial(This->glD3D7, (LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DMaterial3_QueryInterface(glD3DM3,IID_IDirect3DMaterial2,(void**)lplpDirect3DMaterial2);
 	glDirect3DMaterial3_Release(glD3DM3);
@@ -724,7 +739,7 @@ HRESULT WINAPI glDirect3D2_CreateViewport(glDirect3D2 *This, LPDIRECT3DVIEWPORT2
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DViewport2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
-	HRESULT error = This->glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
+	HRESULT error = glDirect3D7_CreateViewport(This->glD3D7, (LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DViewport3_QueryInterface(glD3DV3,IID_IDirect3DViewport2,(void**)lplpD3DViewport2);
 	glDirect3DViewport3_Release(glD3DV3);
@@ -737,14 +752,14 @@ HRESULT WINAPI glDirect3D2_EnumDevices(glDirect3D2 *This, LPD3DENUMDEVICESCALLBA
 {
 	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg));
+	TRACE_RET(HRESULT,23,glDirect3D7_EnumDevices3(This->glD3D7, lpEnumDevicesCallback,lpUserArg));
 }
 
 HRESULT WINAPI glDirect3D2_FindDevice(glDirect3D2 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
 {
 	TRACE_ENTER(3,14,This,14,lpD3DFDS,14,lpD3DFDR);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
+	TRACE_RET(HRESULT,23,glDirect3D7_FindDevice(This->glD3D7, lpD3DFDS,lpD3DFDR));
 }
 
 glDirect3D1Vtbl glDirect3D1_impl =
@@ -784,7 +799,7 @@ HRESULT WINAPI glDirect3D1_QueryInterface(glDirect3D1 *This, REFIID riid, void**
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,This->glD3D7->QueryInterface(riid,ppvObj));
+	TRACE_RET(HRESULT,23,glDirect3D7_QueryInterface(This->glD3D7, riid,ppvObj));
 }
 
 ULONG WINAPI glDirect3D1_AddRef(glDirect3D1 *This)
@@ -805,7 +820,7 @@ HRESULT WINAPI glDirect3D1_CreateLight(glDirect3D1 *This, LPDIRECT3DLIGHT* lplpD
 {
 	TRACE_ENTER(3,14,This,14,pUnkOuter);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->CreateLight(lplpDirect3DLight,pUnkOuter));
+	TRACE_RET(HRESULT,23,glDirect3D7_CreateLight(This->glD3D7, lplpDirect3DLight,pUnkOuter));
 }
 
 HRESULT WINAPI glDirect3D1_CreateMaterial(glDirect3D1 *This, LPDIRECT3DMATERIAL* lplpDirect3DMaterial, IUnknown* pUnkOuter)
@@ -814,7 +829,7 @@ HRESULT WINAPI glDirect3D1_CreateMaterial(glDirect3D1 *This, LPDIRECT3DMATERIAL*
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpDirect3DMaterial) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DMaterial3 *glD3DM3;
-	HRESULT error = This->glD3D7->CreateMaterial((LPDIRECT3DMATERIAL3*)&glD3DM3,pUnkOuter);
+	HRESULT error = glDirect3D7_CreateMaterial(This->glD3D7, (LPDIRECT3DMATERIAL3*)&glD3DM3, pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DMaterial3_QueryInterface(glD3DM3,IID_IDirect3DMaterial,(void**)lplpDirect3DMaterial);
 	glDirect3DMaterial3_Release(glD3DM3);
@@ -829,7 +844,7 @@ HRESULT WINAPI glDirect3D1_CreateViewport(glDirect3D1 *This, LPDIRECT3DVIEWPORT*
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpD3DViewport) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DViewport3 *glD3DV3;
-	HRESULT error = This->glD3D7->CreateViewport((LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
+	HRESULT error = glDirect3D7_CreateViewport(This->glD3D7, (LPDIRECT3DVIEWPORT3*)&glD3DV3,pUnkOuter);
 	if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 	glDirect3DViewport3_QueryInterface(glD3DV3,IID_IDirect3DViewport,(void**)lplpD3DViewport);
 	glDirect3DViewport3_Release(glD3DV3);
@@ -842,14 +857,14 @@ HRESULT WINAPI glDirect3D1_EnumDevices(glDirect3D1 *This, LPD3DENUMDEVICESCALLBA
 {
 	TRACE_ENTER(3,14,This,14,lpEnumDevicesCallback,14,lpUserArg);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->EnumDevices3(lpEnumDevicesCallback,lpUserArg));
+	TRACE_RET(HRESULT,23,glDirect3D7_EnumDevices3(This->glD3D7, lpEnumDevicesCallback,lpUserArg));
 }
 
 HRESULT WINAPI glDirect3D1_FindDevice(glDirect3D1 *This, LPD3DFINDDEVICESEARCH lpD3DFDS, LPD3DFINDDEVICERESULT lpD3DFDR)
 {
 	TRACE_ENTER(3,14,This,14,lpD3DFDS,14,lpD3DFDR);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,This->glD3D7->FindDevice(lpD3DFDS,lpD3DFDR));
+	TRACE_RET(HRESULT,23,glDirect3D7_FindDevice(This->glD3D7, lpD3DFDS,lpD3DFDR));
 }
 
 HRESULT WINAPI glDirect3D1_Initialize(glDirect3D1 *This, REFIID lpREFIID)

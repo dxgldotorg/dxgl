@@ -20,7 +20,7 @@
 #define __GLDIRECT3DDEVICE_H
 
 class glDirectDrawSurface7;
-class glDirect3D7;
+struct glDirect3D7;
 
 struct D3D1MATRIX
 {
