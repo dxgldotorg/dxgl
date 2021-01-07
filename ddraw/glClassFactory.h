@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,18 +19,28 @@
 #ifndef _DXGLCLASSFACTORY_H
 #define _DXGLCLASSFACTORY_H
 
-class glClassFactory : public IClassFactory
+struct glClassFactoryVtbl;
+typedef struct glClassFactory
 {
-public:
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	HRESULT WINAPI CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject);
-	HRESULT WINAPI LockServer(BOOL fLock);
-	glClassFactory() {refcount = 1; lockcount = 0;}
-	~glClassFactory() {}
-private:
+	glClassFactoryVtbl *lpVtbl;
 	ULONG refcount;
 	ULONG lockcount;
-};
+} glClassFactory;
+
+typedef struct glClassFactoryVtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glClassFactory *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glClassFactory *This);
+	ULONG(WINAPI *Release)(glClassFactory *This);
+	HRESULT(WINAPI *CreateInstance)(glClassFactory *This, IUnknown *pUnkOuter, REFIID riid, void **ppvObject);
+	HRESULT(WINAPI *LockServer)(glClassFactory *This, BOOL fLock);
+} glClassFactoryVtbl;
+
+HRESULT glClassFactory_Create(glClassFactory **factory);
+ULONG WINAPI glClassFactory_AddRef(glClassFactory *This);
+ULONG WINAPI glClassFactory_Release(glClassFactory *This);
+HRESULT WINAPI glClassFactory_QueryInterface(glClassFactory *This, REFIID riid, void** ppvObj);
+HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUnkOuter, REFIID riid, void **ppvObject);
+HRESULT WINAPI glClassFactory_LockServer(glClassFactory *This, BOOL fLock);
+
 #endif //_DXGLCLASSFACTORY_H

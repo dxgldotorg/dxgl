@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -488,6 +488,7 @@ HRESULT WINAPI DllCanUnloadNow()
   */
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
+	glClassFactory *factory = NULL;
 	TRACE_ENTER(3,24,&rclsid,24,&riid,14,ppv);
 	if((rclsid != CLSID_DirectDraw) && (rclsid != CLSID_DirectDraw7) &&
 		(rclsid != CLSID_DirectDrawClipper))
@@ -496,15 +497,15 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		return CLASS_E_CLASSNOTAVAILABLE;
 	}
 	GetCurrentConfig(&dxglcfg, FALSE);
-	glClassFactory *factory = new glClassFactory;
+	glClassFactory_Create(&factory);
 	if(factory == NULL)
 	{
 		TRACE_EXIT(23,E_OUTOFMEMORY);
 		return E_OUTOFMEMORY;
 	}
-	HRESULT result = factory->QueryInterface(riid,ppv);
+	HRESULT result = glClassFactory_QueryInterface(factory,riid,ppv);
 	TRACE_VAR("*ppv",14,*ppv);
-	factory->Release();
+	glClassFactory_Release(factory);
 	TRACE_EXIT(23,result);
 	return result;
 }

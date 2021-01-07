@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -24,36 +24,58 @@
 #include "ddraw.h"
 #include "hooks.h"
 
+glClassFactoryVtbl glClassFactory_impl =
+{
+	glClassFactory_QueryInterface,
+	glClassFactory_AddRef,
+	glClassFactory_Release,
+	glClassFactory_CreateInstance,
+	glClassFactory_LockServer
+};
 
-ULONG WINAPI glClassFactory::AddRef()
+HRESULT glClassFactory_Create(glClassFactory **factory)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
-	refcount++;
-	TRACE_EXIT(8,refcount);
-	return refcount;
+	glClassFactory *This;
+	TRACE_ENTER(1, 14, factory);
+	This = (glClassFactory*)malloc(sizeof(glClassFactory));
+	if (!This) TRACE_RET(HRESULT, 23, E_OUTOFMEMORY);
+	This->lpVtbl = &glClassFactory_impl;
+	This->refcount = 1;
+	This->lockcount = 0;
+	*factory = This;
+	TRACE_EXIT(23, S_OK);
+	return S_OK;
 }
-ULONG WINAPI glClassFactory::Release()
+
+ULONG WINAPI glClassFactory_AddRef(glClassFactory *This)
 {
-	TRACE_ENTER(1,14,this);
-	if(!this) TRACE_RET(ULONG,8,0);
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
+	InterlockedIncrement(&This->refcount);
+	TRACE_EXIT(8,This->refcount);
+	return This->refcount;
+}
+ULONG WINAPI glClassFactory_Release(glClassFactory *This)
+{
+	TRACE_ENTER(1,14,This);
+	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	refcount--;
-	ret = refcount;
-	if(refcount == 0) delete this;
+	InterlockedDecrement(&This->refcount);
+	ret = This->refcount;
+	if(This->refcount == 0) free(This);
 	TRACE_EXIT(8,ret);
 	return ret;
 }
 
-HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
+HRESULT WINAPI glClassFactory_QueryInterface(glClassFactory *This, REFIID riid, void** ppvObj)
 {
-	TRACE_ENTER(3,14,this,24,&riid,14,ppvObj);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if(!This) TRACE_RET(HRESULT,23, E_POINTER);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, E_INVALIDARG);
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
-		*ppvObj = this;
-		this->AddRef();
+		*ppvObj = This;
+		glClassFactory_AddRef(This);
 	}
 	else
 	{
@@ -64,10 +86,10 @@ HRESULT WINAPI glClassFactory::QueryInterface(REFIID riid, void** ppvObj)
 	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }
-HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
+HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
-	TRACE_ENTER(4,14,this,14,pUnkOuter,24,&riid,14,ppvObject);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	TRACE_ENTER(4,14,This,14,pUnkOuter,24,&riid,14,ppvObject);
+	if (!This) TRACE_RET(HRESULT, 23, E_POINTER);
 	glDirectDraw7 *glDD7;
 	if(pUnkOuter != NULL) TRACE_RET(HRESULT,23,CLASS_E_NOAGGREGATION);
 	if(riid == IID_IDirectDraw)
@@ -112,16 +134,16 @@ HRESULT WINAPI glClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, 
 	{
 		TRACE_RET(HRESULT, 23, glDirectDrawClipper_CreateNoInit((LPDIRECTDRAWCLIPPER*)ppvObject));
 	}
-	FIXME("glClassFactory::CreateInterface: stub");
+	FIXME("glClassFactory_CreateInterface: stub");
 	TRACE_EXIT(23,E_NOINTERFACE);
 	return E_NOINTERFACE;
 }
-HRESULT WINAPI glClassFactory::LockServer(BOOL fLock)
+HRESULT WINAPI glClassFactory_LockServer(glClassFactory *This, BOOL fLock)
 {
-	TRACE_ENTER(2,14,this,22,fLock);
-	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(fLock) InterlockedIncrement((LONG*)&lockcount);
-	else InterlockedDecrement((LONG*)&lockcount);
+	TRACE_ENTER(2,14,This,22,fLock);
+	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if(fLock) InterlockedIncrement((LONG*)&This->lockcount);
+	else InterlockedDecrement((LONG*)&This->lockcount);
 	TRACE_EXIT(23,S_OK);
 	return S_OK;
 }
