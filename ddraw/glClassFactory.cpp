@@ -88,6 +88,7 @@ HRESULT WINAPI glClassFactory_QueryInterface(glClassFactory *This, REFIID riid, 
 }
 HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
+	HRESULT error;
 	TRACE_ENTER(4,14,This,14,pUnkOuter,24,&riid,14,ppvObject);
 	if (!This) TRACE_RET(HRESULT, 23, E_POINTER);
 	glDirectDraw7 *glDD7;
@@ -95,9 +96,11 @@ HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUn
 	if(riid == IID_IDirectDraw)
 	{
 		InitHooks();
+		error = glDirectDraw7_Create(&glDD7);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 		glDD7 = new glDirectDraw7;
-		glDD7->QueryInterface(IID_IDirectDraw,ppvObject);
-		glDD7->Release();
+		glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,ppvObject);
+		glDirectDraw7_Release(glDD7);
 		TRACE_VAR("*ppvObject",14,*ppvObject);
 		TRACE_EXIT(23,S_OK);
 		return S_OK;
@@ -105,9 +108,10 @@ HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUn
 	if(riid == IID_IDirectDraw2)
 	{
 		InitHooks();
-		glDD7 = new glDirectDraw7;
-		glDD7->QueryInterface(IID_IDirectDraw2,ppvObject);
-		glDD7->Release();
+		error = glDirectDraw7_Create(&glDD7);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw2,ppvObject);
+		glDirectDraw7_Release(glDD7);
 		TRACE_VAR("*ppvObject",14,*ppvObject);
 		TRACE_EXIT(23,S_OK);
 		return S_OK;
@@ -115,9 +119,10 @@ HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUn
 	if(riid == IID_IDirectDraw4)
 	{
 		InitHooks();
-		glDD7 = new glDirectDraw7;
-		glDD7->QueryInterface(IID_IDirectDraw4,ppvObject);
-		glDD7->Release();
+		error = glDirectDraw7_Create(&glDD7);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw4,ppvObject);
+		glDirectDraw7_Release(glDD7);
 		TRACE_VAR("*ppvObject",14,*ppvObject);
 		TRACE_EXIT(23,S_OK);
 		return S_OK;
@@ -125,10 +130,10 @@ HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUn
 	if(riid == IID_IDirectDraw7)
 	{
 		InitHooks();
-		*ppvObject = new glDirectDraw7();
+		error = glDirectDraw7_Create((glDirectDraw7**)ppvObject);
 		TRACE_VAR("*ppvObject",14,*ppvObject);
-		TRACE_EXIT(23,S_OK);
-		return S_OK;
+		TRACE_EXIT(23,error);
+		return error;
 	}
 	if(riid == IID_IDirectDrawClipper)
 	{

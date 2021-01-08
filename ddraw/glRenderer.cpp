@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2020 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1070,10 +1070,10 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		LONG sizes[6];
 		GLfloat view[4];
 		GLint viewport[4];
-		This->ddInterface->GetSizes(sizes);
+		glDirectDraw7_GetSizes(This->ddInterface, sizes);
 		if (cmd->DrawScreen.texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
-			if (This->ddInterface->GetFullscreen())
+			if (glDirectDraw7_GetFullscreen(This->ddInterface))
 			{
 				viewport[0] = viewport[1] = 0;
 				viewport[2] = sizes[4];
@@ -1124,7 +1124,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		tmp_cmd.SetTexture.texstage[0].stage = 8;
 		tmp_cmd.SetTexture.texstage[0].texture = cmd->DrawScreen.texture;
 		//  Set Palette texture (Unit 9) to palette if 8-bit
-		if (This->ddInterface->GetBPP() == 8)
+		if (This->ddInterface->primarybpp == 8)
 		{
 			i++;
 			tmp_cmd.SetTexture.size += (sizeof(DWORD) + sizeof(glTexture*));
@@ -1134,7 +1134,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		tmp_cmd.SetTexture.count = i + 1;
 		glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		// If 8 bit scaled linear:
-		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
+		if ((This->ddInterface->primarybpp == 8) && (dxglcfg.scalingfilter) &&
 			((cmd->DrawScreen.texture->bigwidth != (view[1]-view[0])) ||
 			(cmd->DrawScreen.texture->bigheight != (view[3]-view[2]))))
 		{
@@ -1247,7 +1247,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		}
 		//  Set shader and texture filter
-		if ((This->ddInterface->GetBPP() == 8) && (!dxglcfg.scalingfilter ||
+		if ((This->ddInterface->primarybpp == 8) && (!dxglcfg.scalingfilter ||
 			((cmd->DrawScreen.texture->bigwidth == (view[1] - view[0])) &&
 			(cmd->DrawScreen.texture->bigheight == (view[3] - view[2])))))
 		{
@@ -1342,7 +1342,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			glRenderer_AddCommand(This, &tmp_cmd, TRUE, FALSE);
 		}
 		//  Generate vertices
-		if (This->ddInterface->GetFullscreen())
+		if (glDirectDraw7_GetFullscreen(This->ddInterface))
 		{
 			This->bltvertices[0].x = This->bltvertices[2].x = (GLfloat)sizes[0];
 			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
@@ -1354,7 +1354,7 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 			This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
 			This->bltvertices[2].y = This->bltvertices[3].y = (GLfloat)cmd->DrawScreen.texture->bigheight;
 		}
-		if ((This->ddInterface->GetBPP() == 8) && (dxglcfg.scalingfilter) &&
+		if ((This->ddInterface->primarybpp == 8) && (dxglcfg.scalingfilter) &&
 			((cmd->DrawScreen.texture->bigwidth != (view[1] - view[0])) ||
 			(cmd->DrawScreen.texture->bigheight != (view[3] - view[2]))))
 		{
@@ -1961,7 +1961,7 @@ void glRenderer_Delete(glRenderer *This)
   */
 DWORD glRenderer_GetBPP(glRenderer *This)
 {
-	return This->ddInterface->GetBPP();
+	return This->ddInterface->primarybpp;
 }
 
 /**
@@ -3364,7 +3364,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	RECT srcrect;
 	RECT destrect, destrect2;
 	RECT wndrect;
-	This->ddInterface->GetSizes(sizes);
+	glDirectDraw7_GetSizes(This->ddInterface, sizes);
 	unsigned __int64 shaderid;
 	DDSURFACEDESC2 ddsd;
 	ddsd = cmd->dest->levels[cmd->destlevel].ddsd;
@@ -3460,7 +3460,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	else srcrect = cmd->srcrect;
 	if (cmd->flags & 0x80000000)
 	{
-		if (This->ddInterface->GetFullscreen())
+		if (glDirectDraw7_GetFullscreen(This->ddInterface))
 		{
 			xmul = (GLfloat)sizes[0] / (GLfloat)sizes[2];
 			ymul = (GLfloat)sizes[1] / (GLfloat)sizes[3];
@@ -3632,7 +3632,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		glUtil_SetTexture(This->util, 8, cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			if((dxglcfg.BltScale == 0) || (This->ddInterface->GetBPP() == 8))
+			if((dxglcfg.BltScale == 0) || (This->ddInterface->primarybpp == 8))
 				glTexture__SetFilter(cmd->src, 8, GL_NEAREST, GL_NEAREST, This);
 			else glTexture__SetFilter(cmd->src, 8, GL_LINEAR, GL_LINEAR, This);
 		}
@@ -4096,9 +4096,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	if(texture->levels[0].dirty & 1) glTexture__Upload(texture, 0);
 	if(texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
-		if(This->ddInterface->GetFullscreen())
+		if(glDirectDraw7_GetFullscreen(This->ddInterface))
 		{
-			This->ddInterface->GetSizes(sizes);
+			glDirectDraw7_GetSizes(This->ddInterface, sizes);
 			if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
 				(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
 			{
@@ -4152,7 +4152,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	glUtil_SetFBO(This->util, NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	if(This->ddInterface->GetBPP() == 8)
+	if(This->ddInterface->primarybpp == 8)
 	{
 		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,0);
 		progtype = PROG_PAL256;
@@ -4189,7 +4189,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	else glTexture__SetFilter(texture, 8, GL_NEAREST, GL_NEAREST, This);
 	glUtil_SetViewport(This->util,viewport[0],viewport[1],viewport[2],viewport[3]);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view,view[0],view[1],view[2],view[3]);
-	if(This->ddInterface->GetFullscreen())
+	if(glDirectDraw7_GetFullscreen(This->ddInterface))
 	{
 		This->bltvertices[0].x = This->bltvertices[2].x = (float)sizes[0];
 		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
@@ -4277,7 +4277,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		GLint packalign;
 		glGetIntegerv(GL_PACK_ALIGNMENT,&packalign);
 		glPixelStorei(GL_PACK_ALIGNMENT,1);
-		This->ddInterface->GetSizes(sizes);
+		glDirectDraw7_GetSizes(This->ddInterface, sizes);
 		glReadPixels(0,0,sizes[4],sizes[5],GL_BGRA,GL_UNSIGNED_BYTE,0);
 		BufferObject_Map(This->pbo, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		GLubyte *pixels = (GLubyte*)This->pbo->pointer;

@@ -167,8 +167,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
-	myddraw7 = new glDirectDraw7(lpGUID,pUnkOuter);
-	error = myddraw7->err();
+	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw7);
 	glDD7 = myddraw7;
 	if(error != DD_OK)
 	{
@@ -178,8 +177,8 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		TRACE_EXIT(23, error);
 		return error;
 	}
-	myddraw7->QueryInterface(IID_IDirectDraw,(VOID**)&myddraw);
-	myddraw7->Release();
+	glDirectDraw7_QueryInterface(myddraw7,IID_IDirectDraw,(VOID**)&myddraw);
+	glDirectDraw7_Release(myddraw7);
 	*lplpDD = (LPDIRECTDRAW)myddraw;
 	TRACE_VAR("*lplpDD",14,*lplpDD);
 	LeaveCriticalSection(&dll_cs);
@@ -236,8 +235,7 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
 	}
-	myddraw = new glDirectDraw7(lpGUID,pUnkOuter);
-	error = myddraw->err();
+	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw);
 	if(error != DD_OK)
 	{
 		delete myddraw;

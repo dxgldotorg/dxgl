@@ -81,7 +81,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	int i;
 	float xscale, yscale;
 	DWORD winver, winvermajor, winverminor;
-	ddInterface->GetSizes(sizes);
+	glDirectDraw7_GetSizes(ddInterface, sizes);
 	if(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
 		if(((ddsd.dwFlags & DDSD_WIDTH) || (ddsd.dwFlags & DDSD_HEIGHT)
@@ -94,7 +94,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 		}
 		else
 		{
-			if(ddInterface->GetFullscreen())
+			if(glDirectDraw7_GetFullscreen(ddInterface))
 			{
 				ddsd.dwWidth = sizes[2];
 				ddsd.dwHeight = sizes[3];
@@ -322,7 +322,7 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 	}
 	if (ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 	{
-		if (ddInterface->GetBPP() == 8)
+		if (ddInterface->primarybpp == 8)
 		{
 			if (!palettein)
 			{
@@ -378,7 +378,8 @@ glDirectDrawSurface7::glDirectDrawSurface7(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2
 				ddsdBack.dwBackBufferCount--;
 				ddsdBack.ddsCaps.dwCaps |= DDSCAPS_BACKBUFFER;
 				ddsdBack.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
-				backbuffer = new glDirectDrawSurface7(ddInterface,&ddsdBack,error,palette,parenttex,miplevel,version,front?front:this);
+				backbuffer = new glDirectDrawSurface7((LPDIRECTDRAW7)ddInterface,&ddsdBack,error,
+					palette,parenttex,miplevel,version,front?front:this);
 			}
 			else if (ddsd.dwFlags & DDSD_BACKBUFFERCOUNT)
 			{
@@ -450,7 +451,7 @@ glDirectDrawSurface7::~glDirectDrawSurface7()
 	if(miptexture) miptexture->Release();
 	if (device) glDirect3DDevice7_Release(device); 
 	if (device1) delete device1;
-	ddInterface->DeleteSurface(this);
+	glDirectDraw7_DeleteSurface(ddInterface, this);
 	if (creator) creator->Release();
 	TRACE_EXIT(-1,0);
 }
@@ -537,7 +538,7 @@ HRESULT WINAPI glDirectDrawSurface7::QueryInterface(REFIID riid, void** ppvObj)
 		if(!device1)
 		{
 			glDirect3D7 *tmpd3d;
-			ddInterface->QueryInterface(IID_IDirect3D7,(void**)&tmpd3d);
+			glDirectDraw7_QueryInterface(ddInterface,IID_IDirect3D7,(void**)&tmpd3d);
 			if(!tmpd3d) TRACE_RET(HRESULT,23,E_NOINTERFACE);
 			ret = glDirect3DDevice7_Create(riid, tmpd3d, this, dds1, 1, &device);
 			if (FAILED(ret))
@@ -794,7 +795,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 	if (lpDestRect)
 	{
 		cmd.destrect = *lpDestRect;
-		if(!ddInterface->GetFullscreen() && (ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+		if(!glDirectDraw7_GetFullscreen(ddInterface) && (ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 			OffsetRect(&cmd.destrect, 0 - ddInterface->renderer->xoffset, 0 - ddInterface->renderer->yoffset);
 	}
 	else cmd.destrect = nullrect;
@@ -898,7 +899,7 @@ HRESULT WINAPI glDirectDrawSurface7::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE7
 			tmprect.right = src->ddsd.dwWidth;
 			tmprect.bottom = src->ddsd.dwHeight;
 		}
-		error = this->ddInterface->SetupTempSurface(tmprect.right, tmprect.bottom);
+		error = glDirectDraw7_SetupTempSurface(this->ddInterface, tmprect.right, tmprect.bottom);
 		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 		error = this->ddInterface->tmpsurface->Blt(&tmprect, lpDDSrcSurface, lpSrcRect, 0, NULL);
 		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
@@ -1832,7 +1833,7 @@ HRESULT WINAPI glDirectDrawSurface7::GetDDInterface(LPVOID FAR *lplpDD)
 {
 	TRACE_ENTER(2,14,this,14,lplpDD);
 	if(!this) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	ddInterface->AddRef();
+	glDirectDraw7_AddRef(ddInterface);
 	*lplpDD = ddInterface;
 	TRACE_VAR("*lplpDD",14,*lplpDD);
 	TRACE_EXIT(23,DD_OK);
@@ -2729,8 +2730,8 @@ HRESULT WINAPI glDirectDrawSurface2::GetDDInterface(LPVOID FAR *lplpDD)
 	glDirectDraw7 *glDD7;
 	HRESULT ret = glDDS7->GetDDInterface((void**)&glDD7);
 	if(ret != DD_OK) TRACE_RET(HRESULT,23,ret);
-	glDD7->QueryInterface(IID_IDirectDraw,lplpDD);
-	glDD7->Release();
+	glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,lplpDD);
+	glDirectDraw7_Release(glDD7);
 	TRACE_VAR("*lplpDD",14,*lplpDD);
 	TRACE_RET(HRESULT,23,ret);
 }
@@ -3061,8 +3062,8 @@ HRESULT WINAPI glDirectDrawSurface3::GetDDInterface(LPVOID FAR *lplpDD)
 	glDirectDraw7 *glDD7;
 	HRESULT ret = glDDS7->GetDDInterface((void**)&glDD7);
 	if(ret != DD_OK) TRACE_RET(HRESULT,23,ret);
-	glDD7->QueryInterface(IID_IDirectDraw,lplpDD);
-	glDD7->Release();
+	glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,lplpDD);
+	glDirectDraw7_Release(glDD7);
 	TRACE_VAR("*lplpDD",14,*lplpDD);
 	TRACE_EXIT(23,ret);
 	return ret;

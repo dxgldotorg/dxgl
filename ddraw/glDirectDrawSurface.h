@@ -26,7 +26,7 @@ typedef struct
 	DDCOLORKEY key;
 } CKEY;
 
-class glDirectDraw7;
+struct glDirectDraw7;
 struct glDirectDrawClipper;
 struct glDirectDrawPalette;
 class glDirectDrawSurface1;

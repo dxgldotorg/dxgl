@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -151,7 +151,7 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->cliplist) free(This->cliplist);
 		if (This->vertices) free(This->vertices);
 		if (This->indices) free(This->indices);
-		if (This->glDD7) This->glDD7->DeleteClipper(This);
+		if (This->glDD7) glDirectDraw7_DeleteClipper(This->glDD7, This);
 		if (This->creator) This->creator->Release();
 		if (This->texture) glTexture_Release(This->texture, FALSE);
 		free(This);

@@ -19,7 +19,7 @@
 #define _GLRENDERER_H
 
 #ifdef __cplusplus
-class glDirectDraw7;
+struct glDirectDraw7;
 struct glDirect3DDevice7;
 class glDirectDrawSurface7;
 class glRenderWindow;

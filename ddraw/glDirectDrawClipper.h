@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 #ifndef _GLDIRECTDRAWCLIPPER_H
 #define _GLDIRECTDRAWCLIPPER_H
 
-class glDirectDraw7;
+struct glDirectDraw7;
 
 struct glDirectDrawClipperVtbl;
 

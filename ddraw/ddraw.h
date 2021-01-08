@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2016 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -61,7 +61,7 @@ extern "C" {extern DXGLCFG dxglcfg; }
 extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
-class glDirectDraw7;
+struct glDirectDraw7;
 void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd);
 
 #endif //_DDRAW_PRIVATE_H

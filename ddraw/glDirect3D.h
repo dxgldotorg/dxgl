@@ -21,7 +21,7 @@
 
 extern const D3DDEVICEDESC7 d3ddesc_default;
 extern const D3DDEVICEDESC d3ddesc3_default;
-class glDirectDraw7;
+struct glDirectDraw7;
 
 struct glDirect3D3;
 struct glDirect3D2;

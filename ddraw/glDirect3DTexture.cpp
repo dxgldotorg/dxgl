@@ -44,6 +44,7 @@ HRESULT glDirect3DTexture2_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTextur
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	This->lpVtbl = &glDirect3DTexture2_iface;
 	This->glDDS7 = glDDS7;
+	*texture = This;
 	TRACE_EXIT(23, D3D_OK);
 	return D3D_OK;
 }
@@ -122,6 +123,7 @@ HRESULT glDirect3DTexture1_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTextur
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 	This->lpVtbl = &glDirect3DTexture1_iface;
 	This->glDDS7 = glDDS7;
+	*texture = This;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

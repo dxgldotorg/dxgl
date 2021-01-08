@@ -204,20 +204,20 @@ ULONG WINAPI glDirect3D7_AddRef(glDirect3D7 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glDD7->AddRef());
+	TRACE_RET(ULONG, 8, glDirectDraw7_AddRef(This->glDD7));
 }
 ULONG WINAPI glDirect3D7_Release(glDirect3D7 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glDD7->Release());
+	TRACE_RET(ULONG, 8, glDirectDraw7_Release(This->glDD7));
 }
 
 HRESULT WINAPI glDirect3D7_QueryInterface(glDirect3D7 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, This->glDD7->QueryInterface(riid, ppvObj));
+	TRACE_RET(HRESULT, 23, glDirectDraw7_QueryInterface(This->glDD7, riid, ppvObj));
 }
 
 HRESULT WINAPI glDirect3D7_CreateDevice(glDirect3D7 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice)
@@ -552,14 +552,14 @@ ULONG WINAPI glDirect3D3_AddRef(glDirect3D3 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->AddRef1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_AddRef1(This->glD3D7->glDD7));
 }
 
 ULONG WINAPI glDirect3D3_Release(glDirect3D3 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->Release1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_Release1(This->glD3D7->glDD7));
 }
 
 HRESULT WINAPI glDirect3D3_CreateDevice(glDirect3D3 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE4 lpDDS, LPDIRECT3DDEVICE3 *lplpD3DDevice, LPUNKNOWN pUnkOuter)
@@ -683,14 +683,14 @@ ULONG WINAPI glDirect3D2_AddRef(glDirect3D2 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->AddRef1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_AddRef1(This->glD3D7->glDD7));
 }
 
 ULONG WINAPI glDirect3D2_Release(glDirect3D2 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->Release1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_Release1(This->glD3D7->glDD7));
 }
 
 HRESULT WINAPI glDirect3D2_CreateDevice(glDirect3D2 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice)
@@ -807,14 +807,14 @@ ULONG WINAPI glDirect3D1_AddRef(glDirect3D1 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->AddRef1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_AddRef1(This->glD3D7->glDD7));
 }
 
 ULONG WINAPI glDirect3D1_Release(glDirect3D1 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	TRACE_RET(ULONG, 8, This->glD3D7->glDD7->Release1());
+	TRACE_RET(ULONG, 8, glDirectDraw7_Release1(This->glD3D7->glDD7));
 }
 
 HRESULT WINAPI glDirect3D1_CreateLight(glDirect3D1 *This, LPDIRECT3DLIGHT* lplpDirect3DLight, IUnknown* pUnkOuter)
