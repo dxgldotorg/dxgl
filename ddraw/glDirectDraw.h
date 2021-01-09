@@ -36,7 +36,7 @@ struct D3DDevice
 };
 
 struct glDirectDraw1;
-class glDirectDraw2;
+struct glDirectDraw2;
 class glDirectDraw4;
 
 struct glDirectDraw7Vtbl;
@@ -239,41 +239,69 @@ HRESULT WINAPI glDirectDraw1_SetCooperativeLevel(glDirectDraw1 *This, HWND hWnd,
 HRESULT WINAPI glDirectDraw1_SetDisplayMode(glDirectDraw1 *This, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP);
 HRESULT WINAPI glDirectDraw1_WaitForVerticalBlank(glDirectDraw1 *This, DWORD dwFlags, HANDLE hEvent);
 
-class glDirectDraw2 : public IDirectDraw2
+struct glDirectDraw2Vtbl;
+typedef struct glDirectDraw2
 {
-public:
-	glDirectDraw2(glDirectDraw7 *gl_DD7);
-	// ddraw 1+ api
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI Compact();
-	HRESULT WINAPI CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter);
-	HRESULT WINAPI CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter);
-	HRESULT WINAPI CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter);
-	HRESULT WINAPI DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface);
-	HRESULT WINAPI EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback);
-	HRESULT WINAPI EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
-	HRESULT WINAPI FlipToGDISurface();
-	HRESULT WINAPI GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps);
-	HRESULT WINAPI GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc);
-	HRESULT WINAPI GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes);
-	HRESULT WINAPI GetGDISurface(LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface);
-	HRESULT WINAPI GetMonitorFrequency(LPDWORD lpdwFrequency);
-	HRESULT WINAPI GetScanLine(LPDWORD lpdwScanLine);
-	HRESULT WINAPI GetVerticalBlankStatus(LPBOOL lpbIsInVB);
-	HRESULT WINAPI Initialize(GUID FAR *lpGUID);
-	HRESULT WINAPI RestoreDisplayMode();
-	HRESULT WINAPI SetCooperativeLevel(HWND hWnd, DWORD dwFlags);
-	HRESULT WINAPI SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags);
-	HRESULT WINAPI WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent);
-	// ddraw 2+ api
-	HRESULT WINAPI GetAvailableVidMem(LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree);
-
-	HRESULT err() {return glDD7->error;}
-private:
+	glDirectDraw2Vtbl *lpVtbl;
 	glDirectDraw7 *glDD7;
-};
+} glDirectDraw2;
+typedef struct glDirectDraw2Vtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirectDraw2 *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirectDraw2 *This);
+	ULONG(WINAPI *Release)(glDirectDraw2 *This);
+	HRESULT(WINAPI *Compact)(glDirectDraw2 *This);
+	HRESULT(WINAPI *CreateClipper)(glDirectDraw2 *This, DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter);
+	HRESULT(WINAPI *CreatePalette)(glDirectDraw2 *This, DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter);
+	HRESULT(WINAPI *CreateSurface)(glDirectDraw2 *This, LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter);
+	HRESULT(WINAPI *DuplicateSurface)(glDirectDraw2 *This, LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface);
+	HRESULT(WINAPI *EnumDisplayModes)(glDirectDraw2 *This, DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback);
+	HRESULT(WINAPI *EnumSurfaces)(glDirectDraw2 *This, DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
+	HRESULT(WINAPI *FlipToGDISurface)(glDirectDraw2 *This);
+	HRESULT(WINAPI *GetCaps)(glDirectDraw2 *This, LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps);
+	HRESULT(WINAPI *GetDisplayMode)(glDirectDraw2 *This, LPDDSURFACEDESC lpDDSurfaceDesc);
+	HRESULT(WINAPI *GetFourCCCodes)(glDirectDraw2 *This, LPDWORD lpNumCodes, LPDWORD lpCodes);
+	HRESULT(WINAPI *GetGDISurface)(glDirectDraw2 *This, LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface);
+	HRESULT(WINAPI *GetMonitorFrequency)(glDirectDraw2 *This, LPDWORD lpdwFrequency);
+	HRESULT(WINAPI *GetScanLine)(glDirectDraw2 *This, LPDWORD lpdwScanLine);
+	HRESULT(WINAPI *GetVerticalBlankStatus)(glDirectDraw2 *This, LPBOOL lpbIsInVB);
+	HRESULT(WINAPI *Initialize)(glDirectDraw2 *This, GUID FAR *lpGUID);
+	HRESULT(WINAPI *RestoreDisplayMode)(glDirectDraw2 *This);
+	HRESULT(WINAPI *SetCooperativeLevel)(glDirectDraw2 *This, HWND hWnd, DWORD dwFlags);
+	HRESULT(WINAPI *SetDisplayMode)(glDirectDraw2 *This, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags);
+	HRESULT(WINAPI *WaitForVerticalBlank)(glDirectDraw2 *This, DWORD dwFlags, HANDLE hEvent);
+	HRESULT(WINAPI *GetAvailableVidMem)(glDirectDraw2 *This, LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree);
+} glDirectDraw2Vtbl;
+
+
+HRESULT glDirectDraw2_Create(glDirectDraw7 *gl_DD7, glDirectDraw2 **glDD2);
+// ddraw 1+ api
+HRESULT WINAPI glDirectDraw2_QueryInterface(glDirectDraw2 *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirectDraw2_AddRef(glDirectDraw2 *This);
+ULONG WINAPI glDirectDraw2_Release(glDirectDraw2 *This);
+HRESULT WINAPI glDirectDraw2_Compact(glDirectDraw2 *This);
+HRESULT WINAPI glDirectDraw2_CreateClipper(glDirectDraw2 *This, DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter);
+HRESULT WINAPI glDirectDraw2_CreatePalette(glDirectDraw2 *This, DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter);
+HRESULT WINAPI glDirectDraw2_CreateSurface(glDirectDraw2 *This, LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE FAR *lplpDDSurface, IUnknown FAR *pUnkOuter);
+HRESULT WINAPI glDirectDraw2_DuplicateSurface(glDirectDraw2 *This, LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE FAR *lplpDupDDSurface);
+HRESULT WINAPI glDirectDraw2_EnumDisplayModes(glDirectDraw2 *This, DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback);
+HRESULT WINAPI glDirectDraw2_EnumSurfaces(glDirectDraw2 *This, DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
+HRESULT WINAPI glDirectDraw2_FlipToGDISurface(glDirectDraw2 *This);
+HRESULT WINAPI glDirectDraw2_GetCaps(glDirectDraw2 *This, LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps);
+HRESULT WINAPI glDirectDraw2_GetDisplayMode(glDirectDraw2 *This, LPDDSURFACEDESC lpDDSurfaceDesc);
+HRESULT WINAPI glDirectDraw2_GetFourCCCodes(glDirectDraw2 *This, LPDWORD lpNumCodes, LPDWORD lpCodes);
+HRESULT WINAPI glDirectDraw2_GetGDISurface(glDirectDraw2 *This, LPDIRECTDRAWSURFACE FAR *lplpGDIDDSurface);
+HRESULT WINAPI glDirectDraw2_GetMonitorFrequency(glDirectDraw2 *This, LPDWORD lpdwFrequency);
+HRESULT WINAPI glDirectDraw2_GetScanLine(glDirectDraw2 *This, LPDWORD lpdwScanLine);
+HRESULT WINAPI glDirectDraw2_GetVerticalBlankStatus(glDirectDraw2 *This, LPBOOL lpbIsInVB);
+HRESULT WINAPI glDirectDraw2_Initialize(glDirectDraw2 *This, GUID FAR *lpGUID);
+HRESULT WINAPI glDirectDraw2_RestoreDisplayMode(glDirectDraw2 *This);
+HRESULT WINAPI glDirectDraw2_SetCooperativeLevel(glDirectDraw2 *This, HWND hWnd, DWORD dwFlags);
+HRESULT WINAPI glDirectDraw2_SetDisplayMode(glDirectDraw2 *This, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags);
+HRESULT WINAPI glDirectDraw2_WaitForVerticalBlank(glDirectDraw2 *This, DWORD dwFlags, HANDLE hEvent);
+// ddraw 2+ api
+HRESULT WINAPI glDirectDraw2_GetAvailableVidMem(glDirectDraw2 *This, LPDDSCAPS lpDDSCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree);
+
 class glDirectDraw4 : public IDirectDraw4
 {
 public:
