@@ -1063,9 +1063,9 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 		if (cmd->DrawScreen.texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
 			GetClientRect(This->hWnd, &r1);
-			GetClientRect(This->RenderWnd->GetHWnd(), &r2);
+			GetClientRect(This->RenderWnd->hWnd, &r2);
 			if (memcmp(&r2, &r1, sizeof(RECT)))
-				SetWindowPos(This->RenderWnd->GetHWnd(), NULL, 0, 0, r1.right, r1.bottom, SWP_SHOWWINDOW);
+				SetWindowPos(This->RenderWnd->hWnd, NULL, 0, 0, r1.right, r1.bottom, SWP_SHOWWINDOW);
 		}
 		LONG sizes[6];
 		GLfloat view[4];
@@ -1088,8 +1088,8 @@ HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL 
 				viewport[0] = viewport[1] = 0;
 				viewport[2] = r2.right;
 				viewport[3] = r2.bottom;
-				ClientToScreen(This->RenderWnd->GetHWnd(), (LPPOINT)&r2.left);
-				ClientToScreen(This->RenderWnd->GetHWnd(), (LPPOINT)&r2.right);
+				ClientToScreen(This->RenderWnd->hWnd, (LPPOINT)&r2.left);
+				ClientToScreen(This->RenderWnd->hWnd, (LPPOINT)&r2.right);
 				view[0] = (GLfloat)r2.left;
 				view[1] = (GLfloat)r2.right;
 				view[2] = (GLfloat)cmd->DrawScreen.texture->bigheight - (GLfloat)r2.top;
@@ -1872,7 +1872,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 		// TODO:  Adjust window rect
 	}
 	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-	This->RenderWnd = new glRenderWindow(width,height,fullscreen,This->hWnd,glDD7,devwnd);
+	glRenderWindow_Create(width, height, fullscreen, This->hWnd, glDD7, devwnd, &This->RenderWnd);
 	This->inputs[0] = (void*)width;
 	This->inputs[1] = (void*)height;
 	This->inputs[2] = (void*)bpp;
@@ -2100,9 +2100,9 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
 		!(cmd->dest->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 	{
 		_GetClientRect(This->hWnd,&r);
-		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
+		GetClientRect(This->RenderWnd->hWnd,&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)) != 0)
-			SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+			SetWindowPos(This->RenderWnd->hWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
 	This->inputs[0] = cmd;
 	This->opcode = OP_BLT;
@@ -2865,11 +2865,11 @@ DWORD glRenderer__Entry(glRenderer *This)
 				wglDeleteContext(This->hRC);
 				This->hRC = NULL;
 			};
-			if(This->hDC) ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+			if(This->hDC) ReleaseDC(This->RenderWnd->hWnd,This->hDC);
 			This->hDC = NULL;
 			if (This->dib.info) free(This->dib.info);
 			This->dib.info = NULL;
-			delete This->RenderWnd;
+			glRenderWindow_Delete(This->RenderWnd);
 			This->RenderWnd = NULL;
 			SetEvent(This->busy);
 			return 0;
@@ -3003,7 +3003,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	pfd.cColorBits = bpp;
 	pfd.iLayerType = PFD_MAIN_PLANE;
 	InterlockedIncrement((LONG*)&gllock);
-	This->hDC = GetDC(This->RenderWnd->GetHWnd());
+	This->hDC = GetDC(This->RenderWnd->hWnd);
 	if(!This->hDC)
 	{
 		DEBUG("glRenderer::InitGL: Can not create hDC\n");
@@ -3034,7 +3034,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 		DEBUG("glRenderer::InitGL: Can not activate GL context\n");
 		wglDeleteContext(This->hRC);
 		This->hRC = NULL;
-		ReleaseDC(This->RenderWnd->GetHWnd(),This->hDC);
+		ReleaseDC(This->RenderWnd->hWnd,This->hDC);
 		This->hDC = NULL;
 		InterlockedDecrement((LONG*)&gllock);
 		LeaveCriticalSection(&dll_cs);
@@ -4083,9 +4083,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	if((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		_GetClientRect(This->hWnd,&r);
-		GetClientRect(This->RenderWnd->GetHWnd(),&r2);
+		GetClientRect(This->RenderWnd->hWnd,&r2);
 		if(memcmp(&r2,&r,sizeof(RECT)))
-		SetWindowPos(This->RenderWnd->GetHWnd(),NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
+		SetWindowPos(This->RenderWnd->hWnd,NULL,0,0,r.right,r.bottom,SWP_SHOWWINDOW);
 	}
 	glUtil_DepthTest(This->util, FALSE);
 	RECT *viewrect = &r2;
@@ -4127,8 +4127,8 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			viewport[0] = viewport[1] = 0;
 			viewport[2] = viewrect->right;
 			viewport[3] = viewrect->bottom;
-			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->left);
-			ClientToScreen(This->RenderWnd->GetHWnd(),(LPPOINT)&viewrect->right);
+			ClientToScreen(This->RenderWnd->hWnd,(LPPOINT)&viewrect->left);
+			ClientToScreen(This->RenderWnd->hWnd,(LPPOINT)&viewrect->right);
 			OffsetRect(viewrect, 0 - This->xoffset, 0 -	This->yoffset);
 			if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
 			{
@@ -4289,18 +4289,18 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		BufferObject_Unmap(This->pbo, GL_PIXEL_PACK_BUFFER);
 		BufferObject_Unbind(This->pbo, GL_PIXEL_PACK_BUFFER);
 		glPixelStorei(GL_PACK_ALIGNMENT,packalign);
-		HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->GetHWnd());
+		HDC hRenderDC = (HDC)::GetDC(This->RenderWnd->hWnd);
 		HGDIOBJ hPrevObj = 0;
 		POINT dest = {0,0};
 		POINT srcpoint = {0,0};
 		SIZE wnd = {This->dib.width,This->dib.height};
 		BLENDFUNCTION func = {AC_SRC_OVER,0,255,AC_SRC_ALPHA};
 		hPrevObj = SelectObject(This->dib.hdc,This->dib.hbitmap);
-		ClientToScreen(This->RenderWnd->GetHWnd(),&dest);
-		_UpdateLayeredWindow(This->RenderWnd->GetHWnd(),hRenderDC,&dest,&wnd,
+		ClientToScreen(This->RenderWnd->hWnd,&dest);
+		_UpdateLayeredWindow(This->RenderWnd->hWnd,hRenderDC,&dest,&wnd,
 			This->dib.hdc,&srcpoint,0,&func,ULW_ALPHA);
 		SelectObject(This->dib.hdc,hPrevObj);
-		ReleaseDC(This->RenderWnd->GetHWnd(),hRenderDC);
+		ReleaseDC(This->RenderWnd->hWnd,hRenderDC);
 	}
 	if(setsync) SetEvent(This->busy);
 	if(settime) DXGLTimer_SetLastDraw(&This->timer);
@@ -4524,8 +4524,8 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		EnterCriticalSection(&dll_cs);
 		wglMakeCurrent(NULL, NULL);
 		ReleaseDC(This->hWnd,This->hDC);
-		delete This->RenderWnd;
-		This->RenderWnd = new glRenderWindow(width,height,fullscreen,newwnd,This->ddInterface, devwnd);
+		glRenderWindow_Delete(This->RenderWnd);
+		glRenderWindow_Create(width, height, fullscreen, newwnd, This->ddInterface, devwnd, &This->RenderWnd);
 		PIXELFORMATDESCRIPTOR pfd;
 		GLuint pf;
 		InterlockedIncrement((LONG*)&gllock);
@@ -4537,7 +4537,7 @@ void glRenderer__SetWnd(glRenderer *This, int width, int height, int bpp, int fu
 		pfd.iPixelType = PFD_TYPE_RGBA;
 		pfd.cColorBits = bpp;
 		pfd.iLayerType = PFD_MAIN_PLANE;
-		This->hDC = GetDC(This->RenderWnd->GetHWnd());
+		This->hDC = GetDC(This->RenderWnd->hWnd);
 		if(!This->hDC)
 			DEBUG("glRenderer::SetWnd: Can not create hDC\n");
 		pf = ChoosePixelFormat(This->hDC,&pfd);

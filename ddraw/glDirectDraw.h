@@ -19,6 +19,11 @@
 #ifndef _GLDIRECTDRAW_H
 #define _GLDIRECTDRAW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define DXGLBLT_NOPALSHADER 0x80000000
 
 class glDirectDrawSurface7;
@@ -175,9 +180,9 @@ void glDirectDraw7_DeleteClipper(glDirectDraw7 *This, glDirectDrawClipper *clipp
 HRESULT glDirectDraw7_SetupTempSurface(glDirectDraw7 *This, DWORD width, DWORD height);
 void glDirectDraw7_DeleteTempSurface(glDirectDraw7 *This);
 
-extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
-extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
-extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7);
+void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
+void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
+BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7);
 LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400);
 
 struct glDirectDraw1Vtbl;
@@ -376,5 +381,9 @@ HRESULT WINAPI glDirectDraw4_GetDeviceIdentifier(glDirectDraw4 *This, LPDDDEVICE
 
 HRESULT WINAPI EnumSurfacesCallback1(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext);
 HRESULT WINAPI EnumSurfacesCallback2(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSD2, LPVOID lpContext);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLDIRECTDRAW_H

@@ -19,32 +19,40 @@
 #ifndef _GLRENDERWINDOW_H
 #define _GLRENDERWINDOW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 struct glDirectDraw7;
+
 void WaitForObjectAndMessages(HANDLE object);
-class glRenderWindow
+
+typedef struct glRenderWindow
 {
-public:
-	glRenderWindow(int width, int height, bool fullscreen, HWND parent, glDirectDraw7 *glDD7, bool devwnd);
-	~glRenderWindow();
-	void resize(int width, int height);
-	HWND GetHWnd(){return hWnd;};
-	LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	static DWORD WINAPI ThreadEntry(void *entry);
-private:
-	DWORD _Entry();
 	HWND hWnd;
 	HWND hParentWnd;
 	HANDLE hThread;
 	HANDLE ReadyEvent;
 	int width;
 	int height;
-	bool fullscreen;
-	bool dead;
-	bool device;
+	BOOL fullscreen;
+	BOOL dead;
+	BOOL device;
 	glDirectDraw7 *ddInterface;
-};
+} glRenderWindow;
 
+HRESULT glRenderWindow_Create(int width, int height, BOOL fullscreen,
+	HWND parent, glDirectDraw7 *glDD7, BOOL devwnd, glRenderWindow **renderwnd);
+void glRenderWindow_Delete(glRenderWindow *This);
+//void glRenderWindow_resize(glRenderWindow *This, int width, int height);
+LRESULT glRenderWindow_WndProc(glRenderWindow *This, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+DWORD WINAPI glRenderWindow_ThreadEntry(void *entry);
+DWORD glRenderWindow__Entry(glRenderWindow *This);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GLRENDERWINDOW_H

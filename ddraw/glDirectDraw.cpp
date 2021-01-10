@@ -41,6 +41,8 @@ using namespace std;
 #define DISP_CHANGE_BADDUALVIEW -6
 #endif
 
+extern "C" {
+
 BOOL NoSetDisplayConfig = FALSE;
 LONG (WINAPI *_GetDisplayConfigBufferSizes)(UINT32 flags, UINT32 *numPathArrayElements,
 	UINT32 *numModeInfoArrayElements) = NULL;
@@ -1940,7 +1942,7 @@ HRESULT WINAPI glDirectDraw7_RestoreDisplayMode(glDirectDraw7 *This)
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
-extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
+void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 {
 	if (!This) return;
 	TRACE_ENTER(1, 14, This);
@@ -1952,7 +1954,7 @@ extern "C" void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 	}
 	TRACE_EXIT(0, 0);
 }
-extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight)
+void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight)
 {
 	glDD7->internalx = glDD7->screenx = dwWidth;
 	glDD7->internaly = glDD7->screeny = dwHeight;
@@ -1961,7 +1963,7 @@ extern "C" void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth,
 	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
 		glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
 }
-extern "C" BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
+BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
 	if (!glDD7) return FALSE;
 	if (glDD7->fullscreen) return TRUE;
@@ -2831,7 +2833,7 @@ HRESULT WINAPI glDirectDraw7_EvaluateMode(glDirectDraw7 *This, DWORD dwFlags, DW
 	ERR(DDERR_GENERIC);
 }
 
-extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *This, LONG *sizes) // allocate 6 dwords
+void glDirectDraw7_GetSizes(glDirectDraw7 *This, LONG *sizes) // allocate 6 dwords
 {
 	sizes[0] = This->internalx;
 	sizes[1] = This->internaly;
@@ -3703,4 +3705,6 @@ HRESULT WINAPI glDirectDraw4_GetDeviceIdentifier(glDirectDraw4 *This, LPDDDEVICE
 	memcpy(lpdddi,&This->glDD7->devid,sizeof(DDDEVICEIDENTIFIER));
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
+}
+
 }
