@@ -26,7 +26,7 @@ extern "C" {
 
 #define DXGLBLT_NOPALSHADER 0x80000000
 
-class glDirectDrawSurface7;
+struct glDirectDrawSurface7;
 struct glDirectDrawClipper;
 struct glDirect3D7;
 struct glDirect3D3;

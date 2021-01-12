@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014 William Feely
+// Copyright (C) 2014-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-class glDirectDrawSurface7;
+struct glDirectDrawSurface7;
 struct glDirectDrawGammaControlVtbl;
 
 typedef struct glDirectDrawGammaControl

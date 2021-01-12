@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@
 #include "timer.h"
 
 extern DXGLCFG dxglcfg;
-void glDirectDrawSurface7_RenderScreen(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime, OVERLAY *overlays, int overlaycount);
+void glDirectDrawSurface7_RenderScreen2(LPDIRECTDRAWSURFACE7 surface, int vsync, BOOL settime, OVERLAY *overlays, int overlaycount);
 
 static const DDSURFACEDESC2 ddsd256pal =
 {
@@ -254,7 +254,7 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 			if (This->timer)
 			{
 				if (DXGLTimer_CheckLastDraw(This->timer, dxglcfg.HackPaletteDelay))
-					glDirectDrawSurface7_RenderScreen(This->surface, dxglcfg.HackPaletteVsync, FALSE, NULL, 0);
+					glDirectDrawSurface7_RenderScreen2(This->surface, dxglcfg.HackPaletteVsync, FALSE, NULL, 0);
 			}
 		}
 	}

@@ -393,10 +393,10 @@ HRESULT glDirect3DDevice7_Create(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectD
 	This->glD3D7 = glD3D7;
 	glDirect3D7_AddRef(glD3D7);
 	This->glDDS7 = glDDS7;
-	if(!creator) glDDS7->AddRef();
+	if(!creator) glDirectDrawSurface7_AddRef(glDDS7);
 	This->renderer = This->glD3D7->glDD7->renderer;
 	ZeroMemory(&This->viewport,sizeof(D3DVIEWPORT7));
-	if(glDDS7->GetZBuffer()) zbuffer = 1;
+	if(glDDS7->zbuffer) zbuffer = 1;
 	ZeroMemory(&This->material,sizeof(D3DMATERIAL7));
 	This->lightsmax = 16;
 	This->lights = (glDirect3DLight**) malloc(16*sizeof(glDirect3DLight*));
@@ -438,7 +438,7 @@ void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This)
 		if(This->lights[i]) delete This->lights[i];
 	free(This->lights);
 	for(i = 0; i < 8; i++)
-		if(This->texstages[i].surface) This->texstages[i].surface->Release();
+		if(This->texstages[i].surface) glDirectDrawSurface7_Release(This->texstages[i].surface);
 	for(i = 0; i < This->materialcount; i++)
 	{
 		if(This->materials[i])
@@ -460,7 +460,7 @@ void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This)
 	{
 		if(This->textures[i])
 		{
-			This->textures[i]->Release();
+			glDirectDrawSurface7_Release(This->textures[i]);
 		}
 	}
 	free(This->viewports);
@@ -471,7 +471,7 @@ void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This)
 	if (This->glD3DDev2) free(This->glD3DDev2);
 	if (This->glD3DDev1) free(This->glD3DDev1);
 	glDirect3D7_Release(This->glD3D7);
-	if(!This->creator) This->glDDS7->Release();
+	if(!This->creator) glDirectDrawSurface7_Release(This->glDDS7);
 	free(This);
 	TRACE_EXIT(0,0);
 }
@@ -1278,8 +1278,8 @@ HRESULT WINAPI glDirect3DDevice7_GetRenderTarget(glDirect3DDevice7 *This, LPDIRE
 	TRACE_ENTER(2,14,This,14,lplpRenderTarget);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lplpRenderTarget) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	This->glDDS7->AddRef();
-	*lplpRenderTarget = This->glDDS7;
+	glDirectDrawSurface7_AddRef(This->glDDS7);
+	*lplpRenderTarget = (LPDIRECTDRAWSURFACE7)This->glDDS7;
 	TRACE_VAR("*lplpRenderTarget",14,*lplpRenderTarget);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1299,8 +1299,8 @@ HRESULT WINAPI glDirect3DDevice7_GetTexture(glDirect3DDevice7 *This, DWORD dwSta
 	if(!lplpTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!This->texstages[dwStage].surface) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	*lplpTexture = This->texstages[dwStage].surface;
-	This->texstages[dwStage].surface->AddRef();
+	*lplpTexture = (LPDIRECTDRAWSURFACE7)This->texstages[dwStage].surface;
+	glDirectDrawSurface7_AddRef(This->texstages[dwStage].surface);
 	TRACE_VAR("*lplpTexture",14,*lplpTexture);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -1547,7 +1547,7 @@ HRESULT WINAPI glDirect3DDevice7_SetRenderState(glDirect3DDevice7 *This, D3DREND
 		if(dwRenderState)
 		{
 			if(!This->textures[dwRenderState]) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-			glDirect3DDevice7_SetTexture(This,0,This->textures[dwRenderState]);
+			glDirect3DDevice7_SetTexture(This,0,(LPDIRECTDRAWSURFACE7)This->textures[dwRenderState]);
 		}
 		else glDirect3DDevice7_SetTexture(This,0,NULL);
 		break;
@@ -1682,9 +1682,9 @@ HRESULT WINAPI glDirect3DDevice7_SetRenderTarget(glDirect3DDevice7 *This, LPDIRE
 	ddsd.dwSize = sizeof(DDSURFACEDESC2);
 	lpNewRenderTarget->GetSurfaceDesc(&ddsd);
 	if(!(ddsd.ddsCaps.dwCaps & DDSCAPS_3DDEVICE)) TRACE_RET(HRESULT,23,DDERR_INVALIDSURFACETYPE);
-	if(This->glDDS7) This->glDDS7->Release();
+	if(This->glDDS7) glDirectDrawSurface7_Release(This->glDDS7);
 	This->glDDS7 = (glDirectDrawSurface7*)lpNewRenderTarget;
-	This->glDDS7->AddRef();
+	glDirectDrawSurface7_AddRef(This->glDDS7);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -1701,7 +1701,7 @@ HRESULT WINAPI glDirect3DDevice7_SetTexture(glDirect3DDevice7 *This, DWORD dwSta
 	TRACE_ENTER(3,14,This,8,dwStage,14,lpTexture);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwStage > 7) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(This->texstages[dwStage].surface) This->texstages[dwStage].surface->Release();
+	if(This->texstages[dwStage].surface) glDirectDrawSurface7_Release(This->texstages[dwStage].surface);
 	This->texstages[dwStage].surface = (glDirectDrawSurface7*)lpTexture;
 	if(lpTexture) lpTexture->AddRef();
 	if(This->texstages[dwStage].surface) glRenderer_SetTexture(This->renderer, dwStage, This->texstages[dwStage].surface->texture);
@@ -1958,7 +1958,7 @@ D3DTEXTUREHANDLE glDirect3DDevice7_AddTexture(glDirect3DDevice7 *This, glDirectD
 {
 	TRACE_ENTER(2,14,This,14,texture);
 	This->textures[This->texturecount] = texture;
-	texture->AddRef();
+	glDirectDrawSurface7_AddRef(texture);
 	This->texturecount++;
 	if(This->texturecount >= This->maxtextures)
 	{
@@ -1970,7 +1970,7 @@ D3DTEXTUREHANDLE glDirect3DDevice7_AddTexture(glDirect3DDevice7 *This, glDirectD
 			This->maxtextures -= 32;
 			This->texturecount--;
 			This->textures[This->texturecount] = NULL;
-			texture->Release();
+			glDirectDrawSurface7_Release(texture);
 			TRACE_EXIT(9,0xFFFFFFFF);
 			return 0xFFFFFFFF;
 		}
@@ -3354,7 +3354,8 @@ HRESULT WINAPI glDirect3DDevice3_SetRenderTarget(glDirect3DDevice3 *This, LPDIRE
 {
 	TRACE_ENTER(3,14,This,14,lpNewRenderTarget,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7, ((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7,
+		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice3_SetTexture(glDirect3DDevice3 *This, DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture)
@@ -3364,7 +3365,7 @@ HRESULT WINAPI glDirect3DDevice3_SetTexture(glDirect3DDevice3 *This, DWORD dwSta
 	glDirectDrawSurface7 *dds7;
 	if(lpTexture) dds7 = ((glDirect3DTexture2*)lpTexture)->glDDS7;
 	else dds7 = NULL;
-	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetTexture(This->glD3DDev7, dwStage,dds7));
+	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetTexture(This->glD3DDev7, dwStage, (LPDIRECTDRAWSURFACE7)dds7));
 }
 
 HRESULT WINAPI glDirect3DDevice3_SetTextureStageState(glDirect3DDevice3 *This, DWORD dwStage, D3DTEXTURESTAGESTATETYPE dwState, DWORD dwValue)
@@ -3727,7 +3728,8 @@ HRESULT WINAPI glDirect3DDevice2_SetRenderTarget(glDirect3DDevice2 *This, LPDIRE
 {
 	TRACE_ENTER(3,14,This,14,lpNewRenderTarget,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7, ((glDirectDrawSurface1*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7,
+		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpNewRenderTarget)->GetDDS7(),dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice2_SetTransform(glDirect3DDevice2 *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)

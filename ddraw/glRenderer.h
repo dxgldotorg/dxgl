@@ -21,8 +21,8 @@
 #ifdef __cplusplus
 struct glDirectDraw7;
 struct glDirect3DDevice7;
-class glDirectDrawSurface7;
-class glRenderWindow;
+struct glDirectDrawSurface7;
+struct glRenderWindow;
 extern "C" {
 #else
 typedef int glDirectDraw7;

@@ -19,7 +19,6 @@
 #ifndef __GLDIRECT3DDEVICE_H
 #define __GLDIRECT3DDEVICE_H
 
-class glDirectDrawSurface7;
 struct glDirect3D7;
 
 struct D3D1MATRIX
@@ -29,7 +28,7 @@ struct D3D1MATRIX
 };
 
 struct glDirect3DLight;
-class glDirectDrawSurface7;
+struct glDirectDrawSurface7;
 struct glDirect3DMaterial3;
 struct glDirect3DViewport3;
 struct glDirect3DDevice3;

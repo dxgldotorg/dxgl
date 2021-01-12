@@ -22,7 +22,7 @@
 #ifdef __cplusplus
 struct glDirect3DLight;
 struct glDirect3DDevice7;
-class glDirectDrawSurface7;
+struct glDirectDrawSurface7;
 extern "C" {
 #else
 typedef int glDirect3DLight;

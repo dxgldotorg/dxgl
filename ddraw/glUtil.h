@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2017 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,12 +20,10 @@
 #define _GLUTIL_H
 
 #ifdef __cplusplus
-class glDirectDrawSurface7;
 extern "C" {
-#else
-typedef int glDirectDrawSurface7;
 #endif
 
+struct glDirectDrawSurface7;
 struct glTexture;
 struct BufferObject;
 
