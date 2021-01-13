@@ -701,7 +701,7 @@ HRESULT WINAPI glDirect3D2_CreateDevice(glDirect3D2 *This, REFCLSID rclsid, LPDI
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
 	HRESULT err = glDirect3D7_CreateDevice2(This->glD3D7, rclsid,
-		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpDDS)->GetDDS7(),&lpD3DDev7,2);
+		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpDDS)->glDDS7,&lpD3DDev7,2);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice2,(LPVOID*)lplpD3DDevice);

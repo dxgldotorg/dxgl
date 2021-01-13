@@ -3729,7 +3729,7 @@ HRESULT WINAPI glDirect3DDevice2_SetRenderTarget(glDirect3DDevice2 *This, LPDIRE
 	TRACE_ENTER(3,14,This,14,lpNewRenderTarget,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7,
-		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpNewRenderTarget)->glDDS7,dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice2_SetTransform(glDirect3DDevice2 *This, D3DTRANSFORMSTATETYPE dtstTransformStateType, LPD3DMATRIX lpD3DMatrix)

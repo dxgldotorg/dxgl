@@ -305,7 +305,7 @@ HRESULT WINAPI glDirect3DViewport3_SetBackgroundDepth(glDirect3DViewport3 *This,
 	TRACE_ENTER(2, 14, This, 14, lpDDSurface);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->backZ && !lpDDSurface) TRACE_RET(HRESULT,23,D3D_OK);
-	if(((glDirectDrawSurface1*)lpDDSurface)->GetDDS7() == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
+	if(((glDirectDrawSurface1*)lpDDSurface)->glDDS7 == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
 	if(This->backZ)glDirectDrawSurface7_Release(This->backZ);
 	if(lpDDSurface) ret = lpDDSurface->QueryInterface(IID_IDirectDrawSurface7,(void**)&This->backZ);
 	else This->backZ = NULL;
