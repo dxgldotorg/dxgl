@@ -408,58 +408,104 @@ HRESULT WINAPI glDirectDrawSurface2_GetDDInterface(glDirectDrawSurface2 *This, L
 HRESULT WINAPI glDirectDrawSurface2_PageLock(glDirectDrawSurface2 *This, DWORD dwFlags);
 HRESULT WINAPI glDirectDrawSurface2_PageUnlock(glDirectDrawSurface2 *This, DWORD dwFlags);
 
-class glDirectDrawSurface3 : public IDirectDrawSurface3
+struct glDirectDrawSurface3Vtbl;
+typedef struct glDirectDrawSurface3
 {
-public:
-	glDirectDrawSurface3(glDirectDrawSurface7 *gl_DDS7);
-	// ddraw 1+ api
-	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj);
-	ULONG WINAPI AddRef();
-	ULONG WINAPI Release();
-	HRESULT WINAPI AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
-	HRESULT WINAPI AddOverlayDirtyRect(LPRECT lpRect);
-	HRESULT WINAPI Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
-	HRESULT WINAPI BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags);
-	HRESULT WINAPI BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans);
-	HRESULT WINAPI DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
-	HRESULT WINAPI EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
-	HRESULT WINAPI EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback);
-	HRESULT WINAPI Flip(LPDIRECTDRAWSURFACE3 lpDDSurfaceTargetOverride, DWORD dwFlags);
-	HRESULT WINAPI GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE3 FAR *lplpDDAttachedSurface);
-	HRESULT WINAPI GetBltStatus(DWORD dwFlags);
-	HRESULT WINAPI GetCaps(LPDDSCAPS lpDDSCaps);
-	HRESULT WINAPI GetClipper(LPDIRECTDRAWCLIPPER FAR *lplpDDClipper);
-	HRESULT WINAPI GetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
-	HRESULT WINAPI GetDC(HDC FAR *lphDC);
-	HRESULT WINAPI GetFlipStatus(DWORD dwFlags);
-	HRESULT WINAPI GetOverlayPosition(LPLONG lplX, LPLONG lplY);
-	HRESULT WINAPI GetPalette(LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
-	HRESULT WINAPI GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat);
-	HRESULT WINAPI GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc);
-	HRESULT WINAPI Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc);
-	HRESULT WINAPI IsLost();
-	HRESULT WINAPI Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent);
-	HRESULT WINAPI ReleaseDC(HDC hDC);
-	HRESULT WINAPI Restore();
-	HRESULT WINAPI SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper);
-	HRESULT WINAPI SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
-	HRESULT WINAPI SetOverlayPosition(LONG lX, LONG lY);
-	HRESULT WINAPI SetPalette(LPDIRECTDRAWPALETTE lpDDPalette);
-	HRESULT WINAPI Unlock(LPVOID lpSurfaceData);
-	HRESULT WINAPI UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRAWSURFACE3 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx);
-	HRESULT WINAPI UpdateOverlayDisplay(DWORD dwFlags);
-	HRESULT WINAPI UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSReference);
-	// ddraw 2+ api
-	HRESULT WINAPI GetDDInterface(LPVOID FAR *lplpDD);
-	HRESULT WINAPI PageLock(DWORD dwFlags);
-	HRESULT WINAPI PageUnlock(DWORD dwFlags);
-	// ddraw 3+ api
-	HRESULT WINAPI SetSurfaceDesc(LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
-	glDirectDrawSurface7 *GetDDS7() {return glDDS7;};
-private:
+	glDirectDrawSurface3Vtbl *lpVtbl;
 	glDirectDrawSurface7 *glDDS7;
-};
-class glDirectDrawSurface4 : public IDirectDrawSurface4
+} glDirectDrawSurface3;
+
+typedef struct glDirectDrawSurface3Vtbl
+{
+	HRESULT(WINAPI *QueryInterface)(glDirectDrawSurface3 *This, REFIID riid, void** ppvObj);
+	ULONG(WINAPI *AddRef)(glDirectDrawSurface3 *This);
+	ULONG(WINAPI *Release)(glDirectDrawSurface3 *This);
+	HRESULT(WINAPI *AddAttachedSurface)(glDirectDrawSurface3 *This, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
+	HRESULT(WINAPI *AddOverlayDirtyRect)(glDirectDrawSurface3 *This, LPRECT lpRect);
+	HRESULT(WINAPI *Blt)(glDirectDrawSurface3 *This, LPRECT lpDestRect, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+	HRESULT(WINAPI *BltBatch)(glDirectDrawSurface3 *This, LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags);
+	HRESULT(WINAPI *BltFast)(glDirectDrawSurface3 *This, DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans);
+	HRESULT(WINAPI *DeleteAttachedSurface)(glDirectDrawSurface3 *This, DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
+	HRESULT(WINAPI *EnumAttachedSurfaces)(glDirectDrawSurface3 *This, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
+	HRESULT(WINAPI *EnumOverlayZOrders)(glDirectDrawSurface3 *This, DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback);
+	HRESULT(WINAPI *Flip)(glDirectDrawSurface3 *This, LPDIRECTDRAWSURFACE3 lpDDSurfaceTargetOverride, DWORD dwFlags);
+	HRESULT(WINAPI *GetAttachedSurface)(glDirectDrawSurface3 *This, LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE3 FAR *lplpDDAttachedSurface);
+	HRESULT(WINAPI *GetBltStatus)(glDirectDrawSurface3 *This, DWORD dwFlags);
+	HRESULT(WINAPI *GetCaps)(glDirectDrawSurface3 *This, LPDDSCAPS lpDDSCaps);
+	HRESULT(WINAPI *GetClipper)(glDirectDrawSurface3 *This, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper);
+	HRESULT(WINAPI *GetColorKey)(glDirectDrawSurface3 *This, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
+	HRESULT(WINAPI *GetDC)(glDirectDrawSurface3 *This, HDC FAR *lphDC);
+	HRESULT(WINAPI *GetFlipStatus)(glDirectDrawSurface3 *This, DWORD dwFlags);
+	HRESULT(WINAPI *GetOverlayPosition)(glDirectDrawSurface3 *This, LPLONG lplX, LPLONG lplY);
+	HRESULT(WINAPI *GetPalette)(glDirectDrawSurface3 *This, LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
+	HRESULT(WINAPI *GetPixelFormat)(glDirectDrawSurface3 *This, LPDDPIXELFORMAT lpDDPixelFormat);
+	HRESULT(WINAPI *GetSurfaceDesc)(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpDDSurfaceDesc);
+	HRESULT(WINAPI *Initialize)(glDirectDrawSurface3 *This, LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc);
+	HRESULT(WINAPI *IsLost)(glDirectDrawSurface3 *This);
+	HRESULT(WINAPI *Lock)(glDirectDrawSurface3 *This, LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent);
+	HRESULT(WINAPI *ReleaseDC)(glDirectDrawSurface3 *This, HDC hDC);
+	HRESULT(WINAPI *Restore)(glDirectDrawSurface3 *This);
+	HRESULT(WINAPI *SetClipper)(glDirectDrawSurface3 *This, LPDIRECTDRAWCLIPPER lpDDClipper);
+	HRESULT(WINAPI *SetColorKey)(glDirectDrawSurface3 *This, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
+	HRESULT(WINAPI *SetOverlayPosition)(glDirectDrawSurface3 *This, LONG lX, LONG lY);
+	HRESULT(WINAPI *SetPalette)(glDirectDrawSurface3 *This, LPDIRECTDRAWPALETTE lpDDPalette);
+	HRESULT(WINAPI *Unlock)(glDirectDrawSurface3 *This, LPVOID lpSurfaceData);
+	HRESULT(WINAPI *UpdateOverlay)(glDirectDrawSurface3 *This, LPRECT lpSrcRect, LPDIRECTDRAWSURFACE3 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx);
+	HRESULT(WINAPI *UpdateOverlayDisplay)(glDirectDrawSurface3 *This, DWORD dwFlags);
+	HRESULT(WINAPI *UpdateOverlayZOrder)(glDirectDrawSurface3 *This, DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSReference);
+	HRESULT(WINAPI *GetDDInterface)(glDirectDrawSurface3 *This, LPVOID FAR *lplpDD);
+	HRESULT(WINAPI *PageLock)(glDirectDrawSurface3 *This, DWORD dwFlags);
+	HRESULT(WINAPI *PageUnlock)(glDirectDrawSurface3 *This, DWORD dwFlags);
+	HRESULT(WINAPI *SetSurfaceDesc)(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
+} glDirectDrawSurface3Vtbl;
+
+HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface3 **glDDS3);
+// ddraw 1+ api
+HRESULT WINAPI glDirectDrawSurface3_QueryInterface(glDirectDrawSurface3 *This, REFIID riid, void** ppvObj);
+ULONG WINAPI glDirectDrawSurface3_AddRef(glDirectDrawSurface3 *This);
+ULONG WINAPI glDirectDrawSurface3_Release(glDirectDrawSurface3 *This);
+HRESULT WINAPI glDirectDrawSurface3_AddAttachedSurface(glDirectDrawSurface3 *This, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
+HRESULT WINAPI glDirectDrawSurface3_AddOverlayDirtyRect(glDirectDrawSurface3 *This, LPRECT lpRect);
+HRESULT WINAPI glDirectDrawSurface3_Blt(glDirectDrawSurface3 *This, LPRECT lpDestRect, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx);
+HRESULT WINAPI glDirectDrawSurface3_BltBatch(glDirectDrawSurface3 *This, LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_BltFast(glDirectDrawSurface3 *This, DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans);
+HRESULT WINAPI glDirectDrawSurface3_DeleteAttachedSurface(glDirectDrawSurface3 *This, DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface);
+HRESULT WINAPI glDirectDrawSurface3_EnumAttachedSurfaces(glDirectDrawSurface3 *This, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback);
+HRESULT WINAPI glDirectDrawSurface3_EnumOverlayZOrders(glDirectDrawSurface3 *This, DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback);
+HRESULT WINAPI glDirectDrawSurface3_Flip(glDirectDrawSurface3 *This, LPDIRECTDRAWSURFACE3 lpDDSurfaceTargetOverride, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_GetAttachedSurface(glDirectDrawSurface3 *This, LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE3 FAR *lplpDDAttachedSurface);
+HRESULT WINAPI glDirectDrawSurface3_GetBltStatus(glDirectDrawSurface3 *This, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_GetCaps(glDirectDrawSurface3 *This, LPDDSCAPS lpDDSCaps);
+HRESULT WINAPI glDirectDrawSurface3_GetClipper(glDirectDrawSurface3 *This, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper);
+HRESULT WINAPI glDirectDrawSurface3_GetColorKey(glDirectDrawSurface3 *This, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
+HRESULT WINAPI glDirectDrawSurface3_GetDC(glDirectDrawSurface3 *This, HDC FAR *lphDC);
+HRESULT WINAPI glDirectDrawSurface3_GetFlipStatus(glDirectDrawSurface3 *This, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_GetOverlayPosition(glDirectDrawSurface3 *This, LPLONG lplX, LPLONG lplY);
+HRESULT WINAPI glDirectDrawSurface3_GetPalette(glDirectDrawSurface3 *This, LPDIRECTDRAWPALETTE FAR *lplpDDPalette);
+HRESULT WINAPI glDirectDrawSurface3_GetPixelFormat(glDirectDrawSurface3 *This, LPDDPIXELFORMAT lpDDPixelFormat);
+HRESULT WINAPI glDirectDrawSurface3_GetSurfaceDesc(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpDDSurfaceDesc);
+HRESULT WINAPI glDirectDrawSurface3_Initialize(glDirectDrawSurface3 *This, LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc);
+HRESULT WINAPI glDirectDrawSurface3_IsLost(glDirectDrawSurface3 *This);
+HRESULT WINAPI glDirectDrawSurface3_Lock(glDirectDrawSurface3 *This, LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent);
+HRESULT WINAPI glDirectDrawSurface3_ReleaseDC(glDirectDrawSurface3 *This, HDC hDC);
+HRESULT WINAPI glDirectDrawSurface3_Restore(glDirectDrawSurface3 *This);
+HRESULT WINAPI glDirectDrawSurface3_SetClipper(glDirectDrawSurface3 *This, LPDIRECTDRAWCLIPPER lpDDClipper);
+HRESULT WINAPI glDirectDrawSurface3_SetColorKey(glDirectDrawSurface3 *This, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey);
+HRESULT WINAPI glDirectDrawSurface3_SetOverlayPosition(glDirectDrawSurface3 *This, LONG lX, LONG lY);
+HRESULT WINAPI glDirectDrawSurface3_SetPalette(glDirectDrawSurface3 *This, LPDIRECTDRAWPALETTE lpDDPalette);
+HRESULT WINAPI glDirectDrawSurface3_Unlock(glDirectDrawSurface3 *This, LPVOID lpSurfaceData);
+HRESULT WINAPI glDirectDrawSurface3_UpdateOverlay(glDirectDrawSurface3 *This, LPRECT lpSrcRect, LPDIRECTDRAWSURFACE3 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx);
+HRESULT WINAPI glDirectDrawSurface3_UpdateOverlayDisplay(glDirectDrawSurface3 *This, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_UpdateOverlayZOrder(glDirectDrawSurface3 *This, DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSReference);
+// ddraw 2+ api
+HRESULT WINAPI glDirectDrawSurface3_GetDDInterface(glDirectDrawSurface3 *This, LPVOID FAR *lplpDD);
+HRESULT WINAPI glDirectDrawSurface3_PageLock(glDirectDrawSurface3 *This, DWORD dwFlags);
+HRESULT WINAPI glDirectDrawSurface3_PageUnlock(glDirectDrawSurface3 *This, DWORD dwFlags);
+// ddraw 3+ api
+HRESULT WINAPI glDirectDrawSurface3_SetSurfaceDesc(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
+
+	
+	class glDirectDrawSurface4 : public IDirectDrawSurface4
 {
 public:
 	glDirectDrawSurface4(glDirectDrawSurface7 *gl_DDS7);
