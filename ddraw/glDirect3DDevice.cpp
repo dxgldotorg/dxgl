@@ -3355,7 +3355,7 @@ HRESULT WINAPI glDirect3DDevice3_SetRenderTarget(glDirect3DDevice3 *This, LPDIRE
 	TRACE_ENTER(3,14,This,14,lpNewRenderTarget,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_RET(HRESULT,23,glDirect3DDevice7_SetRenderTarget(This->glD3DDev7,
-		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface4*)lpNewRenderTarget)->GetDDS7(),dwFlags));
+		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface4*)lpNewRenderTarget)->glDDS7,dwFlags));
 }
 
 HRESULT WINAPI glDirect3DDevice3_SetTexture(glDirect3DDevice3 *This, DWORD dwStage, LPDIRECT3DTEXTURE2 lpTexture)
