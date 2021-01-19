@@ -25,7 +25,7 @@ extern "C" {
 
 struct ShaderManager;
 
-typedef struct
+typedef struct _GENSHADER2D
 {
 	GLint vs;
 	GLint fs;
@@ -36,11 +36,11 @@ typedef struct
 	GLint uniforms[16];
 } _GENSHADER2D;
 
-struct GenShader2D
+typedef struct GenShader2D
 {
 	_GENSHADER2D shader;
 	__int64 id;
-};
+} GenShader2D;
 
 typedef struct ShaderGen2D
 {
