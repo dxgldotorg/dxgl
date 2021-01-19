@@ -1257,7 +1257,7 @@ ULONG WINAPI glDirectDraw7_AddRef(glDirectDraw7 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	InterlockedIncrement(&This->refcount7);
+	InterlockedIncrement((LONG*)&This->refcount7);
 	TRACE_EXIT(8,This->refcount7);
 	return This->refcount7;
 }
@@ -1267,7 +1267,7 @@ ULONG WINAPI glDirectDraw7_Release(glDirectDraw7 *This)
 	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	if (This->refcount7 == 0) TRACE_RET(ULONG,8,0);
-	InterlockedDecrement(&This->refcount7);
+	InterlockedDecrement((LONG*)&This->refcount7);
 	ret = This->refcount7;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) &&
 		(This->refcount2 == 0) && (This->refcount1 == 0))
@@ -1280,7 +1280,7 @@ ULONG WINAPI glDirectDraw7_AddRef4(glDirectDraw7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount4);
+	InterlockedIncrement((LONG*)&This->refcount4);
 	TRACE_EXIT(8, This->refcount4);
 	return This->refcount4;
 }
@@ -1290,7 +1290,7 @@ ULONG WINAPI glDirectDraw7_Release4(glDirectDraw7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount4 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount4);
+	InterlockedDecrement((LONG*)&This->refcount4);
 	ret = This->refcount4;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) &&
 		(This->refcount2 == 0) && (This->refcount1 == 0))
@@ -1303,7 +1303,7 @@ ULONG WINAPI glDirectDraw7_AddRef2(glDirectDraw7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount2);
+	InterlockedIncrement((LONG*)&This->refcount2);
 	TRACE_EXIT(8, This->refcount2);
 	return This->refcount2;
 }
@@ -1313,7 +1313,7 @@ ULONG WINAPI glDirectDraw7_Release2(glDirectDraw7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount2 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount2);
+	InterlockedDecrement((LONG*)&This->refcount2);
 	ret = This->refcount2;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) &&
 		(This->refcount2 == 0) && (This->refcount1 == 0))
@@ -1326,7 +1326,7 @@ ULONG WINAPI glDirectDraw7_AddRef1(glDirectDraw7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount1);
+	InterlockedIncrement((LONG*)&This->refcount1);
 	TRACE_EXIT(8, This->refcount1);
 	return This->refcount1;
 }
@@ -1336,7 +1336,7 @@ ULONG WINAPI glDirectDraw7_Release1(glDirectDraw7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount1 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount1);
+	InterlockedDecrement((LONG*)&This->refcount1);
 	ret = This->refcount1;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) &&
 		(This->refcount2 == 0) && (This->refcount1 == 0))

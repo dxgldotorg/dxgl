@@ -619,7 +619,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRef(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	InterlockedIncrement(&This->refcount7);
+	InterlockedIncrement((LONG*)&This->refcount7);
 	TRACE_EXIT(8,This->refcount7);
 	return This->refcount7;
 }
@@ -629,7 +629,7 @@ ULONG WINAPI glDirectDrawSurface7_Release(glDirectDrawSurface7 *This)
 	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
 	if (This->refcount7 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount7);
+	InterlockedDecrement((LONG*)&This->refcount7);
 	ret = This->refcount7;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -641,7 +641,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRef4(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount4);
+	InterlockedIncrement((LONG*)&This->refcount4);
 	TRACE_EXIT(8, This->refcount4);
 	return This->refcount4;
 }
@@ -651,7 +651,7 @@ ULONG WINAPI glDirectDrawSurface7_Release4(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount4 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount4);
+	InterlockedDecrement((LONG*)&This->refcount4);
 	ret = This->refcount4;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -663,7 +663,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRef3(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount3);
+	InterlockedIncrement((LONG*)&This->refcount3);
 	TRACE_EXIT(8, This->refcount3);
 	return This->refcount3;
 }
@@ -673,7 +673,7 @@ ULONG WINAPI glDirectDrawSurface7_Release3(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount3 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount3);
+	InterlockedDecrement((LONG*)&This->refcount3);
 	ret = This->refcount3;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -685,7 +685,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRef2(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount2);
+	InterlockedIncrement((LONG*)&This->refcount2);
 	TRACE_EXIT(8, This->refcount2);
 	return This->refcount2;
 }
@@ -695,7 +695,7 @@ ULONG WINAPI glDirectDrawSurface7_Release2(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount2 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount2);
+	InterlockedDecrement((LONG*)&This->refcount2);
 	ret = This->refcount2;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -707,7 +707,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRef1(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcount1);
+	InterlockedIncrement((LONG*)&This->refcount1);
 	TRACE_EXIT(8, This->refcount1);
 	return This->refcount1;
 }
@@ -717,7 +717,7 @@ ULONG WINAPI glDirectDrawSurface7_Release1(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcount1 == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcount1);
+	InterlockedDecrement((LONG*)&This->refcount1);
 	ret = This->refcount1;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -729,7 +729,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRefGamma(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcountgamma);
+	InterlockedIncrement((LONG*)&This->refcountgamma);
 	TRACE_EXIT(8, This->refcountgamma);
 	return This->refcountgamma;
 }
@@ -739,7 +739,7 @@ ULONG WINAPI glDirectDrawSurface7_ReleaseGamma(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcountgamma == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcountgamma);
+	InterlockedDecrement((LONG*)&This->refcountgamma);
 	ret = This->refcountgamma;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -751,7 +751,7 @@ ULONG WINAPI glDirectDrawSurface7_AddRefColor(glDirectDrawSurface7 *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	InterlockedIncrement(&This->refcountcolor);
+	InterlockedIncrement((LONG*)&This->refcountcolor);
 	TRACE_EXIT(8, This->refcountcolor);
 	return This->refcountcolor;
 }
@@ -761,7 +761,7 @@ ULONG WINAPI glDirectDrawSurface7_ReleaseColor(glDirectDrawSurface7 *This)
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	ULONG ret;
 	if (This->refcountcolor == 0) TRACE_RET(ULONG, 8, 0);
-	InterlockedDecrement(&This->refcountcolor);
+	InterlockedDecrement((LONG*)&This->refcountcolor);
 	ret = This->refcountcolor;
 	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
@@ -2216,7 +2216,8 @@ HRESULT glDirectDrawSurface1_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawS
 	This->lpVtbl = &glDirectDrawSurface1_impl;
 	This->glDDS7 = gl_DDS7;
 	*glDDS1 = This;
-	TRACE_EXIT(-1, 0);
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface1_QueryInterface(glDirectDrawSurface1 *This, REFIID riid, void** ppvObj)
 {
@@ -2578,7 +2579,8 @@ HRESULT glDirectDrawSurface2_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawS
 	This->lpVtbl = &glDirectDrawSurface2_impl;
 	This->glDDS7 = gl_DDS7;
 	*glDDS2 = This;
-	TRACE_EXIT(-1, 0);
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDrawSurface2_QueryInterface(glDirectDrawSurface2 *This, REFIID riid, void** ppvObj)
 {
@@ -2963,7 +2965,8 @@ HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawS
 	This->lpVtbl = &glDirectDrawSurface3_impl;
 	This->glDDS7 = gl_DDS7;
 	*glDDS3 = This;
-	TRACE_EXIT(-1, 0);
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 
 HRESULT WINAPI glDirectDrawSurface3_QueryInterface(glDirectDrawSurface3 *This, REFIID riid, void** ppvObj)
@@ -3362,7 +3365,8 @@ HRESULT glDirectDrawSurface4_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawS
 	This->lpVtbl = &glDirectDrawSurface4_impl;
 	This->glDDS7 = gl_DDS7;
 	*glDDS4 = This;
-	TRACE_EXIT(-1, 0);
+	TRACE_EXIT(23, DD_OK);
+	return DD_OK;
 }
 
 HRESULT WINAPI glDirectDrawSurface4_QueryInterface(glDirectDrawSurface4 *This, REFIID riid, void** ppvObj)

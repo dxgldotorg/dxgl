@@ -579,7 +579,7 @@ ULONG glDirect3DDevice7_AddRefInternal(glDirect3DDevice7 *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 	TRACE_EXIT(8,This->refcount);
 	return This->refcount;
 }
@@ -588,7 +588,7 @@ ULONG glDirect3DDevice7_ReleaseInternal(glDirect3DDevice7 *This)
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	InterlockedDecrement(&This->refcount);
+	InterlockedDecrement((LONG*)&This->refcount);
 	ret = This->refcount;
 	if (This->refcount == 0) glDirect3DDevice7_Destroy(This);
 	TRACE_EXIT(8,ret);

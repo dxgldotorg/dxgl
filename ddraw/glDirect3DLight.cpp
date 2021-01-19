@@ -72,7 +72,7 @@ ULONG WINAPI glDirect3DLight_AddRef(glDirect3DLight *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 	TRACE_EXIT(8,This->refcount);
 	return This->refcount;
 }
@@ -81,7 +81,7 @@ ULONG WINAPI glDirect3DLight_Release(glDirect3DLight *This)
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	InterlockedDecrement(&This->refcount);
+	InterlockedDecrement((LONG*)&This->refcount);
 	ret = This->refcount;
 	if(This->refcount == 0) free(This);
 	TRACE_EXIT(8,ret);

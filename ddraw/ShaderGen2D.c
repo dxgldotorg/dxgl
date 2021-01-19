@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2019 William Feely
+// Copyright (C) 2013-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -882,8 +882,9 @@ void ShaderGen2D_Init(ShaderGen2D *gen, glExtensions *ext, ShaderManager *shader
 
 void ShaderGen2D_Delete(ShaderGen2D *gen)
 {
+	int i;
 	if (!gen->genshaders2D) return;
-	for (int i = 0; i < gen->shadercount; i++)
+	for (i = 0; i < gen->shadercount; i++)
 	{
 		gen->genshaders2D[i].id = 0;
 		if (gen->genshaders2D[i].shader.prog) gen->ext->glDeleteProgram(gen->genshaders2D[i].shader.prog);
@@ -1011,22 +1012,30 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 {
 	STRING tmp;
 	DWORD rop;
-	tmp.ptr = NULL;
 	BOOL intproc = FALSE;
 	BOOL usedest = FALSE;
+	char idstring[30];
+	STRING *vsrc;
+	STRING *fsrc;
+	GLint srclen;
+	GLint result;
+	char *infolog;
+#ifdef _DEBUG
+	GLint loglen;
+#endif
 	unsigned char srctype = (id >> 32) & 0xFF;
 	unsigned char srctype2;
 	unsigned char desttype = (id >> 40) & 0xFF;
+	tmp.ptr = NULL;
 	if (srctype == desttype) srctype2 = 0;
 	else srctype2 = srctype;
 	gen->genshaders2D[index].shader.vsrc.ptr = NULL;
 	gen->genshaders2D[index].shader.fsrc.ptr = NULL;
-	char idstring[30];
 	_snprintf(idstring, 29, "%0.16I64X\n", id);
 	idstring[29] = 0;
 	// Create vertex shader
 	// Header
-	STRING *vsrc = &gen->genshaders2D[index].shader.vsrc;
+	vsrc = &gen->genshaders2D[index].shader.vsrc;
 	String_Append(vsrc, revheader);
 	glslver(vsrc, gen->ext->glver_major, gen->ext->glver_minor);
 	if (id & DDBLT_ROP)
@@ -1084,14 +1093,12 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	TRACE_STRING("\nCompiling 2D blitter vertex shader:\n");
 #endif
 	gen->genshaders2D[index].shader.vs = gen->ext->glCreateShader(GL_VERTEX_SHADER);
-	GLint srclen = strlen(vsrc->ptr);
+	srclen = strlen(vsrc->ptr);
 	gen->ext->glShaderSource(gen->genshaders2D[index].shader.vs, 1, &vsrc->ptr, &srclen);
 	gen->ext->glCompileShader(gen->genshaders2D[index].shader.vs);
-	GLint result;
-	char *infolog = NULL;
+	infolog = NULL;
 	gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_COMPILE_STATUS, &result);
 #ifdef _DEBUG
-	GLint loglen;
 	if (!result)
 	{
 		gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_INFO_LOG_LENGTH, &loglen);
@@ -1106,7 +1113,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 #endif
 	usedest = FALSE;
 	// Create fragment shader
-	STRING *fsrc = &gen->genshaders2D[index].shader.fsrc;
+	fsrc = &gen->genshaders2D[index].shader.fsrc;
 	String_Append(fsrc, revheader);
 	glslver(fsrc, gen->ext->glver_major, gen->ext->glver_minor);
 	if (id & DDBLT_ROP)

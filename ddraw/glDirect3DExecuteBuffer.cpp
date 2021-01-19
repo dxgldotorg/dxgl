@@ -51,7 +51,8 @@ HRESULT glDirect3DExecuteBuffer_Create(LPD3DEXECUTEBUFFERDESC lpDesc, glDirect3D
 	}
 	ZeroMemory(&This->datadesc,sizeof(D3DEXECUTEDATA));
 	This->datadesc.dwSize = sizeof(D3DEXECUTEDATA);
-	TRACE_EXIT(0,0);
+	TRACE_EXIT(23, D3D_OK);
+	return DD_OK;
 }
 void glDirect3DExecuteBuffer_Destroy(glDirect3DExecuteBuffer *This)
 {
@@ -80,7 +81,7 @@ ULONG WINAPI glDirect3DExecuteBuffer_AddRef(glDirect3DExecuteBuffer *This)
 {
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	InterlockedIncrement(&This->refcount);
+	InterlockedIncrement((LONG*)&This->refcount);
 	TRACE_EXIT(8,This->refcount);
 	return This->refcount;
 }
@@ -90,7 +91,7 @@ ULONG WINAPI glDirect3DExecuteBuffer_Release(glDirect3DExecuteBuffer *This)
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
 	ULONG ret;
-	InterlockedDecrement(&This->refcount);
+	InterlockedDecrement((LONG*)&This->refcount);
 	ret = This->refcount;
 	if(This->refcount == 0) glDirect3DExecuteBuffer_Destroy(This);
 	TRACE_EXIT(8,ret);
