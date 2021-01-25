@@ -942,8 +942,16 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\ddraw\glTexture.cpp"
+				RelativePath="..\..\ddraw\glTexture.c"
 				>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\ddraw\glUtil.cpp"

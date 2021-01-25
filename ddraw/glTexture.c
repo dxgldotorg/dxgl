@@ -184,6 +184,7 @@ void ShrinkMip(DWORD *x, DWORD *y)
 
 HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend, GLenum targetoverride)
 {
+	int i;
 	glTexture *newtexture;
 	if (!texture) return DDERR_INVALIDPARAMS;
 	if (!IsWritablePointer(texture, sizeof(glTexture*), TRUE))
@@ -334,7 +335,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 	if (!newtexture->miplevel) newtexture->miplevel = 1;
 	if (newtexture->miplevel > 1)
 	{
-		for (int i = 1; i < newtexture->miplevel; i++)
+		for (i = 1; i < newtexture->miplevel; i++)
 		{
 			memcpy(&newtexture->levels[i].ddsd, &newtexture->levels[0].ddsd, sizeof(DDSURFACEDESC2));
 			newtexture->levels[i].ddsd.dwMipMapCount = newtexture->levels[0].ddsd.dwMipMapCount - i;
@@ -355,6 +356,7 @@ ULONG glTexture_AddRef(glTexture *This)
 }
 ULONG glTexture_Release(glTexture *This, BOOL backend)
 {
+	int i;
 	ULONG ret;
 	ret = InterlockedDecrement((LONG*)&This->refcount);
 	if (This->refcount == 0)
@@ -362,7 +364,7 @@ ULONG glTexture_Release(glTexture *This, BOOL backend)
 		if (This->palette) glTexture_Release(This->palette, backend);
 		if (This->stencil) glTexture_Release(This->stencil, backend);
 		if (This->dummycolor) glTexture_Release(This->dummycolor, backend);
-		for (int i = 0; i < This->miplevel; i++)
+		for (i = 0; i < This->miplevel; i++)
 		{
 			if (This->levels[i].buffer) free(This->levels[i].buffer);
 			if (This->levels[i].bigbuffer) free(This->levels[i].bigbuffer);
@@ -411,10 +413,12 @@ HRESULT glTexture_Unlock(glTexture *This, GLint level, LPRECT r, BOOL backend)
 }
 HRESULT glTexture_GetDC(glTexture *This, GLint level, HDC *hdc, glDirectDrawPalette *palette)
 {
+	int i;
 	HRESULT error;
 	DWORD colors[256];
 	DWORD colormasks[3];
 	LPVOID surface;
+	HGDIOBJ temp;
 	if (This->levels[level].hdc) return DDERR_DCALREADYCREATED;
 	if (!This->levels[level].bitmapinfo)
 	{
@@ -442,7 +446,7 @@ HRESULT glTexture_GetDC(glTexture *This, GLint level, HDC *hdc, glDirectDrawPale
 	if ((This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount == 8) && palette)
 	{
 		memcpy(colors, palette->palette, 1024);
-		for (int i = 0; i < 256; i++)
+		for (i = 0; i < 256; i++)
 			colors[i] = ((colors[i] & 0x0000FF) << 16) | (colors[i] & 0x00FF00) | ((colors[i] & 0xFF0000) >> 16);
 		memcpy(This->levels[level].bitmapinfo->bmiColors, colors, 1024);
 	}
@@ -453,7 +457,7 @@ HRESULT glTexture_GetDC(glTexture *This, GLint level, HDC *hdc, glDirectDrawPale
 		This->levels[level].bitmapinfo, DIB_RGB_COLORS, &surface, NULL, 0);
 	memcpy(surface, This->levels[level].ddsd.lpSurface,
 		This->levels[level].ddsd.lPitch*This->levels[level].ddsd.dwHeight);
-	HGDIOBJ temp = SelectObject(This->levels[level].hdc, This->levels[level].hbitmap);
+	temp = SelectObject(This->levels[level].hdc, This->levels[level].hbitmap);
 	DeleteObject(temp);
 	*hdc = This->levels[level].hdc;
 	return DD_OK;
@@ -502,8 +506,8 @@ BOOL glTexture_ValidatePixelFormat(DDPIXELFORMAT *pixelformat)
 {
 	int i;
 	int texformat = -1;
-	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 	DDPIXELFORMAT compformat;
+	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 	if (pixelformat->dwFlags & DDPF_FOURCC)
 	{
 		ZeroMemory(&compformat, sizeof(DDPIXELFORMAT));
@@ -818,6 +822,7 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 	// data should be null to create uninitialized texture or be pointer to top-level
 	// buffer to retain texture data
 	GLenum error;
+	GLvoid *data;
 	BOOL repairfail = FALSE;
 	int i;
 	if (This->internalformats[1] == 0) return FALSE;
@@ -827,7 +832,6 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 		for (i = 0; i < This->miplevel; i++)
 			glTexture__Download(This, i);
 	}
-	GLvoid *data;
 	if (preserve) data = This->levels[0].bigbuffer ? This->levels[0].bigbuffer : This->levels[0].buffer;
 	glUtil_SetTexture(This->renderer->util, 0, This);
 	for (i = 0; i < This->miplevel; i++)
@@ -895,8 +899,8 @@ void glTexture__FinishCreate(glTexture *This)
 	int bytes2;
 	DWORD x, y;
 	GLenum error;
-	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 	DDPIXELFORMAT compformat;
+	numtexformats = END_TEXFORMATS - START_TEXFORMATS;
 	if (This->levels[0].ddsd.ddpfPixelFormat.dwFlags & DDPF_FOURCC)
 	{
 		ZeroMemory(&compformat, sizeof(DDPIXELFORMAT));
