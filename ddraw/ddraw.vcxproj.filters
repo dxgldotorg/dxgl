@@ -256,9 +256,6 @@
     <ClCompile Include="hooks.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="const.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -278,6 +275,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShaderManager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glTexture.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

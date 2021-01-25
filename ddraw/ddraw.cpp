@@ -38,7 +38,7 @@ const GUID device_template =
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
 
 
-void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd)
+void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
 	if (!glDD7->renderer)
@@ -401,7 +401,6 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
 	TRACE_EXIT(22,ret);
 	return ret;
 }
-#ifdef _UNICODE
 /**
   * Enumerates the available device GUIDs for DXGL, Unicode character format.
   * @param lpCallback
@@ -413,8 +412,9 @@ BOOL CALLBACK MonitorEnum(HMONITOR hMonitor, HDC unused, LPRECT unused2, LPARAM 
   *  to the system.
   * @return
   *  Returns DD_OK if the call succeeds, or DDERR_INVALIDPARAMS if lpCallback
-  *  is invalid.
+  *  is invalid, or DDERR_UNSUPPORTED if called on a non-Unicode build of DXGL.
   */
+#ifdef _UNICODE
 HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags)
 {
 	TRACE_ENTER(3,14,lpCallback,14,lpContext,9,dwFlags);
@@ -575,7 +575,7 @@ DDRAW_API void WINAPI SetAppCompatData(int a, int b)
 DDRAW_API BOOL IsDXGLDDraw()
 {
 	TRACE_ENTER(0);
-	TRACE_EXIT(0,0);
+	TRACE_EXIT(22,TRUE);
 	return TRUE;
 }
 

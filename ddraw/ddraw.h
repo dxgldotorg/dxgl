@@ -57,11 +57,17 @@ DDRAW_API void WINAPI ReleaseDDThreadLock();
 DDRAW_API BOOL IsDXGLDDraw();
 
 void DeleteDirectDraw();
-extern "C" {extern DXGLCFG dxglcfg; }
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern DXGLCFG dxglcfg;
+#ifdef __cplusplus
+}
+#endif
 extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
 struct glDirectDraw7;
-void InitGL(int width, int height, int bpp, bool fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, bool devwnd);
+void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, struct glDirectDraw7 *glDD7, BOOL devwnd);
 
 #endif //_DDRAW_PRIVATE_H
