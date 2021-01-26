@@ -153,7 +153,6 @@ typedef struct glRenderer
 	D3DLIGHT7 lights[8];
 	D3DMATRIX transform[24];
 	D3DVIEWPORT7 viewport;
-	CommandBuffer cmd1, cmd2;
 	float mulx, muly;
 	size_t scenesize, scenesizevertex, scenesizeindex;
 	DWORD last_fvf;
@@ -196,12 +195,9 @@ void glRenderer_SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer_DXGLBreak(glRenderer *This);
-void glRenderer_EndCommand(glRenderer *This, BOOL wait, BOOL in_cs);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
-void glRenderer__InitCommandBuffer(glRenderer *This, CommandBuffer *cmd, size_t framesize);
-void glRenderer__DeleteCommandBuffer(CommandBuffer *cmd);
 void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend);

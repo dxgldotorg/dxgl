@@ -1596,32 +1596,6 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	return TRUE;
 }
 
-void glRenderer__InitCommandBuffer(glRenderer *This, CommandBuffer *cmd, size_t framesize)
-{
-	size_t uploadsize = NextMultipleOf1024(framesize * 2);
-	if (uploadsize > 134217728) // Over 4K resolution
-		uploadsize = NextMultipleOf1024((int)((float)framesize * 1.5f));
-	if (uploadsize > 268435456) // Over 8K resolution
-		uploadsize = NextMultipleOf1024((int)((float)framesize * 1.5f));
-	ZeroMemory(cmd, sizeof(CommandBuffer));
-	cmd->uploadsize = uploadsize;
-	cmd->uploadbuffer = (unsigned char *)malloc(uploadsize);
-	cmd->cmdsize = 1048576;
-	cmd->cmdbuffer = (unsigned char *)malloc(cmd->cmdsize);
-	BufferObject_Create(&cmd->vertices, This->ext, This->util);
-	BufferObject_SetData(cmd->vertices, GL_ARRAY_BUFFER, 4194304, NULL, GL_DYNAMIC_DRAW);
-	BufferObject_Create(&cmd->indices, This->ext, This->util);
-	BufferObject_SetData(cmd->vertices, GL_ELEMENT_ARRAY_BUFFER, 262144, NULL, GL_DYNAMIC_DRAW);
-}
-
-void glRenderer__DeleteCommandBuffer(CommandBuffer *cmd)
-{
-	if (cmd->uploadbuffer) free(cmd->uploadbuffer);
-	if (cmd->cmdbuffer) free(cmd->cmdbuffer);
-	if (cmd->vertices) BufferObject_Release(cmd->vertices);
-	if (cmd->indices) BufferObject_Release(cmd->indices);
-}
-
 void SetColorFillUniform(DWORD color, DWORD *colorsizes, int colororder, DWORD *colorbits, GLint uniform, glExtensions *ext)
 {
 	DWORD r, g, b, a;

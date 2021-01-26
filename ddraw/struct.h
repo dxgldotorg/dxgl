@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2019 William Feely
+// Copyright (C) 2015-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -454,25 +454,6 @@ typedef struct glDirectDrawPaletteVtbl
 	HRESULT(WINAPI *Initialize)(glDirectDrawPalette *This, LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable);
 	HRESULT(WINAPI *SetEntries)(glDirectDrawPalette *This, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries);
 } glDirectDrawPaletteVtbl;
-
-typedef struct CommandBuffer
-{
-	BYTE *cmdbuffer;
-	size_t cmdsize;
-	BYTE *uploadbuffer;
-	size_t uploadsize;
-	BufferObject *vertices;
-	BufferObject *indices;
-	size_t write_ptr_cmd;
-	size_t write_ptr_cmd_modify;
-	size_t read_ptr_cmd;
-	size_t write_ptr_upload;
-	size_t read_ptr_upload;
-	size_t write_ptr_vertex;
-	size_t read_ptr_vertex;
-	size_t write_ptr_index;
-	size_t read_ptr_index;
-} CommandBuffer;
 
 typedef struct RenderTarget
 {
