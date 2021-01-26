@@ -606,7 +606,6 @@
     <ClInclude Include="string.h" />
     <ClInclude Include="glTexture.h" />
     <ClInclude Include="struct.h" />
-    <ClInclude Include="struct_command.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="trace.h" />
     <ClInclude Include="util.h" />

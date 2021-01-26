@@ -1581,10 +1581,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\ddraw\struct_command.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\ddraw\timer.h"
 				>
 			</File>

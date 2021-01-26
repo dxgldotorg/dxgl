@@ -155,7 +155,6 @@ typedef struct glRenderer
 	D3DVIEWPORT7 viewport;
 	CommandBuffer cmd1, cmd2;
 	float mulx, muly;
-	RenderState state;
 	size_t scenesize, scenesizevertex, scenesizeindex;
 	DWORD last_fvf;
 	GLsizei fvf_stride;
@@ -166,7 +165,6 @@ typedef struct glRenderer
 	int overlaycount;
 } glRenderer;
 
-HRESULT glRenderer_AddCommand(glRenderer *This, QueueCmd *cmd, BOOL inner, BOOL wait);
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);
 void glRenderer_Delete(glRenderer *This);
 DWORD glRenderer_GetBPP(glRenderer *This);
