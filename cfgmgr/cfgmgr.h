@@ -122,6 +122,9 @@ typedef struct
 	TCHAR regkey[MAX_PATH + 80];
 	// For parsing .ini file
 	TCHAR inipath[MAX_PATH];
+	// System information
+	ULONGLONG SystemRAM;
+	ULONGLONG VideoRAM;
 } DXGLCFG;
 
 typedef struct
