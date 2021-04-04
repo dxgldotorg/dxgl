@@ -46,7 +46,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2019_7"
+!if ${COMPILER} == "VC2019_9"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2019"
 !ifdef _CPU_X64
@@ -178,12 +178,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_7"
+!else if ${COMPILER} == "VC2019_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.27/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2019.7 x64"
-!define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "AE3860A060BE483C9FCBCF6A41F561FAF2CD681F39138DD13A563E3F39CF4B4F41E7C0F7B58BC8B585B2728245025BE4B198F06634A97FA98847258272F9F59B"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.28/VC_redist.x64.exe
+!define runtime_name "Visual C++ 2019.9 x64"
+!define runtime_filename "VC_redist.x64.exe"
+!define runtime_sha512 "5170B3FD4A0FC637184044C9DBE7AB3F8CA115FBAC5EC851802C290139A3D99AACFD458FE2E925EB3282612C9B18D4C857F8C39284EFBF3DA49317A1FECC16FF"
 !define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -229,12 +229,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_7"
+!else if ${COMPILER} == "VC2019_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.27/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2019.7 x86"
-!define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "404D2301C4719B8791639E8100EFF6DF7CD9C3CA62AD0A5C7AC8252F8ADC2601AEEFE83DA982A409B9E3D901F74518FF98D2AF5EBDD8CC77067BE39C20EB1C56"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.28/VC_redist.x86.exe
+!define runtime_name "Visual C++ 2019.9 x86"
+!define runtime_filename "VC_redist.x86.exe"
+!define runtime_sha512 "A5C33E0F588E11B228CAF7DA0D64EE1456601680703ED35769BD7BC56A891E182FD35D5501598E344CA46F2BCC83FC388F27489F7512C81D27BFF4A61D1FDBDA"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -404,7 +404,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2019_7"
+  !if ${COMPILER} == "VC2019_9"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -466,12 +466,12 @@ Function .onInit
   !else
   !if ${download_runtime} >= 1
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2019_7"
+  !if ${COMPILER} == "VC2019_9"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.27.29016" $1
+  ${VersionCompare} "$0" "14.28.29913" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -586,7 +586,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_7"
+!if ${COMPILER} == "VC2019_9"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif
