@@ -162,6 +162,8 @@ typedef struct glRenderer
 	int xoffset, yoffset;
 	OVERLAY *overlays;
 	int overlaycount;
+	CmdBuffer cmdbuffer[3];
+	int current_cmdbuffer;
 } glRenderer;
 
 void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hwnd, glDirectDraw7 *glDD7, BOOL devwnd);

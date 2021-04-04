@@ -63,6 +63,7 @@ void BufferObject_SetData(BufferObject *This, GLenum target, GLsizeiptr size, GL
 	{
 		This->ext->glNamedBufferDataEXT(This->buffer, size, data, usage);
 	}
+	This->size = size;
 	else
 	{*/
 		glUtil_BindBuffer(This->util, This, target);

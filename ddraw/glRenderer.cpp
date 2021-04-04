@@ -141,6 +141,26 @@ void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint lev
 }
 
 /**
+  * Initializes a command buffer.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param buffer
+  *  Pointer to command buffer structure
+  */
+void glRenderer_InitCmdBuffer(glRenderer *This, CmdBuffer *buffer)
+{
+	ZeroMemory(buffer, sizeof(CmdBuffer));
+	BufferObject_Create(&buffer->vertices, This->ext, This->util);
+	BufferObject_Create(&buffer->indices, This->ext, This->util);
+	BufferObject_Create(&buffer->pixelunpack, This->ext, This->util);
+	BufferObject_SetData(buffer->vertices, GL_ARRAY_BUFFER, dxglcfg.VertexBufferSize * 1024, NULL, GL_STREAM_DRAW);
+	BufferObject_SetData(buffer->indices, GL_ARRAY_BUFFER, dxglcfg.IndexBufferSize * 1024, NULL, GL_STREAM_DRAW);
+	BufferObject_SetData(buffer->pixelunpack, GL_ARRAY_BUFFER, dxglcfg.UnpackBufferSize * 1024, NULL, GL_STREAM_DRAW);
+	buffer->cmdsize = dxglcfg.CmdBufferSize * 1024;
+	buffer->cmdbuffer = (DWORD*)malloc(dxglcfg.CmdBufferSize);
+}
+
+/**
   * Initializes a glRenderer object
   * @param This
   *  Pointer to glRenderer object to initialize
@@ -362,6 +382,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	{
 		// TODO:  Adjust window rect
 	}
+	
 	SetWindowPos(This->hWnd,HWND_TOP,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	glRenderWindow_Create(width, height, fullscreen, This->hWnd, glDD7, devwnd, &This->RenderWnd);
 	This->inputs[0] = (void*)width;
@@ -478,12 +499,6 @@ DWORD WINAPI glRenderer_ThreadEntry(void *entry)
   */
 void glRenderer_MakeTexture(glRenderer *This, glTexture *texture)
 {
-	/*MakeTextureCmd cmd;
-	cmd.opcode = OP_CREATE;
-	cmd.size = sizeof(glTexture*);
-	cmd.texture = texture;
-	glRenderer_AddCommand(This, (BYTE*)&cmd);
-	glRenderer_EndCommand(This, TRUE, FALSE);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->opcode = OP_CREATE;
@@ -503,12 +518,6 @@ void glRenderer_MakeTexture(glRenderer *This, glTexture *texture)
   */
 void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level) 
 {
-	/*UploadTextureCmd cmd;
-	cmd.opcode = OP_UPLOAD;
-	cmd.size = sizeof(UploadTextureCmd) - 8;
-	cmd.texture = texture;
-	cmd.level = level;
-	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = (void*)level;
@@ -529,13 +538,6 @@ void glRenderer_UploadTexture(glRenderer *This, glTexture *texture, GLint level)
   */
 void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint level)
 {
-	/*DownloadTextureCmd cmd;
-	cmd.opcode = OP_DOWNLOAD;
-	cmd.size = sizeof(DownloadTextureCmd) - 8;
-	cmd.texture = texture;
-	cmd.level = level;
-	glRenderer_AddCommand(This, (BYTE*)&cmd);
-	glRenderer_EndCommand(This, TRUE, FALSE);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = (void*)level;
@@ -554,11 +556,6 @@ void glRenderer_DownloadTexture(glRenderer *This, glTexture *texture, GLint leve
   */
 void glRenderer_DeleteTexture(glRenderer *This, glTexture * texture)
 {
-	/*DeleteTextureCmd cmd;
-	cmd.opcode = OP_DELETE;
-	cmd.size = sizeof(glTexture*);
-	cmd.texture = texture;
-	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->opcode = OP_DELETETEX;
@@ -618,14 +615,6 @@ HRESULT glRenderer_Blt(glRenderer *This, BltCommand *cmd)
   */
 void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
-	/*DrawScreenCmd cmd;
-	cmd.opcode = OP_DRAWSCREEN;
-	cmd.size = sizeof(DrawScreenCmd)-8;
-	cmd.texture = texture;
-	cmd.paltex =paltex;
-	cmd.vsync = vsync;
-	cmd.previous = previous;
-	glRenderer_AddCommand(This, (BYTE*)&cmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = texture;
 	This->inputs[1] = paltex;
@@ -653,14 +642,6 @@ void glRenderer_DrawScreen(glRenderer *This, glTexture *texture, glTexture *palt
   */
 void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
 {
-	/*
-	InitD3DCmd cmd;
-	cmd.opcode = OP_INITD3D;
-	cmd.size = sizeof(InitD3DCmd)-8;
-	cmd.zbuffer = zbuffer;
-	cmd.x = x;
-	cmd.y = y;
-	glRenderer_AddCommand(This, (BYTE*)&bltcmd);*/
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = (void*)zbuffer;
 	This->inputs[1] = (void*)x;
@@ -682,12 +663,6 @@ void glRenderer_InitD3D(glRenderer *This, int zbuffer, int x, int y)
   */
 HRESULT glRenderer_Clear(glRenderer *This, ClearCommand *cmd)
 {
-	/*
-	ClearCmd cmd;
-	clearcmd.opcode = OP_CLEAR;
-	clearcmd.size = sizeof(ClearCmd) - 8;
-	clearcmd.cmd = *cmd;
-	glRenderer_AddCommand(This, (BYTE*)&clearcmd); */
 	EnterCriticalSection(&This->cs);
 	This->inputs[0] = cmd;
 	This->opcode = OP_CLEAR;

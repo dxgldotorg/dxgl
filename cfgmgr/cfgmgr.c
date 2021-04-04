@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2021 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -691,6 +691,10 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->LowColorRendering = ReadDWORD(hKey, cfg->LowColorRendering, &cfgmask->LowColorRendering, _T("LowColorRendering"));
 	cfg->EnableDithering = ReadDWORD(hKey, cfg->EnableDithering, &cfgmask->EnableDithering, _T("EnableDithering"));
 	cfg->LimitTextureFormats = ReadDWORD(hKey, cfg->LimitTextureFormats, &cfgmask->LimitTextureFormats, _T("LimitTextureFormats"));
+	cfg->VertexBufferSize = ReadDWORD(hKey, cfg->VertexBufferSize, &cfgmask->VertexBufferSize, _T("VertexBufferSize"));
+	cfg->IndexBufferSize = ReadDWORD(hKey, cfg->IndexBufferSize, &cfgmask->IndexBufferSize, _T("IndexBufferSize"));
+	cfg->UnpackBufferSize = ReadDWORD(hKey, cfg->UnpackBufferSize, &cfgmask->UnpackBufferSize, _T("UnpackBufferSize"));
+	cfg->CmdBufferSize = ReadDWORD(hKey, cfg->CmdBufferSize, &cfgmask->CmdBufferSize, _T("CmdBufferSize"));
 	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -868,6 +872,10 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->LowColorRendering, cfgmask->LowColorRendering, _T("LowColorRendering"));
 	WriteDWORD(hKey, cfg->EnableDithering, cfgmask->EnableDithering, _T("EnableDithering"));
 	WriteDWORD(hKey, cfg->LimitTextureFormats, cfgmask->LimitTextureFormats, _T("LimitTextureFormats"));
+	WriteDWORD(hKey, cfg->VertexBufferSize, cfgmask->VertexBufferSize, _T("VertexBufferSize"));
+	WriteDWORD(hKey, cfg->IndexBufferSize, cfgmask->IndexBufferSize, _T("IndexBufferSize"));
+	WriteDWORD(hKey, cfg->UnpackBufferSize, cfgmask->UnpackBufferSize, _T("UnpackBufferSize"));
+	WriteDWORD(hKey, cfg->CmdBufferSize, cfgmask->CmdBufferSize, _T("CmdBufferSize"));
 	WriteDWORD(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -1265,6 +1273,10 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 			if (!_stricmp(name, "HackPaletteDelay")) cfg->HackPaletteDelay = INIIntValue(value);
 			if (!_stricmp(name, "HackPaletteVsync")) cfg->HackPaletteVsync = INIBoolValue(value);
+			if (!_stricmp(name, "VertexBufferSize")) cfg->VertexBufferSize = INIIntValue(value);
+			if (!_stricmp(name, "IndexBufferSize")) cfg->IndexBufferSize = INIIntValue(value);
+			if (!_stricmp(name, "UnpackBufferSize")) cfg->UnpackBufferSize = INIIntValue(value);
+			if (!_stricmp(name, "CmdBufferSize")) cfg->CmdBufferSize = INIIntValue(value);
 		}
 	}
 	return 1;
@@ -1695,6 +1707,10 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "HackSetCursor", cfg->HackSetCursor, mask->HackSetCursor, INISECTION_HACKS);
 	INIWriteInt(file, "HackPaletteDelay", cfg->HackPaletteDelay, mask->HackPaletteDelay, INISECTION_HACKS);
 	INIWriteBool(file, "HackPaletteVsync", cfg->HackPaletteVsync, mask->HackPaletteVsync, INISECTION_HACKS);
+	INIWriteInt(file, "VertexBufferSize", cfg->VertexBufferSize, mask->VertexBufferSize, INISECTION_HACKS);
+	INIWriteInt(file, "IndexBufferSize", cfg->IndexBufferSize, mask->IndexBufferSize, INISECTION_HACKS);
+	INIWriteInt(file, "UnpackBufferSize", cfg->UnpackBufferSize, mask->UnpackBufferSize, INISECTION_HACKS);
+	INIWriteInt(file, "CmdBufferSize", cfg->CmdBufferSize, mask->CmdBufferSize, INISECTION_HACKS);
 	CloseHandle(file);
 	return ERROR_SUCCESS;
 }

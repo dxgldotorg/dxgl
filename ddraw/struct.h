@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2021 William Feely
+// Copyright (C) 2015-2019 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -50,6 +50,21 @@ typedef struct DXGLTimer
 	LARGE_INTEGER lastdraw;
 	BOOL lastdrawmeasured;
 } DXGLTimer;
+
+struct BufferObject;
+
+typedef struct CmdBuffer
+{
+	struct BufferObject *vertices;
+	struct BufferObject *indices;
+	struct BufferObject *pixelunpack;
+	DWORD *cmdbuffer;
+	size_t cmdsize;
+	size_t vertexptr;
+	size_t indexptr;
+	size_t unpackptr;
+	size_t cmdptr;
+} CmdBuffer;
 
 // OpenGL Extensions structure
 typedef struct glExtensions

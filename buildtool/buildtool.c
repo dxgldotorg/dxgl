@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2020 William Feely
+// Copyright (C) 2012-2021 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -717,9 +717,9 @@ int MakeHelp(char *path)
 	}
 	if(!foundhhc)
 	{
-		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?","HTML Help Workshop not found",
+		int result = MessageBoxA(NULL,"Could not find HTML Help Workshop, would you like to download it?\n\nThis will download from Internet Archive as the official download site was closed.","HTML Help Workshop not found",
 			MB_YESNO|MB_ICONERROR);
-		if(result == IDYES) ShellExecuteA(NULL,"open", "http://www.microsoft.com/en-us/download/details.aspx?id=21138"
+		if(result == IDYES) ShellExecuteA(NULL,"open", "https://web.archive.org/web/20200918004813/https://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe"
 			,NULL,NULL,SW_SHOWNORMAL);
 		puts("ERROR:  HTML Help Compiler not found.");
 		return -1;
