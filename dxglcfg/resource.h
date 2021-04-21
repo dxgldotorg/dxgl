@@ -100,9 +100,10 @@
 #define IDC_CUSTOMSCALEX                        2110
 #define IDC_CUSTOMSCALELABELY                   2111
 #define IDC_CUSTOMSCALEY                        2112
-// Removed for DXGL 0.5.13 release
-// #define IDC_BLTTHRESHOLDSLIDER                  2113
-// #define IDC_BLTTHRESHOLD                        2114
+#define IDC_BLTTHRESHOLDSLIDER                  2113
+#define IDC_BLTTHRESHOLD                        2114
+#define IDC_SHADEROPTIONSCAPTION                2115
+#define IDC_SHADEROPTIONS                       2116
 
 // Controls - 3D Graphics Tab
 #define IDC_TEXFILTER                           2201

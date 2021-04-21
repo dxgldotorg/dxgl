@@ -138,3 +138,10 @@
 /vs8/ddraw/x64
 /vs8/dxglcfg/x64
 /vs8/x64
+/dxglcfg-dll/Debug VS2019
+/dxglcfg-dll/Debug
+/dxglcfg-dll/Release VS2019
+/dxglcfg-dll/Release
+/vs8/dxglcfg-dll/x64/Release
+/vs9/dxglcfg-dll/Release
+/vs9/dxglcfg-dll/x64/Release

@@ -59,6 +59,7 @@ const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
 HMODULE uxtheme = NULL;
+HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
 HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
 HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
@@ -4756,15 +4757,40 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 {
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32;
+	HMODULE msimg32 = NULL;
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
 	HANDLE hMutex;
 	HWND hWnd;
+	BOOL(WINAPI *InitPropertyGrid)() = NULL;
+	SetErrorMode(SEM_FAILCRITICALERRORS);
+	dxglcfgdll = LoadLibrary(_T("dxglcfg.dll"));
+	SetErrorMode(0);
+	if (dxglcfgdll)
+	{
+		InitPropertyGrid = (BOOL(WINAPI*)())GetProcAddress(dxglcfgdll, "InitPropertyGrid");
+		if (InitPropertyGrid)
+		{
+			if (!InitPropertyGrid())
+			{
+				FreeLibrary(dxglcfgdll);
+				dxglcfgdll = NULL;
+			}
+		}
+		else
+		{
+			FreeLibrary(dxglcfgdll);
+			dxglcfgdll = NULL;
+		}
+	}
+	else
+	{
+
+	}
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	if (osver.dwMajorVersion > 4) gradientavailable = true;
 	else if (osver.dwMajorVersion >= 4 && osver.dwMinorVersion >= 1) gradientavailable = true;
 	else gradientavailable = false;
-	HMODULE msimg32 = NULL;
 	if (gradientavailable)
 	{
 		msimg32 = LoadLibrary(_T("msimg32.dll"));
