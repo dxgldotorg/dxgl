@@ -278,9 +278,8 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "Blt Color Key Threshold", 0, 114, 83, 76, 9, SS_LEFT, WS_EX_LEFT
     CONTROL         "", IDC_BLTTHRESHOLDSLIDER, TRACKBAR_CLASS, WS_TABSTOP | TBS_BOTH | TBS_NOTICKS, 114, 93, 79, 15, WS_EX_LEFT
     EDITTEXT        IDC_BLTTHRESHOLD, 195, 94, 21, 14, ES_AUTOHSCROLL | ES_NUMBER, WS_EX_LEFT
-    // This control requires .NET Framework to function and is implemented via dxglcfg.dll a mixed mode assembly.
     LTEXT           "Shader options", IDC_SHADEROPTIONSCAPTION, 221, 7, 114, 49, SS_LEFT, WS_EX_LEFT
-    CONTROL         "", IDC_SHADEROPTIONS, "PropertyGridClass", 0x50020000, 221, 17, 114, 147, 0x00000000
+    // CONTROL         "", IDC_SHADEROPTIONS, "PropertyGridClass", 0x50020000, 221, 17, 114, 147, 0x00000000
 }
 
 

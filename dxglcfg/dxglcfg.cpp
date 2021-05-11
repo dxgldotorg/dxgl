@@ -4761,31 +4761,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
 	HANDLE hMutex;
 	HWND hWnd;
-	BOOL(WINAPI *InitPropertyGrid)() = NULL;
-	SetErrorMode(SEM_FAILCRITICALERRORS);
-	dxglcfgdll = LoadLibrary(_T("dxglcfg.dll"));
-	SetErrorMode(0);
-	if (dxglcfgdll)
-	{
-		InitPropertyGrid = (BOOL(WINAPI*)())GetProcAddress(dxglcfgdll, "InitPropertyGrid");
-		if (InitPropertyGrid)
-		{
-			if (!InitPropertyGrid())
-			{
-				FreeLibrary(dxglcfgdll);
-				dxglcfgdll = NULL;
-			}
-		}
-		else
-		{
-			FreeLibrary(dxglcfgdll);
-			dxglcfgdll = NULL;
-		}
-	}
-	else
-	{
-
-	}
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	if (osver.dwMajorVersion > 4) gradientavailable = true;
