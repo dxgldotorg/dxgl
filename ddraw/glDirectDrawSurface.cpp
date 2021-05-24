@@ -106,7 +106,7 @@ HRESULT glDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSu
 	glDirectDrawSurface4_Create(This, &This->dds4);
 	glDirect3DTexture2_Create(This, &This->d3dt2);
 	glDirect3DTexture1_Create(This, &This->d3dt1);
-	glDirectDrawGammaControl_Create(This, (LPDIRECTDRAWGAMMACONTROL*)&This->gammacontrol);
+	glDirectDrawGammaControl_Create(This, &This->gammacontrol);
 	This->miplevel = miplevel;
 	This->ddInterface = (glDirectDraw7 *)lpDD7;
 	This->hRC = This->ddInterface->renderer->hRC;
@@ -431,10 +431,10 @@ HRESULT glDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSu
 	case 2:
 	case 3:
 	default:
-		This->textureparent = (IUnknown*)This->dds1;
+		This->textureparent = (IUnknown*)&This->dds1;
 		break;
 	case 4:
-		This->textureparent = (IUnknown*)This->dds4;
+		This->textureparent = (IUnknown*)&This->dds4;
 		break;
 	case 7:
 		This->textureparent = (IUnknown*)This;
@@ -449,13 +449,6 @@ void glDirectDrawSurface7_Delete(glDirectDrawSurface7 *This)
 	int i;
 	TRACE_ENTER(1,14,This);
 	glDirectDrawSurface7_AddRef(This);
-	if (This->dds1) free(This->dds1);
-	if (This->dds2) free(This->dds2);
-	if (This->dds3) free(This->dds3);
-	if (This->dds4) free(This->dds4);
-	if (This->d3dt1) free(This->d3dt1);
-	if (This->d3dt2) free(This->d3dt2);
-	if (This->gammacontrol) free(This->gammacontrol);
 	if (This->overlaydest) glDirectDrawSurface7_DeleteOverlay(This->overlaydest, This);
 	if (This->overlays)
 	{
@@ -510,7 +503,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	if(riid == IID_IDirectDrawSurface4)
 	{
 		glDirectDrawSurface7_AddRef4(This);
-		*ppvObj = This->dds4;
+		*ppvObj = &This->dds4;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -518,7 +511,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	if(riid == IID_IDirectDrawSurface3)
 	{
 		glDirectDrawSurface7_AddRef3(This);
-		*ppvObj = This->dds3;
+		*ppvObj = &This->dds3;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -526,7 +519,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	if(riid == IID_IDirectDrawSurface2)
 	{
 		glDirectDrawSurface7_AddRef2(This);
-		*ppvObj = This->dds2;
+		*ppvObj = &This->dds2;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -534,23 +527,23 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	if(riid == IID_IDirectDrawSurface)
 	{
 		glDirectDrawSurface7_AddRef1(This);
-		*ppvObj = This->dds1;
+		*ppvObj = &This->dds1;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3DTexture2)
 	{
-		glDirect3DTexture2_AddRef(This->d3dt2);
-		*ppvObj = This->d3dt2;
+		glDirect3DTexture2_AddRef(&This->d3dt2);
+		*ppvObj = &This->d3dt2;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
 	if(riid == IID_IDirect3DTexture)
 	{
-		glDirect3DTexture1_AddRef(This->d3dt1);
-		*ppvObj = This->d3dt1;
+		glDirect3DTexture1_AddRef(&This->d3dt1);
+		*ppvObj = &This->d3dt1;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -558,7 +551,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 	if (riid == IID_IDirectDrawGammaControl)
 	{
 		glDirectDrawSurface7_AddRefGamma(This);
-		*ppvObj = This->gammacontrol;
+		*ppvObj = &This->gammacontrol;
 		TRACE_VAR("*ppvObj",14,*ppvObj);
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
@@ -578,7 +571,7 @@ HRESULT WINAPI glDirectDrawSurface7_QueryInterface(glDirectDrawSurface7 *This, R
 			glDirect3D7 *tmpd3d;
 			glDirectDraw7_QueryInterface(This->ddInterface,IID_IDirect3D7,(void**)&tmpd3d);
 			if(!tmpd3d) TRACE_RET(HRESULT,23,E_NOINTERFACE);
-			ret = glDirect3DDevice7_Create(riid, tmpd3d, This, (IUnknown*)This->dds1, 1, &This->device1);
+			ret = glDirect3DDevice7_Create(riid, tmpd3d, This, (IUnknown*)&This->dds1, 1, &This->device1);
 			if (FAILED(ret))
 			{
 				if(This->device1) glDirect3DDevice7_Destroy(This->device1);
@@ -2208,14 +2201,11 @@ glDirectDrawSurface1Vtbl glDirectDrawSurface1_impl =
 	glDirectDrawSurface1_UpdateOverlayDisplay,
 	glDirectDrawSurface1_UpdateOverlayZOrder
 };
-HRESULT glDirectDrawSurface1_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface1 **glDDS1)
+HRESULT glDirectDrawSurface1_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface1 *glDDS1)
 {
 	TRACE_ENTER(2,14,gl_DDS7, 14, glDDS1);
-	glDirectDrawSurface1 *This = (glDirectDrawSurface1*)malloc(sizeof(glDirectDrawSurface1));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirectDrawSurface1_impl;
-	This->glDDS7 = gl_DDS7;
-	*glDDS1 = This;
+	glDDS1->lpVtbl = &glDirectDrawSurface1_impl;
+	glDDS1->glDDS7 = gl_DDS7;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -2571,14 +2561,11 @@ glDirectDrawSurface2Vtbl glDirectDrawSurface2_impl =
 	glDirectDrawSurface2_PageUnlock
 };
 
-HRESULT glDirectDrawSurface2_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface2 **glDDS2)
+HRESULT glDirectDrawSurface2_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface2 *glDDS2)
 {
 	TRACE_ENTER(2, 14, gl_DDS7, 14, glDDS2);
-	glDirectDrawSurface2 *This = (glDirectDrawSurface2*)malloc(sizeof(glDirectDrawSurface2));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirectDrawSurface2_impl;
-	This->glDDS7 = gl_DDS7;
-	*glDDS2 = This;
+	glDDS2->lpVtbl = &glDirectDrawSurface2_impl;
+	glDDS2->glDDS7 = gl_DDS7;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -2957,14 +2944,11 @@ glDirectDrawSurface3Vtbl glDirectDrawSurface3_impl =
 	glDirectDrawSurface3_SetSurfaceDesc
 };
 
-HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface3 **glDDS3)
+HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface3 *glDDS3)
 {
 	TRACE_ENTER(2, 14, gl_DDS7, 14, glDDS3);
-	glDirectDrawSurface3 *This = (glDirectDrawSurface3*)malloc(sizeof(glDirectDrawSurface3));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirectDrawSurface3_impl;
-	This->glDDS7 = gl_DDS7;
-	*glDDS3 = This;
+	glDDS3->lpVtbl = &glDirectDrawSurface3_impl;
+	glDDS3->glDDS7 = gl_DDS7;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -3357,14 +3341,11 @@ glDirectDrawSurface4Vtbl glDirectDrawSurface4_impl =
 	glDirectDrawSurface4_ChangeUniquenessValue
 };
 
-HRESULT glDirectDrawSurface4_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface4 **glDDS4)
+HRESULT glDirectDrawSurface4_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface4 *glDDS4)
 {
 	TRACE_ENTER(2, 14, gl_DDS7, 14, glDDS4);
-	glDirectDrawSurface4 *This = (glDirectDrawSurface4*)malloc(sizeof(glDirectDrawSurface4));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirectDrawSurface4_impl;
-	This->glDDS7 = gl_DDS7;
-	*glDDS4 = This;
+	glDDS4->lpVtbl = &glDirectDrawSurface4_impl;
+	glDDS4->glDDS7 = gl_DDS7;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }

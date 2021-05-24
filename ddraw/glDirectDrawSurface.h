@@ -38,17 +38,66 @@ struct glDirect3DTexture1;
 struct glDirect3DDevice7;
 struct glDirectDrawGammaControl;
 
+struct glDirectDrawSurface1Vtbl;
+typedef struct glDirectDrawSurface1
+{
+	glDirectDrawSurface1Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirectDrawSurface1;
+
+struct glDirectDrawSurface2Vtbl;
+typedef struct glDirectDrawSurface2
+{
+	glDirectDrawSurface2Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirectDrawSurface2;
+
+struct glDirectDrawSurface3Vtbl;
+typedef struct glDirectDrawSurface3
+{
+	glDirectDrawSurface3Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirectDrawSurface3;
+
+struct glDirectDrawSurface4Vtbl;
+typedef struct glDirectDrawSurface4
+{
+	glDirectDrawSurface4Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirectDrawSurface4;
+
+struct glDirectDrawGammaControlVtbl;
+typedef struct glDirectDrawGammaControl
+{
+	glDirectDrawGammaControlVtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirectDrawGammaControl;
+
+struct glDirect3DTexture1Vtbl;
+typedef struct glDirect3DTexture1
+{
+	glDirect3DTexture1Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirect3DTexture1;
+
+struct glDirect3DTexture2Vtbl;
+typedef struct glDirect3DTexture2
+{
+	glDirect3DTexture2Vtbl *lpVtbl;
+	glDirectDrawSurface7 *glDDS7;
+} glDirect3DTexture2;
+
 struct glDirectDrawSurface7Vtbl;
 typedef struct glDirectDrawSurface7
 {
 	glDirectDrawSurface7Vtbl *lpVtbl;
-	glDirectDrawSurface1 *dds1;
-	glDirectDrawSurface2 *dds2;
-	glDirectDrawSurface3 *dds3;
-	glDirectDrawSurface4 *dds4;
-	glDirect3DTexture2 *d3dt2;
-	glDirect3DTexture1 *d3dt1;
-	glDirectDrawGammaControl *gammacontrol;
+	glDirectDrawSurface1 dds1;
+	glDirectDrawSurface2 dds2;
+	glDirectDrawSurface3 dds3;
+	glDirectDrawSurface4 dds4;
+	glDirect3DTexture2 d3dt2;
+	glDirect3DTexture1 d3dt1;
+	glDirectDrawGammaControl gammacontrol;
 	DWORD flipcount;
 	DWORD fakex, fakey;
 	float mulx, muly;
@@ -230,12 +279,6 @@ HRESULT glDirectDrawSurface7_DeleteOverlay(glDirectDrawSurface7 *This, glDirectD
 HRESULT glDirectDrawSurface7_UpdateOverlayTexture(glDirectDrawSurface7 *This, glDirectDrawSurface7 *surface, glTexture *texture);
 
 // Legacy DDRAW Interfaces
-struct glDirectDrawSurface1Vtbl;
-typedef struct glDirectDrawSurface1
-{
-	glDirectDrawSurface1Vtbl *lpVtbl;
-	glDirectDrawSurface7 *glDDS7;
-} glDirectDrawSurface1;
 typedef struct glDirectDrawSurface1Vtbl
 {
 	HRESULT(WINAPI *QueryInterface)(glDirectDrawSurface1 *This, REFIID riid, void** ppvObj);
@@ -277,7 +320,7 @@ typedef struct glDirectDrawSurface1Vtbl
 } glDirectDrawSurface1Vtbl;
 
 
-HRESULT glDirectDrawSurface1_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface1 **glDDS1);
+HRESULT glDirectDrawSurface1_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface1 *glDDS1);
 // ddraw 1+ api
 HRESULT WINAPI glDirectDrawSurface1_QueryInterface(glDirectDrawSurface1 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirectDrawSurface1_AddRef(glDirectDrawSurface1 *This);
@@ -316,12 +359,6 @@ HRESULT WINAPI glDirectDrawSurface1_UpdateOverlay(glDirectDrawSurface1 *This, LP
 HRESULT WINAPI glDirectDrawSurface1_UpdateOverlayDisplay(glDirectDrawSurface1 *This, DWORD dwFlags);
 HRESULT WINAPI glDirectDrawSurface1_UpdateOverlayZOrder(glDirectDrawSurface1 *This, DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSReference);
 
-struct glDirectDrawSurface2Vtbl;
-typedef struct glDirectDrawSurface2
-{
-	glDirectDrawSurface2Vtbl *lpVtbl;
-	glDirectDrawSurface7 *glDDS7;
-} glDirectDrawSurface2;
 typedef struct glDirectDrawSurface2Vtbl
 {
 	HRESULT(WINAPI *QueryInterface)(glDirectDrawSurface2 *This, REFIID riid, void** ppvObj);
@@ -365,7 +402,7 @@ typedef struct glDirectDrawSurface2Vtbl
 	HRESULT(WINAPI *PageUnlock)(glDirectDrawSurface2 *This, DWORD dwFlags);
 } glDirectDrawSurface2Vtbl;
 
-HRESULT glDirectDrawSurface2_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface2 **glDDS2);
+HRESULT glDirectDrawSurface2_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface2 *glDDS2);
 // ddraw 1+ api
 HRESULT WINAPI glDirectDrawSurface2_QueryInterface(glDirectDrawSurface2 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirectDrawSurface2_AddRef(glDirectDrawSurface2 *This);
@@ -407,13 +444,6 @@ HRESULT WINAPI glDirectDrawSurface2_UpdateOverlayZOrder(glDirectDrawSurface2 *Th
 HRESULT WINAPI glDirectDrawSurface2_GetDDInterface(glDirectDrawSurface2 *This, LPVOID FAR *lplpDD);
 HRESULT WINAPI glDirectDrawSurface2_PageLock(glDirectDrawSurface2 *This, DWORD dwFlags);
 HRESULT WINAPI glDirectDrawSurface2_PageUnlock(glDirectDrawSurface2 *This, DWORD dwFlags);
-
-struct glDirectDrawSurface3Vtbl;
-typedef struct glDirectDrawSurface3
-{
-	glDirectDrawSurface3Vtbl *lpVtbl;
-	glDirectDrawSurface7 *glDDS7;
-} glDirectDrawSurface3;
 
 typedef struct glDirectDrawSurface3Vtbl
 {
@@ -459,7 +489,7 @@ typedef struct glDirectDrawSurface3Vtbl
 	HRESULT(WINAPI *SetSurfaceDesc)(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
 } glDirectDrawSurface3Vtbl;
 
-HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface3 **glDDS3);
+HRESULT glDirectDrawSurface3_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface3 *glDDS3);
 // ddraw 1+ api
 HRESULT WINAPI glDirectDrawSurface3_QueryInterface(glDirectDrawSurface3 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirectDrawSurface3_AddRef(glDirectDrawSurface3 *This);
@@ -504,12 +534,6 @@ HRESULT WINAPI glDirectDrawSurface3_PageUnlock(glDirectDrawSurface3 *This, DWORD
 // ddraw 3+ api
 HRESULT WINAPI glDirectDrawSurface3_SetSurfaceDesc(glDirectDrawSurface3 *This, LPDDSURFACEDESC lpddsd2, DWORD dwFlags);
 
-struct glDirectDrawSurface4Vtbl;
-typedef struct glDirectDrawSurface4
-{
-	glDirectDrawSurface4Vtbl *lpVtbl;
-	glDirectDrawSurface7 *glDDS7;
-} glDirectDrawSurface4;
 typedef struct glDirectDrawSurface4Vtbl
 {
 	HRESULT(WINAPI *QueryInterface)(glDirectDrawSurface4 *This, REFIID riid, void** ppvObj);
@@ -559,7 +583,7 @@ typedef struct glDirectDrawSurface4Vtbl
 	HRESULT(WINAPI *ChangeUniquenessValue)(glDirectDrawSurface4 *This);
 } glDirectDrawSurface4Vtbl;
 
-HRESULT glDirectDrawSurface4_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface4 **glDDS4);
+HRESULT glDirectDrawSurface4_Create(glDirectDrawSurface7 *gl_DDS7, glDirectDrawSurface4 *glDDS4);
 // ddraw 1+ api
 HRESULT WINAPI glDirectDrawSurface4_QueryInterface(glDirectDrawSurface4 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirectDrawSurface4_AddRef(glDirectDrawSurface4 *This);

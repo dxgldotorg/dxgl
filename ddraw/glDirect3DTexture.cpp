@@ -37,14 +37,11 @@ glDirect3DTexture2Vtbl glDirect3DTexture2_iface =
 	glDirect3DTexture2_Load
 };
 
-HRESULT glDirect3DTexture2_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture2 **texture)
+HRESULT glDirect3DTexture2_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture2 *texture)
 {
 	TRACE_ENTER(2, 14, glDDS7, 14, texture);
-	glDirect3DTexture2 *This = (glDirect3DTexture2*)malloc(sizeof(glDirect3DTexture2));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirect3DTexture2_iface;
-	This->glDDS7 = glDDS7;
-	*texture = This;
+	texture->lpVtbl = &glDirect3DTexture2_iface;
+	texture->glDDS7 = glDDS7;
 	TRACE_EXIT(23, D3D_OK);
 	return D3D_OK;
 }
@@ -116,14 +113,11 @@ glDirect3DTexture1Vtbl glDirect3DTexture1_iface =
 	glDirect3DTexture1_Unload
 };
 
-HRESULT glDirect3DTexture1_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture1 **texture)
+HRESULT glDirect3DTexture1_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture1 *texture)
 {
 	TRACE_ENTER(2,14,glDDS7,14,texture);
-	glDirect3DTexture1 *This = (glDirect3DTexture1*)malloc(sizeof(glDirect3DTexture1));
-	if (!This) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	This->lpVtbl = &glDirect3DTexture1_iface;
-	This->glDDS7 = glDDS7;
-	*texture = This;
+	texture->lpVtbl = &glDirect3DTexture1_iface;
+	texture->glDDS7 = glDDS7;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

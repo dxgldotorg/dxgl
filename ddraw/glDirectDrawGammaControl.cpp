@@ -33,18 +33,14 @@ glDirectDrawGammaControlVtbl glDirectDrawGammaControl_iface =
 	glDirectDrawGammaControl_SetGammaRamp
 };
 
-HRESULT glDirectDrawGammaControl_Create(glDirectDrawSurface7 *glDDS7, LPDIRECTDRAWGAMMACONTROL *gamma)
+HRESULT glDirectDrawGammaControl_Create(glDirectDrawSurface7 *glDDS7, glDirectDrawGammaControl *gamma)
 {
-	glDirectDrawGammaControl *newgamma;
 	TRACE_ENTER(2, 14, glDDS7, 14, gamma);
 	if (!glDDS7) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!gamma) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	newgamma = (glDirectDrawGammaControl*)malloc(sizeof(glDirectDrawGammaControl));
-	if (!newgamma) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-	ZeroMemory(newgamma, sizeof(glDirectDrawGammaControl));
-	newgamma->glDDS7 = glDDS7;
-	newgamma->lpVtbl = &glDirectDrawGammaControl_iface;
-	*gamma = (LPDIRECTDRAWGAMMACONTROL)newgamma;
+	ZeroMemory(gamma, sizeof(glDirectDrawGammaControl));
+	gamma->glDDS7 = glDDS7;
+	gamma->lpVtbl = &glDirectDrawGammaControl_iface;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
