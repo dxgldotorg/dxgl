@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2020 William Feely
+; Copyright (C) 2011-2021 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2019_9"
+!if ${COMPILER} == "VC2019_10"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2019"
 !ifdef _CPU_X64
@@ -148,7 +148,7 @@ SetCompressor /SOLID lzma
 !define runtime_name "Visual C++ 2005 x64"
 !define runtime_filename "vcredist_x64.EXE"
 !define runtime_sha512 "F8E15363E34DB5B5445C41EEA4DD80B2F682642CB8F1046F30EA4FB5F4F51B0B604F7BCB3000A35A7D3BA1D1BCC07DF9B25E4533170C65640B2D137C19916736"
-!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc8"
 !else if ${COMPILER} == "VC2008"
@@ -157,7 +157,7 @@ SetCompressor /SOLID lzma
 !define runtime_name "Visual C++ 2008 x64"
 !define runtime_filename "vcredist_x64.exe"
 !define runtime_sha512 "B890D83D36F3681A690828D8926139B4F13F8D2FCD258581542CF2FB7DCE5D7E7E477731C9545A54A476ED5C2AAAC44CE12D2C3D9B99C2C1C04A5AB4EE20C4B8"
-!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\VC\Servicing\9.0\RED\1033
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\VC\Servicing\9.0\RED\1033
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc9"
 !else if ${COMPILER} == "VC2010"
@@ -175,16 +175,16 @@ SetCompressor /SOLID lzma
 !define runtime_name "Visual C++ 2013 x64"
 !define runtime_filename "vcredist_x64.exe"
 !define runtime_sha512 "3A55DCE14BBD455808BD939A5008B67C9C7111CAB61B1339528308022E587726954F8C55A597C6974DC543964BDB6532FE433556FBEEAF9F8CB4D95F2BBFFC12"
-!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_9"
+!else if ${COMPILER} == "VC2019_10"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.28/VC_redist.x64.exe
-!define runtime_name "Visual C++ 2019.9 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.29/VC_redist.x64.exe
+!define runtime_name "Visual C++ 2019.10 x64"
 !define runtime_filename "VC_redist.x64.exe"
-!define runtime_sha512 "5170B3FD4A0FC637184044C9DBE7AB3F8CA115FBAC5EC851802C290139A3D99AACFD458FE2E925EB3282612C9B18D4C857F8C39284EFBF3DA49317A1FECC16FF"
-!define runtime_regkey SOFTWARE\WOW6432Node\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
+!define runtime_sha512 "109F087BA2021E1AC85C404C202822F01DBC056ACC933BF6CA30B67FC0F48711EB8F58AE15C4E4EB0693E80ECBD4FDF59DF172244189C3F96FAE1C329B77263E"
+!define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
 !define PRODUCT_SUFFIX ""
@@ -229,12 +229,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_9"
+!else if ${COMPILER} == "VC2019_10"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.28/VC_redist.x86.exe
-!define runtime_name "Visual C++ 2019.9 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.29/VC_redist.x86.exe
+!define runtime_name "Visual C++ 2019.10 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "A5C33E0F588E11B228CAF7DA0D64EE1456601680703ED35769BD7BC56A891E182FD35D5501598E344CA46F2BCC83FC388F27489F7512C81D27BFF4A61D1FDBDA"
+!define runtime_sha512 "E2DE89CB69803339F765BC1B29A7D6B24EFFD079F8296463AE6BE0A0FDC99D2DF2BC742C77B1E22EC320366ADA672C022605C26CE21F7A59BA9246DF8BE9E27D"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -404,7 +404,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2019_9"
+  !if ${COMPILER} == "VC2019_10"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -465,13 +465,29 @@ Function .onInit
   If you downloaded this file, please immediately report this to admin@dxgl.org"
   !else
   !if ${download_runtime} >= 1
+  !ifdef _CPU_X64
+  !if ${COMPILER} != "VC2010"
+  SetRegView 64
+  !endif
+  !endif
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue}
-  !if ${COMPILER} == "VC2019_9"
+  !ifdef _CPU_X64
+  SetRegView 32
+  !endif
+  !if ${COMPILER} == "VC2019_10"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
+  !ifdef _CPU_X64
+  !if ${COMPILER} != "VC2010"
+  SetRegView 64
+  !endif
+  !endif
   ReadRegDWORD $0 HKLM ${runtime_regkey} ${runtime_regvalue2}
-  ${VersionCompare} "$0" "14.28.29913" $1
+  !ifdef _CPU_X64
+  SetRegView 32
+  !endif
+  ${VersionCompare} "$0" "14.29.30037" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -586,7 +602,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_9"
+!if ${COMPILER} == "VC2019_10"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif
