@@ -26,7 +26,7 @@ extern "C" {
 
 #define DXGLBLT_NOPALSHADER 0x80000000
 
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 struct glDirectDrawClipper;
 struct glDirect3D7;
 struct glDirect3D3;
@@ -51,7 +51,7 @@ typedef struct glDirectDraw7
 	DWORD screenx, screeny, screenrefresh, screenbpp;
 	DWORD internalx, internaly, internalrefresh, internalbpp;
 	DWORD primaryx, primaryy, primaryrefresh, primarybpp;
-	glDirectDrawSurface7 *primary;
+	dxglDirectDrawSurface7 *primary;
 	bool primarylost;
 	bool lastsync;
 	glDirectDraw1 *glDD1;
@@ -59,7 +59,7 @@ typedef struct glDirectDraw7
 	glDirectDraw4 *glDD4;
 	DDDEVICEIDENTIFIER2 devid;
 	glRenderer *renderer;
-	glDirectDrawSurface7 *tmpsurface;
+	dxglDirectDrawSurface7 *tmpsurface;
 	D3DDevice stored_devices[3];
 	D3DDEVICEDESC7 d3ddesc;
 	D3DDEVICEDESC d3ddesc3;
@@ -73,7 +73,7 @@ typedef struct glDirectDraw7
 	bool threadsafe;
 	bool nowindowchanges;
 	LONG_PTR winstyle, winstyleex;
-	glDirectDrawSurface7 **surfaces;
+	dxglDirectDrawSurface7 **surfaces;
 	int surfacecount, surfacecountmax;
 	glDirectDrawClipper **clippers;
 	int clippercount, clippercountmax;
@@ -172,10 +172,10 @@ ULONG WINAPI glDirectDraw7_Release1(glDirectDraw7 *This);
 HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDSurfaceDesc2, LPDIRECTDRAWSURFACE7 FAR *lplpDDSurface, IUnknown FAR *pUnkOuter, BOOL RecordSurface, int version);
 HRESULT glDirectDraw7_CreateClipper2(glDirectDraw7 *This, DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *lplpDDClipper, IUnknown FAR *pUnkOuter);
 HRESULT glDirectDraw7_CreatePalette2(glDirectDraw7 *This, DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR *lplpDDPalette, IUnknown FAR *pUnkOuter);
-void glDirectDraw7_RemoveSurface(glDirectDraw7 *This, glDirectDrawSurface7 *surface);
+void glDirectDraw7_RemoveSurface(glDirectDraw7 *This, dxglDirectDrawSurface7 *surface);
 extern "C" void glDirectDraw7_GetSizes(glDirectDraw7 *This, LONG *sizes);
 DWORD glDirectDraw7_GetBPPMultipleOf8(glDirectDraw7 *This);
-void glDirectDraw7_DeleteSurface(glDirectDraw7 *This, glDirectDrawSurface7 *surface);
+void glDirectDraw7_DeleteSurface(glDirectDraw7 *This, dxglDirectDrawSurface7 *surface);
 void glDirectDraw7_DeleteClipper(glDirectDraw7 *This, glDirectDrawClipper *clipper);
 HRESULT glDirectDraw7_SetupTempSurface(glDirectDraw7 *This, DWORD width, DWORD height);
 void glDirectDraw7_DeleteTempSurface(glDirectDraw7 *This);

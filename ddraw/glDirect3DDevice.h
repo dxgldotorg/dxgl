@@ -28,7 +28,7 @@ struct D3D1MATRIX
 };
 
 struct glDirect3DLight;
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 struct glDirect3DMaterial3;
 struct glDirect3DViewport3;
 struct glDirect3DDevice3;
@@ -52,14 +52,14 @@ typedef struct glDirect3DDevice7
 	D3DVIEWPORT7 viewport;
 	glDirect3DLight **lights;
 	int gllights[8];
-	glDirectDrawSurface7 *glDDS7;
+	dxglDirectDrawSurface7 *glDDS7;
 	DWORD renderstate[RENDERSTATE_COUNT];
 	TEXTURESTAGE texstages[8];
 	glDirect3D7 *glD3D7;
 	glDirect3DMaterial3 **materials;
 	glDirect3DMaterial3 *currentmaterial;
 	DWORD materialcount;
-	glDirectDrawSurface7 **textures;
+	dxglDirectDrawSurface7 **textures;
 	DWORD texturecount;
 	bool modelview_dirty;
 	bool projection_dirty;
@@ -171,7 +171,7 @@ typedef struct glDirect3DDevice7Vtbl
 } glDirect3DDevice7Vtbl;
 
 
-HRESULT glDirect3DDevice7_Create(REFCLSID rclsid, glDirect3D7 *glD3D7, glDirectDrawSurface7 *glDDS7,
+HRESULT glDirect3DDevice7_Create(REFCLSID rclsid, glDirect3D7 *glD3D7, dxglDirectDrawSurface7 *glDDS7,
 	IUnknown *creator, int version, glDirect3DDevice7 **newdev);
 void glDirect3DDevice7_Destroy(glDirect3DDevice7 *This);
 
@@ -236,7 +236,7 @@ HRESULT WINAPI glDirect3DDevice7_SetViewport(glDirect3DDevice7 *This, LPD3DVIEWP
 HRESULT WINAPI glDirect3DDevice7_ValidateDevice(glDirect3DDevice7 *This, LPDWORD lpdwPasses);
 void glDirect3DDevice7_SetArraySize(glDirect3DDevice7 *This, DWORD size, DWORD vertex, DWORD texcoord);
 D3DMATERIALHANDLE glDirect3DDevice7_AddMaterial(glDirect3DDevice7 *This, glDirect3DMaterial3* material);
-D3DTEXTUREHANDLE glDirect3DDevice7_AddTexture(glDirect3DDevice7 *This, glDirectDrawSurface7* texture);
+D3DTEXTUREHANDLE glDirect3DDevice7_AddTexture(glDirect3DDevice7 *This, dxglDirectDrawSurface7* texture);
 HRESULT glDirect3DDevice7_AddViewport(glDirect3DDevice7 *This, LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 HRESULT glDirect3DDevice7_DeleteViewport(glDirect3DDevice7 *This, LPDIRECT3DVIEWPORT3 lpDirect3DViewport);
 HRESULT WINAPI glDirect3DDevice7_EnumTextureFormats2(glDirect3DDevice7 *This, LPD3DENUMTEXTUREFORMATSCALLBACK lpd3dEnumTextureProc, LPVOID lpArg);

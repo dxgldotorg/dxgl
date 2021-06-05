@@ -27,7 +27,7 @@ using namespace std;
 #include "glTexture.h"
 #include "glUtil.h"
 #include "glDirectDrawClipper.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
 #include "glRenderer.h"
 #include "../common/version.h"
@@ -1152,7 +1152,7 @@ void glDirectDraw7_Delete(glDirectDraw7 *This)
 		{
 			for(int i = 0; i < This->surfacecount; i++)
 			{
-				if(This->surfaces[i]) glDirectDrawSurface7_Delete(This->surfaces[i]);
+				if(This->surfaces[i]) dxglDirectDrawSurface7_Delete(This->surfaces[i]);
 				This->surfaces[i] = NULL;
 			}
 			free(This->surfaces);
@@ -1423,7 +1423,7 @@ HRESULT WINAPI glDirectDraw7_CreateSurface(glDirectDraw7 *This, LPDDSURFACEDESC2
 	if (ret == DD_OK)
 	{
 		glDirectDraw7_AddRef(This);
-		((glDirectDrawSurface7*)*lplpDDSurface)->creator = (IUnknown*)This;
+		((dxglDirectDrawSurface7*)*lplpDDSurface)->creator = (IUnknown*)This;
 	}
 	TRACE_EXIT(23, ret);
 	return ret;
@@ -1444,7 +1444,7 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	{
 		if (This->primarylost)
 		{
-			glDirectDrawSurface7_Restore(This->primary);
+			dxglDirectDrawSurface7_Restore(This->primary);
 			*lplpDDSurface = (LPDIRECTDRAWSURFACE7)This->primary;
 			This->primarylost = false;
 			TRACE_EXIT(23, DD_OK);
@@ -1467,14 +1467,14 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		This->surfacecount++;
 		if (This->surfacecount > This->surfacecountmax)
 		{
-			glDirectDrawSurface7 **surfaces2;
-			surfaces2 = (glDirectDrawSurface7 **)realloc(This->surfaces, (This->surfacecountmax + 1024)*sizeof(glDirectDrawSurface7 *));
+			dxglDirectDrawSurface7 **surfaces2;
+			surfaces2 = (dxglDirectDrawSurface7 **)realloc(This->surfaces, (This->surfacecountmax + 1024)*sizeof(dxglDirectDrawSurface7 *));
 			if (!surfaces2) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
 			This->surfaces = surfaces2;
-			ZeroMemory(&This->surfaces[This->surfacecountmax], 1024 * sizeof(glDirectDrawSurface7 *));
+			ZeroMemory(&This->surfaces[This->surfacecountmax], 1024 * sizeof(dxglDirectDrawSurface7 *));
 			This->surfacecountmax += 1024;
 		}
-		glDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,&This->surfaces[This->surfacecount - 1]);
+		dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,&This->surfaces[This->surfacecount - 1]);
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
 			This->primary = This->surfaces[This->surfacecount - 1];
@@ -1485,11 +1485,11 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	else
 	{
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		glDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,(glDirectDrawSurface7 **)lplpDDSurface);
+		dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,(dxglDirectDrawSurface7 **)lplpDDSurface);
 	}
 	if (error != DD_OK)
 	{
-		glDirectDrawSurface7_Delete((glDirectDrawSurface7*)*lplpDDSurface);
+		dxglDirectDrawSurface7_Delete((dxglDirectDrawSurface7*)*lplpDDSurface);
 		*lplpDDSurface = NULL;
 	}
 	TRACE_VAR("*lplpDDSurface",14,*lplpDDSurface);
@@ -1601,8 +1601,8 @@ HRESULT WINAPI glDirectDraw7_EnumSurfaces(glDirectDraw7 *This, DWORD dwFlags, LP
 				}
 				if (match)
 				{
-					glDirectDrawSurface7_AddRef(This->surfaces[i]);
-					glDirectDrawSurface7_GetSurfaceDesc(This->surfaces[i], &ddsd);
+					dxglDirectDrawSurface7_AddRef(This->surfaces[i]);
+					dxglDirectDrawSurface7_GetSurfaceDesc(This->surfaces[i], &ddsd);
 					ret = lpEnumSurfacesCallback((LPDIRECTDRAWSURFACE7)This->surfaces[i], &ddsd, lpContext);
 					if (ret == DDENUMRET_CANCEL) break;
 				}
@@ -1624,7 +1624,7 @@ HRESULT WINAPI glDirectDraw7_FlipToGDISurface(glDirectDraw7 *This)
 		{
 			while(This->primary->flipcount != 0)
 			{
-				error = glDirectDrawSurface7_Flip(This->primary, NULL, DDFLIP_WAIT);
+				error = dxglDirectDrawSurface7_Flip(This->primary, NULL, DDFLIP_WAIT);
 				if(error != DD_OK) break;
 			}
 		}
@@ -1898,9 +1898,9 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	This->cooplevel = 0;
 	This->timer = timeGetTime();
 	ZeroMemory(&This->oldmode,sizeof(DEVMODE));
-	This->surfaces = (glDirectDrawSurface7 **)malloc(1024*sizeof(glDirectDrawSurface7 *));
+	This->surfaces = (dxglDirectDrawSurface7 **)malloc(1024*sizeof(dxglDirectDrawSurface7 *));
 	if(!This->surfaces) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	ZeroMemory(This->surfaces,1024*sizeof(glDirectDrawSurface7 *));
+	ZeroMemory(This->surfaces,1024*sizeof(dxglDirectDrawSurface7 *));
 	This->surfacecount = 0;
 	This->surfacecountmax = 1024;
 	This->tmpsurface = NULL;
@@ -2752,7 +2752,7 @@ HRESULT WINAPI glDirectDraw7_WaitForVerticalBlank(glDirectDraw7 *This, DWORD dwF
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!This->lastsync) This->lastsync = true;
-	else if(This->primary) glDirectDrawSurface7_RenderScreen(This->primary,This->primary->texture,1,NULL,TRUE,NULL,0);
+	else if(This->primary) dxglDirectDrawSurface7_RenderScreen(This->primary,This->primary->texture,1,NULL,TRUE,NULL,0);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -2795,7 +2795,7 @@ HRESULT WINAPI glDirectDraw7_RestoreAllSurfaces(glDirectDraw7 *This)
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	for (int i = 0; i < This->surfacecount; i++)
 	{
-		if (This->surfaces[i]) glDirectDrawSurface7_Restore(This->surfaces[i]);
+		if (This->surfaces[i]) dxglDirectDrawSurface7_Restore(This->surfaces[i]);
 	}
 	return DD_OK;
 }
@@ -2849,7 +2849,7 @@ DWORD glDirectDraw7_GetBPPMultipleOf8(glDirectDraw7 *This)
 	else return This->primarybpp;
 }
 
-void glDirectDraw7_DeleteSurface(glDirectDraw7 *This, glDirectDrawSurface7 *surface)
+void glDirectDraw7_DeleteSurface(glDirectDraw7 *This, dxglDirectDrawSurface7 *surface)
 {
 	TRACE_ENTER(2,14,This,14,surface);
 	for(int i = 0; i < This->surfacecount; i++)
@@ -2905,7 +2905,7 @@ HRESULT glDirectDraw7_SetupTempSurface(glDirectDraw7 *This, DWORD width, DWORD h
 			ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
 			ddsd.dwWidth = width > This->tmpsurface->ddsd.dwWidth ? width : This->tmpsurface->ddsd.dwWidth;
 			ddsd.dwHeight = height > This->tmpsurface->ddsd.dwHeight ? height : This->tmpsurface->ddsd.dwHeight;
-			glDirectDrawSurface7_Release(This->tmpsurface);
+			dxglDirectDrawSurface7_Release(This->tmpsurface);
 			This->tmpsurface = NULL;
 			error = glDirectDraw7_CreateSurface(This, &ddsd,
 				(LPDIRECTDRAWSURFACE7*)&This->tmpsurface, NULL);
@@ -2925,7 +2925,7 @@ void glDirectDraw7_DeleteTempSurface(glDirectDraw7 *This)
 {
 	if (This->tmpsurface)
 	{
-		glDirectDrawSurface7_Release(This->tmpsurface);
+		dxglDirectDrawSurface7_Release(This->tmpsurface);
 		This->tmpsurface = 0;
 	}
 }
@@ -3548,7 +3548,7 @@ HRESULT WINAPI glDirectDraw4_CreateSurface(glDirectDraw4 *This, LPDDSURFACEDESC2
 		lpDDS7->QueryInterface(IID_IDirectDrawSurface4,(LPVOID*) lplpDDSurface);
 		lpDDS7->Release();
 		glDirectDraw4_AddRef(This);
-		((glDirectDrawSurface7*)lpDDS7)->creator = (IUnknown*)This;
+		((dxglDirectDrawSurface7*)lpDDS7)->creator = (IUnknown*)This;
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}

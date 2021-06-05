@@ -907,7 +907,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\ddraw\glDirectDrawSurface.cpp"
+				RelativePath="..\..\ddraw\dxglDirectDrawSurface.cpp"
 				>
 			</File>
 			<File
@@ -1633,7 +1633,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\ddraw\glDirectDrawSurface.h"
+				RelativePath="..\..\ddraw\dxglDirectDrawSurface.h"
 				>
 			</File>
 			<File

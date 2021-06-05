@@ -44,7 +44,7 @@
     <ClInclude Include="include\d3dtypes.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="glDirectDrawSurface.h">
+    <ClInclude Include="dxglDirectDrawSurface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="glDirectDrawClipper.h">
@@ -175,7 +175,7 @@
     <ClCompile Include="glDirectDraw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glDirectDrawSurface.cpp">
+    <ClCompile Include="dxglDirectDrawSurface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glDirectDrawClipper.cpp">

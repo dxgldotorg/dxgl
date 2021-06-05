@@ -21,13 +21,13 @@
 #ifdef __cplusplus
 struct glDirectDraw7;
 struct glDirect3DDevice7;
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 struct glRenderWindow;
 extern "C" {
 #else
 typedef int glDirectDraw7;
 typedef int glDirect3DDevice7;
-typedef int glDirectDrawSurface7;
+typedef int dxglDirectDrawSurface7;
 typedef int glRenderWindow;
 #endif
 
@@ -58,7 +58,7 @@ typedef struct TEXTURESTAGE
 	D3DTEXTURETRANSFORMFLAGS textransform;
 	union {
 		glTexture *texture;
-		glDirectDrawSurface7 *surface;
+		dxglDirectDrawSurface7 *surface;
 	} DUMMYUNIONNAME1;
 	GLint glmagfilter;
 	GLint glminfilter;

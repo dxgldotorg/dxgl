@@ -21,7 +21,7 @@
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 #include "glDirect3DTexture.h"
 #include "glDirect3DDevice.h"
 #include "ddraw.h"
@@ -37,7 +37,7 @@ glDirect3DTexture2Vtbl glDirect3DTexture2_iface =
 	glDirect3DTexture2_Load
 };
 
-HRESULT glDirect3DTexture2_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture2 *texture)
+HRESULT glDirect3DTexture2_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DTexture2 *texture)
 {
 	TRACE_ENTER(2, 14, glDDS7, 14, texture);
 	texture->lpVtbl = &glDirect3DTexture2_iface;
@@ -58,7 +58,7 @@ HRESULT WINAPI glDirect3DTexture2_QueryInterface(glDirect3DTexture2 *This, REFII
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glDirectDrawSurface7_QueryInterface(This->glDDS7,riid,ppvObj));
+	TRACE_RET(HRESULT,23,dxglDirectDrawSurface7_QueryInterface(This->glDDS7,riid,ppvObj));
 }
 
 ULONG WINAPI glDirect3DTexture2_AddRef(glDirect3DTexture2 *This)
@@ -81,7 +81,7 @@ HRESULT WINAPI glDirect3DTexture2_GetHandle(glDirect3DTexture2 *This, LPDIRECT3D
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice2*)lpDirect3DDevice2)->glD3DDev7;
-	HRESULT ret = glDirectDrawSurface7_GetHandle(This->glDDS7,glD3DDev7,lpHandle);
+	HRESULT ret = dxglDirectDrawSurface7_GetHandle(This->glDDS7,glD3DDev7,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -90,7 +90,7 @@ HRESULT WINAPI glDirect3DTexture2_Load(glDirect3DTexture2 *This, LPDIRECT3DTEXTU
 	TRACE_ENTER(2,14,This,14,lpD3DTexture2);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DTexture2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDirectDrawSurface7_Load(This->glDDS7,((glDirect3DTexture2*)lpD3DTexture2)->glDDS7));
+	TRACE_RET(HRESULT,23,dxglDirectDrawSurface7_Load(This->glDDS7,((glDirect3DTexture2*)lpD3DTexture2)->glDDS7));
 }
 HRESULT WINAPI glDirect3DTexture2_PaletteChanged(glDirect3DTexture2 *This, DWORD dwStart, DWORD dwCount)
 {
@@ -113,7 +113,7 @@ glDirect3DTexture1Vtbl glDirect3DTexture1_iface =
 	glDirect3DTexture1_Unload
 };
 
-HRESULT glDirect3DTexture1_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture1 *texture)
+HRESULT glDirect3DTexture1_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DTexture1 *texture)
 {
 	TRACE_ENTER(2,14,glDDS7,14,texture);
 	texture->lpVtbl = &glDirect3DTexture1_iface;
@@ -133,7 +133,7 @@ HRESULT WINAPI glDirect3DTexture1_QueryInterface(glDirect3DTexture1 *This, REFII
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT,23,glDirectDrawSurface7_QueryInterface(This->glDDS7,riid,ppvObj));
+	TRACE_RET(HRESULT,23,dxglDirectDrawSurface7_QueryInterface(This->glDDS7,riid,ppvObj));
 }
 ULONG WINAPI glDirect3DTexture1_AddRef(glDirect3DTexture1 *This)
 {
@@ -154,7 +154,7 @@ HRESULT WINAPI glDirect3DTexture1_GetHandle(glDirect3DTexture1 *This, LPDIRECT3D
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDirect3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirect3DDevice7 *glD3DDev7 = ((glDirect3DDevice1*)lpDirect3DDevice)->glD3DDev7;
-	HRESULT ret = glDirectDrawSurface7_GetHandle(This->glDDS7,glD3DDev7,lpHandle);
+	HRESULT ret = dxglDirectDrawSurface7_GetHandle(This->glDDS7,glD3DDev7,lpHandle);
 	TRACE_EXIT(23,ret);
 	return ret;
 }
@@ -170,7 +170,7 @@ HRESULT WINAPI glDirect3DTexture1_Load(glDirect3DTexture1 *This, LPDIRECT3DTEXTU
 	TRACE_ENTER(2,14,This,14,lpD3DTexture);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpD3DTexture) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	TRACE_RET(HRESULT,23,glDirectDrawSurface7_Load(This->glDDS7,((glDirect3DTexture1*)lpD3DTexture)->glDDS7));
+	TRACE_RET(HRESULT,23,dxglDirectDrawSurface7_Load(This->glDDS7,((glDirect3DTexture1*)lpD3DTexture)->glDDS7));
 }
 HRESULT WINAPI glDirect3DTexture1_PaletteChanged(glDirect3DTexture1 *This, DWORD dwStart, DWORD dwCount)
 {

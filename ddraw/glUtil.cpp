@@ -19,7 +19,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "BufferObject.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 
 extern "C" {
 

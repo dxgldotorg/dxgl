@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 
 typedef struct glDirectDrawGammaControlVtbl
 {
@@ -34,7 +34,7 @@ typedef struct glDirectDrawGammaControlVtbl
 	HRESULT(WINAPI *SetGammaRamp)(glDirectDrawGammaControl *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData);
 } glDirectDrawGammaControlVtbl;
 
-HRESULT glDirectDrawGammaControl_Create(glDirectDrawSurface7 *glDDS7, glDirectDrawGammaControl *gamma);
+HRESULT glDirectDrawGammaControl_Create(dxglDirectDrawSurface7 *glDDS7, glDirectDrawGammaControl *gamma);
 
 HRESULT WINAPI glDirectDrawGammaControl_QueryInterface(glDirectDrawGammaControl *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirectDrawGammaControl_AddRef(glDirectDrawGammaControl *This);

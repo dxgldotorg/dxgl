@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 struct glTexture;
 struct BufferObject;
 

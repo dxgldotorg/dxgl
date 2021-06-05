@@ -22,12 +22,12 @@
 #ifdef __cplusplus
 struct glDirect3DLight;
 struct glDirect3DDevice7;
-struct glDirectDrawSurface7;
+struct dxglDirectDrawSurface7;
 extern "C" {
 #else
 typedef int glDirect3DLight;
 typedef int glDirect3DDevice7;
-typedef int glDirectDrawSurface7;
+typedef int dxglDirectDrawSurface7;
 #endif
 
 struct glDirect3DViewport3Vtbl;
@@ -38,7 +38,7 @@ typedef struct glDirect3DViewport3
 	ULONG refcount;
 	glDirect3DLight *lights[8];
 	glDirect3DDevice7 *device;
-	glDirectDrawSurface7 *backZ;
+	dxglDirectDrawSurface7 *backZ;
 	D3DMATERIALHANDLE background;
 	D3DVIEWPORT viewport1;
 	D3DVIEWPORT2 viewport;

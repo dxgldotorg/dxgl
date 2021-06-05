@@ -18,7 +18,7 @@
 #include "common.h"
 #include "glTexture.h"
 #include "glUtil.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 #include "glDirectDrawGammaControl.h"
 #include "ddraw.h"
 
@@ -33,7 +33,7 @@ glDirectDrawGammaControlVtbl glDirectDrawGammaControl_iface =
 	glDirectDrawGammaControl_SetGammaRamp
 };
 
-HRESULT glDirectDrawGammaControl_Create(glDirectDrawSurface7 *glDDS7, glDirectDrawGammaControl *gamma)
+HRESULT glDirectDrawGammaControl_Create(dxglDirectDrawSurface7 *glDDS7, glDirectDrawGammaControl *gamma)
 {
 	TRACE_ENTER(2, 14, glDDS7, 14, gamma);
 	if (!glDDS7) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
@@ -57,31 +57,31 @@ HRESULT WINAPI glDirectDrawGammaControl_QueryInterface(glDirectDrawGammaControl 
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 	}
-	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_QueryInterface(This->glDDS7, riid, ppvObj));
+	TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_QueryInterface(This->glDDS7, riid, ppvObj));
 }
 ULONG WINAPI glDirectDrawGammaControl_AddRef(glDirectDrawGammaControl *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	TRACE_RET(ULONG, 8, glDirectDrawSurface7_AddRefGamma(This->glDDS7));
+	TRACE_RET(ULONG, 8, dxglDirectDrawSurface7_AddRefGamma(This->glDDS7));
 }
 ULONG WINAPI glDirectDrawGammaControl_Release(glDirectDrawGammaControl *This)
 {
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
-	TRACE_RET(ULONG, 8, glDirectDrawSurface7_ReleaseGamma(This->glDDS7));
+	TRACE_RET(ULONG, 8, dxglDirectDrawSurface7_ReleaseGamma(This->glDDS7));
 }
 HRESULT WINAPI glDirectDrawGammaControl_GetGammaRamp(glDirectDrawGammaControl *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData)
 {
 	TRACE_ENTER(3, 14, This, 9, dwFlags, 14, lpRampData);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_GetGammaRamp(This->glDDS7, dwFlags, lpRampData));
+	TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_GetGammaRamp(This->glDDS7, dwFlags, lpRampData));
 }
 HRESULT WINAPI glDirectDrawGammaControl_SetGammaRamp(glDirectDrawGammaControl *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData)
 {
 	TRACE_ENTER(3, 14, This, 9, dwFlags, 14, lpRampData);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	TRACE_RET(HRESULT, 23, glDirectDrawSurface7_SetGammaRamp(This->glDDS7, dwFlags, lpRampData));
+	TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_SetGammaRamp(This->glDDS7, dwFlags, lpRampData));
 }
 
 }

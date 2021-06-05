@@ -23,7 +23,7 @@
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"
 #include "glDirectDraw.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 #include "glDirect3DVertexBuffer.h"
 #include "glDirect3DViewport.h"
 #include "glDirect3DMaterial.h"
@@ -234,7 +234,7 @@ HRESULT glDirect3D7_CreateDevice2(glDirect3D7 *This, REFCLSID rclsid, LPDIRECTDR
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret;
 	glDirect3DDevice7 *glD3DDev7 = NULL;
-	ret = glDirect3DDevice7_Create(rclsid, This, (glDirectDrawSurface7*)lpDDS, NULL, version, &glD3DDev7);
+	ret = glDirect3DDevice7_Create(rclsid, This, (dxglDirectDrawSurface7*)lpDDS, NULL, version, &glD3DDev7);
 	if(FAILED(ret))
 	{
 		if (glD3DDev7) free(glD3DDev7);
@@ -569,7 +569,7 @@ HRESULT WINAPI glDirect3D3_CreateDevice(glDirect3D3 *This, REFCLSID rclsid, LPDI
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
 	HRESULT err = glDirect3D7_CreateDevice2(This->glD3D7, rclsid,
-		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface4*)lpDDS)->glDDS7,&lpD3DDev7,3);
+		(LPDIRECTDRAWSURFACE7)((dxglDirectDrawSurface4*)lpDDS)->glDDS7,&lpD3DDev7,3);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice3,(LPVOID*)lplpD3DDevice);
@@ -701,7 +701,7 @@ HRESULT WINAPI glDirect3D2_CreateDevice(glDirect3D2 *This, REFCLSID rclsid, LPDI
 	if(!lplpD3DDevice) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	LPDIRECT3DDEVICE7 lpD3DDev7;
 	HRESULT err = glDirect3D7_CreateDevice2(This->glD3D7, rclsid,
-		(LPDIRECTDRAWSURFACE7)((glDirectDrawSurface1*)lpDDS)->glDDS7,&lpD3DDev7,2);
+		(LPDIRECTDRAWSURFACE7)((dxglDirectDrawSurface1*)lpDDS)->glDDS7,&lpD3DDev7,2);
 	if(err == D3D_OK)
 	{
 		lpD3DDev7->QueryInterface(IID_IDirect3DDevice2,(LPVOID*)lplpD3DDevice);

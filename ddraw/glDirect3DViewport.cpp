@@ -21,7 +21,7 @@
 #include "timer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
-#include "glDirectDrawSurface.h"
+#include "dxglDirectDrawSurface.h"
 #include "glDirect3DLight.h"
 #include "glDirect3DDevice.h"
 #include "glDirect3DMaterial.h"
@@ -125,7 +125,7 @@ ULONG WINAPI glDirect3DViewport3_Release(glDirect3DViewport3 *This)
 	if (This->refcount == 0)
 	{
 		if (This->device) glDirect3DDevice7_Release(This->device);
-		if (This->backZ) glDirectDrawSurface7_Release(This->backZ);
+		if (This->backZ) dxglDirectDrawSurface7_Release(This->backZ);
 		for (int i = 0; i < 8; i++)
 		{
 			if (This->lights[i]) glDirect3DLight_Release(This->lights[i]);
@@ -225,7 +225,7 @@ HRESULT WINAPI glDirect3DViewport3_GetBackgroundDepth(glDirect3DViewport3 *This,
 		else *lpValid = FALSE;
 		TRACE_VAR("*lpValid",22,*lpValid);
 	}
-	if(This->backZ) glDirectDrawSurface7_QueryInterface(This->backZ,IID_IDirectDrawSurface,(void**)lplpDDSurface);
+	if(This->backZ) dxglDirectDrawSurface7_QueryInterface(This->backZ,IID_IDirectDrawSurface,(void**)lplpDDSurface);
 	else *lplpDDSurface = NULL;
 	TRACE_VAR("*lplpDDSurface",14,*lplpDDSurface);
 	TRACE_EXIT(23,D3D_OK);
@@ -242,7 +242,7 @@ HRESULT WINAPI glDirect3DViewport3_GetBackgroundDepth2(glDirect3DViewport3 *This
 		else *lpValid = FALSE;
 		TRACE_VAR("*lpValid",22,*lpValid);
 	}
-	if(This->backZ) glDirectDrawSurface7_QueryInterface(This->backZ,IID_IDirectDrawSurface4,(void**)lplpDDS);
+	if(This->backZ) dxglDirectDrawSurface7_QueryInterface(This->backZ,IID_IDirectDrawSurface4,(void**)lplpDDS);
 	else *lplpDDS = NULL;
 	TRACE_VAR("*lplpDDS",14,*lplpDDS);
 	TRACE_EXIT(23,D3D_OK);
@@ -305,8 +305,8 @@ HRESULT WINAPI glDirect3DViewport3_SetBackgroundDepth(glDirect3DViewport3 *This,
 	TRACE_ENTER(2, 14, This, 14, lpDDSurface);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->backZ && !lpDDSurface) TRACE_RET(HRESULT,23,D3D_OK);
-	if(((glDirectDrawSurface1*)lpDDSurface)->glDDS7 == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
-	if(This->backZ)glDirectDrawSurface7_Release(This->backZ);
+	if(((dxglDirectDrawSurface1*)lpDDSurface)->glDDS7 == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
+	if(This->backZ)dxglDirectDrawSurface7_Release(This->backZ);
 	if(lpDDSurface) ret = lpDDSurface->QueryInterface(IID_IDirectDrawSurface7,(void**)&This->backZ);
 	else This->backZ = NULL;
 	TRACE_EXIT(23,ret);
@@ -318,8 +318,8 @@ HRESULT WINAPI glDirect3DViewport3_SetBackgroundDepth2(glDirect3DViewport3 *This
 	TRACE_ENTER(2,14,This,14,lpDDS);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->backZ && !lpDDS) TRACE_RET(HRESULT,23,D3D_OK);
-	if(((glDirectDrawSurface4*)lpDDS)->glDDS7 == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
-	if(This->backZ)glDirectDrawSurface7_Release(This->backZ);
+	if(((dxglDirectDrawSurface4*)lpDDS)->glDDS7 == This->backZ) TRACE_RET(HRESULT,23,D3D_OK);
+	if(This->backZ)dxglDirectDrawSurface7_Release(This->backZ);
 	if(lpDDS) ret = lpDDS->QueryInterface(IID_IDirectDrawSurface7,(void**)&This->backZ);
 	else This->backZ = NULL;
 	TRACE_EXIT(23,ret);

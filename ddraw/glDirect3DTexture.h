@@ -29,7 +29,7 @@ typedef struct glDirect3DTexture2Vtbl
 	HRESULT(WINAPI *Load)(glDirect3DTexture2 *This, LPDIRECT3DTEXTURE2 lpD3DTexture);
 } glDirect3DTexture2Vtbl;
 
-HRESULT glDirect3DTexture2_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture2 *texture);
+HRESULT glDirect3DTexture2_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DTexture2 *texture);
 HRESULT WINAPI glDirect3DTexture2_QueryInterface(glDirect3DTexture2 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirect3DTexture2_AddRef(glDirect3DTexture2 *This);
 ULONG WINAPI glDirect3DTexture2_Release(glDirect3DTexture2 *This);
@@ -49,7 +49,7 @@ typedef struct glDirect3DTexture1Vtbl
 	HRESULT(WINAPI *Unload)(glDirect3DTexture1 *This);
 } glDirect3DTexture1Vtbl;
 
-HRESULT glDirect3DTexture1_Create(glDirectDrawSurface7 *glDDS7, glDirect3DTexture1 *texture);
+HRESULT glDirect3DTexture1_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DTexture1 *texture);
 HRESULT WINAPI glDirect3DTexture1_QueryInterface(glDirect3DTexture1 *This, REFIID riid, void** ppvObj);
 ULONG WINAPI glDirect3DTexture1_AddRef(glDirect3DTexture1 *This);
 ULONG WINAPI glDirect3DTexture1_Release(glDirect3DTexture1 *This);
