@@ -15,6 +15,8 @@
 ; License along with this library; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+; Temporary fix for NSIS 3.07
+Unicode False
 
 SetCompressor /SOLID lzma
 !ifdef NSIS_PACKEDVERSION
@@ -46,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2019_10"
+!if ${COMPILER} == "VC2019_11"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2019"
 !ifdef _CPU_X64
@@ -178,12 +180,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_10"
+!else if ${COMPILER} == "VC2019_11"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.29/VC_redist.x64.exe
-!define runtime_name "Visual C++ 2019.10 x64"
-!define runtime_filename "VC_redist.x64.exe"
-!define runtime_sha512 "109F087BA2021E1AC85C404C202822F01DBC056ACC933BF6CA30B67FC0F48711EB8F58AE15C4E4EB0693E80ECBD4FDF59DF172244189C3F96FAE1C329B77263E"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.29.30133/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2019.11 x64"
+!define runtime_filename "vc_redist.x64.exe"
+!define runtime_sha512 "E3DF6AD71BDB2946956DE71BF19B178DDFCCD829302CB3ECD773446443C59856F466D3BEB1E4A57A07DCA74219D70DB4791181024102F571EDC32FDCC942D82E"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -229,12 +231,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_10"
+!else if ${COMPILER} == "VC2019_11"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.29/VC_redist.x86.exe
-!define runtime_name "Visual C++ 2019.10 x86"
-!define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "E2DE89CB69803339F765BC1B29A7D6B24EFFD079F8296463AE6BE0A0FDC99D2DF2BC742C77B1E22EC320366ADA672C022605C26CE21F7A59BA9246DF8BE9E27D"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.29.30133/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2019.11 x86"
+!define runtime_filename "vc_redist.x86.exe"
+!define runtime_sha512 "4509CFBD5F08CC32D68855EDC285E8BA8CAA7D2C4D044E4256DD907B205FDA9A689C32AD7EF9FF3955E8390ED67498A54039A3CD4BFC9102ED82F9BD1255011A"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -404,7 +406,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2019_10"
+  !if ${COMPILER} == "VC2019_11"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -474,7 +476,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2019_10"
+  !if ${COMPILER} == "VC2019_11"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -487,7 +489,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.29.30037" $1
+  ${VersionCompare} "$0" "14.29.30133" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -602,7 +604,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_10"
+!if ${COMPILER} == "VC2019_11"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif
