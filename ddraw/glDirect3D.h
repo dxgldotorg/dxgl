@@ -41,6 +41,7 @@ typedef struct glDirect3D7Vtbl
 	ULONG(WINAPI *Release)(glDirect3D7 *This);
 	HRESULT(WINAPI *EnumDevices)(glDirect3D7 *This, LPD3DENUMDEVICESCALLBACK7 lpEnumDevicesCallback, LPVOID lpUserArg);
 	HRESULT(WINAPI *CreateDevice)(glDirect3D7 *This, REFCLSID rclsid, LPDIRECTDRAWSURFACE7 lpDDS, LPDIRECT3DDEVICE7 *lplpD3DDevice);
+	HRESULT(WINAPI *glDirect3D7_CreateVertexBuffer)(glDirect3D7 *This, LPD3DVERTEXBUFFERDESC lpVBDesc, LPDIRECT3DVERTEXBUFFER7* lplpD3DVertexBuffer, DWORD dwFlags);
 	HRESULT(WINAPI *EnumZBufferFormats)(glDirect3D7 *This, REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext);
 	HRESULT(WINAPI *EvictManagedTextures)(glDirect3D7 *This);
 } glDirect3D7Vtbl;

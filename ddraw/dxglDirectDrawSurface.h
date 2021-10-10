@@ -88,36 +88,96 @@ typedef struct glDirect3DTexture2
 } glDirect3DTexture2;
 
 struct dxglDirectDrawSurface7Vtbl;
+
+// dxglDirectDrawSurface7 - DDraw surface
 typedef struct dxglDirectDrawSurface7
 {
+	// COM function pointer table
 	dxglDirectDrawSurface7Vtbl *lpVtbl;
+
+	// Previous version interfaces
 	dxglDirectDrawSurface1 dds1;
 	dxglDirectDrawSurface2 dds2;
 	dxglDirectDrawSurface3 dds3;
 	dxglDirectDrawSurface4 dds4;
 	glDirect3DTexture2 d3dt2;
 	glDirect3DTexture1 d3dt1;
+	// Gamma control interface
 	glDirectDrawGammaControl gammacontrol;
-	DWORD flipcount;
-	DWORD fakex, fakey;
-	float mulx, muly;
-	CKEY colorkey[4];
-	glTexture *texture;
-	bool hasstencil;
-	DWORD miplevel;
+
+	// Reference counts
+	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
+	ULONG refcountgamma, refcountcolor;
+
+	// DDraw version of interface
+	int version;
+
+	// Surface description
 	DDSURFACEDESC2 ddsd;
-	glDirectDrawPalette *palette;
-	HGLRC hRC;
-	D3DMATERIALHANDLE handle;
-	glDirectDrawClipper *clipper;
-	IUnknown *creator;
-	IUnknown *textureparent;
+
+	// Number of times surface has flipped - resets to 0 when it reaches ddsd.dwBackBufferCount
+	DWORD flipcount;
+
+	// Big surface for scaled modes
+	dxglDirectDrawSurface7 *bigsurface;
+
+	// The texture represented by the surface
+	glTexture *texture;
+
+	// The parent surface, null if it's the top of a complex structure 
+	dxglDirectDrawSurface7 *parent;
+
+	// Z-buffer surface
 	dxglDirectDrawSurface7 *zbuffer;
-	dxglDirectDrawSurface7 *miptexture;
-	dxglDirectDrawSurface7 *backbuffer;
-	dxglDirectDrawSurface7 *backbufferwraparound;
-	DWORD attachcount;
+	IUnknown *zbuffer_iface;
+
+	// Clipper object attached to surface
+	glDirectDrawClipper *clipper;
+
+	// Palette object attached to surface
+	glDirectDrawPalette *palette;
+
+	// Interface that created the surface
+	glDirectDraw7 *ddInterface;
+	IUnknown *creator;
+
+	// Complex surface storage
+	dxglDirectDrawSurface7 *attached;
+
+	// Parent interface of IDirectDrawTexture interface
+	IUnknown *textureparent;
+
+	// Mipmap level of surface, used to reference texture miplevel
+	DWORD miplevel;
+
+	// Flip index of surface
+	DWORD flipindex;
+
+	// Parent surface for manually attached surfaces
 	dxglDirectDrawSurface7 *attachparent;
+	// Attachment count for manually attached surfaces
+	DWORD attachcount;
+
+	// D3D device attached to surface
+	glDirect3DDevice7 *device1;
+	glDirect3DDevice7 *device;
+
+	// Tracks vertical sync interval for the primary surface.
+	int swapinterval;
+
+	// Non-zero if the surface has been locked by the DDraw API.
+	int locked;
+
+	// Tracks status of PageLock API.
+	int pagelocked;
+
+	// GL context that created the surface
+	HGLRC hRC;
+
+	// Texture handle for D3D
+	D3DTEXTUREHANDLE handle;
+
+	// Overlay information, to be removed/optimized in a later build
 	BOOL overlayenabled;
 	BOOL overlayset;
 	int overlaycount;
@@ -125,18 +185,23 @@ typedef struct dxglDirectDrawSurface7
 	OVERLAY *overlays;
 	dxglDirectDrawSurface7 *overlaydest;
 	POINT overlaypos;
-	int swapinterval;
-	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
-	ULONG refcountgamma, refcountcolor;
-	int locked;
-	glDirectDraw7 *ddInterface;
+
+	// Padding on x86
+#ifdef _M_IX86
+	//DWORD padding[2];
+#endif
+
+	// Used by older versions of DXGL, may or may not be removed
+	/*DWORD fakex, fakey;
+	float mulx, muly;
+	CKEY colorkey[4];
+	glTexture *texture;
+	bool hasstencil;
+	dxglDirectDrawSurface7 *miptexture;
+	dxglDirectDrawSurface7 *backbuffer;
+	dxglDirectDrawSurface7 *backbufferwraparound;
 	//int surfacetype;  // 0-generic memory, 1-GDI surface, 2-OpenGL Texture
-	int pagelocked;
-	glDirect3DDevice7 *device1;
-	glDirect3DDevice7 *device;
-	IUnknown *zbuffer_iface;
-	int version;
-	unsigned char *clientbuffer;
+	unsigned char *clientbuffer;*/
 } dxglDirectDrawSurface7;
 
 typedef struct dxglDirectDrawSurface7Vtbl
@@ -192,8 +257,8 @@ typedef struct dxglDirectDrawSurface7Vtbl
 	HRESULT(WINAPI *GetLOD)(dxglDirectDrawSurface7 *This, LPDWORD lpdwMaxLOD);
 } glDirectDrawSurface7Vtbl;
 
-HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, HRESULT *error, glDirectDrawPalette *palettein,
-	glTexture *parenttex, DWORD miplevel, int version, dxglDirectDrawSurface7 *front, dxglDirectDrawSurface7 **glDDS7);
+HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, glDirectDrawPalette *palettein,
+	glTexture *parenttex, int version, dxglDirectDrawSurface7 *glDDS7);
 void dxglDirectDrawSurface7_Delete(dxglDirectDrawSurface7 *This);
 // ddraw 1+ api
 HRESULT WINAPI dxglDirectDrawSurface7_QueryInterface(dxglDirectDrawSurface7 *This, REFIID riid, void** ppvObj);

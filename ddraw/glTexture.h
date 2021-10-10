@@ -32,7 +32,7 @@ struct glUtil;
 
 DWORD CalculateMipLevels(DWORD width, DWORD height);
 
-HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend, GLenum targetoverride);
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture *texture, struct glRenderer *renderer, BOOL backend, GLenum targetoverride);
 ULONG glTexture_AddRef(glTexture *This);
 ULONG glTexture_Release(glTexture *This, BOOL backend);
 HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 ddsd, DWORD flags, BOOL backend);
@@ -50,7 +50,7 @@ void glTexture__Download(glTexture *This, GLint level);
 void glTexture__Upload(glTexture *This, GLint level);
 void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL checkerror, BOOL dorealloc, glUtil *util);
 BOOL glTexture__Repair(glTexture *This, BOOL preserve);
-void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling);
+//void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling);
 void glTexture__FinishCreate(glTexture *This);
 void glTexture__Destroy(glTexture *This);
 

@@ -39,7 +39,7 @@ typedef struct glDirectDrawClipper
 	bool hascliplist;
 	bool dirty;
 	IUnknown *creator;
-	glTexture *texture;
+	glTexture texture;
 	BOOL cliplistchanged;
 	WINDOWPLACEMENT lastpos;
 } glDirectDrawClipper;

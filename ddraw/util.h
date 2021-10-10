@@ -37,6 +37,9 @@ void UnregisterDXGLTempWindowClass();
 
 int DivCeiling(int dividend, int divisor);
 
+void EnterSpinlock(DWORD *lock);
+void ExitSpinlock(DWORD *lock);
+
 #ifdef __cplusplus
 }
 #endif

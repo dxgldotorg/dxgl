@@ -184,6 +184,7 @@ glDirect3D7Vtbl glDirect3D7_impl =
 	glDirect3D7_Release,
 	glDirect3D7_EnumDevices,
 	glDirect3D7_CreateDevice,
+	glDirect3D7_CreateVertexBuffer,
 	glDirect3D7_EnumZBufferFormats,
 	glDirect3D7_EvictManagedTextures
 };

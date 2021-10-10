@@ -153,8 +153,8 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->indices) free(This->indices);
 		if (This->glDD7) glDirectDraw7_DeleteClipper(This->glDD7, This);
 		if (This->creator) This->creator->Release();
-		if (This->texture) glTexture_Release(This->texture, FALSE);
-		free(This);
+		if (This->texture.initialized) glTexture_Release(&This->texture, FALSE);
+		if (This->glDD7) glRenderer_FreePointer(This->glDD7->renderer, This);
 	};
 	TRACE_EXIT(8,ret);
 	return ret;
@@ -520,5 +520,6 @@ void glDirectDrawClipper_CreateTexture(glDirectDrawClipper *This, glTexture *tex
 	ddsd.dwWidth = texture->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = texture->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->texture, renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, FALSE, 0);
+	glTexture_Create(&ddsd, &This->texture, renderer, FALSE, 0);
+	This->texture.freeonrelease = FALSE;
 }

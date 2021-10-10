@@ -1434,13 +1434,19 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 {
 	HRESULT error;
 	DWORD mipcount;
+	DWORD complexcount = 1;
+	size_t surfacesize;
 	TRACE_ENTER(5, 14, This, 14, lpDDSurfaceDesc2, 14, lplpDDSurface, 14, pUnkOuter, 22, RecordSurface);
+	// Validate interface pointer pointer
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	// Validate DDSURFACEDESC2 pointer
 	if (!lpDDSurfaceDesc2) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	// API doesn't support COM aggregation
 	if (pUnkOuter) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	// Check if cooperative level is set
 	if (!This->renderer) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
-	if (This->primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) && 
-		(This->renderer->hRC == This->primary->hRC))
+	// Check if primary exists if creating primary
+	if (This->primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		if (This->primarylost)
 		{
@@ -1452,16 +1458,36 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		}
 		else TRACE_RET(HRESULT, 23, DDERR_PRIMARYSURFACEALREADYEXISTS);
 	}
+	// Mipmap textures need a width and height
 	if ((lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_MIPMAP) && 
 		(!(lpDDSurfaceDesc2->dwFlags & DDSD_WIDTH) || !(lpDDSurfaceDesc2->dwFlags & DDSD_HEIGHT)))
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	// Check if mipmap count doesn't go past dimensions of 1
 	if (lpDDSurfaceDesc2->dwFlags & DDSD_MIPMAPCOUNT)
 	{
 		if (!(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_MIPMAP))
 			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (lpDDSurfaceDesc2->dwMipMapCount < 1) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		mipcount = CalculateMipLevels(lpDDSurfaceDesc2->dwWidth, lpDDSurfaceDesc2->dwHeight);
 		if (mipcount < lpDDSurfaceDesc2->dwMipMapCount) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
+	// Get complex surface size
+	// Validate backbuffer count and multiply by number of buffers
+	if (lpDDSurfaceDesc2->dwFlags & DDSD_BACKBUFFERCOUNT)
+	{
+		if (lpDDSurfaceDesc2->dwBackBufferCount < 1) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		complexcount *= lpDDSurfaceDesc2->dwBackBufferCount + 1;
+	}
+	// Multiply by number of mipmaps
+	if (lpDDSurfaceDesc2->dwFlags & DDSD_MIPMAPCOUNT)
+		complexcount * lpDDSurfaceDesc2->dwMipMapCount;
+	// Calculate surface size
+	surfacesize = sizeof(dxglDirectDrawSurface7) * complexcount;
+	if (lpDDSurfaceDesc2->dwFlags & DDSD_BACKBUFFERCOUNT)
+		surfacesize += sizeof(glTexture) * (lpDDSurfaceDesc2->dwBackBufferCount + 1);
+	else surfacesize += sizeof(glTexture);
+
+	// Create recorded surface
 	if (RecordSurface)
 	{
 		This->surfacecount++;
@@ -1474,7 +1500,13 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 			ZeroMemory(&This->surfaces[This->surfacecountmax], 1024 * sizeof(dxglDirectDrawSurface7 *));
 			This->surfacecountmax += 1024;
 		}
-		dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,&This->surfaces[This->surfacecount - 1]);
+		This->surfaces[This->surfacecount - 1] = (dxglDirectDrawSurface7*)malloc(surfacesize);
+		if (!This->surfaces[This->surfacecount - 1])
+		{
+			This->surfacecount--;
+			TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+		}
+		error = dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, NULL, NULL, version, This->surfaces[This->surfacecount - 1]);
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
 			This->primary = This->surfaces[This->surfacecount - 1];
@@ -1485,8 +1517,11 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	else
 	{
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, &error, NULL, NULL, 0, version, NULL,(dxglDirectDrawSurface7 **)lplpDDSurface);
+		*lplpDDSurface = (LPDIRECTDRAWSURFACE7)malloc(surfacesize);
+		if (!*lplpDDSurface) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
+		error = dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, NULL, NULL, version, (dxglDirectDrawSurface7 *)lplpDDSurface);
 	}
+	// Delete surface if creation failed
 	if (error != DD_OK)
 	{
 		dxglDirectDrawSurface7_Delete((dxglDirectDrawSurface7*)*lplpDDSurface);
@@ -1619,7 +1654,7 @@ HRESULT WINAPI glDirectDraw7_FlipToGDISurface(glDirectDraw7 *This)
 	HRESULT error = DD_OK;
 	if(This->primary)
 	{
-		if (!This->primary->backbuffer) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (!(This->primary->ddsd.dwFlags & DDSD_BACKBUFFERCOUNT)) TRACE_RET(HRESULT, 23, DDERR_NOTFLIPPABLE);
 		if(This->primary->flipcount)
 		{
 			while(This->primary->flipcount != 0)
@@ -1862,7 +1897,7 @@ HRESULT WINAPI glDirectDraw7_GetScanLine(glDirectDraw7 *This, LPDWORD lpdwScanLi
 	if(!This->primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	*lpdwScanLine = glRenderer_GetScanLine(This->renderer);
-	if(*lpdwScanLine >= This->primary->fakey) TRACE_RET(HRESULT,23,DDERR_VERTICALBLANKINPROGRESS);
+	if(*lpdwScanLine >= This->primary->ddsd.dwHeight) TRACE_RET(HRESULT,23,DDERR_VERTICALBLANKINPROGRESS);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }
@@ -1874,7 +1909,7 @@ HRESULT WINAPI glDirectDraw7_GetVerticalBlankStatus(glDirectDraw7 *This, LPBOOL 
 	if(!This->renderer) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
-	if(glRenderer_GetScanLine(This->renderer) >= This->primary->fakey) *lpbIsInVB = TRUE;
+	if(glRenderer_GetScanLine(This->renderer) >= This->primary->ddsd.dwHeight) *lpbIsInVB = TRUE;
 	else *lpbIsInVB = FALSE;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;

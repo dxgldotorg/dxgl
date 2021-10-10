@@ -182,100 +182,90 @@ void ShrinkMip(DWORD *x, DWORD *y)
 	*y = max(1, (DWORD)floorf((float)*y / 2.0f));
 }
 
-HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct glRenderer *renderer, GLint bigwidth, GLint bigheight, BOOL zhasstencil, BOOL backend, GLenum targetoverride)
+HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture *texture, struct glRenderer *renderer, BOOL backend, GLenum targetoverride)
 {
 	int i;
-	glTexture *newtexture;
 	if (!texture) return DDERR_INVALIDPARAMS;
-	if (!IsWritablePointer(texture, sizeof(glTexture*), TRUE))
+	if (!IsWritablePointer(texture, sizeof(glTexture), TRUE))
 		return DDERR_EXCEPTION;
 	if (ddsd->dwSize != sizeof(DDSURFACEDESC2)) return DDERR_INVALIDPARAMS;
 	if ((ddsd->dwFlags & DDSD_PIXELFORMAT) && (ddsd->ddpfPixelFormat.dwSize != sizeof(DDPIXELFORMAT)))
 		return DDERR_INVALIDPARAMS;
-	newtexture = (glTexture*)malloc(sizeof(glTexture));
-	if (!newtexture) return DDERR_OUTOFMEMORY;
-	ZeroMemory(newtexture, sizeof(glTexture));
-	memcpy(&newtexture->levels[0].ddsd, ddsd, sizeof(DDSURFACEDESC2));
-	newtexture->useconv = FALSE;
-	newtexture->pboPack = NULL;
-	newtexture->pboUnpack = NULL;
-	newtexture->target = targetoverride;
-	if (bigwidth)
+	ZeroMemory(texture, sizeof(glTexture));
+	memcpy(&texture->levels[0].ddsd, ddsd, sizeof(DDSURFACEDESC2));
+	texture->useconv = FALSE;
+	texture->pboPack = NULL;
+	texture->pboUnpack = NULL;
+	texture->target = targetoverride;
+	if (texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
 	{
-		newtexture->bigwidth = bigwidth;
-		newtexture->bigheight = bigheight;
-		newtexture->bigprimary = TRUE;
-	}
-	else newtexture->bigprimary = FALSE;
-	if (newtexture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
-	{
-		newtexture->levels[0].ddsd.dwFlags |= DDSD_PIXELFORMAT;
-		newtexture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-		newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_ZBUFFER;
-		if (!newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth)
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth = newtexture->levels[0].ddsd.dwRefreshRate;
-		switch (newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth)
+		texture->levels[0].ddsd.dwFlags |= DDSD_PIXELFORMAT;
+		texture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+		texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_ZBUFFER;
+		if (!texture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth)
+			texture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth =  texture->levels[0].ddsd.dwRefreshRate;
+		switch (texture->levels[0].ddsd.ddpfPixelFormat.dwZBufferBitDepth)
 		{
 		case 8:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFF;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFF;
 			break;
 		case 16:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFF;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFF;
 			break;
 		case 24:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFF;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFF;
 			break;
 		case 32:
 		default:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFFFF;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwZBitMask = 0xFFFFFFFF;
 			break;
 		}
-		newtexture->zhasstencil = zhasstencil;
+		//texture->zhasstencil = zhasstencil;
 	}
 
-	if (!(newtexture->levels[0].ddsd.dwFlags & DDSD_PIXELFORMAT))
+	if (!(texture->levels[0].ddsd.dwFlags & DDSD_PIXELFORMAT))
 	{
-		ZeroMemory(&newtexture->levels[0].ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
-		newtexture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-		newtexture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount = glRenderer_GetBPP(renderer);
+		ZeroMemory(&texture->levels[0].ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
+		texture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+		texture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount = glRenderer_GetBPP(renderer);
 		switch (glRenderer_GetBPP(renderer))
 		{
 		case 8:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0;
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth);
+			texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0;
+			texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth);
 			break;
 		case 15:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0x7C00;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0x3E0;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 2);
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount = 16;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0x7C00;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0x3E0;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
+			texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 2);
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount = 16;
 			break;
 		case 16:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 2);
+			texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0x7E0;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0x1F;
+			texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 2);
 			break;
 		case 24:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 3);
+			texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
+			texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 3);
 			break;
 		case 32:
 		default:
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
-			newtexture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
-			newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 4);
+			texture->levels[0].ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwRBitMask = 0xFF0000;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwGBitMask = 0xFF00;
+			texture->levels[0].ddsd.ddpfPixelFormat.dwBBitMask = 0xFF;
+			texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 4);
 			break;
 		}
 	}
@@ -288,7 +278,7 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 			case MAKEFOURCC('Y', '8', ' ', ' '):
 			case MAKEFOURCC('Y', '8', '0', '0'):
 			case MAKEFOURCC('G', 'R', 'E', 'Y'):
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth);
+				texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth);
 				break;
 			case MAKEFOURCC('Y', '1', '6', ' '):
 			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
@@ -300,53 +290,53 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture **texture, struct
 			case MAKEFOURCC('Y', 'V', 'Y', 'U'):
 			case MAKEFOURCC('R', 'G', 'B', 'G'):
 			case MAKEFOURCC('G', 'R', 'G', 'B'):
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 2);
+				texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 2);
 				break;
 			case MAKEFOURCC('A', 'Y', 'U', 'V'):
 			default:
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth * 4);
+				texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth * 4);
 				break;
 			}
 		}
 		else
 		{
 			if (ddsd->ddpfPixelFormat.dwRGBBitCount == 1)
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf8(newtexture->levels[0].ddsd.dwWidth) / 8;
+				texture->levels[0].ddsd.lPitch = NextMultipleOf8(texture->levels[0].ddsd.dwWidth) / 8;
 			else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 2)
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 4;
+				texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth) / 4;
 			else if (ddsd->ddpfPixelFormat.dwRGBBitCount == 4)
-				newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth) / 2;
-			else newtexture->levels[0].ddsd.lPitch = NextMultipleOf4(newtexture->levels[0].ddsd.dwWidth *
-				(newtexture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount / 8));
+				texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth) / 2;
+			else texture->levels[0].ddsd.lPitch = NextMultipleOf4(texture->levels[0].ddsd.dwWidth *
+				(texture->levels[0].ddsd.ddpfPixelFormat.dwRGBBitCount / 8));
 		}
 	}
-	/*if (!(newtexture->levels[0].ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
+	/*if (!(texture->levels[0].ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
 	{
-		newtexture->pixelformat = newtexture->levels[0].ddsd.ddpfPixelFormat;
-		if (newtexture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_MIPMAP)
-			newtexture->miplevel = newtexture->levels[0].ddsd.dwMipMapCount;
+		texture->pixelformat = texture->levels[0].ddsd.ddpfPixelFormat;
+		if (texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_MIPMAP)
+			texture->miplevel = texture->levels[0].ddsd.dwMipMapCount;
 		else texture->miplevel = 1;
 		glRenderer_MakeTexture(ddInterface->renderer, texture, fakex, fakey);
 	}*/
 
-	newtexture->renderer = renderer;
-	newtexture->refcount = 1;
+	texture->renderer = renderer;
+	texture->refcount = 1;
 	// Fill in mipmaps
-	if (!newtexture->miplevel) newtexture->miplevel = 1;
-	if (newtexture->miplevel > 1)
+	if (!texture->miplevel) texture->miplevel = 1;
+	if (texture->miplevel > 1)
 	{
-		for (i = 1; i < newtexture->miplevel; i++)
+		for (i = 1; i < texture->miplevel; i++)
 		{
-			memcpy(&newtexture->levels[i].ddsd, &newtexture->levels[0].ddsd, sizeof(DDSURFACEDESC2));
-			newtexture->levels[i].ddsd.dwMipMapCount = newtexture->levels[0].ddsd.dwMipMapCount - i;
-			newtexture->levels[i].ddsd.dwWidth = max(1, (DWORD)floorf((float)newtexture->levels[i - 1].ddsd.dwWidth / 2.0f));
-			newtexture->levels[i].ddsd.dwHeight = max(1, (DWORD)floorf((float)newtexture->levels[i - 1].ddsd.dwHeight / 2.0f));
-			newtexture->levels[i].ddsd.ddsCaps.dwCaps2 |= DDSCAPS2_MIPMAPSUBLEVEL;
+			memcpy(&texture->levels[i].ddsd, &texture->levels[0].ddsd, sizeof(DDSURFACEDESC2));
+			texture->levels[i].ddsd.dwMipMapCount = texture->levels[0].ddsd.dwMipMapCount - i;
+			texture->levels[i].ddsd.dwWidth = max(1, (DWORD)floorf((float)texture->levels[i - 1].ddsd.dwWidth / 2.0f));
+			texture->levels[i].ddsd.dwHeight = max(1, (DWORD)floorf((float)texture->levels[i - 1].ddsd.dwHeight / 2.0f));
+			texture->levels[i].ddsd.ddsCaps.dwCaps2 |= DDSCAPS2_MIPMAPSUBLEVEL;
 		}
 	}
-	if (backend) glTexture__FinishCreate(newtexture);
-	else glRenderer_MakeTexture(renderer, newtexture);
-	*texture = newtexture;
+	if (backend) glTexture__FinishCreate(texture);
+	else glRenderer_MakeTexture(renderer, texture);
+	texture->initialized = TRUE;
 	return DD_OK;
 }
 ULONG glTexture_AddRef(glTexture *This)
@@ -367,7 +357,6 @@ ULONG glTexture_Release(glTexture *This, BOOL backend)
 		for (i = 0; i < This->miplevel; i++)
 		{
 			if (This->levels[i].buffer) free(This->levels[i].buffer);
-			if (This->levels[i].bigbuffer) free(This->levels[i].bigbuffer);
 			if (This->levels[i].bitmapinfo) free(This->levels[i].bitmapinfo);
 		}
 		if (backend) glTexture__Destroy(This);
@@ -495,7 +484,9 @@ void glTexture_CreateDummyColor(glTexture *This, BOOL backend)
 	ddsd.dwWidth = This->levels[0].ddsd.dwWidth;
 	ddsd.lPitch = NextMultipleOf4(ddsd.dwWidth * 2);
 	ddsd.dwHeight = This->levels[0].ddsd.dwHeight;
-	glTexture_Create(&ddsd, &This->dummycolor, This->renderer, ddsd.dwWidth, ddsd.dwHeight, FALSE, backend, 0);
+	This->dummycolor = (glTexture*)malloc(sizeof(glTexture));
+	glTexture_Create(&ddsd, This->dummycolor, This->renderer, backend, 0);
+	This->dummycolor->freeonrelease = TRUE;
 }
 void glTexture_DeleteDummyColor(glTexture *This, BOOL backend)
 {
@@ -557,13 +548,13 @@ void glTexture__Download(glTexture *This, GLint level)
 	int x = This->levels[level].ddsd.dwWidth;
 	int y = This->levels[level].ddsd.dwHeight;
 	int i;
-	int bigpitch = NextMultipleOf4((bpp / 8)*This->bigwidth);
+	//int bigpitch = NextMultipleOf4((bpp / 8)*This->bigwidth);
 	int pitch = This->levels[level].ddsd.lPitch;
-	int bigx, bigy;
+	//int bigx, bigy;
 	int inpitch, outpitch;
 	GLenum error;
 	char *readbuffer;
-	if (level)
+	/*if (level)
 	{
 		bigx = This->levels[level].ddsd.dwWidth;
 		bigy = This->levels[level].ddsd.dwHeight;
@@ -572,15 +563,15 @@ void glTexture__Download(glTexture *This, GLint level)
 	{
 		bigx = This->bigwidth;
 		bigy = This->bigheight;
-	}
+	}*/
 	if (This->useconv)
 	{
-		if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
-		{
+		/*if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
+		{*/
 			if (!This->pboPack)
 				BufferObject_Create(&This->pboPack, This->renderer->ext, This->renderer->util);
-		}
-		else return; // Non-primary surfaces should not have scaling
+		/* }
+		else return; // Non-primary surfaces should not have scaling*/
 		inpitch = NextMultipleOf4(This->levels[level].ddsd.dwWidth * This->internalsize);
 		outpitch = This->levels[level].ddsd.lPitch;
 		if (This->pboPack->size < inpitch * This->levels[level].ddsd.dwHeight)
@@ -608,8 +599,8 @@ void glTexture__Download(glTexture *This, GLint level)
 	}
 	else
 	{
-		if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
-		{
+		/*if ((bigx == x && bigy == y) || !This->levels[level].bigbuffer)
+		{*/
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
 				This->renderer->ext->glGetTextureImageEXT(This->id, This->target, level, This->format, This->type, This->levels[level].buffer);
 			else
@@ -618,7 +609,7 @@ void glTexture__Download(glTexture *This, GLint level)
 				glUtil_SetTexture(This->renderer->util, 0, This);
 				glGetTexImage(This->target, level, This->format, This->type, This->levels[level].buffer);
 			}
-		}
+		/* }
 		else
 		{
 			if (This->renderer->ext->GLEXT_EXT_direct_state_access)
@@ -649,7 +640,7 @@ void glTexture__Download(glTexture *This, GLint level)
 					x, y, bigx, bigy, bigpitch / 4, pitch / 4);
 				break;
 			}
-		}
+		}*/
 	}
 	This->levels[level].dirty &= ~2;
 }
@@ -666,21 +657,21 @@ void glTexture__Upload2(glTexture *This, int level, int width, int height, BOOL 
 	{
 		This->levels[level].ddsd.dwWidth = width;
 		This->levels[level].ddsd.dwHeight = height;
-		This->bigwidth = width;
-		This->bigheight = height;
+		//This->bigwidth = width;
+		//This->bigheight = height;
 		This->levels[level].buffer = (char*)realloc(This->levels[level].buffer,
 			NextMultipleOf4((This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount *
 			This->levels[level].ddsd.dwWidth) / 8) * This->levels[level].ddsd.dwHeight);
-		if ((level == 0) && ((This->levels[level].ddsd.dwWidth != This->bigwidth) ||
+		/*if ((level == 0) && ((This->levels[level].ddsd.dwWidth != This->bigwidth) ||
 			(This->levels[level].ddsd.dwHeight != This->bigheight)))
 			This->levels[level].bigbuffer = (char *)realloc(This->levels[level].bigbuffer,
 				NextMultipleOf4((This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount *
-				This->bigwidth) / 8) * This->bigheight);
+				This->bigwidth) / 8) * This->bigheight);*/
 	}
-	if ((level == 0) && ((This->levels[level].ddsd.dwWidth != This->bigwidth) ||
+	/*if ((level == 0) && ((This->levels[level].ddsd.dwWidth != This->bigwidth) ||
 		(This->levels[level].ddsd.dwHeight != This->bigheight)))
 		data = This->levels[level].bigbuffer;
-	else data = This->levels[level].buffer;
+	else */data = This->levels[level].buffer;
 	if (This->useconv)
 	{
 		if (!This->pboUnpack)
@@ -773,25 +764,25 @@ void glTexture__Upload(glTexture *This, GLint level)
 	int bpp = This->levels[level].ddsd.ddpfPixelFormat.dwRGBBitCount;
 	int x = This->levels[level].ddsd.dwWidth;
 	int y = This->levels[level].ddsd.dwHeight;
-	int bigpitch = NextMultipleOf4((bpp / 8)*This->bigwidth);
+	//int bigpitch = NextMultipleOf4((bpp / 8)*This->bigwidth);
 	int pitch = This->levels[level].ddsd.lPitch;
 	int bigx, bigy;
-	if (level)
-	{
+	/*if (level)
+	{*/
 		bigx = This->levels[level].ddsd.dwWidth;
 		bigy = This->levels[level].ddsd.dwHeight;
-	}
+	/*}
 	else
 	{
 		bigx = This->bigwidth;
 		bigy = This->bigheight;
-	}
+	}*/
 	if (bpp == 15) bpp = 16;
-	if ((x == bigx && y == bigy) || !This->levels[level].bigbuffer)
-	{
+	/*if ((x == bigx && y == bigy) || !This->levels[level].bigbuffer)
+	{*/
 		glTexture__Upload2(This,level,
 			This->levels[level].ddsd.dwWidth, This->levels[level].ddsd.dwHeight, FALSE, FALSE, This->renderer->util);
-	}
+	/*}
 	else
 	{
 		switch (bpp)
@@ -815,7 +806,7 @@ void glTexture__Upload(glTexture *This, GLint level)
 		}
 		glTexture__Upload2(This, level,
 			bigx, bigy, FALSE, FALSE, This->renderer->util);
-	}
+	}*/
 }
 BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 {
@@ -832,7 +823,8 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 		for (i = 0; i < This->miplevel; i++)
 			glTexture__Download(This, i);
 	}
-	if (preserve) data = This->levels[0].bigbuffer ? This->levels[0].bigbuffer : This->levels[0].buffer;
+	//if (preserve) data = This->levels[0].bigbuffer ? This->levels[0].bigbuffer : This->levels[0].buffer;
+	if (preserve) data = This->levels[0].buffer;
 	glUtil_SetTexture(This->renderer->util, 0, This);
 	for (i = 0; i < This->miplevel; i++)
 	{
@@ -841,10 +833,10 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 			memmove(&This->internalformats[0], &This->internalformats[1], 7 * sizeof(GLint));
 			This->internalformats[7] = 0;
 			ClearError();
-			if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
+			/*if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
 				glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(This->bigwidth, This->packsize),
 					This->bigheight, 0, This->format, This->type, This->levels[i].bigbuffer);
-			else glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(This->levels[i].ddsd.dwWidth, This->packsize),
+			else*/ glTexImage2D(This->target, i, This->internalformats[0], DivCeiling(This->levels[i].ddsd.dwWidth, This->packsize),
 				This->levels[i].ddsd.dwHeight, 0, This->format, This->type, This->levels[i].buffer);
 			error = glGetError();
 			if (error != GL_NO_ERROR)
@@ -864,7 +856,7 @@ BOOL glTexture__Repair(glTexture *This, BOOL preserve)
 	return TRUE;
 }
 
-void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling)
+/*void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight, BOOL scaling)
 {
 	if (This->miplevel > 1) return;  // Function is not for mipmapped texture, primary and attachment only
 	if (This->levels[0].dirty & 2) glTexture__Download(This, 0);
@@ -889,14 +881,14 @@ void glTexture__SetPrimaryScale(glTexture *This, GLint bigwidth, GLint bigheight
 		glTexture__Upload2(This, 0, This->levels[0].ddsd.dwWidth, This->levels[0].ddsd.dwHeight,
 			FALSE, TRUE, This->renderer->util);
 	}
-}
+}*/
 
 void glTexture__FinishCreate(glTexture *This)
 {
 	int texformat = -1;
 	int i;
 	int bytes;
-	int bytes2;
+	//int bytes2;
 	DWORD x, y;
 	GLenum error;
 	DDPIXELFORMAT compformat;
@@ -1654,16 +1646,16 @@ void glTexture__FinishCreate(glTexture *This)
 	glTexParameteri(This->target, GL_TEXTURE_WRAP_S, This->wraps);
 	glTexParameteri(This->target, GL_TEXTURE_WRAP_T, This->wrapt);
 	glTexParameteri(This->target, GL_TEXTURE_MAX_LEVEL, This->miplevel - 1);
-	if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
+	/*if ((This->levels[0].ddsd.dwWidth != This->bigwidth) || (This->levels[0].ddsd.dwHeight != This->bigheight))
 	{
 		x = This->bigwidth;
 		y = This->bigheight;
 	}
 	else
-	{
+	{*/
 		x = This->levels[0].ddsd.dwWidth;
 		y = This->levels[0].ddsd.dwHeight;
-	}
+	//}
 	for (i = 0; i < This->miplevel; i++)
 	{
 		do
@@ -1693,7 +1685,7 @@ void glTexture__FinishCreate(glTexture *This)
 			case MAKEFOURCC('Y', '8', '0', '0'):
 			case MAKEFOURCC('G', 'R', 'E', 'Y'):
 				bytes = NextMultipleOf4(This->levels[i].ddsd.dwWidth);
-				bytes2 = NextMultipleOf4(This->bigwidth);
+				//bytes2 = NextMultipleOf4(This->bigwidth);
 			case MAKEFOURCC('Y', '1', '6', ' '):
 			case MAKEFOURCC('U', 'Y', 'V', 'Y'):
 			case MAKEFOURCC('U', 'Y', 'N', 'V'):
@@ -1705,12 +1697,12 @@ void glTexture__FinishCreate(glTexture *This)
 			case MAKEFOURCC('R', 'G', 'B', 'G'):
 			case MAKEFOURCC('G', 'R', 'G', 'B'):
 				bytes = NextMultipleOf4(2 * This->levels[i].ddsd.dwWidth);
-				bytes2 = NextMultipleOf4(2 * This->bigwidth);
+				//bytes2 = NextMultipleOf4(2 * This->bigwidth);
 				break;
 			case MAKEFOURCC('A', 'Y', 'U', 'V'):
 			default:
 				bytes = 4 * This->levels[i].ddsd.dwWidth;
-				bytes2 = 4 * This->bigwidth;
+				//bytes2 = 4 * This->bigwidth;
 				break;
 			}
 		}
@@ -1718,12 +1710,12 @@ void glTexture__FinishCreate(glTexture *This)
 		{
 			bytes = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
 				This->levels[i].ddsd.dwWidth) / 8);
-			bytes2 = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
-				This->bigwidth) / 8);
+			/*bytes2 = NextMultipleOf4((This->levels[i].ddsd.ddpfPixelFormat.dwRGBBitCount *
+				This->bigwidth) / 8);*/
 		}
 		This->levels[i].buffer = (char*)malloc(bytes * This->levels[i].ddsd.dwHeight);
-		if ((i == 0) && ((This->levels[i].ddsd.dwWidth != This->bigwidth) || (This->levels[i].ddsd.dwHeight != This->bigheight)))
-			This->levels[i].bigbuffer = (char *)malloc(bytes2 * This->bigheight);
+		/*if ((i == 0) && ((This->levels[i].ddsd.dwWidth != This->bigwidth) || (This->levels[i].ddsd.dwHeight != This->bigheight)))
+			This->levels[i].bigbuffer = (char *)malloc(bytes2 * This->bigheight);*/
 	}
 }
 void glTexture__Destroy(glTexture *This)
@@ -1732,7 +1724,8 @@ void glTexture__Destroy(glTexture *This)
 	glDeleteTextures(1, &This->id);
 	if (This->pboPack) BufferObject_Release(This->pboPack);
 	if (This->pboUnpack) BufferObject_Release(This->pboUnpack);
-	free(This);
+	if (This->freeonrelease) free(This);
+	else ZeroMemory(This, sizeof(glTexture));
 }
 
 void glTexture__SetFilter(glTexture *This, int level, GLint mag, GLint min, glRenderer *renderer)

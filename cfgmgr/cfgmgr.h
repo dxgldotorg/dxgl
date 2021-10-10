@@ -115,6 +115,7 @@ typedef struct
 	DWORD IndexBufferSize;
 	DWORD UnpackBufferSize;
 	DWORD CmdBufferSize;
+	DWORD MaxSpinCount;
 	// internal
 	BOOL Windows8Detected;
 	BOOL ParsedAddColorDepths;

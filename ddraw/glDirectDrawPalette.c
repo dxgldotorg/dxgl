@@ -165,6 +165,7 @@ ULONG WINAPI glDirectDrawPalette_AddRef(glDirectDrawPalette *This)
 
 ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 {
+	glRenderer *renderer = NULL;
 	ULONG ret;
 	TRACE_ENTER(1, 14, This);
 	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(ULONG, 8, 0);
@@ -172,8 +173,13 @@ ULONG WINAPI glDirectDrawPalette_Release(glDirectDrawPalette *This)
 	if (This->refcount == 0)
 	{
 		if (This->creator) This->creator->lpVtbl->Release(This->creator);
-		if (This->texture) glTexture_Release(This->texture, FALSE);
-		free(This);
+		if (This->texture.initialized)
+		{
+			renderer = This->texture.renderer;
+			glTexture_Release(&This->texture, FALSE);
+		}
+		if (renderer) glRenderer_FreePointer(renderer, This);
+		else free(This);
 	}
 	TRACE_EXIT(8,ret);
 	return ret;
@@ -241,11 +247,11 @@ HRESULT WINAPI glDirectDrawPalette_SetEntries(glDirectDrawPalette *This, DWORD d
 			memcpy(&This->palette[255], DefaultPalette + 1020, 4);
 		}
 	}
-	if (This->texture)
+	if (This->texture.initialized)
 	{
-		glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
+		glTexture_Lock(&This->texture, 0, NULL, &ddsd, 0, FALSE);
 		memcpy(ddsd.lpSurface, This->palette, 4 * This->palsize);
-		glTexture_Unlock(This->texture, 0, NULL, FALSE);
+		glTexture_Unlock(&This->texture, 0, NULL, FALSE);
 	}
 	if ((This->flags & DDPCAPS_PRIMARYSURFACE) && (This->surface))
 	{
@@ -320,7 +326,7 @@ HRESULT glDirectDrawPalette_Create(DWORD dwFlags, LPPALETTEENTRY lpDDColorArray,
 	newpal->flags = dwFlags;
 	newpal->lpVtbl = &glDirectDrawPalette_iface;
 	newpal->creator = NULL;
-	newpal->texture = NULL;
+	newpal->texture.initialized = FALSE;
 	newpal->surface = NULL;
 	newpal->timer = NULL;
 	if (lpDDColorArray == NULL)
@@ -372,8 +378,9 @@ void glDirectDrawPalette_CreateTexture(glDirectDrawPalette *This, struct glRende
 	memcpy(&ddsd, &ddsd256pal, sizeof(DDSURFACEDESC2));
 	ddsd.dwWidth = This->palsize;
 	ddsd.lPitch = This->palsize * 4;
-	glTexture_Create(&ddsd, &This->texture, renderer, This->palsize, 1, FALSE, FALSE, 0);
-	glTexture_Lock(This->texture, 0, NULL, &ddsd, 0, FALSE);
+	glTexture_Create(&ddsd, &This->texture, renderer, FALSE, 0);
+	This->texture.freeonrelease = FALSE;
+	glTexture_Lock(&This->texture, 0, NULL, &ddsd, 0, FALSE);
 	memcpy(ddsd.lpSurface, This->palette, (This->palsize * 4));
-	glTexture_Unlock(This->texture, 0, NULL, FALSE);
+	glTexture_Unlock(&This->texture, 0, NULL, FALSE);
 }

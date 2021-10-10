@@ -993,8 +993,8 @@ HRESULT WINAPI glDirect3DDevice7_DrawIndexedPrimitive(glDirect3DDevice7 *This, D
 	if(err != D3D_OK) TRACE_RET(HRESULT,23,err);
 	target.target = This->glDDS7->texture;
 	target.level = This->glDDS7->miplevel;
-	target.mulx = This->glDDS7->mulx;
-	target.muly = This->glDDS7->muly;
+	//target.mulx = This->glDDS7->mulx;
+	//target.muly = This->glDDS7->muly;
 	if (This->glDDS7->zbuffer)
 	{
 		target.zbuffer = This->glDDS7->zbuffer->texture;

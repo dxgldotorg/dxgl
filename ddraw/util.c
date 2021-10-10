@@ -205,3 +205,17 @@ int DivCeiling(int dividend, int divisor)
 	return (dividend / divisor) + (dividend % divisor != 0);
 }
 
+void EnterSpinlock(DWORD *lock)
+{
+	DWORD spincount = dxglcfg.MaxSpinCount;
+	DWORD lockcheck = 1;
+	while ((lockcheck = InterlockedExchange(lock, lockcheck)) != 0)
+	{
+		if (!spincount) Sleep(0);
+		else spincount--;
+	}
+}
+void ExitSpinlock(DWORD *lock)
+{
+	InterlockedExchange(lock, 0);
+}

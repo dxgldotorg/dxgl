@@ -107,6 +107,7 @@ typedef struct TEXTURESTAGE
 #define OP_SETUNIFORM				40
 #define OP_SETATTRIB				41
 #define OP_SETMODE3D				42
+#define OP_FREEPOINTER				43
 
 extern const DWORD renderstate_default[RENDERSTATE_COUNT];
 extern const TEXTURESTAGE texstagedefault0;
@@ -136,7 +137,7 @@ typedef struct glRenderer
 	HANDLE start;
 	unsigned int frequency;
 	DXGLTimer timer;
-	glTexture *backbuffers[16];
+	glTexture backbuffers[16];
 	DWORD fogcolor;
 	GLfloat fogcolorfloat[4];
 	GLfloat fogstart;
@@ -197,6 +198,7 @@ void glRenderer_SetD3DViewport(glRenderer *This, LPD3DVIEWPORT7 lpViewport);
 void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD dwFlags, LPDDCOLORKEY lpDDColorKey, GLint level);
 void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer_DXGLBreak(glRenderer *This);
+void glRenderer_FreePointer(glRenderer *This, void *ptr);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
@@ -242,6 +244,7 @@ void glRenderer__SetDepthComp(glRenderer *This);
 void glRenderer__DXGLBreak(glRenderer *This, BOOL setbusy);
 void glRenderer__EndCommand(glRenderer *This, BOOL wait);
 void glRenderer__SetMode3D(glRenderer *This, BOOL enabled);
+void glRenderer__FreePointer(glRenderer *This, void *ptr);
 
 void BltFlipLR(BltVertex *vertices);
 void BltFlipUD(BltVertex *vertices);

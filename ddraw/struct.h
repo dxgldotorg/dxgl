@@ -288,8 +288,6 @@ typedef struct MIPLEVEL
 {
 	DDSURFACEDESC2 ddsd;
 	char *buffer;
-	char *bigbuffer;
-	char *gdibuffer;
 	HDC hdc;
 	HBITMAP hbitmap;
 	BITMAPINFO *bitmapinfo;
@@ -309,9 +307,6 @@ typedef struct glTexture
 	UINT refcount;
 	GLuint id;
 	MIPLEVEL levels[17];  // Future proof to 64k
-	GLint bigwidth;
-	GLint bigheight;
-	BOOL bigprimary;
 	GLint minfilter;
 	GLint magfilter;
 	GLint wraps;
@@ -338,6 +333,11 @@ typedef struct glTexture
 	struct glRenderer *renderer;
 	BufferObject *pboPack;
 	BufferObject *pboUnpack;
+	BOOL freeonrelease;
+	BOOL initialized;
+#ifdef _M_IX86
+	DWORD padding[3];
+#endif
 } glTexture;
 // Color orders:
 // 0 - ABGR
@@ -448,7 +448,7 @@ typedef struct glDirectDrawPalette
 
 	ULONG refcount;
 	PALETTEENTRY palette[256];
-	glTexture *texture;
+	glTexture texture;
 	DWORD flags;
 	IUnknown *creator;
 	LPDIRECTDRAWSURFACE7 surface;

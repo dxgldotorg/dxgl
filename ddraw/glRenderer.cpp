@@ -187,7 +187,7 @@ void glRenderer_Init(glRenderer *This, int width, int height, int bpp, BOOL full
 	This->fogstart = 0.0f;
 	This->fogend = 1.0f;
 	This->fogdensity = 1.0f;
-	ZeroMemory(&This->backbuffers, 16 * sizeof(glTexture*));
+	ZeroMemory(&This->backbuffers, 16 * sizeof(glTexture));
 	This->hDC = NULL;
 	This->hRC = NULL;
 	This->pbo = NULL;
@@ -1252,6 +1252,23 @@ void glRenderer_DXGLBreak(glRenderer *This)
 }
 
 /**
+  * Frees a pointer via the backend to ensure textures are not freed early.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param ptr
+  *  Pointer to free in backend thread
+  */
+void glRenderer_FreePointer(glRenderer *This, void *ptr)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = ptr;
+	This->opcode = OP_FREEPOINTER;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
   * Main loop for glRenderer class
   * @param This
   *  Pointer to glRenderer object
@@ -1289,12 +1306,12 @@ DWORD glRenderer__Entry(glRenderer *This)
 				}
 				for (i = 0; i < 16; i++)
 				{
-					if (This->backbuffers[i])
+					if (This->backbuffers[i].initialized)
 					{
-						glTexture_Release(This->backbuffers[i], TRUE);
-						This->backbuffers[i] = NULL;
+						glTexture_Release(&This->backbuffers[i], TRUE);
 					}
 				}
+				ZeroMemory(&This->backbuffers, 16 * sizeof(glTexture));
 				//glRenderer__DeleteCommandBuffer(&This->cmd1);
 				//glRenderer__DeleteCommandBuffer(&This->cmd2);
 				ShaderManager_Delete(This->shaders);
@@ -1402,6 +1419,8 @@ DWORD glRenderer__Entry(glRenderer *This)
 		case OP_ENDCOMMAND:
 			glRenderer__EndCommand(This, (BOOL)This->inputs[0]);
 			break;
+		case OP_FREEPOINTER:
+			glRenderer__FreePointer(This, (void*)This->inputs[0]);
 		}
 	}
 	return 0;
@@ -1823,9 +1842,9 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 			glRenderer__DrawBackbufferRect(This, cmd->dest, destrect, destrect2, PROG_TEXTURE, 0);
 			This->bltvertices[1].dests = This->bltvertices[3].dests = 0.0f;
-			This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwWidth;
+			This->bltvertices[0].dests = This->bltvertices[2].dests = (GLfloat)(destrect.right - destrect.left) / (GLfloat)This->backbuffers[0].levels[0].ddsd.dwWidth;
 			This->bltvertices[0].destt = This->bltvertices[1].destt = 1.0f;
-			This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0f - ((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backbuffers[0]->levels[0].ddsd.dwHeight);
+			This->bltvertices[2].destt = This->bltvertices[3].destt = 1.0f - ((GLfloat)(destrect.bottom - destrect.top) / (GLfloat)This->backbuffers[0].levels[0].ddsd.dwHeight);
 		}
 	}
 	ShaderManager_SetShader(This->shaders, shaderid, NULL, 1);
@@ -1847,7 +1866,8 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 			cmd->dest->levels[cmd->destlevel].fbo.fbcolor = NULL;
 			cmd->dest->levels[cmd->destlevel].fbo.fbz = NULL;
 		} while (1);
-		glUtil_SetViewport(This->util, 0, 0, cmd->dest->bigwidth, cmd->dest->bigheight);
+		glUtil_SetViewport(This->util, 0, 0, cmd->dest->levels[cmd->destlevel].ddsd.dwWidth,
+			cmd->dest->levels[cmd->destlevel].ddsd.dwHeight);
 	}
 	glUtil_DepthTest(This->util, FALSE);
 	DDSURFACEDESC2 ddsdSrc;
@@ -2003,7 +2023,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
 		if(cmd->flags & 0x80000000)	glUtil_SetTexture(This->util, 9, cmd->dest);
-		else glUtil_SetTexture(This->util, 9, This->backbuffers[0]);
+		else glUtil_SetTexture(This->util, 9, &This->backbuffers[0]);
 		This->ext->glUniform1i(shader->shader.uniforms[2], 9);
 	}
 	if (usepattern && (shader->shader.uniforms[3] != -1))
@@ -2095,35 +2115,36 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 	x2 = (DWORD)((float)x * This->postsizex);
 	y2 = (DWORD)((float)y * This->postsizey);
 	glUtil_SetActiveTexture(This->util,8);
-	if(!This->backbuffers[index])
+	if(!This->backbuffers[index].initialized)
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		memcpy(&ddsd, &ddsdbackbuffer, sizeof(DDSURFACEDESC2));
 		ddsd.dwWidth = x2;
 		ddsd.lPitch = x2 * 4;
 		ddsd.dwHeight = y2;
-		glTexture_Create(&ddsd, &This->backbuffers[index], This, x2, y2, FALSE, TRUE, 0);
-		glUtil_InitFBO(This->util, &This->backbuffers[index]->levels[0].fbo);
+		glTexture_Create(&ddsd, &This->backbuffers[index], This, TRUE, 0);
+		This->backbuffers[index].freeonrelease = FALSE;
+		glUtil_InitFBO(This->util, &This->backbuffers[index].levels[0].fbo);
 	}
-	if((This->backbuffers[index]->levels[0].ddsd.dwWidth != x2) || (This->backbuffers[index]->levels[0].ddsd.dwHeight != y2))
+	if((This->backbuffers[index].levels[0].ddsd.dwWidth != x2) || (This->backbuffers[index].levels[0].ddsd.dwHeight != y2))
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		ddsd.dwWidth = x2;
 		ddsd.dwHeight = y2;
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
-		glTexture__SetSurfaceDesc(This->backbuffers[index], &ddsd);
+		glTexture__SetSurfaceDesc(&This->backbuffers[index], &ddsd);
 	}
 	if (texture)
 	{
-		glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffers[index], NULL, 0, 0, FALSE);
+		glUtil_SetFBOTextures(This->util, &This->fbo, &This->backbuffers[index], NULL, 0, 0, FALSE);
 		view[0] = view[2] = 0;
 		view[1] = (GLfloat)x2;
 		view[3] = (GLfloat)y2;
 		glUtil_SetViewport(This->util, 0, 0, x2, y2);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUtil_SetTexture(This->util, 8, *texture);
-		*texture = This->backbuffers[index];
+		*texture = &This->backbuffers[index];
 		if (!paletted && firstpass && (dxglcfg.postfilter == 1))
 			glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
 		else glTexture__SetFilter(*texture, 8, GL_NEAREST, GL_NEAREST, This);
@@ -2155,34 +2176,34 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	int y2 = destrect.bottom;
 	if (index > 15) return;
 	glUtil_SetActiveTexture(This->util, 0);
-	if (!This->backbuffers[index])
+	if (!This->backbuffers[index].initialized)
 	{
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		memcpy(&ddsd, &ddsdbackbuffer, sizeof(DDSURFACEDESC2));
 		ddsd.dwWidth = x2;
 		ddsd.lPitch = x2 * 4;
 		ddsd.dwHeight = y2;
-		glTexture_Create(&ddsd, &This->backbuffers[index], This, x2, y2, FALSE, TRUE, 0);
+		glTexture_Create(&ddsd, &This->backbuffers[index], This, TRUE, 0);
 	}
-	if ((This->backbuffers[index]->levels[0].ddsd.dwWidth < x2) || (This->backbuffers[index]->levels[0].ddsd.dwHeight < y2))
+	if ((This->backbuffers[index].levels[0].ddsd.dwWidth < x2) || (This->backbuffers[index].levels[0].ddsd.dwHeight < y2))
 	{
-		if (This->backbuffers[index]->levels[0].ddsd.dwWidth > x2) x2 = This->backbuffers[index]->levels[0].ddsd.dwWidth;
-		if (This->backbuffers[index]->levels[0].ddsd.dwHeight > y2) y2 = This->backbuffers[index]->levels[0].ddsd.dwHeight;
+		if (This->backbuffers[index].levels[0].ddsd.dwWidth > x2) x2 = This->backbuffers[index].levels[0].ddsd.dwWidth;
+		if (This->backbuffers[index].levels[0].ddsd.dwHeight > y2) y2 = This->backbuffers[index].levels[0].ddsd.dwHeight;
 		ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 		ddsd.dwSize = sizeof(DDSURFACEDESC2);
 		ddsd.dwWidth = x2;
 		ddsd.dwHeight = y2;
 		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
-		glTexture__SetSurfaceDesc(This->backbuffers[index], &ddsd);
+		glTexture__SetSurfaceDesc(&This->backbuffers[index], &ddsd);
 		x2 = destrect.right;
 		y2 = destrect.bottom;
 	}
-	glUtil_SetFBOTextures(This->util, &This->fbo, This->backbuffers[index], NULL, 0, 0, FALSE);
+	glUtil_SetFBOTextures(This->util, &This->fbo, &This->backbuffers[index], NULL, 0, 0, FALSE);
 	view[0] = view[2] = 0;
-	view[1] = (GLfloat)This->backbuffers[index]->levels[0].ddsd.dwWidth;
-	view[3] = (GLfloat)This->backbuffers[index]->levels[0].ddsd.dwHeight;
-	glUtil_SetViewport(This->util, 0, 0, This->backbuffers[index]->levels[0].ddsd.dwWidth, This->backbuffers[index]->levels[0].ddsd.dwHeight);
-	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backbuffers[index]->levels[0].ddsd.dwWidth, This->backbuffers[index]->levels[0].ddsd.dwHeight);
+	view[1] = (GLfloat)This->backbuffers[index].levels[0].ddsd.dwWidth;
+	view[3] = (GLfloat)This->backbuffers[index].levels[0].ddsd.dwHeight;
+	glUtil_SetViewport(This->util, 0, 0, This->backbuffers[index].levels[0].ddsd.dwWidth, This->backbuffers[index].levels[0].ddsd.dwHeight);
+	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backbuffers[index].levels[0].ddsd.dwWidth, This->backbuffers[index].levels[0].ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
 	glUtil_SetTexture(This->util, 8, texture);
@@ -2549,16 +2570,16 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			}
 			view[0] = (GLfloat)viewrect->left;
 			view[1] = (GLfloat)viewrect->right;
-			view[2] = (GLfloat)texture->bigheight-(GLfloat)viewrect->top;
-			view[3] = (GLfloat)texture->bigheight-(GLfloat)viewrect->bottom;
+			view[2] = (GLfloat)texture->levels[0].ddsd.dwHeight-(GLfloat)viewrect->top;
+			view[3] = (GLfloat)texture->levels[0].ddsd.dwHeight-(GLfloat)viewrect->bottom;
 		}
 	}
 	else
 	{
 		view[0] = 0;
-		view[1] = (GLfloat)texture->bigwidth;
+		view[1] = (GLfloat)texture->levels[0].ddsd.dwWidth;
 		view[2] = 0;
-		view[3] = (GLfloat)texture->bigheight;
+		view[3] = (GLfloat)texture->levels[0].ddsd.dwHeight;
 	}
 	glUtil_SetFBO(This->util, NULL);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -2573,7 +2594,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		glUtil_SetTexture(This->util,9,paltex);
 		if(dxglcfg.scalingfilter || (This->postsizex != 1.0f) || (This->postsizey != 1.0f))
 		{
-			glRenderer__DrawBackbuffer(This,&texture,texture->bigwidth,texture->bigheight,progtype,TRUE,TRUE,0);
+			glRenderer__DrawBackbuffer(This,&texture,texture->levels[0].ddsd.dwWidth,texture->levels[0].ddsd.dwHeight,progtype,TRUE,TRUE,0);
 			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 			progtype = PROG_TEXTURE;
 			glUtil_SetTexture(This->util,8,texture);
@@ -2586,7 +2607,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		{
 			progtype = PROG_TEXTURE;
 			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
-			glRenderer__DrawBackbuffer(This, &texture, texture->bigwidth, texture->bigheight, progtype, FALSE, TRUE, 0);
+			glRenderer__DrawBackbuffer(This, &texture, texture->levels[0].ddsd.dwWidth, texture->levels[0].ddsd.dwHeight, progtype, FALSE, TRUE, 0);
 			glUtil_SetTexture(This->util, 8, texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 0);
 		}
@@ -2607,9 +2628,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	}
 	else
 	{
-		This->bltvertices[0].x = This->bltvertices[2].x = (float)texture->bigwidth;
+		This->bltvertices[0].x = This->bltvertices[2].x = (float)texture->levels[0].ddsd.dwWidth;
 		This->bltvertices[0].y = This->bltvertices[1].y = This->bltvertices[1].x = This->bltvertices[3].x = 0.;
-		This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->bigheight;
+		This->bltvertices[2].y = This->bltvertices[3].y = (float)texture->levels[0].ddsd.dwHeight;
 	}
 	if (scale512448)
 	{
@@ -2889,11 +2910,11 @@ void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 	}
 	if(cmd->dwCount)
 	{
-		if (cmd->targetlevel == 0 && (cmd->target->levels[0].ddsd.dwWidth != cmd->target->bigwidth) ||
-			(cmd->target->levels[0].ddsd.dwHeight != cmd->target->bigheight))
+		if (cmd->targetlevel == 0 && (cmd->target->levels[0].ddsd.dwWidth != cmd->target->levels[0].ddsd.dwWidth) ||
+			(cmd->target->levels[0].ddsd.dwHeight != cmd->target->levels[0].ddsd.dwHeight))
 		{
-			mulx = (GLfloat)cmd->target->bigwidth / (GLfloat)cmd->target->levels[0].ddsd.dwWidth;
-			muly = (GLfloat)cmd->target->bigheight / (GLfloat)cmd->target->levels[0].ddsd.dwHeight;
+			mulx = (GLfloat)cmd->target->levels[0].ddsd.dwWidth / (GLfloat)cmd->target->levels[0].ddsd.dwWidth;
+			muly = (GLfloat)cmd->target->levels[0].ddsd.dwHeight / (GLfloat)cmd->target->levels[0].ddsd.dwHeight;
 			for (DWORD i = 0; i < cmd->dwCount; i++)
 			{
 				x1 = (GLsizei)(((GLfloat)cmd->lpRects[i].x1) * mulx);
@@ -4023,12 +4044,12 @@ void glRenderer__SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD 
 
 void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary)
 {
-	if (primary)
+	/*if (primary)
 	{
 		if (!parent) return;
-		glTexture__SetPrimaryScale(texture, parent->bigwidth, parent->bigheight, TRUE);
+		glTexture__SetPrimaryScale(texture, parent->levels[0].ddsd.dwWidth, parent->levels[0].ddsd.dwHeight, TRUE);
 	}
-	else glTexture__SetPrimaryScale(texture, 0, 0, FALSE);
+	else glTexture__SetPrimaryScale(texture, 0, 0, FALSE);*/
 	SetEvent(This->busy);
 }
 
@@ -4049,6 +4070,12 @@ void glRenderer__EndCommand(glRenderer *This, BOOL wait)
 void glRenderer__SetMode3D(glRenderer *This, BOOL enabled)
 {
 // TODO:  Set 3D mode
+}
+
+void glRenderer__FreePointer(glRenderer *This, void *ptr)
+{
+	SetEvent(This->busy);
+	free(ptr);
 }
 
 }

@@ -695,6 +695,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->IndexBufferSize = ReadDWORD(hKey, cfg->IndexBufferSize, &cfgmask->IndexBufferSize, _T("IndexBufferSize"));
 	cfg->UnpackBufferSize = ReadDWORD(hKey, cfg->UnpackBufferSize, &cfgmask->UnpackBufferSize, _T("UnpackBufferSize"));
 	cfg->CmdBufferSize = ReadDWORD(hKey, cfg->CmdBufferSize, &cfgmask->CmdBufferSize, _T("CmdBufferSize"));
+	cfg->MaxSpinCount = ReadDWORD(hKey, cfg->MaxSpinCount, &cfgmask->MaxSpinCount, _T("MaxSpinCount"));
 	cfg->primaryscale = ReadDWORD(hKey,cfg->primaryscale,&cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	cfg->primaryscalex = ReadFloat(hKey,cfg->primaryscalex,&cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	cfg->primaryscaley = ReadFloat(hKey,cfg->primaryscaley,&cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -876,6 +877,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->IndexBufferSize, cfgmask->IndexBufferSize, _T("IndexBufferSize"));
 	WriteDWORD(hKey, cfg->UnpackBufferSize, cfgmask->UnpackBufferSize, _T("UnpackBufferSize"));
 	WriteDWORD(hKey, cfg->CmdBufferSize, cfgmask->CmdBufferSize, _T("CmdBufferSize"));
+	WriteDWORD(hKey, cfg->MaxSpinCount, cfgmask->MaxSpinCount, _T("MaxSpinCount"));
 	WriteDWORD(hKey,cfg->primaryscale,cfgmask->primaryscale,_T("AdjustPrimaryResolution"));
 	WriteFloat(hKey,cfg->primaryscalex,cfgmask->primaryscalex,_T("PrimaryScaleX"));
 	WriteFloat(hKey,cfg->primaryscaley,cfgmask->primaryscaley,_T("PrimaryScaleY"));
@@ -1025,6 +1027,8 @@ LPTSTR MakeNewConfig(LPTSTR path)
 
 void GetDefaultConfig(DXGLCFG *cfg)
 {
+	OSVERSIONINFO osver;
+	SYSTEM_INFO sysinfo;
 	BOOL Windows8Detected = FALSE;
 	ZeroMemory(cfg, sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
@@ -1049,13 +1053,15 @@ void GetDefaultConfig(DXGLCFG *cfg)
 	cfg->LimitTextureFormats = 1;
 	if (!cfg->Windows8Detected)
 	{
-		OSVERSIONINFO osver;
 		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		GetVersionEx(&osver);
 		if (osver.dwMajorVersion > 6) Windows8Detected = TRUE;
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) Windows8Detected = TRUE;
 		if (Windows8Detected) cfg->AddColorDepths |= (1 | 4 | 16);
 	}
+	GetSystemInfo(&sysinfo);
+	if (sysinfo.dwNumberOfProcessors > 1) cfg->MaxSpinCount = 100000;
+	else cfg->MaxSpinCount = 0; // Don't spin on uniprocessor systems.
 }
 
 DWORD INIBoolValue(const char *value)
@@ -1277,6 +1283,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "IndexBufferSize")) cfg->IndexBufferSize = INIIntValue(value);
 			if (!_stricmp(name, "UnpackBufferSize")) cfg->UnpackBufferSize = INIIntValue(value);
 			if (!_stricmp(name, "CmdBufferSize")) cfg->CmdBufferSize = INIIntValue(value);
+			if (!_stricmp(name, "MaxSpinCount")) cfg->MaxSpinCount = INIIntValue(value);
 		}
 	}
 	return 1;
@@ -1711,6 +1718,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteInt(file, "IndexBufferSize", cfg->IndexBufferSize, mask->IndexBufferSize, INISECTION_HACKS);
 	INIWriteInt(file, "UnpackBufferSize", cfg->UnpackBufferSize, mask->UnpackBufferSize, INISECTION_HACKS);
 	INIWriteInt(file, "CmdBufferSize", cfg->CmdBufferSize, mask->CmdBufferSize, INISECTION_HACKS);
+	INIWriteInt(file, "MaxSpinCount", cfg->MaxSpinCount, mask->MaxSpinCount, INISECTION_HACKS);
 	CloseHandle(file);
 	return ERROR_SUCCESS;
 }

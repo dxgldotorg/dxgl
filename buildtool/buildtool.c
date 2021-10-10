@@ -35,13 +35,15 @@ typedef struct
 
 BOOL IsWOW64()
 {
+	HANDLE hKernel32;
 #ifdef _WIN64
 	return TRUE;
 #else
 	BOOL is64;
-	BOOL(__stdcall * _IsWow64Process)(HANDLE hProcess, PBOOL Wow64Process);
-	_IsWow64Process = (BOOL(__stdcall *)(HANDLE, PBOOL))
-		GetProcAddress(GetModuleHandle(_T("kernel32.dll")), "IsWow64Process");
+	BOOL(__stdcall * _IsWow64Process)(HANDLE hProcess, PBOOL Wow64Process) = NULL;
+	hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+	if(hKernel32) _IsWow64Process = (BOOL(__stdcall *)(HANDLE, PBOOL))
+		GetProcAddress(hKernel32, "IsWow64Process");
 	if (_IsWow64Process)
 	{
 		if (!_IsWow64Process(GetCurrentProcess(), &is64)) return FALSE;
