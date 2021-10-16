@@ -48,20 +48,20 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2019_11"
+!if ${COMPILER} == "VC2022_0"
 !ifdef _DEBUG
-!define PLUGINDIR "Debug VS2019"
+!define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
-!define SRCDIR "x64\Debug VS2019"
+!define SRCDIR "x64\Debug VS2022"
 !else
-!define SRCDIR "Debug VS2019"
+!define SRCDIR "Debug VS2022"
 !endif
 !else
-!define PLUGINDIR "Release VS2019"
+!define PLUGINDIR "Release VS2022"
 !ifdef _CPU_X64
-!define SRCDIR "x64\Release VS2019"
+!define SRCDIR "x64\Release VS2022"
 !else
-!define SRCDIR "Release VS2019"
+!define SRCDIR "Release VS2022"
 !endif
 !endif
 !else if ${COMPILER} == "VC2005"
@@ -180,12 +180,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_11"
+!else if ${COMPILER} == "VC2022_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.29.30133/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2019.11 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30704/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2022.0 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "E3DF6AD71BDB2946956DE71BF19B178DDFCCD829302CB3ECD773446443C59856F466D3BEB1E4A57A07DCA74219D70DB4791181024102F571EDC32FDCC942D82E"
+!define runtime_sha512 "E320F25DAC00FE18B825C1C154C8A5B8F571529AA411A9CDCC510B8B931B98BEC17B550ED425AA93FBBA6C96B9D3630C606264C03F117AA1D1DF09C7B0F20045"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -231,12 +231,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2019_11"
+!else if ${COMPILER} == "VC2022_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.29.30133/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2019.11 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30704/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2022.0 x86"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "4509CFBD5F08CC32D68855EDC285E8BA8CAA7D2C4D044E4256DD907B205FDA9A689C32AD7EF9FF3955E8390ED67498A54039A3CD4BFC9102ED82F9BD1255011A"
+!define runtime_sha512 "F7F4C7DD0690BFEC092ECD7882E6C7B5BD65E9ABA426C777BDF505C3C4EAEB7C479E33F1A29A64CF923903220117E035CDFD3A3873BFF8D71E8EDBCB7DCD58C8"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -275,7 +275,7 @@ VIProductVersion "${PRODUCT_VERSION_NUMBER}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2019 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2021 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
@@ -406,7 +406,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2019_11"
+  !if ${COMPILER} == "VC2022_0"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -476,7 +476,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2019_11"
+  !if ${COMPILER} == "VC2022_0"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -489,7 +489,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.29.30133" $1
+  ${VersionCompare} "$0" "14.30.30704" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -604,7 +604,7 @@ SectionEnd
 
 !if ${SIGNTOOL} == 1
 !finalize 'signtool sign /t http://timestamp.comodoca.com %1'
-!if ${COMPILER} == "VC2019_11"
+!if ${COMPILER} == "VC2022_0"
 !finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
 !endif
 !endif

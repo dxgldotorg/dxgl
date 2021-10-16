@@ -138,3 +138,23 @@
 /vs8/ddraw/x64
 /vs8/dxglcfg/x64
 /vs8/x64
+/Debug VS2022
+/Help/Debug VS2022
+/Help/Release VS2022
+/Installer/Debug VS2022
+/Installer/Release VS2022
+/Release VS2022
+/buildtool/Debug VS2022
+/buildtool/Release VS2022
+/cfgmgr/Debug VS2022
+/cfgmgr/Release VS2022
+/common/Debug VS2022
+/common/Release VS2022
+/ddraw/Debug VS2022
+/ddraw/Release VS2022
+/dxgl-nsis/Debug VS2022
+/dxgl-nsis/Release VS2022
+/dxglcfg-old/Debug VS2022
+/dxglcfg-old/Release VS2022
+/dxglcfg/Debug VS2022
+/dxglcfg/Release VS2022
