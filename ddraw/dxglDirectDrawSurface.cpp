@@ -1813,6 +1813,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_SetPalette(dxglDirectDrawSurface7 *This, L
 			This->palette->flags &= ~DDPCAPS_PRIMARYSURFACE;
 			This->palette->surface = NULL;
 			This->palette->timer = NULL;
+			glTexture_SetPalette(This->texture, NULL, FALSE);
 			glDirectDrawPalette_Release(This->palette);
 			if (!lpDDPalette) glDirectDrawPalette_Create(DDPCAPS_8BIT | DDPCAPS_ALLOW256 | DDPCAPS_PRIMARYSURFACE | 0x800, NULL, (LPDIRECTDRAWPALETTE*)&This->palette);
 		}
