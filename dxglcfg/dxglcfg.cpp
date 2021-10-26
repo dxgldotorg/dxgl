@@ -102,7 +102,7 @@ typedef struct
 
 TCHAR exe_filter[] = _T("Program Files\0*.exe\0All Files\0*.*\0\0");
 
-app_setting *apps;
+app_setting *apps = NULL;
 int appcount;
 int maxapps;
 DWORD current_app;
@@ -3339,7 +3339,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LONG error;
 	TCHAR buffer[64];
 	TCHAR subkey[MAX_PATH];
-	LPTSTR path;
+	LPTSTR path = NULL;
 	SHFILEINFO fileinfo;
 	DWORD verinfosize;
 	LPTSTR outbuffer;
@@ -4107,6 +4107,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				maxapps += 128;
 				apps = (app_setting *)realloc(apps, maxapps * sizeof(app_setting));
 			}
+			ZeroMemory(&apps[appcount - 1], sizeof(app_setting));
 			_tcscpy(subkey, keyname);
 			if (_tcsrchr(subkey, _T('-'))) *(_tcsrchr(subkey, _T('-'))) = 0;
 			error = RegOpenKeyEx(hKeyBase, keyname, 0, KEY_READ, &hKey);
@@ -4150,6 +4151,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				apps[appcount - 1].icon_shared = TRUE;
 				apps[appcount - 1].name = (TCHAR*)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
 				_tcscpy(apps[appcount - 1].name, subkey);
+				free(path);
 				break;
 			}
 			// Get exe attributes
@@ -4204,6 +4206,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		}
 		RegCloseKey(hKeyBase);
 		free(keyname);
+		free(regbuffer);
 		for(i = 0; i < appcount; i++)
 		{
 			SendDlgItemMessage(hWnd,IDC_APPS,CB_ADDSTRING,0,(LPARAM)apps[i].name);
@@ -4761,6 +4764,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
 	HANDLE hMutex;
 	HWND hWnd;
+	int i;
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	if (osver.dwMajorVersion > 4) gradientavailable = true;
@@ -4836,6 +4840,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 		return 0;
 	}
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	if (apps)
+	{
+		for (i = 0; i < appcount; i++)
+		{
+			if (apps[i].name) free(apps[i].name);
+			if(apps[i].regkey) free(apps[i].regkey);
+		}
+		free(apps);
+	}
 	if (comctl32) FreeLibrary(comctl32);
 	if (msimg32) FreeLibrary(msimg32);
 	ReleaseMutex(hMutex);
