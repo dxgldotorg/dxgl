@@ -1296,6 +1296,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 				{
 					if(This->dib.hbitmap) DeleteObject(This->dib.hbitmap);
 					if(This->dib.hdc) DeleteDC(This->dib.hdc);
+					if (This->dib.info) free(This->dib.info);
 					ZeroMemory(&This->dib,sizeof(DIB));
 				}
 				glUtil_DeleteFBO(This->util, &This->fbo);

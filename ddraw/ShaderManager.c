@@ -323,6 +323,7 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 	shaderman->gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
 	ZeroMemory(shaderman->gen2d, sizeof(ShaderGen2D));
 	ShaderGen2D_Init(shaderman->gen2d, shaderman->ext, shaderman);
+	String_Free(&src);
 }
 
 void ShaderManager_Delete(ShaderManager *This)

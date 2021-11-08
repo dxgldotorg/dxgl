@@ -570,7 +570,7 @@ ULONG WINAPI glDirect3DDevice7_AddRef(glDirect3DDevice7 *This)
 ULONG WINAPI glDirect3DDevice7_Release(glDirect3DDevice7 *This)
 {
 	TRACE_ENTER(1, 14, This);
-	if (This) TRACE_RET(ULONG, 8, 0);
+	if (!This) TRACE_RET(ULONG, 8, 0);
 	if (This->creator) TRACE_RET(ULONG, 8, This->creator->Release());
 	TRACE_RET(ULONG, 8, glDirect3DDevice7_ReleaseInternal(This));
 }
