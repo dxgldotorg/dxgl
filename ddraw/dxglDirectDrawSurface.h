@@ -121,6 +121,9 @@ typedef struct dxglDirectDrawSurface7
 	// Big surface for scaled modes
 	dxglDirectDrawSurface7 *bigsurface;
 
+	// Parent of big surface
+	dxglDirectDrawSurface7 *bigparent;
+
 	// The texture represented by the surface
 	glTexture *texture;
 

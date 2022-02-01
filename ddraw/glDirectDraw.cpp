@@ -1519,7 +1519,7 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		if (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		*lplpDDSurface = (LPDIRECTDRAWSURFACE7)malloc(surfacesize);
 		if (!*lplpDDSurface) TRACE_RET(HRESULT, 23, DDERR_OUTOFMEMORY);
-		error = dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, NULL, NULL, version, (dxglDirectDrawSurface7 *)lplpDDSurface);
+		error = dxglDirectDrawSurface7_Create((LPDIRECTDRAW7)This, lpDDSurfaceDesc2, NULL, NULL, version, (dxglDirectDrawSurface7 *)*lplpDDSurface);
 	}
 	// Delete surface if creation failed
 	if (error != DD_OK)

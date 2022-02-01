@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -199,12 +199,13 @@ void glRenderer_SetTextureColorKey(glRenderer *This, glTexture *texture, DWORD d
 void glRenderer_MakeTexturePrimary(glRenderer *This, glTexture *texture, glTexture *parent, BOOL primary);
 void glRenderer_DXGLBreak(glRenderer *This);
 void glRenderer_FreePointer(glRenderer *This, void *ptr);
+void glRenderer_SetTextureSurfaceDesc(glRenderer* This, glTexture* texture, LPDDSURFACEDESC2 ddsd);
 // In-thread APIs
 DWORD glRenderer__Entry(glRenderer *This);
 BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7);
 void glRenderer__UploadTexture(glRenderer *This, glTexture *texture, GLint level);
 void glRenderer__DownloadTexture(glRenderer *This, glTexture *texture, GLint level);
-void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend);
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbig);
 void glRenderer__MakeTexture(glRenderer *This, glTexture *texture);
 void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *paltex, GLint vsync, glTexture *previous, BOOL setsync, BOOL settime, OVERLAY *overlays, int overlaycount);
 void glRenderer__DeleteTexture(glRenderer *This, glTexture *texture);
@@ -245,6 +246,7 @@ void glRenderer__DXGLBreak(glRenderer *This, BOOL setbusy);
 void glRenderer__EndCommand(glRenderer *This, BOOL wait);
 void glRenderer__SetMode3D(glRenderer *This, BOOL enabled);
 void glRenderer__FreePointer(glRenderer *This, void *ptr);
+void glRenderer__SetTextureSurfaceDesc(glRenderer* This, glTexture* texture, LPDDSURFACEDESC2 ddsd);
 
 void BltFlipLR(BltVertex *vertices);
 void BltFlipUD(BltVertex *vertices);

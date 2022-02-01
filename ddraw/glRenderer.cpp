@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1269,6 +1269,26 @@ void glRenderer_FreePointer(glRenderer *This, void *ptr)
 }
 
 /**
+  * Sets the surface description of a texture object.
+  * @param This
+  *  Pointer to glRenderer object
+  * @param texture
+  *  Pointer to texture object to modify
+  * @param ddsd
+  *  Pointer to DDSURFACEDESC2 structure to modify the texture with
+  */
+void glRenderer_SetTextureSurfaceDesc(glRenderer* This, glTexture* texture, LPDDSURFACEDESC2 ddsd)
+{
+	EnterCriticalSection(&This->cs);
+	This->inputs[0] = texture;
+	This->inputs[1] = ddsd;
+	This->opcode = OP_SETTEXTURESURFACEDESC;
+	SetEvent(This->start);
+	WaitForSingleObject(This->busy, INFINITE);
+	LeaveCriticalSection(&This->cs);
+}
+
+/**
   * Main loop for glRenderer class
   * @param This
   *  Pointer to glRenderer object
@@ -1354,7 +1374,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 			glRenderer__DeleteTexture(This,(glTexture*)This->inputs[0]);
 			break;
 		case OP_BLT:
-			glRenderer__Blt(This, (BltCommand*)This->inputs[0], FALSE);
+			glRenderer__Blt(This, (BltCommand*)This->inputs[0], FALSE, FALSE);
 			break;
 		case OP_DRAWSCREEN:
 			glRenderer__DrawScreen(This,(glTexture*)This->inputs[0],(glTexture*)This->inputs[1],
@@ -1422,6 +1442,10 @@ DWORD glRenderer__Entry(glRenderer *This)
 			break;
 		case OP_FREEPOINTER:
 			glRenderer__FreePointer(This, (void*)This->inputs[0]);
+			break;
+		case OP_SETTEXTURESURFACEDESC:
+			glRenderer__SetTextureSurfaceDesc(This, (glTexture*)This->inputs[0], (LPDDSURFACEDESC2)This->inputs[1]);
+			break;
 		}
 	}
 	return 0;
@@ -1784,7 +1808,7 @@ void RotateBlt90(BltVertex *vertices, int times)
 	}
 }
 
-void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
+void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbig)
 {
 	int rotates = 0;
 	BOOL usedest = FALSE;
@@ -1794,6 +1818,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	RECT srcrect;
 	RECT destrect, destrect2;
 	RECT wndrect;
+	BltCommand cmd2;
 	glDirectDraw7_GetSizes(This->ddInterface, sizes);
 	unsigned __int64 shaderid;
 	DDSURFACEDESC2 ddsd;
@@ -1878,6 +1903,18 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	{
 		ddsdSrc = cmd->src->levels[cmd->srclevel].ddsd;
 		if (cmd->src->levels[cmd->srclevel].dirty & 1) glTexture__Upload(cmd->src, cmd->srclevel);
+	}
+	if ((cmd->dest->levels[cmd->destlevel].dirty & 4) && !bltbig)
+	{
+		cmd2.dest = cmd->dest;
+		cmd2.destrect = nullrect;
+		cmd2.src = cmd->dest->bigparent;
+		cmd2.srcrect = nullrect;
+		cmd2.destlevel = cmd->destlevel;
+		cmd2.srclevel = cmd->destlevel;
+		cmd2.flags = DDBLT_WAIT;
+		glRenderer__Blt(This, &cmd2, TRUE, TRUE);
+		cmd->dest->levels[cmd->destlevel].dirty &= ~4;
 	}
 	if (cmd->dest->levels[cmd->destlevel].dirty & 1)
 		glTexture__Upload(cmd->dest, cmd->destlevel);
@@ -2048,7 +2085,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	case 0x11:
 	case 0x12:
 	case 0x13: // Use palette
-		if (cmd->src->palette)
+		if (cmd->src && cmd->src->palette)
 		{
 			if (cmd->src->palette->levels[0].dirty & 1) glTexture__Upload(cmd->src->palette, 0);
 			glUtil_SetTexture(This->util, 12, cmd->src->palette);
@@ -2063,7 +2100,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 		glUtil_SetTexture(This->util, 8, cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
-			if((dxglcfg.BltScale == 0) || (This->ddInterface->primarybpp == 8))
+			if((dxglcfg.BltScale == 0) || (This->ddInterface->primarybpp == 8) || bltbig)
 				glTexture__SetFilter(cmd->src, 8, GL_NEAREST, GL_NEAREST, This);
 			else glTexture__SetFilter(cmd->src, 8, GL_LINEAR, GL_LINEAR, This);
 		}
@@ -2094,11 +2131,12 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend)
 	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glUtil_SetFBO(This->util, NULL);
-	if(((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
+	if (((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
-		!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
-		if(!(cmd->flags & 0x80000000)) glRenderer__DrawScreen(This,cmd->dest,cmd->dest->palette,0,NULL,FALSE,TRUE,NULL,0);
+			!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
+		if (!bltbig && !(cmd->flags & 0x80000000))
+			glRenderer__DrawScreen(This, cmd->dest, cmd->dest->palette, 0, NULL, FALSE, TRUE, NULL, 0);
 	This->outputs[0] = DD_OK;
 	if(!backend) SetEvent(This->busy);
 }
@@ -2525,8 +2563,21 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	LONG sizes[6];
 	GLfloat view[4];
 	GLint viewport[4];
+	if (texture->levels[0].dirty & 4)
+	{
+		bltcmd.dest = texture;
+		bltcmd.destrect = nullrect;
+		bltcmd.src = texture->bigparent;
+		bltcmd.srcrect = nullrect;
+		bltcmd.destlevel = 0;
+		bltcmd.srclevel = 0;
+		bltcmd.flags = DDBLT_WAIT;
+		glRenderer__Blt(This, &bltcmd, TRUE, TRUE);
+		texture->levels[0].dirty &= ~4;
+	}
 	if(texture->levels[0].dirty & 1) glTexture__Upload(texture, 0);
-	if(texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+	if((texture->bigparent && texture->bigparent->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		|| (texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
 		if(glDirectDraw7_GetFullscreen(This->ddInterface))
 		{
@@ -2696,7 +2747,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 				bltcmd.dest = primary;
 				bltcmd.destlevel = 0;
 				bltcmd.destrect = This->overlays[i].destrect;
-				glRenderer__Blt(This, &bltcmd, TRUE);
+				glRenderer__Blt(This, &bltcmd, TRUE, FALSE);
 			}
 		}
 	}
@@ -4077,6 +4128,14 @@ void glRenderer__FreePointer(glRenderer *This, void *ptr)
 {
 	SetEvent(This->busy);
 	free(ptr);
+}
+
+void glRenderer__SetTextureSurfaceDesc(glRenderer* This, glTexture* texture, LPDDSURFACEDESC2 ddsd)
+{
+	DDSURFACEDESC2 ddsd_copy;
+	memcpy(&ddsd_copy, ddsd, sizeof(DDSURFACEDESC2));
+	SetEvent(This->busy);
+	glTexture__SetSurfaceDesc(texture, &ddsd_copy);
 }
 
 }

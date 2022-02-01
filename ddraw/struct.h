@@ -297,6 +297,7 @@ typedef struct MIPLEVEL
 	// dirty bits:
 	// 1 - Surface buffer was locked and may have been written to by CPU
 	// 2 - Texture was written to by GPU
+	// 4 - Big texture needs upload
 	DWORD locked;
 	FBO fbo;
 } MIPLEVEL;
@@ -331,6 +332,8 @@ typedef struct glTexture
 	struct glTexture *stencil;
 	struct glTexture *dummycolor;
 	struct glRenderer *renderer;
+	struct glTexture *bigparent;
+	struct glTexture *bigtexture;
 	BufferObject *pboPack;
 	BufferObject *pboUnpack;
 	BOOL freeonrelease;

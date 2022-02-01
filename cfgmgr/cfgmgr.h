@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2022 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -48,8 +48,7 @@ typedef struct
 	// [scaling]
 	DWORD scalingfilter;
 	DWORD BltScale;
-	// Removed for DXGL 0.5.13 release
-	// DWORD BltThreshold;
+	DWORD BltThreshold;
 	DWORD primaryscale;
 	float primaryscalex;
 	float primaryscaley;
