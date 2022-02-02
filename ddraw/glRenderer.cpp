@@ -2131,12 +2131,21 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbi
 	glUtil_SetPolyMode(This->util, D3DFILL_SOLID);
 	This->ext->glDrawRangeElements(GL_TRIANGLE_STRIP,0,3,4,GL_UNSIGNED_SHORT,bltindices);
 	glUtil_SetFBO(This->util, NULL);
+	if (cmd->dest->bigparent)
+	{
+		ddsd.dwFlags = cmd->dest->bigparent->levels[cmd->destlevel].ddsd.dwFlags;
+		ddsd.ddsCaps.dwCaps = cmd->dest->bigparent->levels[cmd->destlevel].ddsd.ddsCaps.dwCaps;
+	}
 	if (((ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&
 			!(ddsd.ddsCaps.dwCaps & DDSCAPS_FLIP)))
 		if (!bltbig && !(cmd->flags & 0x80000000))
-			glRenderer__DrawScreen(This, cmd->dest, cmd->dest->palette, 0, NULL, FALSE, TRUE, NULL, 0);
+		{
+			if(cmd->dest->bigparent)
+				glRenderer__DrawScreen(This, cmd->dest, cmd->dest->bigparent->palette, 0, NULL, FALSE, TRUE, NULL, 0);
+			else glRenderer__DrawScreen(This, cmd->dest, cmd->dest->palette, 0, NULL, FALSE, TRUE, NULL, 0);
+		}
 	This->outputs[0] = DD_OK;
 	if(!backend) SetEvent(This->busy);
 }
