@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2019 William Feely
+// Copyright (C) 2012-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -407,15 +407,15 @@ void glUtil_SetMaterial(glUtil *This, GLfloat ambient[4],GLfloat diffuse[4],GLfl
 
 void glUtil_SetViewport(glUtil *This, GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	if ((x != This->viewportx) || (y != This->viewporty) ||
-		(width != This->viewportwidth) || (height != This->viewportheight))
-	{
+	//if ((x != This->viewportx) || (y != This->viewporty) ||
+//		(width != This->viewportwidth) || (height != This->viewportheight))
+//	{
 		This->viewportx = x;
 		This->viewporty = y;
 		This->viewportwidth = width;
 		This->viewportheight = height;
 		glViewport(x,y,width,height);
-	}
+//	}
 }
 
 void glUtil_SetDepthRange(glUtil *This, GLclampd rangenear, GLclampd rangefar)

@@ -2524,6 +2524,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	unsigned __int64 shaderid;
 	BltCommand bltcmd;
 	glTexture *primary = texture;
+	BOOL isprimary = FALSE;
 	BOOL scale512448 = Is512448Scale(This, texture, paltex);
 	if (overlays && overlaycount)
 	{
@@ -2550,7 +2551,12 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	glUtil_BlendEnable(This->util, FALSE);
 	if (previous) previous->levels[0].ddsd.ddsCaps.dwCaps &= ~DDSCAPS_FRONTBUFFER;
 	texture->levels[0].ddsd.ddsCaps.dwCaps |= DDSCAPS_FRONTBUFFER;
-	if((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+	if (texture->bigparent)
+	{
+		if ((texture->bigparent->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) isprimary = TRUE;
+	}
+	else if ((texture->levels[0].ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) isprimary = TRUE;
+	if(isprimary)
 	{
 		_GetClientRect(This->hWnd,&r);
 		GetClientRect(This->RenderWnd->hWnd,&r2);

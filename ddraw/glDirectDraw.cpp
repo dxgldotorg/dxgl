@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1995,8 +1995,13 @@ void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHe
 	glDD7->internaly = glDD7->screeny = dwHeight;
 	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
 		glDD7->internaly = (DWORD)((float)glDD7->internaly * 1.2f);
-	if (glDD7->renderer && glDD7->primary) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
-		glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
+	if (glDD7->renderer && glDD7->primary)
+	{
+		if (glDD7->primary->bigsurface) glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->bigsurface->texture,
+			glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
+		else glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
+			glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
+	}
 }
 BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
