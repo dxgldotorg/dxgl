@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2014 William Feely
+// Copyright (C) 2013-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@ static BOOL trace_ready = FALSE;
 static BOOL trace_fail = FALSE;
 BOOL trace_end = FALSE;
 static HANDLE outfile = INVALID_HANDLE_VALUE;
-unsigned int trace_depth = 0;
+int trace_depth = 0;
 static void trace_decode_hresult(HRESULT hr)
 {
 	DWORD byteswritten;
@@ -1057,7 +1057,7 @@ void trace_enter(const char *function, int paramcount, ...)
 {
 	va_list args;
 	DWORD byteswritten;
-	unsigned int i;
+	int i;
 	int argtype;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
@@ -1073,7 +1073,7 @@ void trace_enter(const char *function, int paramcount, ...)
 		WriteFile(outfile,"    ",4,&byteswritten,NULL);
 	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
 	WriteFile(outfile,"(",1,&byteswritten,NULL);
-	for(i = 0; i < (unsigned)paramcount; i++)
+	for(i = 0; i < paramcount; i++)
 	{
 		if(i != 0) WriteFile(outfile,", ",2,&byteswritten,NULL);
 		argtype = va_arg(args,int);
@@ -1087,7 +1087,7 @@ void trace_enter(const char *function, int paramcount, ...)
 void trace_exit(const char *function, int argtype, void *arg)
 {
 	DWORD byteswritten;
-	unsigned int i;
+	int i;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1114,7 +1114,7 @@ void *trace_ret(const char *function, int argtype, void *arg)
 void trace_var(const char *function, const char *var, int argtype, void *arg)
 {
 	DWORD byteswritten;
-	unsigned int i;
+	int i;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1138,7 +1138,7 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 void trace_string(const char *str)
 {
 	DWORD byteswritten;
-	unsigned int i;
+	int i;
 	if (trace_fail) return;
 	if (!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1163,7 +1163,7 @@ void trace_sysinfo()
 	HMODULE hKernel32;
 	BOOL(WINAPI *iswow64)(HANDLE, PBOOL);
 	BOOL is64;
-	unsigned int i;
+	int i;
 	const GLubyte *glstring;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
