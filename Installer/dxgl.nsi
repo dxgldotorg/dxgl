@@ -15,7 +15,7 @@
 ; License along with this library; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-; Temporary fix for NSIS 3.07
+; Temporary fix for NSIS 3.07+
 Unicode False
 
 SetCompressor /SOLID lzma
@@ -182,10 +182,10 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2022_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30704/vc_redist.x64.exe
+!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30708/vc_redist.x64.exe
 !define runtime_name "Visual C++ 2022.0 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "E320F25DAC00FE18B825C1C154C8A5B8F571529AA411A9CDCC510B8B931B98BEC17B550ED425AA93FBBA6C96B9D3630C606264C03F117AA1D1DF09C7B0F20045"
+!define runtime_sha512 "16C1B043C81394BAB65B40C5A9C5B742300CB605D9780226AF725BF4D6E38C701F604549B2A3B2138AE951AADFC53FAEA66C97268C8C61C6C4F0771426ECCA62"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -233,10 +233,10 @@ SetCompressor /SOLID lzma
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2022_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30704/vc_redist.x86.exe
+!define runtime_url http://dxgl.org/download/runtimes/vc14.30.30708/vc_redist.x86.exe
 !define runtime_name "Visual C++ 2022.0 x86"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "F7F4C7DD0690BFEC092ECD7882E6C7B5BD65E9ABA426C777BDF505C3C4EAEB7C479E33F1A29A64CF923903220117E035CDFD3A3873BFF8D71E8EDBCB7DCD58C8"
+!define runtime_sha512 "D6AE156CF6BAB6AEE72BE07B4C752BDEA78306D61DBDC54DDE7F2E7E1AB0A94B408016D96336B626324B001B4CEBD545BCE7D9B997AD991F3AA1DEE31A8327CA"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -489,7 +489,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.30.30704" $1
+  ${VersionCompare} "$0" "14.30.30708" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
