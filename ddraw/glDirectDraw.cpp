@@ -2791,8 +2791,16 @@ HRESULT WINAPI glDirectDraw7_WaitForVerticalBlank(glDirectDraw7 *This, DWORD dwF
 		TRACE_RET(HRESULT,23,DDERR_UNSUPPORTED);
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(!This->lastsync) This->lastsync = true;
-	else if(This->primary) dxglDirectDrawSurface7_RenderScreen(This->primary,This->primary->texture,1,NULL,TRUE,NULL,0);
+	if (!This->cooplevel) TRACE_RET(HRESULT, 23, DD_OK); // Silently pass
+	if (!This->lastsync)
+	{
+		This->lastsync = true;
+	}
+	else if (This->primary)
+	{
+		if(DXGLTimer_CheckLastDraw(&This->renderer->timer, 2))
+			dxglDirectDrawSurface7_RenderScreen(This->primary, This->primary->texture, 1, NULL, TRUE, NULL, 0);
+	}
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
 }

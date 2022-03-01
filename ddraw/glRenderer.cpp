@@ -1901,6 +1901,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbi
 	ddsdSrc.dwSize = sizeof(DDSURFACEDESC2);
 	if (cmd->src)
 	{
+		if(cmd->src->bigtexture && !bltbig) cmd->src = cmd->src->bigtexture;
 		ddsdSrc = cmd->src->levels[cmd->srclevel].ddsd;
 		if (cmd->src->levels[cmd->srclevel].dirty & 1) glTexture__Upload(cmd->src, cmd->srclevel);
 	}

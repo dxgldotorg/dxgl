@@ -366,11 +366,27 @@ ULONG glTexture_Release(glTexture *This, BOOL backend)
 }
 HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 ddsd, DWORD flags, BOOL backend)
 {
+	BltCommand cmd;
 	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	if (!ddsd) return DDERR_INVALIDPARAMS;
 	InterlockedIncrement((LONG*)&This->levels[level].locked);
 	if (backend)
 	{
+		if (This->bigtexture)
+		{
+			if (This->bigtexture->levels[level].dirty & 2)
+			{
+				cmd.dest = This;
+				cmd.destrect = nullrect;
+				cmd.src = This->bigtexture;
+				cmd.srcrect = nullrect;
+				cmd.destlevel = level;
+				cmd.srclevel = level;
+				cmd.flags = DDBLT_WAIT;
+				glRenderer__Blt(This, &cmd, TRUE, TRUE);
+				This->bigtexture->levels[level].dirty &= ~2;
+			}
+		}
 		if (This->levels[level].dirty & 2) glTexture__Download(This, level);
 	}
 	else
