@@ -1672,6 +1672,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_ReleaseDC(dxglDirectDrawSurface7 *This, HD
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!hDC) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT error = glTexture_ReleaseDC(This->texture, This->miplevel, hDC);
+	if (This->bigsurface) This->bigsurface->texture->levels[This->miplevel].dirty |= 4;
 	if (((This->ddsd.ddsCaps.dwCaps & (DDSCAPS_FRONTBUFFER)) &&
 		(This->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)) ||
 		((This->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) &&

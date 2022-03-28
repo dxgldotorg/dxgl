@@ -2535,7 +2535,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	BltCommand bltcmd;
 	glTexture *primary = texture;
 	BOOL isprimary = FALSE;
-	BOOL scale512448 = Is512448Scale(This, texture, paltex);
+	BOOL scale512448;
+	if(texture->bigparent) scale512448 = Is512448Scale(This, texture->bigparent, paltex);
+	else scale512448 = Is512448Scale(This, texture, paltex);
 	if (overlays && overlaycount)
 	{
 		if (!This->overlays)
