@@ -1080,8 +1080,8 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	}
 	if (dwFlags & DDBLT_KEYDEST)
 	{
-		if (!(dest->ddsd.dwFlags & DDSD_CKDESTBLT)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		if (dest->ddsd.ddckCKDestBlt.dwColorSpaceHighValue != dest->ddsd.ddckCKDestBlt.dwColorSpaceLowValue)
+		if (!(This->ddsd.dwFlags & DDSD_CKDESTBLT)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (This->ddsd.ddckCKDestBlt.dwColorSpaceHighValue != This->ddsd.ddckCKDestBlt.dwColorSpaceLowValue)
 			cmd.flags |= 0x40000000;
 	}
 	if (dwFlags & DDBLT_KEYDESTOVERRIDE)
