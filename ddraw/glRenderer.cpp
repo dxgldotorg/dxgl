@@ -2997,11 +2997,25 @@ void glRenderer__Clear(glRenderer *This, ClearCommand *cmd)
 		}
 		else
 		{
-			for (DWORD i = 0; i < cmd->dwCount; i++)
+			if (cmd->target->bigparent)
 			{
-				glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1, cmd->lpRects[i].y1,
-					(cmd->lpRects[i].x2 - cmd->lpRects[i].x1), cmd->lpRects[i].y2 - cmd->lpRects[i].y1);
-				glClear(clearbits);
+				mulx = (GLfloat)cmd->target->levels[0].ddsd.dwWidth / (GLfloat)cmd->target->bigparent->levels[0].ddsd.dwWidth;
+				muly = (GLfloat)cmd->target->levels[0].ddsd.dwHeight / (GLfloat)cmd->target->bigparent->levels[0].ddsd.dwHeight;
+				for (DWORD i = 0; i < cmd->dwCount; i++)
+				{
+					glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1 * mulx, cmd->lpRects[i].y1 * muly,
+						(cmd->lpRects[i].x2 * mulx - cmd->lpRects[i].x1 * mulx), cmd->lpRects[i].y2 * muly - cmd->lpRects[i].y1 * muly);
+					glClear(clearbits);
+				}
+			}
+			else
+			{
+				for (DWORD i = 0; i < cmd->dwCount; i++)
+				{
+					glUtil_SetScissor(This->util, TRUE, cmd->lpRects[i].x1, cmd->lpRects[i].y1,
+						(cmd->lpRects[i].x2 - cmd->lpRects[i].x1), cmd->lpRects[i].y2 - cmd->lpRects[i].y1);
+					glClear(clearbits);
+				}
 			}
 		}
 		glUtil_SetScissor(This->util, false, 0, 0, 0, 0);

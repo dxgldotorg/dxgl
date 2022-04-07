@@ -990,37 +990,41 @@ HRESULT dxglDirectDrawSurface7_AddAttachedSurface2(dxglDirectDrawSurface7 *This,
 		This->zbuffer_iface = iface;
 		if (!This->zbuffer->attachcount) This->zbuffer->attachparent = This;
 		This->zbuffer->attachcount++;
-		if (This->zbuffer && dxglcfg.primaryscale && (This->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+		if (This->zbuffer && dxglcfg.primaryscale)
 		{
-			if (This->bigsurface && !This->zbuffer->bigsurface)
+			if(((This->parent) && (This->parent->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+				|| (This->ddsd.ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 			{
-				memcpy(&ddsdBigSurface, &This->zbuffer->ddsd, sizeof(DDSURFACEDESC2));
-				ddsdBigSurface.dwWidth = This->bigsurface->ddsd.dwWidth;
-				ddsdBigSurface.dwHeight = This->bigsurface->ddsd.dwHeight;
-				error = glDirectDraw7_CreateSurface2(This->ddInterface, &ddsdBigSurface,
-					(LPDIRECTDRAWSURFACE7*)&This->zbuffer->bigsurface, NULL, FALSE, 7);
-				if (SUCCEEDED(error))
+				if (This->bigsurface && !This->zbuffer->bigsurface)
 				{
-					if ((This->zbuffer->ddsd.dwFlags & DDSD_BACKBUFFERCOUNT)
-						&& This->zbuffer->ddsd.dwBackBufferCount)
+					memcpy(&ddsdBigSurface, &This->zbuffer->ddsd, sizeof(DDSURFACEDESC2));
+					ddsdBigSurface.dwWidth = This->bigsurface->ddsd.dwWidth;
+					ddsdBigSurface.dwHeight = This->bigsurface->ddsd.dwHeight;
+					error = glDirectDraw7_CreateSurface2(This->ddInterface, &ddsdBigSurface,
+						(LPDIRECTDRAWSURFACE7*)&This->zbuffer->bigsurface, NULL, FALSE, 7);
+					if (SUCCEEDED(error))
 					{
-						for (i = 0; i < This->zbuffer->ddsd.dwBackBufferCount + 1; i++)
+						if ((This->zbuffer->ddsd.dwFlags & DDSD_BACKBUFFERCOUNT)
+							&& This->zbuffer->ddsd.dwBackBufferCount)
 						{
-							This->zbuffer->bigsurface[i].texture->bigparent = This->zbuffer[i].texture;
-							This->zbuffer[i].texture->bigtexture = This->zbuffer->bigsurface[i].texture;
-							This->zbuffer[i].bigsurface = &This->zbuffer->bigsurface[i];
-							This->zbuffer->bigsurface[i].bigparent = &This->zbuffer[i];
+							for (i = 0; i < This->zbuffer->ddsd.dwBackBufferCount + 1; i++)
+							{
+								This->zbuffer->bigsurface[i].texture->bigparent = This->zbuffer[i].texture;
+								This->zbuffer[i].texture->bigtexture = This->zbuffer->bigsurface[i].texture;
+								This->zbuffer[i].bigsurface = &This->zbuffer->bigsurface[i];
+								This->zbuffer->bigsurface[i].bigparent = &This->zbuffer[i];
+							}
+						}
+						else
+						{
+							This->zbuffer->bigsurface->texture->bigparent = This->zbuffer->texture;
+							This->zbuffer->texture->bigtexture = This->zbuffer->bigsurface->texture;
+							This->zbuffer->bigsurface->bigparent = This->zbuffer;
 						}
 					}
-					else
-					{
-						This->zbuffer->bigsurface->texture->bigparent = This->zbuffer->texture;
-						This->zbuffer->texture->bigtexture = This->zbuffer->bigsurface->texture;
-						This->zbuffer->bigsurface->bigparent = This->zbuffer;
-					}
 				}
+				glRenderer_MakeTexturePrimary(This->ddInterface->renderer, This->zbuffer->texture, This->texture, TRUE);
 			}
-			glRenderer_MakeTexturePrimary(This->ddInterface->renderer, This->zbuffer->texture, This->texture, TRUE);
 		}
 		TRACE_EXIT(23,DD_OK);
 		return DD_OK;
