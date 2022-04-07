@@ -648,11 +648,13 @@ HRESULT WINAPI glDirect3DDevice7_Clear(glDirect3DDevice7 *This, DWORD dwCount, L
 	cmd.dwColor = dwColor;
 	cmd.dvZ = dvZ;
 	cmd.dwStencil = dwStencil;
-	cmd.target = This->glDDS7->texture;
+	if (This->glDDS7->bigsurface) cmd.target = This->glDDS7->bigsurface->texture;
+	else cmd.target = This->glDDS7->texture;
 	cmd.targetlevel = This->glDDS7->miplevel;
 	if (This->glDDS7->zbuffer)
 	{
-		cmd.zbuffer = This->glDDS7->zbuffer->texture;
+		if(This->glDDS7->zbuffer->bigsurface) cmd.zbuffer = This->glDDS7->zbuffer->bigsurface->texture;
+		else cmd.zbuffer = This->glDDS7->zbuffer->texture;
 		cmd.zlevel = This->glDDS7->zbuffer->miplevel;
 	}
 	else
@@ -991,13 +993,23 @@ HRESULT WINAPI glDirect3DDevice7_DrawIndexedPrimitive(glDirect3DDevice7 *This, D
 	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&This->stats);
 	else AddStats(d3dptPrimitiveType,dwVertexCount,&This->stats);
 	if(err != D3D_OK) TRACE_RET(HRESULT,23,err);
-	target.target = This->glDDS7->texture;
+	if (This->glDDS7->bigsurface) target.target = This->glDDS7->bigsurface->texture;
+	else target.target = This->glDDS7->texture;
 	target.level = This->glDDS7->miplevel;
-	//target.mulx = This->glDDS7->mulx;
-	//target.muly = This->glDDS7->muly;
+	if (This->glDDS7->bigsurface)
+	{
+		target.mulx = (float)This->glDDS7->bigsurface->ddsd.dwWidth / (float)This->glDDS7->ddsd.dwWidth;
+		target.muly = (float)This->glDDS7->bigsurface->ddsd.dwHeight / (float)This->glDDS7->ddsd.dwHeight;
+	}
+	else
+	{
+		target.mulx = 1.0f;
+		target.muly = 1.0f;
+	}
 	if (This->glDDS7->zbuffer)
 	{
-		target.zbuffer = This->glDDS7->zbuffer->texture;
+		if (This->glDDS7->zbuffer->bigsurface) target.zbuffer = This->glDDS7->zbuffer->bigsurface->texture;
+		else target.zbuffer = This->glDDS7->zbuffer->texture;
 		target.zlevel = This->glDDS7->zbuffer->miplevel;
 	}
 	else

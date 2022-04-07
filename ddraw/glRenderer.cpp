@@ -4120,6 +4120,10 @@ void glRenderer__MakeTexturePrimary(glRenderer *This, glTexture *texture, glText
 		glTexture__SetPrimaryScale(texture, parent->levels[0].ddsd.dwWidth, parent->levels[0].ddsd.dwHeight, TRUE);
 	}
 	else glTexture__SetPrimaryScale(texture, 0, 0, FALSE);*/
+	if (!texture->bigtexture)
+	{
+
+	}
 	SetEvent(This->busy);
 }
 
