@@ -2657,7 +2657,7 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 	{
 		ShaderManager_SetShader(This->shaders,PROG_PAL256,NULL,0);
 		progtype = PROG_PAL256;
-		glTexture__Upload(paltex, 0);
+		if(paltex) glTexture__Upload(paltex, 0);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,9);
 		glUtil_SetTexture(This->util,8,texture);

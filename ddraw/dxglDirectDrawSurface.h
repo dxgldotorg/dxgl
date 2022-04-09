@@ -108,6 +108,8 @@ typedef struct dxglDirectDrawSurface7
 	// Reference counts
 	ULONG refcount7, refcount4, refcount3, refcount2, refcount1;
 	ULONG refcountgamma, refcountcolor;
+	// Refernce count for complex parent
+	ULONG refcountparent;
 
 	// DDraw version of interface
 	int version;

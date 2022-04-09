@@ -428,7 +428,16 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 			// Set texture pointer to buffer's storage
 			surfaceptr->texture = &textureptr[y];
 			// Initialize refrence count
-			surfaceptr->refcount7 = 1;
+			if (!x && !y)
+			{
+				surfaceptr->refcount7 = 1;
+				surfaceptr->refcountparent = 1;
+			}
+			else
+			{
+				surfaceptr->refcount7 = 0;
+				surfaceptr->refcountparent = 0;
+			}
 			// Set parent on legacy interfaces
 			surfaceptr->dds1.glDDS7 = surfaceptr;
 			surfaceptr->dds2.glDDS7 = surfaceptr;
@@ -798,6 +807,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRef(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
 	InterlockedIncrement((LONG*)&This->refcount7);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8,This->refcount7);
 	return This->refcount7;
 }
@@ -808,8 +818,16 @@ ULONG WINAPI dxglDirectDrawSurface7_Release(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcount7 == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcount7);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcount7;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8,ret);
@@ -820,6 +838,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRef4(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcount4);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcount4);
 	return This->refcount4;
 }
@@ -830,8 +849,16 @@ ULONG WINAPI dxglDirectDrawSurface7_Release4(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcount4 == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcount4);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcount4;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
@@ -842,6 +869,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRef3(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcount3);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcount3);
 	return This->refcount3;
 }
@@ -852,8 +880,16 @@ ULONG WINAPI dxglDirectDrawSurface7_Release3(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcount3 == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcount3);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcount3;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
@@ -864,6 +900,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRef2(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcount2);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcount2);
 	return This->refcount2;
 }
@@ -874,8 +911,16 @@ ULONG WINAPI dxglDirectDrawSurface7_Release2(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcount2 == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcount2);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcount2;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
@@ -886,6 +931,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRef1(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcount1);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcount1);
 	return This->refcount1;
 }
@@ -896,8 +942,16 @@ ULONG WINAPI dxglDirectDrawSurface7_Release1(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcount1 == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcount1);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcount1;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
@@ -908,6 +962,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRefGamma(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcountgamma);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcountgamma);
 	return This->refcountgamma;
 }
@@ -918,8 +973,16 @@ ULONG WINAPI dxglDirectDrawSurface7_ReleaseGamma(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcountgamma == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcountgamma);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcountgamma;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
@@ -930,6 +993,7 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRefColor(dxglDirectDrawSurface7 *This)
 	TRACE_ENTER(1, 14, This);
 	if (!This) TRACE_RET(ULONG, 8, 0);
 	InterlockedIncrement((LONG*)&This->refcountcolor);
+	if (This->parent) InterlockedIncrement((LONG*)&This->parent->refcountparent);
 	TRACE_EXIT(8, This->refcountcolor);
 	return This->refcountcolor;
 }
@@ -940,8 +1004,16 @@ ULONG WINAPI dxglDirectDrawSurface7_ReleaseColor(dxglDirectDrawSurface7 *This)
 	ULONG ret;
 	if (This->refcountcolor == 0) TRACE_RET(ULONG, 8, 0);
 	InterlockedDecrement((LONG*)&This->refcountcolor);
+	if (This->parent) InterlockedDecrement((LONG*)&This->parent->refcountparent);
 	ret = This->refcountcolor;
-	if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+	if (This->parent)
+	{
+		if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
+			(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0)
+			&& (This->parent->refcountparent == 0))
+			dxglDirectDrawSurface7_Delete(This->parent);
+	}
+	else if ((This->refcount7 == 0) && (This->refcount4 == 0) && (This->refcount3 == 0) && (This->refcount2 == 0) &&
 		(This->refcount1 == 0) && (This->refcountgamma == 0) && (This->refcountcolor == 0))
 		dxglDirectDrawSurface7_Delete(This);
 	TRACE_EXIT(8, ret);
