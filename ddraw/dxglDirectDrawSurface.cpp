@@ -493,6 +493,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 			glDDS7[i].ddsd.dwFlags |= DDSD_PIXELFORMAT;
 			memcpy(&glDDS7[i].ddsd.ddpfPixelFormat, &glDDS7[i].texture->levels[glDDS7[i].miplevel].ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 		}
+		glDDS7[i].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 		if (!glTexture_ValidatePixelFormat(&glDDS7[i].ddsd.ddpfPixelFormat))
 		{
 			// Clean up textures

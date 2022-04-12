@@ -171,7 +171,6 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	glDD7 = myddraw7;
 	if(error != DD_OK)
 	{
-		delete myddraw7;
 		glDD7 = NULL;
 		LeaveCriticalSection(&dll_cs);
 		TRACE_EXIT(23, error);
@@ -238,7 +237,6 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw);
 	if(error != DD_OK)
 	{
-		delete myddraw;
 		TRACE_EXIT(23,error);
 		return error;
 	}

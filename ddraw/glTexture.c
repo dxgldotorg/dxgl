@@ -189,8 +189,8 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture *texture, struct 
 	if (!IsWritablePointer(texture, sizeof(glTexture), TRUE))
 		return DDERR_EXCEPTION;
 	if (ddsd->dwSize != sizeof(DDSURFACEDESC2)) return DDERR_INVALIDPARAMS;
-	if ((ddsd->dwFlags & DDSD_PIXELFORMAT) && (ddsd->ddpfPixelFormat.dwSize != sizeof(DDPIXELFORMAT)))
-		return DDERR_INVALIDPARAMS;
+	/*if ((ddsd->dwFlags & DDSD_PIXELFORMAT) && (ddsd->ddpfPixelFormat.dwSize != sizeof(DDPIXELFORMAT)))
+		return DDERR_INVALIDPARAMS;*/
 	ZeroMemory(texture, sizeof(glTexture));
 	memcpy(&texture->levels[0].ddsd, ddsd, sizeof(DDSURFACEDESC2));
 	texture->useconv = FALSE;
@@ -321,6 +321,8 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture *texture, struct 
 
 	texture->renderer = renderer;
 	texture->refcount = 1;
+	if (texture->levels[0].ddsd.ddpfPixelFormat.dwSize != sizeof(DDPIXELFORMAT))
+		texture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	// Fill in mipmaps
 	if (!texture->miplevel) texture->miplevel = 1;
 	if (texture->miplevel > 1)
