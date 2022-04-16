@@ -603,8 +603,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!finalize 'signtool sign /t http://timestamp.comodoca.com %1'
 !if ${COMPILER} == "VC2022_1"
-!finalize 'signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as %1'
+!finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif

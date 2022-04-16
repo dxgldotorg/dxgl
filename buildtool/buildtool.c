@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -335,7 +335,7 @@ int ProcessHeaders(char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 19;
+	version.point = 20;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
@@ -775,15 +775,14 @@ int SignEXE(char *exefile, char *path)
 {
 	PROCESS_INFORMATION process;
 	STARTUPINFOA startinfo;
-	const char signtoolsha1path[] = "signtool sign /t http://timestamp.comodoca.com ";
-	const char signtoolsha256path[] = "signtool sign /tr http://timestamp.comodoca.com /td sha256 /fd sha256 /as ";
+	const char signtoolsha384path[] = "signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as ";
 	char signpath[MAX_PATH + 80];
 	DXGLVER version;
 	BOOL nosign = FALSE;
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 19;
+	version.point = 20;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
@@ -796,21 +795,8 @@ int SignEXE(char *exefile, char *path)
 		puts("Skipping file signature.");
 		return 0;
 	}
-	strcpy(signpath, signtoolsha1path);
-	strcat(signpath, "\"");
-	strncat(signpath, exefile, MAX_PATH);
-	strcat(signpath, "\"");
-	ZeroMemory(&startinfo, sizeof(STARTUPINFOA));
-	startinfo.cb = sizeof(STARTUPINFOA);
-	if (CreateProcessA(NULL, signpath, NULL, NULL, FALSE, 0, NULL, NULL, &startinfo, &process))
-	{
-		WaitForSingleObject(process.hProcess, INFINITE);
-		CloseHandle(process.hProcess);
-		CloseHandle(process.hThread);
-		Sleep(15000);
-	}
 #if (_MSC_VER >= 1920)
-	strcpy(&signpath, &signtoolsha256path);
+	strcpy(&signpath, &signtoolsha384path);
 	strcat(&signpath, "\"");
 	strncat(&signpath, exefile, MAX_PATH);
 	strcat(&signpath, "\"");
