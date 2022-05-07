@@ -225,7 +225,7 @@ LRESULT glRenderWindow_WndProc(glRenderWindow *This, HWND hwnd, UINT msg, WPARAM
 
 
 // Render Window event handler
-LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	glRenderWindow* instance = reinterpret_cast<glRenderWindow*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
 	if(!instance)
