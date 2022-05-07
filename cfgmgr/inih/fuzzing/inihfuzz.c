@@ -1,14 +1,4 @@
-/* inih -- unit tests
-
-This works simply by dumping a bunch of info to standard output, which is
-redirected to an output file (baseline_*.txt) and checked into the Subversion
-repository. This baseline file is the test output, so the idea is to check it
-once, and if it changes -- look at the diff and see which tests failed.
-
-See unittest.bat and unittest.sh for how to run this (with tcc and gcc,
-respectively).
-
-*/
+/* This is a slightly tweaked copy of tests/unittest.c for fuzzing */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,13 +8,8 @@ respectively).
 int User;
 char Prev_section[50];
 
-#if INI_HANDLER_LINENO
-int dumper(void* user, const char* section, const char* name,
-           const char* value, int lineno)
-#else
 int dumper(void* user, const char* section, const char* name,
            const char* value)
-#endif
 {
     User = *((int*)user);
     if (!name || strcmp(section, Prev_section)) {
@@ -36,11 +21,7 @@ int dumper(void* user, const char* section, const char* name,
         return 1;
     }
 
-#if INI_HANDLER_LINENO
-    printf("... %s%s%s;  line %d\n", name, value ? "=" : "", value ? value : "", lineno);
-#else
     printf("... %s%s%s;\n", name, value ? "=" : "", value ? value : "");
-#endif
 
     if (!value) {
         // Happens when INI_ALLOW_NO_VALUE=1 and line has no value (no '=' or ':')
@@ -60,17 +41,12 @@ void parse(const char* fname) {
     u++;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
-    parse("no_file.ini");
-    parse("normal.ini");
-    parse("bad_section.ini");
-    parse("bad_comment.ini");
-    parse("user_error.ini");
-    parse("multi_line.ini");
-    parse("bad_multi.ini");
-    parse("bom.ini");
-    parse("duplicate_sections.ini");
-    parse("no_value.ini");
+    if (argc < 2) {
+        printf("usage: inihfuzz file.ini\n");
+        return 1;
+    }
+    parse(argv[1]);
     return 0;
 }

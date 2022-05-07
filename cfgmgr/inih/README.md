@@ -1,3 +1,7 @@
+# inih (INI Not Invented Here)
+
+[![Tests](https://github.com/benhoyt/inih/actions/workflows/tests.yml/badge.svg)](https://github.com/benhoyt/inih/actions/workflows/tests.yml)
+
 **inih (INI Not Invented Here)** is a simple [.INI file](http://en.wikipedia.org/wiki/INI_file) parser written in C. It's only a couple of pages of code, and it was designed to be _small and simple_, so it's good for embedded systems. It's also more or less compatible with Python's [ConfigParser](http://docs.python.org/library/configparser.html) style of .INI files, including RFC 822-style multi-line syntax and `name: value` entries.
 
 To use it, just give `ini_parse()` an INI file, and it will call a callback for every `name=value` pair parsed, giving you strings for the section, name, and value. It's done this way ("SAX style") because it works well on low-memory embedded systems, but also because it makes for a KISS implementation.
@@ -9,14 +13,29 @@ Download a release, browse the source, or read about [how to use inih in a DRY s
 
 ## Compile-time options ##
 
+You can control various aspects of inih using preprocessor defines:
+
+### Syntax options ###
+
   * **Multi-line entries:** By default, inih supports multi-line entries in the style of Python's ConfigParser. To disable, add `-DINI_ALLOW_MULTILINE=0`.
   * **UTF-8 BOM:** By default, inih allows a UTF-8 BOM sequence (0xEF 0xBB 0xBF) at the start of INI files. To disable, add `-DINI_ALLOW_BOM=0`.
   * **Inline comments:** By default, inih allows inline comments with the `;` character. To disable, add `-DINI_ALLOW_INLINE_COMMENTS=0`. You can also specify which character(s) start an inline comment using `INI_INLINE_COMMENT_PREFIXES`.
-  * **Stack vs heap:** By default, inih allocates its line buffer on the stack. To allocate on the heap using `malloc` instead, specify `-DINI_USE_STACK=0`.
-  * **Stop on first error:** By default, inih keeps parsing the rest of the file after an error. To stop parsing on the first error, add `-DINI_STOP_ON_FIRST_ERROR=1`.
-  * **Maximum line length:** The default maximum line length is 200 bytes. To override this, add something like `-DINI_MAX_LINE=1000`.
-  * **Report line numbers:** By default, the `ini_handler` callback doesn't receive the line number as a parameter. If you need that, add `-DINI_HANDLER_LINENO=1`.
+  * **Start-of-line comments:** By default, inih allows both `;` and `#` to start a comment at the beginning of a line. You can override this by changing `INI_START_COMMENT_PREFIXES`.
+  * **Allow no value:** By default, inih treats a name with no value (no `=` or `:` on the line) as an error. To allow names with no values, add `-DINI_ALLOW_NO_VALUE=1`, and inih will call your handler function with value set to NULL.
 
+### Parsing options ###
+
+  * **Stop on first error:** By default, inih keeps parsing the rest of the file after an error. To stop parsing on the first error, add `-DINI_STOP_ON_FIRST_ERROR=1`.
+  * **Report line numbers:** By default, the `ini_handler` callback doesn't receive the line number as a parameter. If you need that, add `-DINI_HANDLER_LINENO=1`.
+  * **Call handler on new section:** By default, inih only calls the handler on each `name=value` pair. To detect new sections (e.g., the INI file has multiple sections with the same name), add `-DINI_CALL_HANDLER_ON_NEW_SECTION=1`. Your handler function will then be called each time a new section is encountered, with `section` set to the new section name but `name` and `value` set to NULL.
+
+### Memory options ###
+
+  * **Stack vs heap:** By default, inih creates a fixed-sized line buffer on the stack. To allocate on the heap using `malloc` instead, specify `-DINI_USE_STACK=0`.
+  * **Maximum line length:** The default maximum line length (for stack or heap) is 200 bytes. To override this, add something like `-DINI_MAX_LINE=1000`. Note that `INI_MAX_LINE` must be 3 more than the longest line (due to `\r`, `\n`, and the NUL).
+  * **Initial malloc size:** `INI_INITIAL_ALLOC` specifies the initial malloc size when using the heap. It defaults to 200 bytes.
+  * **Allow realloc:** By default when using the heap (`-DINI_USE_STACK=0`), inih allocates a fixed-sized buffer of `INI_INITIAL_ALLOC` bytes. To allow this to grow to `INI_MAX_LINE` bytes, doubling if needed, set `-DINI_ALLOW_REALLOC=1`.
+  * **Custom allocator:** By default when using the heap, the standard library's `malloc`, `free`, and `realloc` functions are used; to use a custom allocator, specify `-DINI_CUSTOM_ALLOCATOR=1` (and `-DINI_USE_STACK=0`). You must define and link functions named `ini_malloc`, `ini_free`, and (if `INI_ALLOW_REALLOC` is set) `ini_realloc`, which must have the same signatures as the `stdlib.h` memory allocation functions.
 
 ## Simple example in C ##
 
@@ -109,3 +128,48 @@ Some differences between inih and Python's [ConfigParser](http://docs.python.org
 ## Platform-specific notes ##
 
 * Windows/Win32 uses UTF-16 filenames natively, so to handle Unicode paths you need to call `_wfopen()` to open a file and then `ini_parse_file()` to parse it; inih does not include `wchar_t` or Unicode handling.
+
+## Meson notes ##
+
+* The `meson.build` file is not required to use or compile inih, its main purpose is for distributions.
+* By default Meson is set up for distro installation, but this behavior can be configured for embedded use cases:
+  * with `-Ddefault_library=static` static libraries are built.
+  * with `-Ddistro_install=false` libraries, headers and pkg-config files won't be installed.
+  * with `-Dwith_INIReader=false` you can disable building the C++ library.
+* All compile-time options are implemented in Meson as well, you can take a look at [meson_options.txt](https://github.com/benhoyt/inih/blob/master/meson_options.txt) for their definition. These won't work if `distro_install` is set to `true`.
+* If you want to use inih for programs which may be shipped in a distro, consider linking against the shared libraries. The pkg-config entries are `inih` and `INIReader`.
+* In case you use inih as a Meson subproject, you can use the `inih_dep` and `INIReader_dep` dependency variables. You might want to set `default_library=static` and `distro_install=false` for the subproject. An official Wrap is provided on [WrapDB](https://wrapdb.mesonbuild.com/inih).
+* For packagers: if you want to tag the version in the pkg-config file, you will need to do this downstream. Add `version : '<version_as_int>',` after the `license` tag in the `project()` function and `version : meson.project_version(),` after the `soversion` tag in both `library()` functions.
+
+## Using inih with tipi.build
+
+`inih` can be easily used in [tipi.build](https://tipi.build) projects simply by adding the following entry to your `.tipi/deps`:
+
+```json
+{
+    "benhoyt/inih": { "@": "r55" }
+}
+```
+
+The required include path in your project is:
+
+```c
+#include <ini.h>
+```
+
+## Building from vcpkg ##
+
+You can build and install inih using [vcpkg](https://github.com/microsoft/vcpkg/) dependency manager:
+
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    ./vcpkg install inih
+
+The inih port in vcpkg is kept up to date by microsoft team members and community contributors.
+If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
+
+## Related links ##
+
+* [Conan package for inih](https://github.com/mohamedghita/conan-inih) (Conan is a C/C++ package manager)

@@ -1,5 +1,9 @@
 // Read an INI file into easy-to-access name/value pairs.
 
+// SPDX-License-Identifier: BSD-3-Clause
+
+// Copyright (C) 2009-2020, Ben Hoyt
+
 // inih and INIReader are released under the New BSD license (see LICENSE.txt).
 // Go to the project home page for more info:
 //
@@ -18,6 +22,12 @@ INIReader::INIReader(const string& filename)
     _error = ini_parse(filename.c_str(), ValueHandler, this);
 }
 
+INIReader::INIReader(const char *buffer, size_t buffer_size)
+{
+  string content(buffer, buffer_size);
+  _error = ini_parse_string(content.c_str(), ValueHandler, this);
+}
+
 int INIReader::ParseError() const
 {
     return _error;
@@ -28,6 +38,12 @@ string INIReader::Get(const string& section, const string& name, const string& d
     string key = MakeKey(section, name);
     // Use _values.find() here instead of _values.at() to support pre C++11 compilers
     return _values.count(key) ? _values.find(key)->second : default_value;
+}
+
+string INIReader::GetString(const string& section, const string& name, const string& default_value) const
+{
+    const string str = Get(section, name, "");
+    return str.empty() ? default_value : str;
 }
 
 long INIReader::GetInteger(const string& section, const string& name, long default_value) const
@@ -62,6 +78,22 @@ bool INIReader::GetBoolean(const string& section, const string& name, bool defau
         return default_value;
 }
 
+bool INIReader::HasSection(const string& section) const
+{
+    const string key = MakeKey(section, "");
+    std::map<string, string>::const_iterator pos = _values.lower_bound(key);
+    if (pos == _values.end())
+        return false;
+    // Does the key at the lower_bound pos start with "section"?
+    return pos->first.compare(0, key.length(), key) == 0;
+}
+
+bool INIReader::HasValue(const string& section, const string& name) const
+{
+    string key = MakeKey(section, name);
+    return _values.count(key);
+}
+
 string INIReader::MakeKey(const string& section, const string& name)
 {
     string key = section + "=" + name;
@@ -73,10 +105,12 @@ string INIReader::MakeKey(const string& section, const string& name)
 int INIReader::ValueHandler(void* user, const char* section, const char* name,
                             const char* value)
 {
-    INIReader* reader = (INIReader*)user;
+    if (!name)  // Happens when INI_CALL_HANDLER_ON_NEW_SECTION enabled
+        return 1;
+    INIReader* reader = static_cast<INIReader*>(user);
     string key = MakeKey(section, name);
     if (reader->_values[key].size() > 0)
         reader->_values[key] += "\n";
-    reader->_values[key] += value;
+    reader->_values[key] += value ? value : "";
     return 1;
 }
