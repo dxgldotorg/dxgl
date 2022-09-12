@@ -568,6 +568,7 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="const.h" />
     <ClInclude Include="ddraw.h" />
+    <ClInclude Include="DXGLQueue.h" />
     <ClInclude Include="DXGLRenderer.h" />
     <ClInclude Include="DXGLRendererGL.h" />
     <ClInclude Include="fourcc.h" />
@@ -589,6 +590,7 @@
     <ClInclude Include="glRenderer.h" />
     <ClInclude Include="glRenderWindow.h" />
     <ClInclude Include="glUtil.h" />
+    <ClInclude Include="DXGLTexture.h" />
     <ClInclude Include="hooks.h" />
     <ClInclude Include="include\d3d.h" />
     <ClInclude Include="include\d3dcaps.h" />

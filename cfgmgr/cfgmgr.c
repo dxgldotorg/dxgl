@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2022 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <ShellAPI.h>
+#include <ShlObj.h>
 #include "crc32.h"
 #include "LibSha256.h"
 #include "cfgmgr.h"
@@ -1729,8 +1730,8 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 	Sha256Context sha_context;
 	SHA256_HASH sha256;
 	TCHAR sha256string[65];
-	TCHAR filename[MAX_PATH+1];
-	WCHAR filename2[MAX_PATH+1];
+	TCHAR filename[MAX_PATH + 84];
+	WCHAR filename2[MAX_PATH + 1];
 	TCHAR regkey[MAX_PATH + 80];
 	size_t i;
 	BOOL DPIAwarePM = FALSE;
@@ -1877,6 +1878,18 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		}
 	}
 	//if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);  // Windows 10 compatibility issues; not needed?
+	// Set shader cache path
+	filename[0] = 0;
+	SHGetSpecialFolderPath(NULL, filename, CSIDL_LOCAL_APPDATA, 1);
+	if (_tcslen(filename) == 0)
+		SHGetSpecialFolderPath(NULL, filename, CSIDL_APPDATA, 1);
+	if (_tcslen(filename) == 0)
+		SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, 1);
+	if (_tcslen(filename) == 0) _tcscpy(filename, _T("C:"));
+	_tcscat(filename, _T("\\DXGL\\ShaderCache\\"));
+	_tcscat(filename, sha256string);
+	_tcscat(filename, "\\");
+	_tcscpy(cfg->shadercachepath, filename);
 }
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {

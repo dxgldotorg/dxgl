@@ -33,6 +33,16 @@ typedef struct IDXGLRendererGL
 	// Reference count
 	ULONG refcount;
 
+	// Attached DirectDraw device
+	struct glDirectDraw7 *glDD7;
+
+	// DirectDraw caps
+	DDCAPS_DX7 ddcaps;
+
+	// Direct3D caps
+	D3DDEVICEDESC d3ddesc6;
+	D3DDEVICEDESC7 d3ddesc7;
+
 	// UI resources
 	HANDLE ThreadHandle;
 	DWORD ThreadID;
@@ -47,6 +57,8 @@ typedef struct IDXGLRendererGL
 	HANDLE SyncEvent;
 	HANDLE StartEvent;
 	CRITICAL_SECTION cs;
+	BOOL running;
+	BOOL shutdown;
 
 	// OpenGL context resources
 	PIXELFORMATDESCRIPTOR pfd;
@@ -54,14 +66,53 @@ typedef struct IDXGLRendererGL
 	HGLRC hrc;
 	glExtensions ext;
 
+	// Window state
+	GLsizei width;
+	GLsizei height;
+	GLsizei winwidth;
+	GLsizei winheight;
+
+	// Command Queue
+	DXGLQueue commandqueue[2];
+	DXGLQueue *currentqueue;
+	int queueindexread, queueindexwrite;
+
+	// OpenGL state
+	GLboolean depthwrite;
+	GLboolean depthtest;
+	GLenum depthcomp;
+	GLenum alphacomp;
+	GLboolean scissor;
+	GLint scissorx, scissory;
+	GLsizei scissorwidth, scissorheight;
+	GLfloat clearr, clearg, clearb, cleara;
+	GLdouble cleardepth;
+	GLint clearstencil;
+	GLenum blendsrc;
+	GLenum blenddest;
+	GLboolean blendenabled;
+	GLenum polymode;
+	GLenum shademode;
+	GLenum texlevel;
+
 
 } IDXGLRendererGL;
+
+// Device creation
+HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out);
 
 // Implementation
 HRESULT WINAPI DXGLRendererGL_QueryInterface(LPDXGLRENDERERGL This, REFIID riid, LPVOID *ppvObject);
 ULONG WINAPI DXGLRendererGL_AddRef(LPDXGLRENDERERGL This);
 ULONG WINAPI DXGLRendererGL_Release(LPDXGLRENDERERGL This);
+HRESULT WINAPI DXGLRendererGL_GetAttachedDevice(LPDXGLRENDERERGL This, struct glDirectDraw7 **glDD7);
+HRESULT WINAPI DXGLRendererGL_SetAttachedDevice(LPDXGLRENDERERGL This, struct glDirectDraw7 *glDD7);
+HRESULT WINAPI DXGLRendererGL_Reset(LPDXGLRENDERERGL This);
+HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd *cmd);
 
+
+// Internal functions
+void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
 
 #ifdef __cplusplus
 }

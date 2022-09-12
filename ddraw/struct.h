@@ -202,6 +202,7 @@ typedef struct glExtensions
 	DWORD glver_major;
 	DWORD glver_minor;
 	BOOL atimem;
+	GLint maxtexturesize;
 } glExtensions;
 
 // Buffer object (such as PBO or VBO)
@@ -523,5 +524,45 @@ typedef struct VIEWPORT
 	GLsizei width;
 	GLsizei hieght;
 } VIEWPORT;
+
+// Outdated D3D structs for size calculations
+typedef struct _D3DDeviceDesc1 {
+	DWORD           dwSize;
+	DWORD           dwFlags;
+	D3DCOLORMODEL   dcmColorModel;
+	DWORD           dwDevCaps;
+	D3DTRANSFORMCAPS dtcTransformCaps;
+	BOOL            bClipping;
+	D3DLIGHTINGCAPS dlcLightingCaps;
+	D3DPRIMCAPS     dpcLineCaps;
+	D3DPRIMCAPS     dpcTriCaps;
+	DWORD           dwDeviceRenderBitDepth;
+	DWORD           dwDeviceZBufferBitDepth;
+	DWORD           dwMaxBufferSize;
+	DWORD           dwMaxVertexCount;
+} D3DDEVICEDESC1, *LPD3DDEVICEDESC1;
+
+typedef struct _D3DDeviceDesc2 {
+	DWORD           dwSize;
+	DWORD           dwFlags;
+	D3DCOLORMODEL   dcmColorModel;
+	DWORD           dwDevCaps;
+	D3DTRANSFORMCAPS dtcTransformCaps;
+	BOOL            bClipping;
+	D3DLIGHTINGCAPS dlcLightingCaps;
+	D3DPRIMCAPS     dpcLineCaps;
+	D3DPRIMCAPS     dpcTriCaps;
+	DWORD           dwDeviceRenderBitDepth;
+	DWORD           dwDeviceZBufferBitDepth;
+	DWORD           dwMaxBufferSize;
+	DWORD           dwMaxVertexCount;
+
+	DWORD           dwMinTextureWidth, dwMinTextureHeight;
+	DWORD           dwMaxTextureWidth, dwMaxTextureHeight;
+	DWORD           dwMinStippleWidth, dwMaxStippleWidth;
+	DWORD           dwMinStippleHeight, dwMaxStippleHeight;
+} D3DDEVICEDESC2, *LPD3DDEVICEDESC2;
+
+
 
 #endif //__STRUCT_H

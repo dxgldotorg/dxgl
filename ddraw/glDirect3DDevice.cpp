@@ -21,6 +21,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
+#include "DXGLRenderer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "dxglDirectDrawSurface.h"
@@ -36,43 +37,7 @@
 using namespace std;
 #include "ShaderGen3D.h"
 #include "matrix.h"
-
-typedef struct _D3DDeviceDesc1 {
-        DWORD           dwSize;
-        DWORD           dwFlags;
-        D3DCOLORMODEL   dcmColorModel;
-        DWORD           dwDevCaps;
-        D3DTRANSFORMCAPS dtcTransformCaps;
-        BOOL            bClipping;
-        D3DLIGHTINGCAPS dlcLightingCaps;
-        D3DPRIMCAPS     dpcLineCaps;
-        D3DPRIMCAPS     dpcTriCaps;
-        DWORD           dwDeviceRenderBitDepth;
-        DWORD           dwDeviceZBufferBitDepth;
-        DWORD           dwMaxBufferSize;
-        DWORD           dwMaxVertexCount;
-} D3DDEVICEDESC1,*LPD3DDEVICEDESC1;
-
-typedef struct _D3DDeviceDesc2 {
-        DWORD           dwSize;
-        DWORD           dwFlags;
-        D3DCOLORMODEL   dcmColorModel;
-        DWORD           dwDevCaps;
-        D3DTRANSFORMCAPS dtcTransformCaps;
-        BOOL            bClipping;
-        D3DLIGHTINGCAPS dlcLightingCaps;
-        D3DPRIMCAPS     dpcLineCaps;
-        D3DPRIMCAPS     dpcTriCaps;
-        DWORD           dwDeviceRenderBitDepth;
-        DWORD           dwDeviceZBufferBitDepth;
-        DWORD           dwMaxBufferSize;
-        DWORD           dwMaxVertexCount;
-
-        DWORD           dwMinTextureWidth,dwMinTextureHeight;
-        DWORD           dwMaxTextureWidth,dwMaxTextureHeight;
-        DWORD           dwMinStippleWidth,dwMaxStippleWidth;
-        DWORD           dwMinStippleHeight,dwMaxStippleHeight;
-} D3DDEVICEDESC2,*LPD3DDEVICEDESC2;
+#include "struct.h"
 
 const DWORD renderstate_default[RENDERSTATE_COUNT] = {0, // 0
 	NULL, //texturehandle

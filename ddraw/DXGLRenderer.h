@@ -30,6 +30,9 @@ extern "C" {
 DEFINE_GUID(CLSID_DXGLRenderer, 0x671445ff, 0xe857, 0x4d4f, 0x84, 0xf3, 0xe2, 0xbe, 0x8, 0xda, 0x8f, 0x8c);
 DEFINE_GUID(CLSID_DXGLRendererGL, 0x67144500, 0xe857, 0x4d4f, 0x84, 0xf3, 0xe2, 0xbe, 0x8, 0xda, 0x8f, 0x8c);
 
+// API defines
+#define DXGLRENDERERAPI_OPENGL 0  // Default OpenGL
+
 
 // struct defines
 typedef struct IDXGLRenderer *LPDXGLRENDERER;
@@ -44,6 +47,10 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
     // IDXGLInterface
+    STDMETHOD(GetAttachedDevice)(THIS_ struct glDirectDraw7 **glDD7);
+    STDMETHOD(SetAttachedDevice)(THIS_ struct glDirectDraw7 *glDD7);
+    STDMETHOD(Reset)(THIS);
+    STDMETHOD(PostCommand)(THIS_ struct DXGLPostQueueCmd *cmd);
     STDMETHOD(SetCooperativeLevel)(THIS_ HWND hWnd, DWORD flags);
 };
 #undef INTERFACE
@@ -54,15 +61,25 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
 #define IDXGLRenderer_AddRef(p)             (p)->lpVtbl->AddRef(p)
 #define IDXGLRenderer_Release(p)            (p)->lpVtbl->Release(p)
 // IDXGLRenderer
-#define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->lpVtbl->Initialize(p,a,b)
+#define IDXGLRenderer_GetAttachedDevice(p,a)             (p)->lpVtbl->GetAttachedDevice(p,a) 
+#define IDXGLRenderer_SetAttachedDevice(p,a)             (p)->lpVtbl->SetAttachedDevice(p,a) 
+#define IDXGLRenderer_Reset(p)                           (p)->lpVtbl->Reset(p)
+#define IDXGLRenderer_PostCommand(p,a)                   (p)->lpVtbl->PostCommand(p,a)
+#define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->lpVtbl->SetCooperativeLevel(p,a,b)
 #else
 // IUnknown
 #define IDXGLRenderer_QueryInterface(p,a,b) (p)->QueryInterface(a,b)
 #define IDXGLRenderer_AddRef(p)             (p)->AddRef()
 #define IDXGLRenderer_Release(p)            (p)->Release()
 // IDXGLRenderer
-#define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->Initialize(p,a,b)
+#define IDXGLRenderer_GetAttachedDevice(p,a)             (p)->GetAttachedDevice(a) 
+#define IDXGLRenderer_SetAttachedDevice(p,a)             (p)->SetAttachedDevice(a) 
+#define IDXGLRenderer_Reset(p)                           (p)->Reset()
+#define IDXGLRenderer_PostCommand(p,a)                   (p)->PostCommand(a)
+#define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->SetCooperativeLevel(a,b)
 #endif
+
+// Constants
 
 
 // Functions

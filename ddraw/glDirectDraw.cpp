@@ -19,6 +19,7 @@
 #include "util.h"
 #include <string>
 using namespace std;
+#include "DXGLRenderer.h"
 #include "shadergen2d.h"
 #include "ddraw.h"
 #include "timer.h"
@@ -1072,7 +1073,7 @@ HRESULT glDirectDraw7_Create(glDirectDraw7 **glDD7)
 	return DD_OK;
 }
 
-HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7)
+HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7, LPDXGLRENDERER renderer)
 {
 	TRACE_ENTER(3,24,lpGUID,14,pUnkOuter,14,glDD7);
 	glDirectDraw7 *This = (glDirectDraw7*)malloc(sizeof(glDirectDraw7));

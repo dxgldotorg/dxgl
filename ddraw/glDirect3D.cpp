@@ -22,6 +22,7 @@
 #include "glRenderer.h"
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "dxglDirectDrawSurface.h"
 #include "glDirect3DVertexBuffer.h"

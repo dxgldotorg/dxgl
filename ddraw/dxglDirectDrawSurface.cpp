@@ -18,6 +18,7 @@
 #include "common.h"
 #include "scalers.h"
 #include "ddraw.h"
+#include "DXGLRenderer.h"
 #include "glTexture.h"
 #include "glUtil.h"
 #include "util.h"

@@ -138,7 +138,7 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		ext->GLEXT_ARB_depth_texture = 1;
 		if(!dxglcfg.DebugNoArbFramebuffer) ext->GLEXT_ARB_framebuffer_object = 1;
 		if((ext->glver_major > 3) ||
-			((ext->glver_major == 3) && (ext->glver_minor == 1)))
+			((ext->glver_major == 3) && (ext->glver_minor >= 1)))
 			ext->GLEXT_ARB_texture_rectangle = 1;
 		if (((ext->glver_major >= 4)
 			|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
@@ -354,4 +354,5 @@ MB_OK | MB_ICONERROR);
 		ext->wglSwapIntervalEXT = wglSwapIntervalEXTStub;
 		ext->wglGetSwapIntervalEXT = wglGetSwapIntervalEXTStub;
 	}
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &ext->maxtexturesize);
 }

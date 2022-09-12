@@ -18,6 +18,7 @@
 #include "common.h"
 #include "util.h"
 #include "ddraw.h"
+#include "DXGLRenderer.h"
 #include "glTexture.h"
 #include "glUtil.h"
 #include "glClassFactory.h"
@@ -28,13 +29,14 @@
 #include "hooks.h"
 #include <intrin.h>
 
-#include "DXGLRenderer.h"
 
 extern "C" {DXGLCFG dxglcfg; }
 glDirectDraw7 *glDD7 = NULL;
 extern "C" DWORD gllock = 0;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
+
+LPDXGLRENDERER renderers[17] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
 const GUID device_template = 
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
@@ -112,6 +114,28 @@ DDRAW_API void WINAPI DSoundHelp()
 }
 
 /**
+  * Gets a device indx from GUID
+  * @param guid
+  *  Address to the GUID of the device to be created, or NULL for the current
+  *  display.  Returns end of the array for the default device.
+  * @return
+  *  Returns the index of the device, or -1 if invalid or out of bounds.
+  */
+ULONG_PTR GetDeviceIndex(GUID *guid)
+{
+	ULONG_PTR index;
+	GUID comp;
+	if ((ULONG_PTR)guid <= 2) return 16;
+	if (!IsReadablePointer(guid, sizeof(GUID))) return -1;
+	memcpy(&comp, guid, sizeof(GUID));
+	comp.Data1 &= 0xFFFFFF00;
+	if (memcmp(&comp, &device_template, sizeof(GUID))) return -1;
+	index = guid->Data1 & 0xFF;
+	if (index > 15) return -1;
+	return index;
+}
+
+/**
   * Creates an IDirectDraw compatible interface to the DXGL graphics library.
   * @param lpGUID
   *  Address to the GUID of the device to be created, or NULL for the current
@@ -133,6 +157,7 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	if(!dll_cs.LockCount && !dll_cs.OwningThread) InitializeCriticalSection(&dll_cs);
 	EnterCriticalSection(&dll_cs);
 	HRESULT ret;
+	DWORD_PTR devindex;
 	if(gllock || IsCallerOpenGL((BYTE*)_ReturnAddress()))
 	{
 		if(!sysddraw)
@@ -165,15 +190,42 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 		return ret;
 	}
 	InitHooks();
+	devindex = GetDeviceIndex(lpGUID);
+	if (devindex == -1)
+	{
+		LeaveCriticalSection(&dll_cs);
+		TRACE_RET(HRESULT,23,DDERR_INVALIDDIRECTDRAWGUID);
+	}
 	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
-	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw7);
+	if (!renderers[devindex])
+	{
+		error = CreateDXGLRenderer(lpGUID, &renderers[devindex]);
+		if (FAILED(error))
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, error);
+			return error;
+		}
+	}
+	else
+	{
+		renderers[devindex]->GetAttachedDevice(&myddraw7);
+		if (myddraw7)
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, DDERR_DIRECTDRAWALREADYCREATED);
+			return DDERR_DIRECTDRAWALREADYCREATED;
+		}
+	}
+	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw7, renderers[devindex]);
 	glDD7 = myddraw7;
 	if(error != DD_OK)
 	{
 		glDD7 = NULL;
+		renderers[devindex]->SetAttachedDevice(NULL);
 		LeaveCriticalSection(&dll_cs);
 		TRACE_EXIT(23, error);
 		return error;
@@ -225,9 +277,16 @@ HRESULT WINAPI DirectDrawCreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR *l
   */
 HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
 {
+	DWORD_PTR devindex;
 	TRACE_ENTER(4,24,lpGUID,14,lplpDD,24,&iid,14,pUnkOuter);
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	InitHooks();
+	devindex = GetDeviceIndex(lpGUID);
+	if (devindex == -1)
+	{
+		LeaveCriticalSection(&dll_cs);
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDDIRECTDRAWGUID);
+	}
 	GetCurrentConfig(&dxglcfg, FALSE);
 	glDirectDraw7 *myddraw;
 	HRESULT error;
@@ -236,9 +295,30 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 		TRACE_EXIT(23,DDERR_INVALIDPARAMS);
 		return DDERR_INVALIDPARAMS;
 	}
-	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw);
+	if (!renderers[devindex])
+	{
+		error = CreateDXGLRenderer(lpGUID, &renderers[devindex]);
+		if (FAILED(error))
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, error);
+			return error;
+		}
+	}
+	else
+	{
+		renderers[devindex]->GetAttachedDevice(&myddraw);
+		if (myddraw)
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, DDERR_DIRECTDRAWALREADYCREATED);
+			return DDERR_DIRECTDRAWALREADYCREATED;
+		}
+	}
+	error = glDirectDraw7_CreateAndInitialize(lpGUID, pUnkOuter, &myddraw, renderers[devindex]);
 	if(error != DD_OK)
 	{
+		renderers[devindex]->SetAttachedDevice(NULL);
 		TRACE_EXIT(23,error);
 		return error;
 	}

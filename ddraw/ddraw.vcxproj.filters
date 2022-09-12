@@ -176,6 +176,12 @@
     <ClInclude Include="include\KHR\khrplatform.h">
       <Filter>Header Files\include\KHR</Filter>
     </ClInclude>
+    <ClInclude Include="DXGLTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGLQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">

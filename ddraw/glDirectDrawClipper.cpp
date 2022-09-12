@@ -18,6 +18,7 @@
 #include "common.h"
 #include "glTexture.h"
 #include "glUtil.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
