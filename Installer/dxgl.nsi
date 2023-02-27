@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_4"
+!if ${COMPILER} == "VC2022_5"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -180,12 +180,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_4"
+!else if ${COMPILER} == "VC2022_5"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31931/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.4 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31938/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2022.5 x64"
 !define runtime_filename "VC_redist.x64.exe"
-!define runtime_sha512 "A66EA382D8BDD31491627FD698242D2EDA38B1D9DF762C402923EF40BBCA6AA2F43F22FA811C5FC894B529F9E77FCDD5CED9CD8AF4A19F53845FCE3780E8C041"
+!define runtime_sha512 "9BE541F26B5D43CEE1766239D8880AB7D30D18FEA2F17E28D63A498B30B7DD0918F389805398CB56B0DF0DF17C8633CB73F9E46672C93B21BE04B85BDA7A2648"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -231,12 +231,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_4"
+!else if ${COMPILER} == "VC2022_5"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31931/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.4 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31938/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2022.5 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "02B959B3F008E70674F3FBB119601701057A0B3620E897A1B514A93EF22E930841D776D81506C0DC1D5D17899188FF489772EA5F9AE2F263FC1E304EBB7A491F"
+!define runtime_sha512 "28CF976FA51E4C7ABB57FD8FCDE6381F1E140407924EF265FDE6E59546FB6FDEB803F388A5D1E9E74FB80D47CE5FD9F275AAF41258A09002FBA27C2CBBC2DF4D"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -406,7 +406,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_4"
+  !if ${COMPILER} == "VC2022_5"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -476,7 +476,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_4"
+  !if ${COMPILER} == "VC2022_5"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -489,7 +489,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.34.31931" $1
+  ${VersionCompare} "$0" "14.34.31938" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -603,7 +603,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_4"
+!if ${COMPILER} == "VC2022_5"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
