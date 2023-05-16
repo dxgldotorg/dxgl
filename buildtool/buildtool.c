@@ -521,13 +521,13 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1935)
-			strncpy(findptr, "\"VC2022_5\"\n", 13);
-			#elif ((_MSC_VER >= 1930) && (_MSC_VER < 1935))
-			#error Please update your Visual Studio 2022 to Update 5 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
-			#elif (_MSC_VER > 1935)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2022.5.")
-			strncpy(findptr, "\"VC2022_5\"\n", 13);
+			#elif (_MSC_VER == 1936)
+			strncpy(findptr, "\"VC2022_6\"\n", 13);
+			#elif ((_MSC_VER >= 1930) && (_MSC_VER < 1936))
+			#error Please update your Visual Studio 2022 to Update 6 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
+			#elif (_MSC_VER > 1936)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2022.6.")
+			strncpy(findptr, "\"VC2022_6\"\n", 13);
 			#else
 			#pragma message ("Can't detect MSVC version!")
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
