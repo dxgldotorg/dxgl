@@ -110,8 +110,11 @@ SetCompressor /SOLID lzma
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
 ; License page
+!define MUI_LICENSEPAGE_TEXT_BOTTOM "DXGL is licensed under the LGPLv2+.  Click next to continue."
+!define MUI_LICENSEPAGE_BUTTON "Next >"
 !insertmacro MUI_PAGE_LICENSE "..\COPYING.txt"
 ; Components page
+!define MUI_COMPONENTSPAGE_SMALLDESC
 !insertmacro MUI_PAGE_COMPONENTS
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
@@ -524,10 +527,9 @@ Function .onInit
 FunctionEnd
 
 LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL."
-LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "The Visual C++ Redistributable package required for this version of DXGL was not detected.  Selecting this will download a copy of the redistributable hosted on dxgl.org and install it."
+LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "Required MSVC redistributable was not detected.  Select to download the required redistributable from dxgl.org."
 LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
-LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adjusts the COM registration of ddraw.dll to allow DXGL to be used from a game's folder.  This option only applies to the user profile being used to install DXGL.  Use for Windows 8 and above."
-
+LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adds a workaround for Windows 8 and above for COM initialization.  Applies to current user account."
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(DESC_SEC01)
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_VCREDIST} $(DESC_SEC_VCREDIST)
