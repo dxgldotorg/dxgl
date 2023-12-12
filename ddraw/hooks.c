@@ -39,7 +39,7 @@ static int hwndhook_count = 0;
 static int hwndhook_max = 0;
 CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
 static BOOL hooks_init = FALSE;
-static EXECUTION_STATE(*_SetThreadExecutionState)(EXECUTION_STATE esFlags) = NULL;
+static EXECUTION_STATE(WINAPI *_SetThreadExecutionState)(EXECUTION_STATE esFlags) = NULL;
 
 // Window management
 LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
@@ -217,7 +217,7 @@ void InitHooks()
 	{
 		hKernel32 = GetModuleHandle(_T("kernel32.dll"));
 		if (hKernel32) _SetThreadExecutionState =
-			(EXECUTION_STATE(*)(EXECUTION_STATE))GetProcAddress(hKernel32, "SetThreadExecutionState");
+			(EXECUTION_STATE(WINAPI*)(EXECUTION_STATE))GetProcAddress(hKernel32, "SetThreadExecutionState");
 	}
 
 	hooks_init = TRUE;
