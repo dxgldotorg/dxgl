@@ -39,6 +39,7 @@ static int hwndhook_count = 0;
 static int hwndhook_max = 0;
 CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
 static BOOL hooks_init = FALSE;
+static EXECUTION_STATE(*_SetThreadExecutionState)(EXECUTION_STATE esFlags) = NULL;
 
 // Window management
 LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
@@ -180,6 +181,7 @@ LRESULT CALLBACK nullwndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void InitHooks()
 {
+	HMODULE hKernel32;
 	if (hooks_init) return;
 	EnterCriticalSection(&hook_cs);
 	wndhook_count = 0;
@@ -210,6 +212,13 @@ void InitHooks()
 	MH_CreateHook(&ClientToScreen, HookClientToScreen, (LPVOID*)&_ClientToScreen);
 	MH_CreateHook(&MoveWindow, HookMoveWindow, (LPVOID*)&_MoveWindow);
 	MH_CreateHook(&SetWindowPos, HookSetWindowPos, (LPVOID*)&_SetWindowPos);
+
+	if (!_SetThreadExecutionState)
+	{
+		hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+		if (hKernel32) _SetThreadExecutionState =
+			(EXECUTION_STATE(*)(EXECUTION_STATE))GetProcAddress(hKernel32, "SetThreadExecutionState");
+	}
 
 	hooks_init = TRUE;
 	LeaveCriticalSection(&hook_cs);
@@ -340,6 +349,11 @@ void InstallDXGLHook(HWND hWnd, LPDIRECTDRAW7 lpDD7)
 		if (lpDD7) wndhook->lpDD7 = lpDD7;
 		return;
 	}
+	if (GetForegroundWindow() == hWnd)
+	{
+		if (_SetThreadExecutionState)
+			_SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
+	}
 	wndproc = (WNDPROC)_GetWindowLongPtrA(hWnd, GWLP_WNDPROC);
 	SetHookWndProc(hWnd, wndproc, lpDD7, FALSE, FALSE);
 	_SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)DXGLWndHookProc);
@@ -378,6 +392,18 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	lpDD7 = wndhook->lpDD7;
 	switch (uMsg)
 	{
+	case WM_ACTIVATE:
+		if (wParam)
+		{
+			if (_SetThreadExecutionState)
+				_SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
+		}
+		else
+		{
+			if (_SetThreadExecutionState)
+				_SetThreadExecutionState(ES_CONTINUOUS);
+		}
+		return CallWindowProc(parentproc, hWnd, uMsg, wParam, lParam);
 	case WM_DESTROY:
 		if (cursorclipped)
 		{
