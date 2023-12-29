@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2023 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -44,12 +44,14 @@ typedef LONG LSTATUS;
 #ifdef _M_X64
 static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global_x64");
 static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles_x64\\");
+static const TCHAR globalname[] = _T("Global");
 static const TCHAR profilesname[] = _T("Profiles_x64\\");
 static const TCHAR configversion[] = _T("Configuration Version x64");
 static const TCHAR regkeyprofilesmigrated[] = _T("Software\\DXGL\\ProfilesMigrated_x64\\");
 #else
 static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global");
 static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles\\");
+static const TCHAR globalname[] = _T("Global");
 static const TCHAR profilesname[] = _T("Profiles\\");
 static const TCHAR configversion[] = _T("Configuration Version");
 static const TCHAR regkeyprofilesmigrated[] = _T("Software\\DXGL\\ProfilesMigrated\\");
@@ -2111,6 +2113,7 @@ void UpgradeProfile0to1(HKEY hKey)
 {
 	// Upgrades from the initial registry format which used EXE checksums
 	// to settings format 1 which uses directory hashes and the Profiles subkey.
+	// This format was first introduced in DXGL 0.5.9.
 	TCHAR olddir[MAX_PATH];
 	TCHAR *subkeyin = NULL;
 	DWORD subkeyinsize = 0;
@@ -2329,6 +2332,77 @@ void UpgradeProfile0to1(HKEY hKey)
 	if (valuename) free(valuename);
 }
 
+void UpgradeProfile1to2(HKEY hKey)
+{
+	// Changes the AddColorDepths value to ensure the default of
+	// 8, 16, and 32-bit modes added.
+	// This change was originally implmented in DXGL 0.5.13.
+	DWORD sizeout;
+	DWORD regtype;
+	DWORD numvalue;
+	DWORD keycount;
+	int profileindex;
+	LONG error;
+	HKEY hKeyProfiles;
+	HKEY hKeyProfileInput;
+	TCHAR profilespath[MAX_PATH];
+	_tcscpy(profilespath, globalname);
+	// Start with the global profile
+	error = RegCreateKeyEx(hKey, globalname, 0, NULL,0, KEY_ALL_ACCESS,
+		NULL, &hKeyProfileInput, NULL);
+	if (error == ERROR_SUCCESS)
+	{
+		sizeout = 4;
+		regtype = REG_DWORD;
+		error = RegQueryValueEx(hKeyProfileInput, _T("AddColorDepths"), NULL,
+			&regtype, (LPBYTE)&numvalue, &sizeout);
+		if (error == ERROR_SUCCESS)
+		{
+			// Ensure 8, 16, and 32-bit modes are added
+			numvalue |= (1 | 4 | 16);
+			RegSetValueEx(hKeyProfileInput, _T("AddColorDepths"), 0,
+				REG_DWORD, (LPBYTE)&numvalue, 4);
+		}
+		RegCloseKey(hKeyProfileInput);
+	}
+	_tcscpy(profilespath, profilesname);
+	profilespath[_tcslen(profilespath) - 1] = 0;
+	// Open Profiles path
+	error = RegOpenKeyEx(hKey, profilespath, 0, KEY_ALL_ACCESS, &hKeyProfiles);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryInfoKey(hKeyProfiles,NULL,NULL,NULL,&keycount,
+			NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+		for (profileindex = 0; profileindex < keycount; profileindex++)
+		{
+			sizeout = MAX_PATH * sizeof(TCHAR);
+			error = RegEnumKeyEx(hKeyProfiles, profileindex, profilespath, &sizeout,
+				NULL, NULL, NULL, NULL);
+			if (error == ERROR_SUCCESS)
+			{
+				// Open profile key
+				error = RegOpenKeyEx(hKeyProfiles, profilespath, 0, KEY_ALL_ACCESS, &hKeyProfileInput);
+				if (error == ERROR_SUCCESS)
+				{
+					error = RegQueryValueEx(hKeyProfileInput, _T("AddColorDepths"), NULL,
+						&regtype, (LPBYTE)&numvalue, &sizeout);
+					if(error == ERROR_SUCCESS)
+					{
+						// Ensure 8, 16, and 32-bit modes are added
+						numvalue |= (1 | 4 | 16);
+						RegSetValueEx(hKeyProfileInput, _T("AddColorDepths"), 0,
+							REG_DWORD, (LPBYTE)&numvalue, 4);
+					}
+					RegCloseKey(hKeyProfileInput);
+				}
+			}
+		}
+		RegCloseKey(hKeyProfiles);
+	}
+	sizeout = 2;
+	RegSetValueEx(hKey, configversion, 0, REG_DWORD, (BYTE*)&sizeout, 4);
+}
+
 /**
   * Checks the registry configuration version and if outdated upgrades to
   * the latest version - currently version 3
@@ -2381,68 +2455,7 @@ void UpgradeConfig()
 	if (error != ERROR_SUCCESS) version = 0;  // Version is 0 if not set (alpha didn't have version)
 	if (regtype != REG_DWORD) version = 0; // Is the key the wrong type?
 	if (version < 1) UpgradeProfile0to1(hKey);  // DXGL 0.5.9 and later - upgrade from initial format
-	if (version >= 1) goto ver1to2;  // If version is 1 check for version 2.
-ver1to2:
-	RegCloseKey(hKey);
-	// Version 1 to 2:  Fix an incorrectly written AddColorDepths value
-	if (version >= 2) goto ver2to3; // If version is 2 check for version 3.
-	// Fix up the global Add color depths
-	_tcscpy(regkey, regkeyglobal);
-	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
-	sizeout = 4;
-	regtype = REG_DWORD;
-	error = RegQueryValueEx(hKey,_T("AddColorDepths"),NULL,
-		&regtype, (LPBYTE)&numvalue, &sizeout);
-	if (error == ERROR_SUCCESS)
-	{
-		if (numvalue == 1)
-		{
-			numvalue = 1 | 4 | 16;
-			RegSetValueEx(hKey, _T("AddColorDepths"), 0, REG_DWORD, (LPBYTE)&numvalue, 4);
-		}
-	}
-	RegCloseKey(hKey);
-	// Enumerate profiles and fix up Add color depths
-	_tcscpy(regkey, regkeyprofiles);
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_ALL_ACCESS, &hKey);
-	if (error == ERROR_SUCCESS)
-	{
-		keyindex = 0;
-		do
-		{
-			sizeout = MAX_PATH;
-			error = RegEnumKeyEx(hKey, keyindex, subkey, &sizeout,
-				NULL, NULL, NULL, NULL);
-			keyindex++;
-			if (error == ERROR_SUCCESS)
-			{
-				error2 = RegOpenKeyEx(hKey, subkey, 0, KEY_ALL_ACCESS, &hKeyProfile);
-				if (error2 == ERROR_SUCCESS)
-				{
-					error2 = RegQueryValueEx(hKeyProfile, _T("AddColorDepths"), NULL,
-						&regtype, (LPBYTE)&numvalue, &sizeout);
-					if (error2 == ERROR_SUCCESS)
-					{
-						if (numvalue == 1)
-						{
-							numvalue = 1 | 4 | 16;
-							RegSetValueEx(hKeyProfile, _T("AddColorDepths"), 0, REG_DWORD, (BYTE*)&numvalue, 4);
-						}
-					}
-					RegCloseKey(hKeyProfile);
-				}
-			}
-		} while (error == ERROR_SUCCESS);
-		RegCloseKey(hKey);
-	}
-	_tcscpy(regkey, regkeybase);
-	error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
-	if (error == ERROR_SUCCESS)
-	{
-		sizeout = 2;
-		RegSetValueEx(hKey, configversion, 0, REG_DWORD, (BYTE*)&sizeout, 4);
-		RegCloseKey(hKey);
-	}
+	if (version < 2) UpgradeProfile1to2(hKey);  // DXGL 0.5.13 and later - Preset color depths option
 ver2to3:
 	// Version 2 to 3:  Fix profile path hashes
 	if (version >= 3) return;
