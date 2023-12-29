@@ -20,6 +20,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glRenderWindow.h"
 #include "glRenderer.h"
@@ -1529,7 +1530,7 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	InterlockedDecrement((LONG*)&gllock);
 	LeaveCriticalSection(&dll_cs);
 	This->ext = (glExtensions *)malloc(sizeof(glExtensions));
-	glExtensions_Init(This->ext);
+	glExtensions_Init(This->ext, This->hDC, FALSE);
 	glUtil_Create(This->ext, &This->util);
 	glRenderer__SetSwap(This,1);
 	glFinish();

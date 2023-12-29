@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glRenderWindow.h"
 #include "ddraw.h"
@@ -70,6 +71,7 @@ HRESULT glRenderWindow_Create(int width, int height, BOOL fullscreen,
 	WaitForObjectAndMessages(This->ReadyEvent);
 	CloseHandle(This->ReadyEvent);
 	This->ReadyEvent = NULL;
+	return S_OK;
 }
 
 DWORD WINAPI glRenderWindow_ThreadEntry(void *entry)
@@ -225,7 +227,7 @@ LRESULT glRenderWindow_WndProc(glRenderWindow *This, HWND hwnd, UINT msg, WPARAM
 
 
 // Render Window event handler
-LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK RenderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	glRenderWindow* instance = reinterpret_cast<glRenderWindow*>(GetWindowLongPtr(hwnd,GWLP_USERDATA));
 	if(!instance)

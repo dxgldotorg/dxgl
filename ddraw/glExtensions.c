@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2017 William Feely
+// Copyright (C) 2011-2022 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 extern DXGLCFG dxglcfg;
 
 static int stubswapinterval = 1;
+static const GLubyte *emptystring = "";
 static BOOL APIENTRY wglSwapIntervalEXTStub(GLint interval)
 {
 	stubswapinterval = interval;
@@ -30,10 +31,13 @@ static GLint APIENTRY wglGetSwapIntervalEXTStub()
 	return stubswapinterval;
 }
 
-void glExtensions_Init(glExtensions *ext)
+void glExtensions_Init(glExtensions *ext, HDC hdc, BOOL core)
 {
 	const GLubyte *glversion;
 	const GLubyte *glextensions;
+	const GLubyte *wglextensions;
+	GLint numextensions;
+	int i;
 	BOOL broken_fbo;
 	BOOL broken_texrect;
 	ZeroMemory(ext, sizeof(glExtensions));
@@ -124,49 +128,133 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		}
 		ExitProcess(-1);
 	}
-	glextensions = glGetString(GL_EXTENSIONS);
-	if((strstr((char*)glextensions,"GL_ARB_framebuffer_object") || (ext->glver_major >= 3))
-		&& !dxglcfg.DebugNoArbFramebuffer) ext->GLEXT_ARB_framebuffer_object = 1;
-	else ext->GLEXT_ARB_framebuffer_object = 0;
-	if(strstr((char*)glextensions,"GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
-		ext->GLEXT_EXT_framebuffer_object = 1;
-	else ext->GLEXT_EXT_framebuffer_object = 0;
-	if (strstr((char*)glextensions, "GL_ARB_texture_rectangle") || (ext->glver_major > 3) ||
-		((ext->glver_major == 3) && (ext->glver_minor == 1))) ext->GLEXT_ARB_texture_rectangle = 1;
-	else ext->GLEXT_ARB_texture_rectangle = 0;
-	if(strstr((char*)glextensions,"GL_NV_packed_depth_stencil")) ext->GLEXT_NV_packed_depth_stencil = 1;
-	else ext->GLEXT_NV_packed_depth_stencil = 0;
-	if(strstr((char*)glextensions,"GL_EXT_packed_depth_stencil")) ext->GLEXT_EXT_packed_depth_stencil = 1;
-	else ext->GLEXT_EXT_packed_depth_stencil = 0;
-	if(strstr((char*)glextensions,"GL_ARB_depth_buffer_float") || (ext->glver_major >= 3)) ext->GLEXT_ARB_depth_buffer_float = 1;
-	else ext->GLEXT_ARB_depth_buffer_float = 0;
-	if(strstr((char*)glextensions,"GL_ARB_depth_texture") || (ext->glver_major >= 2)
-		|| ((ext->glver_major >= 1) && (ext->glver_minor >= 4))) ext->GLEXT_ARB_depth_texture = 1;
-	else ext->GLEXT_ARB_depth_texture = 0;
-	if(strstr((char*)glextensions,"GL_NVX_gpu_memory_info")) ext->GLEXT_NVX_gpu_memory_info = 1;
-	else ext->GLEXT_NVX_gpu_memory_info = 0;
-	if(strstr((char*)glextensions,"GL_ATI_meminfo")) ext->GLEXT_ATI_meminfo = 1;
-	else ext->GLEXT_ATI_meminfo = 0;
-	if((strstr((char*)glextensions,"GL_ARB_ES2_compatibility") || (ext->glver_major >= 5)
-		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) && !dxglcfg.DebugNoES2Compatibility)
-		ext->GLEXT_ARB_ES2_compatibility = 1;
-	else ext->GLEXT_ARB_ES2_compatibility = 0;
-	if(strstr((char*)glextensions,"GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
-		ext->GLEXT_EXT_direct_state_access = 1;
-	else ext->GLEXT_EXT_direct_state_access = 0;
-	if ((strstr((char*)glextensions, "GL_ARB_direct_state_access") || (ext->glver_major >= 5)
-		|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) && !dxglcfg.DebugNoArbDirectStateAccess)
-		ext->GLEXT_ARB_direct_state_access = 1;
-	else ext->GLEXT_ARB_direct_state_access = 0;
-	if ((strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
-		|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
-		ext->GLEXT_ARB_sampler_objects = 1;
-	else ext->GLEXT_ARB_sampler_objects = 0;
-	if(strstr((char*)glextensions,"GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
-		ext->GLEXT_EXT_gpu_shader4 = 1;
-	else ext->GLEXT_EXT_gpu_shader4 = 0;
-	if(strstr((char*)glextensions,"GL_GREMEDY_frame_terminator")) ext->GLEXT_GREMEDY_frame_terminator = 1;
-	else ext->GLEXT_GREMEDY_frame_terminator = 0;
+
+	ext->glGetStringi = (PFNGLGETSTRINGIPROC)wglGetProcAddress("glGetStringi");
+
+	if (core && ext->glGetStringi) // Core uses indexed extensions
+	{
+		// Set version based extensions
+		ext->GLEXT_ARB_depth_buffer_float = 1;
+		ext->GLEXT_ARB_depth_texture = 1;
+		if(!dxglcfg.DebugNoArbFramebuffer) ext->GLEXT_ARB_framebuffer_object = 1;
+		if((ext->glver_major > 3) ||
+			((ext->glver_major == 3) && (ext->glver_minor >= 1)))
+			ext->GLEXT_ARB_texture_rectangle = 1;
+		if (((ext->glver_major >= 4)
+			|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
+			ext->GLEXT_ARB_sampler_objects = 1;
+		if (((ext->glver_major >= 5)
+			|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) && !dxglcfg.DebugNoES2Compatibility)
+			ext->GLEXT_ARB_ES2_compatibility = 1;
+		if (((ext->glver_major >= 5)
+			|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) && !dxglcfg.DebugNoArbDirectStateAccess)
+			ext->GLEXT_ARB_direct_state_access = 1;
+		// Scan for extensions
+		glGetIntegerv(GL_NUM_EXTENSIONS,&numextensions);
+		for (i = 0; i < numextensions; i++)
+		{
+			glextensions = ext->glGetStringi(GL_EXTENSIONS, i);
+			if (glextensions)
+			{
+				if (strcmp((char*)glextensions, "GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
+					ext->GLEXT_EXT_framebuffer_object = 1;
+				if (strcmp((char*)glextensions, "GL_ARB_texture_rectangle"))
+					ext->GLEXT_ARB_texture_rectangle = 1;
+				if (strcmp((char*)glextensions, "GL_NV_packed_depth_stencil"))
+					ext->GLEXT_NV_packed_depth_stencil = 1;
+				if (strcmp((char*)glextensions, "GL_EXT_packed_depth_stencil"))
+					ext->GLEXT_EXT_packed_depth_stencil = 1;
+				if (strcmp((char*)glextensions, "GL_NVX_gpu_memory_info"))
+					ext->GLEXT_NVX_gpu_memory_info = 1;
+				if (strcmp((char*)glextensions, "GL_ATI_meminfo"))
+					ext->GLEXT_ATI_meminfo = 1;
+				if (strcmp((char*)glextensions, "GL_ARB_ES2_compatibility") && !dxglcfg.DebugNoES2Compatibility)
+					ext->GLEXT_ARB_ES2_compatibility = 1;
+				if (strcmp((char*)glextensions, "GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
+					ext->GLEXT_EXT_direct_state_access = 1;
+				if (strcmp((char*)glextensions, "GL_ARB_direct_state_access") && !dxglcfg.DebugNoArbDirectStateAccess)
+					ext->GLEXT_ARB_direct_state_access = 1;
+				if (strcmp((char*)glextensions, "GL_ARB_sampler_objects") && !dxglcfg.DebugNoSamplerObjects)
+					ext->GLEXT_ARB_sampler_objects = 1;
+				if (strcmp((char*)glextensions, "GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
+					ext->GLEXT_EXT_gpu_shader4 = 1;
+				if (strcmp((char*)glextensions, "GL_GREMEDY_frame_terminator"))
+					ext->GLEXT_GREMEDY_frame_terminator = 1;
+			}
+		}
+	}
+
+	else  // Legacy extensions string
+	{
+		glextensions = glGetString(GL_EXTENSIONS);
+		if ((strstr((char*)glextensions, "GL_ARB_framebuffer_object") || (ext->glver_major >= 3))
+			&& !dxglcfg.DebugNoArbFramebuffer) ext->GLEXT_ARB_framebuffer_object = 1;
+		else ext->GLEXT_ARB_framebuffer_object = 0;
+		if (strstr((char*)glextensions, "GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
+			ext->GLEXT_EXT_framebuffer_object = 1;
+		else ext->GLEXT_EXT_framebuffer_object = 0;
+		if (strstr((char*)glextensions, "GL_ARB_texture_rectangle") || (ext->glver_major > 3) ||
+			((ext->glver_major == 3) && (ext->glver_minor == 1))) ext->GLEXT_ARB_texture_rectangle = 1;
+		else ext->GLEXT_ARB_texture_rectangle = 0;
+		if (strstr((char*)glextensions, "GL_NV_packed_depth_stencil")) ext->GLEXT_NV_packed_depth_stencil = 1;
+		else ext->GLEXT_NV_packed_depth_stencil = 0;
+		if (strstr((char*)glextensions, "GL_EXT_packed_depth_stencil")) ext->GLEXT_EXT_packed_depth_stencil = 1;
+		else ext->GLEXT_EXT_packed_depth_stencil = 0;
+		if (strstr((char*)glextensions, "GL_ARB_depth_buffer_float") || (ext->glver_major >= 3)) ext->GLEXT_ARB_depth_buffer_float = 1;
+		else ext->GLEXT_ARB_depth_buffer_float = 0;
+		if (strstr((char*)glextensions, "GL_ARB_depth_texture") || (ext->glver_major >= 2)
+			|| ((ext->glver_major >= 1) && (ext->glver_minor >= 4))) ext->GLEXT_ARB_depth_texture = 1;
+		else ext->GLEXT_ARB_depth_texture = 0;
+		if (strstr((char*)glextensions, "GL_NVX_gpu_memory_info")) ext->GLEXT_NVX_gpu_memory_info = 1;
+		else ext->GLEXT_NVX_gpu_memory_info = 0;
+		if (strstr((char*)glextensions, "GL_ATI_meminfo")) ext->GLEXT_ATI_meminfo = 1;
+		else ext->GLEXT_ATI_meminfo = 0;
+		if ((strstr((char*)glextensions, "GL_ARB_ES2_compatibility") || (ext->glver_major >= 5)
+			|| ((ext->glver_major >= 4) && (ext->glver_minor >= 1))) && !dxglcfg.DebugNoES2Compatibility)
+			ext->GLEXT_ARB_ES2_compatibility = 1;
+		else ext->GLEXT_ARB_ES2_compatibility = 0;
+		if (strstr((char*)glextensions, "GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
+			ext->GLEXT_EXT_direct_state_access = 1;
+		else ext->GLEXT_EXT_direct_state_access = 0;
+		if ((strstr((char*)glextensions, "GL_ARB_direct_state_access") || (ext->glver_major >= 5)
+			|| ((ext->glver_major >= 4) && (ext->glver_minor >= 5))) && !dxglcfg.DebugNoArbDirectStateAccess)
+			ext->GLEXT_ARB_direct_state_access = 1;
+		else ext->GLEXT_ARB_direct_state_access = 0;
+		if ((strstr((char*)glextensions, "GL_ARB_sampler_objects") || (ext->glver_major >= 4)
+			|| ((ext->glver_major >= 3) && (ext->glver_minor >= 3))) && !dxglcfg.DebugNoSamplerObjects)
+			ext->GLEXT_ARB_sampler_objects = 1;
+		else ext->GLEXT_ARB_sampler_objects = 0;
+		if (strstr((char*)glextensions, "GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
+			ext->GLEXT_EXT_gpu_shader4 = 1;
+		else ext->GLEXT_EXT_gpu_shader4 = 0;
+		if (strstr((char*)glextensions, "GL_GREMEDY_frame_terminator")) ext->GLEXT_GREMEDY_frame_terminator = 1;
+		else ext->GLEXT_GREMEDY_frame_terminator = 0;
+	}
+	// Get WGL extensions
+	ext->wglGetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");
+	if (ext->wglGetExtensionsStringEXT) ext->WGLEXT_EXT_extensions_string = 1;
+	ext->wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
+	if (ext->wglGetExtensionsStringARB) ext->WGLEXT_ARB_extensions_string = 1;
+	wglextensions = NULL;
+	if(ext->wglGetExtensionsStringARB) wglextensions = ext->wglGetExtensionsStringARB(hdc);
+	if (!wglextensions)
+	{
+		ext->wglGetExtensionsStringARB = 0;
+		if(ext->wglGetExtensionsStringEXT) wglextensions = ext->wglGetExtensionsStringEXT();
+		if (!wglextensions)
+		{
+			ext->wglGetExtensionsStringEXT = 0;
+			wglextensions = emptystring;
+		}
+	}
+	if (strstr((char*)wglextensions, "WGL_ARB_pixel_format")) ext->WGLEXT_ARB_pixel_format = 1;
+	else ext->WGLEXT_ARB_pixel_format = 0;
+	if (strstr((char*)wglextensions, "WGL_ARB_create_context") && ext->glver_major > 2)
+		ext->WGLEXT_ARB_create_context = 1;
+	else ext->WGLEXT_ARB_create_context = 0;
+	if (strstr((char*)wglextensions, "WGL_ARB_create_context_profile") && ext->glver_major > 2)
+		ext->WGLEXT_ARB_create_context_profile = 1;
+	else ext->WGLEXT_ARB_create_context_profile = 0;
 	broken_fbo = TRUE;
 	if(ext->GLEXT_ARB_framebuffer_object)
 	{
@@ -233,6 +321,14 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	{
 		ext->glFrameTerminatorGREMEDY = (PFNGLFRAMETERMINATORGREMEDYPROC)wglGetProcAddress("glFrameTerminatorGREMEDY");
 	}
+	if (ext->WGLEXT_ARB_pixel_format)
+	{
+		ext->wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+	}
+	if (ext->WGLEXT_ARB_create_context)
+	{
+		ext->wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+	}
 	if(broken_fbo)
 	{
 		if(dxglcfg.DebugNoArbFramebuffer || dxglcfg.DebugNoExtFramebuffer)
@@ -258,4 +354,5 @@ MB_OK | MB_ICONERROR);
 		ext->wglSwapIntervalEXT = wglSwapIntervalEXTStub;
 		ext->wglGetSwapIntervalEXT = wglGetSwapIntervalEXTStub;
 	}
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &ext->maxtexturesize);
 }

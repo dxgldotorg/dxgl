@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "glClassFactory.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glTexture.h"
 #include "glUtil.h"

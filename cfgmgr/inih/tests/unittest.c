@@ -27,17 +27,25 @@ int dumper(void* user, const char* section, const char* name,
 #endif
 {
     User = *((int*)user);
-    if (strcmp(section, Prev_section)) {
+    if (!name || strcmp(section, Prev_section)) {
         printf("... [%s]\n", section);
         strncpy(Prev_section, section, sizeof(Prev_section));
         Prev_section[sizeof(Prev_section) - 1] = '\0';
     }
+    if (!name) {
+        return 1;
+    }
 
 #if INI_HANDLER_LINENO
-    printf("... %s=%s;  line %d\n", name, value, lineno);
+    printf("... %s%s%s;  line %d\n", name, value ? "=" : "", value ? value : "", lineno);
 #else
-    printf("... %s=%s;\n", name, value);
+    printf("... %s%s%s;\n", name, value ? "=" : "", value ? value : "");
 #endif
+
+    if (!value) {
+        // Happens when INI_ALLOW_NO_VALUE=1 and line has no value (no '=' or ':')
+        return 1;
+    }
 
     return strcmp(name, "user")==0 && strcmp(value, "parse_error")==0 ? 0 : 1;
 }
@@ -62,5 +70,7 @@ int main(void)
     parse("multi_line.ini");
     parse("bad_multi.ini");
     parse("bom.ini");
+    parse("duplicate_sections.ini");
+    parse("no_value.ini");
     return 0;
 }

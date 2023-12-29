@@ -124,7 +124,7 @@ typedef struct glDirectDraw7Vtbl
 
 
 HRESULT glDirectDraw7_Create(glDirectDraw7 **glDD7);
-HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7);
+HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7, LPDXGLRENDERER renderer);
 void glDirectDraw7_Delete(glDirectDraw7 *This);
 
 // ddraw 1+ api

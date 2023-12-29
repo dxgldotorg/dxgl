@@ -124,7 +124,13 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern CRITICAL_SECTION dll_cs;
+#ifdef __cplusplus
+}
+#endif
 
 #include "trace.h"
 #include "../cfgmgr/LibSha256.h"

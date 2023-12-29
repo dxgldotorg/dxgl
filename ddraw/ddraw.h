@@ -61,10 +61,10 @@ void DeleteDirectDraw();
 extern "C" {
 #endif
 extern DXGLCFG dxglcfg;
+extern DWORD gllock;
 #ifdef __cplusplus
 }
 #endif
-extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
 struct glDirectDraw7;

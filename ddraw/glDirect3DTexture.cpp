@@ -19,6 +19,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
+#include "DXGLRenderer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
 #include "dxglDirectDrawSurface.h"
