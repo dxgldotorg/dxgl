@@ -1882,18 +1882,6 @@ void GetCurrentConfig(DXGLCFG *cfg, BOOL initial)
 		}
 	}
 	//if(!cfg->colormode) DelCompatFlag(_T("DWM8And16BitMitigation"), initial);  // Windows 10 compatibility issues; not needed?
-	// Set shader cache path
-	filename[0] = 0;
-	SHGetSpecialFolderPath(NULL, filename, CSIDL_LOCAL_APPDATA, 1);
-	if (_tcslen(filename) == 0)
-		SHGetSpecialFolderPath(NULL, filename, CSIDL_APPDATA, 1);
-	if (_tcslen(filename) == 0)
-		SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, 1);
-	if (_tcslen(filename) == 0) _tcscpy(filename, _T("C:"));
-	_tcscat(filename, _T("\\DXGL\\ShaderCache\\"));
-	_tcscat(filename, sha256string);
-	_tcscat(filename, "\\");
-	_tcscpy(cfg->shadercachepath, filename);
 }
 void GetGlobalConfig(DXGLCFG *cfg, BOOL initial)
 {
