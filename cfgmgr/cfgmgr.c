@@ -1977,6 +1977,18 @@ void SaveWindowSettings(const DXGLCFG *cfg)
 	}
 }
 
+void FatalMemoryError(int code)
+{
+	MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+	ExitProcess(code);
+}
+
+void FatalRegistryError(int code)
+{
+	MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
+	ExitProcess(code);
+}
+
 //  Checks for obsolete DXGL Test registry entry and renames it to DXGLCFG.
 
 void UpgradeDXGLTestToDXGLCfg()
@@ -1989,17 +2001,19 @@ void UpgradeDXGLTestToDXGLCfg()
 	TCHAR profilepath[MAX_PATH + 80];
 	TCHAR destpath[MAX_PATH + 80];
 	LONG error;
-	DWORD sizeout = (MAX_PATH + 1) * sizeof(TCHAR);
+	DWORD sizeout = MAX_PATH * sizeof(TCHAR);
 	DWORD sizeout2;
 	HKEY hKeyInstall = NULL;
 	HKEY hKeyProfile = NULL;
 	HKEY hKeyDest = NULL;
 	DWORD numvalue;
+	DWORD valuecount;
 	DWORD olddirsize = MAX_PATH*4;
 	TCHAR *olddir = NULL;
-	DWORD oldvaluesize = 1024;
+	DWORD oldvaluesize;
 	TCHAR *oldvalue = NULL;
 	DWORD regtype;
+	TCHAR *valuename;
 	int i;
 	error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\DXGL"), 0, KEY_READ, &hKeyInstall);
 	if (error == ERROR_SUCCESS)
@@ -2046,46 +2060,23 @@ void UpgradeDXGLTestToDXGLCfg()
 				if (error == ERROR_SUCCESS)
 				{
 					olddir = malloc(olddirsize);
-					oldvalue = malloc(oldvaluesize);
 					numvalue = 0;
-					do
+					RegQueryInfoKey(hKeyProfile, NULL, NULL, 0, NULL, NULL, NULL, &valuecount,
+						NULL, &oldvaluesize, NULL, NULL);
+					oldvaluesize *= sizeof(TCHAR);
+					valuename = (TCHAR*)malloc(32768);
+					if (!valuename) FatalMemoryError(ERROR_NOT_ENOUGH_MEMORY);
+					oldvalue = malloc(oldvaluesize);
+					if (!oldvalue) FatalMemoryError(ERROR_NOT_ENOUGH_MEMORY);
+					for (numvalue = 0; numvalue < valuecount; numvalue++)
 					{
-						sizeout = olddirsize;
+						sizeout = 16384;
 						sizeout2 = oldvaluesize;
-						error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
-						if (error == ERROR_MORE_DATA)
-						{
-							if (sizeout > olddirsize)
-							{
-								olddirsize = sizeout;
-								olddir = realloc(olddir, olddirsize);
-								if (!olddir)
-								{
-									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
-									ExitProcess(error);
-								}
-							}
-							if (sizeout2 > oldvaluesize)
-							{
-								oldvaluesize = sizeout2;
-								oldvalue = realloc(oldvalue, oldvaluesize);
-								if (!oldvalue)
-								{
-									MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
-									ExitProcess(error);
-								}
-							}
-							sizeout = olddirsize;
-							sizeout2 = oldvaluesize;
-							error = RegEnumValue(hKeyProfile, numvalue, olddir, &sizeout, NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
-						}
+						error = RegEnumValue(hKeyProfile, numvalue, valuename, &sizeout,
+							NULL, &regtype, (LPBYTE)oldvalue, &sizeout2);
 						if (error == ERROR_SUCCESS)
-						{
-							if (_tcsnicmp(olddir, _T("InstallPaths"), sizeout))
-								RegSetValueEx(hKeyDest, olddir, 0, regtype, (LPBYTE)oldvalue, sizeout2);
-						}
-						numvalue++;
-					} while (error == ERROR_SUCCESS);
+							RegSetValueEx(hKeyDest, valuename, 0, regtype, (const BYTE *)oldvalue, sizeout2);
+					}
 					RegCloseKey(hKeyDest);
 					free(olddir);
 					free(oldvalue);
@@ -2099,18 +2090,6 @@ void UpgradeDXGLTestToDXGLCfg()
 	if (hKeyInstall) RegCloseKey(hKeyInstall);
 }
 
-
-void FatalMemoryError(int code)
-{
-	MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
-	ExitProcess(code);
-}
-
-void FatalRegistryError(int code)
-{
-	MessageBox(NULL, _T("Out of memory updating registry"), _T("Fatal error"), MB_ICONSTOP | MB_OK);
-	ExitProcess(code);
-}
 
 void UpgradeProfile0to1(HKEY hKey)
 {
