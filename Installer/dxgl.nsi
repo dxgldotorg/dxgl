@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2021 William Feely
+; Copyright (C) 2011-2024 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -303,7 +303,7 @@ VIProductVersion "${PRODUCT_VERSION_NUMBER}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2021 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2024 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
@@ -417,7 +417,9 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
+  !if ${COMPILER} == "VC2022_8"
   File "..\${SRCDIR}\cfgmgr.pdb"
+  !endif
   File "..\${SRCDIR}\ddraw.pdb"
   File "..\${SRCDIR}\dxglcfg.pdb"
 SectionEnd
