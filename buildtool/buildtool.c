@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2022 William Feely
+// Copyright (C) 2012-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -335,7 +335,7 @@ int ProcessHeaders(char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 20;
+	version.point = 21;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
