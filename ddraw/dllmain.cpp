@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2018 William Feely
+// Copyright (C) 2011-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 			GlobalMemoryStatus(&memstatus);
 			dxglcfg.SystemRAM = memstatus.dwTotalPhys;
 		}
-		GetSystemDirectory(path, MAX_PATH);
+		/*GetSystemDirectory(path, MAX_PATH);
 		_tcscat(path, _T("\\ddraw.dll"));
 		hSystemDDraw = LoadLibrary(path);
 		if (!hSystemDDraw)
@@ -92,7 +92,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		dd2->GetAvailableVidMem(&caps, (DWORD*)&dxglcfg.VideoRAM, NULL);
 		dd2->Release();
 		dd->Release();
-		FreeLibrary(hSystemDDraw);
+		FreeLibrary(hSystemDDraw);*/
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
