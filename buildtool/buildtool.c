@@ -335,7 +335,7 @@ int ProcessHeaders(char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 22;
+	version.point = 23;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
@@ -521,13 +521,13 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2010\"\n", 13);
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
-			#elif (_MSC_VER == 1938)
-			strncpy(findptr, "\"VC2022_8\"\n", 13);
-			#elif ((_MSC_VER >= 1930) && (_MSC_VER < 1938))
-			#error Please update your Visual Studio 2022 to Update 6 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
-			#elif (_MSC_VER > 1938)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2022.8.")
-			strncpy(findptr, "\"VC2022_8\"\n", 13);
+			#elif (_MSC_VER == 1939)
+			strncpy(findptr, "\"VC2022_9\"\n", 13);
+			#elif ((_MSC_VER >= 1930) && (_MSC_VER < 1939))
+			#error Please update your Visual Studio 2022 to Update 9 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
+			#elif (_MSC_VER > 1939)
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2022.9.")
+			strncpy(findptr, "\"VC2022_9\"\n", 13);
 			#else
 			#pragma message ("Can't detect MSVC version!")
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
