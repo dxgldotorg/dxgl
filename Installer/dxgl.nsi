@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_8"
+!if ${COMPILER} == "VC2022_9"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -208,12 +208,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_8"
+!else if ${COMPILER} == "VC2022_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33130/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.8 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33135/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2022.9 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "CCF4FD7DA2C3440F1BC7FCAC67C8A12599EAB8D5C015AFFDC2E439FA30F5C7868EF5F52EDE058361FAAE37CCC4AF2C17C0ADF30B8E1F852BB7106D0EC7162506"
+!define runtime_sha512 "70A05BDE549E5A973397CD77FE0C6380807CAE768AA98454830F321A0DE64BD0DA30F31615AE6B4D9F0D244483A571E46024CF51B20FE813A6304A74BD8C0CC2"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -259,12 +259,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_8"
+!else if ${COMPILER} == "VC2022_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33130/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.8 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33135/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2022.9 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "A07DCABB588886C73865C8BDE027D16CE9C8C14C480286F5697620C6D47F20727C208704047512E4BA55E9DC64AC7940B31910A7DF0D1B7DC5569F37270F0441"
+!define runtime_sha512 "C08D1AA7E6E6215A0CEE2793592B65668066C8C984B26675D2B8C09BC7FEE21411CB3C0A905EAEE7A48E7A47535FA777DE21EEB07C78BCA7BF3D7BB17192ACF2"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -320,7 +320,7 @@ Section "DXGL Components (required)" SEC01
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
   File "..\dxgl-example.ini"
-  ${If} PortableMode == "0"
+  ${If} $PortableMode == "0"
     CreateDirectory "$SMPROGRAMS\${SMDIR}"
     Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
     !ifdef _CPU_X64
@@ -342,7 +342,7 @@ SectionEnd
 !ifndef _DEBUG
 !if ${download_runtime} >= 1
 Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
-  ${If} PortableMode == "0"
+  ${If} $PortableMode == "0"
     vcdownloadretry:
     DetailPrint "Downloading ${runtime_name} Runtime"
     NSISdl::download ${runtime_url} $TEMP\${runtime_filename}
@@ -391,7 +391,7 @@ Section -PostInstall
 SectionEnd
 
 Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
-  ${If} PortableMode == "0"
+  ${If} $PortableMode == "0"
     DetailPrint "Setting Wine DLL Overrides"
     WriteRegDWORD HKLM "Software\DXGL" "WineDLLOverride" 1
     WriteRegStr HKCU "Software\Wine\DllOverrides" "ddraw" "native,builtin"
@@ -399,7 +399,7 @@ Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
 SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX
-  ${If} PortableMode == "0"
+  ${If} $PortableMode == "0"
     DetailPrint "Setting DDraw Runtime path in registry"
     WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
     !ifndef _CPU_X64
@@ -417,7 +417,7 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2022_8"
+  !if ${COMPILER} == "VC2022_9"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -498,7 +498,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_8"
+  !if ${COMPILER} == "VC2022_9"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -562,7 +562,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_8"
+  !if ${COMPILER} == "VC2022_9"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -575,7 +575,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.38.33130" $1
+  ${VersionCompare} "$0" "14.38.33135" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -694,7 +694,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_8"
+!if ${COMPILER} == "VC2022_9"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
