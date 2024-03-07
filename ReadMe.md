@@ -1,5 +1,5 @@
 <!--Please enable Word Wrap in Notepad to view this document.-->
-# DXGL 0.5.20
+# DXGL 0.5.21
 https://dxgl.org
 
 ## Introduction
@@ -21,8 +21,8 @@ The “Configuration Version” (“Configuration Version x64” for the x64 ver
 
 ## System Requirements
 
-* Windows Vista (with SP2), 7 (with SP1), 8, 8.1, or 10 (standard build)
-* Windows XP (with SP3), Vista, 7, 8, 8.1, or 10 (legacy build)
+* Windows 7 (with SP1) or newer (standard build)
+* Windows XP (with SP3) or newer (legacy build)
   * Also compatible with most versions of Wine, by setting the ddraw DLL override to "native, builtin" which is done automatically at installation.
   * Not compatible with Windows 10 in S mode.
 * OpenGL 2.0 or higher compatible video card
@@ -30,7 +30,7 @@ The “Configuration Version” (“Configuration Version x64” for the x64 ver
   * Requires support for hardware accelerated non-power-of-two textures
   * OpenGL 3.2 or higher recommended.
 * The standard build requires a SSE2-capable processor; older processors require the legacy build.
-* For the standard build, Visual C++ 2019 x86 runtime, available at https://aka.ms/vs/16/release/vc_redist.x86.exe (note this link may track visitors) (will be installed if not present)
+* For the standard build, Visual C++ 2022 x86 runtime, available at https://aka.ms/vs/17/release/vc_redist.x86.exe (note this link may track visitors) (will be installed if not present)
 * For the legacy build, Visual C++ 2010 x86 runtime, available at https://www.microsoft.com/en-us/download/details.aspx?id=8328 (will be installed if not present)
 
 ## 64-bit Build Notice
@@ -38,11 +38,11 @@ The 64-bit build of DXGL is intended solely for targeting 64-bit DirectDraw prog
 
 ## Build Requirements
 * For the legacy build, Visual Studio 2010 or Visual C++ 2010 Express Edition with Service Pack 1.
-* For the standard build, Visual Studio 2019, Community or higher.
+* For the standard build, Visual Studio 2022 Update 8, Community or higher.
 * The following components are optional.  The build process will ask for these if they do not exist:
-  * TortoiseSVN (to fill in revision on SVN builds)
+  * Git (to fill in revision on Git builds)
   * HTML Help Workshop (to build help)
-  * NSIS (to build installer, requires TortoiseSVN and HTML Help Workshop to succeed)
+  * NSIS (to build installer, requires Git and HTML Help Workshop to succeed)
 * In addition Visual C++ 2005 and Visual C++ 2008 project files are available in the vs8 and vs9 directories respectively.
 
 ## Build Instructions

@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2021 William Feely
+; Copyright (C) 2011-2024 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_4"
+!if ${COMPILER} == "VC2022_9"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -107,14 +107,41 @@ SetCompressor /SOLID lzma
 !define MUI_ICON "..\common\dxgl48.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 
+var RadioButtonPortable
+var RadioButtonNormal
+var PortableMode
+
+Function PortableModeEnter
+	nsDialogs::Create 1018
+	!insertmacro MUI_HEADER_TEXT "Installation mode" "Do you want to install DXGL in portable or normal mode?"
+	; === RadioButtonPortable (type: RadioButton) ===
+	${NSD_CreateRadioButton} 16u 39u 221u 15u "Portable mode:  Extracts DXGL without updating the registry"
+	Pop $RadioButtonPortable
+	${NSD_AddStyle} $RadioButtonPortable ${WS_GROUP}
+	; === RadioButtonNormal (type: RadioButton) ===
+	${NSD_CreateRadioButton} 16u 20u 175u 15u "Normal mode:  Install DXGL and update profiles"
+	Pop $RadioButtonNormal
+	${If} $PortableMode == "0"
+		${NSD_Check} $RadioButtonNormal
+	${Else}
+		${NSD_Check} $RadioButtonPortable
+	${EndIF}
+	nsDialogs::Show
+FunctionEnd
+
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
 ; License page
+!define MUI_LICENSEPAGE_TEXT_BOTTOM "DXGL is licensed under the LGPLv2+.  Click next to continue."
+!define MUI_LICENSEPAGE_BUTTON "Next >"
 !insertmacro MUI_PAGE_LICENSE "..\COPYING.txt"
-; Components page
-!insertmacro MUI_PAGE_COMPONENTS
+; Portable mode page
+Page Custom PortableModeEnter PortableModeLeave
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
+; Components page
+!define MUI_COMPONENTSPAGE_SMALLDESC
+!insertmacro MUI_PAGE_COMPONENTS
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
@@ -128,6 +155,7 @@ SetCompressor /SOLID lzma
 
 ; Language files
 !insertmacro MUI_LANGUAGE "English"
+
 
 ; MUI end ------
 
@@ -180,12 +208,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_4"
+!else if ${COMPILER} == "VC2022_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31931/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.4 x64"
-!define runtime_filename "VC_redist.x64.exe"
-!define runtime_sha512 "A66EA382D8BDD31491627FD698242D2EDA38B1D9DF762C402923EF40BBCA6AA2F43F22FA811C5FC894B529F9E77FCDD5CED9CD8AF4A19F53845FCE3780E8C041"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33135/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2022.9 x64"
+!define runtime_filename "vc_redist.x64.exe"
+!define runtime_sha512 "70A05BDE549E5A973397CD77FE0C6380807CAE768AA98454830F321A0DE64BD0DA30F31615AE6B4D9F0D244483A571E46024CF51B20FE813A6304A74BD8C0CC2"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -231,12 +259,12 @@ SetCompressor /SOLID lzma
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_4"
+!else if ${COMPILER} == "VC2022_9"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.34.31931/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.4 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.38.33135/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2022.9 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "02B959B3F008E70674F3FBB119601701057A0B3620E897A1B514A93EF22E930841D776D81506C0DC1D5D17899188FF489772EA5F9AE2F263FC1E304EBB7A491F"
+!define runtime_sha512 "C08D1AA7E6E6215A0CEE2793592B65668066C8C984B26675D2B8C09BC7FEE21411CB3C0A905EAEE7A48E7A47535FA777DE21EEB07C78BCA7BF3D7BB17192ACF2"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -275,7 +303,7 @@ VIProductVersion "${PRODUCT_VERSION_NUMBER}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2021 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2024 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
@@ -285,128 +313,192 @@ Section "DXGL Components (required)" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   Delete "$INSTDIR\dxgltest.exe"
-  CreateDirectory "$SMPROGRAMS\${SMDIR}"
-  Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
   File "..\${SRCDIR}\dxglcfg.exe"
-  !ifdef _CPU_X64
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL (x64).lnk" "$INSTDIR\dxglcfg.exe"
-  !else
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
-  !endif
   File "..\${SRCDIR}\ddraw.dll"
   File /oname=ReadMe.txt "..\ReadMe.md"
   File "..\ThirdParty.txt"
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Third-party Credits.lnk" "$INSTDIR\ThirdParty.txt"
   File "..\COPYING.txt"
   File "..\Help\dxgl.chm"
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
   File "..\dxgl-example.ini"
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
-  !ifdef _CPU_X64
-  WriteRegStr HKLM "Software\DXGL" "InstallDir_x64" "$INSTDIR"
-  !else
-  WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
-  !endif
+  ${If} $PortableMode == "0"
+    CreateDirectory "$SMPROGRAMS\${SMDIR}"
+    Delete "$SMPROGRAMS\${SMDIR}\DXGL Test.lnk"
+    !ifdef _CPU_X64
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL (x64).lnk" "$INSTDIR\dxglcfg.exe"
+    !else
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Configure DXGL.lnk" "$INSTDIR\dxglcfg.exe"
+    !endif
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Third-party Credits.lnk" "$INSTDIR\ThirdParty.txt"
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\DXGL Help.lnk" "$INSTDIR\dxgl.chm"
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Example configuration file.lnk" "$INSTDIR\dxgl-example.ini"
+    !ifdef _CPU_X64
+    WriteRegStr HKLM "Software\DXGL" "InstallDir_x64" "$INSTDIR"
+    !else
+    WriteRegStr HKLM "Software\DXGL" "InstallDir" "$INSTDIR"
+    !endif
+  ${EndIf}
 SectionEnd
 
 !ifndef _DEBUG
 !if ${download_runtime} >= 1
 Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
-  vcdownloadretry:
-  DetailPrint "Downloading ${runtime_name} Runtime"
-  NSISdl::download ${runtime_url} $TEMP\${runtime_filename}
-  DetailPrint "Checking ${runtime_name} Runtime"
-  dxgl-nsis::CalculateSha512Sum $TEMP\${runtime_filename} ${runtime_sha512}
-  Pop $0
-  ${If} $0 == "0"
-    MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download ${runtime_name} Redistributable.  Would you like to retry?" IDYES vcdownloadretry
-    Delete $TEMP\vcredist_x86.exe
-  ${Else}
-    DetailPrint "Installing ${runtime_name} Runtime"
-    !if ${COMPILER} == "VC2005"
-    ExecWait '"$TEMP\${runtime_filename}" /q' $0
-    !else if ${COMPILER} == "VC2008"
-    ExecWait '"$TEMP\${runtime_filename}" /q' $0
-    !else
-    ExecWait '"$TEMP\${runtime_filename}" /q /norestart' $0
-    !endif
-	${If} $0 != "0"
-	  ${If} $0 == "3010"
-	  SetRebootFlag true
-	  goto vcinstallcomplete
-	  ${Else}
-	  MessageBox MB_OK|MB_ICONSTOP "Failed to install ${runtime_name} Redistributable.  Click OK to attempt manual installation."
-	  ${EndIf}
+  ${If} $PortableMode == "0"
+    vcdownloadretry:
+    DetailPrint "Downloading ${runtime_name} Runtime"
+    NSISdl::download ${runtime_url} $TEMP\${runtime_filename}
+    DetailPrint "Checking ${runtime_name} Runtime"
+    dxgl-nsis::CalculateSha512Sum $TEMP\${runtime_filename} ${runtime_sha512}
+    Pop $0
+    ${If} $0 == "0"
+      MessageBox MB_YESNO|MB_ICONEXCLAMATION|MB_DEFBUTTON2 "Failed to download ${runtime_name} Redistributable.  Would you like to retry?" IDYES vcdownloadretry
+      Delete $TEMP\vcredist_x86.exe
     ${Else}
-	goto vcinstallcomplete
-	${EndIf}
-	ExecWait '"$TEMP\${runtime_filename}"'
-	vcinstallcomplete:
-    Delete $TEMP\${runtime_filename}
+      DetailPrint "Installing ${runtime_name} Runtime"
+      !if ${COMPILER} == "VC2005"
+      ExecWait '"$TEMP\${runtime_filename}" /q' $0
+      !else if ${COMPILER} == "VC2008"
+      ExecWait '"$TEMP\${runtime_filename}" /q' $0
+      !else
+      ExecWait '"$TEMP\${runtime_filename}" /q /norestart' $0
+      !endif
+	  ${If} $0 != "0"
+	    ${If} $0 == "3010"
+	    SetRebootFlag true
+	    goto vcinstallcomplete
+	    ${Else}
+	    MessageBox MB_OK|MB_ICONSTOP "Failed to install ${runtime_name} Redistributable.  Click OK to attempt manual installation."
+	    ${EndIf}
+      ${Else}
+	  goto vcinstallcomplete
+	  ${EndIf}
+	  ExecWait '"$TEMP\${runtime_filename}"'
+	  vcinstallcomplete:
+      Delete $TEMP\${runtime_filename}
+    ${EndIf}
   ${EndIf}
 SectionEnd
 !endif
 !endif
 
 Section -PostInstall
-  CreateDirectory $INSTDIR\Temp
-  CopyFiles $INSTDIR\dxglcfg.exe $INSTDIR\Temp
-  ExecWait '"$INSTDIR\Temp\dxglcfg.exe" upgrade'
-  ExecWait '"$INSTDIR\dxglcfg.exe" profile_install'
-  RMDir /r /REBOOTOK $INSTDIR\Temp
+  ${If} $PortableMode == "0"
+    CreateDirectory $INSTDIR\Temp
+    CopyFiles $INSTDIR\dxglcfg.exe $INSTDIR\Temp
+    ExecWait '"$INSTDIR\Temp\dxglcfg.exe" upgrade'
+    ExecWait '"$INSTDIR\dxglcfg.exe" profile_install'
+    RMDir /r /REBOOTOK $INSTDIR\Temp
+  ${EndIf}
 SectionEnd
 
 Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
-  DetailPrint "Setting Wine DLL Overrides"
-  WriteRegDWORD HKLM "Software\DXGL" "WineDLLOverride" 1
-  WriteRegStr HKCU "Software\Wine\DllOverrides" "ddraw" "native,builtin"
+  ${If} $PortableMode == "0"
+    DetailPrint "Setting Wine DLL Overrides"
+    WriteRegDWORD HKLM "Software\DXGL" "WineDLLOverride" 1
+    WriteRegStr HKCU "Software\Wine\DllOverrides" "ddraw" "native,builtin"
+  ${EndIf}
 SectionEnd
 
 Section "Fix DDraw COM registration" SEC_COMFIX
-  DetailPrint "Setting DDraw Runtime path in registry"
-  WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
-  !ifndef _CPU_X64
-  ${If} ${RunningX64}
-  SetRegView 32
+  ${If} $PortableMode == "0"
+    DetailPrint "Setting DDraw Runtime path in registry"
+    WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
+    !ifndef _CPU_X64
+    ${If} ${RunningX64}
+    SetRegView 32
+    ${EndIf}
+    !endif
+    WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "" "ddraw.dll"
+    WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "ThreadingModel" "Both"
+    WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "" "ddraw.dll"
+    WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "ThreadingModel" "Both"
+    WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "" "ddraw.dll"
+    WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "ThreadingModel" "Both"
   ${EndIf}
+SectionEnd
+
+Section /o "Debug symbols" SEC_DEBUGSYMBOLS
+  !if ${COMPILER} == "VC2022_9"
+  File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
-  WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "" "ddraw.dll"
-  WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "ThreadingModel" "Both"
-  WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "" "ddraw.dll"
-  WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "ThreadingModel" "Both"
-  WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "" "ddraw.dll"
-  WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "ThreadingModel" "Both"
+  File "..\${SRCDIR}\ddraw.pdb"
+  File "..\${SRCDIR}\dxglcfg.pdb"
 SectionEnd
 
 Section -AdditionalIcons
-  WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
-  CreateShortCut "$SMPROGRAMS\${SMDIR}\Uninstall.lnk" "$INSTDIR\uninst.exe"
+  ${If} $PortableMode == "0"
+    WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+    CreateShortCut "$SMPROGRAMS\${SMDIR}\Uninstall.lnk" "$INSTDIR\uninst.exe"
+  ${EndIf}
 SectionEnd
 
 Section -Post
-  WriteUninstaller "$INSTDIR\uninst.exe"
-  !ifndef _CPU_X64
-  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\dxglcfg.exe"
-  !endif
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\dxglcfg.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+  ${If} $PortableMode == "0"
+    WriteUninstaller "$INSTDIR\uninst.exe"
+    !ifndef _CPU_X64
+    WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\dxglcfg.exe"
+    !endif
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\dxglcfg.exe"
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
+    WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+  ${EndIf}
 SectionEnd
 
-
+Function PortableModeLeave
+	${NSD_GetState} $RadioButtonPortable $0
+	${If} $0 == ${BST_CHECKED}
+		StrCpy $PortableMode "1"
+	${Else}
+		${NSD_GetState} $RadioButtonNormal $0
+		${If} $0 == ${BST_CHECKED}
+			StrCpy $PortableMode "0"
+		${EndIf}
+	${EndIf}
+	${If} $PortableMode == "0"
+		!ifdef _CPU_X64
+		StrCpy $INSTDIR "$PROGRAMFILES64\DXGL"
+		!else
+		StrCpy $INSTDIR "$PROGRAMFILES\DXGL"
+		!endif
+		!ifndef _DEBUG
+		SectionGetFlags ${SEC_VCREDIST} $0
+		IntOp $0 $0 & 0x6F
+		SectionGetFlags ${SEC_VCREDIST} $0
+		!endif
+		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
+		IntOp $0 $0 & 0x6F
+		SectionSetFlags ${SEC_WINEDLLOVERRIDE} $0
+		SectionGetFlags ${SEC_COMFIX} $0
+		IntOp $0 $0 & 0x6F
+		SectionSetFlags ${SEC_COMFIX} $0
+	${Else}
+		StrCpy $INSTDIR "$EXEDIR\DXGL"
+		!ifndef _DEBUG
+		SectionGetFlags ${SEC_VCREDIST} $0
+		IntOp $0 $0 | 0x10
+		SectionGetFlags ${SEC_VCREDIST} $0
+		!endif
+		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
+		IntOp $0 $0 | 0x10
+		SectionSetFlags ${SEC_WINEDLLOVERRIDE} $0
+		SectionGetFlags ${SEC_COMFIX} $0
+		IntOp $0 $0 | 0x10
+		SectionSetFlags ${SEC_COMFIX} $0
+	${EndIf}
+FunctionEnd
 
 Function .onInit
+  StrCpy $PortableMode "0"
   !ifdef _CPU_X64
   ${IfNot} ${RunningX64}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires an x64 version of Windows."
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_4"
+  !if ${COMPILER} == "VC2022_9"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -414,17 +506,11 @@ Function .onInit
 	Please download the legacy build to use DXGL on your system."
 	Quit
   ${EndIf}
-  ${IfNot} ${AtLeastWinVista}
-    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows Vista Service Pack 2.$\r\
+  ${IfNot} ${AtLeastWin7}
+    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows 7 Service Pack 1.$\r\
 	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the legacy build."
 	Quit
   ${EndIf}
-  ${If} ${IsWinVista}
-  ${AndIfNot} ${AtLeastServicePack} 2
-    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows Vista or Windows Server 2008 must be upgraded to Service Pack 2 before you can use this version of DXGL.$\r\
-	Please visit https://support.microsoft.com/en-us/kb/948465/ for instructions on upgrading to Service Pack 2."
-	Quit
-  ${endif}
   ${If} ${IsWin7}
   ${AndIfNot} ${AtLeastServicePack} 1
     MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows 7 or Windows Server 2008 R2 must be upgraded to Service Pack 1 before you can use this version of DXGL.$\r\
@@ -476,7 +562,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_4"
+  !if ${COMPILER} == "VC2022_9"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -489,7 +575,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.34.31931" $1
+  ${VersionCompare} "$0" "14.38.33135" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -502,8 +588,10 @@ Function .onInit
   goto vcinstall
   !endif
   skipvcredist:
+  !ifndef _DEBUG
   SectionSetFlags ${SEC_VCREDIST} 0
   SectionSetText ${SEC_VCREDIST} ""
+  !endif
   vcinstall:
   !endif
   !endif
@@ -530,15 +618,18 @@ Function .onInit
 FunctionEnd
 
 LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL."
-LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "The Visual C++ Redistributable package required for this version of DXGL was not detected.  Selecting this will download a copy of the redistributable hosted on dxgl.org and install it."
+LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "Required MSVC redistributable was not detected.  Select to download the required redistributable from dxgl.org."
 LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
-LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adjusts the COM registration of ddraw.dll to allow DXGL to be used from a game's folder.  This option only applies to the user profile being used to install DXGL.  Use for Windows 8 and above."
-
+LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adds a workaround for Windows 8 and above for COM initialization.  Applies to current user account."
+LangString DESC_SEC_DEBUGSYMBOLS ${LANG_ENGLISH} "Copy PDB debug symbols to the installation directory."
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(DESC_SEC01)
+!ifndef _DEBUG
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_VCREDIST} $(DESC_SEC_VCREDIST)
+!endif
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_WINEDLLOVERRIDE} $(DESC_SEC_WINEDLLOVERRIDE)
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_COMFIX} $(DESC_SEC_COMFIX)
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_DEBUGSYMBOLS} $(DESC_SEC_DEBUGSYMBOLS)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Function un.onUninstSuccess
@@ -603,7 +694,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_4"
+!if ${COMPILER} == "VC2022_9"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif

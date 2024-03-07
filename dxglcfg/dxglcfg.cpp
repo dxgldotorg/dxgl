@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2014 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -4764,6 +4764,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	BOOL(WINAPI *iccex)(LPINITCOMMONCONTROLSEX lpInitCtrls);
 	HANDLE hMutex;
 	HWND hWnd;
+	DXGLCFG tmpcfg;
 	int i;
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
@@ -4809,11 +4810,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	}
 	if (!_tcsnicmp(lpCmdLine, _T("profile_install"), 15))
 	{
-		// FIXME:  Remove DXGL Config profile
 		UpgradeDXGLTestToDXGLCfg();
 		LPDIRECTDRAW lpdd;
-		DirectDrawCreate(NULL, &lpdd, NULL);
-		IDirectDraw_Release(lpdd);
+		GetCurrentConfig(&tmpcfg, FALSE);
 		return 0;
 	}
 	icc.dwSize = sizeof(icc);
