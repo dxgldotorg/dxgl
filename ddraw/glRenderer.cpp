@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2022 William Feely
+// Copyright (C) 2012-2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
+#include "DXGLTexture.h"
 #include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glRenderWindow.h"
@@ -1338,6 +1339,7 @@ DWORD glRenderer__Entry(glRenderer *This)
 				//glRenderer__DeleteCommandBuffer(&This->cmd2);
 				ShaderManager_Delete(This->shaders);
 				glUtil_Release(This->util);
+				free(This->util);
 				free(This->shaders);
 				free(This->ext);
 				if (This->overlays) free(This->overlays);
@@ -1531,7 +1533,8 @@ BOOL glRenderer__InitGL(glRenderer *This, int width, int height, int bpp, int fu
 	LeaveCriticalSection(&dll_cs);
 	This->ext = (glExtensions *)malloc(sizeof(glExtensions));
 	glExtensions_Init(This->ext, This->hDC, FALSE);
-	glUtil_Create(This->ext, &This->util);
+	This->util = (glUtil*)malloc(sizeof(glUtil));
+	glUtil_Create(This->ext, This->util);
 	glRenderer__SetSwap(This,1);
 	glFinish();
 	DXGLTimer_Init(&This->timer);
@@ -2758,9 +2761,9 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 					bltcmd.flags |= DDBLT_KEYDEST;
 				}
 				shaderid = bltcmd.flags;
-				shaderid |= ((long long)This->overlays[i].texture->blttype << 32);
+				//shaderid |= ((long long)This->overlays[i].texture->blttype << 32);  // FIXME:  Use this for new renderer
 				shaderid |= ((long long)texture->blttype << 40);
-				bltcmd.src = This->overlays[i].texture;
+				//bltcmd.src = This->overlays[i].texture;  // FIXME:  Use this for new renderer
 				bltcmd.srclevel = 0;
 				bltcmd.srcrect = This->overlays[i].srcrect;
 				bltcmd.dest = primary;

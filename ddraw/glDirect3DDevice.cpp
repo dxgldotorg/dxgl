@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
 #include "glTexture.h"
 #include "glUtil.h"
 #include "timer.h"
+#include "DXGLTexture.h"
 #include "DXGLRenderer.h"
 #include "glRenderer.h"
 #include "glDirectDraw.h"
@@ -359,7 +360,7 @@ HRESULT glDirect3DDevice7_Create(REFCLSID rclsid, glDirect3D7 *glD3D7, dxglDirec
 	glDirect3D7_AddRef(glD3D7);
 	This->glDDS7 = glDDS7;
 	if(!creator) dxglDirectDrawSurface7_AddRef(glDDS7);
-	This->renderer = This->glD3D7->glDD7->renderer;
+	//This->renderer = This->glD3D7->glDD7->renderer;
 	ZeroMemory(&This->viewport,sizeof(D3DVIEWPORT7));
 	if(glDDS7->zbuffer) zbuffer = 1;
 	ZeroMemory(&This->material,sizeof(D3DMATERIAL7));
@@ -603,31 +604,26 @@ HRESULT WINAPI glDirect3DDevice7_CreateStateBlock(glDirect3DDevice7 *This, D3DST
 }
 HRESULT WINAPI glDirect3DDevice7_Clear(glDirect3DDevice7 *This, DWORD dwCount, LPD3DRECT lpRects, DWORD dwFlags, DWORD dwColor, D3DVALUE dvZ, DWORD dwStencil)
 {
-	ClearCommand cmd;
+	int i;
+	HRESULT error;
 	TRACE_ENTER(7,14,This,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	cmd.dwCount = dwCount;
-	cmd.lpRects = lpRects;
-	cmd.dwFlags = dwFlags;
-	cmd.dwColor = dwColor;
-	cmd.dvZ = dvZ;
-	cmd.dwStencil = dwStencil;
-	if (This->glDDS7->bigsurface) cmd.target = This->glDDS7->bigsurface->texture;
-	else cmd.target = This->glDDS7->texture;
-	cmd.targetlevel = This->glDDS7->miplevel;
-	if (This->glDDS7->zbuffer)
-	{
-		if(This->glDDS7->zbuffer->bigsurface) cmd.zbuffer = This->glDDS7->zbuffer->bigsurface->texture;
-		else cmd.zbuffer = This->glDDS7->zbuffer->texture;
-		cmd.zlevel = This->glDDS7->zbuffer->miplevel;
-	}
+	if (This->glDDS7->bigsurface) error = This->glDDS7->ddInterface->renderer->SetTarget(This->glDDS7->bigsurface->texture,
+		This->glDDS7->miplevel);
+	else error = This->glDDS7->ddInterface->renderer->SetTarget(This->glDDS7->texture, This->glDDS7->miplevel);
+	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+	if (!dwCount) error = This->glDDS7->ddInterface->renderer->Clear(NULL, dwFlags, dwColor, dvZ, dwStencil);
 	else
 	{
-		cmd.zbuffer = NULL;
-		cmd.zlevel = 0;
+		for (int i = 0; i < dwCount; i++)
+		{
+			error = This->glDDS7->ddInterface->renderer->Clear(&lpRects[i], dwFlags, dwColor, dvZ, dwStencil);
+			if(FAILED(error)) TRACE_RET(HRESULT,23,error);
+		}
 	}
-	TRACE_RET(HRESULT,23,glRenderer_Clear(This->renderer,&cmd));
+	TRACE_EXIT(23, error);
+	return error;
 }
 
 // ComputeSphereVisibility based on modified code from the Wine project, subject
@@ -952,7 +948,9 @@ HRESULT WINAPI glDirect3DDevice7_DrawIndexedPrimitive(glDirect3DDevice7 *This, D
 {
 	RenderTarget target;
 	TRACE_ENTER(8,9,d3dptPrimitiveType,9,dwVertexTypeDesc,14,lpvVertices,8,dwVertexCount,14,lpwIndices,8,dwIndexCount,9,dwFlags);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	FIXME("glDirect3DDevice7_DrawIndexedPrimitive: stub");
+	TRACE_RET(HRESULT, 23, E_NOTIMPL);
+	/*if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if(!This->inscene) TRACE_RET(HRESULT,23,D3DERR_SCENE_NOT_IN_SCENE);
 	HRESULT err = glDirect3DDevice7_fvftoglvertex(This,dwVertexTypeDesc,(LPDWORD)lpvVertices);
 	if(lpwIndices) AddStats(d3dptPrimitiveType,dwIndexCount,&This->stats);
@@ -983,7 +981,7 @@ HRESULT WINAPI glDirect3DDevice7_DrawIndexedPrimitive(glDirect3DDevice7 *This, D
 		target.zlevel = 0;
 	}
 	TRACE_RET(HRESULT,23,glRenderer_DrawPrimitives(This->renderer,&target,setdrawmode(d3dptPrimitiveType), This->vertdata, This->texformats,
-		dwVertexCount,lpwIndices,dwIndexCount,dwFlags));
+		dwVertexCount,lpwIndices,dwIndexCount,dwFlags));*/
 }
 HRESULT WINAPI glDirect3DDevice7_DrawIndexedPrimitiveStrided(glDirect3DDevice7 *This, D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc,
 	LPD3DDRAWPRIMITIVESTRIDEDDATA lpvVertexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags)
@@ -1681,8 +1679,9 @@ HRESULT WINAPI glDirect3DDevice7_SetTexture(glDirect3DDevice7 *This, DWORD dwSta
 	if(This->texstages[dwStage].surface) dxglDirectDrawSurface7_Release(This->texstages[dwStage].surface);
 	This->texstages[dwStage].surface = (dxglDirectDrawSurface7*)lpTexture;
 	if(lpTexture) lpTexture->AddRef();
-	if(This->texstages[dwStage].surface) glRenderer_SetTexture(This->renderer, dwStage, This->texstages[dwStage].surface->texture);
-	else glRenderer_SetTexture(This->renderer, dwStage, NULL);
+	if (This->texstages[dwStage].surface)
+		This->glDDS7->ddInterface->renderer->SetTexture(dwStage, This->texstages[dwStage].surface->texture);
+	else This->glDDS7->ddInterface->renderer->SetTexture(dwStage, NULL);
 	if (This->renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
 		bool noalpha = false;

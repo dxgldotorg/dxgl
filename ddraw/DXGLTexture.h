@@ -61,6 +61,7 @@ typedef struct DXGLTexture
 	DWORD api;  // API type for texure
 	union
 	{
+		DWORD_PTR handle; // Generic handle
 		GLuint glhandle;  // OpenGL texture name
 	} DUMMYUNIONNAME1;
 	struct
@@ -68,13 +69,16 @@ typedef struct DXGLTexture
 		GLsizei width;
 		GLsizei height;
 		GLsizei depth;
+		GLsizei pitch;
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{
 		GLenum gltarget;  // Texure target - for cubemap GL_TEXTURE_CUBE_MAP
 	} DUMMYUNIONNAME2;
+	BOOL intcoords;
 	texformat format;  // Texture format description
 	texparam params;  // Texture parameters, mostly for OpenGL
+	DDPIXELFORMAT ddformat; // DDraw pixel format
 } DXGLTexture;
 
 

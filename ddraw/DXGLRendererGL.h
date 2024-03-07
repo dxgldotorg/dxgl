@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022 William Feely
+// Copyright (C) 2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -51,12 +51,16 @@ typedef struct IDXGLRendererGL
 	BOOL WindowDead;
 	HWND hWndContext;
 	HWND hWndTarget;
+	LONG_PTR winstyle, winstyleex;
 	HDC hdc;
 
 	// Sync objects
 	HANDLE SyncEvent;
 	HANDLE StartEvent;
 	CRITICAL_SECTION cs;
+	CRITICAL_SECTION synccs;
+	DWORD_PTR syncptr;
+	BOOL waitsync;
 	BOOL running;
 	BOOL shutdown;
 
@@ -65,12 +69,17 @@ typedef struct IDXGLRendererGL
 	GLuint pf;
 	HGLRC hrc;
 	glExtensions ext;
+	glUtil util;
 
 	// Window state
 	GLsizei width;
 	GLsizei height;
-	GLsizei winwidth;
-	GLsizei winheight;
+	BOOL fullscreen;
+
+	// Display mode
+	DWORD vidwidth, vidheight, vidbpp, vidrefresh;
+	DWORD restorewidth, restoreheight, restorebpp, restorerefresh;
+	DWORD cooplevel;
 
 	// Command Queue
 	DXGLQueue commandqueue[2];
@@ -107,12 +116,20 @@ ULONG WINAPI DXGLRendererGL_AddRef(LPDXGLRENDERERGL This);
 ULONG WINAPI DXGLRendererGL_Release(LPDXGLRENDERERGL This);
 HRESULT WINAPI DXGLRendererGL_GetAttachedDevice(LPDXGLRENDERERGL This, struct glDirectDraw7 **glDD7);
 HRESULT WINAPI DXGLRendererGL_SetAttachedDevice(LPDXGLRENDERERGL This, struct glDirectDraw7 *glDD7);
+HRESULT WINAPI DXGLRendererGL_GetCaps(LPDXGLRENDERERGL This, DWORD index, void *output);
 HRESULT WINAPI DXGLRendererGL_Reset(LPDXGLRENDERERGL This);
 HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd *cmd);
+HRESULT WINAPI DXGLRendererGL_Break(LPDXGLRENDERERGL This);
+HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr);
+HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD flags);
+HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture *out);
+HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture);
 
 
 // Internal functions
+HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd* cmd, BOOL inner);
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
+void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD flags);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022 William Feely
+// Copyright (C) 2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "glUtil.h"
+#include "DXGLTexture.h"
 #include "DXGLQueue.h"
 #include "DXGLRenderer.h"
 #include "DXGLRendererGL.h"
 #include "DXGLTexture.h"
+#include "util.h"
 #include <WbemCli.h>
 #include <oleauto.h>
 #include "const.h"
@@ -42,7 +45,15 @@ static IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_AddRef,
 	DXGLRendererGL_Release,
 	DXGLRendererGL_GetAttachedDevice,
-	DXGLRendererGL_SetAttachedDevice
+	DXGLRendererGL_SetAttachedDevice,
+	DXGLRendererGL_GetCaps,
+	DXGLRendererGL_Reset,
+	DXGLRendererGL_PostCommand,
+	DXGLRendererGL_Break,
+	DXGLRendererGL_FreePointer,
+	DXGLRendererGL_SetCooperativeLevel,
+	DXGLRendererGL_CreateTexture,
+	DXGLRendererGL_DeleteTexture
 };
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This);
@@ -54,7 +65,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	DWORD waitobject;
 	HRESULT ret;
 	// Allocate a renderer object
-	This = malloc(sizeof(IDXGLRendererGL));
+	This = (IDXGLRendererGL*)malloc(sizeof(IDXGLRendererGL));
 	if (!This) return DDERR_OUTOFMEMORY;
 	ZeroMemory(This, sizeof(IDXGLRendererGL));
 	This->base.lpVtbl = &vtbl;
@@ -77,6 +88,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	__try
 	{
 		InitializeCriticalSection(&This->cs);
+		InitializeCriticalSection(&This->synccs);
 	}
 	__except (1)
 	{
@@ -89,6 +101,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	if (!This->ThreadHandle)
 	{
 		DeleteCriticalSection(&This->cs);
+		DeleteCriticalSection(&This->synccs);
 		CloseHandle(This->StartEvent);
 		CloseHandle(This->SyncEvent);
 		free(This);
@@ -103,6 +116,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 		GetExitCodeThread(This->ThreadHandle, &ret);
 		CloseHandle(This->ThreadHandle);
 		DeleteCriticalSection(&This->cs);
+		DeleteCriticalSection(&This->synccs);
 		CloseHandle(This->StartEvent);
 		CloseHandle(This->SyncEvent);
 		free(This);
@@ -179,9 +193,9 @@ DWORD WINAPI DXGLRendererGL_WindowThread(LPDXGLRENDERERGL This)
 {
 	MSG Msg;
 	char *windowname;
-	windowname = "DXGL OpenGL Renderer";
 	BOOL exch = TRUE;
-	exch = InterlockedExchange(&wndclasscreated, exch);
+	windowname = "DXGL OpenGL Renderer";
+	exch = InterlockedExchange((LONG*) &wndclasscreated, (LONG)exch);
 	if (!exch)
 	{
 		wndclass.cbSize = sizeof(WNDCLASSEXA);
@@ -213,6 +227,10 @@ DWORD WINAPI DXGLRendererGL_WindowThread(LPDXGLRENDERERGL This)
 	return 0;
 }
 
+static void FlipCommandBuffers(LPDXGLRENDERERGL This)
+{
+	
+}
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 {
@@ -234,8 +252,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	BSTR wql;
 	BSTR wqlquery;
 	BOOL corecontext = FALSE;
-	DXGLQueueCmd currcmd;
+	DXGLQueueCmdDecoder *currcmd;
 	ULONG_PTR queuepos, pixelpos, vertexpos, indexpos;
+	void *tmp;
 	int pfattribs[] =
 	{
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -343,6 +362,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		return DDERR_GENERIC;
 	}
 	glExtensions_Init(&This->ext, hdcinitial, FALSE);
+	glUtil_Create(&This->ext, &This->util);
 	if (This->ext.WGLEXT_ARB_create_context || This->ext.WGLEXT_ARB_pixel_format)
 	{
 		if (This->ext.WGLEXT_ARB_pixel_format)
@@ -704,14 +724,32 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		return DDERR_OUTOFMEMORY;
 	}
 	This->ext.glGenBuffers(1, &This->commandqueue[0].pixelbuffer);
+	This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->commandqueue[0].pixelbuffer);
+	This->ext.glBufferData(GL_PIXEL_UNPACK_BUFFER, dxglcfg.UnpackBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].pixelbuffer);
+	This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->commandqueue[1].pixelbuffer);
+	This->ext.glBufferData(GL_PIXEL_UNPACK_BUFFER, dxglcfg.UnpackBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[0].vertexbuffer);
+	This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->commandqueue[0].vertexbuffer);
+	This->ext.glBufferData(GL_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].vertexbuffer);
+	This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->commandqueue[1].vertexbuffer);
+	This->ext.glBufferData(GL_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[0].indexbuffer);
+	This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->commandqueue[0].indexbuffer);
+	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].indexbuffer);
+	This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->commandqueue[1].indexbuffer);
+	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->queueindexread = 0;
 	This->queueindexwrite = 0;
-	
+
 	// Thread initialization done
 	This->running = FALSE;
 	This->shutdown = FALSE;
@@ -726,12 +764,21 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		This->running = TRUE;
 		This->currentqueue = &This->commandqueue[This->queueindexread];
 		This->currentqueue->busy = TRUE;
+		This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->currentqueue->pixelbuffer);
+		This->ext.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		This->currentqueue->pixelbufferptr = NULL;
+		This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+		This->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
+		This->currentqueue->vertexbufferptr = NULL;
+		This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+		This->ext.glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		This->ext.glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		LeaveCriticalSection(&This->cs);
 		queuepos = pixelpos = vertexpos = indexpos = 0;
 		while (This->running)
 		{
-			memcpy(&currcmd, &This->currentqueue->commands[queuepos], sizeof(DXGLQueueCmd));
-			switch (currcmd.command)
+			currcmd = (DXGLQueueCmdDecoder*)&This->currentqueue->commands[queuepos];
+			switch (currcmd->cmd.command)
 			{
 			case QUEUEOP_QUIT:  // End render device
 				This->shutdown = TRUE;
@@ -742,14 +789,106 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 			case QUEUEOP_RESET:  // Rese device 
 				DXGLRendererGL__Reset(This);
 				break;
-			case QUEUEOP_MAKETEXTURE:  // Create a texture or surface
+			case QUEUEOP_CREATETEXTURE:  // Create a texture or surface
+				break;
+			case QUEUEOP_SETCOOPERATIVELEVEL: // Sets the DDraw Cooperative Level
+				DXGLRendererGL__SetCooperativeLevel(This, currcmd->setcooplevel.hWnd,
+					currcmd->setcooplevel.dwFlags);
+				break;
+			case QUEUEOP_EXPANDBUFFERS: // Expand the buffers, write error to start of queue
+				// Command should only be placed by itself then wait until it finished
+				if (currcmd->expandbuffers.size > This->currentqueue->commandsize)
+				{
+					tmp = realloc(This->currentqueue->commands, currcmd->expandbuffers.size);
+					if (!tmp)
+					{
+						*((DWORD*)This->currentqueue->commands) = DDERR_OUTOFMEMORY;
+						break;
+					}
+					else
+					{
+						This->currentqueue->commandsize = currcmd->expandbuffers.size;
+						This->currentqueue->commands = tmp;
+					}
+				}
+				if (currcmd->expandbuffers.pixelsize > This->currentqueue->pixelbuffersize)
+				{
+					glUtil_ClearErrors(&This->util);
+					
+					This->ext.glBindBuffer(GL_PIXEL_PACK_BUFFER, This->currentqueue->pixelbuffer);
+					This->ext.glBufferData(GL_PIXEL_PACK_BUFFER, currcmd->expandbuffers.pixelsize, NULL, GL_DYNAMIC_DRAW);
+					if (glGetError() != GL_NO_ERROR)
+					{
+						*((DWORD*)This->currentqueue->commands) = DDERR_OUTOFVIDEOMEMORY;
+						break;
+					}
+					else This->currentqueue->pixelbuffersize = currcmd->expandbuffers.pixelsize;
+				}
+				if (currcmd->expandbuffers.vertexsize > This->currentqueue->vertexbuffersize)
+				{
+					glUtil_ClearErrors(&This->util);
+
+					This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->vertexbuffer);
+					This->ext.glBufferData(GL_ARRAY_BUFFER, currcmd->expandbuffers.vertexsize, NULL, GL_DYNAMIC_DRAW);
+					if (glGetError() != GL_NO_ERROR)
+					{
+						*((DWORD*)This->currentqueue->commands) = DDERR_OUTOFVIDEOMEMORY;
+						break;
+					}
+					else This->currentqueue->vertexbuffersize = currcmd->expandbuffers.vertexsize;
+				}
+				if (currcmd->expandbuffers.indexsize > This->currentqueue->indexbuffersize)
+				{
+					glUtil_ClearErrors(&This->util);
+
+					This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
+					This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, currcmd->expandbuffers.indexsize, NULL, GL_DYNAMIC_DRAW);
+					if (glGetError() != GL_NO_ERROR)
+					{
+						*((DWORD*)This->currentqueue->commands) = DDERR_OUTOFVIDEOMEMORY;
+						break;
+					}
+					else This->currentqueue->indexbuffersize = currcmd->expandbuffers.indexsize;
+				}
+				*((DWORD*)This->currentqueue->commands) = DD_OK;
 				break;
 			}
 			// Move queue forward
-			queuepos += currcmd.size;
-			if (queuepos >= This->currentqueue->commandpos)
+			queuepos += currcmd->cmd.size;
+			if (queuepos >= This->currentqueue->commandread)
 			{
 				// Flip buffers or end execution
+				EnterCriticalSection(&This->cs);
+				This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->currentqueue->pixelbuffer);
+				This->currentqueue->pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+				This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+				This->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
+				This->currentqueue->vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+				This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+				This->currentqueue->indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+				This->currentqueue->busy = FALSE;
+				This->currentqueue->filled = FALSE;
+				This->currentqueue->commandread = This->currentqueue->pixelbufferread =
+					This->currentqueue->vertexbufferread = This->currentqueue->indexbufferread = 0;
+				This->currentqueue->commandwrite = This->currentqueue->pixelbufferwrite =
+					This->currentqueue->vertexbufferwrite = This->currentqueue->indexbufferwrite = 0;
+				This->queueindexread = (This->queueindexread ^ 1) & 1;
+				This->currentqueue = &This->commandqueue[This->queueindexread];
+				if (!This->currentqueue->filled)
+				{
+					if (This->waitsync && ((This->syncptr == 0) || (This->syncptr == 1)))
+					{
+						This->waitsync = 0;
+						SetEvent(This->SyncEvent);
+					}
+					This->running = FALSE;
+				}
+				else if (This->waitsync && (This->syncptr == 1))
+				{
+					This->waitsync = 0;
+					SetEvent(This->SyncEvent);
+				}
+				LeaveCriticalSection(&This->cs);
 			}
 		}
 	}
@@ -779,6 +918,33 @@ HRESULT WINAPI DXGLRendererGL_SetAttachedDevice(LPDXGLRENDERERGL This, struct gl
 	return DD_OK;
 }
 
+HRESULT WINAPI DXGLRendererGL_GetCaps(LPDXGLRENDERERGL This, DWORD index, void *output)
+{
+	//TODO:  Retrieve memory status
+	DWORD size;
+	if (!output) return DDERR_INVALIDPARAMS;
+	switch (index)
+	{
+	case 0: // DDraw caps
+		size = ((LPDDCAPS)output)->dwSize;
+		if (size > sizeof(DDCAPS_DX7)) size = sizeof(DDCAPS_DX7);
+		memcpy(output, &This->ddcaps, size);
+		return DD_OK;
+	case 1: // D3D6 caps
+		size = ((LPD3DDEVICEDESC)output)->dwSize;
+		if (size > sizeof(D3DDEVICEDESC)) size = sizeof(D3DDEVICEDESC);
+		memcpy(output, &This->d3ddesc6, size);
+		((LPD3DDEVICEDESC)output)->dwSize = size;
+		return DD_OK;
+	case 2: // D3D7 caps
+		memcpy(output, &This->d3ddesc7, sizeof(D3DDEVICEDESC7));
+		return DD_OK;
+	default:
+		return DDERR_INVALIDPARAMS;
+	}
+}
+
+//Resets the renderer
 HRESULT WINAPI DXGLRendererGL_Reset(LPDXGLRENDERERGL This)
 {
 	DXGLPostQueueCmd cmd;
@@ -788,12 +954,197 @@ HRESULT WINAPI DXGLRendererGL_Reset(LPDXGLRENDERERGL This)
 	cmd.data = &cmddata;
 	return DXGLRendererGL_PostCommand(This, &cmd);
 }
-HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, DXGLPostQueueCmd *cmd)
+
+// Syncs, with an optional address of a resource to wait for
+HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void *ptr)
 {
-	DXGLQueue tmp;
+	This->waitsync = TRUE;
+	This->syncptr = ptr;
+	syncwait:
+	WaitForSingleObject(This->SyncEvent, 10);
+	if (This->waitsync) goto syncwait;
+	return DD_OK;
+}
+
+void DXGLRendererGL_FlipWrite(LPDXGLRENDERERGL This)
+{
 	EnterCriticalSection(&This->cs);
-	
+	This->queueindexwrite = (This->queueindexwrite ^ 1) & 1;
 	LeaveCriticalSection(&This->cs);
+	if (This->commandqueue[This->queueindexwrite].busy) DXGLRendererGL_Sync(This, 1);
+}
+
+HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, DXGLPostQueueCmd* cmd)
+{
+	return DXGLRendererGL_PostCommand2(This, cmd, FALSE);
+}
+
+
+HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueCmd *cmd, BOOL inner)
+{
+	GLuint tmpbuffer;
+	ULONG_PTR newsize;
+	void *tmp;
+	DXGLQueue * queue = &This->commandqueue[This->queueindexwrite];
+	DXGLQueueCmdExpandBuffers expandbufferscmd =
+	{ QUEUEOP_EXPANDBUFFERS,sizeof(DXGLQueueCmdExpandBuffers),0,0,0,0 };
+	BOOL fliprequired = FALSE;
+	BOOL expandrequired = FALSE;
+	EnterCriticalSection(&This->cs);
+	if (!inner)
+	{
+		if (cmd->data->size > queue->commandsize - queue->commandwrite)
+		{
+			if (cmd->data->size > queue->commandsize / 2)
+			{
+				expandbufferscmd.cmdsize =
+					cmd->data->size > (queue->commandsize + 2097152) ?
+					NextMultipleOf1024(cmd->data->size) : (queue->commandsize + 2097152);
+				expandrequired = TRUE;
+			}
+			fliprequired = TRUE;
+		}
+		if (cmd->pixelsize > queue->pixelbuffersize - queue->pixelbufferwrite)
+		{
+			if (cmd->pixelsize > queue->pixelbuffersize / 2)
+			{
+				expandbufferscmd.pixelsize =
+					cmd->pixelsize > (queue->pixelbuffersize + 2097152) ?
+					NextMultipleOf1024(cmd->pixelsize) : (queue->pixelbuffersize + 2097152);
+				expandrequired = TRUE;
+			}
+			fliprequired = TRUE;
+		}
+		if (cmd->vertexsize > queue->vertexbuffersize - queue->vertexbufferwrite)
+		{
+			if (cmd->vertexsize > queue->vertexbuffersize / 2)
+			{
+				expandbufferscmd.vertexsize =
+					cmd->vertexsize > (queue->vertexbuffersize + 2097152) ?
+					NextMultipleOf1024(cmd->vertexsize) : (queue->vertexbuffersize + 2097152);
+				expandrequired = TRUE;
+			}
+			fliprequired = TRUE;
+		}
+		if (cmd->indexsize > queue->indexbuffersize - queue->indexbufferwrite)
+		{
+			if (cmd->indexsize > queue->indexbuffersize / 2)
+			{
+				expandbufferscmd.indexsize =
+					cmd->indexsize > (queue->indexbuffersize + 2097152) ?
+					NextMultipleOf1024(cmd->indexsize) : (queue->indexbuffersize + 2097152);
+				expandrequired = TRUE;
+			}
+			fliprequired = TRUE;
+		}
+		if (fliprequired) DXGLRendererGL_FlipWrite(This);
+		queue = &This->commandqueue[This->queueindexwrite];
+		if (expandrequired)
+		{
+			// Expand both buffers
+			LeaveCriticalSection(&This->cs);
+			DXGLRendererGL_PostCommand2(This, &expandbufferscmd, TRUE);
+			DXGLRendererGL_Sync(This, 0);
+			if (FAILED(*((HRESULT*)queue->commands))) return *((DWORD*)queue->commands);
+			DXGLRendererGL_FlipWrite(This);
+			queue = &This->commandqueue[This->queueindexwrite];
+			DXGLRendererGL_PostCommand2(This, &expandbufferscmd, TRUE);
+			DXGLRendererGL_Sync(This, 0);
+			if (FAILED(*((HRESULT*)queue->commands))) return *((DWORD*)queue->commands);
+			EnterCriticalSection(&This->cs);
+			DXGLRendererGL_FlipWrite(This);
+			queue = &This->commandqueue[This->queueindexwrite];
+		}
+	}
+	LeaveCriticalSection(&This->cs);
+	// Append commmand to buffer
+	memcpy(queue->commands + queue->commandwrite, cmd->data, cmd->data->size);
+	queue->commandwrite += cmd->data->size;
+	if (cmd->pixelsize)
+	{
+		memcpy(queue->pixelbufferptr + queue->pixelbufferwrite, cmd->pixelbuffer, cmd->pixelsize);
+		queue->pixelbufferwrite += cmd->pixelsize;
+	}
+	if (cmd->vertexsize)
+	{
+		memcpy(queue->vertexbufferptr + queue->vertexbufferwrite, cmd->vertexbuffer, cmd->vertexsize);
+		queue->vertexbufferwrite += cmd->vertexsize;
+	}
+	if (cmd->indexsize)
+	{
+		memcpy(queue->indexbufferptr + queue->indexbufferwrite, cmd->indexbuffer, cmd->indexsize);
+		queue->indexbufferwrite += cmd->indexsize;
+	}
+	EnterCriticalSection(&This->cs);
+	if (!This->running) SetEvent(This->StartEvent);
+	LeaveCriticalSection(&This->cs);
+}
+
+// Posts a break command when using GDebugger
+HRESULT WINAPI DXGLRendererGL_Break(LPDXGLRENDERERGL This)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmd cmddata;
+	cmddata.command = QUEUEOP_BREAK;
+	cmddata.size = sizeof(DXGLQueueCmd);
+	cmd.data = &cmddata;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Posts a command to free a pointer, ensuring all uses are finished
+HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdFreePointer cmddata;
+	cmddata.command = QUEUEOP_FREEPOINTER;
+	cmddata.size = sizeof(DXGLQueueCmdFreePointer);
+	cmddata.count = 1;
+	cmddata.ptr = ptr;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Sets the DDraw Cooperative Level
+HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetCooperativeLevel cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SETCOOPERATIVELEVEL;
+	cmddata.size = sizeof(DXGLQueueCmdSetCooperativeLevel);
+	cmddata.hWnd = hWnd;
+	cmddata.dwFlags = dwFlags;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Creates one or more textures, determined by ddsd
+HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture **out)
+{
+	HRESULT error;
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdCreateTexture cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_CREATETEXTURE;
+	cmddata.size = sizeof(DXGLQueueCmdCreateTexture);
+	memcpy(&cmddata.desc, &desc, sizeof(DDSURFACEDESC2));
+	cmddata.out = out;
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (SUCCEEDED(error)) DXGLRendererGL_Sync(This, NULL);
+	return error;
+}
+
+// Posts a command to delete a texture, ensuring all uses are finished
+// Post this command before freeing the buffer holding the texture structures
+HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdDeleteTexture cmddata;
+	cmddata.command = QUEUEOP_DELETETEXTURE;
+	cmddata.size = sizeof(DXGLQueueCmdDeleteTexture);
+	cmddata.count = 1;
+	cmddata.texture = texture;
+	return DXGLRendererGL_PostCommand(This, &cmd);
 }
 
 // Resets OpenGL state
@@ -830,4 +1181,290 @@ void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	if (This->ext.glver_major < 3) glShadeModel(GL_SMOOTH);
 	This->ext.glActiveTexture(GL_TEXTURE0);
+}
+
+// Sets cooperative level for DDraw
+void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
+{
+	BOOL exclusive;
+	DWORD winver = GetVersion();
+	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
+	DWORD winverminor = (DWORD)(HIBYTE(LOWORD(winver)));
+	DEVMODE devmode;
+	RECT wndrect;
+	HWND hTempWnd;
+	WINDOWPLACEMENT wndplace;
+	int screenx, screeny;
+	if (((hWnd != This->hWndTarget) && This->hWndTarget) || (This->hWndTarget && (dwFlags & DDSCL_NORMAL)))
+	{
+		if (This->winstyle)
+		{
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, This->winstyle);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex);
+			ShowWindow(This->hWndTarget, SW_RESTORE);
+			This->winstyle = This->winstyleex = 0;
+			SetWindowPos(This->hWndTarget, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+		}
+	}  
+	if (This->hWndTarget) UninstallDXGLHook(This->hWndTarget);
+	This->hWndTarget = hWnd;
+	if (!This->winstyle && !This->winstyleex)
+	{
+		This->winstyle = GetWindowLongPtrA(hWnd, GWL_STYLE);
+		This->winstyleex = GetWindowLongPtrA(hWnd, GWL_EXSTYLE);
+	}
+	exclusive = FALSE;
+	if (dwFlags & DDSCL_ALLOWMODEX)
+	{
+		// Validate flags
+		if (dwFlags & (DDSCL_FULLSCREEN | DDSCL_EXCLUSIVE))
+		{
+			DEBUG("IDirectDraw::SetCooperativeLevel: Mode X not supported, ignoring\n");
+		}
+		else DEBUG("IDirectDraw::SetCooperativeLevel: DDSCL_ALLOWMODEX without DDSCL_FULLSCREEN | DDSCL_EXCLUSIVE\n");
+	}
+	if (dwFlags & DDSCL_EXCLUSIVE)
+		exclusive = TRUE;
+	else exclusive = FALSE;
+	if (dwFlags & DDSCL_FULLSCREEN)
+		This->fullscreen = TRUE;
+	else This->fullscreen = FALSE;
+	/*if (dwFlags & DDSCL_CREATEDEVICEWINDOW)
+	{
+		if (!exclusive) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		This->devwnd = true;
+	}*/
+	if (dwFlags & DDSCL_SETDEVICEWINDOW)
+		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETDEVICEWINDOW unsupported\n");
+	if (dwFlags & DDSCL_SETFOCUSWINDOW)
+		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETFOCUSWINDOW unsupported\n");
+	InstallDXGLHook(hWnd, (LPDIRECTDRAW7)This);
+	EnableWindowScaleHook(FALSE);
+	ZeroMemory(&devmode, sizeof(DEVMODE));
+	devmode.dmSize = sizeof(DEVMODE);
+	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devmode);
+	if (This->fullscreen)
+	{
+		This->width = This->vidwidth = This->restorewidth = devmode.dmPelsWidth;
+		This->height = This->vidheight = This->restoreheight = devmode.dmPelsHeight;
+	}
+	else
+	{
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
+		{
+			This->width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+			This->height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+		}
+		else
+		{ // Windows versions below 4.1 don't support multi-monitor
+			This->width = devmode.dmPelsWidth;
+			This->height = devmode.dmPelsHeight;
+		}
+		This->vidwidth = This->restorewidth = (DWORD)((float)This->width / dxglcfg.WindowScaleX);
+		This->vidheight = This->restoreheight = (DWORD)((float)This->height / dxglcfg.WindowScaleY);
+		if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+		{
+			GetWindowRect(hWnd, &rect);
+			EnableWindowScaleHook(TRUE);
+			SetWindowPos(hWnd, 0, 0, 0, rect.right - rect.left, rect.bottom - rect.top,
+				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOSENDCHANGING);
+		}
+	}
+	This->vidbpp = This->restorebpp = devmode.dmBitsPerPel;
+	This->vidrefresh = This->restorerefresh = devmode.dmDisplayFrequency;
+	This->cooplevel = dwFlags;
+
+	if (This->fullscreen)
+	{
+		switch (dxglcfg.fullmode)
+		{
+		case 0:    // Fullscreen
+			This->winstyle = GetWindowLongPtrA(This->hWndTarget, GWL_STYLE);
+			This->winstyleex = GetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, (This->winstyle | WS_POPUP) & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER));
+			ShowWindow(This->hWndTarget, SW_MAXIMIZE);
+			break;
+		case 1:    // Non-exclusive Fullscreen
+		case 5:    // Windowed borderless scaled
+			This->winstyle = GetWindowLongPtrA(This->hWndTarget, GWL_STYLE);
+			This->winstyleex = GetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, This->winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(This->hWndTarget, SW_MAXIMIZE);
+			break;
+		case 2:     // Windowed non-resizable
+			This->winstyle = GetWindowLongPtrA(This->hWndTarget, GWL_STYLE);
+			This->winstyleex = GetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex | WS_EX_APPWINDOW);
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP));
+			ShowWindow(This->hWndTarget, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(This->winstyleex | WS_EX_APPWINDOW));
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(This->winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
+			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(This->winstyleex | WS_EX_APPWINDOW));
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					(This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE),
+					CW_USEDEFAULT, CW_USEDEFAULT, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL,
+					GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				AdjustWindowRectEx(&wndrect, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_THICKFRAME | WS_MAXIMIZEBOX), FALSE,
+					(This->winstyleex | WS_EX_APPWINDOW));
+			}
+			SetWindowPos(This->hWndTarget, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		case 3:     // Windowed resizable
+			This->winstyle = GetWindowLongPtrA(This->hWndTarget, GWL_STYLE);
+			This->winstyleex = GetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex | WS_EX_APPWINDOW);
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, (This->winstyle | WS_OVERLAPPEDWINDOW) & ~WS_POPUP);
+			ShowWindow(This->hWndTarget, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, This->winstyle | WS_OVERLAPPEDWINDOW, FALSE, (This->winstyleex | WS_EX_APPWINDOW));
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, This->winstyle | WS_OVERLAPPEDWINDOW, FALSE, (This->winstyleex | WS_EX_APPWINDOW));
+				wndrect.right -= wndrect.left;
+				wndrect.left = 0;
+				wndrect.bottom -= wndrect.top;
+				wndrect.top = 0;
+			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				AdjustWindowRectEx(&wndrect, (This->winstyle | WS_OVERLAPPEDWINDOW), FALSE, (This->winstyleex | WS_EX_APPWINDOW));
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					((This->winstyle | WS_OVERLAPPEDWINDOW) & ~(WS_POPUP | WS_VISIBLE)), CW_USEDEFAULT, CW_USEDEFAULT,
+					wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL, GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				AdjustWindowRectEx(&wndrect, This->winstyle | WS_OVERLAPPEDWINDOW, FALSE, (This->winstyleex | WS_EX_APPWINDOW));
+			}
+			wndplace.length = sizeof(WINDOWPLACEMENT);
+			GetWindowPlacement(This->hWndTarget, &wndplace);
+			wndplace.flags = WPF_ASYNCWINDOWPLACEMENT;
+			if (dxglcfg.WindowMaximized == 1) wndplace.showCmd = SW_SHOWMAXIMIZED;
+			else wndplace.showCmd = SW_SHOWNORMAL;
+			wndplace.rcNormalPosition = wndrect;
+			SetWindowPlacement(This->hWndTarget, &wndplace);
+			break;
+		case 4:     // Windowed borderless
+			This->winstyle = GetWindowLongPtrA(This->hWndTarget, GWL_STYLE);
+			This->winstyleex = GetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE);
+			SetWindowLongPtrA(This->hWndTarget, GWL_EXSTYLE, This->winstyleex & ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE));
+			SetWindowLongPtrA(This->hWndTarget, GWL_STYLE, This->winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP));
+			ShowWindow(This->hWndTarget, SW_NORMAL);
+			if (dxglcfg.WindowPosition == 1)
+			{
+				wndrect.left = dxglcfg.WindowX;
+				wndrect.top = dxglcfg.WindowY;
+				wndrect.right = dxglcfg.WindowX + dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowY + dxglcfg.WindowHeight;
+			}
+			else if (dxglcfg.WindowPosition == 2)
+			{
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+			}
+			else if (dxglcfg.WindowPosition == 3)
+			{
+				if (!wndclassdxgltempatom) RegisterDXGLTempWindowClass();
+				wndrect.left = wndrect.top = 0;
+				wndrect.right = dxglcfg.WindowWidth;
+				wndrect.bottom = dxglcfg.WindowHeight;
+				hTempWnd = CreateWindow(wndclassdxgltemp.lpszClassName, _T("DXGL Sizing Window"),
+					This->winstyle & ~(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_POPUP | WS_VISIBLE), CW_USEDEFAULT, CW_USEDEFAULT,
+					wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL, GetModuleHandle(NULL), NULL);
+				GetWindowRect(hTempWnd, &wndrect);
+				DestroyWindow(hTempWnd);
+			}
+			else
+			{
+				screenx = GetSystemMetrics(SM_CXSCREEN);
+				screeny = GetSystemMetrics(SM_CYSCREEN);
+				wndrect.right = dxglcfg.WindowWidth + (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.bottom = dxglcfg.WindowHeight + (screeny / 2) - (dxglcfg.WindowHeight / 2);
+				wndrect.left = (screenx / 2) - (dxglcfg.WindowWidth / 2);
+				wndrect.top = (screeny / 2) - (dxglcfg.WindowHeight / 2);
+			}
+			SetWindowPos(This->hWndTarget, 0, wndrect.left, wndrect.top, wndrect.right - wndrect.left,
+				wndrect.bottom - wndrect.top, SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			break;
+		}
+	}
+	SetWindowPos(This->hWndTarget, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+
+	// Adjust render window
+	if (!This->hWndTarget)
+	{
+		SetWindowLongPtr(This->hWndContext, GWL_EXSTYLE, WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST);
+		SetParent(This->hWndContext, NULL);
+		SetWindowPos(This->hWndContext, HWND_TOPMOST, 0, 0, This->width, This->height, SWP_SHOWWINDOW);
+	}
+	else
+	{
+		SetWindowLongPtr(This->hWndContext, GWL_EXSTYLE, 0);
+		SetParent(This->hWndContext, This->hWndTarget);
+		SetWindowPos(This->hWndContext, HWND_TOP, 0, 0, This->width, This->height, SWP_SHOWWINDOW);
+	}
 }

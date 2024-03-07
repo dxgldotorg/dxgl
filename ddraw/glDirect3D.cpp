@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@
 #include "glRenderer.h"
 #include "glDirect3D.h"
 #include "glDirect3DDevice.h"
+#include "DXGLTexture.h"
 #include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "dxglDirectDrawSurface.h"
@@ -331,8 +332,10 @@ HRESULT WINAPI glDirect3D7_EnumDevices(glDirect3D7 *This, LPD3DENUMDEVICESCALLBA
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
-	D3DDEVICEDESC7 desc = This->glDD7->d3ddesc;
+	FIXME("Fix enumeration");
+	//FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	D3DDEVICEDESC7 desc;
+	This->glDD7->renderer->GetCaps(2, &desc);
 	for(int i = 0; i < 3; i++)
 	{
 		switch(i)
@@ -362,8 +365,11 @@ HRESULT WINAPI glDirect3D7_EnumDevices3(glDirect3D7 *This, LPD3DENUMDEVICESCALLB
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpEnumDevicesCallback) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT result;
-	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
-	D3DDEVICEDESC desc = This->glDD7->d3ddesc3;
+	FIXME("Fix enumeration");
+	//FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	D3DDEVICEDESC desc;
+	desc.dwSize = sizeof(D3DDEVICEDESC);
+	This->glDD7->renderer->GetCaps(1, &desc);
 	GUID guid = IID_IDirect3DRGBDevice;
 	result = lpEnumDevicesCallback(&guid,This->glDD7->stored_devices[0].name,This->glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
 	if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
@@ -392,7 +398,8 @@ HRESULT WINAPI glDirect3D7_EnumZBufferFormats(glDirect3D7 *This, REFCLSID riidDe
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	if (This->glDD7->renderer)
 	{
-		if (This->glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || This->glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
+		FIXME("Check for packed depth stencil");
+		/*if (This->glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || This->glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
 		{
 			ddpf.dwZBufferBitDepth = 32;
 			ddpf.dwStencilBitDepth = 8;
@@ -402,7 +409,7 @@ HRESULT WINAPI glDirect3D7_EnumZBufferFormats(glDirect3D7 *This, REFCLSID riidDe
 			ddpf.dwZBitMask = 0x00ffffff;
 			ddpf.dwStencilBitMask = 0xff000000;
 			if (lpEnumCallback(&ddpf, lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT, 23, D3D_OK);
-		}
+		}*/
 	}
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -422,65 +429,71 @@ HRESULT WINAPI glDirect3D7_FindDevice(glDirect3D7 *This, LPD3DFINDDEVICESEARCH l
 	if(!lpD3DFDR) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDR->dwSize < sizeof(D3DFINDDEVICERESULT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpD3DFDS->dwSize < sizeof(D3DFINDDEVICESEARCH)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	FIXME("Fix enumeration");
+	//FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
+	D3DDEVICEDESC desc3;
+	D3DDEVICEDESC7 desc7;
+	desc3.dwSize = sizeof(D3DDEVICEDESC);
+	This->glDD7->renderer->GetCaps(1, &desc3);
+	This->glDD7->renderer->GetCaps(2, &desc7);
 	bool found = true;
 	GUID guid = IID_IDirect3DHALDevice;
 	if((lpD3DFDS->dwFlags & D3DFDS_LINES) || (lpD3DFDS->dwFlags & D3DFDS_TRIANGLES))
 	{
 		if(lpD3DFDS->dwFlags & D3DFDS_ALPHACMPCAPS)
 		{
-			if((This->glDD7->d3ddesc.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
+			if((desc7.dpcTriCaps.dwAlphaCmpCaps & lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwAlphaCmpCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_DSTBLENDCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
+			if ((desc7.dpcTriCaps.dwDestBlendCaps & lpD3DFDS->dpcPrimCaps.dwDestBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwDestBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_MISCCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
+			if ((desc7.dpcTriCaps.dwMiscCaps & lpD3DFDS->dpcPrimCaps.dwMiscCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwMiscCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_RASTERCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
+			if ((desc7.dpcTriCaps.dwRasterCaps & lpD3DFDS->dpcPrimCaps.dwRasterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwRasterCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SHADECAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
+			if ((desc7.dpcTriCaps.dwShadeCaps & lpD3DFDS->dpcPrimCaps.dwShadeCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwShadeCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_SRCBLENDCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
+			if ((desc7.dpcTriCaps.dwSrcBlendCaps & lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwSrcBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREBLENDCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
+			if ((desc7.dpcTriCaps.dwTextureBlendCaps & lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureBlendCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTURECAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
+			if ((desc7.dpcTriCaps.dwTextureCaps & lpD3DFDS->dpcPrimCaps.dwTextureCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureCaps) found = false;
 		}
 		if(lpD3DFDS->dwFlags & D3DFDS_TEXTUREFILTERCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
+			if ((desc7.dpcTriCaps.dwTextureFilterCaps & lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwTextureFilterCaps) found = false;
 		}
 		if(lpD3DFDS->dwCaps & D3DFDS_ZCMPCAPS)
 		{
-			if ((This->glDD7->d3ddesc.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
+			if ((desc7.dpcTriCaps.dwZCmpCaps & lpD3DFDS->dpcPrimCaps.dwZCmpCaps)
 				!= lpD3DFDS->dpcPrimCaps.dwZCmpCaps) found = false;
 		}
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_COLORMODEL)
 	{
-		if ((This->glDD7->d3ddesc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
+		if ((desc3.dcmColorModel & lpD3DFDS->dcmColorModel) != lpD3DFDS->dcmColorModel) found = false;
 	}
 	if(lpD3DFDS->dwFlags & D3DFDS_GUID)
 	{
@@ -498,8 +511,8 @@ HRESULT WINAPI glDirect3D7_FindDevice(glDirect3D7 *This, LPD3DFINDDEVICESEARCH l
 		else if(!lpD3DFDS->bHardware) guid = IID_IDirect3DRGBDevice;
 	}
 	if(!found) TRACE_RET(HRESULT,23,DDERR_NOTFOUND);
-	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = This->glDD7->d3ddesc3;
-	else lpD3DFDR->ddHwDesc = This->glDD7->d3ddesc3;
+	if(guid == IID_IDirect3DRGBDevice) lpD3DFDR->ddSwDesc = desc3;
+	else lpD3DFDR->ddHwDesc = desc3;
 	lpD3DFDR->guid = guid;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

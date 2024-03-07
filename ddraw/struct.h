@@ -23,10 +23,11 @@
 typedef struct
 {
 	GLfloat x, y;
+	GLfloat unused1, unused2; // Fit this into a FVF
 	GLfloat s, t;
 	GLfloat dests, destt;
 	GLfloat stencils, stencilt;
-} BltVertex;
+} BltVertex; // Use vertex format D3DFVF_XYZRHW | D3DFVF_TEX3
 
 // Sampler object state information
 typedef struct SAMPLER
@@ -373,7 +374,7 @@ typedef struct OVERLAY
 	RECT srcrect;
 	RECT destrect;
 	void *surface;
-	glTexture *texture;
+	DXGLTexture *texture;
 	DWORD flags;
 	BOOL enabled;
 } OVERLAY;

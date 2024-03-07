@@ -127,7 +127,7 @@ typedef struct dxglDirectDrawSurface7
 	dxglDirectDrawSurface7 *bigparent;
 
 	// The texture represented by the surface
-	glTexture *texture;
+	DXGLTexture *texture;
 
 	// The parent surface, null if it's the top of a complex structure 
 	dxglDirectDrawSurface7 *parent;
@@ -334,10 +334,10 @@ ULONG WINAPI dxglDirectDrawSurface7_AddRefColor(dxglDirectDrawSurface7 *This);
 ULONG WINAPI dxglDirectDrawSurface7_ReleaseColor(dxglDirectDrawSurface7 *This);
 HRESULT WINAPI dxglDirectDrawSurface7_SetPaletteNoDraw(dxglDirectDrawSurface7 *This, LPDIRECTDRAWPALETTE lpDDPalette);
 void dxglDirectDrawSurface7_Restore2(dxglDirectDrawSurface7 *This);
-HRESULT dxglDirectDrawSurface7_Flip2(dxglDirectDrawSurface7 *This, LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags, glTexture **previous);
+HRESULT dxglDirectDrawSurface7_Flip2(dxglDirectDrawSurface7 *This, LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags, DXGLTexture **previous);
 HRESULT dxglDirectDrawSurface7_AddAttachedSurface2(dxglDirectDrawSurface7 *This, LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface, IUnknown *iface);
-void dxglDirectDrawSurface7_SetTexture(dxglDirectDrawSurface7 *This, glTexture *newtexture);
-void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, glTexture *texture, int vsync, glTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount);
+void dxglDirectDrawSurface7_SetTexture(dxglDirectDrawSurface7 *This, DXGLTexture *newtexture);
+void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTexture *texture, int vsync, DXGLTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount);
 // Special ddraw2->ddraw7 api
 HRESULT WINAPI dxglDirectDrawSurface7_Unlock2(dxglDirectDrawSurface7 *This, LPVOID lpSurfaceData);
 HRESULT dxglDirectDrawSurface7_GetHandle(dxglDirectDrawSurface7 *This, glDirect3DDevice7 *glD3DDev7, LPD3DTEXTUREHANDLE lpHandle);
@@ -346,7 +346,7 @@ HRESULT dxglDirectDrawSurface7_GetGammaRamp(dxglDirectDrawSurface7 *This, DWORD 
 HRESULT dxglDirectDrawSurface7_SetGammaRamp(dxglDirectDrawSurface7 *This, DWORD dwFlags, LPDDGAMMARAMP lpRampData);
 HRESULT dxglDirectDrawSurface7_AddOverlay(dxglDirectDrawSurface7 *This, OVERLAY *overlay);
 HRESULT dxglDirectDrawSurface7_DeleteOverlay(dxglDirectDrawSurface7 *This, dxglDirectDrawSurface7 *surface);
-HRESULT dxglDirectDrawSurface7_UpdateOverlayTexture(dxglDirectDrawSurface7 *This, dxglDirectDrawSurface7 *surface, glTexture *texture);
+HRESULT dxglDirectDrawSurface7_UpdateOverlayTexture(dxglDirectDrawSurface7 *This, dxglDirectDrawSurface7 *surface, DXGLTexture *texture);
 
 // Legacy DDRAW Interfaces
 typedef struct dxglDirectDrawSurface1Vtbl

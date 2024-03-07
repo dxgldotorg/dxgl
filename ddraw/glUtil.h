@@ -27,7 +27,7 @@ struct dxglDirectDrawSurface7;
 struct glTexture;
 struct BufferObject;
 
-void glUtil_Create(glExtensions *glext, glUtil **out);
+void glUtil_Create(glExtensions *glext, glUtil *out);
 void glUtil_AddRef(glUtil *This);
 void glUtil_Release(glUtil *This);
 void glUtil_InitFBO(glUtil *This, FBO *fbo);
@@ -58,6 +58,7 @@ void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
 void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
 void glUtil_SetActiveTexture(glUtil *This, int level);
 void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture);
+void glUtil_ClearErrors(glUtil* This);
 
 #ifdef __cplusplus
 }
