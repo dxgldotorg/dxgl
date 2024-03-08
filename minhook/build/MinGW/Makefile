@@ -3,7 +3,7 @@ DLLTOOL:=$(CROSS_PREFIX)dlltool
 AR:=$(CROSS_PREFIX)ar
 CC:=$(CROSS_PREFIX)gcc
 CCLD:=$(CC)
-SRCS:=$(wildcard src/*.c src/HDE/*.c)
+SRCS:=$(wildcard src/*.c src/hde/*.c)
 OBJS:=$(SRCS:%.c=%.o)
 DEPS:=$(SRCS:%.c=%.d)
 INCS:=-Isrc -Iinclude
@@ -17,7 +17,7 @@ all: MinHook.dll libMinHook.dll.a libMinHook.a
 libMinHook.a: $(OBJS)
 	$(AR) r $@ $^
 libMinHook.dll.a: MinHook.dll dll_resources/MinHook.def
-	$(DLLTOOL) --dllname MinHook.dll --def dll_resources/MinHook.def --output-lib $@
+	$(DLLTOOL) --dllname MinHook.dll --input-def dll_resources/MinHook.def --output-lib $@
 MinHook.dll: $(OBJS) dll_resources/MinHook.res dll_resources/MinHook.def
 	$(CCLD) -o $@ -shared $(LDFLAGS) $^
 
