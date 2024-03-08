@@ -5,6 +5,9 @@
  *
  */
 
+#if defined(_M_X64) || defined(__x86_64__)
+
+#include <string.h>
 #include "hde64.h"
 #include "table64.h"
 
@@ -14,12 +17,7 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
     uint8_t *ht = hde64_table, m_mod, m_reg, m_rm, disp_size = 0;
     uint8_t op64 = 0;
 
-    // Avoid using memset to reduce the footprint.
-#ifndef _MSC_VER
-    memset((LPBYTE)hs, 0, sizeof(hde64s));
-#else
-    __stosb((LPBYTE)hs, 0, sizeof(hde64s));
-#endif
+    memset(hs, 0, sizeof(hde64s));
 
     for (x = 16; x; x--)
         switch (c = *p++) {
@@ -197,7 +195,7 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
             }
             for (; ht != table_end; ht += 2)
                 if (*ht++ == opcode) {
-                    if (*ht++ & pref && !((*ht << m_reg) & 0x80))
+                    if ((*ht++ & pref) && !((*ht << m_reg) & 0x80))
                         goto error_operand;
                     else
                         break;
@@ -248,6 +246,7 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
                 disp_size = 2;
                 if (!(pref & PRE_67))
                     disp_size <<= 1;
+                break;
         }
 
         if (m_mod != 3 && m_rm == 4) {
@@ -273,6 +272,7 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
             case 4:
                 hs->flags |= F_DISP32;
                 hs->disp.disp32 = *(uint32_t *)p;
+                break;
         }
         p += disp_size;
     } else if (pref & PRE_LOCK)
@@ -331,3 +331,5 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
 
     return (unsigned int)hs->len;
 }
+
+#endif // defined(_M_X64) || defined(__x86_64__)
