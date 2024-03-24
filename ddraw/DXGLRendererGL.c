@@ -27,6 +27,7 @@
 #include <oleauto.h>
 #include "const.h"
 #include "fourcc.h"
+#include "spinlock.h"
 
 static BOOL(WINAPI *_GlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer) = NULL;
 static HMODULE hKernel32;
@@ -68,6 +69,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	This = (IDXGLRendererGL*)malloc(sizeof(IDXGLRendererGL));
 	if (!This) return DDERR_OUTOFMEMORY;
 	ZeroMemory(This, sizeof(IDXGLRendererGL));
+	This->synclock = 0;
 	This->base.lpVtbl = &vtbl;
 	This->refcount = 1;
 
@@ -88,7 +90,6 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	__try
 	{
 		InitializeCriticalSection(&This->cs);
-		InitializeCriticalSection(&This->synccs);
 	}
 	__except (1)
 	{
@@ -101,7 +102,6 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 	if (!This->ThreadHandle)
 	{
 		DeleteCriticalSection(&This->cs);
-		DeleteCriticalSection(&This->synccs);
 		CloseHandle(This->StartEvent);
 		CloseHandle(This->SyncEvent);
 		free(This);
@@ -116,7 +116,6 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 		GetExitCodeThread(This->ThreadHandle, &ret);
 		CloseHandle(This->ThreadHandle);
 		DeleteCriticalSection(&This->cs);
-		DeleteCriticalSection(&This->synccs);
 		CloseHandle(This->StartEvent);
 		CloseHandle(This->SyncEvent);
 		free(This);
@@ -791,10 +790,6 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				break;
 			case QUEUEOP_CREATETEXTURE:  // Create a texture or surface
 				break;
-			case QUEUEOP_SETCOOPERATIVELEVEL: // Sets the DDraw Cooperative Level
-				DXGLRendererGL__SetCooperativeLevel(This, currcmd->setcooplevel.hWnd,
-					currcmd->setcooplevel.dwFlags);
-				break;
 			case QUEUEOP_EXPANDBUFFERS: // Expand the buffers, write error to start of queue
 				// Command should only be placed by itself then wait until it finished
 				if (currcmd->expandbuffers.size > This->currentqueue->commandsize)
@@ -958,11 +953,18 @@ HRESULT WINAPI DXGLRendererGL_Reset(LPDXGLRENDERERGL This)
 // Syncs, with an optional address of a resource to wait for
 HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void *ptr)
 {
-	This->waitsync = TRUE;
-	This->syncptr = ptr;
+	BOOL running;
+	EnterCriticalSection(&This->cs);
+	running = This->running;
+	LeaveCriticalSection(&This->cs);
+	if (running)
+	{
+		This->waitsync = TRUE;
+		This->syncptr = ptr;
 	syncwait:
-	WaitForSingleObject(This->SyncEvent, 10);
-	if (This->waitsync) goto syncwait;
+		WaitForSingleObject(This->SyncEvent, 10);
+		if (This->waitsync && This->running) goto syncwait;
+	}
 	return DD_OK;
 }
 
@@ -1106,86 +1108,7 @@ HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr)
 // Sets the DDraw Cooperative Level
 HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
 {
-	DXGLPostQueueCmd cmd;
-	DXGLQueueCmdSetCooperativeLevel cmddata;
-	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
-	cmd.data = &cmddata;
-	cmddata.command = QUEUEOP_SETCOOPERATIVELEVEL;
-	cmddata.size = sizeof(DXGLQueueCmdSetCooperativeLevel);
-	cmddata.hWnd = hWnd;
-	cmddata.dwFlags = dwFlags;
-	return DXGLRendererGL_PostCommand(This, &cmd);
-}
-
-// Creates one or more textures, determined by ddsd
-HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture **out)
-{
-	HRESULT error;
-	DXGLPostQueueCmd cmd;
-	DXGLQueueCmdCreateTexture cmddata;
-	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
-	cmd.data = &cmddata;
-	cmddata.command = QUEUEOP_CREATETEXTURE;
-	cmddata.size = sizeof(DXGLQueueCmdCreateTexture);
-	memcpy(&cmddata.desc, &desc, sizeof(DDSURFACEDESC2));
-	cmddata.out = out;
-	error = DXGLRendererGL_PostCommand(This, &cmd);
-	if (SUCCEEDED(error)) DXGLRendererGL_Sync(This, NULL);
-	return error;
-}
-
-// Posts a command to delete a texture, ensuring all uses are finished
-// Post this command before freeing the buffer holding the texture structures
-HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture)
-{
-	DXGLPostQueueCmd cmd;
-	DXGLQueueCmdDeleteTexture cmddata;
-	cmddata.command = QUEUEOP_DELETETEXTURE;
-	cmddata.size = sizeof(DXGLQueueCmdDeleteTexture);
-	cmddata.count = 1;
-	cmddata.texture = texture;
-	return DXGLRendererGL_PostCommand(This, &cmd);
-}
-
-// Resets OpenGL state
-void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
-{
-	This->depthwrite = GL_TRUE;
-	This->depthtest = GL_FALSE;
-	This->depthcomp = GL_LESS;
-	This->alphacomp = GL_ALWAYS;
-	This->scissor = FALSE;
-	This->scissorx = 0;
-	This->scissory = 0;
-	This->scissorwidth = This->width;
-	This->scissorheight = This->height;
-	This->clearr = This->clearg = This->clearb = This->cleara = 0.0f;
-	This->cleardepth = 1.0;
-	This->clearstencil = 0;
-	This->blendsrc = GL_ONE;
-	This->blenddest = GL_ZERO;
-	This->blendenabled = GL_FALSE;
-	This->polymode = GL_FILL;
-	This->shademode = GL_SMOOTH;
-	This->texlevel = 0;
-	glDepthMask(GL_TRUE);
-	glDisable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, This->width, This->height);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClearDepth(0.0);
-	glClearStencil(0);
-	glBlendFunc(GL_ONE, GL_ZERO);
-	glDisable(GL_BLEND);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (This->ext.glver_major < 3) glShadeModel(GL_SMOOTH);
-	This->ext.glActiveTexture(GL_TEXTURE0);
-}
-
-// Sets cooperative level for DDraw
-void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
-{
+	DXGLRendererGL_Sync(This, 0);
 	BOOL exclusive;
 	DWORD winver = GetVersion();
 	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
@@ -1205,7 +1128,7 @@ void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD
 			This->winstyle = This->winstyleex = 0;
 			SetWindowPos(This->hWndTarget, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 		}
-	}  
+	}
 	if (This->hWndTarget) UninstallDXGLHook(This->hWndTarget);
 	This->hWndTarget = hWnd;
 	if (!This->winstyle && !This->winstyleex)
@@ -1467,4 +1390,70 @@ void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD
 		SetParent(This->hWndContext, This->hWndTarget);
 		SetWindowPos(This->hWndContext, HWND_TOP, 0, 0, This->width, This->height, SWP_SHOWWINDOW);
 	}
+}
+
+// Creates one or more textures, determined by ddsd
+HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture **out)
+{
+	HRESULT error;
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdCreateTexture cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_CREATETEXTURE;
+	cmddata.size = sizeof(DXGLQueueCmdCreateTexture);
+	memcpy(&cmddata.desc, &desc, sizeof(DDSURFACEDESC2));
+	cmddata.out = out;
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (SUCCEEDED(error)) DXGLRendererGL_Sync(This, NULL);
+	return error;
+}
+
+// Posts a command to delete a texture, ensuring all uses are finished
+// Post this command before freeing the buffer holding the texture structures
+HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdDeleteTexture cmddata;
+	cmddata.command = QUEUEOP_DELETETEXTURE;
+	cmddata.size = sizeof(DXGLQueueCmdDeleteTexture);
+	cmddata.count = 1;
+	cmddata.texture = texture;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Resets OpenGL state
+void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
+{
+	This->depthwrite = GL_TRUE;
+	This->depthtest = GL_FALSE;
+	This->depthcomp = GL_LESS;
+	This->alphacomp = GL_ALWAYS;
+	This->scissor = FALSE;
+	This->scissorx = 0;
+	This->scissory = 0;
+	This->scissorwidth = This->width;
+	This->scissorheight = This->height;
+	This->clearr = This->clearg = This->clearb = This->cleara = 0.0f;
+	This->cleardepth = 1.0;
+	This->clearstencil = 0;
+	This->blendsrc = GL_ONE;
+	This->blenddest = GL_ZERO;
+	This->blendenabled = GL_FALSE;
+	This->polymode = GL_FILL;
+	This->shademode = GL_SMOOTH;
+	This->texlevel = 0;
+	glDepthMask(GL_TRUE);
+	glDisable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glDisable(GL_SCISSOR_TEST);
+	glScissor(0, 0, This->width, This->height);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(0.0);
+	glClearStencil(0);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	glDisable(GL_BLEND);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (This->ext.glver_major < 3) glShadeModel(GL_SMOOTH);
+	This->ext.glActiveTexture(GL_TEXTURE0);
 }

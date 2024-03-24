@@ -58,11 +58,11 @@ typedef struct IDXGLRendererGL
 	HANDLE SyncEvent;
 	HANDLE StartEvent;
 	CRITICAL_SECTION cs;
-	CRITICAL_SECTION synccs;
 	DWORD_PTR syncptr;
 	BOOL waitsync;
 	BOOL running;
 	BOOL shutdown;
+	DWORD synclock;
 
 	// OpenGL context resources
 	PIXELFORMATDESCRIPTOR pfd;
@@ -129,7 +129,6 @@ HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *
 // Internal functions
 HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd* cmd, BOOL inner);
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
-void DXGLRendererGL__SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD flags);
 
 #ifdef __cplusplus
 }
