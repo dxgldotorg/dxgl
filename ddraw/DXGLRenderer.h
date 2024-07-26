@@ -86,7 +86,7 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
     STDMETHOD(Break)(THIS);
     STDMETHOD(FreePointer)(THIS_ void *);
     STDMETHOD(SetCooperativeLevel)(THIS_ HWND hWnd, DWORD flags);
-    STDMETHOD(CreateTexture)(THIS_ LPDDSURFACEDESC2 desc, DXGLTexture **out);
+    STDMETHOD(CreateTexture)(THIS_ LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture **out);
     STDMETHOD(DeleteTexture)(THIS_ DXGLTexture *texture);
     STDMETHOD(SetTexture)(THIS_ GLuint level, DXGLTexture *texture);
     STDMETHOD(SetTarget)(THIS_ DXGLTexture *texture, GLuint miplevel);
@@ -97,6 +97,7 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
     STDMETHOD(SetFVF)(THIS_ DWORD fvf);
     STDMETHOD(DrawPrimitives)(THIS_ D3DPRIMITIVETYPE type, const BYTE *vertices,
         DWORD vertexcount, const WORD *indices, DWORD indexcount);
+    STDMETHOD(Sync)(THIS_ void *pointer);
 };
 #undef INTERFACE
 
@@ -114,15 +115,17 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
 #define IDXGLRenderer_Break(p)                           (p)->lpVtbl->Break(p)
 #define IDXGLRenderer_FreePointer(p,a)                   (p)->lpVtbl->FreePointer(p,a)
 #define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->lpVtbl->SetCooperativeLevel(p,a,b)
-#define IDXGLRenderer_CreateTexture(p,a,b)               (p)->lpVtbl->CreateTexture(p,a,b)
+#define IDXGLRenderer_CreateTexture(p,a,b,c)             (p)->lpVtbl->CreateTexture(p,a,b,c)
 #define IDXGLRenderer_DeleteTexture(p,a)                 (p)->lpVtbl->DeleteTexture(p,a)
 #define IDXGLRenderer_SetTexture(p,a,b)                  (p)->lpVtbl->SetTexture(p,a,b)
 #define IDXGLRenderer_SetTarget(p,a,b)                   (p)->lpVtbl->SetTarget(p,a,b)
 #define IDXGLRenderer_Lock(p,a,b,c)                      (p)->lpVtbl->Lock(p,a,b,c)
 #define IDXGLRenderer_Unlock(p,a,b)                      (p)->lpVtbl->Unlock(p,a,b)
+#define IDXGLRenderer_Clear(p,a,b,c,d,e)                 (p)->lpVtbl->Clear(p,a,b,c,d,e)
 #define IDXGLRenderer_SetRenderState(p,a)                (p)->lpVtbl->SetRenderState(p,a)
 #define IDXGLRenderer_SetFVF(p,a)                        (p)->lpVtbl->SetFVF(p,a)
 #define IDXGLRenderer_DrawPrimitives(p,a,b,c,d,e)        (p)->lpVtbl->DrawPrimitives(p,a,b,c,d,e)
+#define IDXGLRenderer_Sync(p,a)                          (p)->lpVtbl->Sync(p,a);
 #else
 // IUnknown
 #define IDXGLRenderer_QueryInterface(p,a,b) (p)->QueryInterface(a,b)
@@ -137,15 +140,17 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
 #define IDXGLRenderer_Break(p)                           (p)->Break()
 #define IDXGLRenderer_FreePointer(p,a)                   (p)->FreePointer(a)
 #define IDXGLRenderer_SetCooperativeLevel(p,a,b)         (p)->SetCooperativeLevel(a,b)
-#define IDXGLRenderer_CreateTexture(p,a,b)               (p)->CreateTexture(a,b)
+#define IDXGLRenderer_CreateTexture(p,a,b,c)             (p)->CreateTexture(a,b,c)
 #define IDXGLRenderer_DeleteTexture(p,a)                 (p)->CreateTexture(a)
 #define IDXGLRenderer_SetTexture(p,a,b)                  (p)->SetTexture(a,b)
 #define IDXGLRenderer_SetTarget(p,a,b)                   (p)->SetTarget(a,b)
 #define IDXGLRenderer_Lock(p,a,b,c)                      (p)->Lock(a,b,c)
 #define IDXGLRenderer_Unlock(p,a,b)                      (p)->Unlock(a,b)
+#define IDXGLRenderer_Clear(p,a,b,c,d,e)                 (p)->Clear(a,b,c,d,e)
 #define IDXGLRenderer_SetRenderState(p,a)                (p)->SetRenderState(a)
 #define IDXGLRenderer_SetFVF(p,a)                        (p)->SetFVF(a)
 #define IDXGLRenderer_DrawPrimitives(p,a,b,c,d,e)        (p)->DrawPrimitives(a,b,c,d,e)
+#define IDXGLRenderer_Sync(p,a)                          (p)->Sync(a);
 #endif
 
 // Constants

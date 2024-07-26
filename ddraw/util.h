@@ -37,6 +37,8 @@ void UnregisterDXGLTempWindowClass();
 
 int DivCeiling(int dividend, int divisor);
 
+void ShrinkMip(DWORD *x, DWORD *y, int level);
+
 #ifdef __cplusplus
 }
 #endif

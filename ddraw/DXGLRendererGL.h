@@ -122,8 +122,11 @@ HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, struct DXGLPost
 HRESULT WINAPI DXGLRendererGL_Break(LPDXGLRENDERERGL This);
 HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr);
 HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD flags);
-HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture *out);
+HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture *out);
 HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture);
+//FIXME:  Add remaining functions
+
+HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void* ptr);
 
 
 // Internal functions

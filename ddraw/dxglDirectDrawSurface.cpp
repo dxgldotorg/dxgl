@@ -94,16 +94,6 @@ dxglDirectDrawSurface7Vtbl dxglDirectDrawSurface7_impl =
 	dxglDirectDrawSurface7_GetLOD
 };
 
-void ShrinkMip(DWORD *x, DWORD *y, int level)
-{
-	int i;
-	for (i = 0; i < level; i++)
-	{
-		*x = max(1, (DWORD)floorf((float)*x / 2.0f));
-		*y = max(1, (DWORD)floorf((float)*y / 2.0f));
-	}
-}
-
 // DDRAW7 routines
 HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, glDirectDrawPalette *palettein,
 	glTexture *parenttex, int version, dxglDirectDrawSurface7 *glDDS7)
@@ -453,7 +443,8 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	// Generate texture storage
 	for (i = 0; i < buffercount; i++)
 	{
-		error = surfaceptr->ddInterface->renderer->CreateTexture(&surfaceptr->ddsd, &surfaceptr->texture);
+		error = surfaceptr->ddInterface->renderer->CreateTexture(&surfaceptr->ddsd,
+			surfaceptr->ddInterface->primarybpp, &surfaceptr->texture);
 		if (FAILED(error))
 		{
 			while (i > 0)
@@ -1130,7 +1121,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	TRACE_ENTER(6, 14, This, 26, lpDestRect, 14, lpDDSrcSurface, 26, lpSrcRect, 9, dwFlags, 14, lpDDBltFx);
 	// Validate parameters
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
-	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 32, DDERR_INVALIDPARAMS);
+	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_ROP) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);

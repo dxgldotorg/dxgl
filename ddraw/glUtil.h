@@ -57,7 +57,7 @@ void glUtil_SetShadeMode(glUtil *This, D3DSHADEMODE mode);
 void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
 void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
 void glUtil_SetActiveTexture(glUtil *This, int level);
-void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture);
+void glUtil_SetTexture(glUtil *This, unsigned int level, DXGLTexture *texture);
 void glUtil_ClearErrors(glUtil* This);
 
 #ifdef __cplusplus

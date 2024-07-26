@@ -17,11 +17,11 @@
 
 #include "common.h"
 #include "glUtil.h"
-#include "DXGLTexture.h"
 #include "DXGLQueue.h"
 #include "DXGLRenderer.h"
 #include "DXGLRendererGL.h"
 #include "DXGLTexture.h"
+#include "DXGLTextureGL.h"
 #include "util.h"
 #include <WbemCli.h>
 #include <oleauto.h>
@@ -54,7 +54,16 @@ static IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_FreePointer,
 	DXGLRendererGL_SetCooperativeLevel,
 	DXGLRendererGL_CreateTexture,
-	DXGLRendererGL_DeleteTexture
+	DXGLRendererGL_DeleteTexture,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,// Fixme:  Fill in these functions.
+	DXGLRendererGL_Sync
 };
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This);
@@ -785,10 +794,11 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				break;
 			case QUEUEOP_NULL:  // Do nothing
 				break;
-			case QUEUEOP_RESET:  // Rese device 
+			case QUEUEOP_RESET:  // Reset device 
 				DXGLRendererGL__Reset(This);
 				break;
 			case QUEUEOP_CREATETEXTURE:  // Create a texture or surface
+				DXGLTextureGL__FinishCreate(currcmd->createtexture.out, This, &This->ext, &This->util);
 				break;
 			case QUEUEOP_EXPANDBUFFERS: // Expand the buffers, write error to start of queue
 				// Command should only be placed by itself then wait until it finished
@@ -1098,6 +1108,8 @@ HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr)
 {
 	DXGLPostQueueCmd cmd;
 	DXGLQueueCmdFreePointer cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
 	cmddata.command = QUEUEOP_FREEPOINTER;
 	cmddata.size = sizeof(DXGLQueueCmdFreePointer);
 	cmddata.count = 1;
@@ -1393,11 +1405,13 @@ HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hW
 }
 
 // Creates one or more textures, determined by ddsd
-HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DXGLTexture **out)
+HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture *out)
 {
 	HRESULT error;
 	DXGLPostQueueCmd cmd;
 	DXGLQueueCmdCreateTexture cmddata;
+	error = DXGLTextureGL_Create(desc, bpp, &This->ext, out);
+	if(FAILED(error)) return error;
 	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
 	cmd.data = &cmddata;
 	cmddata.command = QUEUEOP_CREATETEXTURE;
@@ -1415,6 +1429,8 @@ HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *
 {
 	DXGLPostQueueCmd cmd;
 	DXGLQueueCmdDeleteTexture cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
 	cmddata.command = QUEUEOP_DELETETEXTURE;
 	cmddata.size = sizeof(DXGLQueueCmdDeleteTexture);
 	cmddata.count = 1;

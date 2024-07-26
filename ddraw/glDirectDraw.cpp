@@ -1448,7 +1448,7 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	// API doesn't support COM aggregation
 	if (pUnkOuter) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	// Check if cooperative level is set
-	if (!This->renderer) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
+	if (!This->cooplevel) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
 	// Check if primary exists if creating primary
 	if (This->primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
@@ -2055,6 +2055,9 @@ HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd,
 	{
 		
 	}
+	if (dwFlags & DDSCL_FULLSCREEN) This->fullscreen = true;
+	else This->fullscreen = false;
+	This->cooplevel = dwFlags;
 	TRACE_RET(HRESULT, 23, This->renderer->SetCooperativeLevel(hWnd, dwFlags));
 }
 
@@ -2151,6 +2154,54 @@ LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
 	return SetVidMode(devname, mode, flags);
 }
 
+void SetPrimaryMode(glDirectDraw7 *This, LPDDSURFACEDESC2 ddsd, DWORD width, DWORD height, DWORD bpp)
+{
+	ddsd->dwWidth = width;
+	ddsd->dwHeight = height;
+	ddsd->ddpfPixelFormat.dwRGBBitCount = bpp;
+	switch (bpp)
+	{
+	case 8:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth);
+		break;
+	case 15:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0x7C00;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0x3E0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0x1F;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 2);
+		ddsd->ddpfPixelFormat.dwRGBBitCount = 16;
+		break;
+	case 16:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xF800;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0x7E0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0x1F;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 2);
+		break;
+	case 24:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xFF0000;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0xFF00;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0xFF;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 3);
+		break;
+	case 32:
+	default:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xFF0000;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0xFF00;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0xFF;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 4);
+		break;
+	}
+	dxglDirectDrawSurface7_SetSurfaceDesc(This->primary, ddsd, 0);
+}
+
 HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
 	TRACE_ENTER(6,14,This,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
@@ -2167,15 +2218,16 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!This->fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
-	FIXME("Fix for new renderer");
-	TRACE_RET(HRESULT, 23, DDERR_GENERIC);
-	/*
+	This->renderer->Sync(0);
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
 	float aspect,xmul,ymul,xscale,yscale;
 	LONG error;
 	DWORD flags;
 	BOOL crop400 = FALSE;
+	DDSURFACEDESC2 ddsdPrimary;
+	ddsdPrimary.dwSize = sizeof(DDSURFACEDESC2);
+	if (This->primary) dxglDirectDrawSurface7_GetSurfaceDesc(This->primary, &ddsdPrimary);
 	int stretchmode;
 	if ((dwWidth == 640) && (dwHeight == 480) && dxglcfg.HackCrop640480to640400) crop400 = TRUE;
 	if ((dxglcfg.AddColorDepths & 2) && !(dxglcfg.AddColorDepths & 4) && (dwBPP == 16))
@@ -2257,9 +2309,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->primarybpp = dwBPP;
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2293,9 +2343,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2370,9 +2418,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2389,9 +2435,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2434,9 +2478,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
 				This->primarybpp = dwBPP;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2511,9 +2553,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
 				This->primarybpp = dwBPP;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2529,9 +2569,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				else This->internalbpp = This->screenbpp = newmode2.dmBitsPerPel;
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2605,9 +2643,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2628,9 +2664,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2659,9 +2693,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2678,9 +2710,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true, 
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2702,16 +2732,14 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 		if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 		else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 		This->primarybpp = dwBPP;
-		InitGL(This->screenx, This->screeny, This->screenbpp, true,
-			This->internalrefresh, This->hWnd, This, This->devwnd);
-		//glRenderer_SetBPP(this->renderer, primarybpp);
+		if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 		This->primarylost = true;
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 		break;
 	}
 	TRACE_EXIT(23, DDERR_GENERIC);
-	ERR(DDERR_GENERIC);*/
+	ERR(DDERR_GENERIC);
 }
 HRESULT WINAPI glDirectDraw7_WaitForVerticalBlank(glDirectDraw7 *This, DWORD dwFlags, HANDLE hEvent)
 {

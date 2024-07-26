@@ -25,7 +25,7 @@ extern "C" {
 
 typedef struct gltexformat
 {
-	GLint internalformat;
+	GLint internalformats[4];
 	GLenum format;
 	GLenum type;
 } gltexformat;
@@ -56,7 +56,7 @@ typedef union texparam
 
 typedef struct DXGLTexture
 {
-	DWORD_PTR size;  // Size of strucure plus data storage
+	DWORD_PTR size;  // Size of strucure
 	UINT refcount;  // Reference count
 	DWORD api;  // API type for texure
 	union
@@ -64,21 +64,46 @@ typedef struct DXGLTexture
 		DWORD_PTR handle; // Generic handle
 		GLuint glhandle;  // OpenGL texture name
 	} DUMMYUNIONNAME1;
+	DWORD mipcount;
 	struct
 	{
 		GLsizei width;
 		GLsizei height;
-		GLsizei depth;
+		GLsizei depth;  // Future: for depth textures and to pad to 4 DWORDs
 		GLsizei pitch;
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{
 		GLenum gltarget;  // Texure target - for cubemap GL_TEXTURE_CUBE_MAP
 	} DUMMYUNIONNAME2;
-	BOOL intcoords;
+	union
+	{
+		DWORD_PTR readbufferhandle;
+		GLuint readPBO;
+	} DUMMYUNIONNAME3;
+	union
+	{
+		DWORD_PTR writebufferhandle;
+		GLuint writePBO;
+	} DUMMYUNIONNAME4;
+	BYTE *readbuffer;
+	BYTE *writebuffer;
+	DWORD colororder;
+	DWORD colorsizes[4];
+	DWORD colorbits[4];
+	BOOL intcoords;  // Use integer coords if TRUE, float 0 to 1 if FALSE
 	texformat format;  // Texture format description
 	texparam params;  // Texture parameters, mostly for OpenGL
 	DDPIXELFORMAT ddformat; // DDraw pixel format
+	BOOL zhasstencil;
+	BOOL useconv;
+	int convfunctionupload;
+	int convfunctiondownload;
+	int internalsize;
+	int packsize;
+	unsigned char blttype;
+	BOOL sysmem;
+	BYTE *buffer;
 } DXGLTexture;
 
 

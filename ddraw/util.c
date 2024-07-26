@@ -204,3 +204,13 @@ int DivCeiling(int dividend, int divisor)
 {
 	return (dividend / divisor) + (dividend % divisor != 0);
 }
+
+void ShrinkMip(DWORD *x, DWORD *y, int level)
+{
+	int i;
+	for (i = 0; i < level; i++)
+	{
+		*x = max(1, (DWORD)floorf((float)*x / 2.0f));
+		*y = max(1, (DWORD)floorf((float)*y / 2.0f));
+	}
+}

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2023 William Feely
+// Copyright (C) 2012-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+
+
+// This file will be removed upon completion of the new render backend.
 
 #include "common.h"
 #include "BufferObject.h"
@@ -2065,21 +2069,21 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbi
 	}
 	if (usedest && (shader->shader.uniforms[2] != -1))
 	{
-		if(cmd->flags & 0x80000000)	glUtil_SetTexture(This->util, 9, cmd->dest);
-		else glUtil_SetTexture(This->util, 9, &This->backbuffers[0]);
+		if(cmd->flags & 0x80000000)	glUtil_SetTexture(This->util, 9, (DXGLTexture*)cmd->dest);
+		else glUtil_SetTexture(This->util, 9, (DXGLTexture*) &This->backbuffers[0]);
 		This->ext->glUniform1i(shader->shader.uniforms[2], 9);
 	}
 	if (usepattern && (shader->shader.uniforms[3] != -1))
 	{
 		if (cmd->pattern->levels[cmd->patternlevel].dirty & 1) glTexture__Upload(cmd->pattern, cmd->patternlevel);
-		glUtil_SetTexture(This->util, 10, cmd->pattern);
+		glUtil_SetTexture(This->util, 10, (DXGLTexture*)cmd->pattern);
 		This->ext->glUniform1i(shader->shader.uniforms[3], 10);
 		This->ext->glUniform2i(shader->shader.uniforms[9],
 			cmd->pattern->levels[cmd->patternlevel].ddsd.dwWidth, cmd->pattern->levels[cmd->patternlevel].ddsd.dwHeight);
 	}
 	if (cmd->flags & 0x10000000)  // Use clipper
 	{
-		glUtil_SetTexture(This->util, 11, cmd->dest->stencil);
+		glUtil_SetTexture(This->util, 11, (DXGLTexture*)cmd->dest->stencil);
 		This->ext->glUniform1i(shader->shader.uniforms[4],11);
 		glUtil_EnableArray(This->util, shader->shader.attribs[5], TRUE);
 		This->ext->glVertexAttribPointer(shader->shader.attribs[5], 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), &This->bltvertices[0].stencils);
@@ -2093,7 +2097,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbi
 		if (cmd->src && cmd->src->palette)
 		{
 			if (cmd->src->palette->levels[0].dirty & 1) glTexture__Upload(cmd->src->palette, 0);
-			glUtil_SetTexture(This->util, 12, cmd->src->palette);
+			glUtil_SetTexture(This->util, 12, (DXGLTexture*)cmd->src->palette);
 			This->ext->glUniform1i(shader->shader.uniforms[13], 12);
 		}
 		break;
@@ -2102,7 +2106,7 @@ void glRenderer__Blt(glRenderer *This, BltCommand *cmd, BOOL backend, BOOL bltbi
 	}
 	if (cmd->src)
 	{
-		glUtil_SetTexture(This->util, 8, cmd->src);
+		glUtil_SetTexture(This->util, 8, (DXGLTexture*)cmd->src);
 		if(This->ext->GLEXT_ARB_sampler_objects)
 		{
 			if((dxglcfg.BltScale == 0) || (This->ddInterface->primarybpp == 8) || bltbig)
@@ -2196,7 +2200,7 @@ void glRenderer__DrawBackbuffer(glRenderer *This, glTexture **texture, int x, in
 		view[3] = (GLfloat)y2;
 		glUtil_SetViewport(This->util, 0, 0, x2, y2);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUtil_SetTexture(This->util, 8, *texture);
+		glUtil_SetTexture(This->util, 8, (DXGLTexture*)*texture);
 		*texture = &This->backbuffers[index];
 		if (!paletted && firstpass && (dxglcfg.postfilter == 1))
 			glTexture__SetFilter(*texture, 8, GL_LINEAR, GL_LINEAR, This);
@@ -2259,7 +2263,7 @@ void glRenderer__DrawBackbufferRect(glRenderer *This, glTexture *texture, RECT s
 	glUtil_SetScissor(This->util, TRUE, 0, 0, This->backbuffers[index].levels[0].ddsd.dwWidth, This->backbuffers[index].levels[0].ddsd.dwHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUtil_SetScissor(This->util, FALSE, 0, 0, 0, 0);
-	glUtil_SetTexture(This->util, 8, texture);
+	glUtil_SetTexture(This->util, 8, (DXGLTexture*)texture);
 	This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 8);
 	This->ext->glUniform4f(This->shaders->shaders[progtype].view, view[0], view[1], view[2], view[3]);
 	if (texture->target == GL_TEXTURE_RECTANGLE)
@@ -2664,14 +2668,14 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 		if(paltex) glTexture__Upload(paltex, 0);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].pal,9);
-		glUtil_SetTexture(This->util,8,texture);
-		glUtil_SetTexture(This->util,9,paltex);
+		glUtil_SetTexture(This->util,8, (DXGLTexture*)texture);
+		glUtil_SetTexture(This->util,9, (DXGLTexture*)paltex);
 		if(dxglcfg.scalingfilter || (This->postsizex != 1.0f) || (This->postsizey != 1.0f))
 		{
 			glRenderer__DrawBackbuffer(This,&texture,texture->levels[0].ddsd.dwWidth,texture->levels[0].ddsd.dwHeight,progtype,TRUE,TRUE,0);
 			ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 			progtype = PROG_TEXTURE;
-			glUtil_SetTexture(This->util,8,texture);
+			glUtil_SetTexture(This->util,8, (DXGLTexture*)texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 		}
 	}
@@ -2682,12 +2686,12 @@ void glRenderer__DrawScreen(glRenderer *This, glTexture *texture, glTexture *pal
 			progtype = PROG_TEXTURE;
 			ShaderManager_SetShader(This->shaders, PROG_TEXTURE, NULL, 0);
 			glRenderer__DrawBackbuffer(This, &texture, texture->levels[0].ddsd.dwWidth, texture->levels[0].ddsd.dwHeight, progtype, FALSE, TRUE, 0);
-			glUtil_SetTexture(This->util, 8, texture);
+			glUtil_SetTexture(This->util, 8, (DXGLTexture*)texture);
 			This->ext->glUniform1i(This->shaders->shaders[progtype].tex0, 0);
 		}
 		ShaderManager_SetShader(This->shaders,PROG_TEXTURE,NULL,0);
 		progtype = PROG_TEXTURE;
-		glUtil_SetTexture(This->util,8,texture);
+		glUtil_SetTexture(This->util,8, (DXGLTexture*)texture);
 		This->ext->glUniform1i(This->shaders->shaders[progtype].tex0,8);
 	}
 	if (dxglcfg.scalingfilter) glTexture__SetFilter(texture, 8, GL_LINEAR, GL_LINEAR, This);
@@ -3442,7 +3446,7 @@ void glRenderer__DrawPrimitivesOld(glRenderer *This, RenderTarget *target, GLenu
 			}
 			if (This->texstages[i].texture)
 				glTexture__SetFilter(This->texstages[i].texture, i, This->texstages[i].glmagfilter, This->texstages[i].glminfilter, This);
-			glUtil_SetTexture(This->util,i,This->texstages[i].texture);
+			glUtil_SetTexture(This->util,i, (DXGLTexture*)This->texstages[i].texture);
 			glUtil_SetWrap(This->util, i, 0, This->texstages[i].addressu);
 			glUtil_SetWrap(This->util, i, 1, This->texstages[i].addressv);
 		}

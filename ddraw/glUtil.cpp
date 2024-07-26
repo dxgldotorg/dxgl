@@ -611,8 +611,7 @@ void glUtil_SetActiveTexture(glUtil *This, int level)
 	}
 }
 
-
-void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
+void glUtil_SetTexture(glUtil *This, unsigned int level, DXGLTexture *texture)
 {
 	GLuint texname;
 	GLenum target;
@@ -624,8 +623,8 @@ void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
 	}
 	else
 	{
-		texname = texture->id;
-		target = texture->target;
+		texname = texture->glhandle;
+		target = texture->gltarget;
 	}
 	if (texname != This->textures[level])
 	{

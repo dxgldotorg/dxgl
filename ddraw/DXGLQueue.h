@@ -57,7 +57,7 @@ typedef struct DXGLQueueCmdCreateTexture
 	LONG command;
 	DWORD size;
 	DDSURFACEDESC2 desc;
-	DXGLTexture **out;
+	DXGLTexture *out;
 } DXGLQueueCmdCreateTexture;
 
 typedef struct DXGLQueueCmdDeleteTexture
