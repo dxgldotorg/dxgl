@@ -86,7 +86,7 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
     STDMETHOD(Break)(THIS);
     STDMETHOD(FreePointer)(THIS_ void *);
     STDMETHOD(SetCooperativeLevel)(THIS_ HWND hWnd, DWORD flags);
-    STDMETHOD(CreateTexture)(THIS_ LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture **out);
+    STDMETHOD(CreateTexture)(THIS_ LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture *out);
     STDMETHOD(DeleteTexture)(THIS_ DXGLTexture *texture);
     STDMETHOD(SetTexture)(THIS_ GLuint level, DXGLTexture *texture);
     STDMETHOD(SetTarget)(THIS_ DXGLTexture *texture, GLuint miplevel);

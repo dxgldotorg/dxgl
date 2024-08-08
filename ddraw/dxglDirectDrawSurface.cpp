@@ -443,17 +443,26 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	// Generate texture storage
 	for (i = 0; i < buffercount; i++)
 	{
-		error = surfaceptr->ddInterface->renderer->CreateTexture(&surfaceptr->ddsd,
-			surfaceptr->ddInterface->primarybpp, &surfaceptr->texture);
-		if (FAILED(error))
+		for (x = 0; x < mipcount; x++)
 		{
-			while (i > 0)
+			surfaceptr = &glDDS7[x + (i * mipcount)];
+			if (x == 0) error = surfaceptr->ddInterface->renderer->CreateTexture(&surfaceptr->ddsd,
+				surfaceptr->ddInterface->primarybpp, surfaceptr->texture);
+			else
 			{
-				// Delete already created textures in case of failure
-				surfaceptr = &glDDS7[i * mipcount];
-				i--;
-				surfaceptr->ddInterface->renderer->DeleteTexture(surfaceptr->texture);
-				surfaceptr->texture = NULL;
+				surfaceptr->texture = glDDS7[i * mipcount].texture;
+				error = DD_OK;
+			}
+			if (FAILED(error))
+			{
+				while (i > 0)
+				{
+					// Delete already created textures in case of failure
+					surfaceptr = &glDDS7[i * mipcount];
+					i--;
+					surfaceptr->ddInterface->renderer->DeleteTexture(surfaceptr->texture);
+					surfaceptr->texture = NULL;
+				}
 			}
 		}
 	}
@@ -595,17 +604,20 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	case 2:
 	case 3:
 	default:
-		glDDS7->textureparent = (IUnknown*)&glDDS7->dds1;
+		for(i = 0; i < complexcount; i++)
+			glDDS7[i].textureparent = (IUnknown*)&glDDS7[i].dds1;
 		break;
 	case 4:
-		glDDS7->textureparent = (IUnknown*)&glDDS7->dds4;
+		for (i = 0; i < complexcount; i++)
+			glDDS7[i].textureparent = (IUnknown*)&glDDS7[i].dds4;
 		break;
 	case 7:
-		glDDS7->textureparent = (IUnknown*)glDDS7;
+		for (i = 0; i < complexcount; i++)
+			glDDS7[i].textureparent = (IUnknown*)&glDDS7[i];
 		break;
 	}
-	TRACE_EXIT(23,error);
-	return error;
+	TRACE_EXIT(23,DD_OK);
+	return DD_OK;
 }
 
 void dxglDirectDrawSurface7_Delete(dxglDirectDrawSurface7 *This)

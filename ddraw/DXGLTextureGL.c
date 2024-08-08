@@ -253,8 +253,6 @@ HRESULT DXGLTextureGL_Create(LPDDSURFACEDESC2 ddsd, DWORD bpp, glExtensions *ext
 	if (!out) return DDERR_INVALIDPARAMS;
 	if (!IsWritablePointer(out, sizeof(DXGLTexture), TRUE))
 		return DDERR_EXCEPTION;
-	error = DXGLTextureGL_ValidatePixelFormat(&ddsd->ddpfPixelFormat, &texformat);
-	if (FAILED(error)) return error;
 	if ((ddsd->dwWidth < 1) || (ddsd->dwWidth > 32768) || (ddsd->dwHeight < 1) || (ddsd->dwHeight > 32768))
 		return DDERR_INVALIDPARAMS;
 	ZeroMemory(out, sizeof(DXGLTexture));
@@ -299,6 +297,8 @@ HRESULT DXGLTextureGL_Create(LPDDSURFACEDESC2 ddsd, DWORD bpp, glExtensions *ext
 			break;
 		}
 	}
+	error = DXGLTextureGL_ValidatePixelFormat(&out->ddformat, &texformat);
+	if (FAILED(error)) return error;
 	out->levels[0].width = ddsd->dwWidth;
 	out->levels[0].height = ddsd->dwHeight;
 	out->levels[0].pitch = SetPitch(ddsd, ddsd->dwWidth, bpp);
