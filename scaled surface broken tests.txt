@@ -1,0 +1,3 @@
+Raster Operation Blt() test - missing GDI Blt section
+All D3D tests
+Surface/Texture Format Test

@@ -1,0 +1,38 @@
+SURF_IV_CreateSurface
+SURF_Lock, Multiple Rects, Video
+SURF_IV_Lock Invalid Parameters
+SURF_GetDDInterface
+SURF_EnumAttachedSurfaces
+SURF_Set/GetColorKey Test
+SURF_GetClipper
+SURF_AddAttachedSurface (flip chain)
+SURF_LostSurfaceInvalidParam
+SURF_DOSBoxInteraction
+SURF_GetFlipStatus
+SURF_CopyToClipboard
+SURF_EnumPrimarySurface
+SURF_EnumOffScrnPlain
+SURF_EnumFourCCSurf
+SURF_EnumSurfTryMatch
+SURF_SetSurf
+DATA_Surface4_GetSetClientDataInvalid
+DATA_Surface4_GetSetClientData
+CSEM_CreateSurfaceFromMemory
+UNIQ_Surface4_GetChangeUniquenessValue
+Surface4_API_GetSurfaceFromDC (crash)
+CSEM_IV_Create From Existing Mem (crash)
+CSEM_GetDC Custom Memory Surfaces (crash)
+CSEM_Change Surfaces and Blt
+SURF_IV_GetFlipStatus
+SURF_IV_GetBltStatus
+SURF_IV_PageLock
+SURF_IV_PageUnLock
+SURF_IV_SetColorKey
+SURF_IV_GetPixelFormat
+SURF_IV_GetSurfaceDesc (crash)
+SURF_IV_SetSurfaceDesc
+SURF_IV_Lock
+SURF_IV_SetPalette
+SURF_IV_DeleteAttachedSurface (crash)
+SURF_ReleaseFrontBeforeBack
+SURF_SetSurfaceDescDXTn
