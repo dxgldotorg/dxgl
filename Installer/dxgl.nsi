@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_10"
+!if ${COMPILER} == "VC2022_11"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -208,7 +208,7 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_10"
+!else if ${COMPILER} == "VC2022_11"
 !define download_runtime 1
 !define runtime_url http://dxgl.org/download/runtimes/vc14.40.33810/vc_redist.x64.exe
 !define runtime_name "Visual C++ 2022.10 x64"
@@ -259,7 +259,7 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_10"
+!else if ${COMPILER} == "VC2022_11"
 !define download_runtime 1
 !define runtime_url http://dxgl.org/download/runtimes/vc14.40.33810/vc_redist.x86.exe
 !define runtime_name "Visual C++ 2022.10 x86"
@@ -417,7 +417,7 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2022_10"
+  !if ${COMPILER} == "VC2022_11"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -498,7 +498,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_10"
+  !if ${COMPILER} == "VC2022_11"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -562,7 +562,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_10"
+  !if ${COMPILER} == "VC2022_11"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -694,7 +694,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_10"
+!if ${COMPILER} == "VC2022_11"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
