@@ -27,19 +27,19 @@ typedef struct DXGLQueue
 {
 	char *commands;
 	ULONG_PTR commandsize;
-	ULONG_PTR commandread, commandwrite;
+	ULONG_PTR commandwrite;
 	ULONG_PTR pixelbuffer;
 	char *pixelbufferptr;
 	ULONG_PTR pixelbuffersize;
-	ULONG_PTR pixelbufferread, pixelbufferwrite;
+	ULONG_PTR pixelbufferwrite;
 	ULONG_PTR vertexbuffer;
 	char *vertexbufferptr;
 	ULONG_PTR vertexbuffersize;
-	ULONG_PTR vertexbufferread, vertexbufferwrite;
+	ULONG_PTR vertexbufferwrite;
 	ULONG_PTR indexbuffer;
 	char *indexbufferptr;
 	ULONG_PTR indexbuffersize;
-	ULONG_PTR indexbufferread, indexbufferwrite;
+	ULONG_PTR indexbufferwrite;
 	BOOL filled;
 	BOOL busy;
 	BOOL inscene;
@@ -94,6 +94,24 @@ typedef struct DXGLQueueCmdExpandBuffers
 	DWORD_PTR indexsize;
 } DXGLQueueCmdExpandBuffers;
 
+typedef struct DXGLQueueCmdLock
+{
+	LONG command;
+	DWORD size;
+	DXGLTexture *texture;
+	GLuint miplevel;
+	BYTE **ptr;
+} DXGLQueueCmdLock;
+
+typedef struct DXGLQueueCmdUnlock
+{
+	LONG command;
+	DWORD size;
+	DXGLTexture *texture;
+	GLuint miplevel;
+} DXGLQueueCmdUnlock;
+
+
 typedef union DXGLQueueCmdDecoder
 {
 	DXGLQueueCmd cmd;
@@ -102,6 +120,8 @@ typedef union DXGLQueueCmdDecoder
 	DXGLQueueCmdFreePointer freepointer;
 	DXGLQueueCmdSetCooperativeLevel setcooplevel;
 	DXGLQueueCmdExpandBuffers expandbuffers;
+	DXGLQueueCmdLock lock;
+	DXGLQueueCmdUnlock unlock;
 } DXGLQueueCmdDecoder;
 
 typedef struct DXGLPostQueueCmd
@@ -123,6 +143,8 @@ typedef struct DXGLPostQueueCmd
 #define QUEUEOP_BREAK 4
 #define QUEUEOP_FREEPOINTER 5
 #define QUEUEOP_EXPANDBUFFERS 6
+#define QUEUEOP_LOCK 7
+#define QUEUEOP_UNLOCK 8
 
 #ifdef __cplusplus
 }

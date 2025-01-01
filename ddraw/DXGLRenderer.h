@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023 William Feely
+// Copyright (C) 2023-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -90,7 +90,7 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
     STDMETHOD(DeleteTexture)(THIS_ DXGLTexture *texture);
     STDMETHOD(SetTexture)(THIS_ GLuint level, DXGLTexture *texture);
     STDMETHOD(SetTarget)(THIS_ DXGLTexture *texture, GLuint miplevel);
-    STDMETHOD(Lock)(THIS_ DXGLTexture *texture, GLuint miplevel, BYTE *pointer);
+    STDMETHOD(Lock)(THIS_ DXGLTexture *texture, GLuint miplevel, BYTE **pointer);
     STDMETHOD(Unlock)(THIS_ DXGLTexture *texture, GLuint miplevel);
     STDMETHOD(Clear)(THIS_ D3DRECT * rect, DWORD flags, DWORD color, D3DVALUE z, DWORD stencil);
     STDMETHOD(SetRenderState)(THIS_ DXGLRenderState *state);

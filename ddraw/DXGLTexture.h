@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022 William Feely
+// Copyright (C) 2022-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -70,24 +70,18 @@ typedef struct DXGLTexture
 		GLsizei width;
 		GLsizei height;
 		GLsizei depth;  // Future: for depth textures and to pad to 4 DWORDs
-		GLsizei pitch;
+		GLsizei pitch;  // Bytes per line of texture image, used for buffer calculations
+		union
+		{
+			DWORD_PTR bufferhandle;
+			GLuint PBO;
+		} DUMMYUNIONNAME3;
+		BYTE *bufferptr;
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{
 		GLenum gltarget;  // Texure target - for cubemap GL_TEXTURE_CUBE_MAP
 	} DUMMYUNIONNAME2;
-	union
-	{
-		DWORD_PTR readbufferhandle;
-		GLuint readPBO;
-	} DUMMYUNIONNAME3;
-	union
-	{
-		DWORD_PTR writebufferhandle;
-		GLuint writePBO;
-	} DUMMYUNIONNAME4;
-	BYTE *readbuffer;
-	BYTE *writebuffer;
 	DWORD colororder;
 	DWORD colorsizes[4];
 	DWORD colorbits[4];

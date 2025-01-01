@@ -28,6 +28,8 @@ HRESULT DXGLTextureGL_ValidatePixelFormat(LPDDPIXELFORMAT pixelformat, DWORD *te
 HRESULT DXGLTextureGL_Create(LPDDSURFACEDESC2 ddsd, DWORD bpp, glExtensions *ext, DXGLTexture *out);
 
 void DXGLTextureGL__FinishCreate(DXGLTexture *This, LPDXGLRENDERERGL renderer, glExtensions *ext, glUtil *util);
+void DXGLTextureGL__Lock(DXGLTexture *This, glExtensions *ext, GLuint miplevel, BYTE **ptr);
+void DXGLTextureGL__Unlock(DXGLTexture *This, glExtensions *ext, GLuint miplevel);
 
 // Pixel format constants
 #define DXGLPIXELFORMATGL_INVALID			-1
