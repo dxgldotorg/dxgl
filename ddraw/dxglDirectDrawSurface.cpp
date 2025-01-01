@@ -1929,8 +1929,8 @@ HRESULT WINAPI dxglDirectDrawSurface7_Lock(dxglDirectDrawSurface7 *This, LPRECT 
 			|| (lpDestRect->right > This->ddsd.dwWidth) || (lpDestRect->left > This->ddsd.dwWidth))
 			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
-	BYTE *ptr;
-	HRESULT error = This->ddInterface->renderer->Lock(This->texture, This->miplevel, ptr);
+	BYTE *ptr = NULL;
+	HRESULT error = This->ddInterface->renderer->Lock(This->texture, This->miplevel, &ptr);
 	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 	This->ddsd.lpSurface = ptr;
 	if (lpDestRect)

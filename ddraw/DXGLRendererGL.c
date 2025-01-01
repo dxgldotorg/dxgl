@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023 William Feely
+// Copyright (C) 2023-2024 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -55,15 +55,15 @@ static IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_SetCooperativeLevel,
 	DXGLRendererGL_CreateTexture,
 	DXGLRendererGL_DeleteTexture,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,// Fixme:  Fill in these functions.
-	DXGLRendererGL_Sync
+	NULL, // SetTexture
+	NULL, // SetTarget
+	DXGLRendererGL_Lock,
+	DXGLRendererGL_Unlock, // Unlock
+	NULL, // Clear
+	NULL, // SetRenderState
+	NULL, // SetFVF
+	NULL, // DrawPrimitives
+	DXGLRendererGL_Sync //Fixme:  Fill in these functions.
 };
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This);
@@ -719,7 +719,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		WaitForSingleObject(This->WindowThreadHandle, INFINITE);
 		return DDERR_OUTOFMEMORY;
 	}
-	This->commandqueue->commandsize = dxglcfg.CmdBufferSize;
+	This->commandqueue->commandsize = This->commandqueue[1].commandsize = dxglcfg.CmdBufferSize;
 	This->commandqueue[1].commands = (char*)malloc(dxglcfg.CmdBufferSize);
 	if (!This->commandqueue[1].commands)
 	{
@@ -734,26 +734,32 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	This->ext.glGenBuffers(1, &This->commandqueue[0].pixelbuffer);
 	This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->commandqueue[0].pixelbuffer);
 	This->ext.glBufferData(GL_PIXEL_UNPACK_BUFFER, dxglcfg.UnpackBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].pixelbuffersize = dxglcfg.UnpackBufferSize;
 	This->commandqueue[0].pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].pixelbuffer);
 	This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->commandqueue[1].pixelbuffer);
 	This->ext.glBufferData(GL_PIXEL_UNPACK_BUFFER, dxglcfg.UnpackBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].pixelbuffersize = dxglcfg.UnpackBufferSize;
 	This->commandqueue[1].pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[0].vertexbuffer);
 	This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->commandqueue[0].vertexbuffer);
 	This->ext.glBufferData(GL_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].vertexbuffersize = dxglcfg.VertexBufferSize;
 	This->commandqueue[0].vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].vertexbuffer);
 	This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->commandqueue[1].vertexbuffer);
 	This->ext.glBufferData(GL_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].vertexbuffersize = dxglcfg.VertexBufferSize;
 	This->commandqueue[1].vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[0].indexbuffer);
 	This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->commandqueue[0].indexbuffer);
-	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.IndexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[0].indexbuffersize = dxglcfg.IndexBufferSize;
 	This->commandqueue[0].indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->ext.glGenBuffers(1, &This->commandqueue[1].indexbuffer);
 	This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->commandqueue[1].indexbuffer);
-	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.VertexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, dxglcfg.IndexBufferSize, NULL, GL_DYNAMIC_DRAW);
+	This->commandqueue[1].indexbuffersize = dxglcfg.IndexBufferSize;
 	This->commandqueue[1].indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	This->queueindexread = 0;
 	This->queueindexwrite = 0;
@@ -857,10 +863,19 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				}
 				*((DWORD*)This->currentqueue->commands) = DD_OK;
 				break;
+			case QUEUEOP_LOCK:  // Lock a texture
+				DXGLTextureGL__Lock(currcmd->lock.texture, &This->ext, currcmd->lock.miplevel, currcmd->lock.ptr);
+				break;
+			case QUEUEOP_UNLOCK: // Unlock a texture
+				DXGLTextureGL__Unlock(currcmd->unlock.texture, &This->ext, currcmd->unlock.miplevel);
+				break;
+			default:            // Unknown, probably will crash
+				FIXME("Detected an unknown command.")
+				break;
 			}
 			// Move queue forward
 			queuepos += currcmd->cmd.size;
-			if (queuepos >= This->currentqueue->commandread)
+			if (queuepos >= This->currentqueue->commandwrite)
 			{
 				// Flip buffers or end execution
 				EnterCriticalSection(&This->cs);
@@ -873,8 +888,6 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				This->currentqueue->indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 				This->currentqueue->busy = FALSE;
 				This->currentqueue->filled = FALSE;
-				This->currentqueue->commandread = This->currentqueue->pixelbufferread =
-					This->currentqueue->vertexbufferread = This->currentqueue->indexbufferread = 0;
 				This->currentqueue->commandwrite = This->currentqueue->pixelbufferwrite =
 					This->currentqueue->vertexbufferwrite = This->currentqueue->indexbufferwrite = 0;
 				This->queueindexread = (This->queueindexread ^ 1) & 1;
@@ -893,6 +906,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 					This->waitsync = 0;
 					SetEvent(This->SyncEvent);
 				}
+				queuepos = pixelpos = vertexpos = indexpos = 0;
 				LeaveCriticalSection(&This->cs);
 			}
 		}
@@ -978,12 +992,49 @@ HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void *ptr)
 	return DD_OK;
 }
 
+HRESULT WINAPI DXGLRendererGL_Lock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel, BYTE **pointer)
+{
+	HRESULT error;
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdLock cmddata;
+	if (!texture) return DDERR_INVALIDOBJECT;
+	if (miplevel >= texture->mipcount) return DDERR_INVALIDPARAMS;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.size = sizeof(DXGLQueueCmdLock);
+	cmddata.command = QUEUEOP_LOCK;
+	cmddata.texture = texture;
+	cmddata.miplevel = miplevel;
+	cmddata.ptr = pointer;
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (FAILED(error)) return error;
+	DXGLRendererGL_Sync(This, 0);
+}
+
+HRESULT WINAPI DXGLRendererGL_Unlock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
+{
+	HRESULT error;
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdUnlock cmddata;
+	if (!texture) return DDERR_INVALIDOBJECT;
+	if (miplevel >= texture->mipcount) return DDERR_INVALIDPARAMS;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.size = sizeof(DXGLQueueCmdLock);
+	cmddata.command = QUEUEOP_UNLOCK;
+	cmddata.texture = texture;
+	cmddata.miplevel = miplevel;
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (FAILED(error)) return error;
+	DXGLRendererGL_Sync(This, 0);
+}
+
 void DXGLRendererGL_FlipWrite(LPDXGLRENDERERGL This)
 {
 	EnterCriticalSection(&This->cs);
 	This->queueindexwrite = (This->queueindexwrite ^ 1) & 1;
 	LeaveCriticalSection(&This->cs);
-	if (This->commandqueue[This->queueindexwrite].busy) DXGLRendererGL_Sync(This, 1);
+	//if (This->commandqueue[This->queueindexwrite].busy) DXGLRendererGL_Sync(This, 1);
 }
 
 HRESULT WINAPI DXGLRendererGL_PostCommand(LPDXGLRENDERERGL This, DXGLPostQueueCmd* cmd)
@@ -997,12 +1048,19 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	GLuint tmpbuffer;
 	ULONG_PTR newsize;
 	void *tmp;
-	DXGLQueue * queue = &This->commandqueue[This->queueindexwrite];
+	DXGLQueue* queue;
 	DXGLQueueCmdExpandBuffers expandbufferscmd =
 	{ QUEUEOP_EXPANDBUFFERS,sizeof(DXGLQueueCmdExpandBuffers),0,0,0,0 };
+	DXGLPostQueueCmd expandbufferscmd2 = { &expandbufferscmd,NULL,0,NULL,0,NULL,0 };
 	BOOL fliprequired = FALSE;
 	BOOL expandrequired = FALSE;
 	EnterCriticalSection(&This->cs);
+	// Check if running
+	if (!This->running)
+	{
+		if (This->queueindexread != This->queueindexwrite) DXGLRendererGL_FlipWrite(This);
+	}
+	queue = &This->commandqueue[This->queueindexwrite];
 	if (!inner)
 	{
 		if (cmd->data->size > queue->commandsize - queue->commandwrite)
@@ -1055,12 +1113,12 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 		{
 			// Expand both buffers
 			LeaveCriticalSection(&This->cs);
-			DXGLRendererGL_PostCommand2(This, &expandbufferscmd, TRUE);
+			DXGLRendererGL_PostCommand2(This, &expandbufferscmd2, TRUE);
 			DXGLRendererGL_Sync(This, 0);
 			if (FAILED(*((HRESULT*)queue->commands))) return *((DWORD*)queue->commands);
 			DXGLRendererGL_FlipWrite(This);
 			queue = &This->commandqueue[This->queueindexwrite];
-			DXGLRendererGL_PostCommand2(This, &expandbufferscmd, TRUE);
+			DXGLRendererGL_PostCommand2(This, &expandbufferscmd2, TRUE);
 			DXGLRendererGL_Sync(This, 0);
 			if (FAILED(*((HRESULT*)queue->commands))) return *((DWORD*)queue->commands);
 			EnterCriticalSection(&This->cs);
@@ -1068,7 +1126,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			queue = &This->commandqueue[This->queueindexwrite];
 		}
 	}
-	LeaveCriticalSection(&This->cs);
+
 	// Append commmand to buffer
 	memcpy(queue->commands + queue->commandwrite, cmd->data, cmd->data->size);
 	queue->commandwrite += cmd->data->size;
@@ -1087,8 +1145,11 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 		memcpy(queue->indexbufferptr + queue->indexbufferwrite, cmd->indexbuffer, cmd->indexsize);
 		queue->indexbufferwrite += cmd->indexsize;
 	}
-	EnterCriticalSection(&This->cs);
-	if (!This->running) SetEvent(This->StartEvent);
+	if (!This->running)
+	{
+		This->running = TRUE;
+		SetEvent(This->StartEvent);
+	}
 	LeaveCriticalSection(&This->cs);
 }
 

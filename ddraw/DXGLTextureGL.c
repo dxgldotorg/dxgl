@@ -1068,3 +1068,32 @@ void DXGLTextureGL__FinishCreate(DXGLTexture *This, LPDXGLRENDERERGL renderer, g
 		} while (1);
 	}
 }
+
+void DXGLTextureGL__Lock(DXGLTexture *This, glExtensions *ext, GLuint miplevel, BYTE **ptr)
+{
+	if (!This->levels[miplevel].PBO)
+	{
+		ext->glGenBuffers(1, &This->levels[miplevel].PBO);
+		ext->glBindBuffer(GL_PIXEL_PACK_BUFFER, This->levels[miplevel].PBO);
+		ext->glBufferData(GL_PIXEL_PACK_BUFFER, This->levels[miplevel].pitch * This->levels[miplevel].height,
+			NULL, GL_STREAM_READ);
+	}
+	else ext->glBindBuffer(GL_PIXEL_PACK_BUFFER, This->levels[miplevel].PBO);
+	glBindTexture(This->gltarget, This->glhandle);
+	glGetTexImage(This->gltarget, miplevel, This->format.glformat.format, This->format.glformat.type, 0);
+	This->levels[miplevel].bufferptr = ext->glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_WRITE);
+	*ptr = This->levels[miplevel].bufferptr;
+	ext->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+}
+
+void DXGLTextureGL__Unlock(DXGLTexture *This, glExtensions *ext, GLuint miplevel)
+{
+	if (!This->levels[miplevel].bufferptr) return;
+	ext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->levels[miplevel].PBO);
+	ext->glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+	This->levels[miplevel].bufferptr = NULL;
+	glBindTexture(This->gltarget, This->glhandle);
+	glTexSubImage2D(This->gltarget, miplevel, 0, 0, This->levels[miplevel].width, This->levels[miplevel].height,
+		This->format.glformat.format, This->format.glformat.type, 0);
+	ext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
