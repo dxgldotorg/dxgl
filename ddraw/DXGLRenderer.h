@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2024 William Feely
+// Copyright (C) 2023-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -157,7 +157,7 @@ DECLARE_INTERFACE_(IDXGLRenderer, IUnknown)
 
 
 // Functions
-HRESULT CreateDXGLRenderer(GUID *guid, LPDXGLRENDERER *out);
+HRESULT CreateDXGLRenderer(GUID *guid, LPDXGLRENDERER *out, int index);
 
 
 #ifdef __cplusplus

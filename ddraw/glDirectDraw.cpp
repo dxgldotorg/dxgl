@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2023 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1944,7 +1944,7 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	}
 	if (!renderers[devindex])
 	{
-		error = CreateDXGLRenderer(lpGUID, &renderers[devindex]);
+		error = CreateDXGLRenderer(lpGUID, &renderers[devindex], devindex);
 		if (FAILED(error))
 		{
 			LeaveCriticalSection(&dll_cs);

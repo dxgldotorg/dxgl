@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2024 William Feely
+// Copyright (C) 2023-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -68,13 +68,15 @@ static IDXGLRendererVtbl vtbl =
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This);
 
-HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
+HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out, int index)
 {
 	HANDLE waithandles[2];
 	IDXGLRendererGL *This;
 	DWORD waitobject;
 	HRESULT ret;
+	WCHAR RenderThreadName[26] = L"GL Render Thread #00000000";
 	// Allocate a renderer object
+	_itow(index, &RenderThreadName[18], 10);
 	This = (IDXGLRendererGL*)malloc(sizeof(IDXGLRendererGL));
 	if (!This) return DDERR_OUTOFMEMORY;
 	ZeroMemory(This, sizeof(IDXGLRendererGL));
@@ -116,6 +118,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out)
 		free(This);
 		return DDERR_OUTOFMEMORY;
 	}
+	SetThreadName(This->ThreadHandle, RenderThreadName);
 	waithandles[0] = This->SyncEvent;
 	waithandles[1] = This->ThreadHandle;
 	waitobject = WaitForMultipleObjects(2, waithandles, FALSE, INFINITE);
@@ -263,6 +266,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	DXGLQueueCmdDecoder *currcmd;
 	ULONG_PTR queuepos, pixelpos, vertexpos, indexpos;
 	void *tmp;
+	WCHAR WindowThreadName[26] = L"GL Window Thread #00000000";
+	PWSTR RenderThreadName;
+	int index;
 	int pfattribs[] =
 	{
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -290,6 +296,14 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	};
 	This->WindowThreadHandle = CreateThread(NULL, 0, DXGLRendererGL_WindowThread, This, 0, &This->WindowThreadID);
 	if (!This->WindowThreadHandle) return DDERR_OUTOFMEMORY;
+	RenderThreadName = GetThreadName(GetCurrentThread());
+	if (RenderThreadName)
+	{
+		index = _wtoi(&RenderThreadName[18]);
+		_itow(index, &WindowThreadName[18], 10);
+		SetThreadName(This->WindowThreadHandle, WindowThreadName);
+		LocalFree(RenderThreadName);
+	}
 	waithandles[0] = This->StartEvent; // Temporarily use the start event to wait for the window thread
 	waithandles[1] = This->WindowThreadHandle;
 	waitobject = WaitForMultipleObjects(2, waithandles, FALSE, INFINITE);
