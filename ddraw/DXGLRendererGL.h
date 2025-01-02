@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2024 William Feely
+// Copyright (C) 2023-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -108,7 +108,7 @@ typedef struct IDXGLRendererGL
 } IDXGLRendererGL;
 
 // Device creation
-HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out);
+HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out, int index);
 
 // Implementation
 HRESULT WINAPI DXGLRendererGL_QueryInterface(LPDXGLRENDERERGL This, REFIID riid, LPVOID *ppvObject);

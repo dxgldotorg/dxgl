@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2019 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,14 @@
 #include "common.h"
 #include "util.h"
 #include "const.h"
-
 #ifdef _MSC_VER
 #pragma optimize("g", off)
 #endif
+
+static HRESULT(WINAPI *_GetThreadDescription)(HANDLE hThread, PWSTR *ppszThreadDescription) = NULL;
+static HRESULT(WINAPI *_SetThreadDescription)(HANDLE hThread, PCWSTR lpThreadDescription) = NULL;
+static HMODULE hKernel32 = NULL;
+
 extern DXGLCFG dxglcfg;
 /**
   * Tests if a pointer is valid for reading from.  Uses SEH on Visual C++,
@@ -213,4 +217,53 @@ void ShrinkMip(DWORD *x, DWORD *y, int level)
 		*x = max(1, (DWORD)floorf((float)*x / 2.0f));
 		*y = max(1, (DWORD)floorf((float)*y / 2.0f));
 	}
+}
+
+
+PWSTR GetThreadName(HANDLE thread)
+{
+	HRESULT error;
+	PWSTR result;
+	if (_GetThreadDescription == -1) return NULL;  // API was previously not found.
+	if (!_GetThreadDescription)
+	{
+		if (!hKernel32)	hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+		if (!hKernel32)
+		{
+			_GetThreadDescription = -1;
+			return NULL;
+		}
+		if (hKernel32) _GetThreadDescription = GetProcAddress(hKernel32, "GetThreadDescription");
+		if (!_GetThreadDescription)
+		{
+			// Can't find API, tag to not use anymore.
+			_GetThreadDescription = -1;
+			return NULL;
+		}
+	}
+	error = _GetThreadDescription(thread, &result);
+	if (SUCCEEDED(error)) return result;
+	else return NULL;
+}
+
+void SetThreadName(HANDLE thread, PCWSTR description)
+{
+	if (_SetThreadDescription == -1) return;  // API was previously not found.
+	if (!_SetThreadDescription)
+	{
+		if (!hKernel32)	hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+		if (!hKernel32)
+		{
+			_SetThreadDescription = -1;
+			return;
+		}
+		if (hKernel32) _SetThreadDescription = GetProcAddress(hKernel32, "SetThreadDescription");
+		if (!_SetThreadDescription)
+		{
+			// Can't find API, tag to not use anymore.
+			_SetThreadDescription = -1;
+			return;
+		}
+	}
+	_SetThreadDescription(thread, description);
 }
