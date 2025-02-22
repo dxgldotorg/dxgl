@@ -210,10 +210,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2022_12"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34433/vc_redist.x64.exe
+!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x64.exe
 !define runtime_name "Visual C++ 2022.12 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "20E2D7437367CB262CE45184EB4D809249FE654AA450D226E376D4057C00B58ECFD8834A8B5153EB148960FFC845BED1F0943D5FF9A6FC1355B1503138562D8D"
+!define runtime_sha512 "C021453F6DBC8E79C5B97CA1F5D717868E9124E503391CC133A76F10643E2B41043E47D98836F524938D581C610D5F887C710CD5E6C036DC8F868074E3759C8F"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -261,10 +261,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2022_12"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34433/vc_redist.x86.exe
+!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x86.exe
 !define runtime_name "Visual C++ 2022.12 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "2C1FACB8567A052B4FA65D173B0BDA64FA5FDED2CDDB9073B7C28507ED95414C17D2839D06D5E961617C754CDA54D6134964B1AFF5C9E9CDFBACE71F1DE2AC3A"
+!define runtime_sha512 "32CC452BA3E0EAA66CB1FEF379F5F15FBD5D3D632DD7EF5A7259A641EB77B62096CB665FAA3737A7A57798CA7AEF4A9D859BD21D5FE036E1D7D2871834E0349B"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -575,7 +575,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.42.34433" $1
+  ${VersionCompare} "$0" "14.42.34438" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
