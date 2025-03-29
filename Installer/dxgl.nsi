@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2024 William Feely
+; Copyright (C) 2011-2025 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_12"
+!if ${COMPILER} == "VC2022_13"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -208,10 +208,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_12"
+!else if ${COMPILER} == "VC2022_13"
 !define download_runtime 1
 !define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.12 x64"
+!define runtime_name "Visual C++ 2022.13 x64"
 !define runtime_filename "vc_redist.x64.exe"
 !define runtime_sha512 "C021453F6DBC8E79C5B97CA1F5D717868E9124E503391CC133A76F10643E2B41043E47D98836F524938D581C610D5F887C710CD5E6C036DC8F868074E3759C8F"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
@@ -259,10 +259,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_12"
+!else if ${COMPILER} == "VC2022_13"
 !define download_runtime 1
 !define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.12 x86"
+!define runtime_name "Visual C++ 2022.13 x86"
 !define runtime_filename "VC_redist.x86.exe"
 !define runtime_sha512 "32CC452BA3E0EAA66CB1FEF379F5F15FBD5D3D632DD7EF5A7259A641EB77B62096CB665FAA3737A7A57798CA7AEF4A9D859BD21D5FE036E1D7D2871834E0349B"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
@@ -417,7 +417,7 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2022_12"
+  !if ${COMPILER} == "VC2022_13"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -498,7 +498,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_12"
+  !if ${COMPILER} == "VC2022_13"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -562,7 +562,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_12"
+  !if ${COMPILER} == "VC2022_13"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -694,7 +694,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_12"
+!if ${COMPILER} == "VC2022_13"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
