@@ -62,6 +62,7 @@ extern const GUID device_template;
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #if _MSC_VER >= 1600
 #ifdef _DEBUG
 #include <crtdbg.h>
