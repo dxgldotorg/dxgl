@@ -28,6 +28,10 @@
 #include "const.h"
 #include "fourcc.h"
 #include "spinlock.h"
+#include "ShaderManager.h"
+#include "string.h"
+#include "ShaderGen2D.h"
+
 
 static BOOL(WINAPI *_GlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer) = NULL;
 static HMODULE hKernel32;
@@ -40,7 +44,9 @@ extern DWORD gllock;
 static WNDCLASSEXA wndclass;
 static BOOL wndclasscreated = FALSE;
 
-static IDXGLRendererVtbl vtbl =
+static const WORD bltindices[6] = { 0,1,2,1,2,3 };
+
+static const struct IDXGLRendererVtbl vtbl =
 {
 	DXGLRendererGL_QueryInterface,
 	DXGLRendererGL_AddRef,
@@ -55,15 +61,19 @@ static IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_SetCooperativeLevel,
 	DXGLRendererGL_CreateTexture,
 	DXGLRendererGL_DeleteTexture,
-	NULL, // SetTexture
-	NULL, // SetTarget
+	DXGLRendererGL_SetTexture,
+	DXGLRendererGL_SetTarget,
 	DXGLRendererGL_Lock,
 	DXGLRendererGL_Unlock, // Unlock
 	NULL, // Clear
-	NULL, // SetRenderState
-	NULL, // SetFVF
+	DXGLRendererGL_SetRenderState,
+	DXGLRendererGL_SetFVF,
+	DXGLRendererGL_DrawPrimitives2D,
 	NULL, // DrawPrimitives
-	DXGLRendererGL_Sync //Fixme:  Fill in these functions.
+	DXGLRendererGL_SwapBuffers, // SwapBuffers
+	DXGLRendererGL_Sync,
+	DXGLRendererGL_GetWindow,
+	DXGLRendererGL_SetWindowSize//Fixme:  Fill in these functions.
 };
 
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This);
@@ -74,7 +84,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out, int index)
 	IDXGLRendererGL *This;
 	DWORD waitobject;
 	HRESULT ret;
-	WCHAR RenderThreadName[26] = L"GL Render Thread #00000000";
+	WCHAR RenderThreadName[27] = L"GL Render Thread #00000000";
 	// Allocate a renderer object
 	_itow(index, &RenderThreadName[18], 10);
 	This = (IDXGLRendererGL*)malloc(sizeof(IDXGLRendererGL));
@@ -83,6 +93,7 @@ HRESULT DXGLRendererGL_Create(GUID *guid, LPDXGLRENDERERGL *out, int index)
 	This->synclock = 0;
 	This->base.lpVtbl = &vtbl;
 	This->refcount = 1;
+	This->rendermode = -1;
 
 	// Start the render thread
 	This->SyncEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -238,11 +249,6 @@ DWORD WINAPI DXGLRendererGL_WindowThread(LPDXGLRENDERERGL This)
 	return 0;
 }
 
-static void FlipCommandBuffers(LPDXGLRENDERERGL This)
-{
-	
-}
-
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 {
 	UINT numpf;
@@ -254,11 +260,11 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	HDC hdcinitial;
 	BOOL stopthread = FALSE;
 	GLint vidmemnv;
-	VARIANT adapterram;
-	IWbemLocator *wbemloc;
-	IWbemServices *wbemsvc;
-	IEnumWbemClassObject *wbemenum;
-	IWbemClassObject *wbemclsobj;
+	VARIANT adapterram = {0};
+	IWbemLocator *wbemloc = NULL;
+	IWbemServices *wbemsvc = NULL;
+	IEnumWbemClassObject *wbemenum = NULL;
+	IWbemClassObject *wbemclsobj = NULL;
 	BSTR cimv2;
 	BSTR wql;
 	BSTR wqlquery;
@@ -269,6 +275,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	WCHAR WindowThreadName[26] = L"GL Window Thread #00000000";
 	PWSTR RenderThreadName;
 	int index;
+	LONG lastcmd;
 	int pfattribs[] =
 	{
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -452,6 +459,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		InterlockedDecrement((LONG*)&gllock);
 	}
 	glExtensions_Init(&This->ext, This->hdc, corecontext);
+	// Create shader manager
+	ShaderManager_Init(&This->ext, &This->shaders);
+
 	// Populate ddcaps
 	ZeroMemory(&This->ddcaps, sizeof(DDCAPS_DX7));
 	This->ddcaps.dwSize = sizeof(DDCAPS_DX7);
@@ -638,7 +648,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 					if (FAILED(ret)) dxglcfg.VideoRAM = 16777216;
 					else
 					{
-						ret = CoSetProxyBlanket(wbemloc, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL,
+						ret = CoSetProxyBlanket(wbemsvc, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL,
 							RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
 						if(FAILED(ret)) dxglcfg.VideoRAM = 16777216;
 						else
@@ -656,12 +666,15 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 								while (wbemenum)
 								{
 									wbemenum->lpVtbl->Next(wbemenum, WBEM_INFINITE, 1, &wbemclsobj, &ret);
+									if (adapterram.llVal) break;
 									if (ret == 0) break;
 									ret = wbemclsobj->lpVtbl->Get(wbemclsobj, L"AdapterRAM", 0, &adapterram, 0, 0);
 									dxglcfg.VideoRAM = adapterram.llVal;
 									VariantClear(&adapterram);
 									wbemclsobj->lpVtbl->Release(wbemclsobj);
+									wbemclsobj = NULL;
 								}
+								if (!dxglcfg.VideoRAM) dxglcfg.VideoRAM = 16777216;
 							}
 						}
 					}
@@ -712,16 +725,16 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	if (!dxglcfg.IndexBufferSize)
 	{
 		if (dxglcfg.VideoRAM > 1000000000)
-			dxglcfg.VertexBufferSize = 4194302;
+			dxglcfg.IndexBufferSize = 4194302;
 		else if (dxglcfg.VideoRAM > 500000000)
-			dxglcfg.VertexBufferSize = 2097152;
+			dxglcfg.IndexBufferSize = 2097152;
 		else if (dxglcfg.VideoRAM > 250000000)
-			dxglcfg.VertexBufferSize = 1048576;
+			dxglcfg.IndexBufferSize = 1048576;
 		else if (dxglcfg.VideoRAM > 120000000)
-			dxglcfg.VertexBufferSize = 524288;
+			dxglcfg.IndexBufferSize = 524288;
 		else if (dxglcfg.VideoRAM > 60000000)
-			dxglcfg.VertexBufferSize = 262144;
-		else dxglcfg.VertexBufferSize = 131072;
+			dxglcfg.IndexBufferSize = 262144;
+		else dxglcfg.IndexBufferSize = 131072;
 	}
 	This->commandqueue[0].commands = (char*)malloc(dxglcfg.CmdBufferSize);
 	if (!This->commandqueue[0].commands)
@@ -805,6 +818,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		queuepos = pixelpos = vertexpos = indexpos = 0;
 		while (This->running)
 		{
+			lastcmd = currcmd->cmd.command;
 			currcmd = (DXGLQueueCmdDecoder*)&This->currentqueue->commands[queuepos];
 			switch (currcmd->cmd.command)
 			{
@@ -819,6 +833,19 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				break;
 			case QUEUEOP_CREATETEXTURE:  // Create a texture or surface
 				DXGLTextureGL__FinishCreate(currcmd->createtexture.out, This, &This->ext, &This->util);
+				break;
+			case QUEUEOP_DELETETEXTURE:  // Delete one or more textures or surfaces
+				for (index = 0; index < currcmd->deletetexture.count; index++)
+					glDeleteTextures(1, &currcmd->deletetexture.texture[index].glhandle);
+				break;
+			case QUEUEOP_SETTEXTURE:
+				DXGLRendererGL__SetTexture(This, currcmd->settexture.level, currcmd->settexture.texture);
+				break;
+			case QUEUEOP_SETTARGET:
+				DXGLRendererGL__SetTarget(This, currcmd->settarget.texture, currcmd->settarget.miplevel);
+				break;
+			case QUEUEOP_SETRENDERSTATE:
+				DXGLRendererGL__SetRenderState(This, &currcmd->setrenderstate.state);
 				break;
 			case QUEUEOP_EXPANDBUFFERS: // Expand the buffers, write error to start of queue
 				// Command should only be placed by itself then wait until it finished
@@ -882,6 +909,15 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				break;
 			case QUEUEOP_UNLOCK: // Unlock a texture
 				DXGLTextureGL__Unlock(currcmd->unlock.texture, &This->ext, currcmd->unlock.miplevel);
+				break;
+			case QUEUEOP_SETWINDOWSIZE: // Set the window viewport size
+				glUtil_SetViewport(&This->util, currcmd->setwindowsize.r.left, currcmd->setwindowsize.r.top,
+					currcmd->setwindowsize.r.right - currcmd->setwindowsize.r.left,
+					currcmd->setwindowsize.r.bottom - currcmd->setwindowsize.r.top);
+				break;
+			case QUEUEOP_SETFVF:
+				if (currcmd->setfvf.fvf == This->fvf) break;
+				This->fvf = currcmd->setfvf.fvf;
 				break;
 			default:            // Unknown, probably will crash
 				FIXME("Detected an unknown command.")
@@ -1006,6 +1042,7 @@ HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void *ptr)
 	return DD_OK;
 }
 
+// Locks a texture surface and returns a pointer to read or write its contents
 HRESULT WINAPI DXGLRendererGL_Lock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel, BYTE **pointer)
 {
 	HRESULT error;
@@ -1025,6 +1062,7 @@ HRESULT WINAPI DXGLRendererGL_Lock(LPDXGLRENDERERGL This, DXGLTexture *texture, 
 	DXGLRendererGL_Sync(This, 0);
 }
 
+// Unlocks a texture surface and commits the contents to the texture
 HRESULT WINAPI DXGLRendererGL_Unlock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
 {
 	HRESULT error;
@@ -1041,6 +1079,19 @@ HRESULT WINAPI DXGLRendererGL_Unlock(LPDXGLRENDERERGL This, DXGLTexture *texture
 	error = DXGLRendererGL_PostCommand(This, &cmd);
 	if (FAILED(error)) return error;
 	DXGLRendererGL_Sync(This, 0);
+}
+
+HRESULT WINAPI DXGLRendererGL_SetWindowSize(LPDXGLRENDERERGL This, RECT *r)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetWindowSize cmddata;
+	if (!r) return DDERR_INVALIDPARAMS;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.size = sizeof(DXGLQueueCmdSetWindowSize);
+	cmddata.command = QUEUEOP_SETWINDOWSIZE;
+	memcpy(&cmddata.r, r, sizeof(RECT));
+	return DXGLRendererGL_PostCommand(This, &cmd);
 }
 
 void DXGLRendererGL_FlipWrite(LPDXGLRENDERERGL This)
@@ -1062,12 +1113,15 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	GLuint tmpbuffer;
 	ULONG_PTR newsize;
 	void *tmp;
+	DXGLQueueCmdDecoder *cmdptr;
 	DXGLQueue* queue;
 	DXGLQueueCmdExpandBuffers expandbufferscmd =
 	{ QUEUEOP_EXPANDBUFFERS,sizeof(DXGLQueueCmdExpandBuffers),0,0,0,0 };
 	DXGLPostQueueCmd expandbufferscmd2 = { &expandbufferscmd,NULL,0,NULL,0,NULL,0 };
 	BOOL fliprequired = FALSE;
 	BOOL expandrequired = FALSE;
+	WORD indices[6];
+	int i;
 	EnterCriticalSection(&This->cs);
 	// Check if running
 	if (!This->running)
@@ -1142,22 +1196,63 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	}
 
 	// Append commmand to buffer
-	memcpy(queue->commands + queue->commandwrite, cmd->data, cmd->data->size);
-	queue->commandwrite += cmd->data->size;
-	if (cmd->pixelsize)
+	switch (cmd->data->command)
 	{
-		memcpy(queue->pixelbufferptr + queue->pixelbufferwrite, cmd->pixelbuffer, cmd->pixelsize);
-		queue->pixelbufferwrite += cmd->pixelsize;
-	}
-	if (cmd->vertexsize)
-	{
-		memcpy(queue->vertexbufferptr + queue->vertexbufferwrite, cmd->vertexbuffer, cmd->vertexsize);
-		queue->vertexbufferwrite += cmd->vertexsize;
-	}
-	if (cmd->indexsize)
-	{
-		memcpy(queue->indexbufferptr + queue->indexbufferwrite, cmd->indexbuffer, cmd->indexsize);
-		queue->indexbufferwrite += cmd->indexsize;
+	case QUEUEOP_DRAWPRIMITIVES2D:
+		if (queue->lastcommand.command == QUEUEOP_DRAWPRIMITIVES2D)
+		{   // Append to previous command
+			cmdptr = queue->commands + queue->lastcommand.ptr;
+			memcpy(indices, bltindices, 6 * sizeof(WORD));
+			for (i = 0; i < 6; i++)
+				indices[i] += cmdptr->drawprimitives.vertexcount;
+			cmdptr->drawprimitives.vertexcount += 4;
+			cmdptr->drawprimitives.indexcount += 6;
+			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
+				cmdptr->drawprimitives2d.vertices, cmdptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
+			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
+			memcpy(queue->indexbufferptr + queue->indexbufferwrite, indices, 6 * sizeof(WORD));
+			queue->indexbufferwrite += 6 * sizeof(WORD);
+		}
+		else
+		{
+			queue->lastcommand.command = cmd->data->command;
+			queue->lastcommand.ptr = queue->commandwrite;
+			cmdptr = queue->commands + queue->commandwrite;
+			cmdptr->drawprimitives.command = QUEUEOP_DRAWPRIMITIVES2D;
+			cmdptr->drawprimitives.size = sizeof(DXGLQueueCmdDrawPrimitives);
+			cmdptr->drawprimitives.type = D3DPT_TRIANGLELIST;
+			cmdptr->drawprimitives.vertexcount = 4;
+			cmdptr->drawprimitives.indexcount = 6;
+			cmdptr->drawprimitives.vertices = queue->vertexbufferwrite;
+			cmdptr->drawprimitives.indices = queue->indexbufferwrite;
+			queue->commandwrite += cmd->data->size;
+			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
+				cmdptr->drawprimitives2d.vertices, cmdptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
+			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
+			memcpy(queue->indexbufferptr + queue->indexbufferwrite, bltindices, 6 * sizeof(WORD));
+			queue->indexbufferwrite += 6 * sizeof(WORD);
+		}
+		break;
+	default:
+		queue->lastcommand.command = cmd->data->command;
+		memcpy(queue->commands + queue->commandwrite, cmd->data, cmd->data->size);
+		queue->commandwrite += cmd->data->size;
+		if (cmd->pixelsize)
+		{
+			memcpy(queue->pixelbufferptr + queue->pixelbufferwrite, cmd->pixelbuffer, cmd->pixelsize);
+			queue->pixelbufferwrite += cmd->pixelsize;
+		}
+		if (cmd->vertexsize)
+		{
+			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite, cmd->vertexbuffer, cmd->vertexsize);
+			queue->vertexbufferwrite += cmd->vertexsize;
+		}
+		if (cmd->indexsize)
+		{
+			memcpy(queue->indexbufferptr + queue->indexbufferwrite, cmd->indexbuffer, cmd->indexsize);
+			queue->indexbufferwrite += cmd->indexsize;
+		}
+		break;
 	}
 	if (!This->running)
 	{
@@ -1195,7 +1290,6 @@ HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr)
 // Sets the DDraw Cooperative Level
 HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
 {
-	DXGLRendererGL_Sync(This, 0);
 	BOOL exclusive;
 	DWORD winver = GetVersion();
 	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
@@ -1205,6 +1299,7 @@ HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hW
 	HWND hTempWnd;
 	WINDOWPLACEMENT wndplace;
 	int screenx, screeny;
+	DXGLRendererGL_Sync(This, 0);
 	if (((hWnd != This->hWndTarget) && This->hWndTarget) || (This->hWndTarget && (dwFlags & DDSCL_NORMAL)))
 	{
 		if (This->winstyle)
@@ -1513,6 +1608,97 @@ HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *
 	return DXGLRendererGL_PostCommand(This, &cmd);
 }
 
+// Sets the current texture in a texture unit
+HRESULT WINAPI DXGLRendererGL_SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetTexture cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SETTEXTURE;
+	cmddata.size = sizeof(DXGLQueueCmdSetTexture);
+	cmddata.level = level;
+	cmddata.texture = texture;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Sets the current render target
+HRESULT WINAPI DXGLRendererGL_SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetTarget cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SETTARGET;
+	cmddata.size = sizeof(DXGLQueueCmdSetTarget);
+	cmddata.texture = texture;
+	cmddata.miplevel = miplevel;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Sets a render state value or the 2D render state
+HRESULT WINAPI DXGLRendererGL_SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetRenderState cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SETRENDERSTATE;
+	cmddata.size = sizeof(DXGLQueueCmdSetRenderState);
+	memcpy(&cmddata.state, state, sizeof(DXGLRenderState));
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Sets the current vertex format in Direct3D FVF format
+HRESULT WINAPI DXGLRendererGL_SetFVF(LPDXGLRENDERERGL This, DWORD fvf)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetFVF cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SETFVF;
+	cmddata.size = sizeof(DXGLQueueCmdSetFVF);
+	cmddata.fvf = fvf;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Draws vertices in 2D space.  Subsequent calls will be combined for performance.
+HRESULT WINAPI DXGLRendererGL_DrawPrimitives2D(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE *vertices, DWORD vertexcount)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdDrawPrimitives2D cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmd.vertexsize = 4 * sizeof(D3DTLVERTEX);
+	cmd.indexsize = 6 * sizeof(WORD);
+	cmddata.command = QUEUEOP_DRAWPRIMITIVES2D;
+	cmddata.size = sizeof(DXGLQueueCmdDrawPrimitives2D);
+	cmddata.type = type;
+	cmddata.vertices = vertices;
+	cmddata.vertexcount = vertexcount;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Flips the OpenGL buffers at the specified sync interval
+HRESULT WINAPI DXGLRendererGL_SwapBuffers(LPDXGLRENDERERGL This, int interval)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSwapBuffers cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SWAPBUFFERS;
+	cmddata.size = sizeof(DXGLQueueCmdSwapBuffers);
+	cmddata.interval = interval;
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Retrieves the window handle associated with the OpenGL context
+HRESULT WINAPI DXGLRendererGL_GetWindow(LPDXGLRENDERERGL This, HWND *hWnd)
+{
+	*hWnd = This->hWndContext;
+	return DD_OK;
+}
+
 // Resets OpenGL state
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
 {
@@ -1547,4 +1733,93 @@ void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	if (This->ext.glver_major < 3) glShadeModel(GL_SMOOTH);
 	This->ext.glActiveTexture(GL_TEXTURE0);
+}
+
+void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture)
+{
+	if (level > 31) return; // bounds checking
+	if (This->textures[level] == texture) return;
+	This->ext.glActiveTexture(GL_TEXTURE0 + level);
+	if (texture) glBindTexture(GL_TEXTURE_2D, texture->glhandle);
+	else glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
+{
+	if (!texture && (This->target == 0)) return;
+	if ((texture->levels[miplevel].FBO == This->target) && This->target) return;
+	if (texture)
+	{
+		if (This->ext.GLEXT_ARB_framebuffer_object)
+		{
+			if (!texture->levels[miplevel].FBO)
+			{
+				This->ext.glGenFramebuffers(1,&texture->levels[miplevel].FBO);
+				This->ext.glBindFramebuffer(GL_FRAMEBUFFER, texture->levels[miplevel].FBO);
+				This->ext.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture->gltarget, texture->glhandle, miplevel);
+			}
+			else
+			{
+				This->ext.glBindFramebuffer(GL_FRAMEBUFFER, texture->levels[miplevel].FBO);
+			}
+		}
+		else if(This->ext.GLEXT_EXT_framebuffer_object)
+		{
+			if (!texture->levels[miplevel].FBO)
+			{
+				This->ext.glGenFramebuffersEXT(1, &texture->levels[miplevel].FBO);
+				This->ext.glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, texture->levels[miplevel].FBO);
+				This->ext.glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, texture->gltarget, texture->glhandle, miplevel);
+			}
+			else
+			{
+				This->ext.glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, texture->levels[miplevel].FBO);
+			}
+		}
+	}
+	else
+	{
+		if (This->ext.GLEXT_ARB_framebuffer_object) This->ext.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		else if (This->ext.GLEXT_EXT_framebuffer_object) This->ext.glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	}
+}
+
+void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* state)
+{
+	unsigned __int64 shaderid;
+	DXGLRenderState2D* state2D = &state->state.state2D;
+	switch (state->mode)
+	{
+	case DXGLRENDERMODE_STATICSHADER: // Legacy static shader
+		if ((This->rendermode != DXGLRENDERMODE_STATICSHADER || This->staticshader != state->state.staticindex))
+		{
+			This->rendermode = DXGLRENDERMODE_STATICSHADER;
+			ShaderManager_SetShader(&This->shaders, state->state.staticindex, NULL, 0);
+		}
+		break;
+	case DXGLRENDERMODE_STATE2D: // 2D State
+		if ((This->rendermode == DXGLRENDERMODE_STATE2D) && !memcmp(&This->renderstate2D, &state->state.state2D, sizeof(DXGLRenderState2D)))
+			break;
+		This->rendermode = DXGLRENDERMODE_STATE2D;
+		if ((state2D->flags & DDBLT_ROP) && (state2D->bltfx.dwSize == sizeof(DDBLTFX)))
+		{
+			shaderid = PackROPBits(state2D->bltfx.dwROP, state2D->flags);
+		}
+		else shaderid = state2D->flags & 0xF2FAADFF;
+		if (state2D->srcformat.dwSize == sizeof(DDPIXELFORMAT))
+			shaderid |= ((unsigned long long)state2D->blttypesrc << 32);
+		if(state2D->flags & 0x80000000)
+			shaderid != ((unsigned long long)state2D->blttypedest << 40);
+		ShaderManager_SetShader(&This->shaders, shaderid, NULL, 1);
+		memcpy(&This->renderstate2D, &state->state.state2D, sizeof(DXGLRenderState2D));
+		break;
+	case DXGLRENDERMODE_STATE3D: // 3D State
+		break;
+	case DXGLRENDERMODE_POSTSHADER: // Future:  Custom shaders
+		break;
+	}
+}
+
+void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount)
+{
 }

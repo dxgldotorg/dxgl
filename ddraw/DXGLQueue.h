@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023 William Feely
+// Copyright (C) 2023-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,11 @@ typedef struct DXGLQueue
 	char *indexbufferptr;
 	ULONG_PTR indexbuffersize;
 	ULONG_PTR indexbufferwrite;
+	struct
+	{
+		LONG command;
+		ULONG_PTR ptr;
+	} lastcommand;
 	BOOL filled;
 	BOOL busy;
 	BOOL inscene;
@@ -111,6 +116,69 @@ typedef struct DXGLQueueCmdUnlock
 	GLuint miplevel;
 } DXGLQueueCmdUnlock;
 
+typedef struct DXGLQueueCmdSetTexture
+{
+	LONG command;
+	DWORD size;
+	GLuint level;
+	DXGLTexture *texture;
+} DXGLQueueCmdSetTexture;
+
+typedef struct DXGLQueCmdSetTarget
+{
+	LONG command;
+	DWORD size;
+	DXGLTexture *texture;
+	GLuint miplevel;
+} DXGLQueueCmdSetTarget;
+
+typedef struct DXGLQueueCmdSetRenderState
+{
+	LONG command;
+	DWORD size;
+	DXGLRenderState state;
+} DXGLQueueCmdSetRenderState;
+
+typedef struct DXGLQueueCmdSetFVF
+{
+	LONG command;
+	DWORD size;
+	DWORD fvf;
+} DXGLQueueCmdSetFVF;
+
+typedef struct DXGLQueueCmdDrawPrimitives2D
+{
+	LONG command;
+	DWORD size;
+	D3DPRIMITIVETYPE type;
+	DWORD vertexcount;
+	BYTE *vertices;
+} DXGLQueueCmdDrawPrimitives2D;
+
+typedef struct DXGLQueueCmdDrawPrimitives
+{
+	LONG command;
+	DWORD size;
+	D3DPRIMITIVETYPE type;
+	DWORD vertexcount;
+	DWORD indexcount;
+	BYTE *vertices;
+	WORD *indices;
+} DXGLQueueCmdDrawPrimitives;
+
+typedef struct DXGLQueueCmdSwapBuffers
+{
+	LONG command;
+	DWORD size;
+	int interval;
+} DXGLQueueCmdSwapBuffers;
+
+typedef struct DXGLQueueCmdSetWindowSize
+{
+	LONG command;
+	DWORD size;
+	RECT r;
+} DXGLQueueCmdSetWindowSize;
 
 typedef union DXGLQueueCmdDecoder
 {
@@ -122,6 +190,14 @@ typedef union DXGLQueueCmdDecoder
 	DXGLQueueCmdExpandBuffers expandbuffers;
 	DXGLQueueCmdLock lock;
 	DXGLQueueCmdUnlock unlock;
+	DXGLQueueCmdSetTexture settexture;
+	DXGLQueueCmdSetTarget settarget;
+	DXGLQueueCmdSetRenderState setrenderstate;
+	DXGLQueueCmdSetFVF setfvf;
+	DXGLQueueCmdDrawPrimitives2D drawprimitives2d;
+	DXGLQueueCmdDrawPrimitives drawprimitives;
+	DXGLQueueCmdSwapBuffers swapbuffers;
+	DXGLQueueCmdSetWindowSize setwindowsize;
 } DXGLQueueCmdDecoder;
 
 typedef struct DXGLPostQueueCmd
@@ -140,11 +216,19 @@ typedef struct DXGLPostQueueCmd
 #define QUEUEOP_RESET 1
 #define QUEUEOP_CREATETEXTURE 2
 #define QUEUEOP_DELETETEXTURE 3
-#define QUEUEOP_BREAK 4
-#define QUEUEOP_FREEPOINTER 5
-#define QUEUEOP_EXPANDBUFFERS 6
-#define QUEUEOP_LOCK 7
-#define QUEUEOP_UNLOCK 8
+#define QUEUEOP_SETTEXTURE 4
+#define QUEUEOP_SETTARGET 5
+#define QUEUEOP_SETRENDERSTATE 6
+#define QUEUEOP_SETFVF 7
+#define QUEUEOP_DRAWPRIMITIVES2D 8
+#define QUEUEOP_DRAWPRIMITIVES 9
+#define QUEUEOP_BREAK 10
+#define QUEUEOP_FREEPOINTER 11
+#define QUEUEOP_EXPANDBUFFERS 12
+#define QUEUEOP_LOCK 13
+#define QUEUEOP_UNLOCK 14
+#define QUEUEOP_SWAPBUFFERS 15
+#define QUEUEOP_SETWINDOWSIZE 16
 
 #ifdef __cplusplus
 }

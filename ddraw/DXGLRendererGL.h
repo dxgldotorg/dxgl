@@ -103,7 +103,16 @@ typedef struct IDXGLRendererGL
 	GLenum polymode;
 	GLenum shademode;
 	GLenum texlevel;
+	ShaderManager shaders;
 
+	// Render state
+	int rendermode;  // Last used render mode
+	int staticshader;  // Last used static shader
+	DXGLRenderState2D renderstate2D;  // Last used 2D render state
+	unsigned __int64 shader2d;  // Last used 2D shader
+	DWORD fvf;  // Currently used FVF
+	FBO *target;
+	DXGLTexture *textures[32]; // Currently set textures
 
 } IDXGLRendererGL;
 
@@ -124,16 +133,29 @@ HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr);
 HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD flags);
 HRESULT WINAPI DXGLRendererGL_CreateTexture(LPDXGLRENDERERGL This, LPDDSURFACEDESC2 desc, DWORD bpp, DXGLTexture *out);
 HRESULT WINAPI DXGLRendererGL_DeleteTexture(LPDXGLRENDERERGL This, DXGLTexture *texture);
+HRESULT WINAPI DXGLRendererGL_SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture);
+HRESULT WINAPI DXGLRendererGL_SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel);
 HRESULT WINAPI DXGLRendererGL_Lock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel, BYTE **pointer);
 HRESULT WINAPI DXGLRendererGL_Unlock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel);
-//FIXME:  Add remaining functions
-
+HRESULT WINAPI DXGLRendererGL_Clear(LPDXGLRENDERERGL This, DWORD count, D3DRECT *rects, DWORD flags, DWORD color, D3DVALUE z, DWORD stencil);
+HRESULT WINAPI DXGLRendererGL_SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state);
+HRESULT WINAPI DXGLRendererGL_SetFVF(LPDXGLRENDERERGL This, DWORD fvf);
+HRESULT WINAPI DXGLRendererGL_DrawPrimitives2D(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount);
+HRESULT WINAPI DXGLRendererGL_DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount);
+HRESULT WINAPI DXGLRendererGL_SwapBuffers(LPDXGLRENDERERGL This, int interval);
 HRESULT WINAPI DXGLRendererGL_Sync(LPDXGLRENDERERGL This, void* ptr);
+HRESULT WINAPI DXGLRendererGL_GetWindow(LPDXGLRENDERERGL This, HWND *hWnd);
+HRESULT WINAPI DXGLRendererGL_SetWindowSize(LPDXGLRENDERERGL This, RECT r);
 
 
 // Internal functions
 HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd* cmd, BOOL inner);
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
+void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture);
+void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture* texture, GLuint miplevel);
+void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state);
+void DXGLRendererGL__SwapBuffers(LPDXGLRENDERERGL This, int interval);
+void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount);
 
 #ifdef __cplusplus
 }

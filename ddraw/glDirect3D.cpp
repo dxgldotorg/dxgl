@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2023 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -335,7 +335,7 @@ HRESULT WINAPI glDirect3D7_EnumDevices(glDirect3D7 *This, LPD3DENUMDEVICESCALLBA
 	FIXME("Fix enumeration");
 	//FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
 	D3DDEVICEDESC7 desc;
-	This->glDD7->renderer->GetCaps(2, &desc);
+	IDXGLRenderer_GetCaps(This->glDD7->renderer, 2, &desc);
 	for(int i = 0; i < 3; i++)
 	{
 		switch(i)
@@ -369,7 +369,7 @@ HRESULT WINAPI glDirect3D7_EnumDevices3(glDirect3D7 *This, LPD3DENUMDEVICESCALLB
 	//FixCapsTexture(&This->glDD7->d3ddesc, &This->glDD7->d3ddesc3, This->glDD7->renderer);
 	D3DDEVICEDESC desc;
 	desc.dwSize = sizeof(D3DDEVICEDESC);
-	This->glDD7->renderer->GetCaps(1, &desc);
+	IDXGLRenderer_GetCaps(This->glDD7->renderer, 1, &desc);
 	GUID guid = IID_IDirect3DRGBDevice;
 	result = lpEnumDevicesCallback(&guid,This->glDD7->stored_devices[0].name,This->glDD7->stored_devices[0].devname,&desc,&desc,lpUserArg);
 	if(result != D3DENUMRET_OK) TRACE_RET(HRESULT,23,D3D_OK);
@@ -434,8 +434,8 @@ HRESULT WINAPI glDirect3D7_FindDevice(glDirect3D7 *This, LPD3DFINDDEVICESEARCH l
 	D3DDEVICEDESC desc3;
 	D3DDEVICEDESC7 desc7;
 	desc3.dwSize = sizeof(D3DDEVICEDESC);
-	This->glDD7->renderer->GetCaps(1, &desc3);
-	This->glDD7->renderer->GetCaps(2, &desc7);
+	IDXGLRenderer_GetCaps(This->glDD7->renderer, 1, &desc3);
+	IDXGLRenderer_GetCaps(This->glDD7->renderer, 2, &desc7);
 	bool found = true;
 	GUID guid = IID_IDirect3DHALDevice;
 	if((lpD3DFDS->dwFlags & D3DFDS_LINES) || (lpD3DFDS->dwFlags & D3DFDS_TRIANGLES))

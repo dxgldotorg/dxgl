@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2022 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -156,30 +156,32 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 			glextensions = ext->glGetStringi(GL_EXTENSIONS, i);
 			if (glextensions)
 			{
-				if (strcmp((char*)glextensions, "GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
+				if (!strcmp((char*)glextensions, "GL_EXT_framebuffer_object") && !dxglcfg.DebugNoExtFramebuffer)
 					ext->GLEXT_EXT_framebuffer_object = 1;
-				if (strcmp((char*)glextensions, "GL_ARB_texture_rectangle"))
+				if (!strcmp((char*)glextensions, "GL_ARB_texture_rectangle"))
 					ext->GLEXT_ARB_texture_rectangle = 1;
-				if (strcmp((char*)glextensions, "GL_NV_packed_depth_stencil"))
+				if (!strcmp((char*)glextensions, "GL_NV_packed_depth_stencil"))
 					ext->GLEXT_NV_packed_depth_stencil = 1;
-				if (strcmp((char*)glextensions, "GL_EXT_packed_depth_stencil"))
+				if (!strcmp((char*)glextensions, "GL_EXT_packed_depth_stencil"))
 					ext->GLEXT_EXT_packed_depth_stencil = 1;
-				if (strcmp((char*)glextensions, "GL_NVX_gpu_memory_info"))
+				if (!strcmp((char*)glextensions, "GL_NVX_gpu_memory_info"))
 					ext->GLEXT_NVX_gpu_memory_info = 1;
-				if (strcmp((char*)glextensions, "GL_ATI_meminfo"))
+				if (!strcmp((char*)glextensions, "GL_ATI_meminfo"))
 					ext->GLEXT_ATI_meminfo = 1;
-				if (strcmp((char*)glextensions, "GL_ARB_ES2_compatibility") && !dxglcfg.DebugNoES2Compatibility)
+				if (!strcmp((char*)glextensions, "GL_ARB_ES2_compatibility") && !dxglcfg.DebugNoES2Compatibility)
 					ext->GLEXT_ARB_ES2_compatibility = 1;
-				if (strcmp((char*)glextensions, "GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
+				if (!strcmp((char*)glextensions, "GL_EXT_direct_state_access") && !dxglcfg.DebugNoExtDirectStateAccess)
 					ext->GLEXT_EXT_direct_state_access = 1;
-				if (strcmp((char*)glextensions, "GL_ARB_direct_state_access") && !dxglcfg.DebugNoArbDirectStateAccess)
+				if (!strcmp((char*)glextensions, "GL_ARB_direct_state_access") && !dxglcfg.DebugNoArbDirectStateAccess)
 					ext->GLEXT_ARB_direct_state_access = 1;
-				if (strcmp((char*)glextensions, "GL_ARB_sampler_objects") && !dxglcfg.DebugNoSamplerObjects)
+				if (!strcmp((char*)glextensions, "GL_ARB_sampler_objects") && !dxglcfg.DebugNoSamplerObjects)
 					ext->GLEXT_ARB_sampler_objects = 1;
-				if (strcmp((char*)glextensions, "GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
+				if (!strcmp((char*)glextensions, "GL_EXT_gpu_shader4") && !dxglcfg.DebugNoGpuShader4)
 					ext->GLEXT_EXT_gpu_shader4 = 1;
-				if (strcmp((char*)glextensions, "GL_GREMEDY_frame_terminator"))
+				if (!strcmp((char*)glextensions, "GL_GREMEDY_frame_terminator"))
 					ext->GLEXT_GREMEDY_frame_terminator = 1;
+				if (!strcmp((char*)glextensions, "GL_ARB_vertex_array_object"))
+					ext->GLEXT_ARB_vertex_array_object = 1;
 			}
 		}
 	}
@@ -229,6 +231,8 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		else ext->GLEXT_EXT_gpu_shader4 = 0;
 		if (strstr((char*)glextensions, "GL_GREMEDY_frame_terminator")) ext->GLEXT_GREMEDY_frame_terminator = 1;
 		else ext->GLEXT_GREMEDY_frame_terminator = 0;
+		if (strstr((char*)glextensions, "GL_ARB_vertex_array_object")) ext->GLEXT_ARB_vertex_array_object = 1;
+		else ext->GLEXT_ARB_vertex_array_object = 0;
 	}
 	// Get WGL extensions
 	ext->wglGetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");
@@ -329,6 +333,14 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 	{
 		ext->wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 	}
+	if (ext->GLEXT_ARB_vertex_array_object)
+	{
+		ext->glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)wglGetProcAddress("glGenVertexArrays");
+		ext->glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)wglGetProcAddress("glDeleteVertexArrays");
+		ext->glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)wglGetProcAddress("glBindVertexArray");
+		ext->glGenVertexArrays(1, &ext->defaultvao);
+		ext->glBindVertexArray(ext->defaultvao);  // Required for OpenGL 3.x and up
+	}
 	if(broken_fbo)
 	{
 		if(dxglcfg.DebugNoArbFramebuffer || dxglcfg.DebugNoExtFramebuffer)
@@ -349,7 +361,7 @@ MB_OK | MB_ICONERROR);
 	}
 	ext->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 	ext->wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
-	if((!ext->wglSwapIntervalEXT) || (!ext->wglGetSwapIntervalEXT))
+	if((!ext->wglSwapIntervalEXT) || (!ext->wglGetSwapIntervalEXT))  // In case of drivers that don't support vsync
 	{
 		ext->wglSwapIntervalEXT = wglSwapIntervalEXTStub;
 		ext->wglGetSwapIntervalEXT = wglGetSwapIntervalEXTStub;

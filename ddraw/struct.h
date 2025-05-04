@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2022 William Feely
+// Copyright (C) 2015-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -22,8 +22,7 @@
 // Vertex format used by Blt calls
 typedef struct
 {
-	GLfloat x, y;
-	GLfloat unused1, unused2; // Fit this into a FVF
+	GLfloat x, y, z, rhw;
 	GLfloat s, t;
 	GLfloat dests, destt;
 	GLfloat stencils, stencilt;
@@ -180,6 +179,10 @@ typedef struct glExtensions
 
 	HGLRC (WINAPI *wglCreateContextAttribsARB)(HDC hDC, HGLRC hShareContext, const int *attribList);
 
+	void (APIENTRY *glGenVertexArrays)(GLsizei n, GLuint* arrays);
+	void (APIENTRY *glDeleteVertexArrays)(GLsizei n, const GLuint* arrays);
+	void (APIENTRY *glBindVertexArray)(GLuint array);
+
 	int GLEXT_ARB_framebuffer_object;
 	int GLEXT_EXT_framebuffer_object;
 	int GLEXT_ARB_texture_rectangle;
@@ -194,6 +197,7 @@ typedef struct glExtensions
 	int GLEXT_ARB_direct_state_access;
 	int GLEXT_ARB_sampler_objects;
 	int GLEXT_EXT_gpu_shader4;
+	int GLEXT_ARB_vertex_array_object;
 	int GLEXT_GREMEDY_frame_terminator;
 	int WGLEXT_EXT_extensions_string;
 	int WGLEXT_ARB_extensions_string;
@@ -204,6 +208,7 @@ typedef struct glExtensions
 	DWORD glver_minor;
 	BOOL atimem;
 	GLint maxtexturesize;
+	GLuint defaultvao;
 } glExtensions;
 
 // Buffer object (such as PBO or VBO)
@@ -394,6 +399,7 @@ typedef struct SHADER
 	GLint colorsize;
 	GLint pal;
 	GLint view;
+	GLuint vao;
 } SHADER;
 
 struct ShaderGen3D;

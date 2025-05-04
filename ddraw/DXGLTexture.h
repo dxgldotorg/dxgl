@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022-2024 William Feely
+// Copyright (C) 2022-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -77,6 +77,11 @@ typedef struct DXGLTexture
 			GLuint PBO;
 		} DUMMYUNIONNAME3;
 		BYTE *bufferptr;
+		union
+		{
+			DWORD_PTR framebufferhandle;
+			GLuint FBO;
+		};
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{

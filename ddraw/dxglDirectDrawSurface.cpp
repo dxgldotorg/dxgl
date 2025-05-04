@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2024 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@
 using namespace std;
 #include "ShaderGen3D.h"
 #include <math.h>
+#include "hooks.h"
 
 float primaryscalex;
 float primaryscaley;
@@ -279,8 +280,8 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 				ddsdBigSurface.dwWidth = glDDS7->ddsd.dwWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 				ddsdBigSurface.dwHeight = glDDS7->ddsd.dwHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 				FIXME("Fix multi-monitor window mode offset");
-				//glDDS7->ddInterface->renderer->xoffset = GetSystemMetrics(SM_XVIRTUALSCREEN);
-				//glDDS7->ddInterface->renderer->yoffset = GetSystemMetrics(SM_YVIRTUALSCREEN);
+				glDDS7->ddInterface->xoffset = GetSystemMetrics(SM_XVIRTUALSCREEN);
+				glDDS7->ddInterface->yoffset = GetSystemMetrics(SM_YVIRTUALSCREEN);
 			}
 			else
 			{
@@ -446,7 +447,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 		for (x = 0; x < mipcount; x++)
 		{
 			surfaceptr = &glDDS7[x + (i * mipcount)];
-			if (x == 0) error = surfaceptr->ddInterface->renderer->CreateTexture(&surfaceptr->ddsd,
+			if (x == 0) error = IDXGLRenderer_CreateTexture(surfaceptr->ddInterface->renderer, &surfaceptr->ddsd,
 				surfaceptr->ddInterface->primarybpp, surfaceptr->texture);
 			else
 			{
@@ -460,7 +461,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 					// Delete already created textures in case of failure
 					surfaceptr = &glDDS7[i * mipcount];
 					i--;
-					surfaceptr->ddInterface->renderer->DeleteTexture(surfaceptr->texture);
+					IDXGLRenderer_DeleteTexture(surfaceptr->ddInterface->renderer, surfaceptr->texture);
 					surfaceptr->texture = NULL;
 				}
 			}
@@ -487,7 +488,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 			for (i = 0; i < buffercount; i++)
 			{
 				surfaceptr = &glDDS7[i * mipcount];
-				surfaceptr->ddInterface->renderer->DeleteTexture(surfaceptr->texture);
+				IDXGLRenderer_DeleteTexture(surfaceptr->ddInterface->renderer, surfaceptr->texture);
 			}
 			TRACE_EXIT(23, DDERR_INVALIDPIXELFORMAT);
 			return DDERR_INVALIDPIXELFORMAT;
@@ -629,7 +630,7 @@ void dxglDirectDrawSurface7_Delete(dxglDirectDrawSurface7 *This)
 	if (This->overlays)
 	{
 		//for (i = 0; i < This->overlaycount; i++)
-			//This->ddInterface->renderer->DeleteTexture(&This->overlays[i].texture);
+			//IDXGLRenderer_DeleteTexture(This->ddInterface->renderer, &This->overlays[i].texture);
 		free(This->overlays);
 		
 		dxglDirectDrawSurface7_RenderScreen(This, This->texture, 0, NULL, FALSE, NULL, -1);
@@ -638,12 +639,12 @@ void dxglDirectDrawSurface7_Delete(dxglDirectDrawSurface7 *This)
 	{
 		for (i = 0; i <= This->ddsd.dwBackBufferCount; i++)
 		{
-			This->ddInterface->renderer->DeleteTexture(This[i].texture);
+			IDXGLRenderer_DeleteTexture(This->ddInterface->renderer, This[i].texture);
 		}
 	}
 	else
 	{
-		if (This->texture) This->ddInterface->renderer->DeleteTexture(This->texture);
+		if (This->texture) IDXGLRenderer_DeleteTexture(This->ddInterface->renderer, This->texture);
 	}
 	//if(This->bitmapinfo) free(This->bitmapinfo);
 	if (This->palette)
@@ -672,7 +673,7 @@ void dxglDirectDrawSurface7_Delete(dxglDirectDrawSurface7 *This)
 	if (This->device1) glDirect3DDevice7_Destroy(This->device1);
 	glDirectDraw7_DeleteSurface(This->ddInterface, This);
 	if (This->creator) This->creator->Release();
-	This->ddInterface->renderer->FreePointer(This);
+	IDXGLRenderer_FreePointer(This->ddInterface->renderer, This);
 	TRACE_EXIT(-1,0);
 }
 HRESULT WINAPI dxglDirectDrawSurface7_QueryInterface(dxglDirectDrawSurface7 *This, REFIID riid, void** ppvObj)
@@ -1216,7 +1217,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 		destread = NULL;
 	}
 	// Set destination
-	This->ddInterface->renderer->SetTarget(dest->texture, dest->miplevel);
+	IDXGLRenderer_SetTarget(This->ddInterface->renderer, dest->texture, dest->miplevel);
 	// Generate geometry
 	if (dwFlags & DDBLT_ROTATIONANGLE)
 	{
@@ -1284,27 +1285,30 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 		}
 		else
 		{
-			if (src && src->bigsurface)
+			if (src)
 			{
-				vertices[1].s = vertices[3].s = (GLfloat)(srcrect.left * primaryscalex)
-					/ src->bigsurface->ddsd.dwWidth;
-				vertices[0].s = vertices[2].s = (GLfloat)(srcrect.right * primaryscalex)
-					/ src->bigsurface->ddsd.dwWidth;
-				vertices[0].t = vertices[1].t = (GLfloat)(srcrect.top * primaryscaley)
-					/ src->bigsurface->ddsd.dwHeight;
-				vertices[2].t = vertices[3].t = (GLfloat)(srcrect.bottom * primaryscaley)
-					/ src->bigsurface->ddsd.dwHeight;
-			}
-			else
-			{
-				vertices[1].s = vertices[3].s = (GLfloat)srcrect.left
-					/ src->ddsd.dwWidth;
-				vertices[0].s = vertices[2].s = (GLfloat)srcrect.right
-					/ src->ddsd.dwWidth;
-				vertices[0].t = vertices[1].t = (GLfloat)srcrect.top
-					/ src->ddsd.dwHeight;
-				vertices[2].t = vertices[3].t = (GLfloat)srcrect.bottom
-					/ src->ddsd.dwHeight;
+				if (src->bigsurface)
+				{
+					vertices[1].s = vertices[3].s = (GLfloat)(srcrect.left * primaryscalex)
+						/ src->bigsurface->ddsd.dwWidth;
+					vertices[0].s = vertices[2].s = (GLfloat)(srcrect.right * primaryscalex)
+						/ src->bigsurface->ddsd.dwWidth;
+					vertices[0].t = vertices[1].t = (GLfloat)(srcrect.top * primaryscaley)
+						/ src->bigsurface->ddsd.dwHeight;
+					vertices[2].t = vertices[3].t = (GLfloat)(srcrect.bottom * primaryscaley)
+						/ src->bigsurface->ddsd.dwHeight;
+				}
+				else
+				{
+					vertices[1].s = vertices[3].s = (GLfloat)srcrect.left
+						/ src->ddsd.dwWidth;
+					vertices[0].s = vertices[2].s = (GLfloat)srcrect.right
+						/ src->ddsd.dwWidth;
+					vertices[0].t = vertices[1].t = (GLfloat)srcrect.top
+						/ src->ddsd.dwHeight;
+					vertices[2].t = vertices[3].t = (GLfloat)srcrect.bottom
+						/ src->ddsd.dwHeight;
+				}
 			}
 		}
 	}
@@ -1319,7 +1323,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 				vertices[0].t = vertices[1].t = 0.0f;
 				vertices[2].t = vertices[3].t = (GLfloat)src->bigsurface->ddsd.dwHeight;
 			}
-			else
+			else if (src)
 			{
 				vertices[1].s = vertices[3].s = 0.0f;
 				vertices[0].s = vertices[2].s = (GLfloat)src->ddsd.dwWidth;
@@ -1344,7 +1348,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	}
 	if (src)
 	{
-		This->ddInterface->renderer->SetTexture(8, src->texture);
+		IDXGLRenderer_SetTexture(This->ddInterface->renderer, 8, src->texture);
 		shaderstate.state.state2D.srclevel = src->miplevel;
 		memcpy(&shaderstate.state.state2D.srcformat,&src->ddsd.ddpfPixelFormat,sizeof(DDPIXELFORMAT));
 	}
@@ -1353,7 +1357,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	{
 		if ((rop_texture_usage[(lpDDBltFx->dwROP >> 16) & 0xFF] & 2))
 		{
-			This->ddInterface->renderer->SetTexture(9, destread->texture);
+			IDXGLRenderer_SetTexture(This->ddInterface->renderer, 9, destread->texture);
 			shaderstate.state.state2D.destlevel = dest->miplevel;
 			memcpy(&shaderstate.state.state2D.destformat, &dest->ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 		}
@@ -1361,7 +1365,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 		{
 			if (!lpDDBltFx->lpDDSPattern) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 			pattern = (dxglDirectDrawSurface7*)lpDDBltFx->lpDDSPattern;
-			This->ddInterface->renderer->SetTexture(10, pattern->texture);
+			IDXGLRenderer_SetTexture(This->ddInterface->renderer, 10, pattern->texture);
 			shaderstate.state.state2D.patternlevel = pattern->miplevel;
 			memcpy(&shaderstate.state.state2D.patternformat, &dest->ddsd.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 		}
@@ -1408,10 +1412,10 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	if (lpDDBltFx) memcpy(&shaderstate.state.state2D.bltfx, lpDDBltFx, sizeof(DDBLTFX));
 	shaderstate.state.state2D.flags = dwFlags;
 
-	This->ddInterface->renderer->SetRenderState(&shaderstate);
+	IDXGLRenderer_SetRenderState(This->ddInterface->renderer, &shaderstate);
 
-	This->ddInterface->renderer->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX3);
-	This->ddInterface->renderer->DrawPrimitives(D3DPT_TRIANGLELIST, (BYTE*)&vertices, 4, bltindex, 6);
+	IDXGLRenderer_SetFVF(This->ddInterface->renderer, D3DFVF_XYZRHW | D3DFVF_TEX3);
+	IDXGLRenderer_DrawPrimitives(This->ddInterface->renderer, D3DPT_TRIANGLELIST, (BYTE*)&vertices, 4, bltindex, 6);
 }
 HRESULT WINAPI dxglDirectDrawSurface7_BltBatch(dxglDirectDrawSurface7 *This, LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
@@ -1930,7 +1934,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Lock(dxglDirectDrawSurface7 *This, LPRECT 
 			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
 	BYTE *ptr = NULL;
-	HRESULT error = This->ddInterface->renderer->Lock(This->texture, This->miplevel, &ptr);
+	HRESULT error = IDXGLRenderer_Lock(This->ddInterface->renderer, This->texture, This->miplevel, &ptr);
 	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 	This->ddsd.lpSurface = ptr;
 	if (lpDestRect)
@@ -2271,7 +2275,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Unlock(dxglDirectDrawSurface7 *This, LPREC
 	TRACE_ENTER(2,14,This,26,lpRect);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	HRESULT error;
-	if (This->locked <= 1)error = This->ddInterface->renderer->Unlock(This->texture, This->miplevel);
+	if (This->locked <= 1)error = IDXGLRenderer_Unlock(This->ddInterface->renderer, This->texture, This->miplevel);
 	else error == DD_OK;
 	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
 	if(This->locked) This->locked--;
@@ -2384,7 +2388,107 @@ extern "C" void glDirectDrawSurface7_RenderScreen2(LPDIRECTDRAWSURFACE7 surface,
 
 void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTexture *texture, int vsync, DXGLTexture *previous, BOOL settime, OVERLAY *overlays, int overlaycount)
 {
+	BltVertex vertices[4];
+	DXGLRenderState RenderScreenState;
+	RECT r, r2;
+	int i;
+	DXGLTexture *primary = texture;
+	BOOL isprimary = FALSE;
+	BOOL scale512448;
+	LONG sizes[6];
+	GLfloat view[4];
+	GLint viewport[4];
+	HWND hWnd, hWndRender;
+	float postsizex, postsizey;
 	TRACE_ENTER(3,14,This,14,texture,14,vsync);
+	ZeroMemory(&RenderScreenState, sizeof(DXGLRenderState));
+	ZeroMemory(&vertices, 4 * sizeof(BltVertex));
+	RenderScreenState.mode = DXGLRENDERMODE_STATE2D;
+	if (texture->ddformat.dwFlags & DDPF_PALETTEINDEXED8) {}  // FIXME: palette support
+	else RenderScreenState.state.state2D.flags = 0;
+	RenderScreenState.state.state2D.srcformat = This->ddsd.ddpfPixelFormat;
+	RenderScreenState.state.state2D.blttypesrc = texture->blttype;
+	// FIXME:  Support scaled primary
+	// FIXME:  Sample texture for 512x448 scaling
+	// FIXME:  Re-add overlay support
+	hWnd = This->ddInterface->hWnd;
+	IDXGLRenderer_GetWindow(This->ddInterface->renderer, &hWndRender);
+	
+	_GetClientRect(hWnd, &r);
+	GetClientRect(hWndRender, &r2);
+	if (memcmp(&r2, &r, sizeof(RECT)))
+	{
+		SetWindowPos(hWndRender, NULL, 0, 0, r.right, r.bottom, SWP_SHOWWINDOW);
+		IDXGLRenderer_SetWindowSize(This->ddInterface->renderer, &r);
+	}
+
+	if (glDirectDraw7_GetFullscreen(This->ddInterface))
+	{
+		glDirectDraw7_GetSizes(This->ddInterface, sizes);
+		if (_isnan(dxglcfg.postsizex) || _isnan(dxglcfg.postsizey) ||
+			(dxglcfg.postsizex < 0.25f) || (dxglcfg.postsizey < 0.25f))
+		{
+			if (sizes[2] <= 400) postsizex = 2.0f;
+			else postsizex = 1.0f;
+			if (sizes[3] <= 300) postsizey = 2.0f;
+			else postsizey = 1.0f;
+		}
+		else
+		{
+			postsizex = dxglcfg.postsizex;
+			postsizey = dxglcfg.postsizey;
+		}
+		viewport[0] = viewport[1] = 0;
+		viewport[2] = sizes[4];
+		viewport[3] = sizes[5];
+		view[0] = (GLfloat)-(sizes[4] - sizes[0]) / 2;
+		view[1] = (GLfloat)(sizes[4] - sizes[0]) / 2 + sizes[0];
+		view[2] = (GLfloat)(sizes[5] - sizes[1]) / 2 + sizes[1];
+		view[3] = (GLfloat)-(sizes[5] - sizes[1]) / 2;
+	}
+	else
+	{
+		postsizex = 1.0f;
+		postsizey = 1.0f;
+		viewport[0] = viewport[1] = 0;
+		viewport[2] = r.right;
+		viewport[3] = r.bottom;
+		ClientToScreen(hWndRender, (LPPOINT)&r.right);
+		ClientToScreen(hWndRender, (LPPOINT)&r.left);
+		OffsetRect(&r, 0 - This->ddInterface->xoffset, 0 - This->ddInterface->yoffset);
+		if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+		{
+			r.left = (LONG)((float)r.left / dxglcfg.WindowScaleX);
+			r.top = (LONG)((float)r.top / dxglcfg.WindowScaleY);
+			r.right = (LONG)((float)r.right / dxglcfg.WindowScaleX);
+			r.bottom = (LONG)((float)r.bottom / dxglcfg.WindowScaleY);
+		}
+		view[0] = (GLfloat)r.left;
+		view[1] = (GLfloat)r.right;
+		view[2] = (GLfloat)texture->levels[0].height - (GLfloat)r.top;
+		view[3] = (GLfloat)texture->levels[0].height - (GLfloat)r.bottom;
+	}
+
+	// vertices[1].x = vertices[3].x = left
+	// vertices[0].x = vertices[2].x = right
+	// vertices[0].y = vertices[1].y = top
+	// vertices[2].y = vertices[3].y = bottom
+	vertices[1].s = vertices[3].s = 0.0f;
+	vertices[0].s = vertices[2].s = 1.0f;
+	vertices[0].t = vertices[1].t = 0.0f;
+	vertices[2].t = vertices[3].t = 1.0f;
+	vertices[0].rhw = vertices[1].rhw = vertices[2].rhw = vertices[3].rhw = 1.0f;
+	IDXGLRenderer_SetTexture(This->ddInterface->renderer, 8, texture);
+	IDXGLRenderer_SetTarget(This->ddInterface->renderer, 0, 0);
+	IDXGLRenderer_SetRenderState(This->ddInterface->renderer, &RenderScreenState);
+	IDXGLRenderer_SetFVF(This->ddInterface->renderer, D3DFVF_XYZRHW | D3DFVF_TEX3);
+	IDXGLRenderer_DrawPrimitives2D(This->ddInterface->renderer, D3DPT_TRIANGLELIST, (BYTE*)vertices, 4);
+	IDXGLRenderer_SwapBuffers(This->ddInterface->renderer, vsync);
+
+	// Testing
+	Sleep(1000);
+	MessageBox(NULL, _T("Check your debugger"), _T("Notice"), MB_OK);
+
 	//if(texture->bigtexture) glRenderer_DrawScreen(This->ddInterface->renderer, texture->bigtexture, texture->palette, vsync, previous, settime, overlays, overlaycount);
 	//else glRenderer_DrawScreen(This->ddInterface->renderer, texture, texture->palette, vsync, previous, settime, overlays, overlaycount);
 	TRACE_EXIT(0,0);
