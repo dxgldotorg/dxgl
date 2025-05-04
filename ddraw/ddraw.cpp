@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2023 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -600,7 +600,7 @@ DDRAW_API void DXGLBreak()
 	{
 		if (glDD7->renderer)
 		{
-			glDD7->renderer->Break();
+			IDXGLRenderer_Break(glDD7->renderer);
 		}
 	}
 }

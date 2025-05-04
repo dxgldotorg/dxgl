@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2023 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -609,16 +609,16 @@ HRESULT WINAPI glDirect3DDevice7_Clear(glDirect3DDevice7 *This, DWORD dwCount, L
 	TRACE_ENTER(7,14,This,8,dwCount,14,lpRects,9,dwFlags,9,dwColor,19,&dvZ,9,dwStencil);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(dwCount && !lpRects) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if (This->glDDS7->bigsurface) error = This->glDDS7->ddInterface->renderer->SetTarget(This->glDDS7->bigsurface->texture,
+	if (This->glDDS7->bigsurface) error = IDXGLRenderer_SetTarget(This->glDDS7->ddInterface->renderer,This->glDDS7->bigsurface->texture,
 		This->glDDS7->miplevel);
-	else error = This->glDDS7->ddInterface->renderer->SetTarget(This->glDDS7->texture, This->glDDS7->miplevel);
+	else error = IDXGLRenderer_SetTarget(This->glDDS7->ddInterface->renderer,This->glDDS7->texture, This->glDDS7->miplevel);
 	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
-	if (!dwCount) error = This->glDDS7->ddInterface->renderer->Clear(NULL, dwFlags, dwColor, dvZ, dwStencil);
+	if (!dwCount) error = IDXGLRenderer_Clear(This->glDDS7->ddInterface->renderer,NULL, dwFlags, dwColor, dvZ, dwStencil);
 	else
 	{
 		for (int i = 0; i < dwCount; i++)
 		{
-			error = This->glDDS7->ddInterface->renderer->Clear(&lpRects[i], dwFlags, dwColor, dvZ, dwStencil);
+			error = IDXGLRenderer_Clear(This->glDDS7->ddInterface->renderer,&lpRects[i], dwFlags, dwColor, dvZ, dwStencil);
 			if(FAILED(error)) TRACE_RET(HRESULT,23,error);
 		}
 	}
@@ -1680,8 +1680,8 @@ HRESULT WINAPI glDirect3DDevice7_SetTexture(glDirect3DDevice7 *This, DWORD dwSta
 	This->texstages[dwStage].surface = (dxglDirectDrawSurface7*)lpTexture;
 	if(lpTexture) lpTexture->AddRef();
 	if (This->texstages[dwStage].surface)
-		This->glDDS7->ddInterface->renderer->SetTexture(dwStage, This->texstages[dwStage].surface->texture);
-	else This->glDDS7->ddInterface->renderer->SetTexture(dwStage, NULL);
+		IDXGLRenderer_SetTexture(This->glDDS7->ddInterface->renderer, dwStage, This->texstages[dwStage].surface->texture);
+	else IDXGLRenderer_SetTexture(This->glDDS7->ddInterface->renderer, dwStage, NULL);
 	if (This->renderstate[D3DRENDERSTATE_TEXTUREMAPBLEND] == D3DTBLEND_MODULATE)
 	{
 		bool noalpha = false;

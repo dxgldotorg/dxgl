@@ -1164,7 +1164,7 @@ void glDirectDraw7_Delete(glDirectDraw7 *This)
 		}
 		if(This->renderer)
 		{
-			This->renderer->SetAttachedDevice(NULL);
+			IDXGLRenderer_SetAttachedDevice(This->renderer, NULL);
 		}
 		This->renderer = NULL;
 	}
@@ -1684,7 +1684,7 @@ HRESULT WINAPI glDirectDraw7_GetCaps(glDirectDraw7 *This, LPDDCAPS lpDDDriverCap
 	if (!This->initialized) TRACE_RET(HRESULT, 23, DDERR_NOTINITIALIZED);
 	if (ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
 	if (ddCaps.dwSize < sizeof(DDCAPS_DX3)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	This->renderer->GetCaps(0, &ddCaps);
+	IDXGLRenderer_GetCaps(This->renderer, 0, &ddCaps);
 	if(lpDDDriverCaps)
 	{
 		if(lpDDDriverCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDDriverCaps->dwSize = sizeof(DDCAPS_DX7);
@@ -1954,7 +1954,7 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	}
 	else
 	{
-		renderers[devindex]->GetAttachedDevice(&tmpdd7);
+		IDXGLRenderer_GetAttachedDevice(renderers[devindex], &tmpdd7);
 		if (tmpdd7)
 		{
 			LeaveCriticalSection(&dll_cs);
@@ -1963,7 +1963,7 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 		}
 	}
 	This->renderer = renderers[devindex];
-	This->renderer->SetAttachedDevice(This);
+	IDXGLRenderer_SetAttachedDevice(This->renderer, This);
 	memcpy(This->stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
 	This->initialized = true;
 	TRACE_EXIT(23,DD_OK);
@@ -2015,6 +2015,7 @@ BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 
 HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd, DWORD dwFlags)
 {
+	HRESULT error;
 	TRACE_ENTER(3,14,This,13,hWnd,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -2058,7 +2059,10 @@ HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd,
 	if (dwFlags & DDSCL_FULLSCREEN) This->fullscreen = true;
 	else This->fullscreen = false;
 	This->cooplevel = dwFlags;
-	TRACE_RET(HRESULT, 23, This->renderer->SetCooperativeLevel(hWnd, dwFlags));
+	error = IDXGLRenderer_SetCooperativeLevel(This->renderer, hWnd, dwFlags);
+	if (SUCCEEDED(error)) This->hWnd = hWnd;
+	TRACE_EXIT(23, error);
+	return error;
 }
 
 void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
@@ -2218,7 +2222,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!This->fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
-	This->renderer->Sync(0);
+	IDXGLRenderer_Sync(This->renderer,0);
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
 	float aspect,xmul,ymul,xscale,yscale;

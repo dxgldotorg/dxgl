@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2024 William Feely
+// Copyright (C) 2024-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -153,8 +153,8 @@ static int numGLtexformats;
 HRESULT DXGLTextureGL_ValidatePixelFormat(LPDDPIXELFORMAT pixelformat, DWORD *texformat)
 {
 	int i;
-	*texformat = -1;
 	DDPIXELFORMAT compformat;
+	*texformat = -1;
 	numGLtexformats = END_GLTEXFORMATS - START_GLTEXFORMATS;
 	if (pixelformat->dwFlags & DDPF_FOURCC)
 	{
