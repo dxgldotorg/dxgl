@@ -48,7 +48,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_13"
+!if ${COMPILER} == "VC2022_14"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2022"
 !ifdef _CPU_X64
@@ -208,12 +208,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_13"
+!else if ${COMPILER} == "VC2022_14"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.13 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.44.35112/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2022.14 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "C021453F6DBC8E79C5B97CA1F5D717868E9124E503391CC133A76F10643E2B41043E47D98836F524938D581C610D5F887C710CD5E6C036DC8F868074E3759C8F"
+!define runtime_sha512 "610631F92193015D32D572A8BCD18792EC7FD898F28BD4F69E7708D0989AB51FBAA0EB306D40EF5CBEAA2242BFBA4639C8881AD09697FC5E8117F5B856602BB9"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -259,12 +259,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_13"
+!else if ${COMPILER} == "VC2022_14"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.42.34438/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.13 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.44.35112/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2022.14 x86"
 !define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "32CC452BA3E0EAA66CB1FEF379F5F15FBD5D3D632DD7EF5A7259A641EB77B62096CB665FAA3737A7A57798CA7AEF4A9D859BD21D5FE036E1D7D2871834E0349B"
+!define runtime_sha512 "369D9999A5A1237FD9DDA89335CCD7837938E2E76D7A6B9BF0A91DD4002A82EAEE952812840F86C5F00CE5BDB481CCE1AAE1CB5B8AE14A30C0E4EB65C020A38F"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -417,7 +417,7 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2022_13"
+  !if ${COMPILER} == "VC2022_14"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -498,7 +498,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_13"
+  !if ${COMPILER} == "VC2022_14"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -562,7 +562,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_13"
+  !if ${COMPILER} == "VC2022_14"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -575,7 +575,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.42.34438" $1
+  ${VersionCompare} "$0" "14.44.35112" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -694,7 +694,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_13"
+!if ${COMPILER} == "VC2022_14"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
