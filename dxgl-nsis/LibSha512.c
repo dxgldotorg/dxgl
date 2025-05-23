@@ -17,6 +17,7 @@
 //#include <memory.h>
 
 // Quick and dirty memcpy
+#pragma optimize( "", off )
 void *__memcpy(unsigned char *dest, unsigned char *src, size_t size)
 {
 	size_t i;
@@ -24,6 +25,7 @@ void *__memcpy(unsigned char *dest, unsigned char *src, size_t size)
 		dest[i] = src[i];
 	return dest;
 }
+#pragma optimize( "", on )
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  MACROS
