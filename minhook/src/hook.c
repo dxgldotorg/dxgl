@@ -1,6 +1,7 @@
 ﻿/*
  *  MinHook - The Minimalistic API Hooking Library for x64/x86
  *  Copyright (C) 2009-2017 Tsuda Kageyu.
+ *  Modified for DXGL by William Feely 2025
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -26,9 +27,12 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define STRICT
+#define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <tlhelp32.h>
 #include <limits.h>
+#include <tchar.h>
 
 #include "../include/MinHook.h"
 #include "buffer.h"
@@ -87,13 +91,13 @@ typedef struct _FROZEN_THREADS
 //-------------------------------------------------------------------------
 
 // Spin lock flag for EnterSpinLock()/LeaveSpinLock().
-volatile LONG g_isLocked = FALSE;
+static volatile LONG g_isLocked = FALSE;
 
 // Private heap handle. If not NULL, this library is initialized.
-HANDLE g_hHeap = NULL;
+static HANDLE g_hHeap = NULL;
 
 // Hook entries.
-struct
+static struct
 {
     PHOOK_ENTRY pItems;     // Data heap
     UINT        capacity;   // Size of allocated data heap, items
@@ -262,7 +266,6 @@ static VOID ProcessThreadIPs(HANDLE hThread, UINT pos, UINT action)
 //-------------------------------------------------------------------------
 static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
 {
-	LPDWORD p;
     BOOL succeeded = FALSE;
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -292,6 +295,7 @@ static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
                     }
                     else if (pThreads->size >= pThreads->capacity)
                     {
+                        LPDWORD p;
                         pThreads->capacity *= 2;
                         p = (LPDWORD)HeapReAlloc(
                             g_hHeap, 0, pThreads->pItems, pThreads->capacity * sizeof(DWORD));
@@ -324,6 +328,30 @@ static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
     return succeeded;
 }
 
+static HANDLE(WINAPI *__OpenThread)(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId) = NULL;
+static BOOL OpenThreadFail = FALSE;
+static HANDLE WINAPI _OpenThread(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId)
+{
+    HANDLE hKernel32;
+    if (!__OpenThread)
+    {
+        if (OpenThreadFail) return NULL;
+        hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+        if (!hKernel32)
+        {
+            OpenThreadFail = TRUE;
+            return NULL;
+        }
+        __OpenThread = GetProcAddress(hKernel32, "OpenThread");
+        if (!__OpenThread)
+        {
+            OpenThreadFail = TRUE;
+            return NULL;
+        }
+    }
+    return __OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId);
+}
+
 //-------------------------------------------------------------------------
 static MH_STATUS Freeze(PFROZEN_THREADS pThreads, UINT pos, UINT action)
 {
@@ -341,12 +369,23 @@ static MH_STATUS Freeze(PFROZEN_THREADS pThreads, UINT pos, UINT action)
         UINT i;
         for (i = 0; i < pThreads->size; ++i)
         {
-            HANDLE hThread = OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
+            HANDLE hThread = _OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
+            BOOL suspended = FALSE;
             if (hThread != NULL)
             {
-                SuspendThread(hThread);
-                ProcessThreadIPs(hThread, pos, action);
+                DWORD result = SuspendThread(hThread);
+                if (result != 0xFFFFFFFF)
+                {
+                    suspended = TRUE;
+                    ProcessThreadIPs(hThread, pos, action);
+                }
                 CloseHandle(hThread);
+            }
+
+            if (!suspended)
+            {
+                // Mark thread as not suspended, so it's not resumed later on.
+                pThreads->pItems[i] = 0;
             }
         }
     }
@@ -362,11 +401,15 @@ static VOID Unfreeze(PFROZEN_THREADS pThreads)
         UINT i;
         for (i = 0; i < pThreads->size; ++i)
         {
-            HANDLE hThread = OpenThread(THREAD_ACCESS, FALSE, pThreads->pItems[i]);
-            if (hThread != NULL)
+            DWORD threadId = pThreads->pItems[i];
+            if (threadId != 0)
             {
-                ResumeThread(hThread);
-                CloseHandle(hThread);
+                HANDLE hThread = _OpenThread(THREAD_ACCESS, FALSE, threadId);
+                if (hThread != NULL)
+                {
+                    ResumeThread(hThread);
+                    CloseHandle(hThread);
+                }
             }
         }
 
