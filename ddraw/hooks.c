@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014-2020 William Feely
+// Copyright (C) 2014-2025 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -19,6 +19,8 @@
 #include "common.h"
 #include "hooks.h"
 #include <tlhelp32.h>
+#define PSAPI_VERSION 1 // Use NT4-compatible PSAPI
+#include <Psapi.h>
 #include "../minhook/include/MinHook.h"
 
 #ifndef WM_MOUSEHWHEEL
@@ -40,6 +42,21 @@ static int hwndhook_max = 0;
 CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
 static BOOL hooks_init = FALSE;
 static EXECUTION_STATE(WINAPI *_SetThreadExecutionState)(EXECUTION_STATE esFlags) = NULL;
+
+static BOOL moduleapi_loaded = FALSE;
+static HANDLE(WINAPI *_CreateToolhelp32Snapshot)(DWORD dwFlags, DWORD th32ProcessID) = NULL;
+static HANDLE(WINAPI* _Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
+static HANDLE(WINAPI* _Module32FirstW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
+static HANDLE(WINAPI* _Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
+static HANDLE(WINAPI* _Module32NextW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
+static BOOL(WINAPI* _GetModuleInformation)(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) = NULL;
+#ifdef _UNICODE
+#define Mod32First _Module32FirstW
+#define Mod32Next _Module32NextW
+#else
+#define Mod32First _Module32First
+#define Mod32Next _Module32Next
+#endif
 
 // Window management
 LONG(WINAPI *_SetWindowLongA)(HWND hWnd, int nIndex, LONG dwNewLong) = NULL;
@@ -152,23 +169,63 @@ HWND_HOOK *GetWndHook(HWND hWnd)
 */
 BOOL IsCallerOpenGL(BYTE *returnaddress)
 {
+	HMODULE hPsapi;
+	HMODULE hKernel32;
+	HMODULE hOpenGL32;
 	HANDLE hSnapshot;
+	MODULEINFO modinfo;
 	int isgl = 0;
 	MODULEENTRY32 modentry = { 0 };
 	TRACE_ENTER(1, 14, returnaddress);
-	hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
-	modentry.dwSize = sizeof(MODULEENTRY32);
-	Module32First(hSnapshot, &modentry);
-	do
+	if (!moduleapi_loaded)
 	{
-		if ((modentry.modBaseAddr <= returnaddress) &&
-			(modentry.modBaseAddr + modentry.modBaseSize > returnaddress))
+		hPsapi = LoadLibrary(_T("psapi.dll"));
+		if(hPsapi) _GetModuleInformation =
+			(BOOL(WINAPI*)(HANDLE, HMODULE, LPMODULEINFO, DWORD))GetProcAddress(hPsapi, "GetModuleInformation");
+		hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+		_CreateToolhelp32Snapshot =
+			(HANDLE(WINAPI*)(DWORD, DWORD))GetProcAddress(hKernel32, "CreateToolhelp32Snapshot");
+		_Module32First =
+			(HANDLE(WINAPI*)(HANDLE, LPMODULEENTRY32))GetProcAddress(hKernel32, "Module32First");
+		_Module32FirstW =
+			(HANDLE(WINAPI*)(HANDLE, LPMODULEENTRY32W))GetProcAddress(hKernel32, "Module32FirstW");
+		_Module32Next =
+			(HANDLE(WINAPI*)(HANDLE, LPMODULEENTRY32))GetProcAddress(hKernel32, "Module32Next");
+		_Module32NextW =
+			(HANDLE(WINAPI*)(HANDLE, LPMODULEENTRY32W))GetProcAddress(hKernel32, "Module32NextW");
+		moduleapi_loaded = TRUE;
+	}
+	if (_GetModuleInformation)
+	{
+		hOpenGL32 = GetModuleHandle(_T("opengl32.dll"));
+		if (!hOpenGL32) isgl = 0;
+		else
 		{
-			if (!_tcsicmp(modentry.szModule, _T("opengl32.dll"))) isgl = 1;
-			break;
+			_GetModuleInformation(GetCurrentProcess(), hOpenGL32, &modinfo, sizeof(MODULEINFO));
+			if ((returnaddress >= modinfo.lpBaseOfDll) && (returnaddress < ((DWORD_PTR)modinfo.lpBaseOfDll + modinfo.SizeOfImage)))
+				isgl = 1;
+			else isgl = 0;
 		}
-	} while (Module32Next(hSnapshot, &modentry));
-	CloseHandle(hSnapshot);
+	}
+	else if (_CreateToolhelp32Snapshot)
+	{
+		hSnapshot = _CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+		modentry.dwSize = sizeof(MODULEENTRY32);
+		Mod32First(hSnapshot, &modentry);
+		do
+		{
+			if ((modentry.modBaseAddr <= returnaddress) &&
+				(modentry.modBaseAddr + modentry.modBaseSize > returnaddress))
+			{
+				if (!_tcsicmp(modentry.szModule, _T("opengl32.dll")))
+				{
+					isgl = 1;
+					break;
+				}
+			}
+		} while (Mod32Next(hSnapshot, &modentry));
+		CloseHandle(hSnapshot);
+	}
 	TRACE_EXIT(22, isgl);
 	return isgl;
 }
