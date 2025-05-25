@@ -328,11 +328,52 @@ static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
     return succeeded;
 }
 
+typedef long NTSTATUS;
+#define OBJ_INHERIT (ULONG)2;
+
+typedef struct _UNICODE_STRING {
+  USHORT Length;
+  USHORT MaximumLength;
+  PWSTR  Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+
+typedef struct _OBJECT_ATTRIBUTES {
+  ULONG           Length;
+  HANDLE          RootDirectory;
+  PUNICODE_STRING ObjectName;
+  ULONG           Attributes;
+  PVOID           SecurityDescriptor;
+  PVOID           SecurityQualityOfService;
+} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+
+ typedef struct _CLIENT_ID {
+   HANDLE UniqueProcess;
+   HANDLE UniqueThread;
+ } CLIENT_ID;
+
+static NTSTATUS(NTAPI *_NtOpenThread)(PHANDLE ThreadHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, CLIENT_ID *ClientID) = NULL;
 static HANDLE(WINAPI *__OpenThread)(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId) = NULL;
 static BOOL OpenThreadFail = FALSE;
+static HANDLE WINAPI OpenThreadNT(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId)
+{
+    OBJECT_ATTRIBUTES attrib;
+    CLIENT_ID id;
+    HANDLE handle = 0;
+	NTSTATUS error;
+    ZeroMemory(&attrib, sizeof(OBJECT_ATTRIBUTES));
+    attrib.Length = sizeof(OBJECT_ATTRIBUTES);
+	if(bInheritHandle) attrib.Attributes = OBJ_INHERIT;
+    id.UniqueProcess = 0;
+    id.UniqueThread = ULongToHandle(dwThreadId);
+    error = _NtOpenThread(&handle, dwDesiredAccess, &attrib, &id);
+    if (error) return 0;
+    else return handle;
+}
+
 static HANDLE WINAPI _OpenThread(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId)
 {
     HANDLE hKernel32;
+    HANDLE hNtdll;
     if (!__OpenThread)
     {
         if (OpenThreadFail) return NULL;
@@ -345,8 +386,23 @@ static HANDLE WINAPI _OpenThread(DWORD dwDesiredAccess, BOOL  bInheritHandle, DW
         __OpenThread = GetProcAddress(hKernel32, "OpenThread");
         if (!__OpenThread)
         {
-            OpenThreadFail = TRUE;
-            return NULL;
+            // Try NtOpenThread
+            hNtdll = GetModuleHandle(_T("ntdll.dll"));
+            if (hNtdll)
+            {
+                _NtOpenThread = GetProcAddress(hNtdll,"NtOpenThread");
+                if (_NtOpenThread) __OpenThread = OpenThreadNT;
+                else
+                {
+                    OpenThreadFail = TRUE;
+                    return NULL;
+                }
+            }
+            else
+            {
+                OpenThreadFail = TRUE;
+                return NULL;
+            }
         }
     }
     return __OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId);
