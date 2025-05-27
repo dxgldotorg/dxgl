@@ -87,6 +87,10 @@ BOOL(WINAPI *_EnumDisplaySettingsExA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPD
 BOOL(WINAPI *_EnumDisplaySettingsExW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags);
 int(WINAPI *_GetSystemMetrics)(int nIndex);
 
+static BOOL(WINAPI *SysEnumDisplaySettingsExA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode, DWORD dwFlags) = NULL;
+static BOOL(WINAPI *SysEnumDisplaySettingsExW)(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode, DWORD dwFlags) = NULL;
+
+
 // Window geometry
 BOOL(WINAPI *_GetClientRect)(HWND hWnd, LPRECT lpRect);
 BOOL(WINAPI *_GetWindowRect)(HWND hWnd, LPRECT lpRect);
@@ -239,8 +243,17 @@ LRESULT CALLBACK nullwndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void InitHooks()
 {
 	HMODULE hKernel32;
+	HMODULE hUser32;
 	if (hooks_init) return;
 	EnterCriticalSection(&hook_cs);
+	hUser32 = GetModuleHandle(_T("user32.dll"));
+	if (hUser32)
+	{
+		SysEnumDisplaySettingsExA =
+			(BOOL(WINAPI*)(LPCSTR, DWORD, LPDEVMODEA, DWORD)) GetProcAddress(hUser32, "EnumDisplaySettingsExA");
+		SysEnumDisplaySettingsExW =
+			(BOOL(WINAPI*)(LPCWSTR, DWORD, LPDEVMODEW, DWORD)) GetProcAddress(hUser32, "EnumDisplaySettingsExW");
+	}
 	wndhook_count = 0;
 	MH_Initialize();
 	MH_CreateHook(&SetWindowLongA, HookSetWindowLongA, (LPVOID*)&_SetWindowLongA);
@@ -260,8 +273,10 @@ void InitHooks()
 
 	MH_CreateHook(&EnumDisplaySettingsA, HookEnumDisplaySettingsA, (LPVOID*)&_EnumDisplaySettingsA);
 	MH_CreateHook(&EnumDisplaySettingsW, HookEnumDisplaySettingsW, (LPVOID*)&_EnumDisplaySettingsW);
-	MH_CreateHook(&EnumDisplaySettingsExA, HookEnumDisplaySettingsExA, (LPVOID*)&_EnumDisplaySettingsExA);
-	MH_CreateHook(&EnumDisplaySettingsExW, HookEnumDisplaySettingsExW, (LPVOID*)&_EnumDisplaySettingsExW);
+	if(SysEnumDisplaySettingsExA)
+		MH_CreateHook(SysEnumDisplaySettingsExA, HookEnumDisplaySettingsExA, (LPVOID*)&_EnumDisplaySettingsExA);
+	if(SysEnumDisplaySettingsExW)
+		MH_CreateHook(SysEnumDisplaySettingsExW, HookEnumDisplaySettingsExW, (LPVOID*)&_EnumDisplaySettingsExW);
 	MH_CreateHook(&GetSystemMetrics, HookGetSystemMetrics, (LPVOID*)&_GetSystemMetrics);
 
 	MH_CreateHook(&GetClientRect, HookGetClientRect, (LPVOID*)&_GetClientRect);
@@ -302,8 +317,8 @@ void ShutdownHooks()
 
 	MH_RemoveHook(&EnumDisplaySettingsA);
 	MH_RemoveHook(&EnumDisplaySettingsW);
-	MH_RemoveHook(&EnumDisplaySettingsExA);
-	MH_RemoveHook(&EnumDisplaySettingsExW);
+	if(SysEnumDisplaySettingsExA) MH_RemoveHook(SysEnumDisplaySettingsExA);
+	if(SysEnumDisplaySettingsExW) MH_RemoveHook(SysEnumDisplaySettingsExW);
 	MH_RemoveHook(&GetSystemMetrics);
 
 	MH_RemoveHook(&GetClientRect);
@@ -341,8 +356,8 @@ void EnableDXGLHooks()
 
 		MH_EnableHook(&EnumDisplaySettingsA);
 		MH_EnableHook(&EnumDisplaySettingsW);
-		MH_EnableHook(&EnumDisplaySettingsExA);
-		MH_EnableHook(&EnumDisplaySettingsExW);
+		if (SysEnumDisplaySettingsExA) MH_EnableHook(SysEnumDisplaySettingsExA);
+		if (SysEnumDisplaySettingsExW) MH_EnableHook(SysEnumDisplaySettingsExW);
 		MH_EnableHook(&GetSystemMetrics);
 
 		MH_EnableHook(&GetClientRect);
@@ -379,8 +394,8 @@ void DisableDXGLHooks(BOOL force)
 
 		MH_DisableHook(&EnumDisplaySettingsA);
 		MH_DisableHook(&EnumDisplaySettingsW);
-		MH_DisableHook(&EnumDisplaySettingsExA);
-		MH_DisableHook(&EnumDisplaySettingsExW);
+		if (SysEnumDisplaySettingsExA)MH_DisableHook(SysEnumDisplaySettingsExA);
+		if (SysEnumDisplaySettingsExW)MH_DisableHook(SysEnumDisplaySettingsExW);
 		MH_DisableHook(&GetSystemMetrics);
 
 		MH_DisableHook(&GetClientRect);
