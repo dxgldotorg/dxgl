@@ -263,17 +263,186 @@ static VOID ProcessThreadIPs(HANDLE hThread, UINT pos, UINT action)
     }
 }
 
+static BOOL ntsysinfo_loaded = FALSE;
+static BOOL toolhelp_loaded = FALSE;
+typedef long NTSTATUS;
+typedef LONG KPRIORITY, *PKPRIORITY;
+typedef ULONG KTHREAD_STATE;
+typedef ULONG KWAIT_REASON;
+static NTSTATUS(NTAPI *_NtQuerySystemInformation)(DWORD SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength) = NULL;
+static HANDLE(WINAPI *_CreateToolhelp32Snapshot)(DWORD dwFlags, DWORD th32ProcessID) = NULL;
+static BOOL(WINAPI *_Thread32First)(HANDLE hSnapshot, LPTHREADENTRY32 lpte) = NULL;
+static BOOL(WINAPI *_Thread32Next)(HANDLE hSnapshot, LPTHREADENTRY32 lpte) = NULL;
+
+// Structure based on phnt headers, from System Informer
+// MIT Licensed - https://github.com/winsiderss/systeminformer/blob/master/LICENSE.txt
+
+typedef struct _UNICODE_STRING
+{
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+
+typedef struct _CLIENT_ID {
+    HANDLE UniqueProcess;
+    HANDLE UniqueThread;
+} CLIENT_ID;
+
+/**
+ * The SYSTEM_THREAD_INFORMATION structure contains information about a thread running on a system.
+ * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-tsts/e82d73e4-cedb-4077-9099-d58f3459722f
+ */
+typedef struct _SYSTEM_THREAD_INFORMATION
+{
+    LARGE_INTEGER KernelTime;       // Number of 100-nanosecond intervals spent executing kernel code.
+    LARGE_INTEGER UserTime;         // Number of 100-nanosecond intervals spent executing user code.
+    LARGE_INTEGER CreateTime;       // The date and time when the thread was created.
+    ULONG WaitTime;                 // The current time spent in ready queue or waiting (depending on the thread state).
+    PVOID StartAddress;             // The initial start address of the thread.
+    CLIENT_ID ClientId;             // The identifier of the thread and the process owning the thread.
+    KPRIORITY Priority;             // The current dynamic thread priority.
+    KPRIORITY BasePriority;         // The starting priority of the thread.
+    ULONG ContextSwitches;          // The total number of context switches performed.
+    KTHREAD_STATE ThreadState;      // The current state of the thread.
+    KWAIT_REASON WaitReason;        // The current reason the thread is waiting.
+} SYSTEM_THREAD_INFORMATION, *PSYSTEM_THREAD_INFORMATION;
+/**
+ * The SYSTEM_PROCESS_INFORMATION structure contains information about a process running on a system.
+ */
+typedef struct _SYSTEM_PROCESS_INFORMATION
+{
+    ULONG NextEntryOffset;                  // The address of the previous item plus the value in the NextEntryOffset member. For the last item in the array, NextEntryOffset is 0.
+    ULONG NumberOfThreads;                  // The NumberOfThreads member contains the number of threads in the process.
+    ULONGLONG WorkingSetPrivateSize;        // The total private memory that a process currently has allocated and is physically resident in memory. // since VISTA
+    ULONG HardFaultCount;                   // The total number of hard faults for data from disk rather than from in-memory pages. // since WIN7
+    ULONG NumberOfThreadsHighWatermark;     // The peak number of threads that were running at any given point in time, indicative of potential performance bottlenecks related to thread management.
+    ULONGLONG CycleTime;                    // The sum of the cycle time of all threads in the process.
+    LARGE_INTEGER CreateTime;               // Number of 100-nanosecond intervals since the creation time of the process. Not updated during system timezone changes.
+    LARGE_INTEGER UserTime;                 // Number of 100-nanosecond intervals the process has executed in user mode.
+    LARGE_INTEGER KernelTime;               // Number of 100-nanosecond intervals the process has executed in kernel mode.
+    UNICODE_STRING ImageName;               // The file name of the executable image.
+    KPRIORITY BasePriority;                 // The starting priority of the process.
+    HANDLE UniqueProcessId;                 // The identifier of the process.
+    HANDLE InheritedFromUniqueProcessId;    // The identifier of the process that created this process. Not updated and incorrectly refers to processes with recycled identifiers. 
+    ULONG HandleCount;                      // The current number of open handles used by the process.
+    ULONG SessionId;                        // The identifier of the Remote Desktop Services session under which the specified process is running. 
+    ULONG_PTR UniqueProcessKey;             // since VISTA (requires SystemExtendedProcessInformation)
+    SIZE_T PeakVirtualSize;                 // The peak size, in bytes, of the virtual memory used by the process.
+    SIZE_T VirtualSize;                     // The current size, in bytes, of virtual memory used by the process.
+    ULONG PageFaultCount;                   // The total number of page faults for data that is not currently in memory. The value wraps around to zero on average 24 hours.
+    SIZE_T PeakWorkingSetSize;              // The peak size, in kilobytes, of the working set of the process.
+    SIZE_T WorkingSetSize;                  // The number of pages visible to the process in physical memory. These pages are resident and available for use without triggering a page fault.
+    SIZE_T QuotaPeakPagedPoolUsage;         // The peak quota charged to the process for pool usage, in bytes.
+    SIZE_T QuotaPagedPoolUsage;             // The quota charged to the process for paged pool usage, in bytes.
+    SIZE_T QuotaPeakNonPagedPoolUsage;      // The peak quota charged to the process for nonpaged pool usage, in bytes.
+    SIZE_T QuotaNonPagedPoolUsage;          // The current quota charged to the process for nonpaged pool usage.
+    SIZE_T PagefileUsage;                   // The total number of bytes of page file storage in use by the process.
+    SIZE_T PeakPagefileUsage;               // The maximum number of bytes of page-file storage used by the process.
+    SIZE_T PrivatePageCount;                // The number of memory pages allocated for the use by the process.
+    LARGE_INTEGER ReadOperationCount;       // The total number of read operations performed.
+    LARGE_INTEGER WriteOperationCount;      // The total number of write operations performed.
+    LARGE_INTEGER OtherOperationCount;      // The total number of I/O operations performed other than read and write operations.
+    LARGE_INTEGER ReadTransferCount;        // The total number of bytes read during a read operation.
+    LARGE_INTEGER WriteTransferCount;       // The total number of bytes written during a write operation.
+    LARGE_INTEGER OtherTransferCount;       // The total number of bytes transferred during operations other than read and write operations.
+    SYSTEM_THREAD_INFORMATION Threads[1];   // This type is not defined in the structure but was added for convenience.
+} SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
+
+#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
+
+
+// NT4 compatible version
+static BOOL EnumerateThreadsNT(PFROZEN_THREADS pThreads)
+{
+    NTSTATUS error;
+    BOOL succeeded = FALSE;
+    char *buffer = NULL;
+    ULONG buffersize = 0;
+    char *ptr;
+    DWORD pid = GetCurrentProcessId();
+    DWORD tid = GetCurrentThreadId();
+    ULONG i;
+    SYSTEM_PROCESS_INFORMATION *processinfo;
+    error = _NtQuerySystemInformation(5, NULL, 0, &buffersize);
+    if (error == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        buffersize += 65536;
+        buffer = malloc(buffersize);
+        if(!buffer) return FALSE;
+    }
+    error = _NtQuerySystemInformation(5, buffer, buffersize, &buffersize);
+    if (error)
+    {
+        free(buffer);
+        return FALSE;
+    }
+    ptr = buffer;
+    do
+    {
+        processinfo = ptr;
+        if (processinfo->UniqueProcessId == pid) break;
+        if (processinfo->NextEntryOffset == 0)
+        {
+            free(buffer);
+            return FALSE;
+        }
+        ptr += processinfo->NextEntryOffset;
+        if (ptr >= buffer + buffersize)
+        {
+            free(buffer);
+            return FALSE;
+        }
+    } while (1);
+    succeeded = TRUE;
+    for (i = 0; i < processinfo->NumberOfThreads; i++)
+    {
+        if (processinfo->Threads[i].ClientId.UniqueThread != tid)
+        {
+            if (pThreads->pItems == NULL)
+            {
+                pThreads->capacity = INITIAL_THREAD_CAPACITY;
+                pThreads->pItems
+                    = (LPDWORD)HeapAlloc(g_hHeap, 0, pThreads->capacity * sizeof(DWORD));
+                if (pThreads->pItems == NULL)
+                {
+                    succeeded = FALSE;
+                    break;
+                }
+            }
+            else if (pThreads->size >= pThreads->capacity)
+            {
+                LPDWORD p;
+                pThreads->capacity *= 2;
+                p = (LPDWORD)HeapReAlloc(
+                    g_hHeap, 0, pThreads->pItems, pThreads->capacity * sizeof(DWORD));
+                if (p == NULL)
+                {
+                    succeeded = FALSE;
+                    break;
+                }
+
+                pThreads->pItems = p;
+            }
+            pThreads->pItems[pThreads->size++] = processinfo->Threads[i].ClientId.UniqueThread;
+        }
+
+    }
+    free(buffer);
+    return succeeded;
+}
+
 //-------------------------------------------------------------------------
-static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
+static BOOL EnumerateThreadsToolhelp(PFROZEN_THREADS pThreads)
 {
     BOOL succeeded = FALSE;
 
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    HANDLE hSnapshot = _CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     if (hSnapshot != INVALID_HANDLE_VALUE)
     {
         THREADENTRY32 te;
         te.dwSize = sizeof(THREADENTRY32);
-        if (Thread32First(hSnapshot, &te))
+        if (_Thread32First(hSnapshot, &te))
         {
             succeeded = TRUE;
             do
@@ -311,7 +480,7 @@ static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
                 }
 
                 te.dwSize = sizeof(THREADENTRY32);
-            } while (Thread32Next(hSnapshot, &te));
+            } while (_Thread32Next(hSnapshot, &te));
 
             if (succeeded && GetLastError() != ERROR_NO_MORE_FILES)
                 succeeded = FALSE;
@@ -328,14 +497,39 @@ static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
     return succeeded;
 }
 
-typedef long NTSTATUS;
-#define OBJ_INHERIT (ULONG)2;
+// Wrapper function for selecting code paths for Toolhelp32 or Ntdll implementation
+static BOOL EnumerateThreads(PFROZEN_THREADS pThreads)
+{
+    HANDLE hKernel32;
+    HANDLE hNtdll;
+    if (toolhelp_loaded) return EnumerateThreadsToolhelp(pThreads);
+    if (ntsysinfo_loaded) return EnumerateThreadsNT(pThreads);
+    hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+    if (hKernel32)
+    {
+        _CreateToolhelp32Snapshot = GetProcAddress(hKernel32, "CreateToolhelp32Snapshot");
+        _Thread32First = GetProcAddress(hKernel32, "Thread32First");
+        _Thread32Next = GetProcAddress(hKernel32, "Thread32Next");
+        if (_CreateToolhelp32Snapshot && _Thread32First && _Thread32Next)
+        {
+            toolhelp_loaded = TRUE;
+            return EnumerateThreadsToolhelp(pThreads);
+        }
+    }
+    hNtdll = GetModuleHandle(_T("ntdll.dll"));
+    if (hNtdll)
+    {
+        _NtQuerySystemInformation = GetProcAddress(hNtdll, "NtQuerySystemInformation");
+        if (_NtQuerySystemInformation)
+        {
+            ntsysinfo_loaded = TRUE;
+            return EnumerateThreadsNT(pThreads);
+        }
+    }
+    return FALSE;
+}
 
-typedef struct _UNICODE_STRING {
-  USHORT Length;
-  USHORT MaximumLength;
-  PWSTR  Buffer;
-} UNICODE_STRING, *PUNICODE_STRING;
+#define OBJ_INHERIT (ULONG)2;
 
 typedef struct _OBJECT_ATTRIBUTES {
   ULONG           Length;
@@ -345,11 +539,6 @@ typedef struct _OBJECT_ATTRIBUTES {
   PVOID           SecurityDescriptor;
   PVOID           SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
-
- typedef struct _CLIENT_ID {
-   HANDLE UniqueProcess;
-   HANDLE UniqueThread;
- } CLIENT_ID;
 
 static NTSTATUS(NTAPI *_NtOpenThread)(PHANDLE ThreadHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, CLIENT_ID *ClientID) = NULL;
 static HANDLE(WINAPI *__OpenThread)(DWORD dwDesiredAccess, BOOL  bInheritHandle, DWORD dwThreadId) = NULL;
