@@ -368,13 +368,13 @@ static BOOL EnumerateThreadsNT(PFROZEN_THREADS pThreads)
     if (error == STATUS_INFO_LENGTH_MISMATCH)
     {
         buffersize += 65536;
-        buffer = malloc(buffersize);
+        buffer = HeapAlloc(g_hHeap, 0, buffersize);
         if(!buffer) return FALSE;
     }
     error = _NtQuerySystemInformation(5, buffer, buffersize, &buffersize);
     if (error)
     {
-        free(buffer);
+        HeapFree(g_hHeap, 0, buffer);
         return FALSE;
     }
     ptr = buffer;
@@ -384,13 +384,13 @@ static BOOL EnumerateThreadsNT(PFROZEN_THREADS pThreads)
         if (processinfo->UniqueProcessId == pid) break;
         if (processinfo->NextEntryOffset == 0)
         {
-            free(buffer);
+            HeapFree(g_hHeap, 0, buffer);
             return FALSE;
         }
         ptr += processinfo->NextEntryOffset;
         if (ptr >= buffer + buffersize)
         {
-            free(buffer);
+            HeapFree(g_hHeap, 0, buffer);
             return FALSE;
         }
     } while (1);
@@ -428,7 +428,7 @@ static BOOL EnumerateThreadsNT(PFROZEN_THREADS pThreads)
         }
 
     }
-    free(buffer);
+    HeapFree(g_hHeap, 0, buffer);
     return succeeded;
 }
 
