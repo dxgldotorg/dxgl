@@ -513,7 +513,9 @@ int ProcessHeaders(char *path)
 		if(findptr)
 		{
 			#ifdef _MSC_VER
-			#if (_MSC_VER == 1400)
+			#if (_MSC_VER == 1310)
+			strncpy(findptr, "\"VC2003\"\n", 13);
+			#elif (_MSC_VER == 1400)
 			strncpy(findptr, "\"VC2005\"\n", 13);
 			#elif (_MSC_VER == 1500)
 			strncpy(findptr, "\"VC2008\"\n", 13);
@@ -738,6 +740,27 @@ int MakeInstaller(char *path)
 	DWORD buffersize = MAX_PATH+1;
 	PROCESS_INFORMATION process;
 	STARTUPINFOA startinfo;
+	#if (_MSC_VER == 1310)
+	char syspath[(MAX_PATH+1)*2];
+	char destpath[(MAX_PATH+1)*2];
+	char *ptr;
+	int pathpos;
+	DWORD error;
+	GetSystemDirectoryA(syspath, MAX_PATH);
+	pathpos = strlen(syspath);
+	strcpy(syspath + pathpos, "\\msvcr71.dll");
+	strncpy(destpath, path,MAX_PATH);
+	destpath[MAX_PATH] = 0;
+	ptr = strrchr(destpath, '\\');
+	if (ptr) ptr[1] = 0;
+	ptr++;
+	strcpy(ptr, "msvcr71.dll");
+	CopyFileA(syspath, destpath, FALSE);
+	error = GetLastError();
+	strcpy(syspath + pathpos, "\\msvcp71.dll");
+	strcpy(ptr, "msvcp71.dll");
+	CopyFileA(syspath, destpath, FALSE);
+	#endif
 	#ifdef _M_X64
 	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\NSIS", 0, KEY_READ|KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS)
 	#else
