@@ -158,3 +158,23 @@
 /dxglcfg-old/Release VS2022
 /dxglcfg/Debug VS2022
 /dxglcfg/Release VS2022
+*.vcproj.old
+BuildLog.htm
+/vs7.1/buildtool/Debug
+/vs7.1/buildtool/Release
+/vs7.1/cfgmgr/Debug
+/vs7.1/cfgmgr/Release
+/vs7.1/ddraw/Debug
+/vs7.1/ddraw/Release
+/vs7.1/debug
+/vs7.1/dxgl-nsis/Debug
+/vs7.1/dxgl-nsis/Release
+*.ncb
+*.sln.old
+/vs7.1/dxglcfg/Debug
+/vs7.1/dxglcfg/Release
+/vs7.1/libMinHook/Debug
+/vs7.1/libMinHook/Release
+/vs7.1/release
+/Installer/msvcp71.dll
+/Installer/msvcr71.dll

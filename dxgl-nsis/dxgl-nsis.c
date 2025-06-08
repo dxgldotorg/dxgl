@@ -11,7 +11,6 @@
 #include <Windows.h>
 #include "LibSha512.h"
 #include "pluginapi.h"
-#include <intrin.h>
 #ifndef _TCHAR_DEFINED
 #include <tchar.h>
 #endif
@@ -104,7 +103,15 @@ void __declspec(dllexport) CheckSSE2(HWND hwndParent, int string_size,
 	int cpuid[4];
 	char out[256];
 	EXDLL_INIT();
-	__cpuid(cpuid, 1);
+	__asm
+	{
+		mov eax, 1
+		cpuid
+		mov dword ptr cpuid, eax
+		mov dword ptr cpuid+4, ebx
+		mov dword ptr cpuid+8, ecx
+		mov dword ptr cpuid+12, edx
+	}
 	if ((cpuid[3] >> 26) & 1) out[0] = '1';
 	else out[0] = '0';
 	out[1] = out[2] = out[3] = 0;
