@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2019 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,9 @@ extern BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertic
 
 // C RunTime Header Files
 #ifdef _DEBUG
+#if _MSC_VER >= 1400
 #define _CRTDBG_MAP_ALLOC
+#endif
 #endif
 #include <stdio.h>
 #include <stdlib.h>

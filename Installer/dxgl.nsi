@@ -64,6 +64,14 @@ SetCompressor /SOLID lzma
 !define SRCDIR "Release VS2022"
 !endif
 !endif
+!else if ${COMPILER} == "VC2003"
+!ifdef _DEBUG
+!define PLUGINDIR "VS7.1\Debug"
+!define SRCDIR "VS7.1\Debug"
+!else
+!define PLUGINDIR "VS7.1\Release"
+!define SRCDIR "VS7.1\Release"
+!endif
 !else if ${COMPILER} == "VC2005"
 !ifdef _DEBUG
 !define PLUGINDIR "VS8\Debug"
@@ -223,7 +231,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !endif
 !else
 !define PRODUCT_PLATFORM "win32"
-!if ${COMPILER} == "VC2005"
+!if ${COMPILER} == "VC2003"
+!define download_runtime 0
+!define PRODUCT_SUFFIX "-msvc7_1"
+!else if ${COMPILER} == "VC2005"
 !define download_runtime 1
 !define runtime_url "http://dxgl.org/download/runtimes/vc8-6195/vcredist_x86.EXE"
 !define runtime_name "Visual C++ 2005 x86"
@@ -340,6 +351,16 @@ Section "DXGL Components (required)" SEC01
 SectionEnd
 
 !ifndef _DEBUG
+
+!if ${COMPILER} == "VC2003"
+Section "Visual C++ .NET 2003 Runtimes" SEC_VCRUNTIME
+  SetOutPath "$SYSDIR"
+  SetOverwrite off
+  File "msvcr71.dll"
+  File "msvcp71.dll"
+SectionEnd
+!endif
+
 !if ${download_runtime} >= 1
 Section "Download ${runtime_name} Redistributable" SEC_VCREDIST
   ${If} $PortableMode == "0"
@@ -464,9 +485,16 @@ Function PortableModeLeave
 		StrCpy $INSTDIR "$PROGRAMFILES\DXGL"
 		!endif
 		!ifndef _DEBUG
+		!if ${download_runtime} >= 1
 		SectionGetFlags ${SEC_VCREDIST} $0
 		IntOp $0 $0 & 0x6F
 		SectionGetFlags ${SEC_VCREDIST} $0
+		!endif
+		!if ${COMPILER} == "VC2003"
+		SectionGetFlags ${SEC_VCRUNTIME} $0
+		IntOp $0 $0 & 0x6F
+		SectionGetFlags ${SEC_VCRUNTIME} $0
+		!endif
 		!endif
 		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
 		IntOp $0 $0 & 0x6F
@@ -477,9 +505,16 @@ Function PortableModeLeave
 	${Else}
 		StrCpy $INSTDIR "$EXEDIR\DXGL"
 		!ifndef _DEBUG
+		!if ${download_runtime} >= 1
 		SectionGetFlags ${SEC_VCREDIST} $0
 		IntOp $0 $0 | 0x10
 		SectionGetFlags ${SEC_VCREDIST} $0
+		!endif
+		!if ${COMPILER} == "VC2003"
+		SectionGetFlags ${SEC_VCRUNTIME} $0
+		IntOp $0 $0 & 0x6F
+		SectionGetFlags ${SEC_VCRUNTIME} $0
+		!endif
 		!endif
 		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
 		IntOp $0 $0 | 0x10
@@ -540,9 +575,13 @@ Function .onInit
     MessageBox MB_OK|MB_ICONEXCLAMATION "This version of DXGL requires at least Windows 2000."
     Quit
   ${EndIf}
-  !else
+  !else if ${COMPILER} == "VC2005"
   ${IfNot} ${AtleastWin2000}
     MessageBox MB_OK|MB_ICONEXCLAMATION "This version of DXGL requires at least Windows 2000.  You may attempt to install this build anyway however it is not guaranteed to run."
+  ${EndIf}
+  !else if ${COMPILER} == "VC2003"
+  ${IfNot} ${IsNT}
+    MessageBox MB_OK|MB_ICONEXCLAMATION "This version of DXGL has not been tested on non-NT versions of Windows."
   ${EndIf}
   !endif
   !ifdef _DEBUG
@@ -589,8 +628,10 @@ Function .onInit
   !endif
   skipvcredist:
   !ifndef _DEBUG
+  !if ${download_runtime} >= 1
   SectionSetFlags ${SEC_VCREDIST} 0
   SectionSetText ${SEC_VCREDIST} ""
+  !endif
   !endif
   vcinstall:
   !endif
@@ -618,6 +659,7 @@ Function .onInit
 FunctionEnd
 
 LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL."
+LangString DESC_SEC_VCRUNTIME ${LANG_ENGLISH} "Installs the Visual C++ 2003 runtimes required to run this version of DXGL to the system folder."
 LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "Required MSVC redistributable was not detected.  Select to download the required redistributable from dxgl.org."
 LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
 LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adds a workaround for Windows 8 and above for COM initialization.  Applies to current user account."
@@ -625,7 +667,12 @@ LangString DESC_SEC_DEBUGSYMBOLS ${LANG_ENGLISH} "Copy PDB debug symbols to the 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(DESC_SEC01)
 !ifndef _DEBUG
+!if ${COMPILER} == "VC2003"
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_VCRUNTIME} $(DESC_SEC_VCRUNTIME)
+!endif
+!if ${download_runtime} >= 1
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_VCREDIST} $(DESC_SEC_VCREDIST)
+!endif
 !endif
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_WINEDLLOVERRIDE} $(DESC_SEC_WINEDLLOVERRIDE)
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_COMFIX} $(DESC_SEC_COMFIX)

@@ -28,7 +28,13 @@
 #include "timer.h"
 #include "glRenderer.h"
 #include "hooks.h"
+#if _MSC_VER >= 1400
 #include <intrin.h>
+#else
+extern "C" void *_ReturnAddress(void);
+#pragma intrinsic(_ReturnAddress)
+#endif
+
 
 
 extern "C" {DXGLCFG dxglcfg; }
