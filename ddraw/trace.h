@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2014 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,12 @@ extern "C" {
 
 
 extern BOOL trace_end;
+#if _MSC_VER < 1400
+#pragma warning (disable: 4002)
+#define TRACE_ENTER(paramcount) if(dxglcfg.DebugTraceLevel >= 3) trace_enter(__FUNCTION__,paramcount)
+#else
 #define TRACE_ENTER(paramcount,...) if(dxglcfg.DebugTraceLevel >= 3) trace_enter(__FUNCTION__,paramcount,__VA_ARGS__)
+#endif
 #define TRACE_EXIT(argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_exit(__FUNCTION__,argtype,(void*)arg)
 #define TRACE_VAR(var,argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_var(__FUNCTION__,var,argtype,(void*)arg)
 #define TRACE_STRING(str) if(dxglcfg.DebugTraceLevel) trace_string(str)

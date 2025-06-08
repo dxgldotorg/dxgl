@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2014 William Feely
+// Copyright (C) 2011-2025 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -18,7 +18,9 @@
 
 #define _WIN32_WINNT 0x0600
 #define _CRT_SECURE_NO_WARNINGS
+#if _MSC_VER >= 1400
 #define _CRTDBG_MAP_ALLOC
+#endif
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
@@ -599,15 +601,15 @@ void FloatToAspect(float f, LPTSTR aspect)
 #endif
 }
 
-void FloatToScale(float x, float y, LPTSTR scale, float default)
+void FloatToScale(float x, float y, LPTSTR scale, float defaultvalue)
 {
 	TCHAR numberx[8];
 	TCHAR numbery[8];
-	if (_isnan(x)) x = default; //Handle NAN condition
-	if (_isnan(y)) y = default;
+	if (_isnan(x)) x = defaultvalue; //Handle NAN condition
+	if (_isnan(y)) y = defaultvalue;
 	// Too low number, round to "Auto"
-	if (x < 0.25f) x = default;
-	if (y < 0.25f) y = default;
+	if (x < 0.25f) x = defaultvalue;
+	if (y < 0.25f) y = defaultvalue;
 	// Too high number, round to 16
 	if (x > 16.0f) x = 16.0f;
 	if (y > 16.0f) y = 16.0f;
