@@ -624,8 +624,8 @@ void FloatToScale(float x, float y, LPTSTR scale, float defaultvalue)
 	swprintf(numberx, 7, L"%.4g", x);
 	swprintf(numbery, 7, L"%.4g", y);
 #else
-	sprintf(numberx, ".4g", x);
-	sprintf(numbery, ".4g", y);
+	sprintf(numberx, "%.4g", x);
+	sprintf(numbery, "%.4g", y);
 #endif
 	// Fill out string
 	_tcscpy(scale, numberx);

@@ -178,3 +178,4 @@ BuildLog.htm
 /vs7.1/release
 /Installer/msvcp71.dll
 /Installer/msvcr71.dll
+*.suo
