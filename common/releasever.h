@@ -5,7 +5,7 @@
 /* Removed due to transition to Git - Git tags will set the version number
 #define DXGLMAJORVER 0
 #define DXGLMINORVER 5
-#define DXGLPOINTVER 23
+#define DXGLPOINTVER 24
 #define DXGLBETA 0
 
 
