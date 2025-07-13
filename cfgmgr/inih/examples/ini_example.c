@@ -33,6 +33,9 @@ static int handler(void* user, const char* section, const char* name,
 int main(int argc, char* argv[])
 {
     configuration config;
+    config.version = 0;  /* set defaults */
+    config.name = NULL;
+    config.email = NULL;
 
     if (ini_parse("test.ini", handler, &config) < 0) {
         printf("Can't load 'test.ini'\n");
@@ -40,5 +43,11 @@ int main(int argc, char* argv[])
     }
     printf("Config loaded from 'test.ini': version=%d, name=%s, email=%s\n",
         config.version, config.name, config.email);
+
+    if (config.name)
+        free((void*)config.name);
+    if (config.email)
+        free((void*)config.email);
+
     return 0;
 }

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2023 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -61,13 +61,13 @@ void DeleteDirectDraw();
 extern "C" {
 #endif
 extern DXGLCFG dxglcfg;
+extern DWORD gllock;
 #ifdef __cplusplus
 }
 #endif
-extern DWORD gllock;
 extern const GUID device_template;
 struct glRenderer;
 struct glDirectDraw7;
-void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, struct glDirectDraw7 *glDD7, BOOL devwnd);
+//void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, struct glDirectDraw7 *glDD7, BOOL devwnd);
 
 #endif //_DDRAW_PRIVATE_H

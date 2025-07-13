@@ -1,0 +1,27 @@
+[DirectDraw Test Application]
+BufferSize.Window=51200
+LogFile.Log File=c:\ddtests\fnddraw.log
+Cmd.Size=1
+Cmd.Hex0000=00
+ModesToTest=4
+DirectDrawInterface=2
+DirectDrawSurfaceInterface=1
+DirectDrawInitStyle=2
+TreatOtherAsPass=0
+MonitorIndex=0
+LogBMP=0
+StopOnFail=0
+Position=0, 0, 1024, 690
+Options=387
+RunCount=1
+Search=failure
+LogWindowLevel=10
+LogLog FileLevel=10
+FontName=Courier
+FontAttr=-2 400 0 131585
+NumTests=5
+testcasename0004=BLT Test cases\BLT_BltFast, SRCKEY, From/To same surface (TC#3.6.97b)
+testcasename0003=BLT Test cases\BLT_BltFast From/To Same Surface(TC#3.6.97a)
+testcasename0002=BLT Test cases\BLT, Stretch, Complete Overlap, AGP mem.(TC 3.6.?]
+testcasename0001=BLT Test cases\BLT, Stretch, Complete Overlap, Sys. mem.(TC 3.6.?]
+testcasename0000=BLT Test cases\BLT, Stretch, Complete Overlap, VMem(primary)(TC 3.6.?]

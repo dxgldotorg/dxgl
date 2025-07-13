@@ -35,6 +35,8 @@
 #include "GL/gl.h"
 #include "include/GL/glext.h"
 #include "include/GL/wglext.h"
+#include "DXGLTexture.h"
+#include "DXGLRenderer.h"
 #include "struct.h"
 #include "const.h"
 #include "glExtensions.h"
@@ -60,6 +62,7 @@ extern const GUID device_template;
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #if _MSC_VER >= 1600
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -124,7 +127,13 @@ static INLINE void dwordto4int(DWORD in, GLint *out)
 #define NextMultipleOfWord NextMultipleOf4
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern CRITICAL_SECTION dll_cs;
+#ifdef __cplusplus
+}
+#endif
 
 #include "trace.h"
 #include "../cfgmgr/LibSha256.h"

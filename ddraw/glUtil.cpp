@@ -23,11 +23,9 @@
 
 extern "C" {
 
-void glUtil_Create(glExtensions *glext, glUtil **out)
+void glUtil_Create(glExtensions *glext, glUtil *out)
 {
-	glUtil *util;
-	util = (glUtil *)malloc(sizeof(glUtil));
-	if (!util) return;
+	glUtil* util = out;
 	ZeroMemory(util, sizeof(glUtil));
 	util->ext = glext;
 	util->depthwrite = TRUE;
@@ -52,7 +50,7 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 	ZeroMemory(util->materialemission, 4 * sizeof(GLfloat));
 	util->materialshininess = 0;
 	util->scissorenabled = FALSE;
-	util->texwrap[16];
+	ZeroMemory(&util->texwrap, 16 * sizeof(GLint));
 	util->clearr = 0.0;
 	util->clearg = 0.0;
 	util->clearb = 0.0;
@@ -62,7 +60,7 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 	util->blendsrc = GL_ONE;
 	util->blenddest = GL_ZERO;
 	util->blendenabled = FALSE;
-	util->arrays[42];
+	ZeroMemory(&util->arrays, 42 * sizeof(BOOL));
 	util->cullmode = D3DCULL_NONE;
 	util->cullenabled = FALSE;
 	util->polymode = D3DFILL_SOLID;
@@ -70,7 +68,6 @@ void glUtil_Create(glExtensions *glext, glUtil **out)
 	util->pboPackBinding = util->pboUnpackBinding = util->vboArrayBinding =
 		util->vboElementArrayBinding = util->uboUniformBufferBinding = util->LastBoundBuffer = NULL;
 	util->refcount = 1;
-	*out = util;
 	int i;
 	if (glext->GLEXT_ARB_sampler_objects)
 	{
@@ -109,7 +106,7 @@ void glUtil_Release(glUtil *This)
 				This->samplers[i].id = 0;
 			}
 		}
-		free(This);
+		//free(This);
 	}
 }
 
@@ -614,8 +611,7 @@ void glUtil_SetActiveTexture(glUtil *This, int level)
 	}
 }
 
-
-void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
+void glUtil_SetTexture(glUtil *This, unsigned int level, DXGLTexture *texture)
 {
 	GLuint texname;
 	GLenum target;
@@ -627,14 +623,21 @@ void glUtil_SetTexture(glUtil *This, unsigned int level, glTexture *texture)
 	}
 	else
 	{
-		texname = texture->id;
-		target = texture->target;
+		texname = texture->glhandle;
+		target = texture->gltarget;
 	}
 	if (texname != This->textures[level])
 	{
 		glUtil_SetActiveTexture(This, level);
 		glBindTexture(target, texname);
 		//This->textures[level] = texname;
+	}
+}
+
+void glUtil_ClearErrors(glUtil* This)
+{
+	while (glGetError() != 0)
+	{
 	}
 }
 

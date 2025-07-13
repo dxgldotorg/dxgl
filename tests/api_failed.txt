@@ -1,0 +1,14 @@
+API_DuplicateSurf
+API_TestCooperativeLevel
+API_IV_Flip
+API_EnumSurfaces
+API_GetGDISurface
+API_GetVerticalBlankStatus
+API_IV_GetCaps
+API_IV_SetCooperativeLevel
+API_IV_SetDisplayMode
+API_IV_Compact
+API_IV_FlipToGDISurface
+API_IV_CreatePalette
+API_IV_EnumDisplayModes
+API_GetFourCCCodes

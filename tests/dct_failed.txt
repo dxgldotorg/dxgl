@@ -1,0 +1,10 @@
+PC99 14.8 ScrnRes & VidMem Amt
+PC99TA 6.8.6 720x576 Resolution
+PC99TA 6.8.6 720x576 Resolution
+PC99TA 6.8.4 YUV support
+PC99TA 6.8.5 Qual scaling Cons.
+PC99TA 6.8.5 Qual scaling Enter.
+PC99TA 6.8.1 Overlay support:
+PC99TA 6.8.2 Color key support:
+GRPH-0168 Minimum Screen Resolution (non-mobile):
+DCT_LargeNumberOfBuffersPageFlipping (crash)

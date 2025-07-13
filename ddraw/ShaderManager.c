@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -317,7 +317,16 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 		shaderman->shaders[i].colorsize = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog, "colorsize");
 		shaderman->shaders[i].pal = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"pal");
 		shaderman->shaders[i].view = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"view");
+		if (shaderman->ext->GLEXT_ARB_vertex_array_object)
+		{
+			shaderman->ext->glGenVertexArrays(1, &shaderman->shaders[i].vao);
+			shaderman->ext->glBindVertexArray(shaderman->shaders[i].vao);
+			shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
+			shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+		}
+		else shaderman->shaders[i].vao = 0;
 	}
+	shaderman->ext->glBindVertexArray(shaderman->ext->defaultvao);
 	shaderman->gen3d = (ShaderGen3D*)malloc(sizeof(ShaderGen3D));
 	ShaderGen3D_Init(shaderman->ext, shaderman, shaderman->gen3d);
 	shaderman->gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
@@ -346,6 +355,11 @@ void ShaderManager_Delete(ShaderManager *This)
 		{
 			This->ext->glDeleteShader(This->shaders[i].fs);
 			This->shaders[i].fs = 0;
+		}
+		if (This->shaders[i].vao && This->ext->GLEXT_ARB_vertex_array_object)
+		{
+			This->ext->glDeleteVertexArrays(1, &This->shaders[i].vao);
+			This->shaders[i].vao = 0;
 		}
 	}
 	free(This->shaders);

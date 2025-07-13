@@ -18,6 +18,8 @@
 #include "common.h"
 #include "util.h"
 #include "ddraw.h"
+#include "DXGLTexture.h"
+#include "DXGLRenderer.h"
 #include "glTexture.h"
 #include "glUtil.h"
 #include "glClassFactory.h"
@@ -34,9 +36,10 @@ extern "C" void *_ReturnAddress(void);
 #endif
 
 
+
 extern "C" {DXGLCFG dxglcfg; }
 glDirectDraw7 *glDD7 = NULL;
-DWORD gllock = 0;
+extern "C" DWORD gllock = 0;
 HMODULE sysddraw = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
 
@@ -44,7 +47,7 @@ const GUID device_template =
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
 
 
-void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, BOOL devwnd)
+/*void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int frequency, HWND hWnd, glDirectDraw7 *glDD7, BOOL devwnd)
 {
 	TRACE_ENTER(6,11,width,11,height,11,bpp,21,fullscreen,13,hWnd,14,glDD7);
 	if (!glDD7->renderer)
@@ -54,7 +57,7 @@ void InitGL(int width, int height, int bpp, BOOL fullscreen, unsigned int freque
 	}
 	else glRenderer_SetWnd(glDD7->renderer,width,height,bpp,fullscreen,frequency,hWnd,devwnd);
 	TRACE_EXIT(0,0);
-}
+}*/
 
 /// Stub for function found in system ddraw.dll
 DDRAW_API void WINAPI AcquireDDThreadLock()
@@ -603,7 +606,7 @@ DDRAW_API void DXGLBreak()
 	{
 		if (glDD7->renderer)
 		{
-			glRenderer_DXGLBreak(glDD7->renderer);
+			IDXGLRenderer_Break(glDD7->renderer);
 		}
 	}
 }

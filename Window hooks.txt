@@ -1,0 +1,12 @@
+Phase 2 hooks
+AdjustWindowRect
+AdjustWindowRectEx
+DeferWindowPos
+GetWindowInfo
+GetWindowPlacement
+SetWindowPlacement
+WM_MOVING
+WM_NCCALCSIZE
+WM_SIZING
+WM_WINDOWPOSCHANGE
+WM_WINDOWPOSCHANGING

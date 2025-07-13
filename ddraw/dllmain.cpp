@@ -28,7 +28,7 @@ BOOL(WINAPI *_GlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer) = NULL;
 HRESULT(WINAPI *_DirectDrawCreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);
 
 ATOM WindowClass = NULL;
-CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
+extern "C" CRITICAL_SECTION dll_cs = {NULL,0,0,NULL,NULL,0};
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved

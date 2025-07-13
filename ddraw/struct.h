@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2022 William Feely
+// Copyright (C) 2015-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -22,11 +22,11 @@
 // Vertex format used by Blt calls
 typedef struct
 {
-	GLfloat x, y;
+	GLfloat x, y, z, rhw;
 	GLfloat s, t;
 	GLfloat dests, destt;
 	GLfloat stencils, stencilt;
-} BltVertex;
+} BltVertex; // Use vertex format D3DFVF_XYZRHW | D3DFVF_TEX3
 
 // Sampler object state information
 typedef struct SAMPLER
@@ -69,6 +69,11 @@ typedef struct CmdBuffer
 // OpenGL Extensions structure
 typedef struct glExtensions
 {
+	const char* (WINAPI *wglGetExtensionsStringEXT)(void);
+	const char* (WINAPI *wglGetExtensionsStringARB)(HDC hdc);
+
+	const GLubyte* (APIENTRY *glGetStringi)(GLenum name, GLuint index);
+
 	GLuint(APIENTRY *glCreateShader) (GLenum type);
 	void (APIENTRY *glShaderSource) (GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
 	void (APIENTRY *glCompileShader) (GLuint shader);
@@ -156,7 +161,7 @@ typedef struct glExtensions
 	void (APIENTRY *glTextureSubImage2D)(GLuint texture, GLint level, GLint xoffset, GLint yoffset,
 		GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 	void (APIENTRY *glGetTextureImage)(GLuint texture, GLint level, GLenum format, GLenum type, GLsizei bufSize, GLvoid *pixels);
-	void (APIENTRY *glNamedBufferData)(GLuint buffer, GLsizei size, const void *data, GLenum usage);
+	void (APIENTRY *glNamedBufferData)(GLuint buffer, GLsizeiptr size, const void *data, GLenum usage);
 	void* (APIENTRY *glMapNamedBuffer)(GLuint buffer, GLenum access);
 	GLboolean(APIENTRY *glUnmapNamedBuffer)(GLuint buffer);
 
@@ -169,6 +174,14 @@ typedef struct glExtensions
 	void (APIENTRY *glSamplerParameteriv)(GLuint sampler, GLenum pname, const GLint *params);
 
 	void (APIENTRY *glFrameTerminatorGREMEDY)();
+
+	BOOL (WINAPI *wglChoosePixelFormatARB)(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
+	HGLRC (WINAPI *wglCreateContextAttribsARB)(HDC hDC, HGLRC hShareContext, const int *attribList);
+
+	void (APIENTRY *glGenVertexArrays)(GLsizei n, GLuint* arrays);
+	void (APIENTRY *glDeleteVertexArrays)(GLsizei n, const GLuint* arrays);
+	void (APIENTRY *glBindVertexArray)(GLuint array);
 
 	int GLEXT_ARB_framebuffer_object;
 	int GLEXT_EXT_framebuffer_object;
@@ -184,10 +197,18 @@ typedef struct glExtensions
 	int GLEXT_ARB_direct_state_access;
 	int GLEXT_ARB_sampler_objects;
 	int GLEXT_EXT_gpu_shader4;
+	int GLEXT_ARB_vertex_array_object;
 	int GLEXT_GREMEDY_frame_terminator;
+	int WGLEXT_EXT_extensions_string;
+	int WGLEXT_ARB_extensions_string;
+	int WGLEXT_ARB_pixel_format;
+	int WGLEXT_ARB_create_context;
+	int WGLEXT_ARB_create_context_profile;
 	DWORD glver_major;
 	DWORD glver_minor;
 	BOOL atimem;
+	GLint maxtexturesize;
+	GLuint defaultvao;
 } glExtensions;
 
 // Buffer object (such as PBO or VBO)
@@ -358,7 +379,7 @@ typedef struct OVERLAY
 	RECT srcrect;
 	RECT destrect;
 	void *surface;
-	glTexture *texture;
+	DXGLTexture *texture;
 	DWORD flags;
 	BOOL enabled;
 } OVERLAY;
@@ -378,6 +399,7 @@ typedef struct SHADER
 	GLint colorsize;
 	GLint pal;
 	GLint view;
+	GLuint vao;
 } SHADER;
 
 struct ShaderGen3D;
@@ -509,5 +531,45 @@ typedef struct VIEWPORT
 	GLsizei width;
 	GLsizei hieght;
 } VIEWPORT;
+
+// Outdated D3D structs for size calculations
+typedef struct _D3DDeviceDesc1 {
+	DWORD           dwSize;
+	DWORD           dwFlags;
+	D3DCOLORMODEL   dcmColorModel;
+	DWORD           dwDevCaps;
+	D3DTRANSFORMCAPS dtcTransformCaps;
+	BOOL            bClipping;
+	D3DLIGHTINGCAPS dlcLightingCaps;
+	D3DPRIMCAPS     dpcLineCaps;
+	D3DPRIMCAPS     dpcTriCaps;
+	DWORD           dwDeviceRenderBitDepth;
+	DWORD           dwDeviceZBufferBitDepth;
+	DWORD           dwMaxBufferSize;
+	DWORD           dwMaxVertexCount;
+} D3DDEVICEDESC1, *LPD3DDEVICEDESC1;
+
+typedef struct _D3DDeviceDesc2 {
+	DWORD           dwSize;
+	DWORD           dwFlags;
+	D3DCOLORMODEL   dcmColorModel;
+	DWORD           dwDevCaps;
+	D3DTRANSFORMCAPS dtcTransformCaps;
+	BOOL            bClipping;
+	D3DLIGHTINGCAPS dlcLightingCaps;
+	D3DPRIMCAPS     dpcLineCaps;
+	D3DPRIMCAPS     dpcTriCaps;
+	DWORD           dwDeviceRenderBitDepth;
+	DWORD           dwDeviceZBufferBitDepth;
+	DWORD           dwMaxBufferSize;
+	DWORD           dwMaxVertexCount;
+
+	DWORD           dwMinTextureWidth, dwMinTextureHeight;
+	DWORD           dwMaxTextureWidth, dwMaxTextureHeight;
+	DWORD           dwMinStippleWidth, dwMaxStippleWidth;
+	DWORD           dwMinStippleHeight, dwMaxStippleHeight;
+} D3DDEVICEDESC2, *LPD3DDEVICEDESC2;
+
+
 
 #endif //__STRUCT_H

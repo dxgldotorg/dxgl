@@ -41,9 +41,21 @@ user_error.ini: e=3 user=104
 ... single=ghi;
 ... multi=the quick;
 ... name=bob smith;
+... foo=bar;
 multi_line.ini: e=4 user=105
 bad_multi.ini: e=1 user=105
 ... [bom_section]
 ... bom_name=bom_value;
 ... key“=value“;
 bom.ini: e=0 user=107
+... [section1]
+... single1=abc;
+... single2=xyz;
+... single1=def;
+... single2=qrs;
+duplicate_sections.ini: e=0 user=108
+... [section0]
+... key0=val0;
+... [section1]
+... key1=val1;
+no_value.ini: e=2 user=109

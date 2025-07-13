@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@
 #include "common.h"
 #include "glTexture.h"
 #include "glUtil.h"
+#include "DXGLTexture.h"
+#include "DXGLRenderer.h"
 #include "glDirectDraw.h"
 #include "glDirectDrawClipper.h"
 #include "glRenderer.h"
@@ -154,7 +156,7 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->glDD7) glDirectDraw7_DeleteClipper(This->glDD7, This);
 		if (This->creator) This->creator->Release();
 		if (This->texture.initialized) glTexture_Release(&This->texture, FALSE);
-		if (This->glDD7) glRenderer_FreePointer(This->glDD7->renderer, This);
+		if (This->glDD7) IDXGLRenderer_FreePointer(This->glDD7->renderer, This);
 	};
 	TRACE_EXIT(8,ret);
 	return ret;

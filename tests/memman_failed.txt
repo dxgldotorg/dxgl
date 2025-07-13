@@ -1,0 +1,7 @@
+MEMMAN - Consume All Video Mem Test(TC 6.1.1) (crash)
+MEMMAN - Test VidMem/AGP boundary for MipMap chains (crash)
+MEMMAN - Video Memory Reuse Test(TC 6.1.2)
+MEMMAN - Create/Verify All Video Memory Types(TC ??]
+MEMMAN_GetAvailableVidMem(TC 3.6.?]
+MEMMAN - Consume Half SysMem Test (takes too long)
+MEMMAN - Random Create/Release System Memory surfaces Test (takes too long)

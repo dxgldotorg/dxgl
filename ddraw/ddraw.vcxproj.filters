@@ -19,6 +19,9 @@
     <Filter Include="Header Files\include\GL">
       <UniqueIdentifier>{7fde6a26-b080-438c-9956-fd87a7ffad7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\KHR">
+      <UniqueIdentifier>{e1205fd4-2fb7-4411-8c37-99be24490742}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ddraw.def">
@@ -164,6 +167,27 @@
     <ClInclude Include="include\mingw-setdisplayconfig.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="DXGLRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGLRendererGL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\KHR\khrplatform.h">
+      <Filter>Header Files\include\KHR</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGLTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGLQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spinlock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGLTextureGL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ddraw.cpp">
@@ -277,10 +301,27 @@
     <ClCompile Include="glTexture.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DXGLRenderer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DXGLRendererGL.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spinlock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DXGLTextureGL.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ddraw.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="spinlock_x86.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

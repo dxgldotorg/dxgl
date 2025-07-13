@@ -1,0 +1,1 @@
+API_GetDC, Verify Pixel Format(TC ?]

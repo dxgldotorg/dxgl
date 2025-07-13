@@ -120,6 +120,7 @@ typedef struct
 	BOOL ParsedAddColorDepths;
 	BOOL ParsedAddModes;
 	TCHAR regkey[MAX_PATH + 80];
+	TCHAR shadercachepath[MAX_PATH + 84];
 	// For parsing .ini file
 	TCHAR inipath[MAX_PATH];
 	// System information

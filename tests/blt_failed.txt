@@ -1,0 +1,23 @@
+BLT, SRCKEY Space, System to Primary(TC 3.6.?]
+BLT, SRCKEY Space, VMem to Primary(TC 3.6.?]
+BLT, single DESTKEY, System to Primary(TC 3.6.58)
+BLT, single DESTKEY, VMem to Primary(TC 3.6.58)
+BLT, single DESTKEY, AGP to Primary(TC 3.6.60)
+BLT, DESTKEY Space, System to Primary(TC 3.6.?]
+BLT, DESTKEY Space, VMem to Primary(TC 3.6.?]
+BLT, Mirrored and Clipped (Manbug4.1#13532)
+BLT_ZBuffer
+BLT, FourCC to RGB conversion (TC#??.??.]
+BLT, FourCC to RGB stretch (TC#??.??.]
+BLT, FourCC to FourCC(TC# ?] (crash)
+BLT,Invalid Params Test(TC 3.6.1-3, 3.6.5, 3.6.7-8 )
+BLT_OffscreenOverlap
+Blt_ColorConverting (crash)
+BLT_Texture Sys to Sys
+BLT_Texture Sys to Vid
+BLT_Texture Sys to AGP
+BLT_Texture Vid to Vid
+BLT_NoSrcColorKey
+BLT_NoDestColorKey
+BLT_CanNotColorFill
+BLT_InvalidFlagsDDFX

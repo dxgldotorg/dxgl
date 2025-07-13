@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2022 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,8 @@
 #include "util.h"
 #include <string>
 using namespace std;
+#include "DXGLTexture.h"
+#include "DXGLRenderer.h"
 #include "shadergen2d.h"
 #include "ddraw.h"
 #include "timer.h"
@@ -29,7 +31,6 @@ using namespace std;
 #include "glDirectDrawClipper.h"
 #include "dxglDirectDrawSurface.h"
 #include "glDirectDrawPalette.h"
-#include "glRenderer.h"
 #include "../common/version.h"
 #include "hooks.h"
 #include "fourcc.h"
@@ -42,6 +43,10 @@ using namespace std;
 #endif
 
 extern "C" {
+
+
+LPDXGLRENDERER renderers[17] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+
 
 BOOL NoSetDisplayConfig = FALSE;
 LONG (WINAPI *_GetDisplayConfigBufferSizes)(UINT32 flags, UINT32 *numPathArrayElements,
@@ -1159,8 +1164,7 @@ void glDirectDraw7_Delete(glDirectDraw7 *This)
 		}
 		if(This->renderer)
 		{
-			glRenderer_Delete(This->renderer);
-			free(This->renderer);
+			IDXGLRenderer_SetAttachedDevice(This->renderer, NULL);
 		}
 		This->renderer = NULL;
 	}
@@ -1444,7 +1448,7 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	// API doesn't support COM aggregation
 	if (pUnkOuter) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	// Check if cooperative level is set
-	if (!This->renderer) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
+	if (!This->cooplevel) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
 	// Check if primary exists if creating primary
 	if (This->primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
 	{
@@ -1672,74 +1676,15 @@ HRESULT WINAPI glDirectDraw7_GetCaps(glDirectDraw7 *This, LPDDCAPS lpDDDriverCap
 {
 	TRACE_ENTER(3,14,This,14,lpDDDriverCaps,14,lpDDHELCaps);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	//TODO:  Fill in as implemented.
 	DDCAPS_DX7 ddCaps;
 	ZeroMemory(&ddCaps,sizeof(DDCAPS_DX7));
 	if(lpDDDriverCaps) ddCaps.dwSize = lpDDDriverCaps->dwSize;
 	else if(lpDDHELCaps) ddCaps.dwSize = lpDDHELCaps->dwSize;
 	else TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
+	if (!This->initialized) TRACE_RET(HRESULT, 23, DDERR_NOTINITIALIZED);
+	if (ddCaps.dwSize > sizeof(DDCAPS_DX7)) ddCaps.dwSize = sizeof(DDCAPS_DX7);
 	if (ddCaps.dwSize < sizeof(DDCAPS_DX3)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	ddCaps.dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_BLTDEPTHFILL | DDCAPS_BLTFOURCC |
-		DDCAPS_BLTSTRETCH | DDCAPS_COLORKEY | DDCAPS_GDI | DDCAPS_PALETTE | DDCAPS_CANBLTSYSMEM |
-		DDCAPS_3D | DDCAPS_CANCLIP | DDCAPS_CANCLIPSTRETCHED | DDCAPS_READSCANLINE |
-		DDCAPS_OVERLAY | DDCAPS_OVERLAYSTRETCH;
-	ddCaps.dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_WIDESURFACES | DDCAPS2_NOPAGELOCKREQUIRED |
-		DDCAPS2_FLIPINTERVAL | DDCAPS2_FLIPNOVSYNC | DDCAPS2_NONLOCALVIDMEM;
-	ddCaps.dwFXCaps = DDFXCAPS_BLTSHRINKX | DDFXCAPS_BLTSHRINKY |
-		DDFXCAPS_BLTSTRETCHX | DDFXCAPS_BLTSTRETCHY | DDFXCAPS_BLTMIRRORLEFTRIGHT |
-		DDFXCAPS_BLTMIRRORUPDOWN | DDFXCAPS_BLTROTATION90;
-	ddCaps.dwPalCaps = DDPCAPS_1BIT | DDPCAPS_2BIT | DDPCAPS_4BIT | DDPCAPS_8BIT |
-		DDPCAPS_PRIMARYSURFACE | DDPCAPS_ALLOW256;
-	ddCaps.ddsOldCaps.dwCaps = ddCaps.ddsCaps.dwCaps =
-		DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP |
-		DDSCAPS_FRONTBUFFER | DDSCAPS_OFFSCREENPLAIN | DDSCAPS_PALETTE |
-		DDSCAPS_SYSTEMMEMORY | DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE |
-		DDSCAPS_NONLOCALVIDMEM | DDSCAPS_LOCALVIDMEM | DDSCAPS_TEXTURE |
-		DDSCAPS_MIPMAP | DDSCAPS_OVERLAY;
-	ddCaps.ddsCaps.dwCaps2 = DDSCAPS2_MIPMAPSUBLEVEL;
-	ddCaps.dwMinOverlayStretch = 1;
-	ddCaps.dwMaxOverlayStretch = 2147483647;
-	ddCaps.dwCKeyCaps = DDCKEYCAPS_SRCBLT | DDCKEYCAPS_DESTBLT | 
-		/*DDCKEYCAPS_SRCOVERLAY | */DDCKEYCAPS_DESTOVERLAY;
-	ddCaps.dwZBufferBitDepths = DDBD_16 | DDBD_24 | DDBD_32;
-	ddCaps.dwNumFourCCCodes = GetNumFOURCC();
-	BOOL fullrop = FALSE;
-	if (!This->renderer)
-	{
-		HWND hGLWnd = CreateWindow(_T("Test"), NULL, WS_POPUP, 0, 0, 16, 16, NULL, NULL, NULL, NULL);
-		glRenderer *tmprenderer = (glRenderer*)malloc(sizeof(glRenderer));
-		DEVMODE mode;
-		mode.dmSize = sizeof(DEVMODE);
-		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &mode);
-		glRenderer_Init(tmprenderer, 16, 16, mode.dmBitsPerPel, false, mode.dmDisplayFrequency, hGLWnd, NULL, FALSE);
-		if ((tmprenderer->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130) fullrop = TRUE;
-		if (tmprenderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
-		glRenderer_Delete(tmprenderer);
-		free(tmprenderer);
-	}
-	else
-	{
-		if ((This->renderer->ext->glver_major >= 3) && !dxglcfg.DebugNoGLSL130) fullrop = TRUE;
-		if (This->renderer->ext->GLEXT_EXT_gpu_shader4) fullrop = TRUE;
-	}
-	if (fullrop)
-	{
-		memcpy(ddCaps.dwRops, supported_rops, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwNLVBRops, supported_rops, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwSSBRops, supported_rops, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwSVBRops, supported_rops, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwVSBRops, supported_rops, 8 * sizeof(DWORD));
-	}
-	else
-	{
-		memcpy(ddCaps.dwRops, supported_rops_gl2, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwNLVBRops, supported_rops_gl2, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwSSBRops, supported_rops_gl2, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwSVBRops, supported_rops_gl2, 8 * sizeof(DWORD));
-		memcpy(ddCaps.dwVSBRops, supported_rops_gl2, 8 * sizeof(DWORD));
-	}
-	glDirectDraw7_GetAvailableVidMem(This,NULL,&ddCaps.dwVidMemTotal,&ddCaps.dwVidMemFree);
+	IDXGLRenderer_GetCaps(This->renderer, 0, &ddCaps);
 	if(lpDDDriverCaps)
 	{
 		if(lpDDDriverCaps->dwSize > sizeof(DDCAPS_DX7)) lpDDDriverCaps->dwSize = sizeof(DDCAPS_DX7);
@@ -1896,10 +1841,13 @@ HRESULT WINAPI glDirectDraw7_GetScanLine(glDirectDraw7 *This, LPDWORD lpdwScanLi
 	if(!This->renderer) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
+	FIXME("Fix for new renderer");
+	TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+	/*
 	*lpdwScanLine = glRenderer_GetScanLine(This->renderer);
 	if(*lpdwScanLine >= This->primary->ddsd.dwHeight) TRACE_RET(HRESULT,23,DDERR_VERTICALBLANKINPROGRESS);
 	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	return DD_OK;*/
 }
 HRESULT WINAPI glDirectDraw7_GetVerticalBlankStatus(glDirectDraw7 *This, LPBOOL lpbIsInVB)
 {
@@ -1909,13 +1857,42 @@ HRESULT WINAPI glDirectDraw7_GetVerticalBlankStatus(glDirectDraw7 *This, LPBOOL 
 	if(!This->renderer) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->primary) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
 	if(!This->initialized) TRACE_RET(HRESULT,23,DDERR_NOTINITIALIZED);
+	FIXME("Fix for new renderer");
+	TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+	/*
 	if(glRenderer_GetScanLine(This->renderer) >= This->primary->ddsd.dwHeight) *lpbIsInVB = TRUE;
 	else *lpbIsInVB = FALSE;
 	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	return DD_OK;*/
 }
+
+/**
+  * Gets a device index from GUID
+  * @param guid
+  *  Address to the GUID of the device to be created, or NULL for the current
+  *  display.  Returns end of the array for the default device.
+  * @return
+  *  Returns the index of the device, or -1 if invalid or out of bounds.
+  */
+static ULONG_PTR GetDeviceIndex(GUID *guid)
+{
+	ULONG_PTR index;
+	GUID comp;
+	if ((ULONG_PTR)guid <= 2) return 16;
+	if (!IsReadablePointer(guid, sizeof(GUID))) return -1;
+	memcpy(&comp, guid, sizeof(GUID));
+	comp.Data1 &= 0xFFFFFF00;
+	if (memcmp(&comp, &device_template, sizeof(GUID))) return -1;
+	index = guid->Data1 & 0xFF;
+	if (index > 15) return -1;
+	return index;
+}
+
 HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 {
+	DWORD_PTR devindex;
+	HRESULT error;
+	glDirectDraw7 *tmpdd7;
 	TRACE_ENTER(2,14,This,24,lpGUID);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
@@ -1959,8 +1936,34 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 		useguid = true;
 		DEBUG("Display GUIDs not yet supported, using primary.\n");
 	}
-	This->d3ddesc = d3ddesc_default;
-	This->d3ddesc3 = d3ddesc3_default;
+	devindex = GetDeviceIndex(lpGUID);
+	if (devindex == -1)
+	{
+		LeaveCriticalSection(&dll_cs);
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDDIRECTDRAWGUID);
+	}
+	if (!renderers[devindex])
+	{
+		error = CreateDXGLRenderer(lpGUID, &renderers[devindex], devindex);
+		if (FAILED(error))
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, error);
+			return error;
+		}
+	}
+	else
+	{
+		IDXGLRenderer_GetAttachedDevice(renderers[devindex], &tmpdd7);
+		if (tmpdd7)
+		{
+			LeaveCriticalSection(&dll_cs);
+			TRACE_EXIT(23, DDERR_DIRECTDRAWALREADYCREATED);
+			return DDERR_DIRECTDRAWALREADYCREATED;
+		}
+	}
+	This->renderer = renderers[devindex];
+	IDXGLRenderer_SetAttachedDevice(This->renderer, This);
 	memcpy(This->stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
 	This->initialized = true;
 	TRACE_EXIT(23,DD_OK);
@@ -1991,7 +1994,7 @@ void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This)
 }
 void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight)
 {
-	glDD7->internalx = glDD7->screenx = dwWidth;
+	/*glDD7->internalx = glDD7->screenx = dwWidth;
 	glDD7->internaly = glDD7->screeny = dwHeight;
 	if ((glDD7->primaryx == 640) && (glDD7->primaryy == 480) && dxglcfg.HackCrop640480to640400)
 		glDD7->internaly = (DWORD)((float)glDD7->internaly * 1.2f);
@@ -2001,7 +2004,7 @@ void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHe
 			glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
 		else glRenderer_DrawScreen(glDD7->renderer, glDD7->primary->texture,
 			glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
-	}
+	}*/
 }
 BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
@@ -2012,123 +2015,54 @@ BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 
 HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd, DWORD dwFlags)
 {
+	HRESULT error;
 	TRACE_ENTER(3,14,This,13,hWnd,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDSCL_EXCLUSIVE) && !hWnd) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(dwFlags & 0xFFFFE020) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	DWORD winver = GetVersion();
-	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
-	DWORD winverminor = (DWORD)(HIBYTE(LOWORD(winver)));
-	/*if (((hWnd != this->hWnd) && this->hWnd) || (this->hWnd && (dwFlags & DDSCL_NORMAL)))
+	if (dwFlags & DDSCL_EXCLUSIVE)
 	{
-		if (winstyle)
-		{
-			SetWindowLongPtrA(hWnd, GWL_STYLE, winstyle);
-			SetWindowLongPtrA(hWnd, GWL_EXSTYLE, winstyleex);
-			ShowWindow(hWnd, SW_RESTORE);
-			winstyle = winstyleex = 0;
-			SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-		}
-	}*/  // Currently breaks The Settlers IV
-	if (This->hWnd) UninstallDXGLHook(This->hWnd);
-	This->hWnd = hWnd;
-	if (!This->winstyle && !This->winstyleex)
-	{
-		This->winstyle = GetWindowLongPtrA(hWnd, GWL_STYLE);
-		This->winstyleex = GetWindowLongPtrA(hWnd, GWL_EXSTYLE);
+		if (!dwFlags & DDSCL_FULLSCREEN) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
-	bool exclusive = false;
-	This->devwnd = false;
-	if(dwFlags & DDSCL_ALLOWMODEX)
+	if (dwFlags & DDSCL_FULLSCREEN)
 	{
-		// Validate flags
-		if(dwFlags & (DDSCL_FULLSCREEN | DDSCL_EXCLUSIVE))
-		{
-			DEBUG("IDirectDraw::SetCooperativeLevel: Mode X not supported, ignoring\n");
-		}
-		else DEBUG("IDirectDraw::SetCooperativeLevel: DDSCL_ALLOWMODEX without DDSCL_FULLSCREEN | DDSCL_EXCLUSIVE\n");
+		if (!dwFlags & DDSCL_EXCLUSIVE) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
-	if(dwFlags & DDSCL_ALLOWREBOOT)
-		DEBUG("IDirectDraw::SetCooperativeLevel: DDSCL_ALLOWREBOOT unnecessary\n");
-	if(dwFlags & DDSCL_EXCLUSIVE)
-		exclusive = true;
-	else exclusive = false;
-	if(dwFlags & DDSCL_FULLSCREEN)
-		This->fullscreen = true;
-	else This->fullscreen = false;
-	if(exclusive)
-		if(!This->fullscreen) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if (dwFlags & DDSCL_CREATEDEVICEWINDOW)
 	{
-		if (!exclusive) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		This->devwnd = true;
+		if (!dwFlags & DDSCL_FULLSCREEN) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
+	if (dwFlags & DDSCL_NORMAL)
+	{
+		if (dwFlags & (DDSCL_FULLSCREEN | DDSCL_EXCLUSIVE | DDSCL_ALLOWMODEX))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	}
+	if (dwFlags & DDSCL_ALLOWREBOOT)
+		DEBUG("IDirectDraw::SetCooperativeLevel: DDSCL_ALLOWREBOOT unnecessary\n");
 	if (dwFlags & DDSCL_FPUPRESERVE)
 		This->fpupreserve = true;
 	else This->fpupreserve = false;
-	if(dwFlags & DDSCL_FPUSETUP)
+	if (dwFlags & DDSCL_FPUSETUP)
 		This->fpusetup = true;
 	else This->fpusetup = false;
-	if(dwFlags & DDSCL_MULTITHREADED)
+	if (dwFlags & DDSCL_MULTITHREADED)
 		This->threadsafe = true;
 	else This->threadsafe = false;
-	if(dwFlags & DDSCL_NORMAL)
-		if(exclusive) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	if(dwFlags & DDSCL_NOWINDOWCHANGES)
+	if (dwFlags & DDSCL_NOWINDOWCHANGES)
 		This->nowindowchanges = true;
 	else This->nowindowchanges = false;
-	if(dwFlags & DDSCL_SETDEVICEWINDOW)
-		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETDEVICEWINDOW unsupported\n");
-	if(dwFlags & DDSCL_SETFOCUSWINDOW)
-		FIXME("IDirectDraw::SetCooperativeLevel: DDSCL_SETFOCUSWINDOW unsupported\n");
-	InstallDXGLHook(hWnd, (LPDIRECTDRAW7)This);
-	EnableWindowScaleHook(FALSE);
-	DEVMODE devmode;
-	ZeroMemory(&devmode,sizeof(DEVMODE));
-	devmode.dmSize = sizeof(DEVMODE);
-	EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&devmode);
-	int x,y,bpp;
-	if(This->fullscreen)
+	if (dwFlags & DDSCL_FPUSETUP)
 	{
-		x = devmode.dmPelsWidth;
-		y = devmode.dmPelsHeight;
-		This->internalx = This->screenx = This->primaryx = devmode.dmPelsWidth;
-		This->internaly = This->screeny = This->primaryy = devmode.dmPelsHeight;
+		
 	}
-	else
-	{
-		RECT rect;
-		GetClientRect(hWnd,&rect);
-		x = rect.right - rect.left;
-		y = rect.bottom - rect.top;
-		if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
-		{
-			This->screenx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-			This->screeny = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-		}
-		else
-		{ // Windows versions below 4.1 don't support multi-monitor
-			This->screenx = devmode.dmPelsWidth;
-			This->screeny = devmode.dmPelsHeight;
-		}
-		This->internalx = This->primaryx = (DWORD)((float)This->screenx / dxglcfg.WindowScaleX);
-		This->internaly = This->primaryy = (DWORD)((float)This->screeny / dxglcfg.WindowScaleY);
-		if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
-		{
-			GetWindowRect(hWnd, &rect);
-			EnableWindowScaleHook(TRUE);
-			SetWindowPos(hWnd, 0, 0, 0, rect.right - rect.left, rect.bottom - rect.top,
-				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOSENDCHANGING);
-		}
-	}
-	bpp = devmode.dmBitsPerPel;
-	This->internalrefresh = This->primaryrefresh = This->screenrefresh = devmode.dmDisplayFrequency;
-	This->primarybpp = bpp;
-	InitGL(x,y,bpp,This->fullscreen,This->internalrefresh,hWnd,This,This->devwnd);
+	if (dwFlags & DDSCL_FULLSCREEN) This->fullscreen = true;
+	else This->fullscreen = false;
 	This->cooplevel = dwFlags;
-	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	error = IDXGLRenderer_SetCooperativeLevel(This->renderer, hWnd, dwFlags);
+	if (SUCCEEDED(error)) This->hWnd = hWnd;
+	TRACE_EXIT(23, error);
+	return error;
 }
 
 void DiscardUndersizedModes(DEVMODE **array, DWORD *count, DEVMODE comp)
@@ -2224,6 +2158,54 @@ LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400)
 	return SetVidMode(devname, mode, flags);
 }
 
+void SetPrimaryMode(glDirectDraw7 *This, LPDDSURFACEDESC2 ddsd, DWORD width, DWORD height, DWORD bpp)
+{
+	ddsd->dwWidth = width;
+	ddsd->dwHeight = height;
+	ddsd->ddpfPixelFormat.dwRGBBitCount = bpp;
+	switch (bpp)
+	{
+	case 8:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth);
+		break;
+	case 15:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0x7C00;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0x3E0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0x1F;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 2);
+		ddsd->ddpfPixelFormat.dwRGBBitCount = 16;
+		break;
+	case 16:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xF800;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0x7E0;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0x1F;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 2);
+		break;
+	case 24:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xFF0000;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0xFF00;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0xFF;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 3);
+		break;
+	case 32:
+	default:
+		ddsd->ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd->ddpfPixelFormat.dwRBitMask = 0xFF0000;
+		ddsd->ddpfPixelFormat.dwGBitMask = 0xFF00;
+		ddsd->ddpfPixelFormat.dwBBitMask = 0xFF;
+		ddsd->lPitch = NextMultipleOf4(ddsd->dwWidth * 4);
+		break;
+	}
+	dxglDirectDrawSurface7_SetSurfaceDesc(This->primary, ddsd, 0);
+}
+
 HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags)
 {
 	TRACE_ENTER(6,14,This,8,dwWidth,8,dwHeight,8,dwBPP,8,dwRefreshRate,9,dwFlags);
@@ -2240,12 +2222,16 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (!This->fullscreen) TRACE_RET(HRESULT, 23, DDERR_NOEXCLUSIVEMODE);
 	DEBUG("IDirectDraw::SetDisplayMode: implement multiple monitors\n");
+	IDXGLRenderer_Sync(This->renderer,0);
 	DEVMODE newmode,newmode2;
 	DEVMODE currmode;
 	float aspect,xmul,ymul,xscale,yscale;
 	LONG error;
 	DWORD flags;
 	BOOL crop400 = FALSE;
+	DDSURFACEDESC2 ddsdPrimary;
+	ddsdPrimary.dwSize = sizeof(DDSURFACEDESC2);
+	if (This->primary) dxglDirectDrawSurface7_GetSurfaceDesc(This->primary, &ddsdPrimary);
 	int stretchmode;
 	if ((dwWidth == 640) && (dwHeight == 480) && dxglcfg.HackCrop640480to640400) crop400 = TRUE;
 	if ((dxglcfg.AddColorDepths & 2) && !(dxglcfg.AddColorDepths & 4) && (dwBPP == 16))
@@ -2327,9 +2313,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->primarybpp = dwBPP;
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2363,9 +2347,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2440,9 +2422,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2459,9 +2439,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2504,9 +2482,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
 				This->primarybpp = dwBPP;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2581,9 +2557,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
 				This->primarybpp = dwBPP;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2599,9 +2573,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				else This->internalbpp = This->screenbpp = newmode2.dmBitsPerPel;
 				if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 				else This->internalrefresh = This->primaryrefresh = This->screenrefresh = newmode2.dmDisplayFrequency;
-				InitGL(This->screenx, This->screeny, This->screenbpp, true,
-					This->internalrefresh, This->hWnd, This, This->devwnd);
-				//glRenderer_SetBPP(this->renderer, primarybpp);
+				if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 				This->primarylost = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
@@ -2675,9 +2647,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2698,9 +2668,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2729,9 +2697,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 			This->primarybpp = dwBPP;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true,
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			This->primarylost = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
@@ -2748,9 +2714,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			else This->internalbpp = This->screenbpp = currmode.dmBitsPerPel;
 			if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 			else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
-			InitGL(This->screenx, This->screeny, This->screenbpp, true, 
-				This->internalrefresh, This->hWnd, This, This->devwnd);
-			//glRenderer_SetBPP(this->renderer, primarybpp);
+			if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2772,9 +2736,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 		if (dwRefreshRate) This->internalrefresh = This->primaryrefresh = This->screenrefresh = dwRefreshRate;
 		else This->internalrefresh = This->primaryrefresh = This->screenrefresh = currmode.dmDisplayFrequency;
 		This->primarybpp = dwBPP;
-		InitGL(This->screenx, This->screeny, This->screenbpp, true,
-			This->internalrefresh, This->hWnd, This, This->devwnd);
-		//glRenderer_SetBPP(this->renderer, primarybpp);
+		if (This->primary) SetPrimaryMode(This, &ddsdPrimary, dwWidth, dwHeight, dwBPP);
 		This->primarylost = true;
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
@@ -2792,6 +2754,9 @@ HRESULT WINAPI glDirectDraw7_WaitForVerticalBlank(glDirectDraw7 *This, DWORD dwF
 	if(dwFlags & 0xFFFFFFFA) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(dwFlags == 5) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if (!This->cooplevel) TRACE_RET(HRESULT, 23, DD_OK); // Silently pass
+	FIXME("Fix for new renderer");
+	TRACE_RET(HRESULT, 23, DDERR_GENERIC);
+	/*
 	if (!This->lastsync)
 	{
 		This->lastsync = true;
@@ -2802,7 +2767,7 @@ HRESULT WINAPI glDirectDraw7_WaitForVerticalBlank(glDirectDraw7 *This, DWORD dwF
 			dxglDirectDrawSurface7_RenderScreen(This->primary, This->primary->texture, 1, NULL, TRUE, NULL, 0);
 	}
 	TRACE_EXIT(23,DD_OK);
-	return DD_OK;
+	return DD_OK;*/
 }
 HRESULT WINAPI glDirectDraw7_GetAvailableVidMem(glDirectDraw7 *This, LPDDSCAPS2 lpDDSCaps2, LPDWORD lpdwTotal, LPDWORD lpdwFree)
 {

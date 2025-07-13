@@ -176,7 +176,7 @@ miploop:
 	else goto miploop;
 }
 
-void ShrinkMip(DWORD *x, DWORD *y)
+static void ShrinkMip(DWORD *x, DWORD *y)
 {
 	*x = max(1, (DWORD)floorf((float)*x / 2.0f));
 	*y = max(1, (DWORD)floorf((float)*y / 2.0f));

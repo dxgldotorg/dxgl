@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-void glExtensions_Init(glExtensions *ext);
+void glExtensions_Init(glExtensions *ext, HDC hdc, BOOL core);
 
 #ifdef __cplusplus
 }
