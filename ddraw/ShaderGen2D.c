@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2021 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -892,6 +892,8 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 		if (gen->genshaders2D[i].shader.vs) gen->ext->glDeleteShader(gen->genshaders2D[i].shader.vs);
 		if (gen->genshaders2D[i].shader.fsrc.ptr) String_Free(&gen->genshaders2D[i].shader.fsrc);
 		if (gen->genshaders2D[i].shader.vsrc.ptr) String_Free(&gen->genshaders2D[i].shader.vsrc);
+		if (gen->ext->GLEXT_ARB_vertex_array_object && gen->genshaders2D[i].shader.vao)
+			gen->ext->glDeleteVertexArrays(1, &gen->genshaders2D[i].shader.vao);
 	}
 	if (gen->genshaders2D) free(gen->genshaders2D);
 	gen->genshaders2D = NULL;
@@ -1525,4 +1527,27 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	gen->genshaders2D[index].shader.uniforms[14] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "destpal");
 
 	gen->genshaders2D[index].id = id;
+	if (gen->ext->GLEXT_ARB_vertex_array_object)
+	{  // Generate VAO and populate vertex attribute offsets
+		gen->ext->glGenVertexArrays(1, &gen->genshaders2D[index].shader.vao);
+		gen->ext->glBindVertexArray(gen->genshaders2D[index].shader.vao);
+		if (gen->genshaders2D[index].shader.attribs[0])
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[0], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
+		if (gen->genshaders2D[index].shader.attribs[1]) // Reuse texcoord attribute for color fill
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[1], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+		if (gen->genshaders2D[index].shader.attribs[2])
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[2], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+		if (gen->genshaders2D[index].shader.attribs[3])
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[3], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+		if (gen->genshaders2D[index].shader.attribs[4])
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[4], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, dests));
+		if (gen->genshaders2D[index].shader.attribs[5])
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[5], 2,
+				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, stencils));
+	}
 }

@@ -195,6 +195,10 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->current_shader = This->shaders->shaders[id].prog;
 		This->current_shadertype = 0;
 		This->current_genshader = NULL;
+		if (This->ext->GLEXT_ARB_vertex_array_object)
+		{
+			if (This->shaders->shaders[id].vao) This->ext->glBindVertexArray(This->shaders->shaders[id].vao);
+		}
 		break;
 	case 1:  // 2D generated shader
 		if ((This->current_shadertype == 1) && (id == This->current_shader)) return;
@@ -241,6 +245,10 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->ext->glUseProgram(shader2d->shader.prog);
 		This->current_prog = shader2d->shader.prog;
 		This->current_genshader = (GenShader*)shader2d;
+		if (This->ext->GLEXT_ARB_vertex_array_object)
+		{
+			if (shader2d->shader.vao) This->ext->glBindVertexArray(shader2d->shader.vao);
+		}
 		break;
 	case 2:  // 3D generated shader
 		if((This->current_shadertype == 2) && (id == This->current_shader))

@@ -34,6 +34,7 @@ typedef struct _GENSHADER2D
 	GLint prog;
 	GLint attribs[6];
 	GLint uniforms[16];
+	GLuint vao;
 } _GENSHADER2D;
 
 typedef struct GenShader2D
