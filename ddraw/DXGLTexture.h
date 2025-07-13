@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022 William Feely
+// Copyright (C) 2022-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,7 @@ extern "C" {
 
 typedef struct gltexformat
 {
-	GLint internalformat;
+	GLint internalformats[4];
 	GLenum format;
 	GLenum type;
 } gltexformat;
@@ -56,25 +56,53 @@ typedef union texparam
 
 typedef struct DXGLTexture
 {
-	DWORD_PTR size;  // Size of strucure plus data storage
+	DWORD_PTR size;  // Size of strucure
 	UINT refcount;  // Reference count
 	DWORD api;  // API type for texure
 	union
 	{
+		DWORD_PTR handle; // Generic handle
 		GLuint glhandle;  // OpenGL texture name
 	} DUMMYUNIONNAME1;
+	DWORD mipcount;
 	struct
 	{
 		GLsizei width;
 		GLsizei height;
-		GLsizei depth;
+		GLsizei depth;  // Future: for depth textures and to pad to 4 DWORDs
+		GLsizei pitch;  // Bytes per line of texture image, used for buffer calculations
+		union
+		{
+			DWORD_PTR bufferhandle;
+			GLuint PBO;
+		} DUMMYUNIONNAME3;
+		BYTE *bufferptr;
+		union
+		{
+			DWORD_PTR framebufferhandle;
+			GLuint FBO;
+		};
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{
 		GLenum gltarget;  // Texure target - for cubemap GL_TEXTURE_CUBE_MAP
 	} DUMMYUNIONNAME2;
+	DWORD colororder;
+	DWORD colorsizes[4];
+	DWORD colorbits[4];
+	BOOL intcoords;  // Use integer coords if TRUE, float 0 to 1 if FALSE
 	texformat format;  // Texture format description
 	texparam params;  // Texture parameters, mostly for OpenGL
+	DDPIXELFORMAT ddformat; // DDraw pixel format
+	BOOL zhasstencil;
+	BOOL useconv;
+	int convfunctionupload;
+	int convfunctiondownload;
+	int internalsize;
+	int packsize;
+	unsigned char blttype;
+	BOOL sysmem;
+	BYTE *buffer;
 } DXGLTexture;
 
 

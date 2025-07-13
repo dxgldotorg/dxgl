@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -51,6 +51,7 @@ typedef struct glDirectDraw7
 	DWORD screenx, screeny, screenrefresh, screenbpp;
 	DWORD internalx, internaly, internalrefresh, internalbpp;
 	DWORD primaryx, primaryy, primaryrefresh, primarybpp;
+	int xoffset, yoffset;
 	dxglDirectDrawSurface7 *primary;
 	bool primarylost;
 	bool lastsync;
@@ -58,11 +59,9 @@ typedef struct glDirectDraw7
 	glDirectDraw2 *glDD2;
 	glDirectDraw4 *glDD4;
 	DDDEVICEIDENTIFIER2 devid;
-	glRenderer *renderer;
+	LPDXGLRENDERER renderer;
 	dxglDirectDrawSurface7 *tmpsurface;
 	D3DDevice stored_devices[3];
-	D3DDEVICEDESC7 d3ddesc;
-	D3DDEVICEDESC d3ddesc3;
 	DEVMODE currmode;
 	HRESULT error;
 	ULONG refcount7, refcount4, refcount2, refcount1;
@@ -72,7 +71,6 @@ typedef struct glDirectDraw7
 	bool fpusetup;
 	bool threadsafe;
 	bool nowindowchanges;
-	LONG_PTR winstyle, winstyleex;
 	dxglDirectDrawSurface7 **surfaces;
 	int surfacecount, surfacecountmax;
 	glDirectDrawClipper **clippers;
@@ -124,7 +122,7 @@ typedef struct glDirectDraw7Vtbl
 
 
 HRESULT glDirectDraw7_Create(glDirectDraw7 **glDD7);
-HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7, LPDXGLRENDERER renderer);
+HRESULT glDirectDraw7_CreateAndInitialize(GUID FAR* lpGUID, IUnknown FAR* pUnkOuter, glDirectDraw7 **glDD7);
 void glDirectDraw7_Delete(glDirectDraw7 *This);
 
 // ddraw 1+ api

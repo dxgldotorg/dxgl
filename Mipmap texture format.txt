@@ -1,0 +1,185 @@
+Parent texture
+dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000100 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000100
+    dwWidth: 0x00000100
+    lPitch: 0x00000400
+    dwLinearSize: 0x00000400
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000005
+    dwRefreshRate: 0x00000005
+    dwSrcVBHandle: 0x00000005
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 1
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000080 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000080
+    dwWidth: 0x00000080
+    lPitch: 0x00000200
+    dwLinearSize: 0x00000200
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000004
+    dwRefreshRate: 0x00000004
+    dwSrcVBHandle: 0x00000004
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00010000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 2
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000040 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000040
+    dwWidth: 0x00000040
+    lPitch: 0x00000100
+    dwLinearSize: 0x00000100
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000003
+    dwRefreshRate: 0x00000003
+    dwSrcVBHandle: 0x00000003
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00010000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 3
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000020 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000020
+    dwWidth: 0x00000020
+    lPitch: 0x00000080
+    dwLinearSize: 0x00000080
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000002
+    dwRefreshRate: 0x00000002
+    dwSrcVBHandle: 0x00000002
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00010000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 4
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000010 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000010
+    dwWidth: 0x00000010
+    lPitch: 0x00000080
+    dwLinearSize: 0x00000080
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000001
+    dwRefreshRate: 0x00000001
+    dwSrcVBHandle: 0x00000001
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00010000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 5 = error
+
+
+Non-Mipmapcount surface
+Parent texture:
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000100 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000100
+    dwWidth: 0x00000100
+    lPitch: 0x00000400
+    dwLinearSize: 0x00000400
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000009
+    dwRefreshRate: 0x00000009
+    dwSrcVBHandle: 0x00000009
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Mip 1
+{dwSize=0x0000007c dwFlags=0x0002100f dwHeight=0x00000080 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0002100f
+    dwHeight: 0x00000080
+    dwWidth: 0x00000080
+    lPitch: 0x00000200
+    dwLinearSize: 0x00000200
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000008
+    dwRefreshRate: 0x00000008
+    dwSrcVBHandle: 0x00000008
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10405008 dwCaps2=0x00010000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000

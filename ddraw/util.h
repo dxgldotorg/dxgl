@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2019 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,10 @@ void UnregisterDXGLTempWindowClass();
 
 int DivCeiling(int dividend, int divisor);
 
-void EnterSpinlock(DWORD *lock);
-void ExitSpinlock(DWORD *lock);
+void ShrinkMip(DWORD *x, DWORD *y, int level);
+
+PWSTR GetThreadName(HANDLE thread);
+void SetThreadName(HANDLE thread, PCWSTR description);
 
 #ifdef __cplusplus
 }

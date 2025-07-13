@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2022 William Feely
+// Copyright (C) 2023-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,16 +16,17 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "DXGLTexture.h"
 #include "DXGLQueue.h"
 #include "DXGLRenderer.h"
 #include "DXGLRendererGL.h"
 
 
-HRESULT CreateDXGLRenderer(GUID* guid, LPDXGLRENDERER* out)
+HRESULT CreateDXGLRenderer(GUID* guid, LPDXGLRENDERER* out, int index)
 {
 	IDXGLRendererGL *glrenderer;
 	HRESULT error;
-	error = DXGLRendererGL_Create(guid, (LPDXGLRENDERERGL*)&glrenderer);
+	error = DXGLRendererGL_Create(guid, (LPDXGLRENDERERGL*)&glrenderer, index);
 	if (FAILED(error)) return error;
 	*out = (LPDXGLRENDERER)glrenderer;
 	return error;

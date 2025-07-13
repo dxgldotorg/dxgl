@@ -1,0 +1,156 @@
+Top level:
+{dwSize=0x0000007c dwFlags=0x0000102f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000102f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000004
+    dwDepth: 0x00000004
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x1000c238 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Back buffer 1:
+?ddsd2
+{dwSize=0x0000007c dwFlags=0x0000100f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000100f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x1000401c dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Second backbuffer:
+{dwSize=0x0000007c dwFlags=0x0000100f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000100f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10004018 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Third backbuffer:
+{dwSize=0x0000007c dwFlags=0x0000100f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000100f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10004018 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Fourth backbuffer:
+{dwSize=0x0000007c dwFlags=0x0000100f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000100f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000000
+    dwDepth: 0x00000000
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x10004018 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000
+
+Last flip:
+{dwSize=0x0000007c dwFlags=0x0000102f dwHeight=0x00000870 ...}
+    dwSize: 0x0000007c
+    dwFlags: 0x0000102f
+    dwHeight: 0x00000870
+    dwWidth: 0x00000f00
+    lPitch: 0x00003c00
+    dwLinearSize: 0x00003c00
+    dwBackBufferCount: 0x00000004
+    dwDepth: 0x00000004
+    dwMipMapCount: 0x00000000
+    dwRefreshRate: 0x00000000
+    dwSrcVBHandle: 0x00000000
+    dwAlphaBitDepth: 0x00000000
+    dwReserved: 0x00000000
+    lpSurface: 0x00000000
+    ddckCKDestOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    dwEmptyFaceColor: 0x00000000
+    ddckCKDestBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcOverlay: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddckCKSrcBlt: {dwColorSpaceLowValue=0x00000000 dwColorSpaceHighValue=0x00000000 }
+    ddpfPixelFormat: {dwSize=0x00000020 dwFlags=0x00000040 dwFourCC=0x00000000 ...}
+    dwFVF: 0x00000020
+    ddsCaps: {dwCaps=0x1000c238 dwCaps2=0x00000000 dwCaps3=0x00000000 ...}
+    dwTextureStage: 0x00000000

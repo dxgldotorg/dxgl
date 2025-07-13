@@ -1,0 +1,107 @@
+Check destrect, if destrect:
+  Set destrect to whole dest
+  Set destrect2 to destrect
+Else:
+  Set destrect2 to upper left and width and height of destrect
+
+Check for ROP, if used:
+  Pack ROP bits into shader ID
+  If ROP uses dest set dest usage
+  If ROP uses pattern set pattern usage
+Else AND flags with 0xF2FAADFF and set as shader ID
+
+If using dest colorkey set dest usage
+
+If using alpha colorkey (do nothing at this point)
+Else If dest usage
+  Set fixed shader to texture Blt
+  Draw Backbuffer rect
+    (destrect proc for some reason uses palette instead of dest)
+  Set Blt vertex dest texcoords
+
+Set 2D shader to shader ID
+
+Set current shader variable
+
+Disable blending
+
+Set FBO to destination surface, destination level, no Z buffer
+If FBO fails, repair and repeat.
+
+Set viewport to destination width and height, using scaled if relevant
+
+Disable depth test
+
+If source surface
+  Get source DDSURFACEDESC2
+  If dirty bit 1 upload source surface to texture
+  
+If dest dirty bit 1 upload surface to texture
+
+If srcrect is null set srcrect to whole source
+Else use srcrect from command
+
+Set x and y of bltvertices to destrect
+Set s and t of bltvertices to srcrect
+
+Check for flip/rotate, flip/rotate vertices
+
+if flags & 0x10000000 set stencil texcoords
+
+if z buffer clear depth buffer
+
+If colorfill set color fill uniform
+
+If source colorkey
+  Set color key uniform
+  If flags & 0x20000000 set second color key uniform
+  
+If not colorfill set source texture uniform to unit 8
+
+If dest colorkey
+  Set dest color key uniform
+  If flags & 0x40000000 set second dest color key uniform
+  
+If dest texture
+  Set texture 9 to backbuffer
+  Set dest texture uniform to unit 9
+  
+If pattern texture
+  If pattern texture dirty bit 1 upload pattern texture
+  Set texture 10 to pattern texture
+  Set pattern texture uniform to unit 10
+  Set pattern size uniform to width and height of pattern
+  
+If flags & 0x10000000
+  Set texture 11 to stencil
+  Set stencil uniform to unit 11
+  Enable attribute array for stencil texcoords
+  Set attrib pointer for stencil texcooords to address of first stencil texcoords
+  
+If source texture
+  Set texture 8 to source
+  If sampler objects set unit 8 filter to dxglcfg.BltScale
+Else set texture 8 to NULL
+
+Set view uniform to dest surface dimensions
+
+If source texture set colorsize source uniform
+If destination texture set colorsize dest uniform
+
+Set destination dirty bit 2
+
+Enable xy array and set pointer
+If not colorfill enable texcoord array and set pointer
+If using dest enable dest texcoord array and set pointer
+
+Disable culling.
+Set polygon mode to solid.
+
+Draw vertices to destination.
+
+Set FBO to NULL
+
+If destination is primary draw screen
+
+Set output to DD_OK
+End busy event
