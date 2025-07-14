@@ -2,8 +2,11 @@
 # DXGL 0.6.0-dev
 https://dxgl.org
 
-## 0.6.0-dev branch disclaimer
-The branch 0.6.0-dev is a temporary branch, as DXGL 0.6.0 will require a complete rewrite of the rendering backend and is currently non-functional.  Once a significant amount of functionality is working, this branch will be retired and rolled back into the master branch.
+## 0.6.0-dev disclaimer
+The code in this repository is for an upcoming version of DXGL.  At this time, it is non-functional.  For a functional version of DXGL, please check out the 0.5.x branch of the repository by entering the following command in a command line or by switching branches in your Git GUI:
+```
+git checkout 0.5.x
+```
 
 ## Introduction
 DXGL is a free replacement for the Windows ddraw.dll library, running on OpenGL. It is designed to overcome driver bugs, particularly in Windows Vista and newer operating systems. It also adds various enhancements to the graphics output such as display scaling and filtering options. DXGL supports the DirectX 7.0 graphics APIs, however it is currently under development and many programs are not yet compatible with DXGL.
