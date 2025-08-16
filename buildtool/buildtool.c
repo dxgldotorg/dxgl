@@ -527,6 +527,7 @@ int ProcessHeaders(char *path)
 			strncpy(findptr, "\"VC2022_14\"\n", 13);
 			#elif ((_MSC_VER >= 1930) && (_MSC_VER < 1944))
 			#error Please update your Visual Studio 2022 to Update 14 before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
+			#error If this error persists after updating Visual Studio, try uninstalling older MSVC toolchains.
 			#elif (_MSC_VER > 1943)
 			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2022.14.")
 			strncpy(findptr, "\"VC2022_14\"\n", 13);

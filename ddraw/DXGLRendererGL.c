@@ -808,17 +808,18 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->currentqueue->pixelbuffer);
 		This->ext.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 		This->currentqueue->pixelbufferptr = NULL;
-		This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+		This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->vertexbuffer);
 		This->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
 		This->currentqueue->vertexbufferptr = NULL;
-		This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
-		This->ext.glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
 		This->ext.glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		LeaveCriticalSection(&This->cs);
 		queuepos = pixelpos = vertexpos = indexpos = 0;
+		currcmd = NULL;
 		while (This->running)
 		{
-			lastcmd = currcmd->cmd.command;
+			if(currcmd) lastcmd = currcmd->cmd.command;
+			else lastcmd = (DXGLQueueCmdDecoder*)&This->currentqueue->commands[queuepos];
 			currcmd = (DXGLQueueCmdDecoder*)&This->currentqueue->commands[queuepos];
 			switch (currcmd->cmd.command)
 			{
@@ -931,10 +932,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				EnterCriticalSection(&This->cs);
 				This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->currentqueue->pixelbuffer);
 				This->currentqueue->pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-				This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
-				This->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
+				This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->vertexbuffer);
 				This->currentqueue->vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-				This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->pixelbuffer);
+				This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
 				This->currentqueue->indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 				This->currentqueue->busy = FALSE;
 				This->currentqueue->filled = FALSE;
