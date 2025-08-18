@@ -2487,6 +2487,7 @@ void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTextu
 
 	// Testing
 	Sleep(1000);
+	IDXGLRenderer_Break(This->ddInterface->renderer);
 	MessageBox(NULL, _T("Check your debugger"), _T("Notice"), MB_OK);
 
 	//if(texture->bigtexture) glRenderer_DrawScreen(This->ddInterface->renderer, texture->bigtexture, texture->palette, vsync, previous, settime, overlays, overlaycount);

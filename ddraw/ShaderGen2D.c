@@ -1531,22 +1531,22 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	{  // Generate VAO and populate vertex attribute offsets
 		gen->ext->glGenVertexArrays(1, &gen->genshaders2D[index].shader.vao);
 		gen->ext->glBindVertexArray(gen->genshaders2D[index].shader.vao);
-		if (gen->genshaders2D[index].shader.attribs[0])
+		if (gen->genshaders2D[index].shader.attribs[0] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[0], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
-		if (gen->genshaders2D[index].shader.attribs[1]) // Reuse texcoord attribute for color fill
+		if (gen->genshaders2D[index].shader.attribs[1] != -1) // Reuse texcoord attribute for color fill
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[1], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
-		if (gen->genshaders2D[index].shader.attribs[2])
+		if (gen->genshaders2D[index].shader.attribs[2] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[2], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
-		if (gen->genshaders2D[index].shader.attribs[3])
+		if (gen->genshaders2D[index].shader.attribs[3] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[3], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
-		if (gen->genshaders2D[index].shader.attribs[4])
+		if (gen->genshaders2D[index].shader.attribs[4] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[4], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, dests));
-		if (gen->genshaders2D[index].shader.attribs[5])
+		if (gen->genshaders2D[index].shader.attribs[5] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[5], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, stencils));
 	}

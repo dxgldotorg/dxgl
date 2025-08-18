@@ -321,8 +321,13 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 		{
 			shaderman->ext->glGenVertexArrays(1, &shaderman->shaders[i].vao);
 			shaderman->ext->glBindVertexArray(shaderman->shaders[i].vao);
+			shaderman->ext->glEnableVertexAttribArray(shaderman->shaders[i].pos);
 			shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
-			shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+			if (shaderman->shaders[i].texcoord != -1)
+			{
+				shaderman->ext->glEnableVertexAttribArray(shaderman->shaders[i].texcoord);
+				shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
+			}
 		}
 		else shaderman->shaders[i].vao = 0;
 	}

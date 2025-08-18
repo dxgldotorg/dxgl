@@ -260,6 +260,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	HDC hdcinitial;
 	BOOL stopthread = FALSE;
 	GLint vidmemnv;
+	GLuint tmpbuffer;
 	VARIANT adapterram = {0};
 	IWbemLocator *wbemloc = NULL;
 	IWbemServices *wbemsvc = NULL;
@@ -460,8 +461,13 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	}
 	glExtensions_Init(&This->ext, This->hdc, corecontext);
 	// Create shader manager
+	This->ext.glGenBuffers(1, &tmpbuffer);
+	This->ext.glBindBuffer(GL_ARRAY_BUFFER, tmpbuffer);
+	This->ext.glBufferData(GL_ARRAY_BUFFER, 1024, NULL, GL_STATIC_DRAW);
 	ShaderManager_Init(&This->ext, &This->shaders);
-
+	This->ext.glBindBuffer(GL_ARRAY_BUFFER, 0);
+	This->ext.glDeleteBuffers(1, &tmpbuffer);
+	tmpbuffer = 0;
 	// Populate ddcaps
 	ZeroMemory(&This->ddcaps, sizeof(DDCAPS_DX7));
 	This->ddcaps.dwSize = sizeof(DDCAPS_DX7);
@@ -920,6 +926,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				if (currcmd->setfvf.fvf == This->fvf) break;
 				This->fvf = currcmd->setfvf.fvf;
 				break;
+			case QUEUEOP_BREAK:
+				if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
+				break;
 			default:            // Unknown, probably will crash
 				FIXME("Detected an unknown command.")
 				break;
@@ -1113,7 +1122,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	GLuint tmpbuffer;
 	ULONG_PTR newsize;
 	void *tmp;
-	DXGLQueueCmdDecoder *cmdptr;
+	DXGLQueueCmdDecoder *cmdptr, *cmdinptr;
 	DXGLQueue* queue;
 	DXGLQueueCmdExpandBuffers expandbufferscmd =
 	{ QUEUEOP_EXPANDBUFFERS,sizeof(DXGLQueueCmdExpandBuffers),0,0,0,0 };
@@ -1199,6 +1208,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	switch (cmd->data->command)
 	{
 	case QUEUEOP_DRAWPRIMITIVES2D:
+		cmdinptr = cmd->data;
 		if (queue->lastcommand.command == QUEUEOP_DRAWPRIMITIVES2D)
 		{   // Append to previous command
 			cmdptr = queue->commands + queue->lastcommand.ptr;
@@ -1208,7 +1218,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			cmdptr->drawprimitives.vertexcount += 4;
 			cmdptr->drawprimitives.indexcount += 6;
 			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
-				cmdptr->drawprimitives2d.vertices, cmdptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
+				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
 			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
 			memcpy(queue->indexbufferptr + queue->indexbufferwrite, indices, 6 * sizeof(WORD));
 			queue->indexbufferwrite += 6 * sizeof(WORD);
@@ -1227,7 +1237,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			cmdptr->drawprimitives.indices = queue->indexbufferwrite;
 			queue->commandwrite += cmd->data->size;
 			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
-				cmdptr->drawprimitives2d.vertices, cmdptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
+				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
 			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
 			memcpy(queue->indexbufferptr + queue->indexbufferwrite, bltindices, 6 * sizeof(WORD));
 			queue->indexbufferwrite += 6 * sizeof(WORD);
@@ -1265,12 +1275,15 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 // Posts a break command when using GDebugger
 HRESULT WINAPI DXGLRendererGL_Break(LPDXGLRENDERERGL This)
 {
+	HRESULT error;
 	DXGLPostQueueCmd cmd;
 	DXGLQueueCmd cmddata;
 	cmddata.command = QUEUEOP_BREAK;
 	cmddata.size = sizeof(DXGLQueueCmd);
 	cmd.data = &cmddata;
-	return DXGLRendererGL_PostCommand(This, &cmd);
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (FAILED(error)) return error;
+	DXGLRendererGL_Sync(This, 0);
 }
 
 // Posts a command to free a pointer, ensuring all uses are finished
