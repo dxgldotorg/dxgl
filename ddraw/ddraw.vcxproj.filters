@@ -182,9 +182,6 @@
     <ClInclude Include="DXGLQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="spinlock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DXGLTextureGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -307,9 +304,6 @@
     <ClCompile Include="DXGLRendererGL.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="spinlock.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DXGLTextureGL.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -318,10 +312,5 @@
     <ResourceCompile Include="ddraw.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="spinlock_x86.asm">
-      <Filter>Source Files</Filter>
-    </MASM>
   </ItemGroup>
 </Project>

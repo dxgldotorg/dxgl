@@ -1,47 +1,47 @@
 *.user
 /.vs
-/Debug VS2019
+/Debug VS2026
 /Debug
-/Help/Debug VS2019
+/Help/Debug VS2026
 /Help/Debug
-/Help/Release VS2019
+/Help/Release VS2026
 /Help/Release
 /Help/dxgl.chm
-/Installer/Debug VS2019
+/Installer/Debug VS2026
 /Installer/Debug
-/Installer/Release VS2019
+/Installer/Release VS2026
 /Installer/Release
-/Release VS2019
+/Release VS2026
 /Release
-/buildtool/Debug VS2019
+/buildtool/Debug VS2026
 /buildtool/Debug
-/buildtool/Release VS2019
+/buildtool/Release VS2026
 /buildtool/Release
-/cfgmgr/Debug VS2019
+/cfgmgr/Debug VS2026
 /cfgmgr/Debug
-/cfgmgr/Release VS2019
+/cfgmgr/Release VS2026
 /cfgmgr/Release
-/common/Debug VS2019
+/common/Debug VS2026
 /common/Debug
-/common/Release VS2019
+/common/Release VS2026
 /common/Release
 /common/version.h
 /common/version.nsh
-/ddraw/Debug VS2019
+/ddraw/Debug VS2026
 /ddraw/Debug
-/ddraw/Release VS2019
+/ddraw/Release VS2026
 /ddraw/Release
-/dxgl-nsis/Debug VS2019
+/dxgl-nsis/Debug VS2026
 /dxgl-nsis/Debug
-/dxgl-nsis/Release VS2019
+/dxgl-nsis/Release VS2026
 /dxgl-nsis/Release
-/dxglcfg-old/Debug VS2019
+/dxglcfg-old/Debug VS2026
 /dxglcfg-old/Debug
-/dxglcfg-old/Release VS2019
+/dxglcfg-old/Release VS2026
 /dxglcfg-old/Release
-/dxglcfg/Debug VS2019
+/dxglcfg/Debug VS2026
 /dxglcfg/Debug
-/dxglcfg/Release VS2019
+/dxglcfg/Release VS2026
 /dxglcfg/Release
 /vs8/Help/Debug
 /vs8/Help/Release
@@ -138,26 +138,6 @@
 /vs8/ddraw/x64
 /vs8/dxglcfg/x64
 /vs8/x64
-/Debug VS2022
-/Help/Debug VS2022
-/Help/Release VS2022
-/Installer/Debug VS2022
-/Installer/Release VS2022
-/Release VS2022
-/buildtool/Debug VS2022
-/buildtool/Release VS2022
-/cfgmgr/Debug VS2022
-/cfgmgr/Release VS2022
-/common/Debug VS2022
-/common/Release VS2022
-/ddraw/Debug VS2022
-/ddraw/Release VS2022
-/dxgl-nsis/Debug VS2022
-/dxgl-nsis/Release VS2022
-/dxglcfg-old/Debug VS2022
-/dxglcfg-old/Release VS2022
-/dxglcfg/Debug VS2022
-/dxglcfg/Release VS2022
 *.vcproj.old
 BuildLog.htm
 /vs7.1/buildtool/Debug

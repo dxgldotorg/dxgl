@@ -27,7 +27,6 @@
 #include <oleauto.h>
 #include "const.h"
 #include "fourcc.h"
-#include "spinlock.h"
 #include "ShaderManager.h"
 #include "string.h"
 #include "ShaderGen2D.h"

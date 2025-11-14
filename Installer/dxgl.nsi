@@ -48,20 +48,20 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2022_14"
+!if ${COMPILER} == "VC2026_0"
 !ifdef _DEBUG
-!define PLUGINDIR "Debug VS2022"
+!define PLUGINDIR "Debug VS2026"
 !ifdef _CPU_X64
-!define SRCDIR "x64\Debug VS2022"
+!define SRCDIR "x64\Debug VS2026"
 !else
-!define SRCDIR "Debug VS2022"
+!define SRCDIR "Debug VS2026"
 !endif
 !else
-!define PLUGINDIR "Release VS2022"
+!define PLUGINDIR "Release VS2026"
 !ifdef _CPU_X64
-!define SRCDIR "x64\Release VS2022"
+!define SRCDIR "x64\Release VS2026"
 !else
-!define SRCDIR "Release VS2022"
+!define SRCDIR "Release VS2026"
 !endif
 !endif
 !else if ${COMPILER} == "VC2003"
@@ -216,12 +216,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_14"
+!else if ${COMPILER} == "VC2026_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.44.35211/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2022.14 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35710/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2026.0 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "E131B93ACDE5FFC76C19EB0784183A1E94DFA9FE06111A7830EAE3AD8583895575DD4DCA66AA70EFDDB243C95735A0105EFCD3042B4B5CA445D3D8E8C39D957E"
+!define runtime_sha512 "AA420688EFABFB3F999BC2D2D6049668EE12CC4E9D3CC9D1EA04F1D91CA7F8B027D0E5F1D680C2E208F9AA2F1F91F5C63CD4C8F0D0C915DC28A5FB07EC2BE334"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -270,12 +270,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2022_14"
+!else if ${COMPILER} == "VC2026_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.44.35211/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2022.14 x86"
-!define runtime_filename "VC_redist.x86.exe"
-!define runtime_sha512 "D0A609F6B2F05939AB82AA5FDE1BB0595206653A2AB2CE859A750F71596C4491A8074BB825484E365A4FBCDB820D5DE0346E7209EA22214B090B4FE853098DCE"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35710/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2026.0 x86"
+!define runtime_filename "vc_redist.x86.exe"
+!define runtime_sha512 "E60A0A5B0110774F1DA57D88D968A8498B82F283B7144E8A92D3B08FAF13C44F5313018F9D60D24E09C97A55B5F09F3E3BDB211ED171F29E311907E19867BDA4"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -314,7 +314,7 @@ VIProductVersion "${PRODUCT_VERSION_NUMBER}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2011-2024 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright   2011-2024 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"
@@ -438,7 +438,7 @@ Section "Fix DDraw COM registration" SEC_COMFIX
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2022_14"
+  !if ${COMPILER} == "VC2026_0"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -533,7 +533,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2022_14"
+  !if ${COMPILER} == "VC2026_0"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -541,17 +541,11 @@ Function .onInit
 	Please download the legacy build to use DXGL on your system."
 	Quit
   ${EndIf}
-  ${IfNot} ${AtLeastWin7}
-    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows 7 Service Pack 1.$\r\
-	If you need to run DXGL on Windows XP, XP x64, or Server 2003, please download the legacy build."
+  ${IfNot} ${AtLeastWin10}
+    MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows 10.$\r\
+	If you need to run DXGL on Windows XP through 7, please download the legacy build."
 	Quit
   ${EndIf}
-  ${If} ${IsWin7}
-  ${AndIfNot} ${AtLeastServicePack} 1
-    MessageBox MB_OK|MB_ICONSTOP "Your copy of Windows 7 or Windows Server 2008 R2 must be upgraded to Service Pack 1 before you can use this version of DXGL.$\r\
-	Please visit https://support.microsoft.com/en-us/kb/976932/ for instructions on upgrading to Service Pack 1."
-	Quit
-  ${endif}
   !else if ${COMPILER} == "VC2010"
   ${IfNot} ${AtleastWinXP}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows XP Service Pack 3."
@@ -601,7 +595,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2022_14"
+  !if ${COMPILER} == "VC2026_0"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -614,7 +608,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.44.35211" $1
+  ${VersionCompare} "$0" "14.50.35710" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -741,7 +735,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2022_14"
+!if ${COMPILER} == "VC2026_0"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
