@@ -543,7 +543,7 @@ Function .onInit
   ${EndIf}
   ${IfNot} ${AtLeastWin10}
     MessageBox MB_OK|MB_ICONSTOP "This version of DXGL requires at least Windows 10.$\r\
-	If you need to run DXGL on Windows XP through 7, please download the legacy build."
+	If you need to run DXGL on Windows XP through 8.1, please download the legacy build."
 	Quit
   ${EndIf}
   !else if ${COMPILER} == "VC2010"
