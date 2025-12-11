@@ -15,7 +15,7 @@
 ; License along with this library; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-; Temporary fix for NSIS 3.07+
+; Makes sure installer runs on Windows 95/98/Me.
 Unicode False
 
 SetCompressor /SOLID lzma
@@ -314,7 +314,7 @@ VIProductVersion "${PRODUCT_VERSION_NUMBER}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "DXGL ${PRODUCT_VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "InternalName" "DXGL"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright   2011-2024 William Feely"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright   2011-2025 William Feely"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "OriginalFilename" "DXGL-${PRODUCT_VERSION}-win32.exe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "DXGL"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${PRODUCT_VERSION}"

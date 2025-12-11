@@ -32,6 +32,7 @@ void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
 void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);
 void glDirectDraw7_GetSizes(LPDIRECTDRAW7 lpDD7, LONG *sizes);
 BOOL glDirectDraw7_GetFullscreen(LPDIRECTDRAW7 lpDD7);
+HRESULT WINAPI glDirectDraw7_SetDisplayMode(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags);
 extern DXGLCFG dxglcfg;
 
 const TCHAR *wndprop = _T("DXGLWndProc");
@@ -513,7 +514,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			if (dxglcfg.fullmode < 2 && glDirectDraw7_GetFullscreen(lpDD7))
 			{
 				ShowWindow(hWnd, SW_MINIMIZE);
-				if (lpDD7) IDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
+				if (lpDD7) glDirectDraw7_SetDisplayMode(lpDD7, -1, -1, -1, -1, 0);
 			}
 		}
 		break;

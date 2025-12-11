@@ -928,6 +928,11 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 			case QUEUEOP_BREAK:
 				if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
 				break;
+			case QUEUEOP_DRAWPRIMITIVES:
+			case QUEUEOP_DRAWPRIMITIVES2D:
+				DXGLRendererGL__DrawPrimitives(This, currcmd->drawprimitives.type, currcmd->drawprimitives.vertices,
+					currcmd->drawprimitives.vertexcount, currcmd->drawprimitives.indices, currcmd->drawprimitives.indexcount);
+				break;
 			default:            // Unknown, probably will crash
 				FIXME("Detected an unknown command.")
 				break;
@@ -1759,9 +1764,9 @@ void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture
 void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
 {
 	if (!texture && (This->target == 0)) return;
-	if ((texture->levels[miplevel].FBO == This->target) && This->target) return;
 	if (texture)
 	{
+		if ((texture->levels[miplevel].FBO == This->target) && This->target) return;
 		if (This->ext.GLEXT_ARB_framebuffer_object)
 		{
 			if (!texture->levels[miplevel].FBO)
@@ -1834,4 +1839,6 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* stat
 
 void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount)
 {
+	if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
+	return;
 }
