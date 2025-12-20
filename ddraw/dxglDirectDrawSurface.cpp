@@ -31,7 +31,6 @@
 #include "glDirectDrawPalette.h"
 #include "glDirectDrawClipper.h"
 #include "glDirectDrawGammaControl.h"
-#include "glRenderer.h"
 #include <string>
 using namespace std;
 #include "ShaderGen3D.h"
@@ -116,7 +115,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	dxglDirectDrawSurface7 *surfaceptr;
 	dxglDirectDrawSurface7 *bigsurface;
 	glTexture *textureptr;
-	TRACE_ENTER(9,14,lpDD7,14,lpDDSurfaceDesc2,14,palettein,14,parenttex,11,version,14,glDDS7);
+	TRACE_ENTER(6,14,lpDD7,14,lpDDSurfaceDesc2,14,palettein,14,parenttex,11,version,14,glDDS7);
 	ZeroMemory(glDDS7, sizeof(dxglDirectDrawSurface7));
 	glDDS7->lpVtbl = &dxglDirectDrawSurface7_impl;
 	glDDS7->version = version;
