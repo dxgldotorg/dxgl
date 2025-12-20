@@ -1535,10 +1535,10 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[0], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
 		if (gen->genshaders2D[index].shader.attribs[1] != -1) // Reuse texcoord attribute for color fill
-			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[1], 2,
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[1], 3,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
 		if (gen->genshaders2D[index].shader.attribs[2] != -1)
-			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[2], 2,
+			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[2], 4,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
 		if (gen->genshaders2D[index].shader.attribs[3] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[3], 2,

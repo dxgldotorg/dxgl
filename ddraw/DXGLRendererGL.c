@@ -30,6 +30,7 @@
 #include "ShaderManager.h"
 #include "string.h"
 #include "ShaderGen2D.h"
+#include "ShaderGen3D.h"
 
 
 static BOOL(WINAPI *_GlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer) = NULL;
@@ -1282,6 +1283,7 @@ HRESULT WINAPI DXGLRendererGL_Break(LPDXGLRENDERERGL This)
 	HRESULT error;
 	DXGLPostQueueCmd cmd;
 	DXGLQueueCmd cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
 	cmddata.command = QUEUEOP_BREAK;
 	cmddata.size = sizeof(DXGLQueueCmd);
 	cmd.data = &cmddata;
@@ -1837,8 +1839,250 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* stat
 	}
 }
 
-void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount)
+static int GetFVFSize(DWORD fvf)
 {
+	int i;
+	int size = 0;
+	switch (fvf & D3DFVF_POSITION_MASK)
+	{
+	case 0:
+		break;
+	case D3DFVF_XYZ:
+		size += 3 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZRHW:
+		size += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB1:
+		size += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB2:
+		size += 5 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB3:
+		size += 6 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB4:
+		size += 7 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB5:
+		size += 8 * sizeof(DWORD);
+		break;
+	}
+	if (fvf & D3DFVF_NORMAL) size += 3 * sizeof(DWORD);
+	if (fvf & D3DFVF_DIFFUSE) size += sizeof(DWORD);
+	if (fvf & D3DFVF_SPECULAR) size += sizeof(DWORD);
+	for (i = 0; i < ((fvf & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT); i++)
+	{
+		switch ((fvf << (i * 2) + 16) & 3)
+		{
+		case D3DFVF_TEXTUREFORMAT1:
+			size += sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT2:
+			size += 2 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT3:
+			size += 3 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT4:
+			size += 4 * sizeof(DWORD);
+			break;
+		}
+	}
+	return size;
+}
+
+static void PopulateFVF_Static(LPDXGLRENDERERGL This, DWORD fvf, const BYTE *vertices)
+{
+	// Map static shaders to FVF
+	int i;
+	SHADER *shader;
+	shader = &This->shaders.shaders[This->shaders.gen3d->current_shader];
+	DWORD_PTR vertexoffset = vertices;
+	int fvfsize = GetFVFSize(fvf);
+	if (shader->pos != -1)
+	{
+		This->ext.glEnableVertexAttribArray(shader->pos);
+		This->ext.glVertexAttribPointer(shader->pos, 2, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+	}
+	switch (fvf & D3DFVF_POSITION_MASK)
+	{
+	case 0:
+		break;
+	case D3DFVF_XYZ:
+		vertexoffset += 3 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZRHW:
+		vertexoffset += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB1:
+		vertexoffset += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB2:
+		vertexoffset += 5 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB3:
+		vertexoffset += 6 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB4:
+		vertexoffset += 7 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB5:
+		vertexoffset += 8 * sizeof(DWORD);
+		break;
+	}
+	if (fvf & D3DFVF_NORMAL) vertexoffset += 3 * sizeof(DWORD);
+	if (fvf & D3DFVF_DIFFUSE) vertexoffset += sizeof(DWORD);
+	if (fvf & D3DFVF_SPECULAR) vertexoffset += sizeof(DWORD);
+	for (i = 0; i < ((fvf & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT); i++)
+	{
+		if ((i == 0) && (shader->texcoord != -1))
+		{
+			This->ext.glEnableVertexAttribArray(shader->texcoord);
+			This->ext.glVertexAttribPointer(shader->texcoord, 1, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+		}
+		switch ((fvf << (i * 2) + 16) & 3)
+		{
+		case D3DFVF_TEXTUREFORMAT1:
+			vertexoffset += sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT2:
+			vertexoffset += 2 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT3:
+			vertexoffset += 3 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT4:
+			vertexoffset += 4 * sizeof(DWORD);
+			break;
+		}
+	}
+}
+
+static void PopulateFVF_2D(LPDXGLRENDERERGL This, DWORD fvf, const BYTE *vertices)
+{
+	// Map 2D Blt shaders to FVF
+	int i;
+	_GENSHADER2D *shader;
+	shader = (_GENSHADER2D*) &This->shaders.gen3d->current_genshader->shader;
+	DWORD_PTR vertexoffset = vertices;
+	int fvfsize = GetFVFSize(fvf);
+	if (shader->attribs[0] != -1)
+	{
+		This->ext.glEnableVertexAttribArray(shader->attribs[0]);
+		This->ext.glVertexAttribPointer(shader->attribs[0], 2, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+	}
+	switch (fvf & D3DFVF_POSITION_MASK)
+	{
+	case 0:
+		break;
+	case D3DFVF_XYZ:
+		vertexoffset += 3 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZRHW:
+		vertexoffset += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB1:
+		vertexoffset += 4 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB2:
+		vertexoffset += 5 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB3:
+		vertexoffset += 6 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB4:
+		vertexoffset += 7 * sizeof(DWORD);
+		break;
+	case D3DFVF_XYZB5:
+		vertexoffset += 8 * sizeof(DWORD);
+		break;
+	}
+	if (fvf & D3DFVF_NORMAL) vertexoffset += 3 * sizeof(DWORD);
+	if (fvf & D3DFVF_DIFFUSE) vertexoffset += sizeof(DWORD);
+	if (fvf & D3DFVF_SPECULAR) vertexoffset += sizeof(DWORD);
+	for (i = 0; i < ((fvf & D3DFVF_TEXCOUNT_MASK) >> D3DFVF_TEXCOUNT_SHIFT); i++)
+	{
+		if ((i == 0) && (shader->attribs[3] != -1))
+		{
+			This->ext.glEnableVertexAttribArray(shader->attribs[3]);
+			This->ext.glVertexAttribPointer(shader->attribs[3], 2, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+		}
+		if ((i == 1) && (shader->attribs[4] != -1))
+		{
+			This->ext.glEnableVertexAttribArray(shader->attribs[4]);
+			This->ext.glVertexAttribPointer(shader->attribs[4], 2, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+		}
+		if ((i == 2) && (shader->attribs[5] != -1))
+		{
+			This->ext.glEnableVertexAttribArray(shader->attribs[5]);
+			This->ext.glVertexAttribPointer(shader->attribs[5], 2, GL_FLOAT, GL_FALSE, fvfsize, vertexoffset);
+		}
+		switch ((fvf << (i * 2) + 16) & 3)
+		{
+		case D3DFVF_TEXTUREFORMAT1:
+			vertexoffset += sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT2:
+			vertexoffset += 2 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT3:
+			vertexoffset += 3 * sizeof(DWORD);
+			break;
+		case D3DFVF_TEXTUREFORMAT4:
+			vertexoffset += 4 * sizeof(DWORD);
+			break;
+		}
+	}
+}
+
+static void PopulateFVF_3D(LPDXGLRENDERERGL This, DWORD fvf, const BYTE *vertices)
+{
+}
+
+void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE *vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount)
+{
+	GLenum mode;
+	DWORD_PTR vertexoffset = vertices;
+	// Set vertex mode
+	switch (type)
+	{
+	case D3DPT_POINTLIST:
+		mode = GL_POINTS;
+		break;
+	case D3DPT_LINELIST:
+		mode = GL_LINES;
+		break;
+	case D3DPT_LINESTRIP:
+		mode = GL_LINE_STRIP;
+		break;
+	case D3DPT_TRIANGLELIST:
+		mode = GL_TRIANGLES;
+		break;
+	case D3DPT_TRIANGLESTRIP:
+		mode = GL_TRIANGLE_STRIP;
+		break;
+	case D3DPT_TRIANGLEFAN:
+		mode = GL_TRIANGLE_FAN;
+		break;
+	default:
+		return;
+	}
+	// Set vertex offsets
+	switch (This->shaders.gen3d->current_shadertype)
+	{
+	case 0:
+		PopulateFVF_Static(This, This->fvf, vertices);
+		break;
+	case 1:
+		PopulateFVF_2D(This, This->fvf, vertices);
+		break;
+	case 2:
+		PopulateFVF_3D(This, This->fvf, vertices);
+		break;
+	}
+	glDrawElements(mode, indexcount, GL_UNSIGNED_SHORT, indices);
 	if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
 	return;
 }
