@@ -79,6 +79,8 @@ LONG_PTR(WINAPI *_GetWindowLongPtrW)(HWND hWnd, int nIndex) = NULL;
 BOOL(WINAPI *_GetCursorPos)(LPPOINT point) = NULL;
 BOOL(WINAPI *_SetCursorPos)(int X, int Y) = NULL;
 HCURSOR(WINAPI *_SetCursor)(HCURSOR hCursor) = NULL;
+BOOL(WINAPI *_ClipCursor)(const RECT *rect) = NULL;
+BOOL(WINAPI *_GetClipCursor)(LPRECT lpRect) = NULL;
 
 // Display geometry
 BOOL(WINAPI *_EnumDisplaySettingsA)(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode);
@@ -97,6 +99,11 @@ BOOL(WINAPI *_GetWindowRect)(HWND hWnd, LPRECT lpRect);
 BOOL(WINAPI *_ClientToScreen)(HWND hWnd, LPPOINT lpPoint);
 BOOL(WINAPI *_MoveWindow)(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
 BOOL(WINAPI* _SetWindowPos)(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+
+// Version info
+static DWORD winver = 0;
+static DWORD winvermajor = 0;
+static DWORD winverminor = 0;
 
 UINT wndhook_count = 0;
 static BOOL keyctrlalt = FALSE;
@@ -244,6 +251,12 @@ void InitHooks()
 {
 	HMODULE hKernel32;
 	HMODULE hUser32;
+	if (!winver)
+	{
+		winver = GetVersion();
+		winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
+		winverminor = (DWORD)(HIBYTE(LOWORD(winver)));
+	}
 	if (hooks_init) return;
 	EnterCriticalSection(&hook_cs);
 	hUser32 = GetModuleHandle(_T("user32.dll"));
@@ -270,6 +283,8 @@ void InitHooks()
 	MH_CreateHook(&GetCursorPos, HookGetCursorPos, (LPVOID*)&_GetCursorPos);
 	MH_CreateHook(&SetCursorPos, HookSetCursorPos, (LPVOID*)&_SetCursorPos);
 	MH_CreateHook(&SetCursor, HookSetCursor, (LPVOID*)&_SetCursor);
+	MH_CreateHook(&ClipCursor, HookClipCursor, (LPVOID*)&_ClipCursor);
+	MH_CreateHook(&GetClipCursor, HookGetClipCursor, (LPVOID*)&_GetClipCursor);
 
 	MH_CreateHook(&EnumDisplaySettingsA, HookEnumDisplaySettingsA, (LPVOID*)&_EnumDisplaySettingsA);
 	MH_CreateHook(&EnumDisplaySettingsW, HookEnumDisplaySettingsW, (LPVOID*)&_EnumDisplaySettingsW);
@@ -314,6 +329,8 @@ void ShutdownHooks()
 	MH_RemoveHook(&GetCursorPos);
 	MH_RemoveHook(&SetCursorPos);
 	MH_RemoveHook(&SetCursor);
+	MH_RemoveHook(&ClipCursor);
+	MH_RemoveHook(&GetClipCursor);
 
 	MH_RemoveHook(&EnumDisplaySettingsA);
 	MH_RemoveHook(&EnumDisplaySettingsW);
@@ -353,6 +370,8 @@ void EnableDXGLHooks()
 		MH_EnableHook(&GetCursorPos);
 		MH_EnableHook(&SetCursorPos);
 		MH_EnableHook(&SetCursor);
+		MH_EnableHook(&ClipCursor);
+		MH_EnableHook(&GetClipCursor);
 
 		MH_EnableHook(&EnumDisplaySettingsA);
 		MH_EnableHook(&EnumDisplaySettingsW);
@@ -391,6 +410,8 @@ void DisableDXGLHooks(BOOL force)
 		MH_DisableHook(&GetCursorPos);
 		MH_DisableHook(&SetCursorPos);
 		MH_DisableHook(&SetCursor);
+		MH_DisableHook(&ClipCursor);
+		MH_DisableHook(&GetClipCursor);
 
 		MH_DisableHook(&EnumDisplaySettingsA);
 		MH_DisableHook(&EnumDisplaySettingsW);
@@ -479,7 +500,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_DESTROY:
 		if (cursorclipped)
 		{
-			ClipCursor(NULL);
+			_ClipCursor(NULL);
 			cursorclipped = FALSE;
 		}
 		UninstallDXGLHook(hWnd);
@@ -487,7 +508,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_MOVE:
 		if (cursorclipped)
 		{
-			ClipCursor(NULL);
+			_ClipCursor(NULL);
 			cursorclipped = FALSE;
 		}
 		if (lpDD7)
@@ -503,7 +524,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_KILLFOCUS:
 		if (cursorclipped)
 		{
-			ClipCursor(NULL);
+			_ClipCursor(NULL);
 			cursorclipped = FALSE;
 		}
 		break;
@@ -618,7 +639,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		{
 			if (cursorclipped)
 			{
-				ClipCursor(NULL);
+				_ClipCursor(NULL);
 				cursorclipped = FALSE;
 			}
 		}
@@ -632,9 +653,9 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		{
 			if (!cursorclipped)
 			{
-				GetClipCursor(&rcOldClip);
-				ClipCursor(NULL);
-				GetClipCursor(&rcClip);
+				_GetClipCursor(&rcOldClip);
+				_ClipCursor(NULL);
+				_GetClipCursor(&rcClip);
 				if (!memcmp(&rcOldClip, &rcClip, sizeof(RECT)))
 				{
 					// Cursor is not clipped
@@ -643,10 +664,10 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					GetClientRect(hWnd, &rcWindow);
 					ClientToScreen(hWnd, &pt);
 					OffsetRect(&rcWindow, pt.x, pt.y);
-					ClipCursor(&rcWindow);
+					_ClipCursor(&rcWindow);
 					cursorclipped = TRUE;
 				}
-				else ClipCursor(&rcOldClip);
+				else _ClipCursor(&rcOldClip);
 			}
 		}
 		if (lpDD7)
@@ -709,7 +730,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					keyctrlalt = FALSE;
 					if (cursorclipped)
 					{
-						ClipCursor(NULL);
+						_ClipCursor(NULL);
 						cursorclipped = FALSE;
 					}
 				}
@@ -808,7 +829,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_SIZE:
 		if (cursorclipped)
 		{
-			ClipCursor(NULL);
+			_ClipCursor(NULL);
 			cursorclipped = FALSE;
 		}
 		if (wParam != SIZE_MINIMIZED)
@@ -924,15 +945,157 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex)
 	return (LONG_PTR)wndhook->wndproc;
 }
 #endif //_WIN64
-BOOL WINAPI HookGetCursorPos(LPPOINT point)
+
+static void ClipCoords(POINT *pt)
 {
-	HWND_HOOK *wndhook;
+	int minx, miny, maxx, maxy;
+	if ((winvermajor > 4) || ((winvermajor == 4) && (winverminor >= 1)))
+	{
+		minx = GetSystemMetrics(SM_XVIRTUALSCREEN);
+		miny = GetSystemMetrics(SM_YVIRTUALSCREEN);
+		maxx = GetSystemMetrics(SM_CXVIRTUALSCREEN + minx);
+		maxy = GetSystemMetrics(SM_CYVIRTUALSCREEN + miny);
+	}
+	else
+	{
+		minx = 0;
+		miny = 0;
+		maxx = GetSystemMetrics(SM_CXSCREEN);
+		maxy = GetSystemMetrics(SM_CYSCREEN);
+	}
+	if (pt->x < minx) pt->x = minx;
+	if (pt->x >= maxx) pt->x = maxx - 1;
+	if (pt->y < miny) pt->y = miny;
+	if (pt->y >= maxy) pt->y = maxy;
+}
+
+static void TranslateCursorPos(POINT *in, POINT *out, BOOL get, BOOL clip, HWND_HOOK *wndhook)
+{
 	LONG sizes[6];
-	POINT pt;
-	BOOL error;
+	POINT tmp;
 	int oldx, oldy;
 	float mulx, muly;
 	int translatex, translatey;
+	if (!wndhook)
+	{
+		out->x = in->x;
+		out->y = in->y;
+		return;
+	}
+	if (get)
+	{
+		if (wndhook->lpDD7)
+		{
+			if (glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+			{
+				if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+					&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+				{
+					oldx = in->x;
+					oldy = in->y;
+					if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+					{
+						tmp.x = 0;
+						tmp.y = 0;
+						ClientToScreen(wndhook->hwnd, &tmp);
+						oldx -= tmp.x;
+						oldy -= tmp.y;
+					}
+					glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+					mulx = (float)sizes[2] / (float)sizes[0];
+					muly = (float)sizes[3] / (float)sizes[1];
+					translatex = (sizes[4] - sizes[0]) / 2;
+					translatey = (sizes[5] - sizes[1]) / 2;
+					oldx -= translatex;
+					oldy -= translatey;
+					oldx = (int)((float)oldx * mulx);
+					oldy = (int)((float)oldy * muly);
+					if (oldx < 0) oldx = 0;
+					if (oldy < 0) oldy = 0;
+					if (oldx >= sizes[2]) oldx = sizes[2] - 1;
+					if (oldy >= sizes[3]) oldy = sizes[3] - 1;
+					out->x = oldx;
+					out->y = oldy;
+					return;
+				}
+				else
+				{
+					out->x = in->x;
+					out->y = in->y;
+					return;
+				}
+			}
+			else
+			{
+				if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+				{
+					out->x = (LONG)((float)in->x / dxglcfg.WindowScaleX);
+					out->y = (LONG)((float)in->y / dxglcfg.WindowScaleY);
+					return;
+				}
+				else
+				{
+					out->x = in->x;
+					out->y = in->y;
+					return;
+				}
+			}
+		}
+	}
+	else
+	{
+		if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
+			&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
+		{
+			oldx = in->x;
+			oldy = in->y;
+			glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
+			mulx = (float)sizes[0] / (float)sizes[2];
+			muly = (float)sizes[1] / (float)sizes[3];
+			oldx = (int)((float)oldx * mulx);
+			oldy = (int)((float)oldy * muly);
+			translatex = (sizes[4] - sizes[0]) / 2;
+			translatey = (sizes[5] - sizes[1]) / 2;
+			oldx += translatex;
+			oldy += translatey;
+			if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
+			{
+				tmp.x = 0;
+				tmp.y = 0;
+				ClientToScreen(wndhook->hwnd, &tmp);
+				oldx += tmp.x;
+				oldy += tmp.y;
+			}
+			out->x = oldx;
+			out->y = oldy;
+			if (clip) ClipCoords(out);
+			return;
+		}
+		else
+		{
+			if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
+			{
+				out->x = (int)((float)in->x * dxglcfg.WindowScaleX);
+				out->y = (int)((float)in->y * dxglcfg.WindowScaleY);
+				if (clip) ClipCoords(out);
+				return;
+			}
+			else
+			{
+				out->x = in->x;
+				out->y = in->y;
+				if (clip) ClipCoords(out);
+				return;
+			}
+		}
+	}
+}
+
+BOOL WINAPI HookGetCursorPos(LPPOINT point)
+{
+	HWND_HOOK *wndhook;
+	POINT pt;
+	BOOL error;
 
 	if (dxglcfg.DebugNoMouseHooks)
 		return _GetCursorPos(point);
@@ -941,63 +1104,10 @@ BOOL WINAPI HookGetCursorPos(LPPOINT point)
 	if (!wndhook) {
 		return _GetCursorPos(point);
 	}
-
-	if (wndhook->lpDD7)
-	{
-		if (glDirectDraw7_GetFullscreen(wndhook->lpDD7))
-		{
-			error = _GetCursorPos(&pt);
-			if (!error) return error;
-			if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
-				&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
-			{
-				oldx = pt.x;
-				oldy = pt.y;
-				if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
-				{
-					pt.x = 0;
-					pt.y = 0;
-					ClientToScreen(wndhook->hwnd, &pt);
-					oldx -= pt.x;
-					oldy -= pt.y;
-				}
-				glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
-				mulx = (float)sizes[2] / (float)sizes[0];
-				muly = (float)sizes[3] / (float)sizes[1];
-				translatex = (sizes[4] - sizes[0]) / 2;
-				translatey = (sizes[5] - sizes[1]) / 2;
-				oldx -= translatex;
-				oldy -= translatey;
-				oldx = (int)((float)oldx * mulx);
-				oldy = (int)((float)oldy * muly);
-				if (oldx < 0) oldx = 0;
-				if (oldy < 0) oldy = 0;
-				if (oldx >= sizes[2]) oldx = sizes[2] - 1;
-				if (oldy >= sizes[3]) oldy = sizes[3] - 1;
-				point->x = oldx;
-				point->y = oldy;
-				return error;
-			}
-			else
-			{
-				point->x = pt.x;
-				point->y = pt.y;
-				return error;
-			}
-		}
-		else
-		{
-			if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
-			{
-				error = _GetCursorPos(&pt);
-				if (!error) return error;
-				point->x = (LONG)((float)pt.x / dxglcfg.WindowScaleX);
-				point->y = (LONG)((float)pt.y / dxglcfg.WindowScaleY);
-				return error;
-			}
-			else return _GetCursorPos(point);
-		}
-	}
+	error = _GetCursorPos(&pt);
+	if (!error) return(error);
+	TranslateCursorPos(&pt, point, TRUE, FALSE, wndhook);
+	return error;
 }
 
 BOOL WINAPI HookSetCursorPos(int x, int y)
@@ -1005,9 +1115,6 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	HWND_HOOK *wndhook;
 	LONG sizes[6];
 	POINT pt;
-	int oldx, oldy;
-	float mulx, muly;
-	int translatex, translatey;
 
 	if (dxglcfg.DebugNoMouseHooks) {
 		return _SetCursorPos(x, y);
@@ -1017,36 +1124,8 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	if (!wndhook) {
 		return _SetCursorPos(x, y);
 	}
-	if (((dxglcfg.scaler != 0) || ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4)))
-		&& glDirectDraw7_GetFullscreen(wndhook->lpDD7))
-	{
-		oldx = x;
-		oldy = y;
-		glDirectDraw7_GetSizes(wndhook->lpDD7, sizes);
-		mulx = (float)sizes[0] / (float)sizes[2];
-		muly = (float)sizes[1] / (float)sizes[3];
-		oldx = (int)((float)oldx * mulx);
-		oldy = (int)((float)oldy * muly);
-		translatex = (sizes[4] - sizes[0]) / 2;
-		translatey = (sizes[5] - sizes[1]) / 2;
-		oldx += translatex;
-		oldy += translatey;
-		if ((dxglcfg.fullmode >= 2) && (dxglcfg.fullmode <= 4))
-		{
-			pt.x = 0;
-			pt.y = 0;
-			ClientToScreen(wndhook->hwnd, &pt);
-			oldx += pt.x;
-			oldy += pt.y;
-		}
-		return _SetCursorPos(oldx, oldy);
-	}
-	else
-	{
-		if ((dxglcfg.WindowScaleX != 1.0f) || (dxglcfg.WindowScaleY != 1.0f))
-			return _SetCursorPos((int)((float)x * dxglcfg.WindowScaleX), (int)((float)y * dxglcfg.WindowScaleY));
-		else return _SetCursorPos(x, y);
-	}
+
+
 }
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 {
@@ -1067,6 +1146,48 @@ HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 	}
 
 	return prevCursor;
+}
+
+BOOL WINAPI HookClipCursor(const RECT *rect)
+{
+	HWND_HOOK *wndhook;
+	RECT out;
+	if (!rect) return _ClipCursor(rect);
+	if (dxglcfg.DebugNoMouseHooks) {
+		return _ClipCursor(rect);
+	}
+
+	wndhook = GetWndHook(GetActiveWindow());
+	if (!wndhook) {
+		return _ClipCursor(rect);
+	}
+
+	TranslateCursorPos((POINT*)&rect->left, (POINT*)&out.left, FALSE, TRUE, wndhook);
+	TranslateCursorPos((POINT*)&rect->right, (POINT*)&out.right, FALSE, TRUE, wndhook);
+	return _ClipCursor(&out);
+}
+
+BOOL WINAPI HookGetClipCursor(LPRECT lpRect)
+{
+	HWND_HOOK *wndhook;
+	RECT tmp;
+	RECT out;
+	BOOL error;
+	if (!lpRect) return _GetClipCursor(lpRect);
+	if (dxglcfg.DebugNoMouseHooks) {
+		return _GetClipCursor(lpRect);
+	}
+
+	wndhook = GetWndHook(GetActiveWindow());
+	if (!wndhook) {
+		return _GetClipCursor(lpRect);
+	}
+	error = _GetClipCursor(&tmp);
+	if (error) return error;
+	TranslateCursorPos((POINT*)&tmp.left, (POINT*)&out.left, TRUE, FALSE, wndhook);
+	TranslateCursorPos((POINT*)&tmp.right, (POINT*)&out.right, TRUE, FALSE, wndhook);
+	return error;
+
 }
 
 BOOL WINAPI HookEnumDisplaySettingsA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode)
@@ -1244,7 +1365,7 @@ BOOL WINAPI HookSetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int 
 	exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
 	menu = GetMenu(hWnd);
 	ZeroMemory(&wndborder, sizeof(RECT));
-	AdjustWindowRectEx(&wndborder, wndstyle, menu, exstyle);
+	AdjustWindowRectEx(&wndborder, wndstyle, (BOOL)menu, exstyle);
 	wndrect.left = X;
 	wndrect.right = X + cx;
 	wndrect.top = Y;
