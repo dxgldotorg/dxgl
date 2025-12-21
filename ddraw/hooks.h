@@ -91,6 +91,8 @@ LONG_PTR WINAPI HookGetWindowLongPtrW(HWND hWnd, int nIndex);
 BOOL WINAPI HookGetCursorPos(LPPOINT point);
 BOOL WINAPI HookSetCursorPos(int x, int y);
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor);
+BOOL WINAPI HookClipCursor(const RECT *rect);
+BOOL WINAPI HookGetClipCursor(LPRECT lpRect);
 
 BOOL WINAPI HookEnumDisplaySettingsA(LPCSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEA lpDevMode);
 BOOL WINAPI HookEnumDisplaySettingsW(LPCWSTR lpszDeviceName, DWORD iModeNum, LPDEVMODEW lpDevMode);

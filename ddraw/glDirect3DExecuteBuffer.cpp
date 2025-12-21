@@ -38,6 +38,7 @@ HRESULT glDirect3DExecuteBuffer_Create(LPD3DEXECUTEBUFFERDESC lpDesc, glDirect3D
 	TRACE_ENTER(2, 14, lpDesc, 14, buffer);
 	glDirect3DExecuteBuffer *This = (glDirect3DExecuteBuffer*)malloc(sizeof(glDirect3DExecuteBuffer));
 	if (!This) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
+	*buffer = This;
 	This->lpVtbl = &glDirect3DExecuteBuffer_iface;
 	This->refcount = 1;
 	This->locked = FALSE;
