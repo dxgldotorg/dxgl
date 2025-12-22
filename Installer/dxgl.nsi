@@ -218,10 +218,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2026_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35710/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2026.0 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35719/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2026.1 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "AA420688EFABFB3F999BC2D2D6049668EE12CC4E9D3CC9D1EA04F1D91CA7F8B027D0E5F1D680C2E208F9AA2F1F91F5C63CD4C8F0D0C915DC28A5FB07EC2BE334"
+!define runtime_sha512 "B618F601A1989A696C8EFA0208EFD977A3BFE9A8DF8ACE8FAE9EEF20262240E7EEFCB67CE466FE166BDC606D80D594D2DE80B3B4E530749AAB8E99F5CECD86D4"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -272,10 +272,10 @@ Page Custom PortableModeEnter PortableModeLeave
 !define PRODUCT_SUFFIX "-msvc12"
 !else if ${COMPILER} == "VC2026_0"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35710/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2026.0 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35719/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2026.1 x86"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "E60A0A5B0110774F1DA57D88D968A8498B82F283B7144E8A92D3B08FAF13C44F5313018F9D60D24E09C97A55B5F09F3E3BDB211ED171F29E311907E19867BDA4"
+!define runtime_sha512 "A6687EF328597C90093A4278A12A0059496711801D84A40DC730511BADDE3D94199368D57FDC0926D8A3E19D2D2AEEC8FE58337B91CC69AEB4DFA251833CA5A6"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -608,7 +608,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.50.35710" $1
+  ${VersionCompare} "$0" "14.50.35719" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
