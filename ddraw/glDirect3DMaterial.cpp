@@ -65,6 +65,7 @@ HRESULT glDirect3DMaterial3_Create(glDirect3DMaterial3 **material)
 		free(This);
 		return error;
 	}
+	*material = This;
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }

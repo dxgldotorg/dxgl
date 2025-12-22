@@ -2106,7 +2106,7 @@ HRESULT glDirect3DDevice7_GetCaps3(glDirect3DDevice7 *This, LPD3DDEVICEDESC lpD3
 	{
 		desc.dwSize = lpD3DHELDevDesc->dwSize;
 		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(desc.dwSize > sizeof(D3DDEVICEDESC1)) desc.dwSize = sizeof(D3DDEVICEDESC);
+		if(desc.dwSize > sizeof(D3DDEVICEDESC)) desc.dwSize = sizeof(D3DDEVICEDESC);
 		memcpy(lpD3DHELDevDesc, &desc, desc.dwSize);
 	}
 	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
@@ -2114,7 +2114,7 @@ HRESULT glDirect3DDevice7_GetCaps3(glDirect3DDevice7 *This, LPD3DDEVICEDESC lpD3
 	{
 		desc.dwSize = lpD3DHWDevDesc->dwSize;
 		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(desc.dwSize > sizeof(D3DDEVICEDESC1)) desc.dwSize = sizeof(D3DDEVICEDESC);
+		if(desc.dwSize > sizeof(D3DDEVICEDESC)) desc.dwSize = sizeof(D3DDEVICEDESC);
 		memcpy(lpD3DHWDevDesc, &desc, desc.dwSize);
 	}
 	TRACE_EXIT(23,D3D_OK);
