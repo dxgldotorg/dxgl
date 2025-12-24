@@ -1100,7 +1100,7 @@ BOOL WINAPI HookGetCursorPos(LPPOINT point)
 	if (dxglcfg.DebugNoMouseHooks)
 		return _GetCursorPos(point);
 
-	wndhook = GetWndHook(GetActiveWindow());
+	wndhook = GetWndHook(GetForegroundWindow());
 	if (!wndhook) {
 		return _GetCursorPos(point);
 	}
@@ -1120,7 +1120,7 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 		return _SetCursorPos(x, y);
 	}
 
-	wndhook = GetWndHook(GetActiveWindow()); 
+	wndhook = GetWndHook(GetForegroundWindow()); 
 	if (!wndhook) {
 		return _SetCursorPos(x, y);
 	}
@@ -1157,7 +1157,7 @@ BOOL WINAPI HookClipCursor(const RECT *rect)
 		return _ClipCursor(rect);
 	}
 
-	wndhook = GetWndHook(GetActiveWindow());
+	wndhook = GetWndHook(GetForegroundWindow());
 	if (!wndhook) {
 		return _ClipCursor(rect);
 	}
@@ -1178,7 +1178,7 @@ BOOL WINAPI HookGetClipCursor(LPRECT lpRect)
 		return _GetClipCursor(lpRect);
 	}
 
-	wndhook = GetWndHook(GetActiveWindow());
+	wndhook = GetWndHook(GetForegroundWindow());
 	if (!wndhook) {
 		return _GetClipCursor(lpRect);
 	}
