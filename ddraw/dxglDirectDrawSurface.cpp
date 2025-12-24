@@ -300,6 +300,9 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	else if (!((glDDS7->ddsd.dwFlags & DDSD_WIDTH) && (glDDS7->ddsd.dwFlags & DDSD_HEIGHT)))
 	TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 
+	if (!(glDDS7->ddsd.ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY))
+		glDDS7->ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+
 	// Not yet implemented: System memory surface
 	/*	if(glDDS7->ddsd.ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY)
 	{
