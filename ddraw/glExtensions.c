@@ -338,8 +338,8 @@ Please contact your graphics card manufacturer for an updated driver.\r\n\r\nThi
 		ext->glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)wglGetProcAddress("glGenVertexArrays");
 		ext->glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)wglGetProcAddress("glDeleteVertexArrays");
 		ext->glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)wglGetProcAddress("glBindVertexArray");
-		ext->glGenVertexArrays(1, &ext->defaultvao);
-		ext->glBindVertexArray(ext->defaultvao);  // Required for OpenGL 3.x and up
+		ext->glGenVertexArrays(1, &ext->defaultvao.vao);
+		ext->glBindVertexArray(ext->defaultvao.vao);  // Required for OpenGL 3.x and up
 	}
 	if(broken_fbo)
 	{

@@ -66,6 +66,13 @@ typedef struct CmdBuffer
 	size_t cmdptr;
 } CmdBuffer;
 
+typedef struct VAO
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint ibo;
+} VAO;
+
 // OpenGL Extensions structure
 typedef struct glExtensions
 {
@@ -208,7 +215,7 @@ typedef struct glExtensions
 	DWORD glver_minor;
 	BOOL atimem;
 	GLint maxtexturesize;
-	GLuint defaultvao;
+	VAO defaultvao;
 } glExtensions;
 
 // Buffer object (such as PBO or VBO)
@@ -399,7 +406,7 @@ typedef struct SHADER
 	GLint colorsize;
 	GLint pal;
 	GLint view;
-	GLuint vao;
+	VAO vao;
 } SHADER;
 
 struct ShaderGen3D;

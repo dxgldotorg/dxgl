@@ -104,6 +104,7 @@ typedef struct IDXGLRendererGL
 	GLenum shademode;
 	GLenum texlevel;
 	ShaderManager shaders;
+	VAO *vao;
 
 	// Render state
 	int rendermode;  // Last used render mode

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2021 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -34,7 +34,7 @@ typedef struct _GENSHADER2D
 	GLint prog;
 	GLint attribs[6];
 	GLint uniforms[16];
-	GLuint vao;
+	VAO vao;
 } _GENSHADER2D;
 
 typedef struct GenShader2D

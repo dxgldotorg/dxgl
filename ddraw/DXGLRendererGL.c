@@ -31,7 +31,7 @@
 #include "string.h"
 #include "ShaderGen2D.h"
 #include "ShaderGen3D.h"
-
+#include <assert.h>
 
 static BOOL(WINAPI *_GlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer) = NULL;
 static HMODULE hKernel32;
@@ -249,6 +249,20 @@ DWORD WINAPI DXGLRendererGL_WindowThread(LPDXGLRENDERERGL This)
 	return 0;
 }
 
+static void UpdateVAOBuffers(LPDXGLRENDERERGL This)
+{
+	if (This->vao->vbo != This->currentqueue->vertexbuffer)
+	{
+		This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->vertexbuffer);
+		This->vao->vbo = This->currentqueue->vertexbuffer;
+	}
+	if (This->vao->ibo != This->currentqueue->indexbuffer)
+	{
+		This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
+		This->vao->ibo = This->currentqueue->indexbuffer;
+	}
+}
+
 DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 {
 	UINT numpf;
@@ -392,6 +406,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		return DDERR_GENERIC;
 	}
 	glExtensions_Init(&This->ext, hdcinitial, FALSE);
+	This->vao = &This->ext.defaultvao;
 	glUtil_Create(&This->ext, &This->util);
 	if (This->ext.WGLEXT_ARB_create_context || This->ext.WGLEXT_ARB_pixel_format)
 	{
@@ -819,6 +834,8 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 		This->currentqueue->vertexbufferptr = NULL;
 		This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
 		This->ext.glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		This->currentqueue->indexbufferptr = NULL;
+		UpdateVAOBuffers(This);
 		LeaveCriticalSection(&This->cs);
 		queuepos = pixelpos = vertexpos = indexpos = 0;
 		currcmd = NULL;
@@ -946,10 +963,13 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				EnterCriticalSection(&This->cs);
 				This->ext.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, This->currentqueue->pixelbuffer);
 				This->currentqueue->pixelbufferptr = This->ext.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+				assert(This->currentqueue->pixelbufferptr);
 				This->ext.glBindBuffer(GL_ARRAY_BUFFER, This->currentqueue->vertexbuffer);
 				This->currentqueue->vertexbufferptr = This->ext.glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+				assert(This->currentqueue->vertexbufferptr);
 				This->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, This->currentqueue->indexbuffer);
 				This->currentqueue->indexbufferptr = This->ext.glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+				assert(This->currentqueue->indexbufferptr);
 				This->currentqueue->busy = FALSE;
 				This->currentqueue->filled = FALSE;
 				This->currentqueue->commandwrite = This->currentqueue->pixelbufferwrite =
@@ -1240,7 +1260,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			cmdptr->drawprimitives.indexcount = 6;
 			cmdptr->drawprimitives.vertices = queue->vertexbufferwrite;
 			cmdptr->drawprimitives.indices = queue->indexbufferwrite;
-			queue->commandwrite += cmd->data->size;
+			queue->commandwrite += cmdptr->drawprimitives.size;
 			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
 				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
 			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
@@ -1803,7 +1823,7 @@ void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLui
 	}
 }
 
-void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* state)
+void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state)
 {
 	unsigned __int64 shaderid;
 	DXGLRenderState2D* state2D = &state->state.state2D;
@@ -1814,6 +1834,7 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* stat
 		{
 			This->rendermode = DXGLRENDERMODE_STATICSHADER;
 			ShaderManager_SetShader(&This->shaders, state->state.staticindex, NULL, 0);
+			This->vao = &This->shaders.shaders[state->state.staticindex].vao;
 		}
 		break;
 	case DXGLRENDERMODE_STATE2D: // 2D State
@@ -1831,12 +1852,14 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState* stat
 			shaderid != ((unsigned long long)state2D->blttypedest << 40);
 		ShaderManager_SetShader(&This->shaders, shaderid, NULL, 1);
 		memcpy(&This->renderstate2D, &state->state.state2D, sizeof(DXGLRenderState2D));
+		This->vao = &((GenShader2D*)This->shaders.gen3d->current_genshader)->shader.vao;
 		break;
 	case DXGLRENDERMODE_STATE3D: // 3D State
 		break;
 	case DXGLRENDERMODE_POSTSHADER: // Future:  Custom shaders
 		break;
 	}
+	UpdateVAOBuffers(This);
 }
 
 static int GetFVFSize(DWORD fvf)
@@ -2082,7 +2105,8 @@ void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type
 		PopulateFVF_3D(This, This->fvf, vertices);
 		break;
 	}
-	glDrawElements(mode, indexcount, GL_UNSIGNED_SHORT, indices);
+	if(!indexcount) glDrawArrays(mode, vertices, vertexcount);
+	else glDrawElements(mode, indexcount, GL_UNSIGNED_SHORT, indices);
 	if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
 	return;
 }

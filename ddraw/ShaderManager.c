@@ -319,8 +319,8 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 		shaderman->shaders[i].view = shaderman->ext->glGetUniformLocation(shaderman->shaders[i].prog,"view");
 		if (shaderman->ext->GLEXT_ARB_vertex_array_object)
 		{
-			shaderman->ext->glGenVertexArrays(1, &shaderman->shaders[i].vao);
-			shaderman->ext->glBindVertexArray(shaderman->shaders[i].vao);
+			shaderman->ext->glGenVertexArrays(1, &shaderman->shaders[i].vao.vao);
+			shaderman->ext->glBindVertexArray(shaderman->shaders[i].vao.vao);
 			shaderman->ext->glEnableVertexAttribArray(shaderman->shaders[i].pos);
 			shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].pos, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
 			if (shaderman->shaders[i].texcoord != -1)
@@ -329,9 +329,9 @@ void ShaderManager_Init(glExtensions *glext, ShaderManager *shaderman)
 				shaderman->ext->glVertexAttribPointer(shaderman->shaders[i].texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, s));
 			}
 		}
-		else shaderman->shaders[i].vao = 0;
+		else shaderman->shaders[i].vao.vao = 0;
 	}
-	shaderman->ext->glBindVertexArray(shaderman->ext->defaultvao);
+	shaderman->ext->glBindVertexArray(shaderman->ext->defaultvao.vao);
 	shaderman->gen3d = (ShaderGen3D*)malloc(sizeof(ShaderGen3D));
 	ShaderGen3D_Init(shaderman->ext, shaderman, shaderman->gen3d);
 	shaderman->gen2d = (ShaderGen2D*)malloc(sizeof(ShaderGen2D));
@@ -361,10 +361,10 @@ void ShaderManager_Delete(ShaderManager *This)
 			This->ext->glDeleteShader(This->shaders[i].fs);
 			This->shaders[i].fs = 0;
 		}
-		if (This->shaders[i].vao && This->ext->GLEXT_ARB_vertex_array_object)
+		if (This->shaders[i].vao.vao && This->ext->GLEXT_ARB_vertex_array_object)
 		{
-			This->ext->glDeleteVertexArrays(1, &This->shaders[i].vao);
-			This->shaders[i].vao = 0;
+			This->ext->glDeleteVertexArrays(1, &This->shaders[i].vao.vao);
+			This->shaders[i].vao.vao = 0;
 		}
 	}
 	free(This->shaders);

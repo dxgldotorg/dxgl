@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2020 William Feely
+// Copyright (C) 2012-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -197,7 +197,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->current_genshader = NULL;
 		if (This->ext->GLEXT_ARB_vertex_array_object)
 		{
-			if (This->shaders->shaders[id].vao) This->ext->glBindVertexArray(This->shaders->shaders[id].vao);
+			if (This->shaders->shaders[id].vao.vao) This->ext->glBindVertexArray(This->shaders->shaders[id].vao.vao);
 		}
 		break;
 	case 1:  // 2D generated shader
@@ -247,7 +247,7 @@ void ShaderGen3D_SetShader(ShaderGen3D *This, __int64 id, __int64 *texstate, int
 		This->current_genshader = (GenShader*)shader2d;
 		if (This->ext->GLEXT_ARB_vertex_array_object)
 		{
-			if (shader2d->shader.vao) This->ext->glBindVertexArray(shader2d->shader.vao);
+			if (shader2d->shader.vao.vao) This->ext->glBindVertexArray(shader2d->shader.vao.vao);
 		}
 		break;
 	case 2:  // 3D generated shader

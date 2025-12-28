@@ -892,8 +892,8 @@ void ShaderGen2D_Delete(ShaderGen2D *gen)
 		if (gen->genshaders2D[i].shader.vs) gen->ext->glDeleteShader(gen->genshaders2D[i].shader.vs);
 		if (gen->genshaders2D[i].shader.fsrc.ptr) String_Free(&gen->genshaders2D[i].shader.fsrc);
 		if (gen->genshaders2D[i].shader.vsrc.ptr) String_Free(&gen->genshaders2D[i].shader.vsrc);
-		if (gen->ext->GLEXT_ARB_vertex_array_object && gen->genshaders2D[i].shader.vao)
-			gen->ext->glDeleteVertexArrays(1, &gen->genshaders2D[i].shader.vao);
+		if (gen->ext->GLEXT_ARB_vertex_array_object && gen->genshaders2D[i].shader.vao.vao)
+			gen->ext->glDeleteVertexArrays(1, &gen->genshaders2D[i].shader.vao.vao);
 	}
 	if (gen->genshaders2D) free(gen->genshaders2D);
 	gen->genshaders2D = NULL;
@@ -1529,8 +1529,8 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	gen->genshaders2D[index].id = id;
 	if (gen->ext->GLEXT_ARB_vertex_array_object)
 	{  // Generate VAO and populate vertex attribute offsets
-		gen->ext->glGenVertexArrays(1, &gen->genshaders2D[index].shader.vao);
-		gen->ext->glBindVertexArray(gen->genshaders2D[index].shader.vao);
+		gen->ext->glGenVertexArrays(1, &gen->genshaders2D[index].shader.vao.vao);
+		gen->ext->glBindVertexArray(gen->genshaders2D[index].shader.vao.vao);
 		if (gen->genshaders2D[index].shader.attribs[0] != -1)
 			gen->ext->glVertexAttribPointer(gen->genshaders2D[index].shader.attribs[0], 2,
 				GL_FLOAT, GL_FALSE, sizeof(BltVertex), offsetof(BltVertex, x));
