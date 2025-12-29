@@ -993,9 +993,9 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	OutputDebugStringA("Vertex shader:\n");
 	OutputDebugStringA(vsrc->ptr);
 	OutputDebugStringA("\nCompiling vertex shader:\n");
-	TRACE_STRING("Vertex shader:\n");
-	TRACE_STRING(vsrc->ptr);
-	TRACE_STRING("\nCompiling vertex shader:\n");
+	TRACE_SHADER("Vertex shader:\n");
+	TRACE_SHADER(vsrc->ptr);
+	TRACE_SHADER("\nCompiling vertex shader:\n");
 #endif
 	This->genshaders[index].shader.vs = This->ext->glCreateShader(GL_VERTEX_SHADER);
 	const char *src = vsrc->ptr;
@@ -1012,10 +1012,15 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		This->ext->glGetShaderiv(This->genshaders[index].shader.vs,GL_INFO_LOG_LENGTH,&loglen);
 		infolog = (char*)malloc(loglen);
 		This->ext->glGetShaderInfoLog(This->genshaders[index].shader.vs,loglen,&result,infolog);
-		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA("Vertex shader compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
-		TRACE_STRING("Compilation failed. Error messages:\n");
-		TRACE_STRING(infolog);
+		TRACE_ERROR("Vertex shader compilation failed. Error messages:\n");
+		TRACE_ERROR(infolog);
+		if ((dxglcfg.DebugTraceLevel >= 1) && (dxglcfg.DebugTraceLevel < 5))
+		{
+			TRACE_ERROR("Vertex shader source code:");
+			TRACE_ERROR(vsrc->ptr);
+		}
 		free(infolog);
 	}
 #endif
@@ -1592,9 +1597,9 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	OutputDebugStringA("Fragment shader:\n");
 	OutputDebugStringA(fsrc->ptr);
 	OutputDebugStringA("\nCompiling fragment shader:\n");
-	TRACE_STRING("Fragment shader:\n");
-	TRACE_STRING(fsrc->ptr);
-	TRACE_STRING("\nCompiling fragment shader:\n"); 
+	TRACE_SHADER("Fragment shader:\n");
+	TRACE_SHADER(fsrc->ptr);
+	TRACE_SHADER("\nCompiling fragment shader:\n"); 
 #endif
 	This->genshaders[index].shader.fs = This->ext->glCreateShader(GL_FRAGMENT_SHADER);
 	src = fsrc->ptr;
@@ -1608,10 +1613,15 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		This->ext->glGetShaderiv(This->genshaders[index].shader.fs,GL_INFO_LOG_LENGTH,&loglen);
 		infolog = (char*)malloc(loglen);
 		This->ext->glGetShaderInfoLog(This->genshaders[index].shader.fs,loglen,&result,infolog);
-		OutputDebugStringA("Compilation failed. Error messages:\n");
+		OutputDebugStringA("Fragment shader compilation failed. Error messages:\n");
 		OutputDebugStringA(infolog);
-		TRACE_STRING("Compilation failed. Error messages:\n");
-		TRACE_STRING(infolog);
+		TRACE_ERROR("Fragment shader compilation failed. Error messages:\n");
+		TRACE_ERROR(infolog);
+		if ((dxglcfg.DebugTraceLevel >= 1) && (dxglcfg.DebugTraceLevel < 5))
+		{
+			TRACE_ERROR("Fragment shader source code:");
+			TRACE_ERROR(fsrc->ptr);
+		}
 		free(infolog);
 	}
 	OutputDebugStringA("\nLinking program:\n");
@@ -1629,8 +1639,8 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		This->ext->glGetProgramInfoLog(This->genshaders[index].shader.prog,loglen,&result,infolog);
 		OutputDebugStringA("Program link failed. Error messages:\n");
 		OutputDebugStringA(infolog);
-		TRACE_STRING("Program link failed. Error messages:\n");
-		TRACE_STRING(infolog);
+		TRACE_ERROR("Program link failed. Error messages:\n");
+		TRACE_ERROR(infolog);
 		free(infolog);
 	}
 #endif

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2023 William Feely
+// Copyright (C) 2012-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -124,7 +124,7 @@ DWORD glRenderWindow__Entry(glRenderWindow *This)
 	if (RegisterHotKey(This->hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
 	else
 	{
-		TRACE_STRING("Failed to register hotkey.\n");
+		TRACE_ERROR("Failed to register hotkey.\n");
 		Beep(120, 1000);
 	}
 #else
@@ -133,7 +133,7 @@ DWORD glRenderWindow__Entry(glRenderWindow *This)
 		if (RegisterHotKey(This->hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
 		else
 		{
-			TRACE_STRING("Failed to register hotkey.\n");
+			TRACE_ERROR("Failed to register hotkey.\n");
 			Beep(120, 1000);
 		}
 	}

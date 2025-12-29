@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2024 William Feely
+// Copyright (C) 2011-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -197,7 +197,7 @@ STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_VISIBLE | WS_CHILDWINDOW
 FONT 8, "Ms Shell Dlg"
 {
     LTEXT           "Enable tracing file", IDC_STATIC, 7, 7, 57, 9, SS_LEFT, WS_EX_LEFT
-    COMBOBOX        IDC_TRACING, 7, 17, 102, 63, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
+    COMBOBOX        IDC_TRACING, 7, 17, 200, 63, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
     CONTROL         "", IDC_STATIC, WC_STATIC, SS_ETCHEDHORZ, 7, 32, 328, 1, WS_EX_LEFT
     LTEXT           "Enabling tracing will save a file named dxgl.log in the application folder.  Press Ctrl+Break to stop tracing at any time when the application is running.", IDC_STATIC, 7, 35, 328, 17, SS_LEFT, WS_EX_LEFT
     LTEXT           "Tracing is not currently supported on x64 systems, and may result in unexpected behavior.", IDC_TRACEX64NOTICE, 7, 54, 290, 9, SS_LEFT, WS_EX_LEFT
