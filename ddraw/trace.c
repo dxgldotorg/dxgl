@@ -1053,12 +1053,13 @@ static void end_trace()
 	outfile = INVALID_HANDLE_VALUE;
 	trace_fail = TRUE;	
 }
-void trace_enter(const char *function, int paramcount, ...)
+void trace_enter(const char *function, int level, int paramcount, ...)
 {
 	va_list args;
 	DWORD byteswritten;
 	int i;
 	int argtype;
+	if ((level < 3) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1068,26 +1069,30 @@ void trace_enter(const char *function, int paramcount, ...)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	va_start(args,paramcount);
-	for(i = 0; i < trace_depth; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
-	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
-	WriteFile(outfile,"(",1,&byteswritten,NULL);
-	for(i = 0; i < paramcount; i++)
+	if ((level >= 4) || (!trace_depth))
 	{
-		if(i != 0) WriteFile(outfile,", ",2,&byteswritten,NULL);
-		argtype = va_arg(args,int);
-		trace_decode_arg(argtype,va_arg(args,void*));
+		va_start(args, paramcount);
+		for (i = 0; i < trace_depth; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+		WriteFile(outfile, function, strlen(function), &byteswritten, NULL);
+		WriteFile(outfile, "(", 1, &byteswritten, NULL);
+		for (i = 0; i < paramcount; i++)
+		{
+			if (i != 0) WriteFile(outfile, ", ", 2, &byteswritten, NULL);
+			argtype = va_arg(args, int);
+			trace_decode_arg(argtype, va_arg(args, void*));
+		}
+		WriteFile(outfile, ");\r\n", 4, &byteswritten, NULL);
+		va_end(args);
 	}
-	WriteFile(outfile,");\r\n",4,&byteswritten,NULL);
 	trace_depth++;
-	va_end(args);
 	LeaveCriticalSection(&trace_cs);
 }
-void trace_exit(const char *function, int argtype, void *arg)
+void trace_exit(const char *function, int level, int argtype, void *arg)
 {
 	DWORD byteswritten;
 	int i;
+	if ((level < 3) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1098,23 +1103,27 @@ void trace_exit(const char *function, int argtype, void *arg)
 		return;
 	}
 	if(trace_depth) trace_depth--;
-	for(i = 0; i < trace_depth; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
-	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
-	WriteFile(outfile," returned ",10,&byteswritten,NULL);
-	trace_decode_arg(argtype,arg);
-	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	if ((level >= 4) || (!trace_depth))
+	{
+		for (i = 0; i < trace_depth; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+		WriteFile(outfile, function, strlen(function), &byteswritten, NULL);
+		WriteFile(outfile, " returned ", 10, &byteswritten, NULL);
+		trace_decode_arg(argtype, arg);
+		WriteFile(outfile, "\r\n", 2, &byteswritten, NULL);
+	}
 	LeaveCriticalSection(&trace_cs);
 }
-void *trace_ret(const char *function, int argtype, void *arg)
+void *trace_ret(const char *function, int level, int argtype, void *arg)
 {
-	trace_exit(function,argtype,arg);
+	trace_exit(function,level,argtype,arg);
 	return arg;
 }
-void trace_var(const char *function, const char *var, int argtype, void *arg)
+void trace_var(const char *function, int level, const char *var, int argtype, void *arg)
 {
 	DWORD byteswritten;
 	int i;
+	if ((level < 3) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1124,15 +1133,18 @@ void trace_var(const char *function, const char *var, int argtype, void *arg)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
-	WriteFile(outfile,function,strlen(function),&byteswritten,NULL);
-	WriteFile(outfile,": ",2,&byteswritten,NULL);
-	WriteFile(outfile,var,strlen(var),&byteswritten,NULL);
-	WriteFile(outfile," set to ",8,&byteswritten,NULL);
-	trace_decode_arg(argtype,arg);
-	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	LeaveCriticalSection(&trace_cs);
+	if ((level >= 4) || (!trace_depth))
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+		WriteFile(outfile, function, strlen(function), &byteswritten, NULL);
+		WriteFile(outfile, ": ", 2, &byteswritten, NULL);
+		WriteFile(outfile, var, strlen(var), &byteswritten, NULL);
+		WriteFile(outfile, " set to ", 8, &byteswritten, NULL);
+		trace_decode_arg(argtype, arg);
+		WriteFile(outfile, "\r\n", 2, &byteswritten, NULL);
+		LeaveCriticalSection(&trace_cs);
+	}
 }
 
 void trace_string(const char *str)

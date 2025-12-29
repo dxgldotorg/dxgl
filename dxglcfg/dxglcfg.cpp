@@ -4040,11 +4040,15 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Tracing
 		_tcscpy(buffer, _T("Disabled"));
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Errors only"));
+		_tcscpy(buffer, _T("System information only"));
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Information"));
+		_tcscpy(buffer, _T("Errors and system information"));
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Full API trace"));
+		_tcscpy(buffer, _T("Errors, system information, and basic API trace"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Errors, system information, and detailed API trace"));
+		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Errors, system information, API trace, and dump shaders"));
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_SETCURSEL, cfg->DebugTraceLevel, 0);
 #ifndef _M_X64
