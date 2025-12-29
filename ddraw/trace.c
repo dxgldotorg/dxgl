@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2022 William Feely
+// Copyright (C) 2013-2025 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1158,10 +1158,13 @@ void trace_sysinfo()
 {
 	DWORD byteswritten;
 	OSVERSIONINFOA osver;
+	OSVERSIONINFOW osverw;
 	DWORD buildver;
 	char osstring[256];
 	HMODULE hKernel32;
-	BOOL(WINAPI *iswow64)(HANDLE, PBOOL);
+	HMODULE hNtdll;
+	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
+	static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
 	BOOL is64;
 	int i;
 	const GLubyte *glstring;
@@ -1175,7 +1178,20 @@ void trace_sysinfo()
 		return;
 	}
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-	GetVersionExA(&osver);
+	osverw.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	hNtdll = GetModuleHandle(_T("ntdll.dll"));
+	if (hNtdll) _RtlGetVersion = GetProcAddress(hNtdll, "RtlGetVersion");
+	if (_RtlGetVersion)
+	{
+		_RtlGetVersion(&osverw);
+		osver.dwMajorVersion = osverw.dwMajorVersion;
+		osver.dwMinorVersion = osverw.dwMinorVersion;
+		osver.dwBuildNumber = osverw.dwBuildNumber;
+		osver.dwPlatformId = osverw.dwPlatformId;
+		for (i = 0; i < 128; i++)
+			osver.szCSDVersion[i] = (CHAR)osverw.szCSDVersion[i];
+	}
+	else GetVersionExA(&osver);
 	if(osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) buildver = LOWORD(osver.dwBuildNumber);
 	else buildver = osver.dwBuildNumber;
 	if((osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) || (osver.dwPlatformId == VER_PLATFORM_WIN32s))
