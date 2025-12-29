@@ -56,6 +56,7 @@
 static CRITICAL_SECTION trace_cs;
 static BOOL trace_ready = FALSE;
 static BOOL trace_fail = FALSE;
+static BOOL sysinfo_dumped = FALSE;
 BOOL trace_end = FALSE;
 static HANDLE outfile = INVALID_HANDLE_VALUE;
 int trace_depth = 0;
@@ -1143,11 +1144,11 @@ void trace_var(const char *function, int level, const char *var, int argtype, vo
 		WriteFile(outfile, " set to ", 8, &byteswritten, NULL);
 		trace_decode_arg(argtype, arg);
 		WriteFile(outfile, "\r\n", 2, &byteswritten, NULL);
-		LeaveCriticalSection(&trace_cs);
 	}
+	LeaveCriticalSection(&trace_cs);
 }
 
-void trace_string(const char *str)
+void trace_string(const char *str, int level)
 {
 	DWORD byteswritten;
 	int i;
@@ -1160,13 +1161,16 @@ void trace_string(const char *str)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	for (i = 0; i < trace_depth - 1; i++)
-		WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile, str, strlen(str), &byteswritten, NULL);
 	LeaveCriticalSection(&trace_cs);
 }
 
-void trace_sysinfo()
+void trace_sysinfo(int level)
 {
 	DWORD byteswritten;
 	OSVERSIONINFOA osver;
@@ -1180,6 +1184,7 @@ void trace_sysinfo()
 	BOOL is64;
 	int i;
 	const GLubyte *glstring;
+	if (sysinfo_dumped) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1227,39 +1232,58 @@ void trace_sysinfo()
 		else strcat(osstring,"32-bit");
 	}
 	strcat(osstring,"\r\n");
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"Windows version:  ",18,&byteswritten,NULL);
 	WriteFile(outfile,osstring,strlen(osstring),&byteswritten,NULL);
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"GL_VENDOR:  ",12,&byteswritten,NULL);
 	glstring = glGetString(GL_VENDOR);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"GL_RENDERER:  ",14,&byteswritten,NULL);
 	glstring = glGetString(GL_RENDERER);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"GL_VERSION:  ",13,&byteswritten,NULL);
 	glstring = glGetString(GL_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"GL_SHADING_LANGUAGE_VERSION:  ",30,&byteswritten,NULL);
 	glstring = glGetString(GL_SHADING_LANGUAGE_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	for(i = 0; i < trace_depth-1; i++)
-		WriteFile(outfile,"    ",4,&byteswritten,NULL);
+	if (level >= 4)
+	{
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
 	WriteFile(outfile,"GL_EXTENSIONS:  ",16,&byteswritten,NULL);
 	glstring = glGetString(GL_EXTENSIONS);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
+	sysinfo_dumped = TRUE;
 	LeaveCriticalSection(&trace_cs);
 }
