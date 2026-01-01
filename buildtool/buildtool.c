@@ -335,7 +335,7 @@ int ProcessHeaders(char *path)
 	version.build = 0;
 	version.major = 0;
 	version.minor = 5;
-	version.point = 25;
+	version.point = 26;
 	if (!GetGitVersion(path, &version)) ParseVersion(&version, TRUE);
 	else ParseVersion(&version, TRUE);
 	if (SIGNMODE < 1) nosign = TRUE;
