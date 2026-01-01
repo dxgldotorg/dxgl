@@ -1121,6 +1121,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	dxglDirectDrawSurface7 *dest;
 	dxglDirectDrawSurface7 *src;
 	BltCommand cmd;
+	BltCommand cmd2;
 	TRACE_ENTER(6, 14, This, 26, lpDestRect, 14, lpDDSrcSurface, 26, lpSrcRect, 9, dwFlags, 14, lpDDBltFx);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if ((dwFlags & DDBLT_DEPTHFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 32, DDERR_INVALIDPARAMS);
@@ -1221,16 +1222,35 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	}
 	if (This->clipper && !(This->clipper->hWnd)) cmd.flags |= 0x10000000;
 	if (lpDDBltFx) cmd.bltfx = *lpDDBltFx;
+	if (This->bigsurface)
+	{
+		memcpy(&cmd2, &cmd, sizeof(BltCommand));
+		cmd2.dest = This->texture;
+		if (lpDestRect) cmd2.destrect = *lpDestRect;
+		else cmd2.destrect = nullrect;
+	}
 	if (dwFlags & DDBLT_DEPTHFILL)
 	{
 		if (!(dest->ddsd.ddpfPixelFormat.dwFlags & DDPF_ZBUFFER)) TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
 		if (dest->attachparent)
 		{
-			TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd, dest->attachparent->texture, dest->attachparent->miplevel));
+			if (This->bigsurface)
+			{
+				error = glRenderer_DepthFill(This->ddInterface->renderer, &cmd, dest->attachparent->texture, dest->attachparent->miplevel);
+				if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+				TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd2, This->attachparent->texture, This->attachparent->miplevel));
+			}
+			else TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd, dest->attachparent->texture, dest->attachparent->miplevel));
 		}
 		else
 		{
-			TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd, NULL, 0));
+			if (This->bigsurface)
+			{
+				error = glRenderer_DepthFill(This->ddInterface->renderer, &cmd, NULL, 0);
+				if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+				TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd2, NULL, 0));
+			}
+			else TRACE_RET(HRESULT, 23, glRenderer_DepthFill(This->ddInterface->renderer, &cmd, NULL, 0));
 		}
 	}
 	if (dest == src)
@@ -1262,7 +1282,16 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 		TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_Blt(dest, lpDestRect, (LPDIRECTDRAWSURFACE7)This->ddInterface->tmpsurface,
 			&tmprect, dwFlags, lpDDBltFx));
 	}
-	else TRACE_RET(HRESULT, 23, glRenderer_Blt(This->ddInterface->renderer, &cmd));
+	else
+	{
+		if (This->bigsurface)
+		{
+			error = glRenderer_Blt(This->ddInterface->renderer, &cmd);
+			if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+			TRACE_RET(HRESULT,23, glRenderer_Blt(This->ddInterface->renderer, &cmd2));
+		}
+		else TRACE_RET(HRESULT, 23, glRenderer_Blt(This->ddInterface->renderer, &cmd));
+	}
 }
 HRESULT WINAPI dxglDirectDrawSurface7_BltBatch(dxglDirectDrawSurface7 *This, LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags)
 {
