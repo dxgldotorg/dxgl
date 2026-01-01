@@ -39,6 +39,7 @@ using namespace std;
 #include "ShaderGen3D.h"
 #include "matrix.h"
 #include "struct.h"
+#include "const.h"
 
 const DWORD renderstate_default[RENDERSTATE_COUNT] = {0, // 0
 	NULL, //texturehandle
@@ -1029,10 +1030,21 @@ HRESULT WINAPI glDirect3DDevice7_DrawPrimitiveVB(glDirect3DDevice7 *This, D3DPRI
 }
 HRESULT WINAPI glDirect3DDevice7_EndScene(glDirect3DDevice7 *This)
 {
+	BltCommand bltcmd;
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->inscene) TRACE_RET(HRESULT,23,D3DERR_SCENE_NOT_IN_SCENE);
 	This->inscene = false;
+	if (This->glDDS7->bigsurface)
+	{
+		ZeroMemory(&bltcmd, sizeof(BltCommand));
+		bltcmd.src = This->glDDS7->bigsurface->texture;
+		bltcmd.dest = This->glDDS7->texture;
+		bltcmd.srcrect = nullrect;
+		bltcmd.destrect = nullrect;
+		bltcmd.flags = DDBLT_WAIT;
+		glRenderer_Blt(This->renderer, &bltcmd);
+	}
 	glRenderer_Flush(This->renderer);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
