@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2022 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -639,6 +639,117 @@ void glUtil_ClearErrors(glUtil* This)
 	while (glGetError() != 0)
 	{
 	}
+}
+
+void glUtil_SetUniform1i(glUtil *This, GLint location, GLint v0, GLint *cache)
+{
+	if (location == -1) return;
+	if (*cache == v0) return;
+	*cache = v0;
+	This->ext->glUniform1i(location, v0);
+}
+void glUtil_SetUniform2i(glUtil *This, GLint location, GLint v0, GLint v1, GLint *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	This->ext->glUniform2i(location, v0, v1);
+}
+void glUtil_SetUniform3i(glUtil *This, GLint location, GLint v0, GLint v1, GLint v2, GLint *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1) && (cache[2] == v2)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	cache[2] = v2;
+	This->ext->glUniform3i(location, v0, v1, v2);
+}
+void glUtil_SetUniform4i(glUtil *This, GLint location, GLint v0, GLint v1, GLint v2, GLint v3, GLint *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1) && (cache[2] == v2) && (cache[3] == v3)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	cache[2] = v2;
+	cache[3] = v3;
+	This->ext->glUniform4i(location, v0, v1, v2, v3);
+}
+void glUtil_SetUniform3iv(glUtil *This, GLint location, GLsizei count, const GLint *value, GLint *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 3 * count * sizeof(GLint))) return;
+	memcpy(cache, value, 3 * count * sizeof(GLint));
+	This->ext->glUniform3iv(location, count, value);
+}
+void glUtil_SetUniform4iv(glUtil *This, GLint location, GLsizei count, const GLint *value, GLint *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 4 * count * sizeof(GLint))) return;
+	memcpy(cache, value, 4 * count * sizeof(GLint));
+	This->ext->glUniform4iv(location, count, value);
+}
+void glUtil_SetUniform1f(glUtil *This, GLint location, GLfloat v0, GLfloat *cache)
+{
+	if (location == -1) return;
+	if (*cache == v0) return;
+	*cache = v0;
+	This->ext->glUniform1f(location, v0);
+}
+void glUtil_SetUniform2f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	This->ext->glUniform2f(location, v0, v1);
+}
+void glUtil_SetUniform3f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1) && (cache[2] == v2)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	cache[2] = v2;
+	This->ext->glUniform3f(location, v0, v1, v2);
+}
+void glUtil_SetUniform4f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat *cache)
+{
+	if (location == -1) return;
+	if ((cache[0] == v0) && (cache[1] == v1) && (cache[2] == v2) && (cache[3] == v3)) return;
+	cache[0] = v0;
+	cache[1] = v1;
+	cache[2] = v2;
+	cache[3] = v3;
+	This->ext->glUniform4f(location, v0, v1, v2, v3);
+}
+void glUtil_SetUniform3fv(glUtil *This, GLint location, GLsizei count, const GLfloat *value, GLfloat *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 3 * count * sizeof(GLfloat))) return;
+	memcpy(cache, value, 3 * count * sizeof(GLfloat));
+	This->ext->glUniform3fv(location, count, value);
+}
+void glUtil_SetUniform4fv(glUtil *This, GLint location, GLsizei count, const GLfloat *value, GLfloat *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 4 * count * sizeof(GLfloat))) return;
+	memcpy(cache, value, 4 * count * sizeof(GLfloat));
+	This->ext->glUniform4fv(location, count, value);
+}
+void glUtil_SetUniformMatrix3fv(glUtil *This, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value, GLfloat *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 9 * count * sizeof(GLfloat))) return;
+	memcpy(cache, value, 9 * count * sizeof(GLfloat));
+	This->ext->glUniformMatrix3fv(location, count, transpose, value);
+}
+void glUtil_SetUniformMatrix4fv(glUtil *This, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value, GLfloat *cache)
+{
+	if (location == -1) return;
+	if (!memcmp(cache, value, 16 * count * sizeof(GLfloat))) return;
+	memcpy(cache, value, 16 * count * sizeof(GLfloat));
+	This->ext->glUniformMatrix3fv(location, count, transpose, value);
 }
 
 };

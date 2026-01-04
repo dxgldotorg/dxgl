@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1038,8 +1038,8 @@ HRESULT WINAPI glDirect3DDevice7_EndScene(glDirect3DDevice7 *This)
 	if (This->glDDS7->bigsurface)
 	{
 		ZeroMemory(&bltcmd, sizeof(BltCommand));
-		bltcmd.src = This->glDDS7->bigsurface->texture;
-		bltcmd.dest = This->glDDS7->texture;
+		//bltcmd.src = This->glDDS7->bigsurface->texture;
+		//bltcmd.dest = This->glDDS7->texture;
 		bltcmd.srcrect = nullrect;
 		bltcmd.destrect = nullrect;
 		bltcmd.flags = DDBLT_WAIT;

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2025 William Feely
+// Copyright (C) 2023-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -151,6 +151,7 @@ HRESULT WINAPI DXGLRendererGL_SetWindowSize(LPDXGLRENDERERGL This, RECT r);
 
 // Internal functions
 HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, struct DXGLPostQueueCmd* cmd, BOOL inner);
+void DXGLRendererGL__SetWindow(LPDXGLRENDERERGL This, HWND hwnd);
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
 void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture);
 void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture* texture, GLuint miplevel);

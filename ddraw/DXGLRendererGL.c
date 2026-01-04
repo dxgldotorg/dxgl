@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2025 William Feely
+// Copyright (C) 2023-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -852,6 +852,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 				break;
 			case QUEUEOP_NULL:  // Do nothing
 				break;
+			case QUEUEOP_SETWINDOW:
+				DXGLRendererGL__SetWindow(This, currcmd->setwindow.hwnd);
+				break;
 			case QUEUEOP_RESET:  // Reset device 
 				DXGLRendererGL__Reset(This);
 				break;
@@ -1329,6 +1332,9 @@ HRESULT WINAPI DXGLRendererGL_FreePointer(LPDXGLRENDERERGL This, void *ptr)
 // Sets the DDraw Cooperative Level
 HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hWnd, DWORD dwFlags)
 {
+	HRESULT error;
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmdSetWindow cmddata;
 	BOOL exclusive;
 	DWORD winver = GetVersion();
 	DWORD winvermajor = (DWORD)(LOBYTE(LOWORD(winver)));
@@ -1611,6 +1617,15 @@ HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hW
 		SetParent(This->hWndContext, This->hWndTarget);
 		SetWindowPos(This->hWndContext, HWND_TOP, 0, 0, This->width, This->height, SWP_SHOWWINDOW);
 	}
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.size = sizeof(DXGLQueueCmdSetWindow);
+	cmddata.command = QUEUEOP_SETWINDOW;
+	cmddata.hwnd = This->hWndContext;
+	error = DXGLRendererGL_PostCommand(This, &cmd);
+	if (FAILED(error)) return error;
+	error = DXGLRendererGL_Sync(This, 0);
+	return error;
 }
 
 // Creates one or more textures, determined by ddsd
@@ -1738,6 +1753,19 @@ HRESULT WINAPI DXGLRendererGL_GetWindow(LPDXGLRENDERERGL This, HWND *hWnd)
 	return DD_OK;
 }
 
+// Sets the GL target window
+void DXGLRendererGL__SetWindow(LPDXGLRENDERERGL This, HWND hwnd)
+{
+	RECT rect;
+	HDC hdc = GetDC(hwnd);
+	if (!hdc) return;
+	This->hdc = hdc;
+	if (!GetClientRect(hwnd, &rect)) return;
+	if (!GetPixelFormat(hdc)) SetPixelFormat(hdc, This->pf, &This->pfd);
+	wglMakeCurrent(hdc, This->hrc);
+	glViewport(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+}
+
 // Resets OpenGL state
 void DXGLRendererGL__Reset(LPDXGLRENDERERGL This)
 {
@@ -1853,6 +1881,7 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *stat
 		ShaderManager_SetShader(&This->shaders, shaderid, NULL, 1);
 		memcpy(&This->renderstate2D, &state->state.state2D, sizeof(DXGLRenderState2D));
 		This->vao = &((GenShader2D*)This->shaders.gen3d->current_genshader)->shader.vao;
+		//This->ext.glUniform4f()
 		break;
 	case DXGLRENDERMODE_STATE3D: // 3D State
 		break;

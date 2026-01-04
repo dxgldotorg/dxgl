@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,22 @@ void glUtil_BindBuffer(glUtil *This, BufferObject *buffer, GLenum target);
 void glUtil_UndoBindBuffer(glUtil *This, GLenum target);
 void glUtil_SetActiveTexture(glUtil *This, int level);
 void glUtil_SetTexture(glUtil *This, unsigned int level, DXGLTexture *texture);
-void glUtil_ClearErrors(glUtil* This);
+void glUtil_ClearErrors(glUtil *This);
+
+void glUtil_SetUniform1i(glUtil *This, GLint location, GLint v0, GLint *cache);
+void glUtil_SetUniform2i(glUtil *This, GLint location, GLint v0, GLint v1, GLint *cache);
+void glUtil_SetUniform3i(glUtil *This, GLint location, GLint v0, GLint v1, GLint v2, GLint *cache);
+void glUtil_SetUniform4i(glUtil *This, GLint location, GLint v0, GLint v1, GLint v2, GLint v3, GLint *cache);
+void glUtil_SetUniform3iv(glUtil *This, GLint location, GLsizei count, const GLint *value, GLint *cache);
+void glUtil_SetUniform4iv(glUtil *This, GLint location, GLsizei count, const GLint *value, GLint *cache);
+void glUtil_SetUniform1f(glUtil *This, GLint location, GLfloat v0, GLfloat *cache);
+void glUtil_SetUniform2f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat *cache);
+void glUtil_SetUniform3f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat *cache);
+void glUtil_SetUniform4f(glUtil *This, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat *cache);
+void glUtil_SetUniform3fv(glUtil *This, GLint location, GLsizei count, const GLfloat *value, GLfloat *cache);
+void glUtil_SetUniform4fv(glUtil *This, GLint location, GLsizei count, const GLfloat *value, GLfloat *cache);
+void glUtil_SetUniformMatrix3fv(glUtil *This, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value, GLfloat *cache);
+void glUtil_SetUniformMatrix4fv(glUtil *This, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value, GLfloat *cache);
 
 #ifdef __cplusplus
 }

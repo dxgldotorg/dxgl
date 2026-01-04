@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2025 William Feely
+// Copyright (C) 2013-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1520,21 +1520,21 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	gen->genshaders2D[index].shader.attribs[3] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "srcst");
 	gen->genshaders2D[index].shader.attribs[4] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "destst");
 	gen->genshaders2D[index].shader.attribs[5] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "stencilst");
-	gen->genshaders2D[index].shader.uniforms[0] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "view");
-	gen->genshaders2D[index].shader.uniforms[1] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srctex");
-	gen->genshaders2D[index].shader.uniforms[2] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "desttex");
-	gen->genshaders2D[index].shader.uniforms[3] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patterntex");
-	gen->genshaders2D[index].shader.uniforms[4] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "stenciltex");
-	gen->genshaders2D[index].shader.uniforms[5] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
-	gen->genshaders2D[index].shader.uniforms[6] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
-	gen->genshaders2D[index].shader.uniforms[7] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrchigh");
-	gen->genshaders2D[index].shader.uniforms[8] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydesthigh");
-	gen->genshaders2D[index].shader.uniforms[9] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
-	gen->genshaders2D[index].shader.uniforms[10] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizesrc");
-	gen->genshaders2D[index].shader.uniforms[11] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizedest");
-	gen->genshaders2D[index].shader.uniforms[12] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "fillcolor");
-	gen->genshaders2D[index].shader.uniforms[13] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srcpal");
-	gen->genshaders2D[index].shader.uniforms[14] = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "destpal");
+	gen->genshaders2D[index].shader.uniforms.unif_view = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "view");
+	gen->genshaders2D[index].shader.uniforms.unif_srctex = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srctex");
+	gen->genshaders2D[index].shader.uniforms.unif_desttex = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "desttex");
+	gen->genshaders2D[index].shader.uniforms.unif_patterntex = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patterntex");
+	gen->genshaders2D[index].shader.uniforms.unif_stenciltex = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "stenciltex");
+	gen->genshaders2D[index].shader.uniforms.unif_ckeysrc = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrc");
+	gen->genshaders2D[index].shader.uniforms.unif_ckeydest = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydest");
+	gen->genshaders2D[index].shader.uniforms.unif_ckeysrchigh = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeysrchigh");
+	gen->genshaders2D[index].shader.uniforms.unif_ckeydesthigh = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "ckeydesthigh");
+	gen->genshaders2D[index].shader.uniforms.unif_patternsize = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "patternsize");
+	gen->genshaders2D[index].shader.uniforms.unif_colorsizesrc = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizesrc");
+	gen->genshaders2D[index].shader.uniforms.unif_colorsizedest = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "colorsizedest");
+	gen->genshaders2D[index].shader.uniforms.unif_fillcolor = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "fillcolor");
+	gen->genshaders2D[index].shader.uniforms.unif_srcpal = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "srcpal");
+	gen->genshaders2D[index].shader.uniforms.unif_destpal = gen->ext->glGetUniformLocation(gen->genshaders2D[index].shader.prog, "destpal");
 
 	gen->genshaders2D[index].id = id;
 	if (gen->ext->GLEXT_ARB_vertex_array_object)

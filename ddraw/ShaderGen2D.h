@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2025 William Feely
+// Copyright (C) 2013-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,40 @@ extern "C" {
 
 struct ShaderManager;
 
+typedef struct Uniform2D
+{
+	GLfloat view[4];
+	GLint srctex;
+	GLint desttex;
+	GLint patterntex;
+	GLint stenciltex;
+	GLint ckeysrc[3];
+	GLint ckeydest[3];
+	GLint ckeysrchigh[3];
+	GLint ckeydesthigh[3];
+	GLint patternsize[2];
+	GLint colorsizesrc[4];
+	GLint colorsizedest[4];
+	GLint fillcolor[4];
+	GLint srcpal;
+	GLint destpal;
+	GLint unif_view;
+	GLint unif_srctex;
+	GLint unif_desttex;
+	GLint unif_patterntex;
+	GLint unif_stenciltex;
+	GLint unif_ckeysrc;
+	GLint unif_ckeydest;
+	GLint unif_ckeysrchigh;
+	GLint unif_ckeydesthigh;
+	GLint unif_patternsize;
+	GLint unif_colorsizesrc;
+	GLint unif_colorsizedest;
+	GLint unif_fillcolor;
+	GLint unif_srcpal;
+	GLint unif_destpal;
+} Uniform2D;
+
 typedef struct _GENSHADER2D
 {
 	GLint vs;
@@ -33,7 +67,7 @@ typedef struct _GENSHADER2D
 	STRING fsrc;
 	GLint prog;
 	GLint attribs[6];
-	GLint uniforms[16];
+	Uniform2D uniforms;
 	VAO vao;
 } _GENSHADER2D;
 

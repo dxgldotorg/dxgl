@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2025 William Feely
+// Copyright (C) 2023-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,13 @@ typedef struct DXGLQueueCmd
 	LONG command;
 	DWORD size;
 } DXGLQueueCmd;
+
+typedef struct DXGLQueueCmdSetWindow
+{
+	LONG command;
+	DWORD size;
+	HWND hwnd;
+} DXGLQueueCmdSetWindow;
 
 typedef struct DXGLQueueCmdCreateTexture
 {
@@ -183,6 +190,7 @@ typedef struct DXGLQueueCmdSetWindowSize
 typedef union DXGLQueueCmdDecoder
 {
 	DXGLQueueCmd cmd;
+	DXGLQueueCmdSetWindow setwindow;
 	DXGLQueueCmdCreateTexture createtexture;
 	DXGLQueueCmdDeleteTexture deletetexture;
 	DXGLQueueCmdFreePointer freepointer;
@@ -214,21 +222,22 @@ typedef struct DXGLPostQueueCmd
 #define QUEUEOP_QUIT -1
 #define QUEUEOP_NULL 0
 #define QUEUEOP_RESET 1
-#define QUEUEOP_CREATETEXTURE 2
-#define QUEUEOP_DELETETEXTURE 3
-#define QUEUEOP_SETTEXTURE 4
-#define QUEUEOP_SETTARGET 5
-#define QUEUEOP_SETRENDERSTATE 6
-#define QUEUEOP_SETFVF 7
-#define QUEUEOP_DRAWPRIMITIVES2D 8
-#define QUEUEOP_DRAWPRIMITIVES 9
-#define QUEUEOP_BREAK 10
-#define QUEUEOP_FREEPOINTER 11
-#define QUEUEOP_EXPANDBUFFERS 12
-#define QUEUEOP_LOCK 13
-#define QUEUEOP_UNLOCK 14
-#define QUEUEOP_SWAPBUFFERS 15
-#define QUEUEOP_SETWINDOWSIZE 16
+#define QUEUEOP_SETWINDOW 2
+#define QUEUEOP_CREATETEXTURE 3
+#define QUEUEOP_DELETETEXTURE 4
+#define QUEUEOP_SETTEXTURE 5
+#define QUEUEOP_SETTARGET 6
+#define QUEUEOP_SETRENDERSTATE 7
+#define QUEUEOP_SETFVF 8
+#define QUEUEOP_DRAWPRIMITIVES2D 9
+#define QUEUEOP_DRAWPRIMITIVES 10
+#define QUEUEOP_BREAK 11
+#define QUEUEOP_FREEPOINTER 12
+#define QUEUEOP_EXPANDBUFFERS 13
+#define QUEUEOP_LOCK 14
+#define QUEUEOP_UNLOCK 15
+#define QUEUEOP_SWAPBUFFERS 16
+#define QUEUEOP_SETWINDOWSIZE 17
 
 #ifdef __cplusplus
 }
