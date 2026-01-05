@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2015-2025 William Feely
+// Copyright (C) 2015-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -241,6 +241,7 @@ typedef struct FBO
 	GLuint fbo;
 	struct glTexture *fbcolor;
 	struct glTexture *fbz;
+	GLint level;
 	BOOL stencil;
 	GLenum status;
 } FBO;

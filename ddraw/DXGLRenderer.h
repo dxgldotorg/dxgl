@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2023-2025 William Feely
+// Copyright (C) 2023-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -104,6 +104,7 @@ typedef struct IDXGLRendererVtbl
     HRESULT (WINAPI *Unlock)(IDXGLRenderer *This, DXGLTexture *texture, GLuint miplevel);
     HRESULT (WINAPI *Clear)(IDXGLRenderer *This, D3DRECT *rect, DWORD flags, DWORD color, D3DVALUE z, DWORD stencil);
     HRESULT (WINAPI *SetRenderState)(IDXGLRenderer *This, DXGLRenderState *state);
+    HRESULT (WINAPI *SyncRenderState)(IDXGLRenderer *This);
     HRESULT (WINAPI *SetFVF)(IDXGLRenderer *This, DWORD fvf);
     HRESULT (WINAPI *DrawPrimitives2D)(IDXGLRenderer *This, D3DPRIMITIVETYPE type, const BYTE *vertices,
         DWORD vertexcount);
@@ -137,13 +138,14 @@ typedef struct IDXGLRendererVtbl
 #define IDXGLRenderer_Unlock(p,a,b)                      (p)->lpVtbl->Unlock(p,a,b)
 #define IDXGLRenderer_Clear(p,a,b,c,d,e)                 (p)->lpVtbl->Clear(p,a,b,c,d,e)
 #define IDXGLRenderer_SetRenderState(p,a)                (p)->lpVtbl->SetRenderState(p,a)
+#define IDXGLRenderer_SyncRenderState(p)                 (p)->lpVtbl->SyncRenderState(p)
 #define IDXGLRenderer_SetFVF(p,a)                        (p)->lpVtbl->SetFVF(p,a)
 #define IDXGLRenderer_DrawPrimitives2D(p,a,b,c)          (p)->lpVtbl->DrawPrimitives2D(p,a,b,c)
 #define IDXGLRenderer_DrawPrimitives(p,a,b,c,d,e)        (p)->lpVtbl->DrawPrimitives(p,a,b,c,d,e)
 #define IDXGLRenderer_SwapBuffers(p,a)                   (p)->lpVtbl->SwapBuffers(p,a)
-#define IDXGLRenderer_Sync(p,a)                          (p)->lpVtbl->Sync(p,a);
-#define IDXGLRenderer_GetWindow(p,a)                     (p)->lpVtbl->GetWindow(p,a);
-#define IDXGLRenderer_SetWindowSize(p,a)                 (p)->lpVtbl->SetWindowSize(p,a);
+#define IDXGLRenderer_Sync(p,a)                          (p)->lpVtbl->Sync(p,a)
+#define IDXGLRenderer_GetWindow(p,a)                     (p)->lpVtbl->GetWindow(p,a)
+#define IDXGLRenderer_SetWindowSize(p,a)                 (p)->lpVtbl->SetWindowSize(p,a)
 
 // Constants
 

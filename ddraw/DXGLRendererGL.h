@@ -112,8 +112,12 @@ typedef struct IDXGLRendererGL
 	DXGLRenderState2D renderstate2D;  // Last used 2D render state
 	unsigned __int64 shader2d;  // Last used 2D shader
 	DWORD fvf;  // Currently used FVF
-	FBO *target;
+	FBO target;
 	DXGLTexture *textures[32]; // Currently set textures
+	GLint viewportx;
+	GLint viewporty;
+	GLsizei viewportwidth;
+	GLsizei viewportheight;
 
 } IDXGLRendererGL;
 
@@ -140,6 +144,7 @@ HRESULT WINAPI DXGLRendererGL_Lock(LPDXGLRENDERERGL This, DXGLTexture *texture, 
 HRESULT WINAPI DXGLRendererGL_Unlock(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel);
 HRESULT WINAPI DXGLRendererGL_Clear(LPDXGLRENDERERGL This, DWORD count, D3DRECT *rects, DWORD flags, DWORD color, D3DVALUE z, DWORD stencil);
 HRESULT WINAPI DXGLRendererGL_SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state);
+HRESULT WINAPI DXGLRendererGL_SyncRenderState(LPDXGLRENDERERGL This);
 HRESULT WINAPI DXGLRendererGL_SetFVF(LPDXGLRENDERERGL This, DWORD fvf);
 HRESULT WINAPI DXGLRendererGL_DrawPrimitives2D(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount);
 HRESULT WINAPI DXGLRendererGL_DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount);
@@ -156,6 +161,7 @@ void DXGLRendererGL__Reset(LPDXGLRENDERERGL This);
 void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture *texture);
 void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture* texture, GLuint miplevel);
 void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *state);
+void DXGLRendererGL__SyncRenderState(LPDXGLRENDERERGL This);
 void DXGLRendererGL__SwapBuffers(LPDXGLRENDERERGL This, int interval);
 void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type, const BYTE* vertices, DWORD vertexcount, const WORD* indices, DWORD indexcount);
 

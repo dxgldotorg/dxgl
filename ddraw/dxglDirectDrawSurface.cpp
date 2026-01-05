@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -2413,6 +2413,9 @@ void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTextu
 	RenderScreenState.state.state2D.blttypesrc = texture->blttype;
 	// FIXME:  Support scaled primary
 	// FIXME:  Sample texture for 512x448 scaling
+	/*	if(texture->bigparent) scale512448 = Is512448Scale(This, texture->bigparent, paltex);
+	else scale512448 = Is512448Scale(This, texture, paltex);*/
+	scale512448 = 0;
 	// FIXME:  Re-add overlay support
 	hWnd = This->ddInterface->hWnd;
 	IDXGLRenderer_GetWindow(This->ddInterface->renderer, &hWndRender);
@@ -2472,26 +2475,46 @@ void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTextu
 		view[3] = (GLfloat)texture->levels[0].height - (GLfloat)r.bottom;
 	}
 
-	// vertices[1].x = vertices[3].x = left
-	// vertices[0].x = vertices[2].x = right
-	// vertices[0].y = vertices[1].y = top
-	// vertices[2].y = vertices[3].y = bottom
-	vertices[1].s = vertices[3].s = 0.0f;
-	vertices[0].s = vertices[2].s = 1.0f;
-	vertices[0].t = vertices[1].t = 0.0f;
-	vertices[2].t = vertices[3].t = 1.0f;
+	if (glDirectDraw7_GetFullscreen(This->ddInterface))
+	{
+		vertices[0].x = vertices[2].x = (float)sizes[0];
+		vertices[0].y = vertices[1].y = vertices[1].x = vertices[3].x = 0.;
+		vertices[2].y = vertices[3].y = (float)sizes[1];
+	}
+	else
+	{
+		vertices[0].x = vertices[2].x = (float)texture->levels[0].width;
+		vertices[0].y = vertices[1].y = vertices[1].x = vertices[3].x = 0.;
+		vertices[2].y = vertices[3].y = (float)texture->levels[0].height;
+	}
+	if (scale512448)
+	{
+		if (dxglcfg.HackAutoExpandViewport == 1)
+		{
+			vertices[0].s = vertices[2].s = 0.9f;
+			vertices[0].t = vertices[1].t = 0.966666667f;
+			vertices[1].s = vertices[3].s = 0.1f;
+			vertices[2].t = vertices[3].t = 0.0333333333f;
+		}
+		else if (dxglcfg.HackAutoExpandViewport == 2)
+		{
+			vertices[0].s = vertices[2].s = 0.9f;
+			vertices[1].s = vertices[3].s = 0.1f;
+		}
+	}
+	else
+	{
+		vertices[0].s = vertices[0].t = vertices[1].t = vertices[2].s = 1.;
+		vertices[1].s = vertices[2].t = vertices[3].s = vertices[3].t = 0.;
+	}
 	vertices[0].rhw = vertices[1].rhw = vertices[2].rhw = vertices[3].rhw = 1.0f;
 	IDXGLRenderer_SetTexture(This->ddInterface->renderer, 8, texture);
 	IDXGLRenderer_SetTarget(This->ddInterface->renderer, 0, 0);
 	IDXGLRenderer_SetRenderState(This->ddInterface->renderer, &RenderScreenState);
 	IDXGLRenderer_SetFVF(This->ddInterface->renderer, D3DFVF_XYZRHW | D3DFVF_TEX3);
+	IDXGLRenderer_SyncRenderState(This->ddInterface->renderer);
 	IDXGLRenderer_DrawPrimitives2D(This->ddInterface->renderer, D3DPT_TRIANGLELIST, (BYTE*)vertices, 4);
 	IDXGLRenderer_SwapBuffers(This->ddInterface->renderer, vsync);
-
-	// Testing
-	Sleep(1000);
-	IDXGLRenderer_Break(This->ddInterface->renderer);
-	MessageBox(NULL, _T("Check your debugger"), _T("Notice"), MB_OK);
 
 	//if(texture->bigtexture) glRenderer_DrawScreen(This->ddInterface->renderer, texture->bigtexture, texture->palette, vsync, previous, settime, overlays, overlaycount);
 	//else glRenderer_DrawScreen(This->ddInterface->renderer, texture, texture->palette, vsync, previous, settime, overlays, overlaycount);

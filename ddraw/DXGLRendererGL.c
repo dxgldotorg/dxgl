@@ -67,6 +67,7 @@ static const struct IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_Unlock, // Unlock
 	NULL, // Clear
 	DXGLRendererGL_SetRenderState,
+	DXGLRendererGL_SyncRenderState,
 	DXGLRendererGL_SetFVF,
 	DXGLRendererGL_DrawPrimitives2D,
 	NULL, // DrawPrimitives
@@ -874,6 +875,9 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 			case QUEUEOP_SETRENDERSTATE:
 				DXGLRendererGL__SetRenderState(This, &currcmd->setrenderstate.state);
 				break;
+			case QUEUEOP_SYNCRENDERSTATE:
+				DXGLRendererGL__SyncRenderState(This);
+				break;
 			case QUEUEOP_EXPANDBUFFERS: // Expand the buffers, write error to start of queue
 				// Command should only be placed by itself then wait until it finished
 				if (currcmd->expandbuffers.size > This->currentqueue->commandsize)
@@ -937,7 +941,18 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 			case QUEUEOP_UNLOCK: // Unlock a texture
 				DXGLTextureGL__Unlock(currcmd->unlock.texture, &This->ext, currcmd->unlock.miplevel);
 				break;
+			case QUEUEOP_SWAPBUFFERS:
+				if (dxglcfg.vsync == 1) This->ext.wglSwapIntervalEXT(0);
+				else if (dxglcfg.vsync == 2) This->ext.wglSwapIntervalEXT(1);
+				else This->ext.wglSwapIntervalEXT(currcmd->swapbuffers.interval);
+				This->ext.wglGetSwapIntervalEXT();
+				SwapBuffers(This->hdc);
+				break;
 			case QUEUEOP_SETWINDOWSIZE: // Set the window viewport size
+				This->viewportx = currcmd->setwindowsize.r.left;
+				This->viewporty = currcmd->setwindowsize.r.top;
+				This->viewportwidth = currcmd->setwindowsize.r.right - currcmd->setwindowsize.r.left;
+				This->viewportheight = currcmd->setwindowsize.r.bottom - currcmd->setwindowsize.r.top;
 				glUtil_SetViewport(&This->util, currcmd->setwindowsize.r.left, currcmd->setwindowsize.r.top,
 					currcmd->setwindowsize.r.right - currcmd->setwindowsize.r.left,
 					currcmd->setwindowsize.r.bottom - currcmd->setwindowsize.r.top);
@@ -1624,6 +1639,9 @@ HRESULT WINAPI DXGLRendererGL_SetCooperativeLevel(LPDXGLRENDERERGL This, HWND hW
 	cmddata.hwnd = This->hWndContext;
 	error = DXGLRendererGL_PostCommand(This, &cmd);
 	if (FAILED(error)) return error;
+	GetClientRect(This->hWndContext, &wndrect);
+	error = DXGLRendererGL_SetWindowSize(This, &wndrect);
+	if (FAILED(error)) return error;
 	error = DXGLRendererGL_Sync(This, 0);
 	return error;
 }
@@ -1700,6 +1718,18 @@ HRESULT WINAPI DXGLRendererGL_SetRenderState(LPDXGLRENDERERGL This, DXGLRenderSt
 	cmddata.command = QUEUEOP_SETRENDERSTATE;
 	cmddata.size = sizeof(DXGLQueueCmdSetRenderState);
 	memcpy(&cmddata.state, state, sizeof(DXGLRenderState));
+	return DXGLRendererGL_PostCommand(This, &cmd);
+}
+
+// Syncs render state variables to OpenGL
+HRESULT WINAPI DXGLRendererGL_SyncRenderState(LPDXGLRENDERERGL This)
+{
+	DXGLPostQueueCmd cmd;
+	DXGLQueueCmd cmddata;
+	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
+	cmd.data = &cmddata;
+	cmddata.command = QUEUEOP_SYNCRENDERSTATE;
+	cmddata.size = sizeof(DXGLQueueCmd);
 	return DXGLRendererGL_PostCommand(This, &cmd);
 }
 
@@ -1807,16 +1837,24 @@ void DXGLRendererGL__SetTexture(LPDXGLRENDERERGL This, GLuint level, DXGLTexture
 	if (level > 31) return; // bounds checking
 	if (This->textures[level] == texture) return;
 	This->ext.glActiveTexture(GL_TEXTURE0 + level);
-	if (texture) glBindTexture(GL_TEXTURE_2D, texture->glhandle);
-	else glBindTexture(GL_TEXTURE_2D, 0);
+	if (texture)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture->glhandle);
+		This->textures[level] = texture;
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+		This->textures[level] = NULL;
+	}
 }
 
 void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLuint miplevel)
 {
-	if (!texture && (This->target == 0)) return;
+	if (!texture && (This->target.fbo == 0)) return;
 	if (texture)
 	{
-		if ((texture->levels[miplevel].FBO == This->target) && This->target) return;
+		if (texture->levels[miplevel].FBO == This->target.fbo) return;
 		if (This->ext.GLEXT_ARB_framebuffer_object)
 		{
 			if (!texture->levels[miplevel].FBO)
@@ -1843,9 +1881,19 @@ void DXGLRendererGL__SetTarget(LPDXGLRENDERERGL This, DXGLTexture *texture, GLui
 				This->ext.glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, texture->levels[miplevel].FBO);
 			}
 		}
+		This->target.fbo = texture->levels[miplevel].FBO;
+		This->target.fbcolor = texture;
+		This->target.fbz = NULL; // FIXME: Z buffer attachment
+		This->target.level = miplevel;
+		This->target.stencil = FALSE; // FIXME: Stencil buffer attachment
 	}
 	else
 	{
+		This->target.fbo = 0;
+		This->target.fbcolor = NULL;
+		This->target.fbz = NULL;
+		This->target.level = 0;
+		This->target.stencil = FALSE;
 		if (This->ext.GLEXT_ARB_framebuffer_object) This->ext.glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		else if (This->ext.GLEXT_EXT_framebuffer_object) This->ext.glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
@@ -1881,7 +1929,6 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *stat
 		ShaderManager_SetShader(&This->shaders, shaderid, NULL, 1);
 		memcpy(&This->renderstate2D, &state->state.state2D, sizeof(DXGLRenderState2D));
 		This->vao = &((GenShader2D*)This->shaders.gen3d->current_genshader)->shader.vao;
-		//This->ext.glUniform4f()
 		break;
 	case DXGLRENDERMODE_STATE3D: // 3D State
 		break;
@@ -1889,6 +1936,42 @@ void DXGLRendererGL__SetRenderState(LPDXGLRENDERERGL This, DXGLRenderState *stat
 		break;
 	}
 	UpdateVAOBuffers(This);
+}
+void DXGLRendererGL__SyncRenderState(LPDXGLRENDERERGL This)
+{
+	Uniform2D *unif2d;
+	switch (This->rendermode)
+	{
+	case DXGLRENDERMODE_STATICSHADER:
+		break;
+	case DXGLRENDERMODE_STATE2D:
+		unif2d = &((GenShader2D*)This->shaders.gen3d->current_genshader)->shader.uniforms;
+		if (This->target.fbo)
+			glUtil_SetUniform4f(&This->util,unif2d->unif_view,0,0,This->target.fbcolor->levels[This->target.level].ddsd.dwWidth,
+				This->target.fbcolor->levels[This->target.level].ddsd.dwHeight, unif2d->view);
+		else glUtil_SetUniform4f(&This->util, unif2d->unif_view, This->viewportx, This->viewporty, This->viewportwidth, This->viewportheight, unif2d->view);
+		glUtil_SetUniform1i(&This->util, unif2d->unif_srctex, 8, &unif2d->srctex);
+		glUtil_SetUniform1i(&This->util, unif2d->unif_desttex, 9, &unif2d->desttex);
+		glUtil_SetUniform1i(&This->util, unif2d->unif_patterntex, 10, &unif2d->patterntex);
+		glUtil_SetUniform1i(&This->util, unif2d->unif_stenciltex, 11, &unif2d->stenciltex);
+		// ckeysrc
+		// ckeydest
+		// ckeysrchigh
+		// ckeydesthigh
+		// patternsize
+		if (This->textures[8]) glUtil_SetUniform4iv(&This->util, unif2d->unif_colorsizesrc, 1, &This->textures[8]->colorsizes, &unif2d->colorsizesrc);
+		if (This->textures[9])
+			glUtil_SetUniform4iv(&This->util, unif2d->unif_colorsizedest, 1, &This->textures[9]->colorsizes, &unif2d->colorsizedest);
+		else glUtil_SetUniform4i(&This->util, unif2d->unif_colorsizedest, 4095, 4095, 4095, 4095, &unif2d->colorsizedest);
+		// fillcolor
+		// srcpal
+		// destpal
+		break;
+	case DXGLRENDERMODE_STATE3D:
+		break;
+	case DXGLRENDERMODE_POSTSHADER:
+		break;
+	}
 }
 
 static int GetFVFSize(DWORD fvf)
@@ -2136,6 +2219,5 @@ void DXGLRendererGL__DrawPrimitives(LPDXGLRENDERERGL This, D3DPRIMITIVETYPE type
 	}
 	if(!indexcount) glDrawArrays(mode, vertices, vertexcount);
 	else glDrawElements(mode, indexcount, GL_UNSIGNED_SHORT, indices);
-	if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
 	return;
 }
