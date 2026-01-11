@@ -291,6 +291,7 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 	WCHAR WindowThreadName[26] = L"GL Window Thread #00000000";
 	PWSTR RenderThreadName;
 	int index;
+	int i;
 	LONG lastcmd;
 	int pfattribs[] =
 	{
@@ -964,6 +965,11 @@ DWORD WINAPI DXGLRendererGL_MainThread(LPDXGLRENDERERGL This)
 			case QUEUEOP_BREAK:
 				if (This->ext.glFrameTerminatorGREMEDY) This->ext.glFrameTerminatorGREMEDY();
 				break;
+			case QUEUEOP_FREEPOINTER:
+				tmp = &currcmd->freepointer.ptr;
+				for(i =0; i < currcmd->freepointer.count; i++)
+					free(((void**)tmp)[i]);
+				break;
 			case QUEUEOP_DRAWPRIMITIVES:
 			case QUEUEOP_DRAWPRIMITIVES2D:
 				DXGLRendererGL__DrawPrimitives(This, currcmd->drawprimitives.type, currcmd->drawprimitives.vertices,
@@ -1175,11 +1181,11 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	WORD indices[6];
 	int i;
 	EnterCriticalSection(&This->cs);
-	// Check if running
-	if (!This->running)
-	{
-		if (This->queueindexread != This->queueindexwrite) DXGLRendererGL_FlipWrite(This);
-	}
+//	// Check if running
+//	if (!This->running)
+//	{
+		if(This->commandqueue[This->queueindexwrite].busy) DXGLRendererGL_FlipWrite(This);
+//	}
 	queue = &This->commandqueue[This->queueindexwrite];
 	if (!inner)
 	{
@@ -1309,6 +1315,7 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 	}
 	if (!This->running)
 	{
+		This->queueindexread = This->queueindexwrite;
 		This->running = TRUE;
 		SetEvent(This->StartEvent);
 	}
@@ -1794,6 +1801,7 @@ void DXGLRendererGL__SetWindow(LPDXGLRENDERERGL This, HWND hwnd)
 	if (!GetPixelFormat(hdc)) SetPixelFormat(hdc, This->pf, &This->pfd);
 	wglMakeCurrent(hdc, This->hrc);
 	glViewport(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+	glFlush();
 }
 
 // Resets OpenGL state
@@ -1949,7 +1957,7 @@ void DXGLRendererGL__SyncRenderState(LPDXGLRENDERERGL This)
 		if (This->target.fbo)
 			glUtil_SetUniform4f(&This->util,unif2d->unif_view,0,0,This->target.fbcolor->levels[This->target.level].ddsd.dwWidth,
 				This->target.fbcolor->levels[This->target.level].ddsd.dwHeight, unif2d->view);
-		else glUtil_SetUniform4f(&This->util, unif2d->unif_view, This->viewportx, This->viewporty, This->viewportwidth, This->viewportheight, unif2d->view);
+		else glUtil_SetUniform4f(&This->util, unif2d->unif_view, This->viewportx, This->viewportwidth, This->viewportheight, This->viewporty, unif2d->view);
 		glUtil_SetUniform1i(&This->util, unif2d->unif_srctex, 8, &unif2d->srctex);
 		glUtil_SetUniform1i(&This->util, unif2d->unif_desttex, 9, &unif2d->desttex);
 		glUtil_SetUniform1i(&This->util, unif2d->unif_patterntex, 10, &unif2d->patterntex);

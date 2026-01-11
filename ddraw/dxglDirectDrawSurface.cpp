@@ -2499,13 +2499,15 @@ void dxglDirectDrawSurface7_RenderScreen(dxglDirectDrawSurface7 *This, DXGLTextu
 		else if (dxglcfg.HackAutoExpandViewport == 2)
 		{
 			vertices[0].s = vertices[2].s = 0.9f;
+			vertices[0].t = vertices[1].t = 1.0f;
 			vertices[1].s = vertices[3].s = 0.1f;
+			vertices[2].t = vertices[3].t = 0.0f;
 		}
 	}
 	else
 	{
-		vertices[0].s = vertices[0].t = vertices[1].t = vertices[2].s = 1.;
-		vertices[1].s = vertices[2].t = vertices[3].s = vertices[3].t = 0.;
+		vertices[0].s = vertices[0].t = vertices[1].t = vertices[2].s = 1.0f;
+		vertices[1].s = vertices[2].t = vertices[3].s = vertices[3].t = 0.0f;
 	}
 	vertices[0].rhw = vertices[1].rhw = vertices[2].rhw = vertices[3].rhw = 1.0f;
 	IDXGLRenderer_SetTexture(This->ddInterface->renderer, 8, texture);
