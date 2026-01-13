@@ -1267,8 +1267,8 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			cmdptr->drawprimitives.vertexcount += 4;
 			cmdptr->drawprimitives.indexcount += 6;
 			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
-				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
-			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
+				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(BltVertex));
+			queue->vertexbufferwrite += 4 * sizeof(BltVertex);
 			memcpy(queue->indexbufferptr + queue->indexbufferwrite, indices, 6 * sizeof(WORD));
 			queue->indexbufferwrite += 6 * sizeof(WORD);
 		}
@@ -1286,8 +1286,8 @@ HRESULT WINAPI DXGLRendererGL_PostCommand2(LPDXGLRENDERERGL This, DXGLPostQueueC
 			cmdptr->drawprimitives.indices = queue->indexbufferwrite;
 			queue->commandwrite += cmdptr->drawprimitives.size;
 			memcpy(queue->vertexbufferptr + queue->vertexbufferwrite,
-				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(D3DTLVERTEX));
-			queue->vertexbufferwrite += 4 * sizeof(D3DTLVERTEX);
+				cmdinptr->drawprimitives2d.vertices, cmdinptr->drawprimitives2d.vertexcount * sizeof(BltVertex));
+			queue->vertexbufferwrite += 4 * sizeof(BltVertex);
 			memcpy(queue->indexbufferptr + queue->indexbufferwrite, bltindices, 6 * sizeof(WORD));
 			queue->indexbufferwrite += 6 * sizeof(WORD);
 		}
@@ -1760,7 +1760,7 @@ HRESULT WINAPI DXGLRendererGL_DrawPrimitives2D(LPDXGLRENDERERGL This, D3DPRIMITI
 	DXGLQueueCmdDrawPrimitives2D cmddata;
 	ZeroMemory(&cmd, sizeof(DXGLPostQueueCmd));
 	cmd.data = &cmddata;
-	cmd.vertexsize = 4 * sizeof(D3DTLVERTEX);
+	cmd.vertexsize = 4 * sizeof(BltVertex);
 	cmd.indexsize = 6 * sizeof(WORD);
 	cmddata.command = QUEUEOP_DRAWPRIMITIVES2D;
 	cmddata.size = sizeof(DXGLQueueCmdDrawPrimitives2D);
