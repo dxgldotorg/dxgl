@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,9 @@ extern "C" {DXGLCFG dxglcfg; }
 glDirectDraw7 *glDD7 = NULL;
 extern "C" DWORD gllock = 0;
 HMODULE sysddraw = NULL;
+HMODULE hKernel32 = NULL;
 HRESULT (WINAPI *sysddrawcreate)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter) = NULL;
+BOOL (WINAPI *_SetProcessAffinityMask)(HANDLE hProcess, DWORD_PTR dwProcessAffinityMask) = NULL;
 
 const GUID device_template = 
 { 0x9ff8900, 0x8c4a, 0x4ba4, { 0xbf, 0x29, 0x56, 0x50, 0x4a, 0xf, 0x3b, 0xb3 } };
@@ -173,6 +175,16 @@ HRESULT WINAPI DirectDrawCreate(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnk
 	}
 	InitHooks();
 	GetCurrentConfig(&dxglcfg, FALSE);
+	if (dxglcfg.HackAffinityMask)
+	{
+		if (!_SetProcessAffinityMask)
+		{
+			if(!hKernel32) hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+			if (hKernel32) _SetProcessAffinityMask = (BOOL(WINAPI*)(HANDLE,DWORD_PTR))GetProcAddress(hKernel32, "SetProcessAffinityMask");
+		}
+		if (_SetProcessAffinityMask)
+			_SetProcessAffinityMask(GetCurrentProcess(), (DWORD_PTR)dxglcfg.HackAffinityMask);
+	}
 	glDirectDraw7 *myddraw7;
 	glDirectDraw1 *myddraw;
 	HRESULT error;
@@ -236,6 +248,16 @@ HRESULT WINAPI DirectDrawCreateEx(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, 
 	if(!lplpDD) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	InitHooks();
 	GetCurrentConfig(&dxglcfg, FALSE);
+	if (dxglcfg.HackAffinityMask)
+	{
+		if (!_SetProcessAffinityMask)
+		{
+			if (!hKernel32) hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+			if (hKernel32) _SetProcessAffinityMask = (BOOL(WINAPI*)(HANDLE, DWORD_PTR))GetProcAddress(hKernel32, "SetProcessAffinityMask");
+		}
+		if (_SetProcessAffinityMask)
+			_SetProcessAffinityMask(GetCurrentProcess(), (DWORD_PTR)dxglcfg.HackAffinityMask);
+	}
 	glDirectDraw7 *myddraw;
 	HRESULT error;
 	if(iid != IID_IDirectDraw7)
@@ -502,6 +524,16 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		return CLASS_E_CLASSNOTAVAILABLE;
 	}
 	GetCurrentConfig(&dxglcfg, FALSE);
+	if (dxglcfg.HackAffinityMask)
+	{
+		if (!_SetProcessAffinityMask)
+		{
+			if (!hKernel32) hKernel32 = GetModuleHandle(_T("kernel32.dll"));
+			if (hKernel32) _SetProcessAffinityMask = (BOOL(WINAPI*)(HANDLE, DWORD_PTR))GetProcAddress(hKernel32, "SetProcessAffinityMask");
+		}
+		if (_SetProcessAffinityMask)
+			_SetProcessAffinityMask(GetCurrentProcess(), (DWORD_PTR)dxglcfg.HackAffinityMask);
+	}
 	glClassFactory_Create(&factory);
 	if(factory == NULL)
 	{
