@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2022 William Feely
+// Copyright (C) 2011-2026 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -110,6 +110,7 @@ typedef struct
 	BOOL HackSetCursor;
 	DWORD HackPaletteDelay;
 	BOOL HackPaletteVsync;
+	ULONGLONG HackAffinityMask;
 	DWORD VertexBufferSize;
 	DWORD IndexBufferSize;
 	DWORD UnpackBufferSize;

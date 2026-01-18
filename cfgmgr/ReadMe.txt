@@ -612,6 +612,12 @@ INI Group hacks
 REG_DWORD HKCU\DXGL\Profiles\<app>\HackPaletteVsync
 Sets whether to use vsync when updating the display due to a palette change.
 
+Member HackAffinityMask
+INI Entry HackAffinityMask
+INI group hacks
+REG_BINARY HKCU\DXGL\Profiles\<app>\HackAffinityMask
+Sets the process affinity mask.  Useful for single core mode.
+
 Member Windows8Detected
 Not in INI file
 REG_DWORD HKCU\DXGL\Global\Windows8Detected

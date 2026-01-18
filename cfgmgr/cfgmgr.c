@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2024 William Feely
+// Copyright (C) 2011-2026 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -510,6 +510,24 @@ DWORD ReadDWORDWithObsolete(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR valu
 	}
 }
 
+ULONGLONG ReadQWORD(HKEY hKey, DWORD original, ULONGLONG *mask, LPCTSTR value)
+{
+	ULONGLONG ullOut = 0i64;
+	DWORD sizeout = 8;
+	DWORD regbinary = REG_BINARY;
+	LSTATUS error = RegQueryValueEx(hKey, value, NULL, &regbinary, (LPBYTE)&ullOut, &sizeout);
+	if (error == ERROR_SUCCESS)
+	{
+		*mask = 1i64;
+		return ullOut;
+	}
+	else
+	{
+		*mask = 0i64;
+		return original;
+	}
+}
+
 DWORD ReadDWORD(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR value)
 {
 	DWORD dwOut;
@@ -759,6 +777,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->HackSetCursor = ReadBool(hKey, cfg->HackSetCursor, &cfgmask->HackSetCursor, _T("HackSetCursor"));
 	cfg->HackPaletteDelay = ReadDWORD(hKey, cfg->HackPaletteDelay, &cfgmask->HackPaletteDelay, _T("HackPaletteDelay"));
 	cfg->HackPaletteVsync = ReadBool(hKey, cfg->HackPaletteVsync, &cfgmask->HackPaletteVsync, _T("HackPaletteVsync"));
+	cfg->HackAffinityMask = ReadQWORD(hKey, cfg->HackAffinityMask, &cfgmask->HackAffinityMask, _T("HackAffinityMask"));
 	if(!global && dll)
 	{
 		sizeout = 0;
@@ -807,6 +826,12 @@ void WriteDWORDDeleteObsolete(HKEY hKey, DWORD value, DWORD mask, LPCTSTR name,
 	}
 	va_end(va);
 	if (mask) RegSetValueEx(hKey, name, 0, REG_DWORD, (BYTE*)&value, 4);
+	else RegDeleteValue(hKey, name);
+}
+
+void WriteQWORD(HKEY hKey, ULONGLONG value, ULONGLONG mask, LPCTSTR name)
+{
+	if (mask) RegSetValueEx(hKey, name, 0, REG_BINARY, (BYTE*)&value, 8);
 	else RegDeleteValue(hKey, name);
 }
 
@@ -940,6 +965,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteBool(hKey, cfg->HackSetCursor, cfgmask->HackSetCursor, _T("HackSetCursor"));
 	WriteDWORD(hKey, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay, _T("HackPaletteDelay"));
 	WriteDWORD(hKey, cfg->HackPaletteVsync, cfgmask->HackPaletteVsync, _T("HackPaletteVsync"));
+	WriteQWORD(hKey, cfg->HackAffinityMask, cfgmask->HackAffinityMask, _T("HackAffinityMask"));
 }
 
 TCHAR newregname[MAX_PATH+65];
@@ -1091,6 +1117,11 @@ DWORD INIIntBoolValue(const char *value)
 	if (value[0] == 'T') return 1;
 	if (value[0] == 't') return 1;
 	return atoi(value);
+}
+
+ULONGLONG INIHex64Value(const char *value)
+{
+	return (ULONGLONG)_strtoui64(value, NULL, 0);
 }
 
 DWORD INIHexValue(const char *value)
@@ -1284,6 +1315,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "HackSetCursor")) cfg->HackSetCursor = INIBoolValue(value);
 			if (!_stricmp(name, "HackPaletteDelay")) cfg->HackPaletteDelay = INIIntValue(value);
 			if (!_stricmp(name, "HackPaletteVsync")) cfg->HackPaletteVsync = INIBoolValue(value);
+			if (!_stricmp(name, "HackAffinityMask")) cfg->HackAffinityMask = INIHex64Value(value);
 			if (!_stricmp(name, "VertexBufferSize")) cfg->VertexBufferSize = INIIntValue(value);
 			if (!_stricmp(name, "IndexBufferSize")) cfg->IndexBufferSize = INIIntValue(value);
 			if (!_stricmp(name, "UnpackBufferSize")) cfg->UnpackBufferSize = INIIntValue(value);
@@ -1394,6 +1426,25 @@ void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 		strcpy(buffer, name);
 		strcat(buffer, "=");
 		_itoa(value, number, 10);
+		strcat(buffer, number);
+		strcat(buffer, "\r\n");
+		buffersize = (DWORD)strlen(buffer);
+		WriteFile(file, buffer, buffersize, &outsize, NULL);
+	}
+}
+
+void INIWriteHex64(HANDLE file, const char name, ULONGLONG value, ULONGLONG mask, int section)
+{
+	char buffer[256];
+	char number[64];
+	DWORD buffersize;
+	DWORD outsize;
+	if (mask)
+	{
+		SetINISection(file, section);
+		strcpy(buffer, name);
+		strcat(buffer, "=0x");
+		_i64toa(value, number, 16);
 		strcat(buffer, number);
 		strcat(buffer, "\r\n");
 		buffersize = (DWORD)strlen(buffer);
@@ -1719,6 +1770,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "HackSetCursor", cfg->HackSetCursor, mask->HackSetCursor, INISECTION_HACKS);
 	INIWriteInt(file, "HackPaletteDelay", cfg->HackPaletteDelay, mask->HackPaletteDelay, INISECTION_HACKS);
 	INIWriteBool(file, "HackPaletteVsync", cfg->HackPaletteVsync, mask->HackPaletteVsync, INISECTION_HACKS);
+	INIWriteHex64(file, "HackAffinityMask", cfg->HackAffinityMask, mask->HackAffinityMask, INISECTION_HACKS);
 	INIWriteInt(file, "VertexBufferSize", cfg->VertexBufferSize, mask->VertexBufferSize, INISECTION_HACKS);
 	INIWriteInt(file, "IndexBufferSize", cfg->IndexBufferSize, mask->IndexBufferSize, INISECTION_HACKS);
 	INIWriteInt(file, "UnpackBufferSize", cfg->UnpackBufferSize, mask->UnpackBufferSize, INISECTION_HACKS);
