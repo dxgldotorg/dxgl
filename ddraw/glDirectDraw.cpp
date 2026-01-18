@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2022 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1478,9 +1478,22 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		if (lpDDSurfaceDesc2->dwBackBufferCount < 1) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 		complexcount *= lpDDSurfaceDesc2->dwBackBufferCount + 1;
 	}
+
+	// Calculate mipmap levels
+	if ((lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_MIPMAP) && !(lpDDSurfaceDesc2->ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
+	{
+		if (!(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_TEXTURE))
+			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+		if (!(lpDDSurfaceDesc2->dwFlags & DDSD_MIPMAPCOUNT))
+		{
+			lpDDSurfaceDesc2->dwFlags |= DDSD_MIPMAPCOUNT;
+			lpDDSurfaceDesc2->dwMipMapCount = CalculateMipLevels(lpDDSurfaceDesc2->dwWidth, lpDDSurfaceDesc2->dwHeight);
+		}
+	}
+
 	// Multiply by number of mipmaps
 	if (lpDDSurfaceDesc2->dwFlags & DDSD_MIPMAPCOUNT)
-		complexcount * lpDDSurfaceDesc2->dwMipMapCount;
+		complexcount *= lpDDSurfaceDesc2->dwMipMapCount;
 	// Calculate surface size
 	surfacesize = sizeof(dxglDirectDrawSurface7) * complexcount;
 	if (lpDDSurfaceDesc2->dwFlags & DDSD_BACKBUFFERCOUNT)

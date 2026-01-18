@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2022 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -354,18 +354,6 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	glDDS7->bitmapinfo->bmiHeader.biWidth = glDDS7->ddsd.dwWidth;
 	glDDS7->bitmapinfo->bmiHeader.biHeight = -(signed)glDDS7->ddsd.dwHeight;
 	glDDS7->bitmapinfo->bmiHeader.biPlanes = 1; */
-
-	// Calculate mipmap levels
-	if ((glDDS7->ddsd.ddsCaps.dwCaps & DDSCAPS_MIPMAP) && !(glDDS7->ddsd.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL))
-	{
-		if (!(glDDS7->ddsd.ddsCaps.dwCaps & DDSCAPS_TEXTURE))
-			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-		if (!(glDDS7->ddsd.dwFlags & DDSD_MIPMAPCOUNT))
-		{
-			glDDS7->ddsd.dwFlags |= DDSD_MIPMAPCOUNT;
-			glDDS7->ddsd.dwMipMapCount = CalculateMipLevels(glDDS7->ddsd.dwWidth, glDDS7->ddsd.dwHeight);
-		}
-	}
 
 	// Calculate complex surface count
 	if (glDDS7->ddsd.dwFlags & DDSD_BACKBUFFERCOUNT) buffercount = glDDS7->ddsd.dwBackBufferCount + 1;
