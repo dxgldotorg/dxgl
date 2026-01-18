@@ -1433,7 +1433,7 @@ void INIWriteInt(HANDLE file, const char *name, DWORD value, DWORD mask, int sec
 	}
 }
 
-void INIWriteHex64(HANDLE file, const char name, ULONGLONG value, ULONGLONG mask, int section)
+void INIWriteHex64(HANDLE file, const char *name, ULONGLONG value, ULONGLONG mask, int section)
 {
 	char buffer[256];
 	char number[64];
@@ -1760,7 +1760,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteBool(file, "DebugNoPaletteRedraw", cfg->DebugNoPaletteRedraw, mask->DebugNoPaletteRedraw, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMajor", cfg->DebugMaxGLVersionMajor, mask->DebugMaxGLVersionMajor, INISECTION_DEBUG);
 	INIWriteBool(file, "DebugMaxGLVersionMinor", cfg->DebugMaxGLVersionMinor, mask->DebugMaxGLVersionMinor, INISECTION_DEBUG);
-	INIWriteBool(file, "DebugTraceLevel", cfg->DebugTraceLevel, mask->DebugTraceLevel, INISECTION_DEBUG);
+	INIWriteInt(file, "DebugTraceLevel", cfg->DebugTraceLevel, mask->DebugTraceLevel, INISECTION_DEBUG);
 	// [hacks]
 	INIWriteBool(file, "HackCrop640480to640400", cfg->HackCrop640480to640400, mask->HackCrop640480to640400, INISECTION_HACKS);
 	INIWriteInt(file, "HackAutoExpandViewport", cfg->HackAutoExpandViewport, mask->HackAutoExpandViewport, INISECTION_HACKS);
