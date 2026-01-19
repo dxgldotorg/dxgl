@@ -2451,7 +2451,7 @@ HRESULT dxglDirectDrawSurface7_GetHandle(dxglDirectDrawSurface7 *This, glDirect3
 	This->device = glD3DDev7;
 	This->handle = glDirect3DDevice7_AddTexture(This->device, This);
 	if(This->handle == -1) TRACE_RET(HRESULT,23,DDERR_OUTOFMEMORY);
-	glDirect3DDevice7_AddRef(This->device);
+	//glDirect3DDevice7_AddRef(This->device);
 	*lpHandle = This->handle;
 	TRACE_VAR("*lpHandle",9,*lpHandle);
 	TRACE_EXIT(23,D3D_OK);

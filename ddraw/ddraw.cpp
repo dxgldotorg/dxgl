@@ -455,7 +455,7 @@ HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpC
 	monitorinfo.cbSize = sizeof(MONITORINFOEXW);
 	DISPLAY_DEVICEW dev;
 	dev.cb = sizeof(DISPLAY_DEVICE);
-	if(!lpCallback(NULL,L"Primary Display Driver",L"display",lpContext,0)) return DD_OK;
+	if(!lpCallback(NULL,L"Primary Display Driver",L"display",lpContext,0)) TRACE_RET(HRESULT,23,DD_OK);
 	if(dwFlags & DDENUM_ATTACHEDSECONDARYDEVICES)
 	{
 		EnumDisplayMonitors(NULL,NULL,MonitorEnum,(LPARAM)&monitors);
