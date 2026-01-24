@@ -815,6 +815,13 @@ static void trace_decode_guid(GUID *guid)
 	else if(!memcmp(guid,&IID_IDirect3D2,sizeof(GUID))) strcpy(str,"IID_IDirect3D2");
 	else if(!memcmp(guid,&IID_IDirect3D3,sizeof(GUID))) strcpy(str,"IID_IDirect3D3");
 	else if(!memcmp(guid,&IID_IDirect3D7,sizeof(GUID))) strcpy(str,"IID_IDirect3D7");
+	else if(!memcmp(guid,&IID_IDirect3DRampDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DRampDevice");
+	else if(!memcmp(guid,&IID_IDirect3DRGBDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DRGBDevice");
+	else if(!memcmp(guid,&IID_IDirect3DHALDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DHALDevice");
+	else if(!memcmp(guid,&IID_IDirect3DMMXDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DMMXDevice");
+	else if(!memcmp(guid,&IID_IDirect3DRefDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DRefDevice");
+	else if(!memcmp(guid,&IID_IDirect3DTnLHalDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DTnLHalDevice");
+	else if(!memcmp(guid,&IID_IDirect3DNullDevice,sizeof(GUID))) strcpy(str,"IID_IDirect3DNullDevice");
 	else if(!memcmp(guid,&IID_IDirect3DTexture,sizeof(GUID))) strcpy(str,"IID_IDirect3DTexture");
 	else if(!memcmp(guid,&IID_IDirect3DTexture2,sizeof(GUID))) strcpy(str,"IID_IDirect3DTexture2");
 	else if(!memcmp(guid,&IID_IDirect3DLight,sizeof(GUID))) strcpy(str,"IID_IDirect3DLight");
