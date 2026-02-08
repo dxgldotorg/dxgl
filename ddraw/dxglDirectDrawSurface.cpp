@@ -487,7 +487,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 		if (!glTexture_ValidatePixelFormat(&glDDS7[i].ddsd.ddpfPixelFormat))
 		{
 			// Clean up textures
-			for (i = 0; i < complexcount; i++)
+			for (i = 0; i < buffercount; i++)
 				glRenderer_DeleteTexture(glDDS7->ddInterface->renderer, &textureptr[i]);
 			TRACE_EXIT(23, DDERR_INVALIDPIXELFORMAT);
 			return DDERR_INVALIDPIXELFORMAT;
