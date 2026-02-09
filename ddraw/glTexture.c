@@ -324,7 +324,9 @@ HRESULT glTexture_Create(const DDSURFACEDESC2 *ddsd, glTexture *texture, struct 
 	if (texture->levels[0].ddsd.ddpfPixelFormat.dwSize != sizeof(DDPIXELFORMAT))
 		texture->levels[0].ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 	// Fill in mipmaps
-	if (!texture->miplevel) texture->miplevel = 1;
+	if (texture->levels[0].ddsd.dwFlags & DDSD_MIPMAPCOUNT)
+		texture->miplevel = texture->levels[0].ddsd.dwMipMapCount;
+	else texture->miplevel = 1;
 	if (texture->miplevel > 1)
 	{
 		for (i = 1; i < texture->miplevel; i++)
