@@ -1487,7 +1487,9 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		if (!(lpDDSurfaceDesc2->dwFlags & DDSD_MIPMAPCOUNT))
 		{
 			lpDDSurfaceDesc2->dwFlags |= DDSD_MIPMAPCOUNT;
-			lpDDSurfaceDesc2->dwMipMapCount = CalculateMipLevels(lpDDSurfaceDesc2->dwWidth, lpDDSurfaceDesc2->dwHeight);
+			if ((lpDDSurfaceDesc2->dwFlags & DDSD_CAPS) && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_COMPLEX))
+				lpDDSurfaceDesc2->dwMipMapCount = CalculateMipLevels(lpDDSurfaceDesc2->dwWidth, lpDDSurfaceDesc2->dwHeight);
+			else lpDDSurfaceDesc2->dwMipMapCount = 1;
 		}
 	}
 
