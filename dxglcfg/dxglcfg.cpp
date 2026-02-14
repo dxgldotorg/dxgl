@@ -74,6 +74,7 @@ HWND hDialog = NULL;
 static BOOL EditInterlock = FALSE;
 static DWORD hackstabitem = 0xFFFFFFFF;
 static BOOL createdialoglock = FALSE;
+static int corecount;
 #ifdef _M_X64
 static const TCHAR installdir[] = _T("InstallDir_x64");
 static const TCHAR regglobal[] = _T("Global_x64");
@@ -2686,8 +2687,27 @@ void UpdateHacksControl(HWND hWnd, int DlgItem, int item)
 	}
 }
 
+static ULONGLONG getcoremask(int cores)
+{
+	if (cores > 64) return 0xFFFFFFFFFFFFFFFFi64;
+	return (ULONGLONG)0xFFFFFFFFFFFFFFFFi64 >> (64-cores);
+}
+
+static int popcount(ULONGLONG value)
+{
+	int count = 0;
+	while (value > 0)
+	{
+		value &= (value - 1);
+		count++;
+	}
+	return (int)count;
+}
+
 void DrawHacksItemText(HDC hdc, RECT *r, int item)
 {
+	int cores;
+	ULONGLONG coremask;
 	LPCTSTR str = strUnknown;
 	TCHAR buffer[33];
 	switch (item)
@@ -2757,10 +2777,146 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 			else str = strDisabled;
 		}
 		break;
+	case 8:
+		if (!cfgmask->HackAffinityMask) str = strdefault;
+		else
+		{
+			coremask = getcoremask(corecount);
+			if (((cfg->HackAffinityMask & coremask) == coremask) || !cfg->HackAffinityMask)
+				str = _T("All cores");
+			else if (popcount(cfg->HackAffinityMask & coremask) == 1)
+				str = _T("One core");
+			else str = _T("Multiple cores");
+		}
+		break;
 	default:
 		str = strUnknown;
 	}
 	DrawText(hdc, str, (int)_tcslen(str), r, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+}
+
+LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	WNDPROC oldproc;
+	oldproc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	switch (Msg)
+	{
+	case WM_COMMAND:
+		SendMessage(GetParent(hWnd), Msg, wParam, lParam);
+		return oldproc(hWnd, Msg, wParam, lParam);
+		break;
+	default:
+		return oldproc(hWnd, Msg, wParam, lParam);
+		break;
+	}
+}
+
+LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	RECT r1, r2;
+	int checkspacing;
+	int resizecount;
+	int i;
+	int checkstate;
+	ULONGLONG coremask;
+	ULONGLONG coremaskcmp;
+	switch (Msg)
+	{
+	case WM_INITDIALOG:
+		GetWindowRect(GetDlgItem(hWnd, IDC_CPU0), &r1);
+		GetWindowRect(GetDlgItem(hWnd, IDC_CPU8), &r2);
+		checkspacing = r2.top - r1.top;
+		if (corecount < 64)
+		{
+			for (i = 63; i >= corecount; i--)
+				DestroyWindow(GetDlgItem(hWnd, IDC_CPU0 + i));
+		}
+		// FIXME:  Add P/E cores
+		DestroyWindow(GetDlgItem(hWnd, IDC_ALLPCORES));
+		DestroyWindow(GetDlgItem(hWnd, IDC_ALLECORES));
+		DestroyWindow(GetDlgItem(hWnd, IDC_SINGLEECORE));
+		if (corecount < 1) corecount = 1;
+		if (corecount > 64) corecount = 64;
+		resizecount = 8 - (((corecount-1) / 8) + 1);
+		if (resizecount)
+		{
+			checkspacing *= resizecount;
+			for (i = IDC_SINGLECORE; i <= IDC_COREDLGSPACER; i++)
+			{
+				GetWindowRect(GetDlgItem(hWnd, i), &r1);
+				ScreenToClient(hWnd, (LPPOINT)&r1.left);
+				r1.top -= checkspacing;
+				SetWindowPos(GetDlgItem(hWnd, i), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+			}
+			GetWindowRect(GetDlgItem(hWnd, IDOK), &r1);
+			ScreenToClient(hWnd, (LPPOINT)&r1.left);
+			r1.top -= checkspacing;
+			SetWindowPos(GetDlgItem(hWnd, IDOK), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+			GetWindowRect(GetDlgItem(hWnd, IDCANCEL), &r1);
+			ScreenToClient(hWnd, (LPPOINT)&r1.left);
+			r1.top -= checkspacing;
+			SetWindowPos(GetDlgItem(hWnd, IDCANCEL), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+			GetWindowRect(hWnd, &r1);
+			r1.bottom -= checkspacing;
+			SetWindowPos(hWnd, HWND_TOP, r1.left, r1.top, r1.right-r1.left, r1.bottom-r1.top, SWP_SHOWWINDOW);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, lParam);
+			coremask = *(ULONGLONG*)lParam;
+			if (!coremask) coremask = (ULONGLONG)0xFFFFFFFFFFFFFFFFi64;
+			for (i = 0; i < corecount; i++)
+			{
+				if (coremask & 1) SendDlgItemMessage(hWnd, IDC_CPU0 + i, BM_SETCHECK, BST_CHECKED, 0);
+				else SendDlgItemMessage(hWnd, IDC_CPU0 + i, BM_SETCHECK, BST_UNCHECKED, 0);
+				coremask >>= 1i64;
+			}
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hWnd, wParam);
+			return TRUE;
+		case IDC_SINGLECORE:
+			coremask = 1;
+			*(ULONGLONG*)GetWindowLongPtr(hWnd, GWLP_USERDATA) = coremask;
+			for (i = 0; i < corecount; i++)
+			{
+				if (coremask & 1) SendDlgItemMessage(hWnd, IDC_CPU0 + i, BM_SETCHECK, BST_CHECKED, 0);
+				else SendDlgItemMessage(hWnd, IDC_CPU0 + i, BM_SETCHECK, BST_UNCHECKED, 0);
+				coremask >>= 1i64;
+			}
+			return TRUE;
+		case IDC_ALLCORES:
+			coremask = 0;
+			*(ULONGLONG*)GetWindowLongPtr(hWnd, GWLP_USERDATA) = coremask;
+			for (i = 0; i < corecount; i++)
+				SendDlgItemMessage(hWnd, IDC_CPU0 + i, BM_SETCHECK, BST_CHECKED, 0);
+			return TRUE;
+		default:
+			if ((LOWORD(wParam) >= IDC_CPU0) && (LOWORD(wParam) <= IDC_CPU63))
+			{
+				coremask = *(ULONGLONG*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+				if (!coremask)
+				{
+					if(corecount < 64) coremask = ((1i64 << corecount) - 1);
+					else coremask = (ULONGLONG)0xFFFFFFFFFFFFFFFFi64;
+				}
+				checkstate = SendDlgItemMessage(hWnd, LOWORD(wParam), BM_GETCHECK, 0, 0);
+				if (checkstate) coremask |= 1i64 << (LOWORD(wParam) - IDC_CPU0);
+				else coremask &= ~(1i64 << (LOWORD(wParam) - IDC_CPU0));
+				if(corecount < 64) coremaskcmp = ((1i64 << corecount) - 1);
+				else coremaskcmp = (ULONGLONG)0xFFFFFFFFFFFFFFFFi64;
+				if (coremask == coremaskcmp) coremask = 0;
+				*(ULONGLONG*)GetWindowLongPtr(hWnd, GWLP_USERDATA) = coremask;
+				return TRUE;
+			}
+			return FALSE;
+		}
+	default:
+		return FALSE;
+	}
+
 }
 
 LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -2770,14 +2926,24 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	DWORD x;
 	DRAWITEMSTRUCT* drawitem;
 	COLORREF OldTextColor, OldBackColor;
+	WNDPROC tmp;
+	ULONGLONG coremaskedit;
+	INT_PTR dlgresult;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		SetParent(GetDlgItem(hWnd,IDC_HACKSDROPDOWN), GetDlgItem(hWnd,IDC_HACKSLIST));
 		SetParent(GetDlgItem(hWnd, IDC_HACKSEDIT), GetDlgItem(hWnd, IDC_HACKSLIST));
+		SetParent(GetDlgItem(hWnd, IDC_HACKSBTNRESET), GetDlgItem(hWnd, IDC_HACKSLIST));
+		SetParent(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), GetDlgItem(hWnd, IDC_HACKSLIST));
 		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
 		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
+		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
+		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_USERDATA,
+			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC));
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC, (LONG_PTR)HacksListCallback);
 		return TRUE;
 	case WM_MEASUREITEM:
 		switch (wParam)
@@ -2875,6 +3041,31 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				break;
 			}
 			break;
+		case IDC_HACKSBTNEDIT:
+			if (hackstabitem == 8)
+			{
+				coremaskedit = cfg->HackAffinityMask;
+				dlgresult = DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CORES), GetParent(hWnd), (DLGPROC)AffinityDlgCallback, (LPARAM)&coremaskedit);
+				if (dlgresult == IDOK)
+				{
+					cfg->HackAffinityMask = coremaskedit;
+					cfgmask->HackAffinityMask = 1;
+					EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+					*dirty = TRUE;
+				}
+				InvalidateRect(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, TRUE);
+			}
+			break;
+		case IDC_HACKSBTNRESET:
+			if (hackstabitem == 8)
+			{
+				cfg->HackAffinityMask = 0;
+				cfgmask->HackAffinityMask = 0;
+				InvalidateRect(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, TRUE);
+				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+				*dirty = TRUE;
+			}
+			break;
 		case IDC_HACKSLIST:
 			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
 			{
@@ -2888,7 +3079,26 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT),
 						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
 					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
 					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, hackstabitem);
+				}
+				else if (hackstabitem == 8)
+				{
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), &r);
+					x = r.right - r.left;
+					r2.left = r2.right - x;
+					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT),
+						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), &r);
+					x = r.right - r.left;
+					r2.left = r2.right - (x*2);
+					if(tristate) SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
+						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
+					else SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
+						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_HIDEWINDOW);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
 				}
 				else
 				{
@@ -2898,11 +3108,13 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN),
 						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
 					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
 					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 				}
 				RedrawWindow(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
-			break;
+			 break;
 		default:
 			break;
 		}
@@ -2942,6 +3154,13 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
+			if (hackstabitem == 8)
+			{
+				RedrawWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT),
+					NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+				if(tristate) RedrawWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
+					NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+			}
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
 		default:
@@ -3117,6 +3336,15 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		// Tracing tab
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)strdefault);
+
+		// Update hacks tab if needed
+		if (tabopen == 5)
+		{
+			if (hackstabitem == 8)
+			{
+				ShowWindow(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_SHOWNA);
+			}
+		}
 	}
 	else if (!current_app && tristate)
 	{
@@ -3186,6 +3414,15 @@ void RefreshControls(HWND hWnd)
 		// Tracing tab
 		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+
+		// Update hacks tab if needed
+		if (tabopen == 5)
+		{
+			if (hackstabitem == 8)
+			{
+				ShowWindow(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
+			}
+		}
 	}
 	// Read settings into controls
 	// Display tab
@@ -3259,7 +3496,7 @@ void RefreshControls(HWND hWnd)
 	SetFloat3place(hTabs[1], IDC_CUSTOMSCALEY, cfg->primaryscaley, cfgmask->primaryscaley);
 	SetText(hTabs[1], IDC_SHADER, cfg->shaderfile, cfgmask->shaderfile, tristate);
 	SetCombo(hTabs[1], IDC_BLTFILTER, cfg->BltScale, cfgmask->BltScale, tristate);
-	// Removed for DXGL 0.5.13 release
+	// Removed until implemented
 	/* SetInteger(hTabs[1], IDC_BLTTHRESHOLD, cfg->BltThreshold, cfgmask->BltThreshold);
 	if (cfgmask->BltThreshold)
 	{
@@ -3372,6 +3609,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	HWND hProgressWnd;
 	WNDCLASSEX wndclass;
 	HWND hTempWnd;
+	SYSTEM_INFO sysinfo;
 	//DWORD threadid;
 	switch (Msg)
 	{
@@ -3414,6 +3652,9 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		apps[0].path[0] = 0;
 		SetClassLongPtr(hWnd,GCLP_HICON,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGL));
 		SetClassLongPtr(hWnd,GCLP_HICONSM,(LONG)LoadIcon(hinstance,(LPCTSTR)IDI_DXGLSM));
+		// Get core count
+		GetSystemInfo(&sysinfo);
+		corecount = sysinfo.dwNumberOfProcessors;
 		// create temporary gl context to get AA and AF settings.
 		mode.dmSize = sizeof(DEVMODE);
 		EnumDisplaySettings(NULL,ENUM_CURRENT_SETTINGS,&mode);
@@ -3507,6 +3748,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		ShowWindow(hTabs[7], SW_HIDE);
 		ShowWindow(hTabs[8], SW_HIDE);
 		tabopen = 0;
+
+		// Remove unimplemented controls
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLDLABEL));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLD));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLDSLIDER));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_USESHADER));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_SHADER));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_BROWSESHADER));
+		DestroyWindow(GetDlgItem(hTabs[1], IDC_SHADEROPTIONSCAPTION));
+
 
 		// Load global settings.
 		// video mode
@@ -4034,6 +4285,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		_tcscpy(buffer, _T("Palette draw delay (ms)"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		_tcscpy(buffer, _T("Sync palette update to Vsync"));
+		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
+		_tcscpy(buffer, _T("Force core affinity"));
 		SendDlgItemMessage(hTabs[5], IDC_HACKSLIST, LB_ADDSTRING, 0, (LPARAM)buffer);
 		// Auto expand viewport hack value
 		SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);

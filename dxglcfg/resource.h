@@ -27,6 +27,7 @@
 #define IDD_MODELIST                            105
 #define IDD_SAVEINI                             106
 #define IDD_WINDOWSTYLE                         107
+#define IDD_CORES                               108
 
 // Tabs
 #define IDD_DISPLAY                             201
@@ -100,10 +101,11 @@
 #define IDC_CUSTOMSCALEX                        2110
 #define IDC_CUSTOMSCALELABELY                   2111
 #define IDC_CUSTOMSCALEY                        2112
-#define IDC_BLTTHRESHOLDSLIDER                  2113
-#define IDC_BLTTHRESHOLD                        2114
-#define IDC_SHADEROPTIONSCAPTION                2115
-#define IDC_SHADEROPTIONS                       2116
+#define IDC_BLTTHRESHOLDLABEL                   2113
+#define IDC_BLTTHRESHOLDSLIDER                  2114
+#define IDC_BLTTHRESHOLD                        2115
+#define IDC_SHADEROPTIONSCAPTION                2116
+#define IDC_SHADEROPTIONS                       2117
 
 // Controls - 3D Graphics Tab
 #define IDC_TEXFILTER                           2201
@@ -140,6 +142,9 @@
 #define IDC_HACKSLIST                           2501
 #define IDC_HACKSDROPDOWN                       2502
 #define IDC_HACKSEDIT                           2503
+#define IDC_HACKSBTNRESET                       2504
+#define IDC_HACKSBTNEDIT                        2505
+
 
 // Controls - Graphics Tests Tab
 #define IDC_TESTLIST                            2601
@@ -350,3 +355,76 @@
 // Controls - Tracing tab
 #define IDC_TRACING                             3401
 #define IDC_TRACEX64NOTICE                      3402
+
+// Controls - Affinity dialog
+#define IDC_CPU0                                3500
+#define IDC_CPU1                                3501
+#define IDC_CPU2                                3502
+#define IDC_CPU3                                3503
+#define IDC_CPU4                                3504
+#define IDC_CPU5                                3505
+#define IDC_CPU6                                3506
+#define IDC_CPU7                                3507
+#define IDC_CPU8                                3508
+#define IDC_CPU9                                3509
+#define IDC_CPU10                               3510
+#define IDC_CPU11                               3511
+#define IDC_CPU12                               3512
+#define IDC_CPU13                               3513
+#define IDC_CPU14                               3514
+#define IDC_CPU15                               3515
+#define IDC_CPU16                               3516
+#define IDC_CPU17                               3517
+#define IDC_CPU18                               3518
+#define IDC_CPU19                               3519
+#define IDC_CPU20                               3520
+#define IDC_CPU21                               3521
+#define IDC_CPU22                               3522
+#define IDC_CPU23                               3523
+#define IDC_CPU24                               3524
+#define IDC_CPU25                               3525
+#define IDC_CPU26                               3526
+#define IDC_CPU27                               3527
+#define IDC_CPU28                               3528
+#define IDC_CPU29                               3529
+#define IDC_CPU30                               3530
+#define IDC_CPU31                               3531
+#define IDC_CPU32                               3532
+#define IDC_CPU33                               3533
+#define IDC_CPU34                               3534
+#define IDC_CPU35                               3535
+#define IDC_CPU36                               3536
+#define IDC_CPU37                               3537
+#define IDC_CPU38                               3538
+#define IDC_CPU39                               3539
+#define IDC_CPU40                               3540
+#define IDC_CPU41                               3541
+#define IDC_CPU42                               3542
+#define IDC_CPU43                               3543
+#define IDC_CPU44                               3544
+#define IDC_CPU45                               3545
+#define IDC_CPU46                               3546
+#define IDC_CPU47                               3547
+#define IDC_CPU48                               3548
+#define IDC_CPU49                               3549
+#define IDC_CPU50                               3550
+#define IDC_CPU51                               3551
+#define IDC_CPU52                               3552
+#define IDC_CPU53                               3553
+#define IDC_CPU54                               3554
+#define IDC_CPU55                               3555
+#define IDC_CPU56                               3556
+#define IDC_CPU57                               3557
+#define IDC_CPU58                               3558
+#define IDC_CPU59                               3559
+#define IDC_CPU60                               3560
+#define IDC_CPU61                               3561
+#define IDC_CPU62                               3562
+#define IDC_CPU63                               3563
+#define IDC_SINGLECORE                          3564
+#define IDC_ALLCORES						    3565
+#define IDC_SINGLEECORE                         3566
+#define IDC_ALLPCORES                           3567
+#define IDC_ALLECORES                           3568
+#define IDC_COREDLGSPACER                       3569
+
