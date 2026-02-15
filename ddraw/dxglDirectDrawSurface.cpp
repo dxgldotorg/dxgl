@@ -1824,6 +1824,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_Lock(dxglDirectDrawSurface7 *This, LPRECT 
 {
 	TRACE_ENTER(5,14,This,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(This->locked) TRACE_RET(HRESULT,23,DDERR_SURFACEBUSY);
 	HRESULT error = glTexture_Lock(This->texture, This->miplevel, lpDestRect, lpDDSurfaceDesc, dwFlags, FALSE);
@@ -2935,6 +2936,7 @@ HRESULT WINAPI dxglDirectDrawSurface1_Lock(dxglDirectDrawSurface1 *This, LPRECT 
 {
 	TRACE_ENTER(5,14,This,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
@@ -3296,6 +3298,7 @@ HRESULT WINAPI dxglDirectDrawSurface2_Lock(dxglDirectDrawSurface2 *This, LPRECT 
 {
 	TRACE_ENTER(5,14,This,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
@@ -3685,6 +3688,7 @@ HRESULT WINAPI dxglDirectDrawSurface3_Lock(dxglDirectDrawSurface3 *This, LPRECT 
 {
 	TRACE_ENTER(5,14,This,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
@@ -4067,6 +4071,7 @@ HRESULT WINAPI dxglDirectDrawSurface4_Lock(dxglDirectDrawSurface4 *This, LPRECT 
 {
 	TRACE_ENTER(5,14,This,26,lpDestRect,14,lpDDSurfaceDesc,9,dwFlags,14,hEvent);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	TRACE_RET(HRESULT,23, dxglDirectDrawSurface7_Lock(This->glDDS7,lpDestRect,lpDDSurfaceDesc,dwFlags,hEvent));
 }
 HRESULT WINAPI dxglDirectDrawSurface4_ReleaseDC(dxglDirectDrawSurface4 *This, HDC hDC)
