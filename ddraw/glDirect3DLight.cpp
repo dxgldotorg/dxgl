@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -99,8 +99,10 @@ HRESULT WINAPI glDirect3DLight_Initialize(glDirect3DLight *This, LPDIRECT3D lpDi
 HRESULT WINAPI glDirect3DLight_QueryInterface(glDirect3DLight *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3DLight))
 	{
 		glDirect3DLight_AddRef(This);

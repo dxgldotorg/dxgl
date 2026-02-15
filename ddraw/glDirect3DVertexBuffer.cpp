@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -105,8 +105,10 @@ ULONG WINAPI glDirect3DVertexBuffer7_Release(glDirect3DVertexBuffer7 *This)
 HRESULT WINAPI glDirect3DVertexBuffer7_QueryInterface(glDirect3DVertexBuffer7 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DVertexBuffer7_AddRef(This);

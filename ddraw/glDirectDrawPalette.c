@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -132,8 +132,10 @@ const unsigned char DefaultPalette[1024] = {
 HRESULT WINAPI glDirectDrawPalette_QueryInterface(glDirectDrawPalette *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
-	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
+	if (!IsReadablePointer(This, sizeof(glDirectDrawPalette))) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(!memcmp(riid,&IID_IUnknown,sizeof(GUID)))
 	{
 		glDirectDrawPalette_AddRef(This);

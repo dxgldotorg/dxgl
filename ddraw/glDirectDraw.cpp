@@ -1179,8 +1179,10 @@ void glDirectDraw7_Delete(glDirectDraw7 *This)
 HRESULT WINAPI glDirectDraw7_QueryInterface(glDirectDraw7 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirectDraw7))
 	{
 		glDirectDraw7_AddRef(This);
@@ -3035,7 +3037,10 @@ HRESULT glDirectDraw1_Create(glDirectDraw7 *gl_DD7, glDirectDraw1 **glDD1)
 HRESULT WINAPI glDirectDraw1_QueryInterface(glDirectDraw1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirectDraw))
 	{
 		glDirectDraw1_AddRef(This);
@@ -3275,7 +3280,10 @@ HRESULT glDirectDraw2_Create(glDirectDraw7 *gl_DD7, glDirectDraw2 **glDD2)
 HRESULT WINAPI glDirectDraw2_QueryInterface(glDirectDraw2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirectDraw2))
 	{
 		glDirectDraw2_AddRef(This);
@@ -3543,7 +3551,10 @@ HRESULT glDirectDraw4_Create(glDirectDraw7 *gl_DD7, glDirectDraw4 **glDD4)
 HRESULT WINAPI glDirectDraw4_QueryInterface(glDirectDraw4 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirectDraw4_AddRef(This);

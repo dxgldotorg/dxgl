@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2021 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -83,7 +83,10 @@ void glDirect3DMaterial3_Destroy(glDirect3DMaterial3 *This)
 HRESULT WINAPI glDirect3DMaterial3_QueryInterface(glDirect3DMaterial3 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DMaterial3_AddRef(This);
@@ -261,7 +264,10 @@ ULONG WINAPI glDirect3DMaterial2_Release(glDirect3DMaterial2 *This)
 HRESULT WINAPI glDirect3DMaterial2_QueryInterface(glDirect3DMaterial2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3DMaterial2))
 	{
 		glDirect3DMaterial2_AddRef(This);
@@ -341,7 +347,10 @@ ULONG WINAPI glDirect3DMaterial1_Release(glDirect3DMaterial1 *This)
 HRESULT WINAPI glDirect3DMaterial1_QueryInterface(glDirect3DMaterial1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3DMaterial))
 	{
 		glDirect3DMaterial1_AddRef(This);
