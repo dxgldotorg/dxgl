@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -112,8 +112,10 @@ HRESULT glDirectDrawClipper_Create(DWORD dwFlags, glDirectDraw7 *parent, LPDIREC
 HRESULT WINAPI glDirectDrawClipper_QueryInterface(glDirectDrawClipper *This, REFIID riid, LPVOID* obp)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,obp);
+	if (!obp) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*obp = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!obp) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirectDrawClipper_AddRef(This);

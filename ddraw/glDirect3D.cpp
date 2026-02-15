@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -219,6 +219,8 @@ ULONG WINAPI glDirect3D7_Release(glDirect3D7 *This)
 HRESULT WINAPI glDirect3D7_QueryInterface(glDirect3D7 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	TRACE_RET(HRESULT, 23, glDirectDraw7_QueryInterface(This->glDD7, riid, ppvObj));
 }
@@ -551,7 +553,10 @@ HRESULT glDirect3D3_Create(glDirect3D7 *glD3D7, glDirect3D3 **glD3D3)
 HRESULT WINAPI glDirect3D3_QueryInterface(glDirect3D3 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3D3))
 	{
 		glDirect3D3_AddRef(This);
@@ -683,7 +688,10 @@ HRESULT glDirect3D2_Create(glDirect3D7 *glD3D7, glDirect3D2 **glD3D2)
 HRESULT WINAPI glDirect3D2_QueryInterface(glDirect3D2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((riid == IID_IUnknown) || (riid == IID_IDirect3D2))
 	{
 		glDirect3D2_AddRef(This);
@@ -808,7 +816,10 @@ HRESULT glDirect3D1_Create(glDirect3D7 *glD3D7, glDirect3D1 **glD3D1)
 HRESULT WINAPI glDirect3D1_QueryInterface(glDirect3D1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3D))
 	{
 		glDirect3D1_AddRef(This);

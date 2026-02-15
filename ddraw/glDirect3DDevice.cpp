@@ -458,8 +458,10 @@ int ExpandLightBuffer(glDirect3DLight ***lights, DWORD *maxlights, DWORD newmax)
 HRESULT WINAPI glDirect3DDevice7_QueryInterface(glDirect3DDevice7 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DDevice7_AddRef(This);
@@ -3052,7 +3054,10 @@ HRESULT glDirect3DDevice3_Create(glDirect3DDevice7 *glD3DDev7, glDirect3DDevice3
 HRESULT WINAPI glDirect3DDevice3_QueryInterface(glDirect3DDevice3 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DDevice3_AddRef(This);
@@ -3436,7 +3441,10 @@ HRESULT glDirect3DDevice2_Create(glDirect3DDevice7 *glD3DDev7, glDirect3DDevice2
 HRESULT WINAPI glDirect3DDevice2_QueryInterface(glDirect3DDevice2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DDevice2_AddRef(This);
@@ -3782,7 +3790,10 @@ HRESULT glDirect3DDevice1_Create(glDirect3DDevice7 *glD3DDev7, glDirect3DDevice1
 HRESULT WINAPI glDirect3DDevice1_QueryInterface(glDirect3DDevice1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DDevice1_AddRef(This);

@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2023 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -51,7 +51,10 @@ HRESULT glDirect3DTexture2_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DText
 HRESULT WINAPI glDirect3DTexture2_QueryInterface(glDirect3DTexture2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DTexture2_AddRef(This);
@@ -126,7 +129,10 @@ HRESULT glDirect3DTexture1_Create(dxglDirectDrawSurface7 *glDDS7, glDirect3DText
 HRESULT WINAPI glDirect3DTexture1_QueryInterface(glDirect3DTexture1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		glDirect3DTexture1_AddRef(This);

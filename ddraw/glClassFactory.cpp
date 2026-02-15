@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2023 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -72,8 +72,10 @@ ULONG WINAPI glClassFactory_Release(glClassFactory *This)
 HRESULT WINAPI glClassFactory_QueryInterface(glClassFactory *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
-	if(!This) TRACE_RET(HRESULT,23, E_POINTER);
 	if (!ppvObj) TRACE_RET(HRESULT, 23, E_INVALIDARG);
+	*ppvObj = NULL;
+	if (!This) TRACE_RET(HRESULT, 23, E_POINTER);
+	if (!&riid) TRACE_RET(HRESULT, 23, E_POINTER);
 	if((riid == IID_IUnknown) || (riid == IID_IClassFactory))
 	{
 		*ppvObj = This;

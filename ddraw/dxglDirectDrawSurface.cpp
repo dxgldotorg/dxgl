@@ -709,8 +709,10 @@ HRESULT WINAPI dxglDirectDrawSurface7_QueryInterface(dxglDirectDrawSurface7 *Thi
 {
 	HRESULT ret;
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!ppvObj) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
+	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirectDrawSurface7))
 	{
 		dxglDirectDrawSurface7_AddRef(This);
@@ -2969,7 +2971,10 @@ HRESULT dxglDirectDrawSurface1_Create(dxglDirectDrawSurface7 *gl_DDS7, dxglDirec
 HRESULT WINAPI dxglDirectDrawSurface1_QueryInterface(dxglDirectDrawSurface1 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		dxglDirectDrawSurface1_AddRef(This);
@@ -3329,7 +3334,10 @@ HRESULT dxglDirectDrawSurface2_Create(dxglDirectDrawSurface7 *gl_DDS7, dxglDirec
 HRESULT WINAPI dxglDirectDrawSurface2_QueryInterface(dxglDirectDrawSurface2 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		dxglDirectDrawSurface2_AddRef(This);
@@ -3713,7 +3721,10 @@ HRESULT dxglDirectDrawSurface3_Create(dxglDirectDrawSurface7 *gl_DDS7, dxglDirec
 HRESULT WINAPI dxglDirectDrawSurface3_QueryInterface(dxglDirectDrawSurface3 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		dxglDirectDrawSurface3_AddRef(This);
@@ -4110,7 +4121,10 @@ HRESULT dxglDirectDrawSurface4_Create(dxglDirectDrawSurface7 *gl_DDS7, dxglDirec
 HRESULT WINAPI dxglDirectDrawSurface4_QueryInterface(dxglDirectDrawSurface4 *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(riid == IID_IUnknown)
 	{
 		dxglDirectDrawSurface4_AddRef(This);

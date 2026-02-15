@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2021 William Feely
+// Copyright (C) 2013-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,10 @@ void glDirect3DExecuteBuffer_Destroy(glDirect3DExecuteBuffer *This)
 HRESULT WINAPI glDirect3DExecuteBuffer_QueryInterface(glDirect3DExecuteBuffer *This, REFIID riid, void** ppvObj)
 {
 	TRACE_ENTER(3,14,This,24,&riid,14,ppvObj);
+	if (!ppvObj) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	*ppvObj = NULL;
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!&riid) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if((riid == IID_IUnknown) || (riid == IID_IDirect3DExecuteBuffer))
 	{
 		glDirect3DExecuteBuffer_AddRef(This);
