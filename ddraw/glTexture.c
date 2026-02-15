@@ -529,7 +529,7 @@ BOOL glTexture_ValidatePixelFormat(DDPIXELFORMAT *pixelformat)
 	else compformat = *pixelformat;
 	for (i = 0; i < numtexformats; i++)
 	{
-		if (!memcmp(&texformats[i], pixelformat, sizeof(DDPIXELFORMAT)))
+		if (!memcmp(&texformats[i], &compformat, sizeof(DDPIXELFORMAT)))
 		{
 			texformat = i;
 			break;

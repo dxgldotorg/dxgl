@@ -102,6 +102,43 @@ void ShrinkMip(DWORD *x, DWORD *y, int level)
 	}
 }
 
+void FixPixelFormat(DDPIXELFORMAT *ddpf)
+{
+	DDPIXELFORMAT ddpfout;
+	if (ddpf->dwSize != sizeof(DDPIXELFORMAT)) return;
+	ddpfout.dwSize = ddpf->dwSize;
+	ddpfout.dwFlags = ddpf->dwFlags;
+	if (ddpf->dwFlags & DDPF_FOURCC) ddpfout.dwFourCC = ddpf->dwFourCC;
+	else ddpfout.dwFourCC = 0;
+	if ((ddpf->dwFlags & DDPF_RGB) || (ddpf->dwFlags & DDPF_YUV) || (ddpf->dwFlags & DDPF_BUMPDUDV) ||
+		(ddpf->dwFlags & DDPF_ZBUFFER) || (ddpf->dwFlags & DDPF_ALPHA) || (ddpf->dwFlags & DDPF_LUMINANCE) ||
+		(ddpf->dwFlags & DDPF_BUMPLUMINANCE) || (ddpf->dwFlags & DDPF_BUMPDUDV))
+		ddpfout.dwRGBBitCount = ddpf->dwRGBBitCount;
+	else ddpfout.dwRGBBitCount = 0;
+	if ((ddpf->dwFlags & DDPF_RGB) || (ddpf->dwFlags & DDPF_YUV) || (ddpf->dwFlags & DDPF_BUMPDUDV) ||
+		(ddpf->dwFlags & DDPF_ZBUFFER) || (ddpf->dwFlags & DDPF_ALPHA) || (ddpf->dwFlags & DDPF_LUMINANCE) ||
+		(ddpf->dwFlags & DDPF_BUMPLUMINANCE))
+	{
+		ddpfout.dwRBitMask = ddpf->dwRBitMask;
+		ddpfout.dwGBitMask = ddpf->dwGBitMask;
+		ddpfout.dwBBitMask = ddpf->dwBBitMask;
+	}
+	else if (ddpf->dwFlags & DDPF_BUMPDUDV)
+	{
+		ddpfout.dwRBitMask = ddpf->dwRBitMask;
+		ddpfout.dwGBitMask = ddpf->dwGBitMask;
+		ddpfout.dwBBitMask = 0;
+	}
+	else
+	{
+		ddpfout.dwRBitMask = ddpfout.dwGBitMask = ddpfout.dwBBitMask = 0;
+	}
+	if ((ddpf->dwFlags & DDPF_ALPHAPIXELS) || (ddpf->dwFlags & DDPF_ZPIXELS))
+		ddpfout.dwRGBAlphaBitMask = ddpf->dwRGBAlphaBitMask;
+	else ddpfout.dwRGBAlphaBitMask = 0;
+	memcpy(ddpf, &ddpfout, sizeof(DDPIXELFORMAT));
+}
+
 // DDRAW7 routines
 HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDDSurfaceDesc2, glDirectDrawPalette *palettein,
 	glTexture *parenttex, int version, dxglDirectDrawSurface7 *glDDS7)
@@ -451,6 +488,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 		for (i = 0; i < buffercount; i++)
 		{
 			surfaceptr = &glDDS7[i * mipcount];
+			if (surfaceptr->ddsd.dwFlags & DDSD_PIXELFORMAT) FixPixelFormat(&surfaceptr->ddsd.ddpfPixelFormat);
 			error = glTexture_Create(&surfaceptr->ddsd, surfaceptr->texture, surfaceptr->ddInterface->renderer, /*surfaceptr->hasstencil,*/ FALSE, 0);
 			if (error != DD_OK)
 			{
