@@ -1930,6 +1930,7 @@ HRESULT WINAPI dxglDirectDrawSurface7_GetSurfaceDesc(dxglDirectDrawSurface7 *Thi
 	TRACE_ENTER(2,14,This,14,lpDDSurfaceDesc);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	memcpy(&lpDDSurfaceDesc->dwSize+1,&This->ddsd.dwSize+1,lpDDSurfaceDesc->dwSize-sizeof(DWORD)); // copy skipping first DWORD dwSize
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -1957,12 +1958,20 @@ HRESULT WINAPI dxglDirectDrawSurface7_Lock(dxglDirectDrawSurface7 *This, LPRECT 
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	lpDDSurfaceDesc->lpSurface = NULL;
 	if(This->locked) TRACE_RET(HRESULT,23,DDERR_SURFACEBUSY);
 	if (lpDestRect)
 	{
-		if ((lpDestRect->right < lpDestRect->left) || (lpDestRect->bottom < lpDestRect->top)
-			|| (lpDestRect->bottom > This->ddsd.dwHeight) || (lpDestRect->top > This->ddsd.dwHeight)
-			|| (lpDestRect->right > This->ddsd.dwWidth) || (lpDestRect->left > This->ddsd.dwWidth))
+		if ((lpDestRect->left > lpDestRect->right) ||
+			(lpDestRect->top > lpDestRect->bottom) ||
+			(lpDestRect->left < 0) ||
+			(lpDestRect->top < 0) ||
+			(lpDestRect->right < 0) ||
+			(lpDestRect->bottom < 0) ||
+			(lpDestRect->right > This->ddsd.dwWidth) ||
+			(lpDestRect->bottom > This->ddsd.dwHeight) ||
+			(lpDestRect->left > This->ddsd.dwWidth) ||
+			(lpDestRect->top > This->ddsd.dwHeight))
 			TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	}
 	BYTE *ptr = NULL;
@@ -3208,6 +3217,7 @@ HRESULT WINAPI dxglDirectDrawSurface1_Lock(dxglDirectDrawSurface1 *This, LPRECT 
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	lpDDSurfaceDesc->lpSurface = NULL;
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
@@ -3570,6 +3580,7 @@ HRESULT WINAPI dxglDirectDrawSurface2_Lock(dxglDirectDrawSurface2 *This, LPRECT 
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	lpDDSurfaceDesc->lpSurface = NULL;
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
@@ -3960,6 +3971,7 @@ HRESULT WINAPI dxglDirectDrawSurface3_Lock(dxglDirectDrawSurface3 *This, LPRECT 
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDDSurfaceDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize != sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	lpDDSurfaceDesc->lpSurface = NULL;
 	DDSURFACEDESC2 ddsd;
 	ZeroMemory(&ddsd, sizeof(DDSURFACEDESC2));
 	memcpy(&ddsd, lpDDSurfaceDesc, sizeof(DDSURFACEDESC));
