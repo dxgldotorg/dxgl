@@ -2846,13 +2846,38 @@ HRESULT WINAPI glDirectDraw7_GetAvailableVidMem(glDirectDraw7 *This, LPDDSCAPS2 
 		return DD_OK;
 	}
 }
+
+HRESULT WINAPI GetSurfaceFromDCCallback(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext)
+{
+	HDC hdc = *(HDC*)lpContext;
+	dxglDirectDrawSurface7 *surface = (dxglDirectDrawSurface7*)lpDDSurface;
+	glTexture *texture = surface->texture;
+	if (!texture) return DDENUMRET_OK;
+	if (texture->levels[surface->miplevel].hdc == hdc)
+	{
+		*(dxglDirectDrawSurface7**)lpContext = surface;
+		return DDENUMRET_CANCEL;
+	}
+	return DDENUMRET_OK;
+}
+
+
 HRESULT WINAPI glDirectDraw7_GetSurfaceFromDC(glDirectDraw7 *This, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
+	dxglDirectDrawSurface7 *out  = NULL;
+	LPVOID ptr = hdc;
 	TRACE_ENTER(3,14,This,13,hdc,14,lpDDS);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("IDirectDraw_GetSurfaceFromDC: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	if (!lpDDS) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	HRESULT error = glDirectDraw7_EnumSurfaces(This, DDENUMSURFACES_DOESEXIST | DDENUMSURFACES_ALL,
+		NULL, &ptr, GetSurfaceFromDCCallback);
+	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+	if (ptr == hdc) TRACE_RET(HRESULT, 23, DDERR_NOTFOUND);
+	out = (dxglDirectDrawSurface7*)ptr;
+	dxglDirectDrawSurface7_AddRef(out);
+	*lpDDS = (LPDIRECTDRAWSURFACE7)out;
+	TRACE_EXIT(23,DD_OK);
+	return DD_OK;
 }
 HRESULT WINAPI glDirectDraw7_RestoreAllSurfaces(glDirectDraw7 *This)
 {
@@ -3752,11 +3777,21 @@ HRESULT WINAPI glDirectDraw4_GetAvailableVidMem(glDirectDraw4 *This, LPDDSCAPS2 
 }
 HRESULT WINAPI glDirectDraw4_GetSurfaceFromDC(glDirectDraw4 *This, HDC hdc, LPDIRECTDRAWSURFACE4 *lpDDS)
 {
-	TRACE_ENTER(3,14,This,13,hdc,14,lpDDS);
-	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	FIXME("IDirectDraw4_GetSurfaceFromDC: stub\n");
-	TRACE_EXIT(23,DDERR_GENERIC);
-	ERR(DDERR_GENERIC);
+	HRESULT error;
+	dxglDirectDrawSurface7 *dds7 = NULL;
+	TRACE_ENTER(3, 14, This, 13, hdc, 14, lpDDS);
+	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
+	error = glDirectDraw7_GetSurfaceFromDC(This->glDD7, hdc, (LPDIRECTDRAWSURFACE7 *)&dds7);
+	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+	if (dds7)
+	{
+		error = dxglDirectDrawSurface7_QueryInterface(dds7, IID_IDirectDrawSurface4, (void**)lpDDS);
+		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+		dxglDirectDrawSurface7_Release(dds7);
+		TRACE_EXIT(23, DD_OK);
+		return DD_OK;
+	}
+	else TRACE_RET(HRESULT, 23, DDERR_NOTFOUND);
 }
 HRESULT WINAPI glDirectDraw4_RestoreAllSurfaces(glDirectDraw4 *This)
 {

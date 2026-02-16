@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2012-2019 William Feely
+// Copyright (C) 2012-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -373,6 +373,7 @@ HRESULT glTexture_Lock(glTexture *This, GLint level, LPRECT r, LPDDSURFACEDESC2 
 	BltCommand cmd;
 	if (level > (This->levels[0].ddsd.dwMipMapCount - 1)) return DDERR_INVALIDPARAMS;
 	if (!ddsd) return DDERR_INVALIDPARAMS;
+	if (This->levels[level].locked) return DDERR_SURFACEBUSY;
 	InterlockedIncrement((LONG*)&This->levels[level].locked);
 	if (backend)
 	{
@@ -473,6 +474,7 @@ HRESULT glTexture_GetDC(glTexture *This, GLint level, HDC *hdc, glDirectDrawPale
 }
 HRESULT glTexture_ReleaseDC(glTexture *This, GLint level, HDC hdc)
 {
+	if (!This->levels[level].hdc) return DDERR_NODC;
 	if (This->levels[level].hdc != hdc) return DDERR_INVALIDPARAMS;
 	GetDIBits(This->levels[level].hdc, This->levels[level].hbitmap, 0,
 		This->levels[level].ddsd.dwHeight, This->levels[level].ddsd.lpSurface,
