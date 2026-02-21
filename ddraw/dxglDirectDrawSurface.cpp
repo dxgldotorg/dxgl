@@ -1862,7 +1862,8 @@ HRESULT WINAPI dxglDirectDrawSurface7_GetDC(dxglDirectDrawSurface7 *This, HDC FA
 	if(!lphDC) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	glDirectDrawPalette *pal = NULL;
 	HRESULT error;
-	if (This->ddsd.ddpfPixelFormat.dwRGBBitCount == 8)
+	if ((This->ddsd.ddpfPixelFormat.dwRGBBitCount == 8) || (This->ddsd.ddpfPixelFormat.dwRGBBitCount == 4) ||
+		(This->ddsd.ddpfPixelFormat.dwRGBBitCount == 2) || (This->ddsd.ddpfPixelFormat.dwRGBBitCount == 1))
 	{
 		if (This->palette) pal = This->palette;
 		else pal = This->ddInterface->primary->palette;

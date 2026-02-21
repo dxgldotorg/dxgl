@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2020 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1288,6 +1288,15 @@ void DrawGDIPatterns(DDSURFACEDESC2 ddsd, HDC hDC, int type)
 		SetTextColor(hDC,RGB(255,255,255));
 		TextOut(hDC,0,0,_T("Screen 7:  Bitmaps"),18);
 		break;
+	case 8: // Multiple types
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 0, ddsd.dwHeight / 14, 0x0000FF, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, ddsd.dwHeight / 14, 2 * (ddsd.dwHeight / 14), 0x00FF00, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 2 * (ddsd.dwHeight / 14), 3 * (ddsd.dwHeight / 14), 0xFF0000, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 3 * (ddsd.dwHeight / 14), 4 * (ddsd.dwHeight / 14), 0xFFFF00, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 4 * (ddsd.dwHeight / 14), 5 * (ddsd.dwHeight / 14), 0xFF00FF, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 5 * (ddsd.dwHeight / 14), 6 * (ddsd.dwHeight / 14), 0x00FFFF, gradientavailable);
+		DrawGradient(hDC, 0, ddsd.dwWidth / 2, 6 * (ddsd.dwHeight / 14), ddsd.dwHeight, 0xFFFFFF, gradientavailable);
+		break;
 	}
 }
 
@@ -1951,7 +1960,7 @@ static const LPTSTR strFormatTestPatterns[] =
 {
 	_T("Unknown "),
 	_T("Palettes "),
-	_T("Gradients "),
+	_T("GDI Patterns "),
 };
 static const LPTSTR StrFormatTestMethods[] =
 {

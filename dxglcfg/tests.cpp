@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2020 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -369,8 +369,22 @@ LRESULT CALLBACK DDWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 					RunSurfaceFormatTest();
 					break;
 				case VK_LEFT:  // Test pattern -
+					testpattern--;
+					if (testpattern < 1)
+					{
+						testpattern = 1;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_RIGHT:  // Test pattern +
+					testpattern++;
+					if (testpattern > 2)
+					{
+						testpattern = 2;
+						break;
+					}
+					RunSurfaceFormatTest();
 					break;
 				case VK_PRIOR:  // Dest format - (PgUp)
 					destformat--;
@@ -2435,6 +2449,8 @@ void RunSurfaceFormatTest()
 	RECT srcrect,destrect;
 	DDCAPS_DX7 caps[2];
 	DDCOLORKEY keycolor;
+	BOOL lockfail = FALSE;
+	HDC hdc;
 	errorlocation = 0;
 	errornumber = 0;
 	if (ddver > 3)
@@ -2524,22 +2540,52 @@ void RunSurfaceFormatTest()
 				sprites[0].surface->SetPalette(sprites[0].palette);
 				break;
 			}
-			// FIXME: Select pattern
-			error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
-			if (error != DD_OK)
+			switch (testpattern)
 			{
-				errorlocation = 2;
-				errornumber = error;
-				bltfx.dwSize = sizeof(DDBLTFX);
-				bltfx.dwFillColor = 0;
-				ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
-				sprites[0].surface->Release();
-				sprites[0].surface = NULL;
+			case 1: // Palettes
+			default:
+				error = sprites[0].surface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+				if (error != DD_OK)
+				{
+					errorlocation = 2;
+					errornumber = error;
+					bltfx.dwSize = sizeof(DDBLTFX);
+					bltfx.dwFillColor = 0;
+					ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+					sprites[0].surface->Release();
+					sprites[0].surface = NULL;
+					lockfail = TRUE;
+				}
+				break;
+			case 2: // GDI Patterns
+				error = sprites[0].surface->GetDC(&hdc);
+				if (error != -DD_OK)
+				{
+					errorlocation = 2;
+					errornumber = error;
+					bltfx.dwSize = sizeof(DDBLTFX);
+					bltfx.dwFillColor = 0;
+					ddsrender->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &bltfx);
+					sprites[0].surface->Release();
+					sprites[0].surface = NULL;
+					lockfail = TRUE;
+				}
+				break;
 			}
-			else
+			if(!lockfail)
 			{
-				DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
-				error = sprites[0].surface->Unlock(NULL);
+				switch (testpattern)
+				{
+				case 1:
+				default:
+					DrawPalette(ddsd, (unsigned char*)ddsd.lpSurface);
+					error = sprites[0].surface->Unlock(NULL);
+					break;
+				case 2:
+					DrawGDIPatterns(ddsd, hdc, 8);
+					error = sprites[0].surface->ReleaseDC(hdc);
+					break;
+				}
 				if (destformat != -1)
 				{
 					ddsrender->GetSurfaceDesc(&ddsd);
