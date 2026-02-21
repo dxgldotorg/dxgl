@@ -1866,7 +1866,11 @@ HRESULT WINAPI dxglDirectDrawSurface7_GetDC(dxglDirectDrawSurface7 *This, HDC FA
 		(This->ddsd.ddpfPixelFormat.dwRGBBitCount == 2) || (This->ddsd.ddpfPixelFormat.dwRGBBitCount == 1))
 	{
 		if (This->palette) pal = This->palette;
-		else pal = This->ddInterface->primary->palette;
+		else
+		{
+			if (This->ddInterface->primary) pal = This->ddInterface->primary->palette;
+			else pal = NULL;
+		}
 	}
 	error = glTexture_GetDC(This->texture, This->miplevel, lphDC, pal);
 	if (SUCCEEDED(error)) { TRACE_VAR("*lphDC", 14, *lphDC); }
