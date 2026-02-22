@@ -2571,8 +2571,26 @@ HRESULT WINAPI dxglDirectDrawSurface7_GetDDInterface(dxglDirectDrawSurface7 *Thi
 	TRACE_ENTER(2,14,This,14,lplpDD);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lplpDD) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	glDirectDraw7_AddRef(This->ddInterface);
-	*lplpDD = This->ddInterface;
+	switch (This->version)
+	{
+	case 1:
+		glDirectDraw1_AddRef(This->ddInterface->glDD1);
+		*lplpDD = This->ddInterface->glDD1;
+		break;
+	case 2:
+	case 3:
+		glDirectDraw2_AddRef(This->ddInterface->glDD2);
+		*lplpDD = This->ddInterface->glDD2;
+		break;
+	case 4:
+		glDirectDraw4_AddRef(This->ddInterface->glDD4);
+		*lplpDD = This->ddInterface->glDD4;
+		break;
+	case 7:
+	default:
+		glDirectDraw7_AddRef(This->ddInterface);
+		*lplpDD = This->ddInterface;
+	}
 	TRACE_VAR("*lplpDD",14,*lplpDD);
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -3664,13 +3682,7 @@ HRESULT WINAPI dxglDirectDrawSurface2_GetDDInterface(dxglDirectDrawSurface2 *Thi
 	TRACE_ENTER(2,14,This,14,lplpDD);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lplpDD) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	glDirectDraw7 *glDD7;
-	HRESULT ret = dxglDirectDrawSurface7_GetDDInterface(This->glDDS7, (void**)&glDD7);
-	if(ret != DD_OK) TRACE_RET(HRESULT,23,ret);
-	glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,lplpDD);
-	glDirectDraw7_Release(glDD7);
-	TRACE_VAR("*lplpDD",14,*lplpDD);
-	TRACE_RET(HRESULT,23,ret);
+	TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_GetDDInterface(This->glDDS7, lplpDD));
 }
 HRESULT WINAPI dxglDirectDrawSurface2_PageLock(dxglDirectDrawSurface2 *This, DWORD dwFlags)
 {
@@ -4055,14 +4067,7 @@ HRESULT WINAPI dxglDirectDrawSurface3_GetDDInterface(dxglDirectDrawSurface3 *Thi
 	TRACE_ENTER(2,14,This,14,lplpDD);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lplpDD) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
-	glDirectDraw7 *glDD7;
-	HRESULT ret = dxglDirectDrawSurface7_GetDDInterface(This->glDDS7, (void**)&glDD7);
-	if(ret != DD_OK) TRACE_RET(HRESULT,23,ret);
-	glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,lplpDD);
-	glDirectDraw7_Release(glDD7);
-	TRACE_VAR("*lplpDD",14,*lplpDD);
-	TRACE_EXIT(23,ret);
-	return ret;
+	TRACE_RET(HRESULT, 23, dxglDirectDrawSurface7_GetDDInterface(This->glDDS7, lplpDD));
 }
 HRESULT WINAPI dxglDirectDrawSurface3_PageLock(dxglDirectDrawSurface3 *This, DWORD dwFlags)
 {
