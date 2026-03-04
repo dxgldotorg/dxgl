@@ -1471,6 +1471,11 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 		FIXMENOBREAK("Cubemap surfaces not yet supported");
 		TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
 	}
+	// Check for 0 width or height
+	if ((lpDDSurfaceDesc2->dwFlags & DDSD_WIDTH) && (!lpDDSurfaceDesc2->dwWidth))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if ((lpDDSurfaceDesc2->dwFlags & DDSD_HEIGHT) && (!lpDDSurfaceDesc2->dwHeight))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	// Mipmap textures need a width and height
 	if ((lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_MIPMAP) && 
 		(!(lpDDSurfaceDesc2->dwFlags & DDSD_WIDTH) || !(lpDDSurfaceDesc2->dwFlags & DDSD_HEIGHT)))
