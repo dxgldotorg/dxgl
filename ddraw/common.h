@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -75,6 +75,11 @@ extern const GUID device_template;
 	OutputDebugStringA("FIXME: ");\
 	OutputDebugStringA(x);\
 	DEBUGBREAK\
+}
+#define FIXMENOBREAK(x)\
+{\
+	OutputDebugStringA("FIXME: ");\
+	OutputDebugStringA(x);\
 }
 #define DEBUG(x)\
 {\

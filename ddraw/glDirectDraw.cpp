@@ -1452,7 +1452,8 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 	// Check if cooperative level is set
 	if (!This->cooplevel) TRACE_RET(HRESULT, 23, DDERR_NOCOOPERATIVELEVELSET);
 	// Check if primary exists if creating primary
-	if (This->primary && (lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE))
+	if (This->primary && ((lpDDSurfaceDesc2->dwFlags & DDSD_CAPS) &&
+		(lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)))
 	{
 		if (This->primarylost)
 		{
@@ -1463,6 +1464,12 @@ HRESULT glDirectDraw7_CreateSurface2(glDirectDraw7 *This, LPDDSURFACEDESC2 lpDDS
 			return DD_OK;
 		}
 		else TRACE_RET(HRESULT, 23, DDERR_PRIMARYSURFACEALREADYEXISTS);
+	}
+	// FIXME:  Cube maps not yet supported
+	if ((lpDDSurfaceDesc2->dwFlags & DDSD_CAPS) && (lpDDSurfaceDesc2->ddsCaps.dwCaps2 & DDSCAPS2_CUBEMAP))
+	{
+		FIXMENOBREAK("Cubemap surfaces not yet supported");
+		TRACE_RET(HRESULT, 23, DDERR_UNSUPPORTED);
 	}
 	// Mipmap textures need a width and height
 	if ((lpDDSurfaceDesc2->ddsCaps.dwCaps & DDSCAPS_MIPMAP) && 
