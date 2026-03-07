@@ -1169,6 +1169,32 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	if ((dwFlags & DDBLT_COLORFILL) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if ((dwFlags & DDBLT_ROP) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!This->clipper)
+	{
+		if (lpDestRect)
+		{
+			if ((lpDestRect->left > This->ddsd.dwWidth) || (lpDestRect->right > This->ddsd.dwWidth) ||
+				(lpDestRect->left < 0) || (lpDestRect->right < 0) || (lpDestRect->top > This->ddsd.dwHeight) ||
+				(lpDestRect->bottom > This->ddsd.dwHeight) || (lpDestRect->top < 0) || (lpDestRect->bottom < 0) ||
+				(lpDestRect->right < lpDestRect->left) || (lpDestRect->bottom < lpDestRect->top) ||
+				(lpDestRect->left == lpDestRect->right) || (lpDestRect->top == lpDestRect->bottom))
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDRECT);
+		}
+	}
+	if (lpSrcRect)
+	{
+		if (lpDDSrcSurface)
+		{
+			if ((lpSrcRect->left < 0) || (lpSrcRect->right < 0) || (lpSrcRect->top < 0) || (lpSrcRect->bottom < 0) ||
+				(lpSrcRect->right < lpSrcRect->left) || (lpSrcRect->bottom < lpSrcRect->top) ||
+				(lpSrcRect->left == lpSrcRect->right) || (lpSrcRect->top == lpSrcRect->bottom) ||
+				(lpSrcRect->left > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwWidth) ||
+				(lpSrcRect->right > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwWidth) ||
+				(lpSrcRect->top > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwHeight) ||
+				(lpSrcRect->bottom > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwHeight))
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDRECT);
+		}
+	}
 	if (dwFlags & DDBLT_KEYSRCOVERRIDE)
 	{
 		if (!lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
