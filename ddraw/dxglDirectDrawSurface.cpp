@@ -1157,11 +1157,24 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 	if ((dwFlags & DDBLT_DDFX) && !lpDDBltFx) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if (This->bigsurface) dest = This->bigsurface;
 	else dest = This;
+	if (!This->clipper)
+	{
+		if (lpDestRect)
+		{
+			if ((lpDestRect->left > This->ddsd.dwWidth) || (lpDestRect->right > This->ddsd.dwWidth) ||
+				(lpDestRect->left < 0) || (lpDestRect->right < 0) || (lpDestRect->top > This->ddsd.dwHeight) ||
+				(lpDestRect->bottom > This->ddsd.dwHeight) || (lpDestRect->top < 0) || (lpDestRect->bottom < 0) ||
+				(lpDestRect->right < lpDestRect->left) || (lpDestRect->bottom < lpDestRect->top) ||
+				(lpDestRect->left == lpDestRect->right) || (lpDestRect->top == lpDestRect->bottom))
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDRECT);
+		}
+	}
 	ZeroMemory(&cmd, sizeof(BltCommand));
 	cmd.dest = dest->texture;
 	cmd.destlevel = dest->miplevel;
 	if (lpDestRect)
 	{
+
 		if (This->bigsurface)
 		{
 			cmd.destrect.left = (LONG)((float)lpDestRect->left * primaryscalex);
@@ -1174,7 +1187,21 @@ HRESULT WINAPI dxglDirectDrawSurface7_Blt(dxglDirectDrawSurface7 *This, LPRECT l
 			OffsetRect(&cmd.destrect, 0 - dest->ddInterface->renderer->xoffset, 0 - dest->ddInterface->renderer->yoffset);
 	}
 	else cmd.destrect = nullrect;
-	if (lpSrcRect) cmd.srcrect = *lpSrcRect;
+	if (lpSrcRect)
+	{
+		if (lpDDSrcSurface)
+		{
+			if ((lpSrcRect->left < 0) || (lpSrcRect->right < 0) || (lpSrcRect->top < 0) || (lpSrcRect->bottom < 0) ||
+				(lpSrcRect->right < lpSrcRect->left) || (lpSrcRect->bottom < lpSrcRect->top) ||
+				(lpSrcRect->left == lpSrcRect->right) || (lpSrcRect->top == lpSrcRect->bottom) ||
+				(lpSrcRect->left > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwWidth) ||
+				(lpSrcRect->right > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwWidth) ||
+				(lpSrcRect->top > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwHeight) ||
+				(lpSrcRect->bottom > ((dxglDirectDrawSurface7*)lpDDSrcSurface)->ddsd.dwHeight))
+				TRACE_RET(HRESULT, 23, DDERR_INVALIDRECT);
+		}
+		cmd.srcrect = *lpSrcRect;
+	}
 	else cmd.srcrect = nullrect;
 	if (lpDDSrcSurface)
 	{
