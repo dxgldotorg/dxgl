@@ -2846,10 +2846,19 @@ HRESULT WINAPI glDirectDraw7_GetSurfaceFromDC(glDirectDraw7 *This, HDC hdc, LPDI
 	TRACE_ENTER(3,14,This,13,hdc,14,lpDDS);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if (!lpDDS) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!hdc)
+	{
+		*lpDDS = NULL;
+		TRACE_RET(HRESULT, 23, DDERR_NOTFOUND);
+	}
 	HRESULT error = glDirectDraw7_EnumSurfaces(This, DDENUMSURFACES_DOESEXIST | DDENUMSURFACES_ALL,
 		NULL, &ptr, GetSurfaceFromDCCallback);
 	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
-	if (ptr == hdc) TRACE_RET(HRESULT, 23, DDERR_NOTFOUND);
+	if (ptr == hdc)
+	{
+		*lpDDS = NULL;
+		TRACE_RET(HRESULT, 23, DDERR_NOTFOUND);
+	}
 	out = (dxglDirectDrawSurface7*)ptr;
 	dxglDirectDrawSurface7_AddRef(out);
 	*lpDDS = (LPDIRECTDRAWSURFACE7)out;
@@ -3759,7 +3768,11 @@ HRESULT WINAPI glDirectDraw4_GetSurfaceFromDC(glDirectDraw4 *This, HDC hdc, LPDI
 	TRACE_ENTER(3, 14, This, 13, hdc, 14, lpDDS);
 	if (!This) TRACE_RET(HRESULT, 23, DDERR_INVALIDOBJECT);
 	error = glDirectDraw7_GetSurfaceFromDC(This->glDD7, hdc, (LPDIRECTDRAWSURFACE7 *)&dds7);
-	if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
+	if (FAILED(error))
+	{
+		*lpDDS = NULL;
+		TRACE_RET(HRESULT, 23, error);
+	}
 	if (dds7)
 	{
 		error = dxglDirectDrawSurface7_QueryInterface(dds7, IID_IDirectDrawSurface4, (void**)lpDDS);

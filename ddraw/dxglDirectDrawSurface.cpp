@@ -126,6 +126,14 @@ void FixPixelFormat(DDPIXELFORMAT *ddpf)
 	{
 		ddpfout.dwRBitMask = ddpfout.dwGBitMask = ddpfout.dwBBitMask = 0;
 	}
+	if ((ddpf->dwFlags & (DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED2 |
+		DDPF_PALETTEINDEXED4 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXEDTO8)))
+	{
+		ddpfout.dwRBitMask = 0;
+		ddpfout.dwGBitMask = 0;
+		ddpfout.dwBBitMask = 0;
+		ddpfout.dwRGBAlphaBitMask = 0;
+	}
 	if ((ddpf->dwFlags & DDPF_ALPHAPIXELS) || (ddpf->dwFlags & DDPF_ZPIXELS))
 		ddpfout.dwRGBAlphaBitMask = ddpf->dwRGBAlphaBitMask;
 	else ddpfout.dwRGBAlphaBitMask = 0;
@@ -2259,6 +2267,9 @@ HRESULT WINAPI dxglDirectDrawSurface7_SetPalette(dxglDirectDrawSurface7 *This, L
 {
 	TRACE_ENTER(2,14,This,14,lpDDPalette);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!(This->ddsd.ddpfPixelFormat.dwFlags & (DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED2 |
+		DDPF_PALETTEINDEXED4 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXEDTO8)))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPIXELFORMAT);
 	if ((LPDIRECTDRAWPALETTE)This->palette != lpDDPalette)
 	{
 		if (This->palette)
