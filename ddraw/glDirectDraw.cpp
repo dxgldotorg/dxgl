@@ -1949,6 +1949,8 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	This->devid = devid_default;
+	This->devid.liDriverVersion.HighPart = (DXGLMAJOR << 16) | DXGLMINOR;
+	This->devid.liDriverVersion.LowPart = (DXGLPOINT << 16) | DXGLBUILD;
 	This->hWnd = NULL;
 	This->primarylost = true;
 	This->renderer = NULL;
