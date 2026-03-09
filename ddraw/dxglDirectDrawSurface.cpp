@@ -173,6 +173,7 @@ HRESULT dxglDirectDrawSurface7_Create(LPDIRECTDRAW7 lpDD7, LPDDSURFACEDESC2 lpDD
 	glDirectDrawGammaControl_Create(glDDS7, &glDDS7->gammacontrol);
 	glDDS7->ddInterface = (glDirectDraw7 *)lpDD7;
 	glDDS7->ddsd = *lpDDSurfaceDesc2;
+	glDDS7->hRC = glDDS7->ddInterface->renderer->hRC;
 	LONG sizes[6];
 	int i, x, y;
 	float xscale, yscale;
