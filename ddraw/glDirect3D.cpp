@@ -392,9 +392,11 @@ HRESULT WINAPI glDirect3D7_EnumZBufferFormats(glDirect3D7 *This, REFCLSID riidDe
 	ddpf.dwZBitMask = 0xffff;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	ddpf.dwZBufferBitDepth = 24;
-	ddpf.dwZBitMask = 0xffffff00;
+	ddpf.dwZBitMask = 0xffffff;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	ddpf.dwZBufferBitDepth = 32;
+	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
+	ddpf.dwZBitMask = 0xffffff00;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
 	ddpf.dwZBitMask = 0xffffffff;
 	if(lpEnumCallback(&ddpf,lpContext) == D3DENUMRET_CANCEL) TRACE_RET(HRESULT,23,D3D_OK);
