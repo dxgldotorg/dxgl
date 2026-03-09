@@ -1172,6 +1172,7 @@ HRESULT WINAPI glDirect3DDevice7_GetCaps(glDirect3DDevice7 *This, LPD3DDEVICEDES
 {
 	TRACE_ENTER(2,14,This,14,lpD3DDevDesc);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
+	if (!lpD3DDevDesc) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	D3DDEVICEDESC7 desc = This->d3ddesc;
 	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION | D3DDEVCAPS_HWTRANSFORMANDLIGHT;
 	desc.deviceGUID = IID_IDirect3DTnLHalDevice;
@@ -2114,23 +2115,18 @@ HRESULT glDirect3DDevice7_GetCaps3(glDirect3DDevice7 *This, LPD3DDEVICEDESC lpD3
 {
 	TRACE_ENTER(3,14,This,14,lpD3DHWDevDesc,14,lpD3DHELDevDesc);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
-	if(!lpD3DHWDevDesc && !lpD3DHELDevDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	D3DDEVICEDESC desc = This->d3ddesc3;
-	if(lpD3DHELDevDesc)
-	{
-		desc.dwSize = lpD3DHELDevDesc->dwSize;
-		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(desc.dwSize > sizeof(D3DDEVICEDESC)) desc.dwSize = sizeof(D3DDEVICEDESC);
-		memcpy(lpD3DHELDevDesc, &desc, desc.dwSize);
-	}
-	desc.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
-	if(lpD3DHWDevDesc)
-	{
-		desc.dwSize = lpD3DHWDevDesc->dwSize;
-		if(desc.dwSize < sizeof(D3DDEVICEDESC1)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-		if(desc.dwSize > sizeof(D3DDEVICEDESC)) desc.dwSize = sizeof(D3DDEVICEDESC);
-		memcpy(lpD3DHWDevDesc, &desc, desc.dwSize);
-	}
+	if(!lpD3DHWDevDesc || !lpD3DHELDevDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	D3DDEVICEDESC deschel = This->d3ddesc3;
+	D3DDEVICEDESC deschw = This->d3ddesc3;
+	deschel.dwSize = lpD3DHELDevDesc->dwSize;
+	if ((deschel.dwSize != sizeof(D3DDEVICEDESC1)) && (deschel.dwSize != sizeof(D3DDEVICEDESC2)) &&
+		(deschel.dwSize != sizeof(D3DDEVICEDESC))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	deschw.dwDevCaps |= D3DDEVCAPS_HWRASTERIZATION;
+	deschw.dwSize = lpD3DHWDevDesc->dwSize;
+	if ((deschw.dwSize != sizeof(D3DDEVICEDESC1)) && (deschw.dwSize != sizeof(D3DDEVICEDESC2)) &&
+		(deschw.dwSize != sizeof(D3DDEVICEDESC))) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	memcpy(lpD3DHELDevDesc, &deschel, deschel.dwSize);
+	memcpy(lpD3DHWDevDesc, &deschw, deschw.dwSize);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
