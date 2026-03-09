@@ -86,6 +86,7 @@ HRESULT glDirect3DViewport3_Create(LPDIRECT3DVIEWPORT3 *viewport)
 		newvp->lights[i] = NULL;
 	newvp->refcount = 1;
 	newvp->current = false;
+	newvp->viewportver = 0;
 	TRACE_EXIT(23, DD_OK);
 	return DD_OK;
 }
@@ -258,7 +259,9 @@ HRESULT WINAPI glDirect3DViewport3_GetViewport(glDirect3DViewport3 *This, LPD3DV
 	TRACE_ENTER(2,14,This,14,lpData);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
-	memcpy(lpData,&This->viewport1,sizeof(D3DVIEWPORT2));
+	if(lpData->dwSize != sizeof(D3DVIEWPORT)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!This->viewportver) TRACE_RET(HRESULT, 23, D3DERR_VIEWPORTDATANOTSET);
+	memcpy(lpData,&This->viewport1,sizeof(D3DVIEWPORT));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
 }
@@ -267,6 +270,8 @@ HRESULT WINAPI glDirect3DViewport3_GetViewport2(glDirect3DViewport3 *This, LPD3D
 	TRACE_ENTER(2,14,This,14,lpData);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (lpData->dwSize != sizeof(D3DVIEWPORT2)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
+	if (!This->viewportver) TRACE_RET(HRESULT, 23, D3DERR_VIEWPORTDATANOTSET);
 	memcpy(lpData,&This->viewport,sizeof(D3DVIEWPORT2));
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;
@@ -337,6 +342,7 @@ HRESULT WINAPI glDirect3DViewport3_SetViewport(glDirect3DViewport3 *This, LPD3DV
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (lpData->dwSize != sizeof(D3DVIEWPORT)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	D3DVIEWPORT2 vp;
 	memcpy(&vp,lpData,sizeof(D3DVIEWPORT));
 	vp.dvClipHeight = This->viewport.dvClipHeight;
@@ -359,6 +365,7 @@ HRESULT WINAPI glDirect3DViewport3_SetViewport2(glDirect3DViewport3 *This, LPD3D
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!This->device) TRACE_RET(HRESULT,23,D3DERR_VIEWPORTHASNODEVICE);
 	if(!lpData) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (lpData->dwSize != sizeof(D3DVIEWPORT2)) TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	D3DVIEWPORT vp;
 	memcpy(&vp, lpData, sizeof(D3DVIEWPORT2));
 	vp.dvMaxX = This->viewport1.dvMaxX;
@@ -370,6 +377,7 @@ HRESULT WINAPI glDirect3DViewport3_SetViewport2(glDirect3DViewport3 *This, LPD3D
 	This->viewport1 = vp;
 	if ((This->viewport.dvMinZ == 0) && (This->viewport.dvMaxZ == 0))
 		This->viewport.dvMaxZ = 1.0f;
+	This->viewportver = 2;
 	if (This->current && This->device) glDirect3DViewport3_Sync(This);
 	TRACE_EXIT(23,D3D_OK);
 	return D3D_OK;

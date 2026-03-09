@@ -1424,6 +1424,8 @@ HRESULT WINAPI glDirectDraw7_CreateSurface(glDirectDraw7 *This, LPDDSURFACEDESC2
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSurfaceDesc2) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(pUnkOuter) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDSurface, sizeof(LPDIRECTDRAWSURFACE7), TRUE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc2->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	HRESULT ret = glDirectDraw7_CreateSurface2(This,lpDDSurfaceDesc2,lplpDDSurface,pUnkOuter,TRUE,7);
 	if (ret == DD_OK)
@@ -1926,6 +1928,8 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(This->initialized) TRACE_RET(HRESULT,23,DDERR_ALREADYINITIALIZED);
 	This->devid = devid_default;
+	This->devid.liDriverVersion.HighPart = (DXGLMAJOR << 16) | DXGLMINOR;
+	This->devid.liDriverVersion.LowPart = (DXGLPOINT << 16) | DXGLBUILD;
 	This->hWnd = NULL;
 	This->primarylost = true;
 	This->renderer = NULL;
@@ -3108,6 +3112,8 @@ HRESULT WINAPI glDirectDraw1_CreateSurface(glDirectDraw1 *This, LPDDSURFACEDESC 
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDSurface, sizeof(LPDIRECTDRAWSURFACE), TRUE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	DDSURFACEDESC2 ddsd2;
 	ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
@@ -3351,6 +3357,8 @@ HRESULT WINAPI glDirectDraw2_CreateSurface(glDirectDraw2 *This, LPDDSURFACEDESC 
 	if(!lplpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDSurface, sizeof(LPDIRECTDRAWSURFACE), TRUE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	DDSURFACEDESC2 ddsd2;
 	ZeroMemory(&ddsd2, sizeof(DDSURFACEDESC2));
@@ -3626,6 +3634,8 @@ HRESULT WINAPI glDirectDraw4_CreateSurface(glDirectDraw4 *This, LPDDSURFACEDESC2
 	if(!lplpDDSurface) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(!lpDDSurfaceDesc) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
 	if(lpDDSurfaceDesc->dwSize < sizeof(DDSURFACEDESC2)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
+	if (!IsWritablePointer(lplpDDSurface, sizeof(LPDIRECTDRAWSURFACE), TRUE))
+		TRACE_RET(HRESULT, 23, DDERR_INVALIDPARAMS);
 	LPDIRECTDRAWSURFACE7 lpDDS7;
 	HRESULT err = glDirectDraw7_CreateSurface2(This->glDD7,(LPDDSURFACEDESC2)lpDDSurfaceDesc,&lpDDS7,pUnkOuter,TRUE,4);
 	if(err == DD_OK)

@@ -102,7 +102,6 @@ HRESULT WINAPI glClassFactory_CreateInstance(glClassFactory *This, IUnknown *pUn
 		InitHooks();
 		error = glDirectDraw7_Create(&glDD7);
 		if (FAILED(error)) TRACE_RET(HRESULT, 23, error);
-		glDD7 = new glDirectDraw7;
 		glDirectDraw7_QueryInterface(glDD7,IID_IDirectDraw,ppvObject);
 		glDirectDraw7_Release(glDD7);
 		TRACE_VAR("*ppvObject",14,*ppvObject);
