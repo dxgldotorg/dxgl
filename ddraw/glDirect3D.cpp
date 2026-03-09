@@ -397,6 +397,7 @@ HRESULT WINAPI glDirect3D7_EnumZBufferFormats(glDirect3D7 *This, REFCLSID riidDe
 	{
 		if (This->glDD7->renderer->ext->GLEXT_EXT_packed_depth_stencil || This->glDD7->renderer->ext->GLEXT_NV_packed_depth_stencil)
 		{
+			ddpf.dwFlags |= DDPF_STENCILBUFFER;
 			ddpf.dwZBufferBitDepth = 32;
 			ddpf.dwStencilBitDepth = 8;
 			ddpf.dwZBitMask = 0xffffff00;

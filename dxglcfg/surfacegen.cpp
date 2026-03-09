@@ -2044,8 +2044,8 @@ const DDPIXELFORMAT surfaceformats[] =
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF,	0,			0},  // 24 bit Z buffer, 32-bit space
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFF00,	0,			0},  // 24 bit Z buffer, 32-bit space, reversed
 	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		0,			0xFFFFFFFF,	0,			0},  // 32 bit Z buffer
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
-	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER,					0,		32,		8,			0xFF,		0xFFFFFF00,	0},  // 32 bit Z buffer with stencil, reversed
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER|DDPF_STENCILBUFFER,0,		32,		8,			0xFFFFFF00,	0xFF,		0},  // 32 bit Z buffer with stencil
+	{sizeof(DDPIXELFORMAT),	DDPF_ZBUFFER|DDPF_STENCILBUFFER,0,		32,		8,			0xFFFFFF,	0xFF000000,	0},  // 32 bit Z buffer with stencil, reversed
 	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8',' ',' '), 0,	0,			0,			0,			0},  // 8-bit grayscale
 	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('Y','8','0','0'), 0,	0,			0,			0,			0},  // 8-bit grayscale
 	{sizeof(DDPIXELFORMAT), DDPF_FOURCC, MAKEFOURCC('G','R','E','Y'), 0,	0,			0,			0,			0},  // 8-bit grayscale
