@@ -75,6 +75,7 @@ typedef struct glDirectDraw7
 	LONG_PTR winstyle, winstyleex;
 	dxglDirectDrawSurface7 **surfaces;
 	int surfacecount, surfacecountmax;
+	CRITICAL_SECTION surfacecs;
 	glDirectDrawClipper **clippers;
 	int clippercount, clippercountmax;
 	DEVMODE oldmode;
