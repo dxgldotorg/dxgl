@@ -73,6 +73,7 @@ typedef struct glDirectDraw7
 	bool nowindowchanges;
 	dxglDirectDrawSurface7 **surfaces;
 	int surfacecount, surfacecountmax;
+	CRITICAL_SECTION surfacecs;
 	glDirectDrawClipper **clippers;
 	int clippercount, clippercountmax;
 	DEVMODE oldmode;
