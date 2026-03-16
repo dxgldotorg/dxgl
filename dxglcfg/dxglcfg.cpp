@@ -52,6 +52,10 @@
 #define BCM_SETSHIELD 0x160C
 #endif
 
+#ifndef TMT_TEXTCOLOR
+#define TMT_TEXTCOLOR 3803
+#endif
+
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 BOOL *dirty;
@@ -61,13 +65,20 @@ const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
 HMODULE uxtheme = NULL;
+HMODULE dwmapi = NULL;
 HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
 HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
 HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
+HTHEME WINAPI _OpenThemeDataStub(HWND hwnd, LPCWSTR psxClassList) { return NULL; }
+HRESULT WINAPI _CloseThemeDataStub(HTHEME hTheme) { return S_OK; }
 HRESULT(WINAPI *_DrawThemeBackground)(HTHEME hTheme, HDC hdc, int iPartID,
 	int iStateID, const RECT *pRect, const RECT *pClipRect) = NULL;
 HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags) = NULL;
+HRESULT(WINAPI *_SetWindowTheme)(HWND hWnd, LPCWSTR pszSubAppName, LPCWSTR pszSubIdList) = NULL;
+HRESULT WINAPI _SetWindowThemeStub(HWND hWnd, LPCWSTR pszSubAppName, LPCWSTR pszSubIdList) { return S_OK; }
+HRESULT(WINAPI *_GetThemeColor)(HTHEME hTheme, int iPartId, int iStateId, int iPropId, COLORREF *pColor) = NULL;
+HRESULT WINAPI _GetThemeColorStub(HTHEME hTheme, int iPartId, int iStateId, int iPropId, COLORREF *pColor) { return E_FAIL; }
 static BOOL ExtraModes_Dropdown = FALSE;
 static BOOL ColorDepth_Dropdown = FALSE;
 HWND hDialog = NULL;
@@ -89,6 +100,127 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
+// Dark Mode APIs
+HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+static const COLORREF darkbackground = 0x202020;
+static const COLORREF darktabbackground = 0x262626;
+static const COLORREF darkhighlight = 0x363636;
+static const COLORREF darkmodetext = 0xFFFFFF;
+HBRUSH hbrDarkBackground = NULL;
+HBRUSH hbrDarkTabBackground = NULL;
+HBRUSH hbrDarkHighlight = NULL;
+static BOOL usedarkmode = FALSE;
+BOOL tabownerdraw = FALSE;
+
+void MakeButtonDark(HWND hWnd)
+{
+	if (usedarkmode) _SetWindowTheme(hWnd, L"DarkMode_Explorer", NULL);
+	else _SetWindowTheme(hWnd, L" ", NULL);
+	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+
+void MakeEditDark(HWND hWnd)
+{
+	if (usedarkmode) _SetWindowTheme(hWnd, L"DarkMode_CFD", NULL);
+	else _SetWindowTheme(hWnd, L" ", NULL);
+	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+
+void MakeTabsDark(HWND hWnd)
+{
+	HTHEME hTheme;
+	COLORREF color;
+	HRESULT error;
+	if (usedarkmode)
+	{
+		hTheme = _OpenThemeData(hWnd, L"DarkMode_DarkTheme::Tab");
+		if (hTheme)
+		{
+			error = _GetThemeColor(hTheme, TABP_TABITEM, TIS_SELECTED, TMT_TEXTCOLOR, &color);
+			_CloseThemeData(hTheme);
+			if (FAILED(error) || color == RGB(0, 0, 0))
+			{
+				tabownerdraw = TRUE;
+				_SetWindowTheme(hWnd, L"", L"");
+			}
+			else
+			{
+				tabownerdraw = FALSE;
+				_SetWindowTheme(hWnd, L"DarkMode_DarkTheme", NULL);
+			}
+		}
+		else
+		{
+			tabownerdraw = TRUE;
+			_SetWindowTheme(hWnd, L"", L"");
+		}
+	}
+	else
+	{
+		tabownerdraw = FALSE;
+		_SetWindowTheme(hWnd, L" ", NULL);
+	}
+	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+
+
+void EnableDarkMode(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	MakeButtonDark(GetDlgItem(hDialog, IDOK));
+	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_APPLY));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_ADD));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_REMOVE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_RESTOREDEFAULTS));
+	MakeEditDark(GetDlgItem(hDialog, IDC_APPS));
+	MakeTabsDark(GetDlgItem(hDialog, IDC_TABS));
+	/*wndstyle = GetWindowLongPtr(GetDlgItem(hDialog, IDC_TABS), GWL_STYLE);
+	if (tabownerdraw) wndstyle |= TCS_OWNERDRAWFIXED;
+	else wndstyle &= ~TCS_OWNERDRAWFIXED;
+	SetWindowLongPtr(GetDlgItem(hDialog, IDC_TABS), GWL_STYLE, wndstyle);
+	SetWindowPos(GetDlgItem(hDialog, IDC_TABS), NULL, 0, 0, 0, 0,
+		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);*/
+	InvalidateRect(hDialog, NULL, TRUE);
+}
 
 typedef struct
 {
@@ -2803,10 +2935,34 @@ LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	{
 	case WM_COMMAND:
 		SendMessage(GetParent(hWnd), Msg, wParam, lParam);
-		return oldproc(hWnd, Msg, wParam, lParam);
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
 	default:
-		return oldproc(hWnd, Msg, wParam, lParam);
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+		break;
+	}
+}
+
+LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	WNDPROC oldproc;
+	RECT r;
+	oldproc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	switch (Msg)
+	{
+	case WM_CTLCOLORSTATIC:
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return 1;
+		}
+		else return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+		break;
+	default:
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
 	}
 }
@@ -3690,18 +3846,34 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		uxtheme = LoadLibrary(_T("uxtheme.dll"));
 		if (uxtheme)
 		{
-
 			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
 			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
-			_DrawThemeBackground = 
+			_GetThemeColor = (HRESULT(WINAPI*)(HTHEME, int, int, int, COLORREF*)) GetProcAddress(uxtheme, "GetThemeColor");
+			_DrawThemeBackground =
 				(HRESULT(WINAPI*)(HTHEME, HDC, int, int, const RECT*, const RECT*))
 				GetProcAddress(uxtheme, "DrawThemeBackground");
 			_EnableThemeDialogTexture = (HRESULT(WINAPI*)(HWND, DWORD))
 				GetProcAddress(uxtheme, "EnableThemeDialogTexture");
-			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground && _EnableThemeDialogTexture))
+			_SetWindowTheme = (HRESULT(WINAPI*)(HWND, LPCWSTR, LPCWSTR))
+				GetProcAddress(uxtheme, "SetWindowTheme");
+			if (!(_OpenThemeData && _CloseThemeData && _DrawThemeBackground && _EnableThemeDialogTexture &&	_SetWindowTheme))
 			{
 				FreeLibrary(uxtheme);
 				uxtheme = NULL;
+			}
+			if (!_SetWindowTheme) _SetWindowTheme = _SetWindowThemeStub;
+			if (!_OpenThemeData) _OpenThemeData = _OpenThemeDataStub;
+			if (!_CloseThemeData) _CloseThemeData = _CloseThemeDataStub;
+			if (!_GetThemeColor) _GetThemeColor = _GetThemeColorStub;
+		}
+		dwmapi = LoadLibrary(_T("dwmapi.dll"));
+		if (dwmapi)
+		{
+			_DwmSetWindowAttribute = (HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD))GetProcAddress(dwmapi, "DwmSetWindowAttribute");
+			if (!(_DwmSetWindowAttribute))
+			{
+				FreeLibrary(dwmapi);
+				dwmapi = NULL;
 			}
 		}
 		// Add tabs
@@ -4497,7 +4669,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		if(token) CloseHandle(token);
 		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
 		SetForegroundWindow(hWnd);*/
+		EnableDarkMode(hWnd);
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
+			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
 		return TRUE;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkMode(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+		}
+		else return FALSE;
 	case WM_MEASUREITEM:
 		switch(wParam)
 		{
@@ -4530,17 +4750,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		case IDC_APPS:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
-			if((drawitem->itemState & ODS_SELECTED))
+			if (usedarkmode)
 			{
-				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
-				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
-				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
+				if ((drawitem->itemState & ODS_SELECTED))
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darkhighlight);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkHighlight);
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darkbackground);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkBackground);
+				}
 			}
 			else
 			{
-				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
-				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
-				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				if ((drawitem->itemState & ODS_SELECTED))
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				}
 			}
 			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
 				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
