@@ -61,6 +61,7 @@ const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
 HMODULE uxtheme = NULL;
+HMODULE dwmapi = NULL;
 HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
 HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
@@ -89,6 +90,48 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
+// Dark Mode APIs
+HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+static const COLORREF darkbackground = 0x383838;
+static const COLORREF darkmodetext = 0xFFFFFF;
+
+
+void EnableDarkMode(HWND hDialog)
+{
+	BOOL usedarkmode;
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+}
 
 typedef struct
 {
@@ -2803,10 +2846,10 @@ LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	{
 	case WM_COMMAND:
 		SendMessage(GetParent(hWnd), Msg, wParam, lParam);
-		return oldproc(hWnd, Msg, wParam, lParam);
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
 	default:
-		return oldproc(hWnd, Msg, wParam, lParam);
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
 	}
 }
@@ -3690,7 +3733,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		uxtheme = LoadLibrary(_T("uxtheme.dll"));
 		if (uxtheme)
 		{
-
 			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
 			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
 			_DrawThemeBackground = 
@@ -3702,6 +3744,16 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			{
 				FreeLibrary(uxtheme);
 				uxtheme = NULL;
+			}
+		}
+		dwmapi = LoadLibrary(_T("dwmapi.dll"));
+		if (dwmapi)
+		{
+			_DwmSetWindowAttribute = (HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD))GetProcAddress(dwmapi, "DwmSetWindowAttribute");
+			if (!(_DwmSetWindowAttribute))
+			{
+				FreeLibrary(dwmapi);
+				dwmapi = NULL;
 			}
 		}
 		// Add tabs
@@ -4497,7 +4549,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		if(token) CloseHandle(token);
 		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
 		SetForegroundWindow(hWnd);*/
+		EnableDarkMode(hWnd);
 		return TRUE;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkMode(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
 	case WM_MEASUREITEM:
 		switch(wParam)
 		{
