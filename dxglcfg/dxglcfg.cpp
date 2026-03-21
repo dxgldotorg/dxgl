@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0601
 #define _CRT_SECURE_NO_WARNINGS
 #if _MSC_VER >= 1400
 #define _CRTDBG_MAP_ALLOC
@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
+#include <windowsx.h>
 #include <HtmlHelp.h>
 #include <CommCtrl.h>
 #include <string.h>
@@ -56,6 +57,10 @@
 #define TMT_TEXTCOLOR 3803
 #endif
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 BOOL *dirty;
@@ -64,10 +69,13 @@ BOOL msaa_available = FALSE;
 const char *extensions_string = NULL;
 OSVERSIONINFO osver;
 TCHAR hlppath[MAX_PATH+16];
+static HMODULE hUser32 = NULL;
 HMODULE uxtheme = NULL;
 HMODULE dwmapi = NULL;
 HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
+HTHEME hThemeTabs = NULL;
+BOOL(WINAPI *__TrackMouseEvent)(LPTRACKMOUSEEVENT lpEventTrack) = NULL;
 HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
 HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
 HTHEME WINAPI _OpenThemeDataStub(HWND hwnd, LPCWSTR psxClassList) { return NULL; }
@@ -100,6 +108,26 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
+UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
+
+static UINT windowdpi = 96;
+static UINT GetWindowDPI(HWND hwnd)
+{
+	HDC hdc;
+	int dpi;
+	if (!hUser32) hUser32 = GetModuleHandle(_T("User32.dll"));
+	if (hUser32)
+		_GetDpiForWindow = (UINT(WINAPI*)(HWND))GetProcAddress(hUser32, "GetDpiForWindow");
+	if (_GetDpiForWindow) return _GetDpiForWindow(hwnd);
+	else
+	{
+		hdc = GetWindowDC(hwnd);
+		dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+		ReleaseDC(hwnd, hdc);
+		return dpi;
+	}
+}
+
 // Dark Mode APIs
 HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
@@ -108,13 +136,17 @@ HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pv
 
 static const COLORREF darkbackground = 0x202020;
 static const COLORREF darktabbackground = 0x262626;
+static const COLORREF darktabhot = 0x313131;
+static const COLORREF darktabborder = 0x525252;
 static const COLORREF darkhighlight = 0x363636;
 static const COLORREF darkmodetext = 0xFFFFFF;
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrDarkTabBackground = NULL;
+HBRUSH hbrDarkTabHot = NULL;
+HPEN hpenDarkTabBorder = NULL;
 HBRUSH hbrDarkHighlight = NULL;
 static BOOL usedarkmode = FALSE;
-BOOL tabownerdraw = FALSE;
+BOOL tabstripthemed = FALSE;
 
 void MakeButtonDark(HWND hWnd)
 {
@@ -132,36 +164,34 @@ void MakeEditDark(HWND hWnd)
 
 void MakeTabsDark(HWND hWnd)
 {
-	HTHEME hTheme;
 	COLORREF color;
 	HRESULT error;
 	if (usedarkmode)
 	{
-		hTheme = _OpenThemeData(hWnd, L"DarkMode_DarkTheme::Tab");
-		if (hTheme)
+		if(!hThemeTabs) hThemeTabs = _OpenThemeData(hWnd, L"DarkMode_DarkTheme::Tab");
+		if (hThemeTabs)
 		{
-			error = _GetThemeColor(hTheme, TABP_TABITEM, TIS_SELECTED, TMT_TEXTCOLOR, &color);
-			_CloseThemeData(hTheme);
+			error = _GetThemeColor(hThemeTabs, TABP_TABITEM, TIS_SELECTED, TMT_TEXTCOLOR, &color);
 			if (FAILED(error) || color == RGB(0, 0, 0))
 			{
-				tabownerdraw = TRUE;
+				tabstripthemed = FALSE;
 				_SetWindowTheme(hWnd, L"", L"");
 			}
 			else
 			{
-				tabownerdraw = FALSE;
+				tabstripthemed = TRUE;
 				_SetWindowTheme(hWnd, L"DarkMode_DarkTheme", NULL);
 			}
 		}
 		else
 		{
-			tabownerdraw = TRUE;
+			tabstripthemed = FALSE;
 			_SetWindowTheme(hWnd, L"", L"");
 		}
 	}
 	else
 	{
-		tabownerdraw = FALSE;
+		tabstripthemed = TRUE;
 		_SetWindowTheme(hWnd, L" ", NULL);
 	}
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
@@ -202,7 +232,10 @@ void EnableDarkMode(HWND hDialog)
 	if (!hbrDarkBackground)
 	{
 		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
 		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
 	}
 	_SetWindowTheme(hDialog, L"Explorer", NULL);
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -213,12 +246,6 @@ void EnableDarkMode(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hDialog, IDC_RESTOREDEFAULTS));
 	MakeEditDark(GetDlgItem(hDialog, IDC_APPS));
 	MakeTabsDark(GetDlgItem(hDialog, IDC_TABS));
-	/*wndstyle = GetWindowLongPtr(GetDlgItem(hDialog, IDC_TABS), GWL_STYLE);
-	if (tabownerdraw) wndstyle |= TCS_OWNERDRAWFIXED;
-	else wndstyle &= ~TCS_OWNERDRAWFIXED;
-	SetWindowLongPtr(GetDlgItem(hDialog, IDC_TABS), GWL_STYLE, wndstyle);
-	SetWindowPos(GetDlgItem(hDialog, IDC_TABS), NULL, 0, 0, 0, 0,
-		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);*/
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
@@ -2943,15 +2970,163 @@ LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 	}
 }
 
+int hottab = -1;
+
+static inline int dpiscale(int coord)
+{
+	return (coord * windowdpi) / 96;
+}
+
 LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
 	WNDPROC oldproc;
-	RECT r;
+	RECT r, r2;
+	POINT p;
+	HDC hdc;
+	HPEN oldpen;
+	HFONT tabfont;
+	HFONT oldfont;
+	int i;
+	int tabcount;
+	int activetab;
+	int state;
+	TRACKMOUSEEVENT tme;
+	TCHAR tabtext[256];
+	TCITEM tabitem;
 	oldproc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	switch (Msg)
 	{
-	case WM_CTLCOLORSTATIC:
-		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+	case WM_MOUSEMOVE:
+		p.x = GET_X_LPARAM(lParam);
+		p.y = GET_Y_LPARAM(lParam);
+		tabcount = TabCtrl_GetItemCount(hWnd);
+		activetab = -1;
+		for (i = 0; i < tabcount; i++)
+		{
+			TabCtrl_GetItemRect(hWnd, i, &r);
+			if (PtInRect(&r, p))
+			{
+				activetab = i;
+				break;
+			}
+		}
+		if (hottab != activetab)
+		{
+			if (hottab != -1)
+			{
+				TabCtrl_GetItemRect(hWnd, hottab, &r);
+				InvalidateRect(hWnd, &r, FALSE);
+			}
+			hottab = activetab;
+			TabCtrl_GetItemRect(hWnd, hottab, &r);
+			InvalidateRect(hWnd, &r, FALSE);
+		}
+		if (__TrackMouseEvent)
+		{
+			tme.cbSize = sizeof(TRACKMOUSEEVENT);
+			tme.dwFlags = TME_LEAVE;
+			tme.dwHoverTime = 0;
+			tme.hwndTrack = hWnd;
+			TrackMouseEvent(&tme);
+		}
+		return TRUE;
+		break;
+	case WM_MOUSELEAVE:
+		if (hottab != -1)
+		{
+			TabCtrl_GetItemRect(hWnd, hottab, &r);
+			InvalidateRect(hWnd, &r, FALSE);
+		}
+		hottab = -1;
+		return TRUE;
+		break;
+	case WM_PAINT:
+		if (usedarkmode)
+		{
+			hdc = BeginPaint(hWnd, &ps);
+			GetClientRect(hWnd, &r);
+			FillRect(hdc, &r, hbrDarkBackground);
+			tabcount = TabCtrl_GetItemCount(hWnd);
+			activetab = TabCtrl_GetCurSel(hWnd);
+			SetTextColor(hdc, darkmodetext);
+			tabfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+			if (!tabfont) tabfont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+			oldfont = (HFONT)SelectObject(hdc, tabfont);
+			for (i = 0; i < tabcount; i++)
+			{
+				if (i == activetab) continue;
+				TabCtrl_GetItemRect(hWnd, i, &r);
+				if (i == hottab) state = TIS_HOT;
+				else state = TIS_NORMAL;
+				switch (state)
+				{
+				case TIS_SELECTED:
+					if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, state, &r, NULL);
+					else FillRect(hdc, &r, hbrDarkTabBackground);
+					SetBkColor(hdc,darktabbackground);
+					break;
+				case TIS_HOT:
+					if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, state, &r, NULL);
+					else FillRect(hdc, &r, hbrDarkTabHot);
+					SetBkColor(hdc, darktabhot);
+					break;
+				case TIS_NORMAL:
+					if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, state, &r, NULL);
+					else FillRect(hdc, &r, hbrDarkBackground);
+					SetBkColor(hdc, darkbackground);
+				}
+				if (!i && tabstripthemed)
+				{
+					oldpen = (HPEN)SelectObject(hdc, hpenDarkTabBorder);
+					MoveToEx(hdc, r.left, r.bottom - 1, NULL);
+					LineTo(hdc, r.left, r.top);
+					SelectObject(hdc, oldpen);
+				}
+				if (!tabstripthemed)
+				{
+					oldpen = (HPEN)SelectObject(hdc, hpenDarkTabBorder);
+					MoveToEx(hdc, r.left, r.bottom - 1, NULL);
+					LineTo(hdc, r.left, r.top);
+					LineTo(hdc, r.right, r.top);
+					LineTo(hdc, r.right, r.bottom);
+					SelectObject(hdc, oldpen);
+				}
+				ZeroMemory(&tabitem, sizeof(TCITEM));
+				tabitem.mask = TCIF_TEXT;
+				tabitem.pszText = tabtext;
+				tabitem.cchTextMax = 256;
+				TabCtrl_GetItem(hWnd, i, &tabitem);
+				TextOut(hdc, r.left+dpiscale(6), r.top+dpiscale(3), tabtext, _tcslen(tabtext));
+			}
+			// Now draw the active tab
+			TabCtrl_GetItemRect(hWnd, activetab, &r);
+			r.top -= dpiscale(2);
+			r.left -= dpiscale(2);
+			r.right += dpiscale(2);
+			if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, TIS_SELECTED, &r, NULL);
+			else FillRect(hdc, &r, hbrDarkTabBackground);
+			if (!tabstripthemed)
+			{
+				oldpen = (HPEN)SelectObject(hdc, hpenDarkTabBorder);
+				MoveToEx(hdc, r.left, r.bottom - 1, NULL);
+				LineTo(hdc, r.left, r.top);
+				LineTo(hdc, r.right, r.top);
+				LineTo(hdc, r.right, r.bottom);
+				SelectObject(hdc, oldpen);
+			}
+			r.left += dpiscale(2);
+			ZeroMemory(&tabitem, sizeof(TCITEM));
+			tabitem.mask = TCIF_TEXT;
+			tabitem.pszText = tabtext;
+			tabitem.cchTextMax = 256;
+			TabCtrl_GetItem(hWnd, activetab, &tabitem);
+			TextOut(hdc, r.left + dpiscale(6), r.top + dpiscale(3), tabtext, _tcslen(tabtext));
+			SelectObject(hdc, oldfont);
+			EndPaint(hWnd, &ps);
+			return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+		}
+		else return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 	case WM_ERASEBKGND:
 		if (usedarkmode)
 		{
@@ -3367,7 +3542,6 @@ LRESULT CALLBACK PathsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 DWORD GetDPISupportLevel()
 {
 	HMODULE hSHCore = NULL;
-	HMODULE hUser32 = NULL;
 	HRESULT(WINAPI *_SetProcessDpiAwareness)(DWORD value) = NULL;
 	BOOL(WINAPI *_SetProcessDpiAwarenessContext)(HANDLE value) = NULL;
 	DWORD level = 0;
@@ -3390,18 +3564,13 @@ DWORD GetDPISupportLevel()
 	}
 	else return level;
 	// v1703 or higher - Support Per-Monitor scaling v2
-	hUser32 = LoadLibrary(_T("User32.dll"));
+	if(!hUser32) hUser32 = GetModuleHandle(_T("User32.dll"));
 	if (hUser32)
 	{
 		_SetProcessDpiAwarenessContext =
 			(BOOL(WINAPI*)(HANDLE))GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
 		if (_SetProcessDpiAwarenessContext) level = 3;
-		else
-		{
-			FreeLibrary(hUser32);
-			return level;
-		}
-		FreeLibrary(hUser32);
+		else return level;
 	}
 	return level;
 }
@@ -3770,6 +3939,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		windowdpi = GetWindowDPI(hWnd);
 		hProgressWnd = NULL;
 		/*CreateThread(NULL, 0, ProgressThread, &hProgressWnd, 0, &threadid);
 		while (hProgressWnd == NULL) Sleep(10);*/
@@ -4716,19 +4886,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		{
 			GetClientRect(hWnd, &r);
 			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
 		}
 		else return FALSE;
+	case WM_DPICHANGED:
+		windowdpi = LOWORD(wParam);
+		return TRUE;
 	case WM_MEASUREITEM:
 		switch(wParam)
 		{
 		case IDC_APPS:
 			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON) + 1;
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
+			return TRUE;
 			break;
 		default:
+			return FALSE;
 			break;
 		}
-		break;
+		break;		
 	case WM_NOTIFY:
 		nm = (LPNMHDR)lParam;
 		if (nm->code == TCN_SELCHANGE)
@@ -5322,6 +5498,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	GetModuleFileName(NULL,hlppath,MAX_PATH);
 	GetDirFromPath(hlppath);
 	_tcscat(hlppath,_T("\\dxgl.chm"));
+	if (!hUser32) hUser32 = GetModuleHandle(_T("user32.dll"));
+	if (hUser32) __TrackMouseEvent = (BOOL(WINAPI*)(LPTRACKMOUSEEVENT))GetProcAddress(hUser32, "TrackMouseEvent");
 	#ifdef _M_X64
 	hMutex = CreateMutex(NULL, TRUE, _T("DXGLConfigMutex_x64"));
 	#else
@@ -5336,6 +5514,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 		return 0;
 	}
 	DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	if (hMutex) ReleaseMutex(hMutex);
+	if (hMutex) CloseHandle(hMutex);
 	if (apps)
 	{
 		for (i = 0; i < appcount; i++)
@@ -5347,8 +5527,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	}
 	if (comctl32) FreeLibrary(comctl32);
 	if (msimg32) FreeLibrary(msimg32);
-	ReleaseMutex(hMutex);
-	CloseHandle(hMutex);
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif
