@@ -107,6 +107,8 @@ static const TCHAR profilespath[] = _T("Software\\DXGL\\Profiles");
 static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
+HWND hTab;
+HWND hTabs[9];
 
 UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
 
@@ -246,6 +248,26 @@ void EnableDarkMode(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hDialog, IDC_RESTOREDEFAULTS));
 	MakeEditDark(GetDlgItem(hDialog, IDC_APPS));
 	MakeTabsDark(GetDlgItem(hDialog, IDC_TABS));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_VIDMODE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_COLORDEPTH));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_SCALE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_EXTRAMODES));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_ASPECT));
+	SendMessage(GetDlgItem(hTabs[0], IDC_ASPECT), CB_SETEDITSEL, 0, 0);
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_SORTMODES));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_DPISCALE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_VSYNC));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_FULLMODE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_FIXEDSCALEX));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_FIXEDSCALEY));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_CUSTOMMODE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_WINDOWSCALE));
+	SendMessage(GetDlgItem(hTabs[0], IDC_WINDOWSCALE), CB_SETEDITSEL, 0, 0);
+	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETMODE));
+	MakeButtonDark(GetDlgItem(hTabs[0], IDC_COLOR));
+	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
+	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
+
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
@@ -271,8 +293,6 @@ DWORD current_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 TCHAR strdefaultshort[] = _T("(default)");
-HWND hTab;
-HWND hTabs[9];
 static int tabopen;
 BOOL modelistdirty = FALSE;
 
@@ -1738,6 +1758,42 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		else hThemeDisplay = NULL;
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
@@ -3061,11 +3117,6 @@ LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				else state = TIS_NORMAL;
 				switch (state)
 				{
-				case TIS_SELECTED:
-					if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, state, &r, NULL);
-					else FillRect(hdc, &r, hbrDarkTabBackground);
-					SetBkColor(hdc,darktabbackground);
-					break;
 				case TIS_HOT:
 					if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, state, &r, NULL);
 					else FillRect(hdc, &r, hbrDarkTabHot);
