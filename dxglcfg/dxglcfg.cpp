@@ -307,7 +307,17 @@ void EnableDarkMode(HWND hDialog)
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_COLOR));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
-
+	_SetWindowTheme(hTabs[1], L"Explorer", NULL);
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_POSTSCALE));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_POSTSCALESIZE));
+	//MakeEditDark(GetDlgItem(hTabs[1], IDC_SHADER));
+	//MakeButtonDark(GetDlgItem(hTabs[1], IDC_BROWSESHADER));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_PRIMARYSCALE));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_BLTFILTER));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY));
+	// FIXME:  Blt threshold slider
+	//MakeEditDark(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLD));
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
@@ -1868,17 +1878,23 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			if ((customdraw->hdr.idFrom == IDC_COLOR) || (customdraw->hdr.idFrom == IDC_SINGLEBUFFER) ||
 				(customdraw->hdr.idFrom == IDC_SETDISPLAYCONFIG))
 			{
-				if ((customdraw->dwDrawStage) == CDDS_PREPAINT)
+				switch(customdraw->dwDrawStage)
 				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(18);
-					// Draw the checkbox text manually
+					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
+				default:
+					break;
 				}
 			}
 		}
@@ -2269,11 +2285,48 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 
 LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	RECT r;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
