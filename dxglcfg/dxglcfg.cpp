@@ -74,7 +74,6 @@ HMODULE uxtheme = NULL;
 HMODULE dwmapi = NULL;
 HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
-HTHEME hThemeTabs = NULL;
 BOOL(WINAPI *__TrackMouseEvent)(LPTRACKMOUSEEVENT lpEventTrack) = NULL;
 HTHEME(WINAPI *_OpenThemeData)(HWND hwnd, LPCWSTR pszClassList) = NULL;
 HRESULT(WINAPI *_CloseThemeData)(HTHEME hTheme) = NULL;
@@ -112,7 +111,10 @@ HWND hTabs[9];
 
 UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
 
+
+
 static UINT windowdpi = 96;
+static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
 static UINT GetWindowDPI(HWND hwnd)
 {
 	HDC hdc;
@@ -149,12 +151,47 @@ HPEN hpenDarkTabBorder = NULL;
 HBRUSH hbrDarkHighlight = NULL;
 static BOOL usedarkmode = FALSE;
 BOOL tabstripthemed = FALSE;
+HTHEME hThemeTabs = NULL;
+HTHEME hThemeChecks = NULL;
 
 void MakeButtonDark(HWND hWnd)
 {
 	if (usedarkmode) _SetWindowTheme(hWnd, L"DarkMode_Explorer", NULL);
 	else _SetWindowTheme(hWnd, L" ", NULL);
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+
+void MakeCheckboxDark(HWND hWnd)
+{
+	COLORREF color;
+	HRESULT error;
+	LONG_PTR style;
+	if (usedarkmode)
+	{
+		if (!hThemeChecks) hThemeChecks = _OpenThemeData(hWnd, L"DarkMode_DarkTheme::Button");
+		if (hThemeChecks)
+		{
+			error = _GetThemeColor(hThemeChecks, BP_CHECKBOX, CBS_CHECKEDNORMAL, TMT_TEXTCOLOR, &color);
+			if (FAILED(error) || color == RGB(0, 0, 0))	_SetWindowTheme(hWnd, L" ", NULL);
+			else _SetWindowTheme(hWnd, L"DarkMode_DarkTheme", NULL);
+		}
+		else _SetWindowTheme(hWnd, L" ", NULL);
+		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+		/*style = GetWindowLongPtr(hWnd, GWL_STYLE);
+		style |= BS_OWNERDRAW;
+		SetWindowLongPtr(hWnd, GWL_STYLE, style);
+		SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);*/
+}
+	else
+	{
+		_SetWindowTheme(hWnd, L" ", NULL);
+		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+		/*style = GetWindowLongPtr(hWnd, GWL_STYLE);
+		style &= ~BS_OWNERDRAW;
+		style |= BS_AUTOCHECKBOX;
+		SetWindowLongPtr(hWnd, GWL_STYLE, style);
+		SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);*/
+	}
 }
 
 void MakeEditDark(HWND hWnd)
@@ -240,6 +277,7 @@ void EnableDarkMode(HWND hDialog)
 		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
 	}
 	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_APPLY));
@@ -248,6 +286,8 @@ void EnableDarkMode(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hDialog, IDC_RESTOREDEFAULTS));
 	MakeEditDark(GetDlgItem(hDialog, IDC_APPS));
 	MakeTabsDark(GetDlgItem(hDialog, IDC_TABS));
+	_SetWindowTheme(hTabs[0], L"Explorer", NULL);
+	SendMessage(hTabs[0], WM_THEMECHANGED, 0, 0);
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_VIDMODE));
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_COLORDEPTH));
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_SCALE));
@@ -264,10 +304,20 @@ void EnableDarkMode(HWND hDialog)
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_WINDOWSCALE));
 	SendMessage(GetDlgItem(hTabs[0], IDC_WINDOWSCALE), CB_SETEDITSEL, 0, 0);
 	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETMODE));
-	MakeButtonDark(GetDlgItem(hTabs[0], IDC_COLOR));
-	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
-	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
-
+	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_COLOR));
+	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
+	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
+	_SetWindowTheme(hTabs[1], L"Explorer", NULL);
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_POSTSCALE));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_POSTSCALESIZE));
+	//MakeEditDark(GetDlgItem(hTabs[1], IDC_SHADER));
+	//MakeButtonDark(GetDlgItem(hTabs[1], IDC_BROWSESHADER));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_PRIMARYSCALE));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_BLTFILTER));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEX));
+	MakeEditDark(GetDlgItem(hTabs[1], IDC_CUSTOMSCALEY));
+	// FIXME:  Blt threshold slider
+	//MakeEditDark(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLD));
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
@@ -1746,10 +1796,12 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	COLORREF OldTextColor, OldBackColor;
 	RECT r;
 	TCHAR combotext[64];
+	TCHAR buttontext[256];
 	DWORD cursel;
 	HDC hdc;
 	HFONT font1, font2;
 	SIZE size;
+	LPNMCUSTOMDRAW customdraw;
 	int i;
 	switch (Msg)
 	{
@@ -1818,11 +1870,45 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		default:
 			break;
 		}
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hWnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			if ((customdraw->hdr.idFrom == IDC_COLOR) || (customdraw->hdr.idFrom == IDC_SINGLEBUFFER) ||
+				(customdraw->hdr.idFrom == IDC_SETDISPLAYCONFIG))
+			{
+				switch(customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
 	case WM_DRAWITEM:
 		if(createdialoglock) break;
 		drawitem = (DRAWITEMSTRUCT*)lParam;
 		switch (wParam)
 		{
+		case IDC_COLOR:
+		case IDC_SINGLEBUFFER:
+		case IDC_SETDISPLAYCONFIG:
+			FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkTabBackground);
+			break;
 		case IDC_COLORDEPTH:
 			OldTextColor = GetTextColor(drawitem->hDC);
 			OldBackColor = GetBkColor(drawitem->hDC);
@@ -2199,11 +2285,48 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 
 LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	RECT r;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -3027,11 +3150,6 @@ LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 }
 
 int hottab = -1;
-
-static inline int dpiscale(int coord)
-{
-	return (coord * windowdpi) / 96;
-}
 
 LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
