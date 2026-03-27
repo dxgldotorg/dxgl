@@ -341,6 +341,9 @@ void EnableDarkMode(HWND hDialog)
 	MakeCheckboxDark(GetDlgItem(hTabs[3], IDC_CAPTUREMOUSE));
 	MakeEditDark(GetDlgItem(hTabs[3], IDC_PROFILEPATH));
 	MakeButtonDark(GetDlgItem(hTabs[3], IDC_WRITEINI));
+	_SetWindowTheme(hTabs[4], L"Explorer", NULL);
+	MakeEditDark(GetDlgItem(hTabs[4], IDC_DEBUGLIST));
+	MakeEditDark(GetDlgItem(hTabs[4], IDC_GLVERSION));
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
@@ -1598,7 +1601,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 	{
 		if (checked)
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDDISABLED, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
@@ -1613,7 +1622,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 		}
 		else if (tristate)
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_MIXEDDISABLED, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
@@ -1628,7 +1643,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 		}
 		else
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDDISABLED, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
@@ -1646,7 +1667,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 	{
 		if (checked)
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDNORMAL, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_CHECKEDHOT, r, NULL);
@@ -1661,7 +1688,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 		}
 		else if (tristate)
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_MIXEDNORMAL, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_MIXEDHOT, r, NULL);
@@ -1676,7 +1709,13 @@ void DrawCheck(HDC hdc, BOOL selected, BOOL checked, BOOL grayed, BOOL tristate,
 		}
 		else
 		{
-			if (hThemeDisplay)
+			if (usedarkmode && hThemeChecks)
+			{
+				if (selected)
+					_DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
+				else _DrawThemeBackground(hThemeChecks, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDNORMAL, r, NULL);
+			}
+			else if (hThemeDisplay)
 			{
 				if (selected)
 					_DrawThemeBackground(hThemeDisplay, hdc, BS_AUTOCHECKBOX, CBS_UNCHECKEDHOT, r, NULL);
@@ -2970,6 +3009,42 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
@@ -3037,15 +3112,33 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			OldBackColor = GetBkColor(drawitem->hDC);
 			if((drawitem->itemState & ODS_SELECTED))
 			{
-				SetTextColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHTTEXT));
-				SetBkColor(drawitem->hDC,GetSysColor(COLOR_HIGHLIGHT));
-				FillRect(drawitem->hDC,&drawitem->rcItem,(HBRUSH)(COLOR_HIGHLIGHT+1));
+				if (usedarkmode)
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darkhighlight);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkHighlight);
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+				}
 			}
 			else
 			{
-				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
-				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
-				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				if (usedarkmode)
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darktabbackground);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkTabBackground);
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				}
 			}
 			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
 			r.left = r.left + 2;
