@@ -351,6 +351,8 @@ void EnableDarkMode(HWND hDialog)
 	MakeEditDark(GetDlgItem(hTabs[5], IDC_HACKSLIST));
 	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNRESET));
 	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNEDIT));
+	_SetWindowTheme(hTabs[6], L"Explorer", NULL);
+	MakeEditDark(GetDlgItem(hTabs[6], IDC_TRACING));
 }
 
 typedef struct
@@ -3966,11 +3968,48 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 
 LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	RECT r;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
