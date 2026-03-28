@@ -345,6 +345,12 @@ void EnableDarkMode(HWND hDialog)
 	MakeEditDark(GetDlgItem(hTabs[4], IDC_DEBUGLIST));
 	MakeEditDark(GetDlgItem(hTabs[4], IDC_GLVERSION));
 	InvalidateRect(hDialog, NULL, TRUE);
+	_SetWindowTheme(hTabs[5], L"Explorer", NULL);
+	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN));
+	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT));
+	MakeEditDark(GetDlgItem(hTabs[5], IDC_HACKSLIST));
+	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNRESET));
+	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNEDIT));
 }
 
 typedef struct
@@ -3365,6 +3371,15 @@ LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 		SendMessage(GetParent(hWnd), Msg, wParam, lParam);
 		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	default:
 		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		break;
@@ -3667,6 +3682,42 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC, (LONG_PTR)HacksListCallback);
 		return TRUE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
@@ -3849,15 +3900,33 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			OldBackColor = GetBkColor(drawitem->hDC);
 			if ((drawitem->itemState & ODS_SELECTED))
 			{
-				SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
-				SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
-				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+				if (usedarkmode)
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darkhighlight);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkHighlight);
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_HIGHLIGHT));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+				}
 			}
 			else
 			{
-				SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
-				SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
-				FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				if (usedarkmode)
+				{
+					SetTextColor(drawitem->hDC, darkmodetext);
+					SetBkColor(drawitem->hDC, darkbackground);
+					FillRect(drawitem->hDC, &drawitem->rcItem, hbrDarkBackground);
+				}
+				else
+				{
+					SetTextColor(drawitem->hDC, GetSysColor(COLOR_WINDOWTEXT));
+					SetBkColor(drawitem->hDC, GetSysColor(COLOR_WINDOW));
+					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
+				}
 			}
 			memcpy(&r, &drawitem->rcItem, sizeof(RECT));
 			r.left = r.left + 2;
