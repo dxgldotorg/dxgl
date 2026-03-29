@@ -133,6 +133,8 @@ static UINT GetWindowDPI(HWND hwnd)
 }
 
 // Dark Mode APIs
+int(WINAPI *_SetPreferredAppMode)(int mode) = NULL;
+void(WINAPI *_FlushMenuThemes)() = NULL;
 HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
@@ -262,7 +264,7 @@ void MakeTabsDark(HWND hWnd)
 }
 
 
-void EnableDarkMode(HWND hDialog)
+void EnableDarkModeForMainDialog(HWND hDialog)
 {
 	HKEY hKeyPersonalize;
 	DWORD lightapps;
@@ -302,6 +304,12 @@ void EnableDarkMode(HWND hDialog)
 		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
 		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
 	}
+	if (_SetPreferredAppMode)
+	{
+		if (usedarkmode) _SetPreferredAppMode(1);
+		else _SetPreferredAppMode(0);
+	}
+	if (_FlushMenuThemes) _FlushMenuThemes();
 	_SetWindowTheme(hDialog, L"Explorer", NULL);
 	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -412,6 +420,54 @@ void EnableDarkMode(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hTabs[8], IDC_DXDIAG));
 	InvalidateRect(hDialog, NULL, TRUE);
 }
+
+void EnableDarkModeForModeListDialog(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	MakeButtonDark(GetDlgItem(hDialog, IDC_MODELIST));
+	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
+	MakeButtonDark(GetDlgItem(hDialog, IDOK));
+}
+
 
 typedef struct
 {
@@ -1850,9 +1906,11 @@ LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	TCHAR str[64];
 	TCHAR *ptr;
 	DWORD i;
+	RECT r;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		EnableDarkModeForModeListDialog(hWnd);
 		modenum = 0;
 		modemax = 128;
 		modes = (DEVMODE*)malloc(128 * sizeof(DEVMODE));
@@ -1892,6 +1950,51 @@ LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_CLOSE:
 		EndDialog(hWnd, 0);
 		return TRUE;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkModeForModeListDialog(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -1913,7 +2016,7 @@ LRESULT CALLBACK ModeListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		}
 		return TRUE;
 	default:
-		return DefWindowProc(hWnd, Msg, wParam, lParam);
+		return FALSE;
 	}
 	return 0;
 }
@@ -4592,6 +4695,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		uxtheme = LoadLibrary(_T("uxtheme.dll"));
 		if (uxtheme)
 		{
+			_SetPreferredAppMode = (int(WINAPI*)(int))GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
+			_FlushMenuThemes = (void(WINAPI*)())GetProcAddress(uxtheme, MAKEINTRESOURCEA(136));
 			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
 			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
 			_GetThemeColor = (HRESULT(WINAPI*)(HTHEME, int, int, int, COLORREF*)) GetProcAddress(uxtheme, "GetThemeColor");
@@ -5415,7 +5520,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		if(token) CloseHandle(token);
 		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
 		SetForegroundWindow(hWnd);*/
-		EnableDarkMode(hWnd);
+		EnableDarkModeForMainDialog(hWnd);
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
@@ -5425,7 +5530,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		{
 			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
 			{
-				EnableDarkMode(hWnd);
+				EnableDarkModeForMainDialog(hWnd);
 				return TRUE;
 			}
 		}
