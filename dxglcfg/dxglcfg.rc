@@ -213,11 +213,12 @@ STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_VISIBLE | WS_CHILDWINDOW
 FONT 8, "Ms Shell Dlg"
 {
     LTEXT           "Test graphics functionality in DXGL or DirectDraw.  Press ESC to quit any test.", IDC_STATIC, 6, 4, 327, 8, SS_LEFT
-    GROUPBOX        "Select test", IDC_STATIC, 6, 17, 213, 104
+    GROUPBOX        "Select test", IDC_GRPSELECT, 6, 17, 213, 104
     LISTBOX         IDC_TESTLIST, 12, 30, 200, 85, WS_TABSTOP | WS_VSCROLL | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY
-    GROUPBOX        "Resolution", IDC_STATIC, 226, 17, 108, 104
+    GROUPBOX        "Resolution", IDC_GRPRESOLUTION, 226, 17, 108, 104
     LISTBOX         IDC_VIDMODES, 232, 30, 96, 85, WS_TABSTOP | WS_VSCROLL | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY
-    GROUPBOX        "Display mode", IDC_STATIC, 6, 125, 57, 38
+    CONTROL         "Display mode", IDC_GRPDISPLAYMODE, BUTTON, BS_GROUPBOX, 6, 125, 57, 38
+    //GROUPBOX        "Display mode", IDC_GRPDISPLAYMODE, 6, 125, 57, 38
     RADIOBUTTON     "Windowed", IDC_WINDOWED, 9, 137, 50, 8, WS_GROUP
     RADIOBUTTON     "Fullscreen", IDC_FULLSCREEN, 9, 148, 48, 8
     AUTOCHECKBOX    "Resizable", IDC_RESIZABLE, 76, 126, 47, 8, 0, WS_EX_LEFT

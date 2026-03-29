@@ -113,7 +113,7 @@ UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
 
 
 
-static UINT windowdpi = 96;
+UINT windowdpi = 96;
 static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
 static UINT GetWindowDPI(HWND hwnd)
 {
@@ -138,18 +138,18 @@ HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pv
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-static const COLORREF darkbackground = 0x202020;
-static const COLORREF darktabbackground = 0x262626;
-static const COLORREF darktabhot = 0x313131;
-static const COLORREF darktabborder = 0x525252;
-static const COLORREF darkhighlight = 0x363636;
-static const COLORREF darkmodetext = 0xFFFFFF;
+const COLORREF darkbackground = 0x202020;
+const COLORREF darktabbackground = 0x262626;
+const COLORREF darktabhot = 0x313131;
+const COLORREF darktabborder = 0x525252;
+const COLORREF darkhighlight = 0x363636;
+const COLORREF darkmodetext = 0xFFFFFF;
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrDarkTabBackground = NULL;
 HBRUSH hbrDarkTabHot = NULL;
 HPEN hpenDarkTabBorder = NULL;
 HBRUSH hbrDarkHighlight = NULL;
-static BOOL usedarkmode = FALSE;
+BOOL usedarkmode = FALSE;
 BOOL tabstripthemed = FALSE;
 HTHEME hThemeTabs = NULL;
 HTHEME hThemeChecks = NULL;
@@ -159,6 +159,30 @@ void MakeButtonDark(HWND hWnd)
 	if (usedarkmode) _SetWindowTheme(hWnd, L"DarkMode_Explorer", NULL);
 	else _SetWindowTheme(hWnd, L" ", NULL);
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+
+void MakeGroupBoxDark(HWND hWnd)
+{
+	COLORREF color;
+	HRESULT error;
+	LONG_PTR style;
+	if (usedarkmode)
+	{
+		if (!hThemeChecks) hThemeChecks = _OpenThemeData(hWnd, L"DarkMode_DarkTheme::Button");
+		if (hThemeChecks)
+		{
+			error = _GetThemeColor(hThemeChecks, BP_CHECKBOX, CBS_CHECKEDNORMAL, TMT_TEXTCOLOR, &color);
+			if (FAILED(error) || color == RGB(0, 0, 0))	_SetWindowTheme(hWnd, L"", L"");
+			else _SetWindowTheme(hWnd, L"DarkMode_DarkTheme", NULL);
+		}
+		else _SetWindowTheme(hWnd, L"", L"");
+		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+	}
+	else
+	{
+		_SetWindowTheme(hWnd, L" ", NULL);
+		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+	}
 }
 
 void MakeCheckboxDark(HWND hWnd)
@@ -344,7 +368,6 @@ void EnableDarkMode(HWND hDialog)
 	_SetWindowTheme(hTabs[4], L"Explorer", NULL);
 	MakeEditDark(GetDlgItem(hTabs[4], IDC_DEBUGLIST));
 	MakeEditDark(GetDlgItem(hTabs[4], IDC_GLVERSION));
-	InvalidateRect(hDialog, NULL, TRUE);
 	_SetWindowTheme(hTabs[5], L"Explorer", NULL);
 	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN));
 	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT));
@@ -353,6 +376,27 @@ void EnableDarkMode(HWND hDialog)
 	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNEDIT));
 	_SetWindowTheme(hTabs[6], L"Explorer", NULL);
 	MakeEditDark(GetDlgItem(hTabs[6], IDC_TRACING));
+	_SetWindowTheme(hTabs[7], L"Explorer", NULL);
+	MakeGroupBoxDark(GetDlgItem(hTabs[7], IDC_GRPSELECT));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_TESTLIST));
+	MakeGroupBoxDark(GetDlgItem(hTabs[7], IDC_GRPRESOLUTION));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_VIDMODES));
+	MakeGroupBoxDark(GetDlgItem(hTabs[7], IDC_GRPDISPLAYMODE));
+	MakeCheckboxDark(GetDlgItem(hTabs[7], IDC_WINDOWED));
+	MakeCheckboxDark(GetDlgItem(hTabs[7], IDC_FULLSCREEN));
+	MakeCheckboxDark(GetDlgItem(hTabs[7], IDC_RESIZABLE));
+	MakeCheckboxDark(GetDlgItem(hTabs[7], IDC_TESTVSYNC));
+	MakeCheckboxDark(GetDlgItem(hTabs[7], IDC_SOFTD3D));
+	MakeEditDark(GetDlgItem(hTabs[7], IDC_APIVER));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_SPINAPI));
+	MakeEditDark(GetDlgItem(hTabs[7], IDC_BUFFERS));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_SPINBACK));
+	MakeEditDark(GetDlgItem(hTabs[7], IDC_FRAMERATE));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_SPINFRAME));
+	MakeEditDark(GetDlgItem(hTabs[7], IDC_FILTER));
+	MakeEditDark(GetDlgItem(hTabs[7], IDC_FSAA));
+	MakeButtonDark(GetDlgItem(hTabs[7], IDC_TEST));
+	InvalidateRect(hDialog, NULL, TRUE);
 }
 
 typedef struct

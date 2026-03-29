@@ -25,6 +25,24 @@ bool gradientavailable;
 BOOL (WINAPI *_GradientFill)(HDC hdc, TRIVERTEX* pVertices, ULONG nVertices, void* pMesh, ULONG nMeshElements, DWORD dwMode) = NULL;
 BOOL(WINAPI* IsDXGLDDraw)() = NULL; 
 extern BOOL modelistdirty;
+extern BOOL usedarkmode;
+const COLORREF darkbackground = 0x202020;
+const COLORREF darktabbackground = 0x262626;
+const COLORREF darktabhot = 0x313131;
+const COLORREF darktabborder = 0x525252;
+const COLORREF darkhighlight = 0x363636;
+const COLORREF darkmodetext = 0xFFFFFF;
+extern HBRUSH hbrDarkBackground;
+extern HBRUSH hbrDarkTabBackground;
+extern HBRUSH hbrDarkTabHot;
+extern HPEN hpenDarkTabBorder;
+extern HBRUSH hbrDarkHighlight;
+extern BOOL usedarkmode;
+extern UINT windowdpi;
+static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
+
+
+
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -271,6 +289,9 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	HRESULT error;
 	HMODULE hddraw;
 	int width,height,bpp,refresh;
+	TCHAR buttontext[256];
+	LPNMCUSTOMDRAW customdraw;
+	RECT r;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -291,6 +312,42 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			if (GetProcAddress(hddraw, "IsDXGLDDraw")) DestroyWindow(GetDlgItem(hWnd, IDC_SOFTD3D));
 		}
 		break;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
@@ -472,6 +529,32 @@ Do you want to apply them before running this test?"),
 	case WM_NOTIFY:
 		switch(((LPNMHDR)lParam)->code)
 		{
+		case NM_CUSTOMDRAW:
+			customdraw = (LPNMCUSTOMDRAW)lParam;
+			if ((customdraw->hdr.idFrom == IDC_WINDOWED) || (customdraw->hdr.idFrom == IDC_FULLSCREEN) ||
+				(customdraw->hdr.idFrom == IDC_GRPDISPLAYMODE) || (customdraw->hdr.idFrom == IDC_RESIZABLE) ||
+				(customdraw->hdr.idFrom == IDC_TESTVSYNC) || (customdraw->hdr.idFrom == IDC_SOFTD3D))
+			{
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+			break;
 		case UDN_DELTAPOS:
 			switch(((LPNMHDR)lParam)->idFrom)
 			{
