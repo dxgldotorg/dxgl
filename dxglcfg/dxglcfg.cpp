@@ -133,6 +133,8 @@ static UINT GetWindowDPI(HWND hwnd)
 }
 
 // Dark Mode APIs
+int(WINAPI *_SetPreferredAppMode)(int mode) = NULL;
+void(WINAPI *_FlushMenuThemes)() = NULL;
 HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
@@ -262,7 +264,7 @@ void MakeTabsDark(HWND hWnd)
 }
 
 
-void EnableDarkMode(HWND hDialog)
+void EnableDarkModeForMainDialog(HWND hDialog)
 {
 	HKEY hKeyPersonalize;
 	DWORD lightapps;
@@ -302,6 +304,12 @@ void EnableDarkMode(HWND hDialog)
 		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
 		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
 	}
+	if (_SetPreferredAppMode)
+	{
+		if (usedarkmode) _SetPreferredAppMode(1);
+		else _SetPreferredAppMode(0);
+	}
+	if (_FlushMenuThemes) _FlushMenuThemes();
 	_SetWindowTheme(hDialog, L"Explorer", NULL);
 	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -4592,6 +4600,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		uxtheme = LoadLibrary(_T("uxtheme.dll"));
 		if (uxtheme)
 		{
+			_SetPreferredAppMode = (int(WINAPI*)(int))GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
+			_FlushMenuThemes = (void(WINAPI*)())GetProcAddress(uxtheme, MAKEINTRESOURCEA(136));
 			_OpenThemeData = (HTHEME(WINAPI*)(HWND,LPCWSTR))GetProcAddress(uxtheme, "OpenThemeData");
 			_CloseThemeData = (HRESULT(WINAPI*)(HTHEME))GetProcAddress(uxtheme, "CloseThemeData");
 			_GetThemeColor = (HRESULT(WINAPI*)(HTHEME, int, int, int, COLORREF*)) GetProcAddress(uxtheme, "GetThemeColor");
@@ -5415,7 +5425,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		if(token) CloseHandle(token);
 		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
 		SetForegroundWindow(hWnd);*/
-		EnableDarkMode(hWnd);
+		EnableDarkModeForMainDialog(hWnd);
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
@@ -5425,7 +5435,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		{
 			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
 			{
-				EnableDarkMode(hWnd);
+				EnableDarkModeForMainDialog(hWnd);
 				return TRUE;
 			}
 		}
