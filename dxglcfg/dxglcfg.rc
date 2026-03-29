@@ -308,13 +308,13 @@ CAPTION "Save .ini File"
 FONT 8, "Ms Shell Dlg"
 {
 	AUTOCHECKBOX    "Don't write application profile to registry", IDC_NOWRITEREGISTRY, 11, 16, 138, 8, 0, WS_EX_LEFT
-		AUTOCHECKBOX    "Override global registry settings", IDC_OVERRIDEREGISTRY, 11, 26, 113, 8, 0, WS_EX_LEFT
-		AUTOCHECKBOX    "Prevent DXGL Config from overwriting ddraw.dll", IDC_NOOVERWRITE, 11, 36, 165, 8, 0, WS_EX_LEFT
-		GROUPBOX        ".ini file options", 0, 5, 5, 172, 69, 0, WS_EX_LEFT
-		AUTOCHECKBOX    "Save SHA-256 signature of existing ddraw.dll", IDC_SAVESHA256, 11, 46, 157, 8, 0, WS_EX_LEFT
-		AUTOCHECKBOX    "Prevent DXGL Config from deleting ddraw.dll", IDC_NOUNINSTALL, 11, 56, 156, 8, 0, WS_EX_LEFT
-		PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
-		DEFPUSHBUTTON   "&Save", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
+	AUTOCHECKBOX    "Override global registry settings", IDC_OVERRIDEREGISTRY, 11, 26, 113, 8, 0, WS_EX_LEFT
+	AUTOCHECKBOX    "Prevent DXGL Config from overwriting ddraw.dll", IDC_NOOVERWRITE, 11, 36, 165, 8, 0, WS_EX_LEFT
+	GROUPBOX        ".ini file options", IDC_GRPINIOPTIONS, 5, 5, 172, 69, 0, WS_EX_LEFT
+	AUTOCHECKBOX    "Save SHA-256 signature of existing ddraw.dll", IDC_SAVESHA256, 11, 46, 157, 8, 0, WS_EX_LEFT
+	AUTOCHECKBOX    "Prevent DXGL Config from deleting ddraw.dll", IDC_NOUNINSTALL, 11, 56, 156, 8, 0, WS_EX_LEFT
+	PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
+	DEFPUSHBUTTON   "&Save", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
 }
 
 
