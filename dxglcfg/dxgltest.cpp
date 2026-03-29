@@ -165,6 +165,7 @@ INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	HMODULE mod_ddraw;
 	int i;
 	tstring ver;
+	RECT r;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -190,6 +191,42 @@ INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				SetWindowText(GetDlgItem(hWnd,dllboxes[i]),_T("N/A"));
 		}
 		break;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darktabbackground);
+			return (LRESULT)hbrDarkTabBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkTabBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darktabbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkTabBackground);
+			return (LPARAM)hbrDarkTabBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
@@ -313,14 +350,14 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		}
 		break;
 	case WM_CTLCOLORDLG:
-		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
 	case WM_CTLCOLORSTATIC:
 		if (usedarkmode)
 		{
 			SetTextColor((HDC)wParam, darkmodetext);
 			SetBkColor((HDC)wParam, darktabbackground);
-			return (LRESULT)hbrDarkBackground;
+			return (LRESULT)hbrDarkTabBackground;
 		}
 		else return FALSE;
 	case WM_CTLCOLORBTN:
@@ -328,7 +365,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		{
 			SetTextColor((HDC)wParam, darkmodetext);
 			SetBkMode((HDC)wParam, TRANSPARENT);
-			return (LRESULT)hbrDarkBackground;
+			return (LRESULT)hbrDarkTabBackground;
 		}
 		else return FALSE;
 	case WM_CTLCOLOREDIT:
@@ -337,7 +374,7 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		{
 			SetBkColor((HDC)wParam, darktabbackground);
 			SetTextColor((HDC)wParam, darkmodetext);
-			return (LPARAM)hbrDarkBackground;
+			return (LPARAM)hbrDarkTabBackground;
 		}
 		else return FALSE;
 	case WM_ERASEBKGND:
