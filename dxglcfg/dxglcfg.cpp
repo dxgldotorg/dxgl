@@ -147,6 +147,7 @@ const COLORREF darkmodetext = 0xFFFFFF;
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrDarkTabBackground = NULL;
 HBRUSH hbrDarkTabHot = NULL;
+HBRUSH hbrDarkTabBorder = NULL;
 HPEN hpenDarkTabBorder = NULL;
 HBRUSH hbrDarkHighlight = NULL;
 BOOL usedarkmode = FALSE;
@@ -298,6 +299,7 @@ void EnableDarkMode(HWND hDialog)
 		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
 		hbrDarkTabHot = CreateSolidBrush(darktabhot);
 		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
 		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
 	}
 	_SetWindowTheme(hDialog, L"Explorer", NULL);
@@ -3516,6 +3518,13 @@ LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			hdc = BeginPaint(hWnd, &ps);
 			GetClientRect(hWnd, &r);
 			FillRect(hdc, &r, hbrDarkBackground);
+			TabCtrl_AdjustRect(hWnd, FALSE, &r);
+			r.left -= dpiscale(4);
+			r.right += dpiscale(3);
+			r.top -= dpiscale(2);
+			r.bottom += dpiscale(3);
+			FillRect(hdc, &r, hbrDarkTabBackground);
+			FrameRect(hdc, &r, hbrDarkTabBorder);
 			tabcount = TabCtrl_GetItemCount(hWnd);
 			activetab = TabCtrl_GetCurSel(hWnd);
 			SetTextColor(hdc, darkmodetext);
@@ -3568,7 +3577,18 @@ LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			r.top -= dpiscale(2);
 			r.left -= dpiscale(2);
 			r.right += dpiscale(2);
-			if (tabstripthemed) _DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, TIS_SELECTED, &r, NULL);
+			r.bottom += dpiscale(1);
+			if (tabstripthemed)
+			{
+				_DrawThemeBackground(hThemeTabs, hdc, TABP_TABITEM, TIS_SELECTED, &r, NULL);
+				if (!activetab)
+				{
+					oldpen = (HPEN)SelectObject(hdc, hpenDarkTabBorder);
+					MoveToEx(hdc, r.left, r.bottom - 1, NULL);
+					LineTo(hdc, r.left, r.top);
+					SelectObject(hdc, oldpen);
+				}
+			}
 			else FillRect(hdc, &r, hbrDarkTabBackground);
 			if (!tabstripthemed)
 			{
@@ -3585,6 +3605,7 @@ LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			tabitem.pszText = tabtext;
 			tabitem.cchTextMax = 256;
 			TabCtrl_GetItem(hWnd, activetab, &tabitem);
+			SetBkColor(hdc, darktabbackground);
 			TextOut(hdc, r.left + dpiscale(6), r.top + dpiscale(3), tabtext, _tcslen(tabtext));
 			SelectObject(hdc, oldfont);
 			EndPaint(hWnd, &ps);
