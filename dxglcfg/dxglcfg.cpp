@@ -466,6 +466,7 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hDialog, IDC_MODELIST));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
+	InvalidateRect(hDialog, NULL, TRUE);
 }
 
 void EnableDarkModeForWriteINIDialog(HWND hDialog)
@@ -518,6 +519,62 @@ void EnableDarkModeForWriteINIDialog(HWND hDialog)
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOUNINSTALL));
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
+	InvalidateRect(hDialog, NULL, TRUE);
+}
+
+void EnableDarkModeForAffinityDialog(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	int i;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	for (i = 0; i < 64; i++)
+		MakeCheckboxDark(GetDlgItem(hDialog, IDC_CPU0 + i));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SINGLECORE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_ALLCORES));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SINGLEECORE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_ALLPCORES));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_ALLECORES));
+	MakeButtonDark(GetDlgItem(hDialog, IDOK));
+	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
+	InvalidateRect(hDialog, NULL, TRUE);
 }
 
 typedef struct
@@ -2873,7 +2930,7 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
@@ -3869,12 +3926,17 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	int checkstate;
 	ULONGLONG coremask;
 	ULONGLONG coremaskcmp;
+	LPNMCUSTOMDRAW customdraw;
+	TCHAR buttontext[256];
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
+		EnableDarkModeForAffinityDialog(hWnd);
 		GetWindowRect(GetDlgItem(hWnd, IDC_CPU0), &r1);
 		GetWindowRect(GetDlgItem(hWnd, IDC_CPU8), &r2);
 		checkspacing = r2.top - r1.top;
+		if (corecount < 1) corecount = 1;
+		if (corecount > 64) corecount = 64;
 		if (corecount < 64)
 		{
 			for (i = 63; i >= corecount; i--)
@@ -3884,8 +3946,6 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 		DestroyWindow(GetDlgItem(hWnd, IDC_ALLPCORES));
 		DestroyWindow(GetDlgItem(hWnd, IDC_ALLECORES));
 		DestroyWindow(GetDlgItem(hWnd, IDC_SINGLEECORE));
-		if (corecount < 1) corecount = 1;
-		if (corecount > 64) corecount = 64;
 		resizecount = 8 - (((corecount-1) / 8) + 1);
 		if (resizecount)
 		{
@@ -3919,6 +3979,79 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			}
 		}
 		return TRUE;
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hWnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			if ((customdraw->hdr.idFrom >= IDC_CPU0) && (customdraw->hdr.idFrom <= IDC_CPU63))
+			{
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r1 = customdraw->rc;
+					r1.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkModeForAffinityDialog(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r1);
+			FillRect((HDC)wParam, &r1, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
