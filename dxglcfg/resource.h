@@ -165,6 +165,9 @@
 #define IDC_FSAALABEL                           2616
 #define IDC_FSAA                                2617
 #define IDC_TEST                                2618
+#define IDC_GRPSELECT                           2619
+#define IDC_GRPRESOLUTION                       2620
+#define IDC_GRPDISPLAYMODE                      2621
 
 // Controls - About Tab
 #define IDC_ABOUTTEXT                           2701
