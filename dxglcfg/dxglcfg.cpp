@@ -468,6 +468,57 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 }
 
+void EnableDarkModeForWriteINIDialog(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPINIOPTIONS));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOWRITEREGISTRY));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_OVERRIDEREGISTRY));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOOVERWRITE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_SAVESHA256));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOUNINSTALL));
+	MakeButtonDark(GetDlgItem(hDialog, IDOK));
+	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
+}
 
 typedef struct
 {
@@ -2794,18 +2845,97 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 
 LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	RECT r;
 	BOOL unused;
 	DWORD error;
 	TCHAR errormsg[2048+MAX_PATH];
+	TCHAR buttontext[256];
+	LPNMCUSTOMDRAW customdraw;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
+		EnableDarkModeForWriteINIDialog(hWnd);
 		SendDlgItemMessage(hWnd, IDC_NOWRITEREGISTRY, BM_SETCHECK, BST_CHECKED, 0);
 		SendDlgItemMessage(hWnd, IDC_OVERRIDEREGISTRY, BM_SETCHECK, BST_UNCHECKED, 0);
 		SendDlgItemMessage(hWnd, IDC_NOOVERWRITE, BM_SETCHECK, BST_UNCHECKED, 0);
 		SendDlgItemMessage(hWnd, IDC_SAVESHA256, BM_SETCHECK, BST_CHECKED, 0);
 		SendDlgItemMessage(hWnd, IDC_NOUNINSTALL, BM_SETCHECK, BST_UNCHECKED, 0);
 		return TRUE;
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hWnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			if ((customdraw->hdr.idFrom == IDC_NOWRITEREGISTRY) || (customdraw->hdr.idFrom == IDC_OVERRIDEREGISTRY) ||
+				(customdraw->hdr.idFrom == IDC_NOOVERWRITE) || (customdraw->hdr.idFrom == IDC_SAVESHA256) ||
+				(customdraw->hdr.idFrom == IDC_NOUNINSTALL))
+			{
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkModeForWriteINIDialog(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{

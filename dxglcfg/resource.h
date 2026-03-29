@@ -354,6 +354,7 @@
 #define IDC_NOOVERWRITE                         3303
 #define IDC_SAVESHA256                          3304
 #define IDC_NOUNINSTALL                         3305
+#define IDC_GRPINIOPTIONS                       3306
 
 // Controls - Tracing tab
 #define IDC_TRACING                             3401
