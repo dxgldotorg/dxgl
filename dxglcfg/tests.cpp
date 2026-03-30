@@ -74,6 +74,23 @@ static HANDLE testthread;
 static HMENU hmenu = NULL;
 static LPARAM windowpos, windowsize;
 
+extern BOOL usedarkmode;
+const COLORREF darkbackground = 0x202020;
+const COLORREF darktabbackground = 0x262626;
+const COLORREF darktabhot = 0x313131;
+const COLORREF darktabborder = 0x525252;
+const COLORREF darkhighlight = 0x363636;
+const COLORREF darkmodetext = 0xFFFFFF;
+extern HBRUSH hbrDarkBackground;
+extern HBRUSH hbrDarkTabBackground;
+extern HBRUSH hbrDarkTabHot;
+extern HPEN hpenDarkTabBorder;
+extern HBRUSH hbrDarkHighlight;
+extern BOOL usedarkmode;
+extern UINT windowdpi;
+static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
+
+
 #define FVF_COLORVERTEX (D3DFVF_VERTEX | D3DFVF_DIFFUSE | D3DFVF_SPECULAR)
 struct COLORVERTEX
 {
@@ -3384,12 +3401,16 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	int number;
 	float f;
 	TCHAR tmpstring[MAX_PATH + 1];
+	RECT r;
+	LPNMCUSTOMDRAW customdraw;
+	TCHAR buttontext[256];
+	LONG_PTR style;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
-		RECT r;
 		DDSURFACEDESC2 ddsd;
 		DDPIXELFORMAT ddpfz;
+		EnableDarkModeForTextureShaderTest(hWnd);
 		testnum = 14;
 		ddinterface = new MultiDirectDraw(7, &error, NULL);
 		hDisplay = GetDlgItem(hWnd, IDC_DISPLAY);
@@ -3474,6 +3495,80 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 		::height = ddsd.dwHeight;
 		StartTimer(hWnd, WM_APP, 60);
 		break;
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hWnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			style = GetWindowLongPtr(customdraw->hdr.hwndFrom, GWL_STYLE) & BS_TYPEMASK;
+			if ((style == BS_AUTOCHECKBOX) || (style == BS_GROUPBOX))
+			{
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkModeForTextureShaderTest(hWnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hWnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
