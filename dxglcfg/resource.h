@@ -237,6 +237,11 @@
 #define IDC_FILLSTIPPLEFILE                     2935
 #define IDC_FILLSTIPPLEBROWSE                   2936
 #define IDC_FILLSTIPPLEPREVIEW                  2937
+#define IDC_GRPTEXSTAGE                         2938
+#define IDC_GRPCOLORS                           2939
+#define IDC_GRPALPHA                            2940
+#define IDC_GRPFOG                              2941
+#define IDC_GRPSTIPPLE                          2942
 
 // Controls - Vertex Test Dialog
 #define IDC_AMBIENT                             3001

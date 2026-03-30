@@ -567,8 +567,10 @@ Do you want to apply them before running this test?"),
 		switch(((LPNMHDR)lParam)->code)
 		{
 		case NM_CUSTOMDRAW:
+			if (!usedarkmode) break;
 			customdraw = (LPNMCUSTOMDRAW)lParam;
-			if ((customdraw->hdr.idFrom == IDC_WINDOWED) || (customdraw->hdr.idFrom == IDC_FULLSCREEN) ||
+			if ((customdraw->hdr.idFrom == IDC_GRPSELECT) || (customdraw->hdr.idFrom == IDC_GRPRESOLUTION) ||
+				(customdraw->hdr.idFrom == IDC_WINDOWED) || (customdraw->hdr.idFrom == IDC_FULLSCREEN) ||
 				(customdraw->hdr.idFrom == IDC_GRPDISPLAYMODE) || (customdraw->hdr.idFrom == IDC_RESIZABLE) ||
 				(customdraw->hdr.idFrom == IDC_TESTVSYNC) || (customdraw->hdr.idFrom == IDC_SOFTD3D))
 			{

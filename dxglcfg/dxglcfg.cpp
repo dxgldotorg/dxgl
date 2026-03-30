@@ -577,6 +577,111 @@ void EnableDarkModeForAffinityDialog(HWND hDialog)
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
+void EnableDarkModeForTextureShaderTest(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	int i;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXSTAGE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_TEXSTAGE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINSTAGE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_TEXCOLORKEY));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SETTEXCOLORKEY));
+	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTURE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTUREFILE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_TEXTUREBROWSE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_CARG1));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_CARG1INV));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_CARG1A));
+	MakeEditDark(GetDlgItem(hDialog, IDC_CARG2));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_CARG2INV));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_CARG2A));
+	MakeEditDark(GetDlgItem(hDialog, IDC_COLOROP));
+	MakeEditDark(GetDlgItem(hDialog, IDC_AARG1));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_AARG1INV));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_AARG1A));
+	MakeEditDark(GetDlgItem(hDialog, IDC_AARG2));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_AARG2INV));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_AARG2A));
+	MakeEditDark(GetDlgItem(hDialog, IDC_ALPHAOP));
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPCOLORS));
+	MakeEditDark(GetDlgItem(hDialog, IDC_DIFFUSE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_DIFFUSESELECT));
+	MakeEditDark(GetDlgItem(hDialog, IDC_SPECULAR));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SPECULARSELECT));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FACTOR));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_FACTORSELECT));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FOGCOLOR));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_FOGCOLORSELECT));
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPALPHA));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_ALPHABLEND));
+	MakeEditDark(GetDlgItem(hDialog, IDC_SRCBLEND));
+	MakeEditDark(GetDlgItem(hDialog, IDC_DESTBLEND));
+	MakeEditDark(GetDlgItem(hDialog, IDC_ALPHAREF));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINALPHAREF));
+	MakeEditDark(GetDlgItem(hDialog, IDC_ALPHAFUNC));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_ALPHASTIPPLE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_ALPHATEST));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_COLORKEY));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_COLORKEYBLEND));
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPFOG));
+	MakeEditDark(GetDlgItem(hDialog, IDC_VERTEXFOGMODE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_PIXELFOGMODE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FOGSTART));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FOGEND));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FOGDENSITY));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_RANGEBASEDFOG));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_FOGENABLE));
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPSTIPPLE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_LINESTIPPLEPATTERN));
+	MakeEditDark(GetDlgItem(hDialog, IDC_LINESTIPPLEREPEAT));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINLINEREPEAT));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FILLSTIPPLETYPE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_FILLSTIPPLEFILE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_FILLSTIPPLEBROWSE));
+	MakeEditDark(GetDlgItem(hDialog, IDC_BGCOLOR));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BGCOLORSELECT));
+	InvalidateRect(hDialog, NULL, TRUE);
+}
+
 typedef struct
 {
 	LPTSTR regkey;
