@@ -92,6 +92,7 @@ extern HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags);
 extern HWND hDialog;
 void SaveChanges(HWND hWnd);
 void EnableDarkModeForTextureShaderTest(HWND hDialog);
+void EnableDarkModeForVertexShaderTest(HWND hDialog);
 
 
 #endif //_COMMON_H
