@@ -795,6 +795,116 @@ void EnableDarkModeForVertexShaderTest(HWND hDialog)
 	InvalidateRect(hDialog, NULL, TRUE);
 }
 
+void EnableDarkModeForWindowStyleTest(HWND hDialog)
+{
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	LONG error;
+	LONG_PTR wndstyle;
+	int i;
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+
+	// Check for dark mode Registry preference
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKeyPersonalize);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) usedarkmode = FALSE;
+			else usedarkmode = TRUE;
+		}
+		else usedarkmode = FALSE;
+		RegCloseKey(hKeyPersonalize);
+	}
+	else usedarkmode = FALSE;
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (!hbrDarkBackground)
+	{
+		hbrDarkBackground = CreateSolidBrush(darkbackground);
+		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
+		hbrDarkTabHot = CreateSolidBrush(darktabhot);
+		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
+		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
+		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
+	}
+	_SetWindowTheme(hDialog, L"Explorer", NULL);
+	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPSTYLE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMAXIMIZEBOX));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMINIMIZEBOX));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSTHICKFRAME));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSSYSMENU));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSHSCROLL));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSVSCROLL));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSDLGFRAME));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSBORDER));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSCAPTION));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMAXIMIZE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSCLIPCHILDREN));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSCLIPSIBLINGS));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSDISABLED));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSVISIBLE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMINIMIZE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSCHILD));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSPOPUP));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSOVERLAPPEDWINDOW));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSPOPUPWINDOW));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_MENUBAR));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNMINIMIZE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNMAXIMIZE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNRESTORE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNSHOW));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNHIDE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNDISABLE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_BTNENABLE));
+	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPEXSTYLE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXDLGMODALFRAME));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXNOPARENTNOTIFY));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXTOPMOST));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXACCEPTFILES));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXTRANSPARENT));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXMDICHILD));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXTOOLWINDOW));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXWINDOWEDGE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXCLIENTEDGE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXCONTEXTHELP));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXRIGHT));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXRTLREADING));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXLEFTSCROLLBAR));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXCONTROLPARENT));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXSTATICEDGE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXAPPWINDOW));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXLAYERED));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXNOINHERITLAYOUT));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXNOREDIRECTIONBITMAP));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXLAYOUTRTL));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXCOMPOSITED));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXNOACTIVATE));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXOVERLAPPEDWINDOW));
+	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSEXPALETTEWINDOW));
+	MakeEditDark(GetDlgItem(hDialog, IDC_WINDOWSTATUS));
+	MakeEditDark(GetDlgItem(hDialog, IDC_WINDOWRESIZEX));
+	MakeEditDark(GetDlgItem(hDialog, IDC_WINDOWRESIZEY));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_RESIZEWINDOW));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_RESIZECLIENT));
+	MakeEditDark(GetDlgItem(hDialog, IDC_WINDOWMOVEX));
+	MakeEditDark(GetDlgItem(hDialog, IDC_WINDOWMOVEY));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_MOVEWINDOW));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_MOVECLIENT));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_MOVESIZE));
+	MakeButtonDark(GetDlgItem(hDialog, IDC_MOVESIZECLIENT));
+	InvalidateRect(hDialog, NULL, TRUE);
+}
+
 typedef struct
 {
 	LPTSTR regkey;

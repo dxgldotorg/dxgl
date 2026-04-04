@@ -353,6 +353,8 @@
 #define IDC_MOVECLIENT                          3159
 #define IDC_MOVESIZE                            3160
 #define IDC_MOVESIZECLIENT                      3161
+#define IDC_GRPSTYLE                            3162
+#define IDC_GRPEXSTYLE                          3163
 
 // Controls - Mode list dialog
 #define IDC_MODELIST                            3201
