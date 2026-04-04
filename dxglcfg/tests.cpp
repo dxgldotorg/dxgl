@@ -4731,17 +4731,95 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 {
 	int x, y, w, h;
 	RECT r;
+	LPNMCUSTOMDRAW customdraw;
+	TCHAR buttontext[256];
+	LONG_PTR style;
 	TCHAR buffer[128];
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 		hDlg = hwnd;
+		EnableDarkModeForWindowStyleTest(hwnd);
 		wndstyle = GetWindowLong(hWnd, GWL_STYLE);
 		exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);
 		SetWindowStyleCheckboxes(wndstyle, exstyle, hwnd);
 		SetWindowStyleSizes(hwnd);
 		SetEvent(*(HANDLE*)lParam);
 		return TRUE;
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hwnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			style = GetWindowLongPtr(customdraw->hdr.hwndFrom, GWL_STYLE) & BS_TYPEMASK;
+			if ((style == BS_AUTOCHECKBOX) || (style == BS_GROUPBOX))
+			{
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					SetWindowLongPtr(hwnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hwnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				EnableDarkModeForWindowStyleTest(hwnd);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	case WM_CTLCOLORDLG:
+		if (usedarkmode && hbrDarkBackground) return (LRESULT)hbrDarkBackground;
+		else return FALSE;
+	case WM_CTLCOLORSTATIC:
+		if (usedarkmode)
+		{
+			SetTextColor((HDC)wParam, darkmodetext);
+			SetBkColor((HDC)wParam, darkbackground);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLORBTN:
+		if (usedarkmode)
+		{
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (LRESULT)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if (usedarkmode)
+		{
+			SetBkColor((HDC)wParam, darkbackground);
+			SetTextColor((HDC)wParam, darkmodetext);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
+	case WM_ERASEBKGND:
+		if (usedarkmode)
+		{
+			GetClientRect(hwnd, &r);
+			FillRect((HDC)wParam, &r, hbrDarkBackground);
+			return (LPARAM)hbrDarkBackground;
+		}
+		else return FALSE;
 	case WM_APP:
 		wndstyle = GetWindowLong(hWnd, GWL_STYLE);
 		exstyle = GetWindowLong(hWnd, GWL_EXSTYLE);

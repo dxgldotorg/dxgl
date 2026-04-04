@@ -93,6 +93,7 @@ extern HWND hDialog;
 void SaveChanges(HWND hWnd);
 void EnableDarkModeForTextureShaderTest(HWND hDialog);
 void EnableDarkModeForVertexShaderTest(HWND hDialog);
+void EnableDarkModeForWindowStyleTest(HWND hDialog);
 
 
 #endif //_COMMON_H
