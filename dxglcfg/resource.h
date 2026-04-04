@@ -285,6 +285,10 @@
 #define IDC_LIGHTATTEN2                         3039
 #define IDC_LIGHTTHETA                          3040
 #define IDC_LIGHTPHI                            3041
+#define IDC_GRPTEXTURE                          3042
+#define IDC_GRPSETTINGS                         3043
+#define IDC_GRPVERTEXCOLOR                      3044
+#define IDC_GRPLIGHTS                           3045
 
 // Controls - Window style test dialog
 #define IDC_WSMAXIMIZEBOX                       3100
