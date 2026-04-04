@@ -27,7 +27,7 @@ The “Configuration Version” (“Configuration Version x64” for the x64 ver
 
 ## System Requirements
 
-* Windows 7 (with SP1) or newer (standard build)
+* Windows 10 or newer (standard build)
 * Windows XP (with SP3) or newer (legacy build)
   * Also compatible with most versions of Wine, by setting the ddraw DLL override to "native, builtin" which is done automatically at installation.
   * Not compatible with Windows 10 in S mode.
