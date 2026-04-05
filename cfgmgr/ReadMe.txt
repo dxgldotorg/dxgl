@@ -159,6 +159,15 @@ INI Group display
 Multiplier for the pixel height for display mode 8.
 Default is 1.0
 
+Member DarkMode
+INI Entry DarkMode
+INI Group display
+Adjusts window border to match dark mode, requires Windows 10 v1809 or above.
+Valid settings:
+0 - System default
+1 - Prefer dark mode
+2 - Prefer light mode
+
 Member scalingfilter
 INI Entry ScalingFilter
 INI Group scaling
