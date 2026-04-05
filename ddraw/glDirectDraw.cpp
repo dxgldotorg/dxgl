@@ -57,6 +57,19 @@ LONG (WINAPI *_QueryDisplayConfig)(UINT32 flags, UINT32 *numPathArrayElements,
 LONG (WINAPI *_SetDisplayConfig)(UINT32 numPathArrayElements, DISPLAYCONFIG_PATH_INFO *pathArray,
 	UINT32 numModeInfoArrayElements, DISPLAYCONFIG_MODE_INFO *modeInfoArray, UINT32 flags) = NULL;
 
+HMODULE uxtheme = NULL;
+HMODULE dwmapi = NULL;
+static int(WINAPI *_SetPreferredAppMode)(int mode) = NULL;
+static void(WINAPI *_FlushMenuThemes)() = NULL;
+static HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute) = NULL;
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+static BOOL usedarkmode = FALSE;
+static HMODULE hNtdll;
+static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
+static OSVERSIONINFOW osver;
+
 LONG SetVidMode(LPCTSTR devname, DEVMODE *mode, DWORD flags)
 {
 	DEVMODE currmode;
@@ -2009,6 +2022,35 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	This->renderer = renderers[devindex];
 	IDXGLRenderer_SetAttachedDevice(This->renderer, This);
 	memcpy(This->stored_devices, d3ddevices, 3 * sizeof(D3DDevice));
+	if (!dwmapi) dwmapi = LoadLibrary(_T("dwmapi.dll"));
+	if (dwmapi)
+	{
+		_DwmSetWindowAttribute = (HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD))GetProcAddress(dwmapi, "DwmSetWindowAttribute");
+		if (!(_DwmSetWindowAttribute))
+		{
+			FreeLibrary(dwmapi);
+			dwmapi = NULL;
+		}
+	}
+	uxtheme = LoadLibrary(_T("uxtheme.dll"));
+	if (uxtheme)
+	{
+		_SetPreferredAppMode = (int(WINAPI*)(int))GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
+		_FlushMenuThemes = (void(WINAPI*)())GetProcAddress(uxtheme, MAKEINTRESOURCEA(136));
+		if (!(_SetPreferredAppMode && _FlushMenuThemes))
+		{
+			FreeLibrary(uxtheme);
+			uxtheme = NULL;
+		}
+	}
+	if(!hNtdll) hNtdll = GetModuleHandle(_T("ntdll.dll"));
+	if (hNtdll && !_RtlGetVersion) _RtlGetVersion = (long(NTAPI*)(LPOSVERSIONINFOEXW))GetProcAddress(hNtdll, "RtlGetVersion");
+	if (_RtlGetVersion)
+	{
+		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+		_RtlGetVersion((LPOSVERSIONINFOEXW)&osver);
+	}
+	else ZeroMemory(&osver, sizeof(OSVERSIONINFOW));
 	This->initialized = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
@@ -2060,6 +2102,9 @@ BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd, DWORD dwFlags)
 {
 	HRESULT error;
+	HKEY hKeyPersonalize;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
 	TRACE_ENTER(3,14,This,13,hWnd,9,dwFlags);
 	if(!This) TRACE_RET(HRESULT,23,DDERR_INVALIDOBJECT);
 	if(hWnd && !IsWindow(hWnd)) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -2103,6 +2148,42 @@ HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd,
 	if (dwFlags & DDSCL_FULLSCREEN) This->fullscreen = true;
 	else This->fullscreen = false;
 	This->cooplevel = dwFlags;
+	if (osver.dwBuildNumber >= 17763)
+	{
+		if (dxglcfg.DarkMode == 1) usedarkmode = TRUE;
+		else if (dxglcfg.DarkMode == 2) usedarkmode = FALSE;
+		else
+		{
+			// Check for dark mode Registry preference
+			error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+				KEY_READ, &hKeyPersonalize);
+			if (error == ERROR_SUCCESS)
+			{
+				error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+				if (error == ERROR_SUCCESS)
+				{
+					if (lightapps) usedarkmode = FALSE;
+					else usedarkmode = TRUE;
+				}
+				else usedarkmode = FALSE;
+				RegCloseKey(hKeyPersonalize);
+			}
+			else usedarkmode = FALSE;
+		}
+	}
+	if (_DwmSetWindowAttribute)
+	{
+		if (osver.dwBuildNumber >= 18985)
+			_DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+		else if (osver.dwBuildNumber >= 17763)
+			_DwmSetWindowAttribute(hWnd, 19, &usedarkmode, sizeof(BOOL));
+	}
+	if (_SetPreferredAppMode)
+	{
+		if (usedarkmode) _SetPreferredAppMode(1);
+		else _SetPreferredAppMode(0);
+	}
+	if (_FlushMenuThemes) _FlushMenuThemes();
 	error = IDXGLRenderer_SetCooperativeLevel(This->renderer, hWnd, dwFlags);
 	if (SUCCEEDED(error)) This->hWnd = hWnd;
 	TRACE_EXIT(23, error);
