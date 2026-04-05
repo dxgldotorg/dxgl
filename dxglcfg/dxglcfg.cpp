@@ -63,6 +63,8 @@
 
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
+DXGLCFG currcfg;
+DWORD lastdark;
 BOOL *dirty;
 static HINSTANCE hinstance;
 BOOL msaa_available = FALSE;
@@ -272,22 +274,26 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	LONG error;
 	LONG_PTR wndstyle;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -338,6 +344,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_WINDOWSCALE));
 	SendMessage(GetDlgItem(hTabs[0], IDC_WINDOWSCALE), CB_SETEDITSEL, 0, 0);
 	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETMODE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_DARKMODE));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_COLOR));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
@@ -429,22 +436,26 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 	LONG error;
 	LONG_PTR wndstyle;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -477,22 +488,26 @@ void EnableDarkModeForWriteINIDialog(HWND hDialog)
 	LONG error;
 	LONG_PTR wndstyle;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -531,22 +546,26 @@ void EnableDarkModeForAffinityDialog(HWND hDialog)
 	LONG_PTR wndstyle;
 	int i;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -586,22 +605,26 @@ void EnableDarkModeForTextureShaderTest(HWND hDialog)
 	LONG_PTR wndstyle;
 	int i;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -691,22 +714,26 @@ void EnableDarkModeForVertexShaderTest(HWND hDialog)
 	LONG_PTR wndstyle;
 	int i;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -804,22 +831,26 @@ void EnableDarkModeForWindowStyleTest(HWND hDialog)
 	LONG_PTR wndstyle;
 	int i;
 	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-
-	// Check for dark mode Registry preference
-	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-		KEY_READ, &hKeyPersonalize);
-	if (error == ERROR_SUCCESS)
+	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
+	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
+	else
 	{
-		error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		// Check for dark mode Registry preference
+		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+			KEY_READ, &hKeyPersonalize);
 		if (error == ERROR_SUCCESS)
 		{
-			if (lightapps) usedarkmode = FALSE;
-			else usedarkmode = TRUE;
+			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+			if (error == ERROR_SUCCESS)
+			{
+				if (lightapps) usedarkmode = FALSE;
+				else usedarkmode = TRUE;
+			}
+			else usedarkmode = FALSE;
+			RegCloseKey(hKeyPersonalize);
 		}
 		else usedarkmode = FALSE;
-		RegCloseKey(hKeyPersonalize);
 	}
-	else usedarkmode = FALSE;
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
@@ -2925,6 +2956,11 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				modelistdirty = TRUE;
 			}
 			break;
+		case IDC_DARKMODE:
+			cfg->DarkMode = GetCombo(hWnd, IDC_DARKMODE, &cfgmask->DarkMode);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		case IDC_COLOR:
 			cfg->colormode = GetCheck(hWnd, IDC_COLOR, &cfgmask->colormode);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
@@ -4902,6 +4938,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[0], IDC_VSYNC, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
@@ -4965,6 +5002,8 @@ void RefreshControls(HWND hWnd)
 			SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
@@ -5030,6 +5069,7 @@ void RefreshControls(HWND hWnd)
 	SetCombo(hTabs[0], IDC_DPISCALE, cfg->DPIScale, cfgmask->DPIScale, tristate);
 	SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
 	SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
+	SetCombo(hTabs[0], IDC_DARKMODE, cfg->DarkMode, cfgmask->DarkMode, tristate);
 	SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
 	SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
 	SetCheck(hTabs[0], IDC_SETDISPLAYCONFIG, cfg->UseSetDisplayConfig, cfgmask->UseSetDisplayConfig, tristate);
@@ -5820,6 +5860,22 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hTabs[0], IDC_DPISCALE, CB_ADDSTRING, 2, (LPARAM)buffer);
 		}
 		SendDlgItemMessage(hTabs[0],IDC_DPISCALE,CB_SETCURSEL,cfg->DPIScale,0);
+		// Dark mode
+		_tcscpy(buffer, _T("System default"));
+		SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (osver.dwBuildNumber >= 17763)
+		{
+			_tcscpy(buffer, _T("Prefer dark mode"));
+			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_ADDSTRING, 1, (LPARAM)buffer);
+			_tcscpy(buffer, _T("Prefer light mode"));
+			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_ADDSTRING, 2, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_SETCURSEL, cfg->DarkMode, 0);
+		}
+		else
+		{
+			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_DARKMODE), FALSE);
+		}
 		// Paths
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PROFILEPATH), FALSE);
@@ -6111,6 +6167,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		if(token) CloseHandle(token);
 		/*SendMessage(hProgressWnd, WM_USER+1, 0, 0);
 		SetForegroundWindow(hWnd);*/
+		GetCurrentConfig(&currcfg, FALSE);
+		lastdark = currcfg.DarkMode;
 		EnableDarkModeForMainDialog(hWnd);
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
@@ -6268,6 +6326,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		case IDC_APPLY:
 			SaveChanges(hWnd);
 			if(modelistdirty) ResetModeList(hTabs[7]);
+			GetCurrentConfig(&currcfg, FALSE);
+			if (currcfg.DarkMode != lastdark)
+			{
+				lastdark = currcfg.DarkMode;
+				EnableDarkModeForMainDialog(hWnd);
+			}
 			return TRUE;
 		case IDC_APPS:
 			if(HIWORD(wParam) == CBN_SELCHANGE)
