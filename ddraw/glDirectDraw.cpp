@@ -60,6 +60,9 @@ static HRESULT(WINAPI *_DwmSetWindowAttribute)(HWND hwnd, DWORD dwAttribute, LPC
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+#define DWMWA_WINDOW_CORNER_PREFERENCE 33
+#endif
 static BOOL usedarkmode = FALSE;
 static HMODULE hNtdll;
 static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
@@ -2241,6 +2244,11 @@ HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd,
 			_DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
 		else if (osver.dwBuildNumber >= 17763)
 			_DwmSetWindowAttribute(hWnd, 19, &usedarkmode, sizeof(BOOL));
+		if (osver.dwBuildNumber >= 22000)
+		{
+			if (dxglcfg.WindowCorner > 3) dxglcfg.WindowCorner = 0;
+			_DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &dxglcfg.WindowCorner, sizeof(DWORD));
+		}
 	}
 	if (_SetPreferredAppMode)
 	{
