@@ -345,6 +345,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	SendMessage(GetDlgItem(hTabs[0], IDC_WINDOWSCALE), CB_SETEDITSEL, 0, 0);
 	MakeButtonDark(GetDlgItem(hTabs[0], IDC_SETMODE));
 	MakeEditDark(GetDlgItem(hTabs[0], IDC_DARKMODE));
+	MakeEditDark(GetDlgItem(hTabs[0], IDC_WINDOWCORNER));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_COLOR));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SINGLEBUFFER));
 	MakeCheckboxDark(GetDlgItem(hTabs[0], IDC_SETDISPLAYCONFIG));
@@ -2961,6 +2962,11 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
+		case IDC_WINDOWCORNER:
+			cfg->WindowCorner = GetCombo(hWnd, IDC_WINDOWCORNER, &cfgmask->WindowCorner);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
 		case IDC_COLOR:
 			cfg->colormode = GetCheck(hWnd, IDC_COLOR, &cfgmask->colormode);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
@@ -4939,6 +4945,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[0], IDC_FULLMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_ADDSTRING, 0, (LPARAM)strdefault);
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
@@ -5004,6 +5011,8 @@ void RefreshControls(HWND hWnd)
 			SendDlgItemMessage(hTabs[0], IDC_WINDOWSCALE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_DELETESTRING,
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 		SendDlgItemMessage(hTabs[0], IDC_COLOR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SINGLEBUFFER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
 		SendDlgItemMessage(hTabs[0], IDC_SETDISPLAYCONFIG, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
@@ -5070,6 +5079,7 @@ void RefreshControls(HWND hWnd)
 	SetCombo(hTabs[0], IDC_VSYNC, cfg->vsync, cfgmask->vsync, tristate);
 	SetCombo(hTabs[0], IDC_FULLMODE, cfg->fullmode, cfgmask->fullmode, tristate);
 	SetCombo(hTabs[0], IDC_DARKMODE, cfg->DarkMode, cfgmask->DarkMode, tristate);
+	SetCombo(hTabs[0], IDC_WINDOWCORNER, cfg->WindowCorner, cfgmask->WindowCorner, tristate);
 	SetCheck(hTabs[0], IDC_COLOR, cfg->colormode, cfgmask->colormode, tristate);
 	SetCheck(hTabs[0], IDC_SINGLEBUFFER, cfg->SingleBufferDevice, cfgmask->SingleBufferDevice, tristate);
 	SetCheck(hTabs[0], IDC_SETDISPLAYCONFIG, cfg->UseSetDisplayConfig, cfgmask->UseSetDisplayConfig, tristate);
@@ -5875,6 +5885,24 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		{
 			SendDlgItemMessage(hTabs[0], IDC_DARKMODE, CB_SETCURSEL, 0, 0);
 			EnableWindow(GetDlgItem(hTabs[0], IDC_DARKMODE), FALSE);
+		}
+		// Window corners
+		_tcscpy(buffer, _T("System default"));
+		SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_ADDSTRING, 0, (LPARAM)buffer);
+		if (osver.dwBuildNumber >= 22000)
+		{
+			_tcscpy(buffer, _T("Square corners"));
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_ADDSTRING, 0, (LPARAM)buffer);
+			_tcscpy(buffer, _T("Rounded corners"));
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_ADDSTRING, 0, (LPARAM)buffer);
+			_tcscpy(buffer, _T("Small rounded corners"));
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_ADDSTRING, 0, (LPARAM)buffer);
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_SETCURSEL, cfg->WindowCorner, 0);
+		}
+		else
+		{
+			SendDlgItemMessage(hTabs[0], IDC_WINDOWCORNER, CB_SETCURSEL, 0, 0);
+			EnableWindow(GetDlgItem(hTabs[0], IDC_WINDOWCORNER), FALSE);
 		}
 		// Paths
 		EnableWindow(GetDlgItem(hTabs[3], IDC_PATHLABEL), FALSE);

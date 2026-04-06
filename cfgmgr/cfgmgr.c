@@ -738,6 +738,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->DisplayMultiplierY = ReadFloat(hKey, cfg->DisplayMultiplierY, &cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
 	cfg->UseSetDisplayConfig = ReadBool(hKey, cfg->UseSetDisplayConfig, &cfgmask->UseSetDisplayConfig, _T("UseSetDisplayConfig"));
 	cfg->DarkMode = ReadDWORD(hKey, cfg->DarkMode, &cfgmask->DarkMode, _T("DarkMode"));
+	cfg->WindowCorner = ReadDWORD(hKey, cfg->WindowCorner, &cfgmask->WindowCorner, _T("WindowCorner"));
 	cfg->vsync = ReadDWORD(hKey,cfg->vsync,&cfgmask->vsync,_T("VSync"));
 	cfg->TextureFormat = ReadDWORD(hKey,cfg->TextureFormat,&cfgmask->TextureFormat,_T("TextureFormat"));
 	cfg->TexUpload = ReadDWORD(hKey,cfg->TexUpload,&cfgmask->TexUpload,_T("TexUpload"));
@@ -926,6 +927,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteFloat(hKey, cfg->DisplayMultiplierY, cfgmask->DisplayMultiplierY, _T("DisplayMultiplierY"));
 	WriteBool(hKey, cfg->UseSetDisplayConfig, cfgmask->UseSetDisplayConfig, _T("UseSetDisplayConfig"));
 	WriteDWORD(hKey, cfg->DarkMode, cfgmask->DarkMode, _T("DarkMode"));
+	WriteDWORD(hKey, cfg->WindowCorner, cfgmask->WindowCorner, _T("WindowCorner"));
 	WriteDWORD(hKey,cfg->vsync,cfgmask->vsync,_T("VSync"));
 	WriteDWORD(hKey,cfg->TextureFormat,cfgmask->TextureFormat,_T("TextureFormat"));
 	WriteDWORD(hKey,cfg->TexUpload,cfgmask->TexUpload,_T("TexUpload"));
@@ -1233,6 +1235,7 @@ int ReadINICallback(DXGLCFG *cfg, const char *section, const char *name,
 			if (!_stricmp(name, "SingleBufferDevice")) cfg->SingleBufferDevice = INIBoolValue(value);
 			if (!_stricmp(name, "UseSetDisplayConfig")) cfg->UseSetDisplayConfig = INIBoolValue(value);
 			if (!_stricmp(name, "DarkMode")) cfg->DarkMode = INIIntValue(value);
+			if (!_stricmp(name, "WindowCorner")) cfg->WindowCorner = INIIntValue(value);
 		}
 		if (!_stricmp(section, "scaling"))
 		{
@@ -1710,6 +1713,7 @@ DWORD WriteINI(DXGLCFG *cfg, DXGLCFG *mask, LPCTSTR path, HWND hWnd)
 	INIWriteInt(file, "SingleBufferDevice", cfg->SingleBufferDevice, mask->SingleBufferDevice, INISECTION_DISPLAY);
 	INIWriteBool(file, "UseSetDisplayConfig", cfg->UseSetDisplayConfig, mask->UseSetDisplayConfig, INISECTION_DISPLAY);
 	INIWriteInt(file, "DarkMode", cfg->DarkMode, mask->DarkMode, INISECTION_DISPLAY);
+	INIWriteInt(file, "WindowCorner", cfg->WindowCorner, mask->WindowCorner, INISECTION_DISPLAY);
 	// [scaling]
 	INIWriteInt(file, "ScalingFilter", cfg->scalingfilter, mask->scalingfilter, INISECTION_SCALING);
 	INIWriteInt(file, "BltScale", cfg->BltScale, mask->BltScale, INISECTION_SCALING);

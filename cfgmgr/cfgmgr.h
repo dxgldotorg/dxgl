@@ -46,6 +46,7 @@ typedef struct
 	float DisplayMultiplierY;
 	BOOL UseSetDisplayConfig;
 	DWORD DarkMode;
+	DWORD WindowCorner;
 	// [scaling]
 	DWORD scalingfilter;
 	DWORD BltScale;

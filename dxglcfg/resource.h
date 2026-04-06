@@ -85,9 +85,10 @@
 #define IDC_SETMODE                             2017
 #define IDC_WINDOWSCALE                         2018
 #define IDC_DARKMODE                            2019
-#define IDC_COLOR                               2020
-#define IDC_SINGLEBUFFER                        2021
-#define IDC_SETDISPLAYCONFIG                    2022
+#define IDC_WINDOWCORNER                        2020
+#define IDC_COLOR                               2021
+#define IDC_SINGLEBUFFER                        2022
+#define IDC_SETDISPLAYCONFIG                    2023
 
 // Controls - Effects Tab
 #define IDC_POSTSCALE                           2101
