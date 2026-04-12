@@ -26,7 +26,8 @@ SetCompressor /SOLID lzma
 
 !include 'WinVer.nsh'
 !include 'LogicLib.nsh'
-!include "WordFunc.nsh"
+!include 'WordFunc.nsh'
+!include 'Sections.nsh'
 !include 'x64.nsh'
 !include "..\common\version.nsh"
 
@@ -649,6 +650,14 @@ Function .onInit
   ${If} $0 == "0"
     SectionSetFlags ${SEC_WINEDLLOVERRIDE} 0
 	SectionSetText ${SEC_WINEDLLOVERRIDE} ""
+  ${Else}
+    ${VersionConvert} "$0" "" $R0
+	${VersionConvert} "11.6" "" $R1
+	${VersionCompare} "$R0" "$R1" $R2
+	${If} $R2 == 0
+	${OrIf} $R2 == 1
+	  !insertmacro UnselectSection ${SEC_WINEDLLOVERRIDE}
+	${EndIf}
   ${EndIf}
 FunctionEnd
 
