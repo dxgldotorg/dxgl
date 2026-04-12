@@ -124,6 +124,8 @@ void __declspec(dllexport) IsWine(HWND hwndParent, int string_size,
 	HMODULE ntdll;
 	char* (__cdecl *wine_get_version)();
 	char out[256];
+	int i;
+	char *winever;
 	EXDLL_INIT();
 	ntdll = LoadLibraryA("ntdll.dll");
 	if (!ntdll)
@@ -134,10 +136,22 @@ void __declspec(dllexport) IsWine(HWND hwndParent, int string_size,
 		return;
 	}
 	wine_get_version = (char*(__cdecl*)())GetProcAddress(ntdll, "wine_get_version");
-	if (wine_get_version) out[0] = '1';
-	else out[0] = '0';
+	if (wine_get_version)
+	{
+		winever = wine_get_version();
+		for (i = 0; i < 255; i++)
+		{
+			out[i] = winever[i];
+			if (winever[i] == 0) break;
+		}
+		out[255] = 0;
+	}
+	else
+	{
+		out[0] = '0';
+		out[1] = out[2] = out[3] = 0;
+	}
 	FreeLibrary(ntdll);
-	out[1] = out[2] = out[3] = 0;
 	pushstring(out);
 }
 

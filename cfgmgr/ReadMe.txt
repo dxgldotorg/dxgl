@@ -168,6 +168,16 @@ Valid settings:
 1 - Prefer dark mode
 2 - Prefer light mode
 
+Member WindowCorner
+INI Entry WindowCorner
+INI Group display
+Sets the window corner preference in Windows 11 and above.
+Valid settings:
+0 - System default
+1 - Use square corners
+2 - Use rounded corners
+3 - Use small rounded corners
+
 Member scalingfilter
 INI Entry ScalingFilter
 INI Group scaling
