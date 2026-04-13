@@ -113,7 +113,169 @@ HWND hTabs[9];
 
 UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
 
+static int comlevel;
 
+static const TCHAR clsid_ddraw[] = _T("Software\\Classes\\CLSID\\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}");
+static const TCHAR clsid_ddraw7[] = _T("Software\\Classes\\CLSID\\{3C305196-50DB-11D3-9CFE-00C04FD930C5}");
+static const TCHAR clsid_ddrawclipper[] = _T("Software\\Classes\\CLSID\\{593817A0-7DB3-11CF-A2DE-00AA00B93356}");
+static const TCHAR inprocserver32[] = _T("\\InprocServer32");
+static const TCHAR threadingmodel[] = _T("ThreadingModel");
+
+// COM levels:
+// 0:  Not registered
+// 1:  Fully registered
+// 2:  Partially registered
+// 3:  Custom registered (show warning dialog before changing)
+
+int GetCOMLevel()
+{
+	HKEY hkey;
+	LONG error;
+	DWORD regtype = REG_SZ;
+	int level = 0;
+	int count = 0;
+	BOOL foundcustom = FALSE;
+	TCHAR regkey[MAX_PATH];
+	TCHAR output[512];
+	DWORD length = 512*sizeof(TCHAR);
+	_tcscpy(regkey, clsid_ddraw);
+	_tcscat(regkey, inprocserver32);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hkey);
+	if (!error)
+	{
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, NULL, NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if (!error)
+		{
+			if (!_tcsnicmp(output, _T("ddraw.dll"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, _T("ThreadingModel"), NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if (!error)
+		{
+			if (!_tcsnicmp(output, _T("Both"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		RegCloseKey(hkey);
+	}
+	_tcscpy(regkey, clsid_ddraw7);
+	_tcscat(regkey, inprocserver32);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hkey);
+	if (!error)
+	{
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, NULL, NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if (!error)
+		{
+			if (!_tcsnicmp(output, _T("ddraw.dll"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, _T("ThreadingModel"), NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if(!error)
+		{
+			if (!_tcsnicmp(output, _T("Both"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		RegCloseKey(hkey);
+	}
+	_tcscpy(regkey, clsid_ddrawclipper);
+	_tcscat(regkey, inprocserver32);
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, regkey, 0, KEY_READ, &hkey);
+	if (!error)
+	{
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, NULL, NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if (!error)
+		{
+			if (!_tcsnicmp(output, _T("ddraw.dll"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		length = 512 * sizeof(TCHAR);
+		error = RegQueryValueEx(hkey, _T("ThreadingModel"), NULL, &regtype, (BYTE*)&output, &length);
+		output[511] = 0;
+		if (!error)
+		{
+			if (!_tcsnicmp(output, _T("Both"), 511)) count++;
+			else foundcustom = TRUE;
+		}
+		RegCloseKey(hkey);
+	}
+	if (foundcustom) level = 3;
+	else if ((count >= 1) && (count < 6)) level = 2;
+	else if (count == 6) level = 1;
+	else level = 0;
+	return level;
+}
+
+int SetCOMLevel(int level)
+{
+	TCHAR regkey[MAX_PATH];
+	HKEY hKey;
+	LONG error;
+	DWORD length;
+	if (level)
+	{
+		_tcscpy(regkey, clsid_ddraw);
+		_tcscat(regkey, inprocserver32);
+		error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+		if (!error)
+		{
+			length = 10 * sizeof(TCHAR);
+			RegSetValueEx(hKey, NULL, 0, REG_SZ, (BYTE*)_T("ddraw.dll"), length);
+			length = 5 * sizeof(TCHAR);
+			RegSetValueEx(hKey, threadingmodel, 0, REG_SZ, (BYTE*)_T("Both"), length);
+			RegCloseKey(hKey);
+		}
+		_tcscpy(regkey, clsid_ddraw7);
+		_tcscat(regkey, inprocserver32);
+		error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+		if (!error)
+		{
+			length = 10 * sizeof(TCHAR);
+			RegSetValueEx(hKey, NULL, 0, REG_SZ, (BYTE*)_T("ddraw.dll"), length);
+			length = 5 * sizeof(TCHAR);
+			RegSetValueEx(hKey, threadingmodel, 0, REG_SZ, (BYTE*)_T("Both"), length);
+			RegCloseKey(hKey);
+		}
+		_tcscpy(regkey, clsid_ddrawclipper);
+		_tcscat(regkey, inprocserver32);
+		error = RegCreateKeyEx(HKEY_CURRENT_USER, regkey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL);
+		if (!error)
+		{
+			length = 10 * sizeof(TCHAR);
+			RegSetValueEx(hKey, NULL, 0, REG_SZ, (BYTE*)_T("ddraw.dll"), length);
+			length = 5 * sizeof(TCHAR);
+			RegSetValueEx(hKey, threadingmodel, 0, REG_SZ, (BYTE*)_T("Both"), length);
+			RegCloseKey(hKey);
+		}
+	}
+	else
+	{
+		_tcscpy(regkey, clsid_ddraw);
+		_tcscat(regkey, inprocserver32);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+		_tcscpy(regkey, clsid_ddraw);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+		_tcscpy(regkey, clsid_ddraw7);
+		_tcscat(regkey, inprocserver32);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+		_tcscpy(regkey, clsid_ddraw7);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+		_tcscpy(regkey, clsid_ddrawclipper);
+		_tcscat(regkey, inprocserver32);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+		_tcscpy(regkey, clsid_ddrawclipper);
+		RegDeleteKey(HKEY_CURRENT_USER, regkey);
+	}
+	return level;
+}
 
 UINT windowdpi = 96;
 static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
@@ -385,6 +547,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	MakeCheckboxDark(GetDlgItem(hTabs[3], IDC_NOAUTOSIZE));
 	MakeCheckboxDark(GetDlgItem(hTabs[3], IDC_CAPTUREMOUSE));
 	MakeEditDark(GetDlgItem(hTabs[3], IDC_PROFILEPATH));
+	MakeCheckboxDark(GetDlgItem(hTabs[3], IDC_COMREG));
 	MakeButtonDark(GetDlgItem(hTabs[3], IDC_WRITEINI));
 	_SetWindowTheme(hTabs[4], L"Explorer", NULL);
 	SendMessage(hTabs[4], WM_THEMECHANGED, 0, 0);
@@ -3412,6 +3575,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	RECT r;
 	LPNMCUSTOMDRAW customdraw;
 	TCHAR buttontext[256];
+	int result;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -3460,7 +3624,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 		{
 			if ((customdraw->hdr.idFrom == IDC_REMEMBERWINDOWPOS) || (customdraw->hdr.idFrom == IDC_REMEMBERWINDOWSIZE) ||
 				(customdraw->hdr.idFrom == IDC_WINDOWMAXIMIZED) || (customdraw->hdr.idFrom == IDC_NOAUTOSIZE) ||
-				(customdraw->hdr.idFrom == IDC_CAPTUREMOUSE))
+				(customdraw->hdr.idFrom == IDC_CAPTUREMOUSE) || (customdraw->hdr.idFrom == IDC_COMREG))
 			{
 				switch (customdraw->dwDrawStage)
 				{
@@ -3583,6 +3747,29 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			break;
 		case IDC_CAPTUREMOUSE:
 			cfg->CaptureMouse = GetCheck(hWnd, IDC_CAPTUREMOUSE, &cfgmask->CaptureMouse);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_COMREG:
+			if (comlevel == 3)
+			{
+				result = MessageBox(hWnd, _T("Custom settings have been detected for COM registration.  \
+Continuing will overwrite the settings.  Would you like to continue?"), _T("Warning"), MB_ICONEXCLAMATION | MB_YESNO);
+			}
+			else result = IDYES;
+			if (result == IDNO) break;
+			if (comlevel > 1)
+			{
+				comlevel = 1;
+				SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+				SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETCHECK, BST_CHECKED, 0);
+			}
+			else
+			{
+				result = (int)SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_GETCHECK, 0, 0);
+				if (result == BST_CHECKED) comlevel = 1;
+				else if (result == BST_UNCHECKED) comlevel = 0;
+			}
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
 			break;
@@ -4971,6 +5158,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 		SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
 		SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETSTYLE, BS_AUTO3STATE, TRUE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_COMREG), FALSE);
 		// Debug tab
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
 		// Tracing tab
@@ -5051,6 +5239,7 @@ void RefreshControls(HWND hWnd)
 		SendDlgItemMessage(hTabs[3], IDC_REMEMBERWINDOWSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 		SendDlgItemMessage(hTabs[3], IDC_WINDOWMAXIMIZED, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
 		SendDlgItemMessage(hTabs[3], IDC_NOAUTOSIZE, BM_SETSTYLE, BS_AUTOCHECKBOX, TRUE);
+		EnableWindow(GetDlgItem(hTabs[3], IDC_COMREG), TRUE);
 		// Debug tab
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
@@ -5850,6 +6039,15 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Capture mouse
 		if (cfg->CaptureMouse) SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETCHECK, BST_CHECKED, 0);
 		else SendDlgItemMessage(hTabs[3], IDC_CAPTUREMOUSE, BM_SETCHECK, BST_UNCHECKED, 0);
+		// COM registration
+		comlevel = GetCOMLevel();
+		if (comlevel > 1)
+		{
+			SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETSTYLE, BS_3STATE, TRUE);
+			SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETCHECK, BST_INDETERMINATE, 0);
+		}
+		else if(comlevel == 1) SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETCHECK, BST_CHECKED, 0);
+		else SendDlgItemMessage(hTabs[3], IDC_COMREG, BM_SETCHECK, BST_UNCHECKED, 0);
 		// DPI
 		dpisupport = GetDPISupportLevel();
 		_tcscpy(buffer, _T("Disabled"));
@@ -6346,6 +6544,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		{
 		case IDOK:
 			SaveChanges(hWnd);
+			if (comlevel != GetCOMLevel()) SetCOMLevel(comlevel);
 			EndDialog(hWnd,IDOK);
 			return TRUE;
 		case IDCANCEL:
@@ -6360,6 +6559,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				lastdark = currcfg.DarkMode;
 				EnableDarkModeForMainDialog(hWnd);
 			}
+			if (comlevel != GetCOMLevel()) SetCOMLevel(comlevel);
 			return TRUE;
 		case IDC_APPS:
 			if(HIWORD(wParam) == CBN_SELCHANGE)

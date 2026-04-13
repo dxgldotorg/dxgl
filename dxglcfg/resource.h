@@ -134,7 +134,8 @@
 #define IDC_CAPTUREMOUSE                        2314
 #define IDC_PATHLABEL                           2315
 #define IDC_PROFILEPATH                         2316
-#define IDC_WRITEINI                            2317
+#define IDC_COMREG                              2317
+#define IDC_WRITEINI                            2318
 
 // Controls - Debug Tab
 #define IDC_DEBUGLIST                           2401
