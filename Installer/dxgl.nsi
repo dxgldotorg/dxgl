@@ -420,24 +420,6 @@ Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
   ${EndIf}
 SectionEnd
 
-Section "Fix DDraw COM registration" SEC_COMFIX
-  ${If} $PortableMode == "0"
-    DetailPrint "Setting DDraw Runtime path in registry"
-    WriteRegDWORD HKLM "Software\DXGL" "COMFix" 1
-    !ifndef _CPU_X64
-    ${If} ${RunningX64}
-    SetRegView 32
-    ${EndIf}
-    !endif
-    WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "" "ddraw.dll"
-    WriteRegStr HKCU "Software\Classes\CLSID\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}\InprocServer32" "ThreadingModel" "Both"
-    WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "" "ddraw.dll"
-    WriteRegStr HKCU "Software\Classes\CLSID\{3C305196-50DB-11D3-9CFE-00C04FD930C5}\InprocServer32" "ThreadingModel" "Both"
-    WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "" "ddraw.dll"
-    WriteRegStr HKCU "Software\Classes\CLSID\{593817A0-7DB3-11CF-A2DE-00AA00B93356}\InprocServer32" "ThreadingModel" "Both"
-  ${EndIf}
-SectionEnd
-
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
   !if ${COMPILER} == "VC2026_0"
   File "..\${SRCDIR}\cfgmgr.pdb"
@@ -500,9 +482,6 @@ Function PortableModeLeave
 		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
 		IntOp $0 $0 & 0x6F
 		SectionSetFlags ${SEC_WINEDLLOVERRIDE} $0
-		SectionGetFlags ${SEC_COMFIX} $0
-		IntOp $0 $0 & 0x6F
-		SectionSetFlags ${SEC_COMFIX} $0
 	${Else}
 		StrCpy $INSTDIR "$EXEDIR\DXGL"
 		!ifndef _DEBUG
@@ -520,9 +499,6 @@ Function PortableModeLeave
 		SectionGetFlags ${SEC_WINEDLLOVERRIDE} $0
 		IntOp $0 $0 | 0x10
 		SectionSetFlags ${SEC_WINEDLLOVERRIDE} $0
-		SectionGetFlags ${SEC_COMFIX} $0
-		IntOp $0 $0 | 0x10
-		SectionSetFlags ${SEC_COMFIX} $0
 	${EndIf}
 FunctionEnd
 
@@ -632,19 +608,6 @@ Function .onInit
   !endif
   !endif
   
-  System::Call "${GetVersion} () .r0"
-  IntOp $1 $0 & 255
-  IntOp $2 $0 >> 8
-  IntOp $2 $2 & 255
-  IntCmp $1 6 CheckMinor BelowEight EightOrAbove
-  CheckMinor:
-  IntCmp $2 2 EightOrAbove BelowEight EightOrAbove
-  EightOrAbove:
-  SectionSetText ${SEC_COMFIX} "Fix DDraw COM registration (recommended)"
-  goto VersionFinish
-  BelowEight:
-  SectionSetFlags ${SEC_COMFIX} 0
-  VersionFinish:
   dxgl-nsis::IsWine $0
   Pop $0
   ${If} $0 == "0"
@@ -665,7 +628,6 @@ LangString DESC_SEC01 ${LANG_ENGLISH} "Installs the required components for DXGL
 LangString DESC_SEC_VCRUNTIME ${LANG_ENGLISH} "Installs the Visual C++ 2003 runtimes required to run this version of DXGL to the system folder."
 LangString DESC_SEC_VCREDIST ${LANG_ENGLISH} "Required MSVC redistributable was not detected.  Select to download the required redistributable from dxgl.org."
 LangString DESC_SEC_WINEDLLOVERRIDE ${LANG_ENGLISH} "Sets a DLL override in Wine to allow DXGL to be used."
-LangString DESC_SEC_COMFIX ${LANG_ENGLISH} "Adds a workaround for Windows 8 and above for COM initialization.  Applies to current user account."
 LangString DESC_SEC_DEBUGSYMBOLS ${LANG_ENGLISH} "Copy PDB debug symbols to the installation directory."
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(DESC_SEC01)
@@ -678,7 +640,6 @@ LangString DESC_SEC_DEBUGSYMBOLS ${LANG_ENGLISH} "Copy PDB debug symbols to the 
 !endif
 !endif
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_WINEDLLOVERRIDE} $(DESC_SEC_WINEDLLOVERRIDE)
-!insertmacro MUI_DESCRIPTION_TEXT ${SEC_COMFIX} $(DESC_SEC_COMFIX)
 !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DEBUGSYMBOLS} $(DESC_SEC_DEBUGSYMBOLS)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
