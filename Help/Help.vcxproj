@@ -466,12 +466,14 @@
     <None Include="images\dxglcfg-3dgraphics.png" />
     <None Include="images\dxglcfg-about.png" />
     <None Include="images\dxglcfg-advanced.png" />
+    <None Include="images\dxglcfg-affinity.png" />
     <None Include="images\dxglcfg-debug.png" />
     <None Include="images\dxglcfg-display.png" />
     <None Include="images\dxglcfg-effects.png" />
     <None Include="images\dxglcfg-hacks.png" />
     <None Include="images\dxglcfg-saveini.png" />
     <None Include="images\dxglcfg-tests.png" />
+    <None Include="images\dxglcfg-tracing.png" />
     <None Include="images\gdi-pattern.png" />
     <None Include="images\gdi-random.png" />
     <None Include="images\gradients-15bpp.png" />
