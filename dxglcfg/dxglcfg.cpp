@@ -1272,7 +1272,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 		{
 			CloseHandle(exefile);
 			#ifdef _M_X64
-			MessageBox(hwnd, _T("Platform of selected program is not x64.  Please use the 32-bit version of DXGL to add 32-bit programs."),
+			MessageBox(hwnd, _T("Platform of selected program is not x64 or ARM64EC.  Please use the 32-bit version of DXGL to add 32-bit programs."),
 				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
 			#else
 			MessageBox(hwnd, _T("Platform of selected program is not x86.  Please use the 64-bit version of DXGL to add 64-bit programs."),

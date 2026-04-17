@@ -747,6 +747,12 @@
     <None Include="images\windowapitest2.png">
       <Filter>Help files\images</Filter>
     </None>
+    <None Include="images\dxglcfg-tracing.png">
+      <Filter>Help files\images</Filter>
+    </None>
+    <None Include="images\dxglcfg-affinity.png">
+      <Filter>Help files\images</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">
