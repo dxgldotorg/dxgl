@@ -306,6 +306,10 @@
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Tracing Tab">
+			<param name="Local" value="html\config\tracingtab.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Graphics Tests Tab">
 			<param name="Local" value="html\config\gfxtesttab.html">
 			</OBJECT>

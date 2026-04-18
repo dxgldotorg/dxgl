@@ -993,10 +993,10 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	OutputDebugStringA("Vertex shader:\n");
 	OutputDebugStringA(vsrc->ptr);
 	OutputDebugStringA("\nCompiling vertex shader:\n");
+#endif
 	TRACE_SHADER("Vertex shader:\n");
 	TRACE_SHADER(vsrc->ptr);
 	TRACE_SHADER("\nCompiling vertex shader:\n");
-#endif
 	This->genshaders[index].shader.vs = This->ext->glCreateShader(GL_VERTEX_SHADER);
 	const char *src = vsrc->ptr;
 	GLint srclen = strlen(src);
@@ -1005,7 +1005,6 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	GLint result;
 	char *infolog = NULL;
 	This->ext->glGetShaderiv(This->genshaders[index].shader.vs,GL_COMPILE_STATUS,&result);
-#ifdef _DEBUG
 	GLint loglen;
 	if(!result)
 	{
@@ -1023,7 +1022,6 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		}
 		free(infolog);
 	}
-#endif
 	// Create fragment shader
 	if ((id>>62)&1)	dither = true;
 	STRING *fsrc = &This->genshaders[index].shader.fsrc;
@@ -1597,17 +1595,16 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 	OutputDebugStringA("Fragment shader:\n");
 	OutputDebugStringA(fsrc->ptr);
 	OutputDebugStringA("\nCompiling fragment shader:\n");
+#endif
 	TRACE_SHADER("Fragment shader:\n");
 	TRACE_SHADER(fsrc->ptr);
 	TRACE_SHADER("\nCompiling fragment shader:\n"); 
-#endif
 	This->genshaders[index].shader.fs = This->ext->glCreateShader(GL_FRAGMENT_SHADER);
 	src = fsrc->ptr;
 	srclen = strlen(src);
 	This->ext->glShaderSource(This->genshaders[index].shader.fs,1,&src,&srclen);
 	This->ext->glCompileShader(This->genshaders[index].shader.fs);
 	This->ext->glGetShaderiv(This->genshaders[index].shader.fs,GL_COMPILE_STATUS,&result);
-#ifdef _DEBUG
 	if(!result)
 	{
 		This->ext->glGetShaderiv(This->genshaders[index].shader.fs,GL_INFO_LOG_LENGTH,&loglen);
@@ -1625,13 +1622,11 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		free(infolog);
 	}
 	OutputDebugStringA("\nLinking program:\n");
-#endif
 	This->genshaders[index].shader.prog = This->ext->glCreateProgram();
 	This->ext->glAttachShader(This->genshaders[index].shader.prog,This->genshaders[index].shader.vs);
 	This->ext->glAttachShader(This->genshaders[index].shader.prog,This->genshaders[index].shader.fs);
 	This->ext->glLinkProgram(This->genshaders[index].shader.prog);
 	This->ext->glGetProgramiv(This->genshaders[index].shader.prog,GL_LINK_STATUS,&result);
-#ifdef _DEBUG
 	if(!result)
 	{
 		This->ext->glGetProgramiv(This->genshaders[index].shader.prog,GL_INFO_LOG_LENGTH,&loglen);
@@ -1643,7 +1638,6 @@ void ShaderGen3D_CreateShader(ShaderGen3D *This, int index, __int64 id, __int64 
 		TRACE_ERROR(infolog);
 		free(infolog);
 	}
-#endif
 	// Attributes
 	This->genshaders[index].shader.attribs[0] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"xyz");
 	This->genshaders[index].shader.attribs[1] = This->ext->glGetAttribLocation(This->genshaders[index].shader.prog,"rhw");

@@ -444,6 +444,8 @@
     <None Include="html\config\hacks\setcursorhidevisibility.htmltitle" />
     <None Include="html\config\hacks\syncpaletteupdatetovsync.htmlbody" />
     <None Include="html\config\hacks\syncpaletteupdatetovsync.htmltitle" />
+    <None Include="html\config\tracingtab.htmlbody" />
+    <None Include="html\config\tracingtab.htmltitle" />
     <None Include="html\introduction.htmlbody" />
     <None Include="html\introduction.htmltitle" />
     <None Include="html\licenses.htmlbody" />
