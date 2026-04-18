@@ -67,12 +67,20 @@
 				<param name="Local" value="html\config\display\customresolution.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Change display color depth">
-				<param name="Local" value="html\config\display\changedisplaycolordepth.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Windowed mode scaling">
 				<param name="Local" value="html\config\display\windowmodescaling.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Dark mode support">
+				<param name="Local" value="html\config\display\darkmodesupport.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Window corner style">
+				<param name="Local" value="html\config\display\windowcornerstyle.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Change display color depth">
+				<param name="Local" value="html\config\display\changedisplaycolordepth.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Single buffered display">
@@ -192,6 +200,10 @@
 				<param name="Name" value="Write INI file...">
 				<param name="Local" value="html\config\advanced\writeinifile.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Adjust COM registration to allow DXGL via CoCreateInstance">
+				<param name="Local" value="html\config\advanced\adjustcomregistration.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Debug Tab">
@@ -287,6 +299,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Sync palette update to Vsync">
 				<param name="Local" value="html\config\hacks\syncpaletteupdatetovsync.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Force core affinity">
+				<param name="Local" value="html\config\hacks\forcecoreaffinity.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">

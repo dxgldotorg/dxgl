@@ -26,3 +26,6 @@
 <p>
   <a href="hacks/syncpaletteupdatetovsync.html">Sync palette update to Vsync</a>
 </p>
+<p>
+  <a href="hacks/forcecoreaffinity.html">Force core affinity</a>"
+</p>
