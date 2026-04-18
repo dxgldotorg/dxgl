@@ -121,6 +121,7 @@ html\config\hacks\removetvcompatiblerefreshrates.html
 html\config\hacks\setcursorhidevisibility.html
 html\config\hacks\palettedrawdelayms.html
 html\config\hacks\syncpaletteupdatetovsync.html
+html\config\hacks\forcecoreaffinity.html
 html\config\gfxtest\colorpalette.html
 html\config\gfxtest\randomnoise.html
 html\config\gfxtest\gditest.html
