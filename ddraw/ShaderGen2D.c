@@ -1020,9 +1020,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	GLint srclen;
 	GLint result;
 	char *infolog;
-#ifdef _DEBUG
 	GLint loglen;
-#endif
 	unsigned char srctype = (id >> 32) & 0xFF;
 	unsigned char srctype2;
 	unsigned char desttype = (id >> 40) & 0xFF;
@@ -1088,17 +1086,16 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	OutputDebugStringA("2D blitter vertex shader:\n");
 	OutputDebugStringA(vsrc->ptr);
 	OutputDebugStringA("\nCompiling 2D blitter vertex shader:\n");
+#endif
 	TRACE_SHADER("2D blitter vertex shader:\n");
 	TRACE_SHADER(vsrc->ptr);
 	TRACE_SHADER("\nCompiling 2D blitter vertex shader:\n");
-#endif
 	gen->genshaders2D[index].shader.vs = gen->ext->glCreateShader(GL_VERTEX_SHADER);
 	srclen = strlen(vsrc->ptr);
 	gen->ext->glShaderSource(gen->genshaders2D[index].shader.vs, 1, &vsrc->ptr, &srclen);
 	gen->ext->glCompileShader(gen->genshaders2D[index].shader.vs);
 	infolog = NULL;
 	gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_COMPILE_STATUS, &result);
-#ifdef _DEBUG
 	if (!result)
 	{
 		gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.vs, GL_INFO_LOG_LENGTH, &loglen);
@@ -1115,7 +1112,6 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 		free(infolog);
 	}
-#endif
 	usedest = FALSE;
 	// Create fragment shader
 	fsrc = &gen->genshaders2D[index].shader.fsrc;
@@ -1467,16 +1463,15 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 	OutputDebugStringA("2D blitter fragment shader:\n");
 	OutputDebugStringA(fsrc->ptr);
 	OutputDebugStringA("\nCompiling 2D blitter fragment shader:\n");
+#endif
 	TRACE_SHADER("2D blitter fragment shader:\n");
 	TRACE_SHADER(fsrc->ptr);
 	TRACE_SHADER("\nCompiling 2D blitter fragment shader:\n");
-#endif
 	gen->genshaders2D[index].shader.fs = gen->ext->glCreateShader(GL_FRAGMENT_SHADER);
 	srclen = strlen(fsrc->ptr);
 	gen->ext->glShaderSource(gen->genshaders2D[index].shader.fs, 1, &fsrc->ptr, &srclen);
 	gen->ext->glCompileShader(gen->genshaders2D[index].shader.fs);
 	gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.fs, GL_COMPILE_STATUS, &result);
-#ifdef _DEBUG
 	if (!result)
 	{
 		gen->ext->glGetShaderiv(gen->genshaders2D[index].shader.fs, GL_INFO_LOG_LENGTH, &loglen);
@@ -1493,13 +1488,11 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		}
 		free(infolog);
 	}
-#endif
 	gen->genshaders2D[index].shader.prog = gen->ext->glCreateProgram();
 	gen->ext->glAttachShader(gen->genshaders2D[index].shader.prog, gen->genshaders2D[index].shader.vs);
 	gen->ext->glAttachShader(gen->genshaders2D[index].shader.prog, gen->genshaders2D[index].shader.fs);
 	gen->ext->glLinkProgram(gen->genshaders2D[index].shader.prog);
 	gen->ext->glGetProgramiv(gen->genshaders2D[index].shader.prog, GL_LINK_STATUS, &result);
-#ifdef _DEBUG
 	if (!result)
 	{
 		gen->ext->glGetProgramiv(gen->genshaders2D[index].shader.prog, GL_INFO_LOG_LENGTH, &loglen);
@@ -1511,7 +1504,6 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		TRACE_ERROR(infolog);
 		free(infolog);
 	}
-#endif
 	gen->genshaders2D[index].shader.attribs[0] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "xy");
 	gen->genshaders2D[index].shader.attribs[1] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "rgb");
 	gen->genshaders2D[index].shader.attribs[2] = gen->ext->glGetAttribLocation(gen->genshaders2D[index].shader.prog, "rgba");

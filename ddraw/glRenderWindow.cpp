@@ -117,21 +117,21 @@ DWORD glRenderWindow__Entry(glRenderWindow *This)
 			"DirectDrawDeviceWnd", windowname, WS_POPUP, 0, 0, This->width, This->height, 0, 0, NULL, This);
 		SetWindowPos(This->hWnd, HWND_TOP, 0, 0, This->width, This->height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 	}
-#ifdef _DEBUG
+	#ifdef _DEBUG
 	if (RegisterHotKey(This->hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
 	else
 	{
 		TRACE_ERROR("Failed to register hotkey.\n");
-		Beep(120, 1000);
+		Beep(120, 500);
 	}
-#else
+	#else
 	if (dxglcfg.DebugTraceLevel)
 	{
 		if (RegisterHotKey(This->hWnd, 1, MOD_CONTROL, VK_CANCEL)) hotkeyregistered = true;
 		else
 		{
 			TRACE_ERROR("Failed to register hotkey.\n");
-			Beep(120, 1000);
+			Beep(120, 500);
 		}
 	}
 	#endif

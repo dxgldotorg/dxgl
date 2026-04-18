@@ -57,6 +57,7 @@ html\config\3dgraphicstab.html
 html\config\advancedtab.html
 html\config\debugtab.html
 html\config\hackstab.html
+html\config\tracingtab.html
 html\config\gfxtesttab.html
 html\config\abouttab.html
 html\config\display\addcolordepths.html

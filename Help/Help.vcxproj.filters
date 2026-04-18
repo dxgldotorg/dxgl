@@ -777,6 +777,12 @@
     <None Include="html\config\hacks\forcecoreaffinity.htmltitle">
       <Filter>Help files\html\config\hacks</Filter>
     </None>
+    <None Include="html\config\tracingtab.htmlbody">
+      <Filter>Help files\html\config</Filter>
+    </None>
+    <None Include="html\config\tracingtab.htmltitle">
+      <Filter>Help files\html\config</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">
