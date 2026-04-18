@@ -38,3 +38,6 @@
 <p>
   <a href="advanced/writeinifile.html">Write INI file...</a>
 </p>
+<p>
+  <a href="advanced/adjustcomregistration.html">Adjust COM registration to allow DXGL via CoCreateInstance</a>
+</p>

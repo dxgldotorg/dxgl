@@ -1,0 +1,1 @@
+Adjust COM registration to allow DXGL via CoCreateInstance
