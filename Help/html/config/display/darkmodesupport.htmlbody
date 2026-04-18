@@ -1,0 +1,7 @@
+<p>Adjusts titlebars and context menus for dark mode themes. This feature is available in Windows 10 version 1809 and later. DXGL Config will adjust its theme accordingly if it is within the scope of the configuration.</p>
+<h1>System default</h1>
+<p>Applies dark or light mode based on system preference.</p>
+<h1>Prefer dark mode</h1>
+<p>Applies dark mode regardless of system preference.</p>
+<h1>Prefer light mode</h1>
+<p>Applies light mode regardless of system preference.</p>

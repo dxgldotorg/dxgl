@@ -753,6 +753,18 @@
     <None Include="images\dxglcfg-affinity.png">
       <Filter>Help files\images</Filter>
     </None>
+    <None Include="html\config\display\darkmodesupport.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\darkmodesupport.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\windowcornerstyle.htmlbody">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
+    <None Include="html\config\display\windowcornerstyle.htmltitle">
+      <Filter>Help files\html\config\display</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">

@@ -345,6 +345,8 @@
     <None Include="html\config\display\changedisplaycolordepth.htmltitle" />
     <None Include="html\config\display\customresolution.htmlbody" />
     <None Include="html\config\display\customresolution.htmltitle" />
+    <None Include="html\config\display\darkmodesupport.htmlbody" />
+    <None Include="html\config\display\darkmodesupport.htmltitle" />
     <None Include="html\config\display\dpiscalingmode.htmlbody" />
     <None Include="html\config\display\dpiscalingmode.htmltitle" />
     <None Include="html\config\display\fixedscaling.htmlbody" />
@@ -365,6 +367,8 @@
     <None Include="html\config\display\verticalsync.htmltitle" />
     <None Include="html\config\display\videomode.htmlbody" />
     <None Include="html\config\display\videomode.htmltitle" />
+    <None Include="html\config\display\windowcornerstyle.htmlbody" />
+    <None Include="html\config\display\windowcornerstyle.htmltitle" />
     <None Include="html\config\display\windowmodescaling.htmlbody" />
     <None Include="html\config\display\windowmodescaling.htmltitle" />
     <None Include="html\config\effectstab.htmlbody" />

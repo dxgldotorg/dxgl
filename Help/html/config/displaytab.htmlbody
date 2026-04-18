@@ -39,10 +39,16 @@
   <a href="display/customresolution.html">Custom resolution</a>
 </p>
 <p>
-  <a href="display/changedisplaycolordepth.html">Change display color depth</a>
+	<a href="display/windowmodescaling.html">Windowed mode scaling</a>
 </p>
 <p>
-  <a href="display/windowmodescaling.html">Windowed mode scaling</a>
+	<a href="display/darkmodesupport.html">Dark mode support</a>
+</p>
+<p>
+	<a href="display/windowcornerstyle.html">Window corner style</a>
+</p>
+<p>
+	<a href="display/changedisplaycolordepth.html">Change display color depth</a>
 </p>
 <p>
   <a href="display/singlebuffereddisplay.html">Single buffered display</a>
