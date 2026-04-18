@@ -1,0 +1,2 @@
+<p>Enables a registry fix to ensure that if a program uses COM APIs to initialize DirectDraw that the DXGL wrapper can be found.</p>
+<p>If unexpected settings are found, a warning will be displayed before changing this setting.</p>

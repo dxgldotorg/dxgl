@@ -765,6 +765,12 @@
     <None Include="html\config\display\windowcornerstyle.htmltitle">
       <Filter>Help files\html\config\display</Filter>
     </None>
+    <None Include="html\config\advanced\adjustcomregistration.htmlbody">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
+    <None Include="html\config\advanced\adjustcomregistration.htmltitle">
+      <Filter>Help files\html\config\advanced</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="html\config\gfxtest\rasterop.htmltitle">

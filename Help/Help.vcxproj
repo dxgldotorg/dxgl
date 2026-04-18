@@ -283,6 +283,8 @@
     <None Include="html\config\abouttab.htmltitle" />
     <None Include="html\config\advancedtab.htmlbody" />
     <None Include="html\config\advancedtab.htmltitle" />
+    <None Include="html\config\advanced\adjustcomregistration.htmlbody" />
+    <None Include="html\config\advanced\adjustcomregistration.htmltitle" />
     <None Include="html\config\advanced\capturemouseinwindowmode.htmlbody" />
     <None Include="html\config\advanced\capturemouseinwindowmode.htmltitle" />
     <None Include="html\config\advanced\defaultwindowposition.htmlbody" />
