@@ -1,0 +1,9 @@
+<p>Adjusts the corner rounding of the application window.  This affects Windows 11, build 22000, or newer.</p>
+<h1>System default</h1>
+<p>Allows the system to decide the corner rounding based on the window style</p>
+<h1>Square corners</h1>
+<p>Makes the corners of the window square, can help prevent pixels from being cut off in the corners of the window.</p>
+<h1>Rounded corners</h1>
+<p>Rounds the corners of the window.  This may cause artifacts on the screen edges in fullscreen mode.</p>
+<h1>Small rounded corners</h1>
+<p>Rounds the corners of the window, but uses a smaller radius.  This may cause artifacts on the screen edges in fullscreen mode.</p>
