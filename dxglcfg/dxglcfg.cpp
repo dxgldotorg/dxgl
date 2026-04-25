@@ -6310,6 +6310,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			{
 				if (!_tcsicmp(installpath, path)) apps[appcount - 1].builtin = TRUE;
 				else apps[appcount - 1].builtin = FALSE;
+				free(installpath);
+				installpath = NULL;
 			}
 			_tcscat(path, _T("\\"));
 			_tcscat(path, subkey);

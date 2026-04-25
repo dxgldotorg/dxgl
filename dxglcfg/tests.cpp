@@ -3508,7 +3508,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				case CDDS_PREERASE:
 					r = customdraw->rc;
 					r.left += dpiscale(15);
-					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
+					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
@@ -4112,7 +4112,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				case CDDS_PREERASE:
 					r = customdraw->rc;
 					r.left += dpiscale(15);
-					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
+					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
@@ -4765,7 +4765,7 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				case CDDS_PREERASE:
 					r = customdraw->rc;
 					r.left += dpiscale(15);
-					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
+					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hwnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
