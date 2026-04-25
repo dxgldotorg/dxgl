@@ -4961,7 +4961,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
-			if (hackstabitem == 8)
+			if (hackstabitem == 8 && !_wine_get_version)
 			{
 				RedrawWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT),
 					NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
