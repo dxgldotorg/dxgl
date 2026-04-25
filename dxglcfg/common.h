@@ -88,6 +88,7 @@ extern const unsigned char DefaultPalette8[1024];
 #endif
 
 extern HRESULT(WINAPI *_EnableThemeDialogTexture)(HWND hwnd, DWORD dwFlags);
+extern char* (__cdecl *_wine_get_version)();
 // DXGL Config items for DXGL Test
 extern HWND hDialog;
 void SaveChanges(HWND hWnd);

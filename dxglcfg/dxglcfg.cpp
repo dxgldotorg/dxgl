@@ -74,6 +74,8 @@ TCHAR hlppath[MAX_PATH+16];
 static HMODULE hUser32 = NULL;
 HMODULE uxtheme = NULL;
 HMODULE dwmapi = NULL;
+HMODULE ntdll = NULL;
+char* (__cdecl *_wine_get_version)() = NULL;
 HMODULE dxglcfgdll = NULL;
 HTHEME hThemeDisplay = NULL;
 BOOL(WINAPI *__TrackMouseEvent)(LPTRACKMOUSEEVENT lpEventTrack) = NULL;
@@ -2743,10 +2745,13 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				switch(customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if(_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -3463,10 +3468,13 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -3629,10 +3637,13 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkTabBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -4546,10 +4557,13 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					r1 = customdraw->rc;
+					r1.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r1, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -7003,6 +7017,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	HWND hWnd;
 	DXGLCFG tmpcfg;
 	int i;
+	ntdll = LoadLibrary(_T("ntdll.dll"));
+	if (ntdll) _wine_get_version = (char*(__cdecl*)())GetProcAddress(ntdll, "wine_get_version");
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osver);
 	if (osver.dwMajorVersion > 4) gradientavailable = true;

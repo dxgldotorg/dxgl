@@ -3506,10 +3506,13 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -4107,10 +4110,13 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
@@ -4757,10 +4763,13 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				switch (customdraw->dwDrawStage)
 				{
 				case CDDS_PREERASE:
-					FillRect(customdraw->hdc, &customdraw->rc, hbrDarkBackground);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hwnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
 				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
 					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
