@@ -145,9 +145,10 @@ ULONG WINAPI glDirectDrawClipper_AddRef(glDirectDrawClipper *This)
 }
 ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 {
+	ULONG ret;
+	IUnknown *creator = NULL;
 	TRACE_ENTER(1,14,This);
 	if(!This) TRACE_RET(ULONG,8,0);
-	ULONG ret;
 	This->refcount--;
 	ret = This->refcount;
 	if (This->refcount == 0)
@@ -156,9 +157,10 @@ ULONG WINAPI glDirectDrawClipper_Release(glDirectDrawClipper *This)
 		if (This->vertices) free(This->vertices);
 		if (This->indices) free(This->indices);
 		if (This->glDD7) glDirectDraw7_DeleteClipper(This->glDD7, This);
-		if (This->creator) This->creator->Release();
+		creator = This->creator;
 		if (This->texture.initialized) glTexture_Release(&This->texture, FALSE);
 		if (This->glDD7) IDXGLRenderer_FreePointer(This->glDD7->renderer, This);
+		if(creator) creator->Release();
 	};
 	TRACE_EXIT(8,ret);
 	return ret;
