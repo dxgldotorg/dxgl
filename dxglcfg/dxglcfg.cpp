@@ -429,8 +429,7 @@ void MakeTabsDark(HWND hWnd)
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
 }
 
-
-void EnableDarkModeForMainDialog(HWND hDialog)
+void SetDarkMode(HWND hWnd)
 {
 	HKEY hKeyPersonalize;
 	DWORD lightapps;
@@ -461,9 +460,9 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	if (_DwmSetWindowAttribute)
 	{
 		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
+			_DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
 		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
+			_DwmSetWindowAttribute(hWnd, 19, &usedarkmode, sizeof(BOOL));
 	}
 	if (!hbrDarkBackground)
 	{
@@ -480,8 +479,12 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 		else _SetPreferredAppMode(0);
 	}
 	if (_FlushMenuThemes) _FlushMenuThemes();
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	_SetWindowTheme(hWnd, L"Explorer", NULL);
+	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+}
+void EnableDarkModeForMainDialog(HWND hDialog)
+{
+	SetDarkMode(hDialog);
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_APPLY));
@@ -596,50 +599,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 
 void EnableDarkModeForModeListDialog(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	MakeButtonDark(GetDlgItem(hDialog, IDC_MODELIST));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -648,50 +608,7 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 
 void EnableDarkModeForWriteINIDialog(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPINIOPTIONS));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOWRITEREGISTRY));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_OVERRIDEREGISTRY));
@@ -705,51 +622,8 @@ void EnableDarkModeForWriteINIDialog(HWND hDialog)
 
 void EnableDarkModeForAffinityDialog(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
 	int i;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	for (i = 0; i < 64; i++)
 		MakeCheckboxDark(GetDlgItem(hDialog, IDC_CPU0 + i));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SINGLECORE));
@@ -764,51 +638,7 @@ void EnableDarkModeForAffinityDialog(HWND hDialog)
 
 void EnableDarkModeForTextureShaderTest(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
-	int i;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXSTAGE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXSTAGE));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINSTAGE));
@@ -873,51 +703,7 @@ void EnableDarkModeForTextureShaderTest(HWND hDialog)
 
 void EnableDarkModeForVertexShaderTest(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
-	int i;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTUREFILE));
@@ -990,51 +776,7 @@ void EnableDarkModeForVertexShaderTest(HWND hDialog)
 
 void EnableDarkModeForWindowStyleTest(HWND hDialog)
 {
-	HKEY hKeyPersonalize;
-	DWORD lightapps;
-	DWORD regsize = sizeof(DWORD);
-	LONG error;
-	LONG_PTR wndstyle;
-	int i;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
-	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
-	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
-	else
-	{
-		// Check for dark mode Registry preference
-		error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
-			KEY_READ, &hKeyPersonalize);
-		if (error == ERROR_SUCCESS)
-		{
-			error = RegQueryValueEx(hKeyPersonalize, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
-			if (error == ERROR_SUCCESS)
-			{
-				if (lightapps) usedarkmode = FALSE;
-				else usedarkmode = TRUE;
-			}
-			else usedarkmode = FALSE;
-			RegCloseKey(hKeyPersonalize);
-		}
-		else usedarkmode = FALSE;
-	}
-	if (_DwmSetWindowAttribute)
-	{
-		if (osver.dwBuildNumber >= 18985)
-			_DwmSetWindowAttribute(hDialog, DWMWA_USE_IMMERSIVE_DARK_MODE, &usedarkmode, sizeof(BOOL));
-		else if (osver.dwBuildNumber >= 17763)
-			_DwmSetWindowAttribute(hDialog, 19, &usedarkmode, sizeof(BOOL));
-	}
-	if (!hbrDarkBackground)
-	{
-		hbrDarkBackground = CreateSolidBrush(darkbackground);
-		hbrDarkTabBackground = CreateSolidBrush(darktabbackground);
-		hbrDarkTabHot = CreateSolidBrush(darktabhot);
-		hbrDarkHighlight = CreateSolidBrush(darkhighlight);
-		hbrDarkTabBorder = CreateSolidBrush(darktabborder);
-		hpenDarkTabBorder = CreatePen(PS_SOLID, 1, darktabborder);
-	}
-	_SetWindowTheme(hDialog, L"Explorer", NULL);
-	SendMessage(hDialog, WM_THEMECHANGED, 0, 0);
+	SetDarkMode(hDialog);
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPSTYLE));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMAXIMIZEBOX));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMINIMIZEBOX));
