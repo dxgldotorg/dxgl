@@ -2932,7 +2932,7 @@ HRESULT WINAPI GetSurfaceFromDCCallback(LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSU
 {
 	HDC hdc = *(HDC*)lpContext;
 	dxglDirectDrawSurface7 *surface = (dxglDirectDrawSurface7*)lpDDSurface;
-	glTexture *texture = surface->texture;
+	DXGLTexture *texture = surface->texture;
 	if (!texture) return DDENUMRET_OK;
 	if (texture->levels[surface->miplevel].hdc == hdc)
 	{

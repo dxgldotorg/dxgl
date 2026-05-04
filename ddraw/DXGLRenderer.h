@@ -90,6 +90,7 @@ typedef struct IDXGLRendererVtbl
     // IDXGLInterface
     HRESULT (WINAPI *GetAttachedDevice)(IDXGLRenderer *This, struct glDirectDraw7 **glDD7);
     HRESULT (WINAPI *SetAttachedDevice)(IDXGLRenderer *This, struct glDirectDraw7 *glDD7);
+    HRESULT (WINAPI *GetRendererHandle)(IDXGLRenderer *This, void **handle);
     HRESULT (WINAPI *GetCaps)(IDXGLRenderer *This, DWORD index, void *output);
     HRESULT (WINAPI *Reset)(IDXGLRenderer *This);
     HRESULT (WINAPI *PostCommand)(IDXGLRenderer *This, struct DXGLPostQueueCmd *cmd);
@@ -122,8 +123,9 @@ typedef struct IDXGLRendererVtbl
 #define IDXGLRenderer_AddRef(p)             (p)->lpVtbl->AddRef(p)
 #define IDXGLRenderer_Release(p)            (p)->lpVtbl->Release(p)
 // IDXGLRenderer
-#define IDXGLRenderer_GetAttachedDevice(p,a)             (p)->lpVtbl->GetAttachedDevice(p,a) 
-#define IDXGLRenderer_SetAttachedDevice(p,a)             (p)->lpVtbl->SetAttachedDevice(p,a) 
+#define IDXGLRenderer_GetAttachedDevice(p,a)             (p)->lpVtbl->GetAttachedDevice(p,a)
+#define IDXGLRenderer_SetAttachedDevice(p,a)             (p)->lpVtbl->SetAttachedDevice(p,a)
+#define IDXGLRenderer_GetRendererHandle(p,a)             (p)->lpVtbl->GetRendererHandle(p,a)
 #define IDXGLRenderer_GetCaps(p,a,b)                     (p)->lpVtbl->GetCaps(p,a,b)
 #define IDXGLRenderer_Reset(p)                           (p)->lpVtbl->Reset(p)
 #define IDXGLRenderer_PostCommand(p,a)                   (p)->lpVtbl->PostCommand(p,a)

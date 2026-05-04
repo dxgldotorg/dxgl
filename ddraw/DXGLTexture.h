@@ -82,6 +82,7 @@ typedef struct DXGLTexture
 			DWORD_PTR framebufferhandle;
 			GLuint FBO;
 		};
+		HDC hdc;
 	} levels[17];  // Dimensions of texture levels, future proofed to 65536
 	union
 	{

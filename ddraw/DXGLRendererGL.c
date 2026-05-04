@@ -53,6 +53,7 @@ static const struct IDXGLRendererVtbl vtbl =
 	DXGLRendererGL_Release,
 	DXGLRendererGL_GetAttachedDevice,
 	DXGLRendererGL_SetAttachedDevice,
+	DXGLRendererGL_GetRendererHandle,
 	DXGLRendererGL_GetCaps,
 	DXGLRendererGL_Reset,
 	DXGLRendererGL_PostCommand,
@@ -1042,6 +1043,12 @@ HRESULT WINAPI DXGLRendererGL_SetAttachedDevice(LPDXGLRENDERERGL This, struct gl
 {
 	This->glDD7 = glDD7;
 	if (!This->glDD7) {}
+	return DD_OK;
+}
+
+HRESULT WINAPI DXGLRendererGL_GetRendererHandle(LPDXGLRENDERERGL This, void **handle)
+{
+	*handle = (void*)This->hrc;
 	return DD_OK;
 }
 
