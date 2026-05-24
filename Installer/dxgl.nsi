@@ -1,5 +1,5 @@
 ; DXGL
-; Copyright (C) 2011-2025 William Feely
+; Copyright (C) 2011-2026 William Feely
 
 ; This library is free software; you can redistribute it and/or
 ; modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2026_0"
+!if ${COMPILER} == "VC2026_6"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2026"
 !ifdef _CPU_X64
@@ -217,12 +217,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2026_0"
+!else if ${COMPILER} == "VC2026_6"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35719/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2026.1 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.51.36231/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2026.6 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "B618F601A1989A696C8EFA0208EFD977A3BFE9A8DF8ACE8FAE9EEF20262240E7EEFCB67CE466FE166BDC606D80D594D2DE80B3B4E530749AAB8E99F5CECD86D4"
+!define runtime_sha512 "3DECE58F72DDCB2574C33BD4CC41FDE8B4304C5BC0A9E6A0CF9EB9E095A389F5659462475AB366A6D8A6820999FD5F03AB17F865C921C481632B236A05EE5B35"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -271,12 +271,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2026_0"
+!else if ${COMPILER} == "VC2026_6"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.50.35719/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2026.1 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.51.36231/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2026.6 x86"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "A6687EF328597C90093A4278A12A0059496711801D84A40DC730511BADDE3D94199368D57FDC0926D8A3E19D2D2AEEC8FE58337B91CC69AEB4DFA251833CA5A6"
+!define runtime_sha512 "58A32CD725FB36273E6576C0BD76B8A962F0E5411580CC50AEAABE80A75BECB8FED43B018B2D4BD483E6910BEDFAA3491DFBA8EDDC9E96855DB851EEEF3F5CDC"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -421,7 +421,7 @@ Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2026_0"
+  !if ${COMPILER} == "VC2026_6"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -510,7 +510,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2026_0"
+  !if ${COMPILER} == "VC2026_6"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -572,7 +572,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2026_0"
+  !if ${COMPILER} == "VC2026_6"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -585,7 +585,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.50.35719" $1
+  ${VersionCompare} "$0" "14.51.36231" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -705,7 +705,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2026_0"
+!if ${COMPILER} == "VC2026_6"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
