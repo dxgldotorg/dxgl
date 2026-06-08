@@ -564,7 +564,7 @@ DDRAW_API HANDLE WINAPI GetOLEThunkData(int i1)
 
 /// Stub for function found in system ddraw.dll
 /// Function import is GetSurfaceFromDC
-DDRAW_API HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
+HRESULT WINAPI GlobalGetSurfaceFromDC(LPDIRECTDRAW7 lpDD, HDC hdc, LPDIRECTDRAWSURFACE7 *lpDDS)
 {
 	TRACE_ENTER(3,14,lpDD,9,hdc,14,lpDDS);
 	FIXME("GetSurfaceFromDC: Verify proper referencing for LPDIRECTDRAW7\n");
