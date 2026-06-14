@@ -524,13 +524,13 @@ int ProcessHeaders(char *path)
 			#elif (_MSC_VER == 1800)
 			strncpy(findptr, "\"VC2013\"\n", 13);
 			#elif (_MSC_VER == 1951)
-			strncpy(findptr, "\"VC2026_6\"\n", 13);
+			strncpy(findptr, "\"VC2026_7\"\n", 13);
 			#elif ((_MSC_VER >= 1950) && (_MSC_VER < 1951))
-			#error Please update your Visual Studio 2026 to Update 6 (May 2026 Feature Update) before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
+			#error Please update your Visual Studio 2026 to Update 7 (June 2026 Feature Update) before continuing.  If you have an expired MSDN subscription and cannot update your paid version of Visual Studio, you can still use the Community version to compile DXGL.
 			#error If this error persists after updating Visual Studio, try uninstalling older MSVC toolchains.*/
 			#elif (_MSC_VER > 1951)
-			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2026.6.")
-			strncpy(findptr, "\"VC2026_6\"\n", 13);
+			#pragma message ("Detected a newer version of Visual Studio, compiling assuming 2026.7.")
+			strncpy(findptr, "\"VC2026_7\"\n", 13);
 			#else
 			#pragma message ("Can't detect MSVC version!")
 			strncpy(findptr, "\"UNKNOWN\"\n", 13);
