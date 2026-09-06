@@ -1190,18 +1190,142 @@ void trace_string(const char *str, int level)
 	LeaveCriticalSection(&trace_cs);
 }
 
+static const char *winversions[] =
+{
+	"Windows",               // 0
+	"Windows NT",            // 1
+	"Windows 95",            // 2
+	"Windows 98",            // 3
+	"Windows Me",            // 4
+	"Windows 2000",          // 5
+	"Windows XP",            // 6
+	"Windows XP 2003",       // 7
+	"Windows Server 2003",   // 8
+	"Windows Vista",         // 9
+	"Windows Server 2008",   // 10
+	"Windows 7",             // 11
+	"Windows Server 2008 R2",// 12
+	"Windows 8",             // 13
+	"Windows Server 2012",   // 14
+	"Windows 8.1",           // 15
+	"Windows Server 2012 R2",// 16
+	"Windows 10 Prerelease", // 17
+	"Windows 10",            // 18
+	"Windows Server 2016",   // 19
+	"Windows Server 2019",   // 20
+	"Windows Server 2022",   // 21
+	"Windows 11",            // 22
+	"Windows Server 2025",   // 23
+	"Windows 11 or later",   // 24
+	"Windows Server 2028",   // 25
+};
+
+static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
+static BOOL (WINAPI *_GetVersionExW)(LPOSVERSIONINFOW lpVersionInformation) = NULL;
+static void print_winver(OSVERSIONINFOA *osver, char *output, BOOL usentcall)
+{
+	char outstring[256];
+	HMODULE hNtdll;
+	OSVERSIONINFOEXW osverex;
+	OSVERSIONINFOEXA osverexa;
+	if (!_GetVersionExW)
+	{
+		hNtdll = GetModuleHandle(_T("ntdll.dll"));
+		if (hNtdll) _GetVersionExW = GetProcAddress(hNtdll, "RtlGetVersion");
+	}
+	osverex.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+	if (usentcall && _GetVersionExW) _GetVersionExW(&osverex);
+	else
+	{
+		GetVersionExA(&osverexa);
+		memcpy(&osverex, &osverexa, sizeof(OSVERSIONINFOA));
+		WideCharToMultiByte(CP_ACP, 0, osverex.szCSDVersion, 128, osverexa.szCSDVersion, 128, NULL, NULL);
+		osverex.wServicePackMajor = osverexa.wServicePackMajor;
+		osverex.wServicePackMinor = osverexa.wServicePackMinor;
+		osverex.wSuiteMask = osverexa.wSuiteMask;
+		osverex.wProductType = osverexa.wProductType;
+		osverex.wReserved = osverexa.wReserved;
+	}
+	int winver = 0;
+	if ((osver->dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) || (osver->dwPlatformId == VER_PLATFORM_WIN32s))
+	{
+		if ((osver->dwMajorVersion == 4) && (osver->dwMinorVersion == 0)) winver = 2;
+		else if ((osver->dwMajorVersion == 4) && (osver->dwMinorVersion == 10)) winver = 3;
+		else if ((osver->dwMajorVersion == 4) && (osver->dwMinorVersion == 90))	winver = 4;
+		else winver = 0;
+	}
+	else
+	{
+		if ((osver->dwMajorVersion == 5) && (osver->dwMinorVersion == 0)) winver = 5;
+		if ((osver->dwMajorVersion == 5) && (osver->dwMinorVersion == 1)) winver = 6;
+		if ((osver->dwMajorVersion == 5) && (osver->dwMinorVersion == 2))
+		{
+			if (osverex.wProductType != VER_NT_WORKSTATION) winver = 8;
+			else winver = 7;
+		}
+		if ((osver->dwMajorVersion == 6) && (osver->dwMinorVersion == 0))
+		{
+			if (osverex.wProductType != VER_NT_WORKSTATION) winver = 10;
+			else winver = 9;
+		}
+		if ((osver->dwMajorVersion == 6) && (osver->dwMinorVersion == 1))
+		{
+			if (osverex.wProductType != VER_NT_WORKSTATION) winver = 12;
+			else winver = 11;
+		}
+		if ((osver->dwMajorVersion == 6) && (osver->dwMinorVersion == 2))
+		{
+			if (osverex.wProductType != VER_NT_WORKSTATION) winver = 14;
+			else winver = 13;
+		}
+		if ((osver->dwMajorVersion == 6) && (osver->dwMinorVersion == 3))
+		{
+			if (osverex.wProductType != VER_NT_WORKSTATION) winver = 16;
+			else winver = 15;
+		}
+		if ((osver->dwMajorVersion == 6) && (osver->dwMinorVersion == 4)) winver = 17;
+		if ((osver->dwMajorVersion == 10) && (osver->dwMinorVersion == 0))
+		{
+			if (osverex.wProductType == VER_NT_WORKSTATION)
+			{
+				if (osver->dwBuildNumber <= 21390) winver = 18;
+				else if ((osver->dwBuildNumber > 21390) && (osver->dwBuildNumber < 29000)) winver = 22;
+				else winver = 24;  // FIXME:  Update when future versions are confirmed
+			}
+			else
+			{
+				if (osver->dwBuildNumber <= 14393) winver = 19;
+				else if ((osver->dwBuildNumber > 14393) && (osver->dwBuildNumber <= 17763)) winver = 20;
+				else if ((osver->dwBuildNumber > 17763) && (osver->dwBuildNumber <= 20348)) winver = 21;
+				else if ((osver->dwBuildNumber > 20348) && (osver->dwBuildNumber <= 26100)) winver = 23;
+				else winver = 25; // FIXME:  Update when future versions are confirmed
+			}
+		}
+	}
+	strcat(output, winversions[winver]);
+	if (osver->dwPlatformId == VER_PLATFORM_WIN32_NT)
+	{
+		if (osver->szCSDVersion[0]) strcat(output, " ");
+	}
+	strcat(output, osver->szCSDVersion);
+	strcat(output, ", Build ");
+	if (osver->dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) _itoa(LOWORD(osver->dwBuildNumber), output + strlen(output), 10);
+	else _itoa(osver->dwBuildNumber, output + strlen(output), 10);
+	strcat(output, "\r\n");
+}
+
 void trace_sysinfo(int level)
 {
 	DWORD byteswritten;
-	OSVERSIONINFOA osver;
+	OSVERSIONINFOA osver, osver2;
 	OSVERSIONINFOW osverw;
 	DWORD buildver;
 	char osstring[256];
 	HMODULE hKernel32;
 	HMODULE hNtdll;
 	BOOL(WINAPI *iswow64)(HANDLE, PBOOL) = NULL;
-	static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
 	BOOL is64;
+	BOOL isNT;
 	int i;
 	const GLubyte *glstring;
 	if (sysinfo_dumped) return;
@@ -1215,9 +1339,13 @@ void trace_sysinfo(int level)
 		return;
 	}
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+	osver2.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
 	osverw.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-	hNtdll = GetModuleHandle(_T("ntdll.dll"));
-	if (hNtdll) _RtlGetVersion = GetProcAddress(hNtdll, "RtlGetVersion");
+	if (!_RtlGetVersion)
+	{
+		hNtdll = GetModuleHandle(_T("ntdll.dll"));
+		if (hNtdll) _RtlGetVersion = GetProcAddress(hNtdll, "RtlGetVersion");
+	}
 	if (_RtlGetVersion)
 	{
 		_RtlGetVersion(&osverw);
@@ -1225,39 +1353,49 @@ void trace_sysinfo(int level)
 		osver.dwMinorVersion = osverw.dwMinorVersion;
 		osver.dwBuildNumber = osverw.dwBuildNumber;
 		osver.dwPlatformId = osverw.dwPlatformId;
-		for (i = 0; i < 128; i++)
-			osver.szCSDVersion[i] = (CHAR)osverw.szCSDVersion[i];
+		WideCharToMultiByte(CP_ACP, 0, osverw.szCSDVersion, 128, osver.szCSDVersion, 128, NULL, NULL);
 	}
 	else GetVersionExA(&osver);
-	if(osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) buildver = LOWORD(osver.dwBuildNumber);
-	else buildver = osver.dwBuildNumber;
-	if((osver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) || (osver.dwPlatformId == VER_PLATFORM_WIN32s))
-		sprintf(osstring,"Windows %u.%u.%u",osver.dwMajorVersion,osver.dwMinorVersion,buildver);
-	else sprintf(osstring,"Windows NT %u.%u.%u",osver.dwMajorVersion,osver.dwMinorVersion,buildver);
-	if(osver.szCSDVersion[0])
+	for (i = strlen(osver.szCSDVersion); i < 128; i++)
+		osver.szCSDVersion[i] = 0;
+	strcpy(osstring, "Windows version:  ");
+	print_winver(&osver, osstring, 1);
+	if (level >= 4)
 	{
-		strcat(osstring,", ");
-		strcat(osstring,osver.szCSDVersion);
+		for (i = 0; i < trace_depth - 1; i++)
+			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+	}
+	WriteFile(outfile, osstring, strlen(osstring), &byteswritten, NULL);
+	GetVersionExA(&osver2);
+	for (i = strlen(osver2.szCSDVersion); i < 128; i++)
+		osver2.szCSDVersion[i] = 0;
+	if (memcmp(&osver, &osver2, sizeof(OSVERSIONINFOA)))
+	{
+		strcpy(osstring, "Detected as version:  ");
+		print_winver(&osver2, osstring, 1);
+		if (level >= 4)
+		{
+			for (i = 0; i < trace_depth - 1; i++)
+				WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+		}
+		WriteFile(outfile, osstring, strlen(osstring), &byteswritten, NULL);
 	}
 	if(((osver.dwMajorVersion == 5) && (osver.dwMinorVersion >= 1)) || (osver.dwMajorVersion >= 6))
 	{
-		strcat(osstring,", ");
 		hKernel32 = LoadLibrary(_T("kernel32.dll"));
 		iswow64 = NULL;
 		if(hKernel32) iswow64 = (BOOL(WINAPI*)(HANDLE,PBOOL))GetProcAddress(hKernel32,"IsWow64Process");
 		is64 = FALSE;
 		if(iswow64) iswow64(GetCurrentProcess(),&is64);
 		if(hKernel32) FreeLibrary(hKernel32);
-		if(is64) strcat(osstring,"64-bit");
-		else strcat(osstring,"32-bit");
+		if(is64) strcpy(osstring,"64-bit Operating System\r\n");
+		else strcpy(osstring,"32-bit Operating System\r\n");
 	}
-	strcat(osstring,"\r\n");
 	if (level >= 4)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
 	}
-	WriteFile(outfile,"Windows version:  ",18,&byteswritten,NULL);
 	WriteFile(outfile,osstring,strlen(osstring),&byteswritten,NULL);
 	if (level >= 4)
 	{
