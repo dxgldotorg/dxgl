@@ -39,6 +39,11 @@
 /dxglcfg-old/Debug
 /dxglcfg-old/Release VS2026
 /dxglcfg-old/Release
+/dxglcfg-winui/Debug VS2026
+/dxglcfg-winui/Debug
+/dxglcfg-winui/Release VS2026
+/dxglcfg-winui/Release
+/dxglcfg-winui/x64
 /dxglcfg/Debug VS2026
 /dxglcfg/Debug
 /dxglcfg/Release VS2026
