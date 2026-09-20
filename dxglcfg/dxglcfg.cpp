@@ -6765,6 +6765,7 @@ int StartDXGLCFGWinUI()
 	HRESULT(WINAPI *_WindowsCreateString)(PCNZWCH sourceString, UINT32 length, HSTRING * string) = NULL;
 	HRESULT(WINAPI *_WindowsDeleteString)(HSTRING string) = NULL;
 	int(WINAPI * _RunDXGLConfigWinUI)(void *rundxgltest) = NULL;
+	OSVERSIONINFOA osver;
 	HMODULE hCombase = NULL;
 	HMODULE hDxglcfg_winui = NULL;
 	BOOL islandsAvailable = FALSE;
@@ -6772,6 +6773,9 @@ int StartDXGLCFGWinUI()
 	PCWSTR classnamestr = L"Windows.UI.Xaml.Hosting.WindowsXamlManager";
 	IUnknown *factory = NULL;
 	int error;
+	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+	GetVersionExA(&osver);
+	if ((osver.dwMajorVersion < 10) || (osver.dwBuildNumber < 17763)) return 0; // Bail out if not running Windows 10 1809+
 	hCombase = LoadLibrary(_T("combase.dll"));
 	if (hCombase)
 	{
