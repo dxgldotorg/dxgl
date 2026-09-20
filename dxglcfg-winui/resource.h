@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2026 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -15,21 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#pragma once
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
+#endif
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <dwmapi.h>
-#include <tchar.h>
-
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.UI.Xaml.Hosting.h>
-#include <winrt/Windows.UI.Xaml.Controls.h>
-#include <winrt/Windows.UI.Xaml.Markup.h>
-#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-
-
-
-#endif //_COMMON_H
+#define IDR_DXGLCFG_WINUI_MAIN 4000

@@ -1,0 +1,33 @@
+<!--
+    DXGL
+    Copyright (C) 2026 William Fely
+    
+    This library is free software; you can redistribute it an/or
+    modify it under the terms of the GNU Lesser General Pulic
+    License as published by the Free Software Foundation; eiher
+    version 2.1 of the License, or (at your option) any later verson.
+    
+    This library is distributed in the hope that it will be useul,
+    but WITHOUT ANY WARRANTY; without even the implied warrant of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See theGNU
+    Lesser General Public License for more detals.
+    
+    You should have received a copy of the GNU Lesser General Pulic
+    License along with this library; if not, write to the Free Softare
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+
+<Grid
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Name="MainGrid"
+    Margin="20">
+    <TextBlock
+        Margin="0,0,0,15"
+        Style="{StaticResource CaptionTextBlockStyle}"
+        Text="DXGL Config" />
+    <Button
+        Margin="0,0,0,25"
+        Content="Test"/>
+
+</Grid>

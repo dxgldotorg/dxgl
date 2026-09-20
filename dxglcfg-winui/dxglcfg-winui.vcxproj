@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClInclude Include="dxglcfg-winui.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -186,6 +187,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release VS2026|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release VS2026|x64'">Create</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="dxglcfg-winui.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="dxglcfg-main.xaml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

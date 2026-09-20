@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "dxglcfg-winui.h"
+#include "resource.h"
 
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt;
@@ -38,38 +39,57 @@ static const TCHAR dxglcfgname[] = _T("DXGL Config");
 
 DesktopWindowXamlSource xamlsource = nullptr;
 
+HBRUSH hbrDarkBackground = NULL;
+HBRUSH hbrLightBackground = NULL;
+HBRUSH *hbrBackground;
+
+BOOL darkmode = FALSE;
+
 void (*_RunDXGLTest)(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d, HWND parent) = NULL;
 
 HWND islandwnd = NULL;
+HMODULE hDxglcfgWinui = NULL;
 
 void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 {
 	RECT r;
+	HRSRC hRes;
+	HGLOBAL hLoad;
+	const char *data;
+	DWORD size;
+	std::string utf8str;
+	std::wstring wstr;
+	int wcharsize;
 	xamlsource = DesktopWindowXamlSource();
 	auto interop = xamlsource.as<IDesktopWindowXamlSourceNative>();
 	check_hresult(interop->AttachToWindow(hwnd));
 	check_hresult(interop->get_WindowHandle(&islandwnd));
 	GetClientRect(hwnd, &r);
 	SetWindowPos(islandwnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
-
-	// FIXME:  Replace with real code
-	winrt::Windows::UI::Xaml::Controls::Grid mainGrid;
-	winrt::Windows::UI::Xaml::Controls::TextBlock textBlock;
-
-	textBlock.Text(L"Coming soon...");
-	textBlock.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
-	textBlock.VerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment::Center);
-
-	mainGrid.Children().Append(textBlock);
-
-	// 7. Inject the UWP container framework straight into the island source
-	xamlsource.Content(mainGrid);
-
+	if (!hDxglcfgWinui) hDxglcfgWinui = GetModuleHandle(_T("dxglcfg-winui.dll"));
+	hRes = FindResource(hDxglcfgWinui, MAKEINTRESOURCE(IDR_DXGLCFG_WINUI_MAIN), L"XAML");
+	hLoad = LoadResource(hDxglcfgWinui, hRes);
+	data = (const char*)LockResource(hLoad);
+	size = SizeofResource(hDxglcfgWinui, hRes);
+	if (data && size)
+	{
+		utf8str.assign(data, size);
+		wcharsize = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, NULL, 0);
+		wstr.resize(wcharsize-1, 0);
+		MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &wstr[0], wcharsize);
+	}
+	if (!wstr.empty())
+	{
+		winrt::Windows::UI::Xaml::UIElement xamlRoot =
+			winrt::Windows::UI::Xaml::Markup::XamlReader::Load(wstr).as<winrt::Windows::UI::Xaml::UIElement>();
+		xamlsource.Content(xamlRoot);
+	}
 }
 
 LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	RECT r;
 	switch (Msg)
 	{
 	case WM_CREATE:
@@ -82,6 +102,12 @@ LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPAR
 	case WM_SIZE:
 		if (islandwnd) SetWindowPos(islandwnd, NULL, 0, 0, LOWORD(lParam), HIWORD(lParam), SWP_NOZORDER|SWP_SHOWWINDOW);
 		return 0;
+	case WM_ERASEBKGND:
+		GetClientRect(hwnd, &r);
+		FillRect((HDC)wParam, &r, hbrDarkBackground);
+		return 1;
+	case WM_NCCALCSIZE:
+		return 0;
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
@@ -89,7 +115,7 @@ LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPAR
 
 		// All painting occurs here, between BeginPaint and EndPaint.
 
-		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_BTNSHADOW));
+		FillRect(hdc, &ps.rcPaint, hbrDarkBackground);
 
 		EndPaint(hwnd, &ps);
 	}
@@ -107,12 +133,14 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 	MSG msg;
 	WindowsXamlManager xamlmanager = WindowsXamlManager::InitializeForCurrentThread();
 	_RunDXGLTest = (void(*)(int, int, int, int, int, int, int, int, int, double, bool, bool, BOOL, BOOL, HWND))rundxgltest;
+	hbrDarkBackground = CreateSolidBrush(RGB(32, 32, 32));
+	hbrLightBackground = CreateSolidBrush(RGB(243, 243, 243));
 	ZeroMemory(&wndclass, sizeof(WNDCLASS));
 	wndclass.lpfnWndProc = DXGLConfigWinUIWndProc;
 	wndclass.hInstance = hinstance;
 	wndclass.lpszClassName = wndclassname;
 	RegisterClass(&wndclass);
-	hwnd = CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP,wndclassname,dxglcfgname,WS_OVERLAPPEDWINDOW,
+	hwnd = CreateWindowEx(0,wndclassname,dxglcfgname,WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 		NULL, NULL, hinstance, NULL);
 	if (!hwnd) return 0;
@@ -122,5 +150,9 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+	DeleteObject(hbrDarkBackground);
+	hbrDarkBackground = NULL;
+	DeleteObject(hbrLightBackground);
+	hbrLightBackground = NULL;
 	return 1;
 }
