@@ -164,3 +164,6 @@ BuildLog.htm
 /Installer/msvcp71.dll
 /Installer/msvcr71.dll
 *.suo
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+/dxglcfg-winui/Generated Files

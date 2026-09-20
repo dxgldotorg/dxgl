@@ -6806,6 +6806,11 @@ int StartDXGLCFGWinUI()
 				FreeLibrary(hDxglcfg_winui);
 				return error;
 			}
+			else
+			{
+				error = GetLastError();
+				return 0;
+			}
 		}
 		return 0;
 	}

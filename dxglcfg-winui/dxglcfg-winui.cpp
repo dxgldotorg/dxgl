@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "common.h"
+#include "pch.h"
 #include "dxglcfg-winui.h"
 #include "resource.h"
 
@@ -37,7 +37,7 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
-DesktopWindowXamlSource xamlsource = nullptr;
+//Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xamlsource = nullptr;
 
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrLightBackground = NULL;
@@ -53,7 +53,7 @@ HMODULE hDxglcfgWinui = NULL;
 
 void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 {
-	RECT r;
+	/*RECT r;
 	HRSRC hRes;
 	HGLOBAL hLoad;
 	const char *data;
@@ -84,7 +84,7 @@ void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 		winrt::Windows::UI::Xaml::UIElement xamlRoot =
 			winrt::Windows::UI::Xaml::Markup::XamlReader::Load(wstr).as<winrt::Windows::UI::Xaml::UIElement>();
 		xamlsource.Content(xamlRoot);
-	}
+	}*/
 }
 
 LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -131,7 +131,7 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 	WNDCLASS wndclass;
 	HINSTANCE hinstance = GetModuleHandle(NULL);
 	MSG msg;
-	WindowsXamlManager xamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+	//WindowsXamlManager xamlmanager = WindowsXamlManager::InitializeForCurrentThread();
 	_RunDXGLTest = (void(*)(int, int, int, int, int, int, int, int, int, double, bool, bool, BOOL, BOOL, HWND))rundxgltest;
 	hbrDarkBackground = CreateSolidBrush(RGB(32, 32, 32));
 	hbrLightBackground = CreateSolidBrush(RGB(243, 243, 243));
