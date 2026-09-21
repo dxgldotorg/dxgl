@@ -20,14 +20,15 @@
 <Grid
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     Name="MainGrid"
     Margin="20">
-    <TextBlock
-        Margin="0,0,0,15"
-        Style="{StaticResource CaptionTextBlockStyle}"
-        Text="DXGL Config" />
-    <Button
-        Margin="0,0,0,25"
-        Content="Test"/>
+    <StackPanel>
+        <TextBlock
+            Margin="0,0,0,15"
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Text="test" />
 
+        <Button Margin="0,0,0,25" Content="Test" />
+    </StackPanel>
 </Grid>

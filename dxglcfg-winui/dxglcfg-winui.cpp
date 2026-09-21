@@ -19,8 +19,11 @@
 #include "dxglcfg-winui.h"
 #include "resource.h"
 
-using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt;
+using namespace winrt::Microsoft::UI::Dispatching;
+using namespace winrt::Microsoft::UI::Xaml;
+using namespace winrt::Microsoft::UI::Xaml::Hosting;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 
 #ifdef _M_X64
@@ -37,7 +40,8 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
-//Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xamlsource = nullptr;
+DispatcherQueueController queuecontroller = nullptr;
+DesktopWindowXamlSource xamlsource = nullptr;
 
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrLightBackground = NULL;
@@ -53,7 +57,7 @@ HMODULE hDxglcfgWinui = NULL;
 
 void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 {
-	/*RECT r;
+	RECT r;
 	HRSRC hRes;
 	HGLOBAL hLoad;
 	const char *data;
@@ -62,9 +66,11 @@ void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 	std::wstring wstr;
 	int wcharsize;
 	xamlsource = DesktopWindowXamlSource();
-	auto interop = xamlsource.as<IDesktopWindowXamlSourceNative>();
-	check_hresult(interop->AttachToWindow(hwnd));
-	check_hresult(interop->get_WindowHandle(&islandwnd));
+	winrt::Microsoft::UI::WindowId windowid;
+	windowid.Value = reinterpret_cast<uint64_t>(hwnd);
+	xamlsource.Initialize(windowid);
+	auto islandwindowid = xamlsource.SiteBridge().WindowId();
+	islandwnd = reinterpret_cast<HWND>(islandwindowid.Value);
 	GetClientRect(hwnd, &r);
 	SetWindowPos(islandwnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
 	if (!hDxglcfgWinui) hDxglcfgWinui = GetModuleHandle(_T("dxglcfg-winui.dll"));
@@ -81,15 +87,22 @@ void CreateXamlWindow(HWND hwnd, HINSTANCE hinstance)
 	}
 	if (!wstr.empty())
 	{
-		winrt::Windows::UI::Xaml::UIElement xamlRoot =
-			winrt::Windows::UI::Xaml::Markup::XamlReader::Load(wstr).as<winrt::Windows::UI::Xaml::UIElement>();
-		xamlsource.Content(xamlRoot);
-	}*/
+		winrt::Microsoft::UI::Xaml::UIElement xamlRoot =
+			winrt::Microsoft::UI::Xaml::Markup::XamlReader::Load(wstr).as<winrt::Microsoft::UI::Xaml::UIElement>();
+		auto maingrid = xamlRoot.as<winrt::Microsoft::UI::Xaml::Controls::Grid>();
+		xamlsource.Content(maingrid);
+	}
 }
 
 LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	RECT r;
+	RECT r,r2;
+	LRESULT result;
+	NCCALCSIZE_PARAMS *ncparams;
+	WINDOWPLACEMENT wndplace;
+	WINDOWPOS *windowpos;
+	int bordersize;
+	UINT dpi;
 	switch (Msg)
 	{
 	case WM_CREATE:
@@ -107,9 +120,32 @@ LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPAR
 		FillRect((HDC)wParam, &r, hbrDarkBackground);
 		return 1;
 	case WM_NCCALCSIZE:
-		return 0;
+		if (wParam)
+		{
+			ncparams = (NCCALCSIZE_PARAMS*)lParam;
+			wndplace.length = sizeof(WINDOWPLACEMENT);
+			GetWindowPlacement(hwnd, &wndplace);
+			if (wndplace.showCmd == SW_SHOWMAXIMIZED)
+			{
+				bordersize = GetSystemMetrics(SM_CXPADDEDBORDER);
+				ncparams->rgrc[0].top += GetSystemMetrics(SM_CYSIZEFRAME) + bordersize;
+				ncparams->rgrc[0].left += GetSystemMetrics(SM_CXSIZEFRAME) + bordersize;
+				ncparams->rgrc[0].right -= GetSystemMetrics(SM_CXSIZEFRAME) + bordersize;
+				ncparams->rgrc[0].bottom -= GetSystemMetrics(SM_CYSIZEFRAME) + bordersize;
+			}
+			else
+			{
+				ncparams->rgrc[0].left += GetSystemMetrics(SM_CXSIZEFRAME);
+				ncparams->rgrc[0].right -= GetSystemMetrics(SM_CXSIZEFRAME);
+				ncparams->rgrc[0].bottom -= GetSystemMetrics(SM_CYSIZEFRAME);
+				dpi = GetDpiForWindow(hwnd);
+				ncparams->rgrc[0].top += MulDiv(1, dpi, 96);
+			}
+			ZeroMemory(&ncparams->rgrc[1], 2 * sizeof(RECT));
+			return WVR_REDRAW;
+		}
+		break;
 	case WM_PAINT:
-	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hwnd, &ps);
 
@@ -118,9 +154,7 @@ LRESULT CALLBACK DXGLConfigWinUIWndProc(HWND hwnd, UINT Msg, WPARAM wParam, LPAR
 		FillRect(hdc, &ps.rcPaint, hbrDarkBackground);
 
 		EndPaint(hwnd, &ps);
-	}
-	return 0;
-
+		return 0;
 	}
 	return DefWindowProc(hwnd, Msg, wParam, lParam);
 }
@@ -131,7 +165,14 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 	WNDCLASS wndclass;
 	HINSTANCE hinstance = GetModuleHandle(NULL);
 	MSG msg;
-	//WindowsXamlManager xamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+	PACKAGE_VERSION minver = { WINDOWSAPPSDK_RUNTIME_VERSION_UINT64 };
+	HRESULT error = MddBootstrapInitialize2(WINDOWSAPPSDK_RELEASE_MAJORMINOR, 
+		WINDOWSAPPSDK_RELEASE_VERSION_TAG_W,
+		minver,	MddBootstrapInitializeOptions_None);
+	if (FAILED(error)) return 0;
+	winrt::init_apartment(winrt::apartment_type::single_threaded);
+	queuecontroller = DispatcherQueueController::CreateOnCurrentThread();
+	WindowsXamlManager xamlmanager = WindowsXamlManager::InitializeForCurrentThread();
 	_RunDXGLTest = (void(*)(int, int, int, int, int, int, int, int, int, double, bool, bool, BOOL, BOOL, HWND))rundxgltest;
 	hbrDarkBackground = CreateSolidBrush(RGB(32, 32, 32));
 	hbrLightBackground = CreateSolidBrush(RGB(243, 243, 243));
@@ -145,6 +186,7 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 		NULL, NULL, hinstance, NULL);
 	if (!hwnd) return 0;
 	ShowWindow(hwnd, SW_SHOWNORMAL);
+	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{
 		TranslateMessage(&msg);
@@ -154,5 +196,6 @@ int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 	hbrDarkBackground = NULL;
 	DeleteObject(hbrLightBackground);
 	hbrLightBackground = NULL;
+	MddBootstrapShutdown();
 	return 1;
 }
