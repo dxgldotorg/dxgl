@@ -1228,6 +1228,7 @@ static void print_winver(OSVERSIONINFOA *osver, char *output, BOOL usentcall)
 	HMODULE hNtdll;
 	OSVERSIONINFOEXW osverex;
 	OSVERSIONINFOEXA osverexa;
+	int winver = 0;
 	if (!_GetVersionExW)
 	{
 		hNtdll = GetModuleHandle(_T("ntdll.dll"));
@@ -1246,7 +1247,6 @@ static void print_winver(OSVERSIONINFOA *osver, char *output, BOOL usentcall)
 		osverex.wProductType = osverexa.wProductType;
 		osverex.wReserved = osverexa.wReserved;
 	}
-	int winver = 0;
 	if ((osver->dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) || (osver->dwPlatformId == VER_PLATFORM_WIN32s))
 	{
 		if ((osver->dwMajorVersion == 4) && (osver->dwMinorVersion == 0)) winver = 2;
