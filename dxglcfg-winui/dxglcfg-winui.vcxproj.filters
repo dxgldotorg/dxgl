@@ -19,6 +19,7 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="dxglcfg-main.xaml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dxglcfg-winui.h">
@@ -46,10 +47,5 @@
     <ResourceCompile Include="dxglcfg-winui.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="dxglcfg-main.xaml">
-      <Filter>Resource Files</Filter>
-    </Page>
   </ItemGroup>
 </Project>
