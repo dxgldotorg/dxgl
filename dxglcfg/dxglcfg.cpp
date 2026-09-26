@@ -43,11 +43,8 @@
 #include "dxgltest.h"
 #include "common.h"
 #include "../common/version.h"
-#if _MSC_VER >= 1950
 #include "MultiDD.h"
 #include "tests.h"
-#include <hstring.h>
-#endif
 
 #pragma warning(disable: 4996)
 
@@ -6757,73 +6754,28 @@ typedef struct tagINITCOMMONCONTROLSEX {
 #endif
 #endif
 
-// Try WinRT mode
-#if _MSC_VER >= 1950
+// Attempt to start DXGL Config WinUI version
 int StartDXGLCFGWinUI()
 {
-	HRESULT(WINAPI *_RoGetActivationFactory)(HSTRING activatableClassId, REFIID iid, void **factory) = NULL;
-	HRESULT(WINAPI *_WindowsCreateString)(PCNZWCH sourceString, UINT32 length, HSTRING * string) = NULL;
-	HRESULT(WINAPI *_WindowsDeleteString)(HSTRING string) = NULL;
 	int(WINAPI * _RunDXGLConfigWinUI)(void *rundxgltest) = NULL;
-	OSVERSIONINFOA osver;
-	HMODULE hCombase = NULL;
 	HMODULE hDxglcfg_winui = NULL;
-	BOOL islandsAvailable = FALSE;
-	HSTRING classname = NULL;
-	PCWSTR classnamestr = L"Windows.UI.Xaml.Hosting.WindowsXamlManager";
-	IUnknown *factory = NULL;
 	int error;
-	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-	GetVersionExA(&osver);
 	if ((osver.dwMajorVersion < 10) || (osver.dwBuildNumber < 17763)) return 0; // Bail out if not running Windows 10 1809+
-	hCombase = LoadLibrary(_T("combase.dll"));
-	if (hCombase)
+	if (_wine_get_version) return 0; // Don't attempt to launch under Wine
+	hDxglcfg_winui = LoadLibrary(_T("dxglcfg-winui.dll"));
+	if (hDxglcfg_winui)
 	{
-		_RoGetActivationFactory = (HRESULT(WINAPI*)(HSTRING, REFIID, void**))GetProcAddress(hCombase, "RoGetActivationFactory");
-		_WindowsCreateString = (HRESULT(WINAPI*)(PCNZWCH, UINT32, HSTRING*))GetProcAddress(hCombase, "WindowsCreateString");
-		_WindowsDeleteString = (HRESULT(WINAPI*)(HSTRING))GetProcAddress(hCombase, "WindowsDeleteString");
-	}
-	else return 0;
-	if (_RoGetActivationFactory && _WindowsCreateString && _WindowsDeleteString)
-	{
-		if (SUCCEEDED(_WindowsCreateString(classnamestr, wcslen(classnamestr), &classname)))
-		{
-			if (SUCCEEDED(_RoGetActivationFactory(classname, IID_IUnknown, (void**) &factory)))
-			{
-				islandsAvailable = TRUE;
-				factory->Release();
-			}
-			_WindowsDeleteString(classname);
-		}
-		FreeLibrary(hCombase);
-		if (islandsAvailable)
-		{
-			hDxglcfg_winui = LoadLibrary(_T("dxglcfg-winui.dll"));
-			if (hDxglcfg_winui)
-			{
-				_RunDXGLConfigWinUI = (int(WINAPI*)(void*))GetProcAddress(hDxglcfg_winui, "RunDXGLConfigWinUI");
-				if (_RunDXGLConfigWinUI) error = _RunDXGLConfigWinUI(RunDXGLTest);
-				FreeLibrary(hDxglcfg_winui);
-				return error;
-			}
-			else
-			{
-				error = GetLastError();
-				return 0;
-			}
-		}
-		return 0;
+		_RunDXGLConfigWinUI = (int(WINAPI*)(void*))GetProcAddress(hDxglcfg_winui, "RunDXGLConfigWinUI");
+		if (_RunDXGLConfigWinUI) error = _RunDXGLConfigWinUI(RunDXGLTest);
+		FreeLibrary(hDxglcfg_winui);
+		return error;
 	}
 	else
 	{
-		FreeLibrary(hCombase);
+		error = GetLastError();
 		return 0;
 	}
 }
-
-#else
-int StartDXGLCFGWinUI() { return 0; }
-#endif
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
 {
