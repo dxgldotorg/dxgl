@@ -18,6 +18,8 @@
 #include "pch.h"
 #include "dxglcfg-winui.h"
 #include "resource.h"
+#include "../dxglcfg/resource.h"
+#include "util.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::UI::Dispatching;
@@ -26,7 +28,9 @@ using namespace winrt::Microsoft::UI::Xaml::Hosting;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Microsoft::UI::Xaml::XamlTypeInfo;
 using namespace winrt::Microsoft::UI::Xaml::Markup;
+using namespace winrt::Microsoft::UI::Xaml::Media::Imaging;
 using namespace winrt::Windows::UI::Xaml::Interop;
+using namespace winrt::Windows::Storage::Streams;
 
 
 #ifdef _M_X64
@@ -55,14 +59,16 @@ BOOL darkmode = FALSE;
 void (*_RunDXGLTest)(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d, HWND parent) = NULL;
 
-HWND islandwnd = NULL;
+HMODULE hDxglcfg = NULL;  // HMODULE for parent EXE to extract resources from
 HMODULE hDxglcfgWinui = NULL;
 
 class App : public ApplicationT<App, IXamlMetadataProvider>
 {
 public:
-	void OnLaunched(LaunchActivatedEventArgs const&)
+	winrt::Windows::Foundation::IAsyncAction OnLaunched(LaunchActivatedEventArgs const&)
 	{
+		HICON appicon;
+		HWND hwnd;
 		HRSRC hRes;
 		HGLOBAL hLoad;
 		const char *data;
@@ -93,8 +99,29 @@ public:
 			window.Content(maingrid);
 			window.SystemBackdrop(winrt::Microsoft::UI::Xaml::Media::MicaBackdrop());
 
-			auto titlebar = maingrid.FindName(L"DXGLCFGTitleBar").try_as<winrt::Microsoft::UI::Xaml::Controls::TitleBar>();
+			auto titlebar = maingrid.FindName(L"DXGLCFGTitlebar").try_as<winrt::Microsoft::UI::Xaml::Controls::TitleBar>();
 			titlebar.Title(dxglcfgname);
+			//auto titlebaricon = maingrid.FindName(L"TitlebarIcon").try_as<winrt::Microsoft::UI::Xaml::Controls::ImageIconSource>();
+			if (!hDxglcfg) hDxglcfg = GetModuleHandle(NULL);
+			try
+			{
+				appicon = (HICON)LoadImage(hDxglcfg, MAKEINTRESOURCE(IDI_DXGL), IMAGE_ICON,
+					GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+				auto windowNative = window.as<IWindowNative>();
+				winrt::check_hresult(windowNative->get_WindowHandle(&hwnd));
+				IRandomAccessStream stream = co_await ReadIconAsync(appicon, GetDpiForWindow(hwnd));
+				auto bitmapsource = BitmapImage();
+				co_await bitmapsource.SetSourceAsync(stream);
+				ImageIconSource titlebaricon;
+				titlebaricon.ImageSource(bitmapsource);
+				titlebar.IconSource(titlebaricon);
+				DestroyIcon(appicon);
+			}
+			catch (hresult_error const& error)
+			{
+
+			}
+
 		}
 		window.ExtendsContentIntoTitleBar(true);
 		window.Activate();

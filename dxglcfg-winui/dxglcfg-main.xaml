@@ -22,20 +22,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:winui="using:Microsoft.UI.Xaml.Controls"
-    Background="Transparent"
-    Name="DXGLCFGMainGrid">
+    Name="DXGLCFGMainGrid"
+    Background="Transparent">
     <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
     </Grid.RowDefinitions>
-    <TitleBar
-        IsPaneToggleButtonVisible="True"
-        Name="DXGLCFGTitleBar">
+    <TitleBar Name="DXGLCFGTitlebar" IsPaneToggleButtonVisible="True">
         <TitleBar.Resources>
-            <HorizontalAlignment x:Key="TitleBarContentHorizontalAlignment">Stretch</HorizontalAlignment>
+            <HorizontalAlignment x:Key="AccentFillColorDefaultBrush">Stretch</HorizontalAlignment>
         </TitleBar.Resources>
-        <TitleBar.IconSource>
-            <ImageIconSource x:Name="TitlebarIcon" />
-        </TitleBar.IconSource>
     </TitleBar>
 </Grid>

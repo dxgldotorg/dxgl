@@ -24,12 +24,15 @@
 #include <dwmapi.h>
 #include <tchar.h>
 #include <Unknwn.h>
+#include <coroutine>
 
 #undef GetCurrentTime
 #include <WindowsAppSDK-VersionInfo.h>
 #include <MddBootstrap.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h> 
+#include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.Graphics.Imaging.h>
 #include <winrt/Microsoft.UI.dispatching.h>
 #include <winrt/Microsoft.UI.Content.h>
 #include <winrt/Microsoft.UI.Interop.h>
@@ -41,6 +44,7 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.Media.h>
+#include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
 #include <Microsoft.UI.Xaml.Window.h>
 
 
