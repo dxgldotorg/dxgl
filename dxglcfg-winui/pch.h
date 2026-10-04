@@ -36,6 +36,7 @@
 #include <winrt/Microsoft.UI.dispatching.h>
 #include <winrt/Microsoft.UI.Content.h>
 #include <winrt/Microsoft.UI.Interop.h>
+#include <winrt/Microsoft.UI.Windowing.h>
 #include <winrt/Microsoft.UI.Xaml.h>
 #include <winrt/Microsoft.UI.Xaml.Interop.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>

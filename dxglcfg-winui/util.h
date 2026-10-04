@@ -20,5 +20,6 @@
 #define _UTIL_H
 
 winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::Streams::IRandomAccessStream> ReadIconAsync(HICON icon, int dpi);
+void GetThemeInfo(BOOL *darkmode, BOOL *accentmode, DWORD *accentcolor);
 
 #endif //_UTIL_H

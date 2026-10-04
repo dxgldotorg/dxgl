@@ -147,7 +147,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>dxgl-winui.def</ModuleDefinitionFile>
-      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;Shell32.lib;$(OutDir)cfgmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -170,7 +170,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>dxgl-winui.def</ModuleDefinitionFile>
-      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;Shell32.lib;$(OutDir)cfgmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -191,7 +191,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>dxgl-winui.def</ModuleDefinitionFile>
-      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;Shell32.lib;$(OutDir)cfgmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -214,7 +214,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>dxgl-winui.def</ModuleDefinitionFile>
-      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuntimeObject.lib;User32.lib;Gdi32.lib;Shell32.lib;$(OutDir)cfgmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>

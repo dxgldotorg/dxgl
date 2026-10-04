@@ -20,9 +20,13 @@
 #include "resource.h"
 #include "../dxglcfg/resource.h"
 #include "util.h"
+#include "../cfgmgr/LibSha256.h"
+#include "../cfgmgr/cfgmgr.h"
+#pragma comment(lib, "comctl32.lib")
 
 using namespace winrt;
 using namespace winrt::Microsoft::UI::Dispatching;
+using namespace winrt::Microsoft::UI::Windowing;
 using namespace winrt::Microsoft::UI::Xaml;
 using namespace winrt::Microsoft::UI::Xaml::Hosting;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
@@ -31,7 +35,6 @@ using namespace winrt::Microsoft::UI::Xaml::Markup;
 using namespace winrt::Microsoft::UI::Xaml::Media::Imaging;
 using namespace winrt::Windows::UI::Xaml::Interop;
 using namespace winrt::Windows::Storage::Streams;
-
 
 #ifdef _M_X64
 static const TCHAR installdir[] = _T("InstallDir_x64");
@@ -47,20 +50,57 @@ static const TCHAR profilespath2[] = _T("Software\\DXGL\\Profiles\\");
 static const TCHAR dxglcfgname[] = _T("DXGL Config");
 #endif
 
-DispatcherQueueController queuecontroller = nullptr;
-DesktopWindowXamlSource xamlsource = nullptr;
+DXGLCFG currcfg;
 
 HBRUSH hbrDarkBackground = NULL;
 HBRUSH hbrLightBackground = NULL;
 HBRUSH *hbrBackground;
 
 BOOL darkmode = FALSE;
+BOOL accentborder = FALSE;
+DWORD accentcolor = 0;
 
 void (*_RunDXGLTest)(int testnum, int width, int height, int bpp, int refresh, int backbuffers, int apiver,
 	int filter, int msaa, double fps, bool fullscreen, bool resizable, BOOL is3d, BOOL softd3d, HWND parent) = NULL;
 
 HMODULE hDxglcfg = NULL;  // HMODULE for parent EXE to extract resources from
 HMODULE hDxglcfgWinui = NULL;
+
+winrt::Microsoft::UI::Xaml::UIElement xamlroot{ nullptr };
+
+LRESULT CALLBACK FixTopBorder(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR refdata)
+{
+	switch (msg)
+	{
+	case WM_NCCALCSIZE:
+		if (wParam)
+		{
+			LRESULT ret = DefSubclassProc(hwnd, msg, wParam, lParam);
+			NCCALCSIZE_PARAMS *params = (NCCALCSIZE_PARAMS*)lParam;
+			UINT dpi = GetDpiForWindow(hwnd);
+			params->rgrc[0].top -= MulDiv(1, dpi, 96);
+			return ret;
+		}
+		else return DefSubclassProc(hwnd, msg, wParam, lParam);
+	case WM_SETTINGCHANGE:
+		if (lParam)
+		{
+			if (!_tcscmp((TCHAR*)lParam, _T("ImmersiveColorSet")))
+			{
+				GetThemeInfo(&darkmode, &accentborder, &accentcolor);
+
+				return TRUE;
+			}
+		}
+		return DefSubclassProc(hwnd, msg, wParam, lParam);
+	case WM_DESTROY:
+		xamlroot = nullptr;
+		break;
+	default:
+		return DefSubclassProc(hwnd, msg, wParam, lParam);
+	}
+	return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
 
 class App : public ApplicationT<App, IXamlMetadataProvider>
 {
@@ -76,6 +116,7 @@ public:
 		std::string utf8str;
 		std::wstring wstr;
 		int wcharsize;
+		GetCurrentConfig(&currcfg, FALSE);
 		window = Window();
 		window.Title(dxglcfgname);
 		Resources().MergedDictionaries().Append(XamlControlsResources());
@@ -95,6 +136,7 @@ public:
 		{
 			winrt::Microsoft::UI::Xaml::UIElement xamlRoot =
 				winrt::Microsoft::UI::Xaml::Markup::XamlReader::Load(wstr).as<winrt::Microsoft::UI::Xaml::UIElement>();
+			xamlroot = xamlRoot.as<UIElement>();
 			auto maingrid = xamlRoot.as<winrt::Microsoft::UI::Xaml::Controls::Grid>();
 			window.Content(maingrid);
 			window.SystemBackdrop(winrt::Microsoft::UI::Xaml::Media::MicaBackdrop());
@@ -109,6 +151,7 @@ public:
 					GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 				auto windowNative = window.as<IWindowNative>();
 				winrt::check_hresult(windowNative->get_WindowHandle(&hwnd));
+				SetWindowSubclass(hwnd, FixTopBorder, 1, 0);
 				IRandomAccessStream stream = co_await ReadIconAsync(appicon, GetDpiForWindow(hwnd));
 				auto bitmapsource = BitmapImage();
 				co_await bitmapsource.SetSourceAsync(stream);
@@ -121,9 +164,22 @@ public:
 			{
 
 			}
-
+			switch (currcfg.DarkMode)
+			{
+			case 0:
+			default:
+				maingrid.RequestedTheme(ElementTheme::Default);
+				break;
+			case 1:
+				maingrid.RequestedTheme(ElementTheme::Dark);
+				break;
+			case 2:
+				maingrid.RequestedTheme(ElementTheme::Light);
+				break;
+			}
+			window.ExtendsContentIntoTitleBar(true);
+			window.SetTitleBar(titlebar);
 		}
-		window.ExtendsContentIntoTitleBar(true);
 		window.Activate();
 	}
 	IXamlType GetXamlType(TypeName const& type)

@@ -21,7 +21,6 @@
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage::Streams;
-using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::Graphics::Imaging;
 
 IAsyncOperation<IRandomAccessStream> ReadIconAsync(HICON icon, int dpi)
@@ -72,4 +71,43 @@ IAsyncOperation<IRandomAccessStream> ReadIconAsync(HICON icon, int dpi)
 	if (iconinfo.hbmColor) DeleteObject(iconinfo.hbmColor);
 	if (iconinfo.hbmMask) DeleteObject(iconinfo.hbmMask);
 	co_return stream;
+}
+
+void GetThemeInfo(BOOL *darkmode, BOOL *accentmode, DWORD *accentcolor)
+{
+	HKEY hKey;
+	LONG error;
+	DWORD lightapps;
+	DWORD regsize = sizeof(DWORD);
+	// Check for dark mode.  FIXME:  Load DXGL config info in dxglcfg.exe scope and check dark mode preference
+	/*	if (currcfg.DarkMode == 1) *darkmode = TRUE;
+	else if (currcfg.DarkMode == 2) *darkmode = FALSE;
+	else {*/
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0,
+		KEY_READ, &hKey);
+	if (error == ERROR_SUCCESS)
+	{
+		error = RegQueryValueEx(hKey, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&lightapps, &regsize);
+		if (error == ERROR_SUCCESS)
+		{
+			if (lightapps) *darkmode = FALSE;
+			else *darkmode = TRUE;
+		}
+		else *darkmode = FALSE;
+		RegCloseKey(hKey);
+	}
+	else *darkmode = FALSE;
+	/*}*/
+	// Check for accent mode
+	error = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\DWM"), 0,
+		KEY_READ, &hKey);
+	if (error == ERROR_SUCCESS)
+	{
+		regsize = sizeof(BOOL);
+		error = RegQueryValueEx(hKey, _T("ColorPrevalence"), NULL, NULL, (LPBYTE)accentmode, &regsize);
+		regsize = sizeof(DWORD);
+		error = RegQueryValueEx(hKey, _T("AccentColor"), NULL, NULL, (LPBYTE)accentcolor, &regsize);
+		RegCloseKey(hKey);
+	}
+
 }

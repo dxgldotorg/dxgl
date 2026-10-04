@@ -28,9 +28,76 @@
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
     </Grid.RowDefinitions>
-    <TitleBar Name="DXGLCFGTitlebar" IsPaneToggleButtonVisible="True">
+    <Rectangle
+        Name="TopBorder"
+        Height="1"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Top"
+        Fill="{ThemeResource SystemAccentColor}" />
+    <TitleBar
+        Name="DXGLCFGTitlebar"
+        IsPaneToggleButtonVisible="True"
+        Subtitle="WIP">
         <TitleBar.Resources>
             <HorizontalAlignment x:Key="AccentFillColorDefaultBrush">Stretch</HorizontalAlignment>
         </TitleBar.Resources>
     </TitleBar>
+    <NavigationView
+        x:Name="MainNav"
+        Grid.Row="1"
+        Canvas.ZIndex="0"
+        IsBackButtonVisible="Collapsed"
+        IsPaneToggleButtonVisible="False"
+        IsSettingsVisible="false"
+        IsTabStop="false"
+        OpenPaneLength="170">
+        <Frame x:Name="RootFrame" />
+        <NavigationView.MenuItems>
+            <NavigationViewItem x:Name="TabDisplay" Content="Display">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE7F4;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabEffects" Content="Effects">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE790;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="Tab3DGraphics" Content="3D Graphics">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xF158;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabAdvanced" Content="Advanced">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE8FD;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabDebug" Content="Debug">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEBE8;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabHacks" Content="Hacks">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEC7A;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabTracing" Content="Tracing">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE9D9;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabGfxTest" Content="Graphics Tests">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEC77;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItem x:Name="TabAbout" Content="About">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE946;" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+        </NavigationView.MenuItems>
+    </NavigationView>
 </Grid>
