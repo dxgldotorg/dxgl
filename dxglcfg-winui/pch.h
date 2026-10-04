@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef _PCH_H
+#define _PCH_H
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -51,4 +51,4 @@
 
 
 
-#endif //_COMMON_H
+#endif //_PCH_H

@@ -39,8 +39,20 @@
         IsPaneToggleButtonVisible="True"
         Subtitle="WIP">
         <TitleBar.Resources>
-            <HorizontalAlignment x:Key="AccentFillColorDefaultBrush">Stretch</HorizontalAlignment>
+            <HorizontalAlignment x:Key="TitleBarContentHorizontalAlignment">Stretch</HorizontalAlignment>
         </TitleBar.Resources>
+        <TitleBar.Content>
+            <ComboBox x:Name="AppProfile" MaxWidth="580">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ContentPresenter VerticalAlignment="Center" Content="{Binding ItemIcon}" />
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Label}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </TitleBar.Content>
     </TitleBar>
     <NavigationView
         x:Name="MainNav"

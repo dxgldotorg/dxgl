@@ -160,10 +160,7 @@ public:
 				titlebar.IconSource(titlebaricon);
 				DestroyIcon(appicon);
 			}
-			catch (hresult_error const& error)
-			{
-
-			}
+			catch (hresult_error const& error){}
 			switch (currcfg.DarkMode)
 			{
 			case 0:
@@ -179,6 +176,7 @@ public:
 			}
 			window.ExtendsContentIntoTitleBar(true);
 			window.SetTitleBar(titlebar);
+			window.AppWindow().TitleBar().PreferredHeightOption(TitleBarHeightOption::Tall);
 		}
 		window.Activate();
 	}
