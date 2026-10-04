@@ -117,6 +117,7 @@ HWND hTab;
 HWND hTabs[9];
 
 UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
+RECT dlgrect;
 
 static int comlevel;
 
@@ -5203,6 +5204,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	WNDCLASSEX wndclass;
 	HWND hTempWnd;
 	SYSTEM_INFO sysinfo;
+	MINMAXINFO *minmax;
 	//DWORD threadid;
 	switch (Msg)
 	{
@@ -6160,6 +6162,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
+		GetWindowRect(hWnd, &dlgrect);
 		return TRUE;
 	case WM_SETTINGCHANGE:
 		if (lParam)
@@ -6209,6 +6212,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 	case WM_DPICHANGED:
 		windowdpi = LOWORD(wParam);
 		return TRUE;
+	case WM_GETMINMAXINFO:
+		if (currcfg.DPIScale == 1)
+		{
+			minmax = (MINMAXINFO*)lParam;
+			minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = dlgrect.right - dlgrect.left;
+			minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = dlgrect.bottom - dlgrect.top;
+		}
+		return 0;
 	case WM_MEASUREITEM:
 		switch(wParam)
 		{
