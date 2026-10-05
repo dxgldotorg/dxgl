@@ -45,7 +45,7 @@ typedef LONG LSTATUS;
 #ifdef _M_X64
 static const TCHAR regkeyglobal[] = _T("Software\\DXGL\\Global_x64");
 static const TCHAR regkeyprofiles[] = _T("Software\\DXGL\\Profiles_x64\\");
-static const TCHAR globalname[] = _T("Global");
+static const TCHAR globalname[] = _T("Global_x64");
 static const TCHAR profilesname[] = _T("Profiles_x64\\");
 static const TCHAR profilesmigratedname[] = _T("ProfilesMigrated_x64"); 
 static const TCHAR configversion[] = _T("Configuration Version x64");
