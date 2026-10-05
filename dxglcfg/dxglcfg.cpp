@@ -280,7 +280,7 @@ int SetCOMLevel(int level)
 	return level;
 }
 
-UINT windowdpi = 96;
+UINT windowdpi = 0;
 static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
 static UINT GetWindowDPI(HWND hwnd)
 {
@@ -298,6 +298,35 @@ static UINT GetWindowDPI(HWND hwnd)
 		return dpi;
 	}
 }
+
+extern int(WINAPI *_GetSystemMetricsForDpi)(int nIndex, UINT dpi);
+BOOL SystemMetricsDpiLoaded = FALSE;
+int WINAPI GetSystemMetricsNoDpi(int nIndex, UINT dpi)
+{
+	int(WINAPI *functionptr)(int nIndex, UINT dpi);
+	if (!SystemMetricsDpiLoaded)
+	{
+		if (!hUser32) hUser32 = GetModuleHandle(_T("User32.dll"));
+		if (hUser32)
+		{
+			functionptr = (int(WINAPI*)(int, UINT))GetProcAddress(hUser32, "GetSystemMetricsForDpi");
+			if (functionptr)
+			{
+				_GetSystemMetricsForDpi = functionptr;
+				SystemMetricsDpiLoaded = TRUE;
+				return functionptr(nIndex, dpi);
+			}
+			else
+			{
+				SystemMetricsDpiLoaded = TRUE;
+				return GetSystemMetrics(nIndex);
+			}
+		}
+	}
+	else return GetSystemMetrics(nIndex);
+}
+int(WINAPI *_GetSystemMetricsForDpi)(int nIndex, UINT dpi) = GetSystemMetricsNoDpi;
+
 
 // Dark Mode APIs
 int(WINAPI *_SetPreferredAppMode)(int mode) = NULL;
@@ -5191,7 +5220,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	BOOL failed;
 	LPTSTR installpath;
 	DWORD err;
-	RECT r;
+	RECT r, r2;
 	NMHDR *nm;
 	TCHAR abouttext[1024];
 	int newtab;
@@ -6207,8 +6236,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		}
 		else return FALSE;
 	case WM_DPICHANGED:
-		windowdpi = LOWORD(wParam);
-		return TRUE;
+		if (currcfg.DPIScale == 4)
+		{
+			windowdpi = LOWORD(wParam);
+			GetWindowRect(GetDlgItem(hWnd, IDC_APPS), &r);
+			r2.top = r2.left = r2.right = 0;
+			r2.bottom = 203;  // From the dialog resource
+			MapDialogRect(hWnd, &r2);
+			MapWindowPoints(NULL, hWnd, (LPPOINT)&r, 2);
+			SetWindowPos(GetDlgItem(hWnd, IDC_APPS), NULL, r.left, r.top, r.right - r.left, r2.bottom,
+				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, -1, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
+			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
+			return TRUE;
+		}
+		break;
 	case WM_GETMINMAXINFO:
 		if (currcfg.DPIScale == 1)
 		{
@@ -6221,8 +6263,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		switch(wParam)
 		{
 		case IDC_APPS:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYSMICON) + 1;
-			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXSMICON)+1;
+			if (!windowdpi) windowdpi = GetWindowDPI(hWnd);
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi) + 1;
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = _GetSystemMetricsForDpi(SM_CXSMICON, windowdpi) + 1;
 			return TRUE;
 			break;
 		default:
@@ -6281,13 +6324,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					FillRect(drawitem->hDC, &drawitem->rcItem, (HBRUSH)(COLOR_WINDOW + 1));
 				}
 			}
-			DrawIconEx(drawitem->hDC,drawitem->rcItem.left+2,drawitem->rcItem.top,
-				apps[drawitem->itemID].icon,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0,NULL,DI_NORMAL);
-			drawitem->rcItem.left += GetSystemMetrics(SM_CXSMICON)+5;
+			DrawIconEx(drawitem->hDC, drawitem->rcItem.left + 2, drawitem->rcItem.top,
+				apps[drawitem->itemID].icon, _GetSystemMetricsForDpi(SM_CXSMICON, windowdpi),
+				_GetSystemMetricsForDpi(SM_CYSMICON, windowdpi), 0, NULL, DI_NORMAL);
+			drawitem->rcItem.left += _GetSystemMetricsForDpi(SM_CXSMICON, windowdpi) + 5;
 			DrawText(drawitem->hDC,apps[drawitem->itemID].name,
 				(int)_tcslen(apps[drawitem->itemID].name),&drawitem->rcItem,
 				DT_LEFT|DT_SINGLELINE|DT_VCENTER);
-			drawitem->rcItem.left -= GetSystemMetrics(SM_CXSMICON)+5;
+			drawitem->rcItem.left -= _GetSystemMetricsForDpi(SM_CXSMICON, windowdpi) + 5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC,OldTextColor);
 			SetBkColor(drawitem->hDC,OldBackColor);
