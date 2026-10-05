@@ -61,6 +61,10 @@
 #define WM_DPICHANGED 0x02E0
 #endif
 
+#ifndef WM_DPICHANGED_AFTERPARENT
+#define WM_DPICHANGED_AFTERPARENT 0x02E3
+#endif
+
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 DXGLCFG currcfg;
@@ -2482,6 +2486,21 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			return (LPARAM)hbrDarkTabBackground;
 		}
 		else return FALSE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			hdc = GetDC(hWnd);
+			font1 = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+			font2 = (HFONT)SelectObject(hdc, font1);
+			GetTextExtentPoint(hdc, _T(" "), 1, &size);
+			SelectObject(hdc, font2);
+			ReleaseDC(hWnd, hdc);
+			SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_SETITEMHEIGHT, -1, size.cy + 2);
+			SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_SETITEMHEIGHT, -1, size.cy + 2);
+			SendDlgItemMessage(hWnd, IDC_COLORDEPTH, CB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
+			SendDlgItemMessage(hWnd, IDC_EXTRAMODES, CB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
+		}
+		break;
 	case WM_MEASUREITEM:
 		switch (wParam)
 		{
@@ -2499,8 +2518,8 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			}
 			else
 			{
-				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
-				((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+				((LPMEASUREITEMSTRUCT)lParam)->itemHeight = _GetSystemMetricsForDpi(SM_CYMENUCHECK,windowdpi);
+				((LPMEASUREITEMSTRUCT)lParam)->itemWidth = _GetSystemMetricsForDpi(SM_CXMENUCHECK,windowdpi);
 			}
 			break;
 		default:
@@ -2562,7 +2581,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				r.left = r.left + 2;
-				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				r.right = r.left + _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi);
 				if (drawitem->itemID == 5)
 				{
 					if(!cfgmask->AddColorDepths)
@@ -2575,7 +2594,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddColorDepths, FALSE, &r);
 					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddColorDepths, FALSE, &r);
 				}
-				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+				drawitem->rcItem.left += _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi) + 5;
 			}
 			combotext[0] = 0;
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
@@ -2590,7 +2609,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
-				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+				drawitem->rcItem.left -= _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi) + 5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
@@ -2608,7 +2627,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
 			{
 				r.left = r.left + 2;
-				r.right = r.left + GetSystemMetrics(SM_CXMENUCHECK);
+				r.right = r.left + _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi);
 				if (drawitem->itemID == 8)
 				{
 					if (!cfgmask->AddModes)
@@ -2621,7 +2640,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 						DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, TRUE, !cfgmask->AddModes, FALSE, &r);
 					else DrawCheck(drawitem->hDC, drawitem->itemState & ODS_SELECTED, FALSE, !cfgmask->AddModes, FALSE, &r);
 				}
-				drawitem->rcItem.left += GetSystemMetrics(SM_CXMENUCHECK) + 5;
+				drawitem->rcItem.left += _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi) + 5;
 			}
 			combotext[0] = 0;
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
@@ -2670,7 +2689,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
 			if (drawitem->itemID != -1 && !(drawitem->itemState & ODS_COMBOBOXEDIT))
-				drawitem->rcItem.left -= GetSystemMetrics(SM_CXMENUCHECK) + 5;
+				drawitem->rcItem.left -= _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi) + 5;
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
@@ -6248,6 +6267,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, -1, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
 			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
+			SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+			SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 			return TRUE;
 		}
 		break;
