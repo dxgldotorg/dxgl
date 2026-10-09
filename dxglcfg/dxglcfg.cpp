@@ -463,14 +463,14 @@ void MakeTabsDark(HWND hWnd)
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
 }
 
-void SetDarkMode(HWND hWnd)
+int SetDarkMode(HWND hWnd)
 {
 	HKEY hKeyPersonalize;
 	DWORD lightapps;
 	DWORD regsize = sizeof(DWORD);
 	LONG error;
 	LONG_PTR wndstyle;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return 0;  // Dark mode Win32 introduced in Win10 v1809
 	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
 	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
 	else
@@ -515,10 +515,11 @@ void SetDarkMode(HWND hWnd)
 	if (_FlushMenuThemes) _FlushMenuThemes();
 	_SetWindowTheme(hWnd, L"Explorer", NULL);
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+	return 1;
 }
 void EnableDarkModeForMainDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_APPLY));
@@ -633,7 +634,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 
 void EnableDarkModeForModeListDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeButtonDark(GetDlgItem(hDialog, IDC_MODELIST));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -642,7 +643,7 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 
 void EnableDarkModeForWriteINIDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPINIOPTIONS));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOWRITEREGISTRY));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_OVERRIDEREGISTRY));
@@ -657,7 +658,7 @@ void EnableDarkModeForWriteINIDialog(HWND hDialog)
 void EnableDarkModeForAffinityDialog(HWND hDialog)
 {
 	int i;
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	for (i = 0; i < 64; i++)
 		MakeCheckboxDark(GetDlgItem(hDialog, IDC_CPU0 + i));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SINGLECORE));
@@ -672,7 +673,7 @@ void EnableDarkModeForAffinityDialog(HWND hDialog)
 
 void EnableDarkModeForTextureShaderTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXSTAGE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXSTAGE));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINSTAGE));
@@ -737,7 +738,7 @@ void EnableDarkModeForTextureShaderTest(HWND hDialog)
 
 void EnableDarkModeForVertexShaderTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTUREFILE));
@@ -810,7 +811,7 @@ void EnableDarkModeForVertexShaderTest(HWND hDialog)
 
 void EnableDarkModeForWindowStyleTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPSTYLE));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMAXIMIZEBOX));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMINIMIZEBOX));
