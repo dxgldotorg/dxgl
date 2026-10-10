@@ -1985,6 +1985,7 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 	This->primary = NULL;
 	This->lastsync = false;
 	This->fullscreen = false;
+	This->fullchanged = false;
 	This->fpupreserve = false;
 	This->fpusetup = false;
 	This->threadsafe = false;
@@ -2092,11 +2093,15 @@ void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHe
 			glDD7->primary->texture->palette, 0, NULL, FALSE, NULL, 0);
 	}
 }
-BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
+int glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7)
 {
-	if (!glDD7) return FALSE;
-	if (glDD7->fullscreen) return TRUE;
-	else return FALSE;
+	if (!glDD7) return 0;
+	if (glDD7->fullscreen)
+	{
+		if (glDD7->fullchanged) return 2;
+		else return 1;
+	}
+	else return 0;
 }
 
 HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd, DWORD dwFlags)
@@ -2147,8 +2152,11 @@ HRESULT WINAPI glDirectDraw7_SetCooperativeLevel(glDirectDraw7 *This, HWND hWnd,
 	if(dwFlags & DDSCL_EXCLUSIVE)
 		exclusive = true;
 	else exclusive = false;
-	if(dwFlags & DDSCL_FULLSCREEN)
+	if (dwFlags & DDSCL_FULLSCREEN)
+	{
 		This->fullscreen = true;
+		This->fullchanged = false;
+	}
 	else This->fullscreen = false;
 	if(exclusive)
 		if(!This->fullscreen) TRACE_RET(HRESULT,23,DDERR_INVALIDPARAMS);
@@ -2465,6 +2473,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 					This->internalrefresh, This->hWnd, This, This->devwnd);
 				//glRenderer_SetBPP(this->renderer, primarybpp);
 				This->primarylost = true;
+				This->fullchanged = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
 			case DISP_CHANGE_BADMODE:
@@ -2501,6 +2510,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
 			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2578,6 +2588,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
 			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2596,6 +2607,8 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			InitGL(This->screenx, This->screeny, This->screenbpp, true,
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
+			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2642,6 +2655,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 					This->internalrefresh, This->hWnd, This, This->devwnd);
 				//glRenderer_SetBPP(this->renderer, primarybpp);
 				This->primarylost = true;
+				This->fullchanged = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
 				break;
@@ -2719,6 +2733,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 					This->internalrefresh, This->hWnd, This, This->devwnd);
 				//glRenderer_SetBPP(this->renderer, primarybpp);
 				This->primarylost = true;
+				This->fullchanged = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
 				break;
@@ -2737,6 +2752,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 					This->internalrefresh, This->hWnd, This, This->devwnd);
 				//glRenderer_SetBPP(this->renderer, primarybpp);
 				This->primarylost = true;
+				This->fullchanged = true;
 				TRACE_EXIT(23, DD_OK);
 				return DD_OK;
 				break;
@@ -2813,6 +2829,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
 			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2835,6 +2852,8 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			InitGL(This->screenx, This->screeny, This->screenbpp, true,
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
+			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2867,6 +2886,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
 			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2885,6 +2905,8 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			InitGL(This->screenx, This->screeny, This->screenbpp, true, 
 				This->internalrefresh, This->hWnd, This, This->devwnd);
 			//glRenderer_SetBPP(this->renderer, primarybpp);
+			This->primarylost = true;
+			This->fullchanged = true;
 			TRACE_EXIT(23, DD_OK);
 			return DD_OK;
 			break;
@@ -2910,6 +2932,7 @@ HRESULT WINAPI glDirectDraw7_SetDisplayMode(glDirectDraw7 *This, DWORD dwWidth, 
 			This->internalrefresh, This->hWnd, This, This->devwnd);
 		//glRenderer_SetBPP(this->renderer, primarybpp);
 		This->primarylost = true;
+		This->fullchanged = true;
 		TRACE_EXIT(23, DD_OK);
 		return DD_OK;
 		break;
