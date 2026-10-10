@@ -640,19 +640,32 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	case WM_GETMINMAXINFO:
-		if ((dxglcfg.DPIScale == 1) && (dxglcfg.fullmode == 2) && lpDD7)
+		if ((dxglcfg.DPIScale == 1)&& lpDD7)
 		{
 			if (glDirectDraw7_GetFullscreen(lpDD7) == 2)
 			{
-				glDirectDraw7_GetSizes(lpDD7, sizes);
-				r1.left = 0;
-				r1.top = 0;
-				r1.right = sizes[4];
-				r1.bottom = sizes[5];
-				AdjustWindowRect(&r1, GetWindowLongPtr(hWnd, GWL_STYLE),GetMenu(hWnd) ? TRUE : FALSE);
-				minmax = (MINMAXINFO*)lParam;
-				minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = r1.right - r1.left;
-				minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = r1.bottom - r1.top;
+				switch (dxglcfg.fullmode)
+				{
+				case 4:
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					minmax = (MINMAXINFO*)lParam;
+					minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = sizes[4];
+					minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = sizes[5];
+					break;
+				case 2:
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					r1.left = 0;
+					r1.top = 0;
+					r1.right = sizes[4];
+					r1.bottom = sizes[5];
+					AdjustWindowRect(&r1, GetWindowLongPtr(hWnd, GWL_STYLE), GetMenu(hWnd) ? TRUE : FALSE);
+					minmax = (MINMAXINFO*)lParam;
+					minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = r1.right - r1.left;
+					minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = r1.bottom - r1.top;
+					break;
+				default:
+					break;
+				}
 			}
 		}
 		break;
