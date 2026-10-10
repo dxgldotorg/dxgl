@@ -3765,11 +3765,18 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		switch (wParam)
 		{
 		case IDC_DEBUGLIST:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
-			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi);
 			break;
 		default:
 			break;
+		}
+		break;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, WM_VSCROLL, SB_ENDSCROLL, 0);
 		}
 		break;
 	case WM_COMMAND:
@@ -4474,6 +4481,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	WNDPROC tmp;
 	ULONGLONG coremaskedit;
 	INT_PTR dlgresult;
+	HFONT dlgfont;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -4490,6 +4498,39 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC, (LONG_PTR)HacksListCallback);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			dlgfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			r.left = 186; r.top = 17; r.right = 146; r.bottom = 80;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			r.left = 186; r.top = 32; r.right = 146; r.bottom = 14;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			r.left = 258; r.top = 54; r.right = 36; r.bottom = 12;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			r.left = 294; r.top = 54; r.right = 36; r.bottom = 12;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			for (x = 0; x <= 8; x++)
+			{
+				if (x == 3)
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+				else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_SETITEMHEIGHT, x, r.bottom - r.top);
+			}
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
