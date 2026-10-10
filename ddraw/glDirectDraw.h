@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2021 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -68,6 +68,7 @@ typedef struct glDirectDraw7
 	ULONG refcount7, refcount4, refcount2, refcount1;
 	HWND hWnd;
 	bool fullscreen;
+	bool fullchanged;
 	bool fpupreserve;
 	bool fpusetup;
 	bool threadsafe;
@@ -183,7 +184,7 @@ void glDirectDraw7_DeleteTempSurface(glDirectDraw7 *This);
 
 void glDirectDraw7_UnrestoreDisplayMode(glDirectDraw7 *This);
 void glDirectDraw7_SetWindowSize(glDirectDraw7 *glDD7, DWORD dwWidth, DWORD dwHeight);
-BOOL glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7);
+int glDirectDraw7_GetFullscreen(glDirectDraw7 *glDD7);
 LONG Try640400Mode(LPCTSTR devname, DEVMODE *mode, DWORD flags, BOOL *crop400);
 
 struct glDirectDraw1Vtbl;
