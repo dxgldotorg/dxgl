@@ -463,14 +463,14 @@ void MakeTabsDark(HWND hWnd)
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
 }
 
-void SetDarkMode(HWND hWnd)
+int SetDarkMode(HWND hWnd)
 {
 	HKEY hKeyPersonalize;
 	DWORD lightapps;
 	DWORD regsize = sizeof(DWORD);
 	LONG error;
 	LONG_PTR wndstyle;
-	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return;  // Dark mode Win32 introduced in Win10 v1809
+	if ((osver.dwBuildNumber < 17763) || (osver.dwMajorVersion < 10)) return 0;  // Dark mode Win32 introduced in Win10 v1809
 	if (currcfg.DarkMode == 1) usedarkmode = TRUE;
 	else if (currcfg.DarkMode == 2) usedarkmode = FALSE;
 	else
@@ -515,10 +515,11 @@ void SetDarkMode(HWND hWnd)
 	if (_FlushMenuThemes) _FlushMenuThemes();
 	_SetWindowTheme(hWnd, L"Explorer", NULL);
 	SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+	return 1;
 }
 void EnableDarkModeForMainDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_APPLY));
@@ -633,7 +634,7 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 
 void EnableDarkModeForModeListDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeButtonDark(GetDlgItem(hDialog, IDC_MODELIST));
 	MakeButtonDark(GetDlgItem(hDialog, IDCANCEL));
 	MakeButtonDark(GetDlgItem(hDialog, IDOK));
@@ -642,7 +643,7 @@ void EnableDarkModeForModeListDialog(HWND hDialog)
 
 void EnableDarkModeForWriteINIDialog(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPINIOPTIONS));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_NOWRITEREGISTRY));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_OVERRIDEREGISTRY));
@@ -657,7 +658,7 @@ void EnableDarkModeForWriteINIDialog(HWND hDialog)
 void EnableDarkModeForAffinityDialog(HWND hDialog)
 {
 	int i;
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	for (i = 0; i < 64; i++)
 		MakeCheckboxDark(GetDlgItem(hDialog, IDC_CPU0 + i));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SINGLECORE));
@@ -672,7 +673,7 @@ void EnableDarkModeForAffinityDialog(HWND hDialog)
 
 void EnableDarkModeForTextureShaderTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXSTAGE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXSTAGE));
 	MakeButtonDark(GetDlgItem(hDialog, IDC_SPINSTAGE));
@@ -737,7 +738,7 @@ void EnableDarkModeForTextureShaderTest(HWND hDialog)
 
 void EnableDarkModeForVertexShaderTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPTEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTURE));
 	MakeEditDark(GetDlgItem(hDialog, IDC_TEXTUREFILE));
@@ -810,7 +811,7 @@ void EnableDarkModeForVertexShaderTest(HWND hDialog)
 
 void EnableDarkModeForWindowStyleTest(HWND hDialog)
 {
-	SetDarkMode(hDialog);
+	if (!SetDarkMode(hDialog)) return;
 	MakeGroupBoxDark(GetDlgItem(hDialog, IDC_GRPSTYLE));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMAXIMIZEBOX));
 	MakeCheckboxDark(GetDlgItem(hDialog, IDC_WSMINIMIZEBOX));
@@ -3764,11 +3765,18 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		switch (wParam)
 		{
 		case IDC_DEBUGLIST:
-			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = GetSystemMetrics(SM_CYMENUCHECK);
-			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = GetSystemMetrics(SM_CXMENUCHECK);
+			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi);
+			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = _GetSystemMetricsForDpi(SM_CXMENUCHECK, windowdpi);
 			break;
 		default:
 			break;
+		}
+		break;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
+			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, WM_VSCROLL, SB_ENDSCROLL, 0);
 		}
 		break;
 	case WM_COMMAND:
@@ -4473,6 +4481,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	WNDPROC tmp;
 	ULONGLONG coremaskedit;
 	INT_PTR dlgresult;
+	HFONT dlgfont;
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
@@ -4489,6 +4498,39 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC, (LONG_PTR)HacksListCallback);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			dlgfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			r.left = 186; r.top = 17; r.right = 146; r.bottom = 80;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			r.left = 186; r.top = 32; r.right = 146; r.bottom = 14;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			r.left = 258; r.top = 54; r.right = 36; r.bottom = 12;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			r.left = 294; r.top = 54; r.right = 36; r.bottom = 12;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			for (x = 0; x <= 8; x++)
+			{
+				if (x == 3)
+					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+				else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_SETITEMHEIGHT, x, r.bottom - r.top);
+			}
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;

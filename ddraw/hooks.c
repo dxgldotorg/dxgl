@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2014-2025 William Feely
+// Copyright (C) 2014-2026 William Feely
 // Portions copyright (C) 2018 Syahmi Azhar
 
 // This library is free software; you can redistribute it and/or
@@ -27,11 +27,15 @@
 #define WM_MOUSEHWHEEL 0x020E
 #endif
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
 // temporary references to C++ C-linked stuff
 void glDirectDraw7_UnrestoreDisplayMode(LPDIRECTDRAW7 lpDD7);
 void glDirectDraw7_SetWindowSize(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight);
 void glDirectDraw7_GetSizes(LPDIRECTDRAW7 lpDD7, LONG *sizes);
-BOOL glDirectDraw7_GetFullscreen(LPDIRECTDRAW7 lpDD7);
+int glDirectDraw7_GetFullscreen(LPDIRECTDRAW7 lpDD7);
 HRESULT WINAPI glDirectDraw7_SetDisplayMode(LPDIRECTDRAW7 lpDD7, DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags);
 extern DXGLCFG dxglcfg;
 
@@ -476,6 +480,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	float mulx, muly;
 	int translatex, translatey;
 	LPARAM newpos;
+	MINMAXINFO *minmax;
 	wndhook = GetWndHook(hWnd);
 	if (!wndhook)
 	{
@@ -632,6 +637,23 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					}
 					break;
 				}
+			}
+		}
+		break;
+	case WM_GETMINMAXINFO:
+		if ((dxglcfg.DPIScale == 1) && (dxglcfg.fullmode == 2) && lpDD7)
+		{
+			if (glDirectDraw7_GetFullscreen(lpDD7) == 2)
+			{
+				glDirectDraw7_GetSizes(lpDD7, sizes);
+				r1.left = 0;
+				r1.top = 0;
+				r1.right = sizes[4];
+				r1.bottom = sizes[5];
+				AdjustWindowRect(&r1, GetWindowLongPtr(hWnd, GWL_STYLE),GetMenu(hWnd) ? TRUE : FALSE);
+				minmax = (MINMAXINFO*)lParam;
+				minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = r1.right - r1.left;
+				minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = r1.bottom - r1.top;
 			}
 		}
 		break;
