@@ -46,14 +46,16 @@ static int hwndhook_max = 0;
 CRITICAL_SECTION hook_cs = { NULL, 0, 0, NULL, NULL, 0 };
 static BOOL hooks_init = FALSE;
 static EXECUTION_STATE(WINAPI *_SetThreadExecutionState)(EXECUTION_STATE esFlags) = NULL;
+static UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
+static BOOL(WINAPI *_AdjustWindowRectExForDpi)(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle, UINT dpi) = NULL;
 
 static BOOL moduleapi_loaded = FALSE;
 static HANDLE(WINAPI *_CreateToolhelp32Snapshot)(DWORD dwFlags, DWORD th32ProcessID) = NULL;
-static HANDLE(WINAPI* _Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
-static HANDLE(WINAPI* _Module32FirstW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
-static HANDLE(WINAPI* _Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
-static HANDLE(WINAPI* _Module32NextW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
-static BOOL(WINAPI* _GetModuleInformation)(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) = NULL;
+static HANDLE(WINAPI *_Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
+static HANDLE(WINAPI *_Module32FirstW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
+static HANDLE(WINAPI *_Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;
+static HANDLE(WINAPI *_Module32NextW)(HANDLE hSnapshot, LPMODULEENTRY32W lpme) = NULL;
+static BOOL(WINAPI *_GetModuleInformation)(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) = NULL;
 #ifdef _UNICODE
 #define Mod32First _Module32FirstW
 #define Mod32Next _Module32NextW
@@ -270,6 +272,9 @@ void InitHooks()
 			(BOOL(WINAPI*)(LPCSTR, DWORD, LPDEVMODEA, DWORD)) GetProcAddress(hUser32, "EnumDisplaySettingsExA");
 		SysEnumDisplaySettingsExW =
 			(BOOL(WINAPI*)(LPCWSTR, DWORD, LPDEVMODEW, DWORD)) GetProcAddress(hUser32, "EnumDisplaySettingsExW");
+		_GetDpiForWindow = (UINT(WINAPI*)(HWND)) GetProcAddress(hUser32, "GetDpiForWindow");
+		_AdjustWindowRectExForDpi =
+			(BOOL(WINAPI*)(LPRECT, DWORD, BOOL, DWORD, UINT)) GetProcAddress(hUser32, "AdjustWindowRectExForDpi");
 	}
 	wndhook_count = 0;
 	MH_Initialize();
@@ -640,7 +645,7 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	case WM_GETMINMAXINFO:
-		if ((dxglcfg.DPIScale == 1)&& lpDD7)
+		if ((dxglcfg.DPIScale == 1) && lpDD7)
 		{
 			if (glDirectDraw7_GetFullscreen(lpDD7) == 2)
 			{
@@ -658,10 +663,44 @@ LRESULT CALLBACK DXGLWndHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					r1.top = 0;
 					r1.right = sizes[4];
 					r1.bottom = sizes[5];
-					AdjustWindowRect(&r1, GetWindowLongPtr(hWnd, GWL_STYLE), GetMenu(hWnd) ? TRUE : FALSE);
+					AdjustWindowRectEx(&r1, GetWindowLongPtr(hWnd, GWL_STYLE),
+						GetMenu(hWnd) ? TRUE : FALSE, GetWindowLongPtr(hWnd,GWL_EXSTYLE));
 					minmax = (MINMAXINFO*)lParam;
 					minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = r1.right - r1.left;
 					minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = r1.bottom - r1.top;
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		else if ((dxglcfg.DPIScale == 4) && lpDD7)
+		{
+			if (glDirectDraw7_GetFullscreen(lpDD7) == 2)
+			{
+				switch (dxglcfg.fullmode)
+				{
+				case 4:
+					glDirectDraw7_GetSizes(lpDD7, sizes);
+					minmax = (MINMAXINFO*)lParam;
+					minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = sizes[4];
+					minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = sizes[5];
+					break;
+				case 2:
+					if (_GetDpiForWindow && _AdjustWindowRectExForDpi)
+					{
+						glDirectDraw7_GetSizes(lpDD7, sizes);
+						r1.left = 0;
+						r1.top = 0;
+						r1.right = sizes[4];
+						r1.bottom = sizes[5];
+						_AdjustWindowRectExForDpi(&r1, GetWindowLongPtr(hWnd, GWL_STYLE),
+							GetMenu(hWnd) ? TRUE : FALSE, GetWindowLongPtr(hWnd, GWL_EXSTYLE),
+							_GetDpiForWindow(hWnd));
+						minmax = (MINMAXINFO*)lParam;
+						minmax->ptMinTrackSize.x = minmax->ptMaxTrackSize.x = r1.right - r1.left;
+						minmax->ptMinTrackSize.y = minmax->ptMaxTrackSize.y = r1.bottom - r1.top;
+					}
 					break;
 				default:
 					break;
