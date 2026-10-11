@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
+#include "../cfgmgr/LibSha256.h"
+#include "../cfgmgr/cfgmgr.h"
 #include "dxgltest.h"
 #include "MultiDD.h"
 #include "tests.h"
@@ -40,9 +42,11 @@ extern HBRUSH hbrDarkHighlight;
 extern BOOL usedarkmode;
 extern UINT windowdpi;
 static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
+extern DXGLCFG currcfg;
 
-
-
+#ifndef WM_DPICHANGED_AFTERPARENT
+#define WM_DPICHANGED_AFTERPARENT 0x02E3
+#endif
 
 void GetFileVersion(tstring &version, LPCTSTR filename)
 {
@@ -189,6 +193,16 @@ INT_PTR CALLBACK AboutTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		{
 			for(i = 1; i < 1; i++)
 				SetWindowText(GetDlgItem(hWnd,dllboxes[i]),_T("N/A"));
+		}
+		break;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -347,6 +361,16 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		if (hddraw)
 		{
 			if (GetProcAddress(hddraw, "IsDXGLDDraw")) DestroyWindow(GetDlgItem(hWnd, IDC_SOFTD3D));
+		}
+		break;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
 		}
 		break;
 	case WM_CTLCOLORDLG:

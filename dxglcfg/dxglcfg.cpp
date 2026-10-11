@@ -2490,6 +2490,11 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_DPICHANGED_AFTERPARENT:
 		if (currcfg.DPIScale == 4)
 		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
 			hdc = GetDC(hWnd);
 			font1 = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
 			font2 = (HFONT)SelectObject(hdc, font1);
@@ -2960,6 +2965,16 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
@@ -3146,6 +3161,16 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
@@ -3381,6 +3406,16 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
@@ -3775,6 +3810,11 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_DPICHANGED_AFTERPARENT:
 		if (currcfg.DPIScale == 4)
 		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
 			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
 			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, WM_VSCROLL, SB_ENDSCROLL, 0);
 		}
@@ -4501,6 +4541,11 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	case WM_DPICHANGED_AFTERPARENT:
 		if (currcfg.DPIScale == 4)
 		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
 			dlgfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
 			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
 			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
@@ -4821,6 +4866,16 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
 		return TRUE;
+	case WM_DPICHANGED_AFTERPARENT:
+		if (currcfg.DPIScale == 4)
+		{
+			r.left = r.top = 0;
+			r.right = 340;
+			r.bottom = 169;
+			MapDialogRect(hWnd, &r);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+		}
+		break;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
