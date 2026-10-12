@@ -120,6 +120,7 @@ typedef struct
 	DWORD MaxSpinCount;
 	// internal
 	BOOL Windows8Detected;
+	BOOL Windows10CUDetected;
 	BOOL ParsedAddColorDepths;
 	BOOL ParsedAddModes;
 	TCHAR regkey[MAX_PATH + 80];

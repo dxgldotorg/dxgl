@@ -645,6 +645,14 @@ If zero or undefined and Windows 8 (or later) is detected, AllColorDepths in
 Global key is set to 1 and Windows8Detected is also set to 1.
 If nonzero, AllColorDepths is not affected.
 
+Member Windows10CUDetected
+Not in INI file
+REG_DWORD HKCU\DXGL\Global\Windows10CUDetected
+Nonzero if Windows 10 Creators Update (or later) is detected.
+If zero or undefined and Windows 10 Creators Update (or later) is detected,
+DPIScale in Global key is set to 1 and Windows10CUDetected is also set to 1.
+If nonzero, DPIScale is not affected.
+
 Member PasrsedAddColorDepths
 Not in INI file
 Not in registry

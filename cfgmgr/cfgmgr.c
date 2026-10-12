@@ -64,6 +64,9 @@ static const TCHAR regkeydxgl[] = _T("Software\\DXGL");
 
 DXGLCFG defaultmask;
 
+static HMODULE hNtdll = NULL;
+static long (NTAPI * _RtlGetVersion)(LPOSVERSIONINFOEXW lpVersionInformation) = NULL;
+
 #define INISECTION_NULL 0
 #define INISECTION_SYSTEM 1
 #define INISECTION_DISPLAY 2
@@ -692,6 +695,8 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	LONG error;
 	DWORD regsz = REG_SZ;
 	DWORD sizeout=4;
+	OSVERSIONINFO osver;
+	OSVERSIONINFOW osverw;
 	if (mask) cfgmask = mask;
 	else cfgmask = &defaultmask;
 	cfg->scaler = ReadDWORD(hKey, cfg->scaler, &cfgmask->scaler, _T("ScalingMode"));
@@ -753,6 +758,7 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	cfg->CaptureMouse = ReadDWORD(hKey, cfg->CaptureMouse, &cfgmask->CaptureMouse, _T("CaptureMouse"));
 	ReadWindowPos(hKey, cfg, cfgmask);
 	cfg->Windows8Detected = ReadBool(hKey,cfg->Windows8Detected,&cfgmask->Windows8Detected,_T("Windows8Detected"));
+	cfg->Windows10CUDetected = ReadBool(hKey, cfg->Windows10CUDetected, &cfgmask->Windows10CUDetected, _T("Windows10CUDetected"));
 	cfg->DPIScale = ReadDWORD(hKey,cfg->DPIScale,&cfgmask->DPIScale,_T("DPIScale"));
 	cfg->aspect = ReadFloat(hKey, cfg->aspect, &cfgmask->aspect, _T("ScreenAspect"));
 	cfg->DebugNoExtFramebuffer = ReadBool(hKey, cfg->DebugNoExtFramebuffer, &cfgmask->DebugNoExtFramebuffer, _T("DebugNoExtFramebuffer"));
@@ -793,12 +799,37 @@ void ReadSettings(HKEY hKey, DXGLCFG *cfg, DXGLCFG *mask, BOOL global, BOOL dll,
 	}
 	if (global && !cfg->Windows8Detected)
 	{
-		OSVERSIONINFO osver;
 		osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		GetVersionEx(&osver);
 		if (osver.dwMajorVersion > 6) cfg->Windows8Detected = TRUE;
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) cfg->Windows8Detected = TRUE;
 		if (cfg->Windows8Detected) cfg->AddColorDepths |= 1 | 4 | 16;
+	}
+	if (global && !cfg->Windows10CUDetected)
+	{
+		if (!hNtdll)
+		{
+			hNtdll = GetModuleHandle(_T("ntdll.dll"));
+			if (hNtdll) _RtlGetVersion = GetProcAddress(hNtdll, "RtlGetVersion");
+		}
+		if (_RtlGetVersion)
+		{
+			osverw.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+			_RtlGetVersion(&osverw);
+			if ((osverw.dwMajorVersion >= 10) && (osverw.dwBuildNumber >= 15063))
+				cfg->Windows10CUDetected = TRUE;
+		}
+		else
+		{
+			osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+			GetVersionEx(&osver);
+			if ((osver.dwMajorVersion >= 10) && (osver.dwBuildNumber >= 15063))
+				cfg->Windows10CUDetected = TRUE;
+		}
+		if (cfg->Windows10CUDetected)
+		{
+			if (cfg->DPIScale == 1) cfg->DPIScale = 4;
+		}
 	}
 }
 
@@ -943,6 +974,7 @@ void WriteSettings(HKEY hKey, const DXGLCFG *cfg, const DXGLCFG *mask)
 	WriteDWORD(hKey, cfg->WindowMaximized, cfgmask->WindowMaximized, _T("WindowMaximized"));
 	WriteDWORD(hKey, cfg->CaptureMouse, cfgmask->CaptureMouse, _T("CaptureMouse"));
 	WriteBool(hKey,cfg->Windows8Detected,cfgmask->Windows8Detected,_T("Windows8Detected"));
+	WriteBool(hKey, cfg->Windows10CUDetected, cfgmask->Windows10CUDetected, _T("Windows10CUDetected"));
 	WriteDWORD(hKey,cfg->DPIScale,cfgmask->DPIScale,_T("DPIScale"));
 	WriteFloat(hKey, cfg->aspect, cfgmask->aspect, _T("ScreenAspect"));
 	WriteBool(hKey, cfg->DebugNoExtFramebuffer, cfgmask->DebugNoExtFramebuffer, _T("DebugNoExtFramebuffer"));
@@ -1063,8 +1095,10 @@ LPTSTR MakeNewConfig(LPTSTR path)
 void GetDefaultConfig(DXGLCFG *cfg)
 {
 	OSVERSIONINFO osver;
+	OSVERSIONINFOW osverw;
 	SYSTEM_INFO sysinfo;
 	BOOL Windows8Detected = FALSE;
+	BOOL Windows10CUDetected = FALSE;
 	ZeroMemory(cfg, sizeof(DXGLCFG));
 	cfg->DPIScale = 1;
 	cfg->AddModes = 1;
@@ -1093,6 +1127,30 @@ void GetDefaultConfig(DXGLCFG *cfg)
 		if (osver.dwMajorVersion > 6) Windows8Detected = TRUE;
 		if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion >= 2)) Windows8Detected = TRUE;
 		if (Windows8Detected) cfg->AddColorDepths |= (1 | 4 | 16);
+	}
+	if (!cfg->Windows10CUDetected)
+	{
+		if (!hNtdll)
+		{
+			hNtdll = GetModuleHandle(_T("ntdll.dll"));
+			if (hNtdll) _RtlGetVersion = GetProcAddress(hNtdll, "RtlGetVersion");
+		}
+		if (_RtlGetVersion)
+		{
+			osverw.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+			_RtlGetVersion(&osverw);
+			if ((osverw.dwMajorVersion >= 10) && (osverw.dwBuildNumber >= 15063))
+				Windows10CUDetected = TRUE;
+		}
+		else
+		{
+			osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+			GetVersionEx(&osver);
+			if ((osver.dwMajorVersion >= 10) && (osver.dwBuildNumber >= 15063))
+				Windows10CUDetected = TRUE;
+		}
+		if (Windows10CUDetected) cfg->DPIScale = 4;
+		else cfg->DPIScale = 1;
 	}
 	GetSystemInfo(&sysinfo);
 	if (sysinfo.dwNumberOfProcessors > 1) cfg->MaxSpinCount = 100000;
