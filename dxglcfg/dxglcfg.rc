@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2025 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -203,11 +203,21 @@ IDD_TRACING DIALOG 0, 0, 340, 169
 STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_VISIBLE | WS_CHILDWINDOW
 FONT 8, "Ms Shell Dlg"
 {
-    LTEXT           "Enable tracing file", IDC_STATIC, 7, 7, 57, 9, SS_LEFT, WS_EX_LEFT
-    COMBOBOX        IDC_TRACING, 7, 17, 200, 63, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
-    CONTROL         "", IDC_STATIC, WC_STATIC, SS_ETCHEDHORZ, 7, 32, 328, 1, WS_EX_LEFT
-    LTEXT           "Enabling tracing will save a file named dxgl.log in the application folder.  Press Ctrl+Break to stop tracing at any time when the application is running.", IDC_STATIC, 7, 35, 328, 17, SS_LEFT, WS_EX_LEFT
-    LTEXT           "Tracing is not currently supported on x64 systems, and may result in unexpected behavior.", IDC_TRACEX64NOTICE, 7, 54, 290, 9, SS_LEFT, WS_EX_LEFT
+    //LTEXT           "Enable tracing file", IDC_STATIC, 7, 7, 57, 9, SS_LEFT, WS_EX_LEFT
+    //COMBOBOX        IDC_TRACING, 7, 17, 200, 63, CBS_DROPDOWNLIST | CBS_HASSTRINGS, WS_EX_LEFT
+    CONTROL         "", IDC_STATIC, WC_STATIC, SS_ETCHEDHORZ, 7, 27, 328, 1, WS_EX_LEFT
+    PUSHBUTTON      "Reset", IDC_TRACERESET, 300, 8, 36, 12
+    LTEXT           "Enabling tracing will save a file named dxgl.log in the application folder.\r\nPress Ctrl+Break to stop tracing at any time when the application is running.", IDC_STATIC, 7, 7, 290, 17, SS_LEFT, WS_EX_LEFT
+    LTEXT           "Tracing is not currently supported on x64 systems, and may result in unexpected behavior.", IDC_TRACEX64NOTICE, 7, 146, 290, 9, SS_LEFT, WS_EX_LEFT
+    LTEXT           "Certain tracing options may severely affect performance.  Please only enable for testing.", IDC_STATIC, 7, 157, 290, 9, SS_LEFT, WS_EX_LEFT
+    LTEXT           "Standard logging options", IDC_STATIC, 7, 32, 100, 9, SS_LEFT, WS_EX_LEFT
+    AUTOCHECKBOX    "Log system information", IDC_LOGSYSINFO, 7, 43, 86, 8, 0, WS_EX_LEFT
+    AUTOCHECKBOX    "Log errors", IDC_LOGERROR, 7, 54, 48, 8, 0, WS_EX_LEFT
+    AUTOCHECKBOX    "Log API calls", IDC_LOGAPI, 7, 65, 54, 8, 0, WS_EX_LEFT
+    AUTOCHECKBOX    "Log detailed API calls", IDC_LOGAPIEXTENDED, 7, 76, 86, 8, 0, WS_EX_LEFT
+    AUTOCHECKBOX    "Log compiled shaders", IDC_LOGSHADER, 7, 87, 86, 8, 0, WS_EX_LEFT
+    LTEXT           "Expert logging options", IDC_STATIC, 114, 32, 100, 9, SS_LEFT, WS_EX_LEFT
+    AUTOCHECKBOX    "Log mouse API hooks", IDC_LOGMOUSEHOOK, 114, 43, 82, 8, 0, WS_EX_LEFT
 }
 
 

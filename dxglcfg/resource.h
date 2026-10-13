@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2011-2020 William Feely
+// Copyright (C) 2011-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -371,8 +371,14 @@
 #define IDC_GRPINIOPTIONS                       3306
 
 // Controls - Tracing tab
-#define IDC_TRACING                             3401
-#define IDC_TRACEX64NOTICE                      3402
+#define IDC_TRACEX64NOTICE                      3401
+#define IDC_TRACERESET                          3402
+#define IDC_LOGSYSINFO                          3410
+#define IDC_LOGERROR                            3411
+#define IDC_LOGAPI                              3412
+#define IDC_LOGAPIEXTENDED                      3413
+#define IDC_LOGSHADER                           3414
+#define IDC_LOGMOUSEHOOK                        3420
 
 // Controls - Affinity dialog
 #define IDC_CPU0                                3500
