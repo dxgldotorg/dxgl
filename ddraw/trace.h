@@ -23,27 +23,34 @@
 extern "C" {
 #endif
 
+#define DXGLTRACE_SYSINFO     1
+#define DXGLTRACE_ERROR       2
+#define DXGLTRACE_API         4
+#define DXGLTRACE_APIEXTENDED 8
+#define DXGLTRACE_SHADER      16
+
+#define DXGLTRACE_MOUSEHOOK   65536
 
 extern BOOL trace_end;
 #if _MSC_VER < 1400
 #pragma warning (disable: 4002)
-#define TRACE_ENTER(paramcount) if(dxglcfg.DebugTraceLevel >= 3) trace_enter(__FUNCTION__,dxglcfg.DebugTraceLevel,paramcount)
+#define TRACE_ENTER(paramcount) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) trace_enter(__FUNCTION__,dxglcfg.DebugTraceLevel,paramcount)
 #else
-#define TRACE_ENTER(paramcount,...) if(dxglcfg.DebugTraceLevel >= 3) trace_enter(__FUNCTION__,dxglcfg.DebugTraceLevel,paramcount,__VA_ARGS__)
+#define TRACE_ENTER(paramcount,...) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) trace_enter(__FUNCTION__,dxglcfg.DebugTraceLevel,paramcount,__VA_ARGS__)
 #endif
-#define TRACE_EXIT(argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_exit(__FUNCTION__,dxglcfg.DebugTraceLevel,argtype,(void*)arg)
-#define TRACE_VAR(var,argtype,arg) if(dxglcfg.DebugTraceLevel >= 3) trace_var(__FUNCTION__,dxglcfg.DebugTraceLevel,var,argtype,(void*)arg)
-#define TRACE_ERROR(str) if(dxglcfg.DebugTraceLevel >= 2) trace_string(str,dxglcfg.DebugTraceLevel)
-#define TRACE_SHADER(str) if(dxglcfg.DebugTraceLevel >= 5) trace_string(str,dxglcfg.DebugTraceLevel)
-#define TRACE_STRING(str) if(dxglcfg.DebugTraceLevel >= 1) trace_string(str,dxglcfg.DebugTraceLevel)
-#define TRACE_SYSINFO() if(dxglcfg.DebugTraceLevel >= 1) trace_sysinfo(dxglcfg.DebugTraceLevel) // Must be in thread used by OpenGL.
+#define TRACE_EXIT(argtype,arg) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) trace_exit(__FUNCTION__,dxglcfg.DebugTraceLevel,argtype,(void*)arg)
+#define TRACE_VAR(var,argtype,arg) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) trace_var(__FUNCTION__,dxglcfg.DebugTraceLevel,var,argtype,(void*)arg)
+#define TRACE_ERROR(str) if(dxglcfg.DebugTraceLevel & DXGLTRACE_ERROR) trace_string(str,dxglcfg.DebugTraceLevel)
+#define TRACE_SHADER(str) if(dxglcfg.DebugTraceLevel & DXGLTRACE_SHADER) trace_string(str,dxglcfg.DebugTraceLevel)
+#define TRACE_STRING(str) if(dxglcfg.DebugTraceLevel & DXGLTRACE_SYSINFO) trace_string(str,dxglcfg.DebugTraceLevel)
+#define TRACE_SYSINFO() if(dxglcfg.DebugTraceLevel & DXGLTRACE_SYSINFO) trace_sysinfo(dxglcfg.DebugTraceLevel) // Must be in thread used by OpenGL.
 void trace_enter(const char *function, int level, int paramcount, ...);
 void trace_exit(const char *function, int level, int argtype, void *arg);
 void *trace_ret(const char *function, int level, int argtype, void *arg);
 void trace_var(const char *function, int level, const char *var, int argtype, void *arg);
 void trace_string(const char *str, int level);
 void trace_sysinfo(int level);
-#define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel >= 3) \
+#define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) \
 return (type)trace_ret(__FUNCTION__,dxglcfg.DebugTraceLevel,argtype,(void*)arg); \
 else return arg;
 

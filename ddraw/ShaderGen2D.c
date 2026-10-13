@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2025 William Feely
+// Copyright (C) 2013-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -1105,7 +1105,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		OutputDebugStringA(infolog);
 		TRACE_ERROR("Vertex shader compilation failed. Error messages:\n");
 		TRACE_ERROR(infolog);
-		if ((dxglcfg.DebugTraceLevel >= 1) && (dxglcfg.DebugTraceLevel < 5))
+		if ((dxglcfg.DebugTraceLevel & DXGLTRACE_ERROR) && !(dxglcfg.DebugTraceLevel & DXGLTRACE_SHADER))
 		{
 			TRACE_ERROR("Vertex shader source code:");
 			TRACE_ERROR(vsrc->ptr);
@@ -1481,7 +1481,7 @@ void ShaderGen2D_CreateShader2D(ShaderGen2D *gen, int index, __int64 id)
 		OutputDebugStringA(infolog);
 		TRACE_ERROR("Fragment shader compilation failed. Error messages:\n");
 		TRACE_ERROR(infolog);
-		if ((dxglcfg.DebugTraceLevel >= 1) && (dxglcfg.DebugTraceLevel < 5))
+		if ((dxglcfg.DebugTraceLevel & DXGLTRACE_ERROR) && !(dxglcfg.DebugTraceLevel & DXGLTRACE_SHADER))
 		{
 			TRACE_ERROR("Fragment shader source code:");
 			TRACE_ERROR(fsrc->ptr);
