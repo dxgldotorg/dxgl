@@ -605,7 +605,13 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNEDIT));
 	_SetWindowTheme(hTabs[6], L"Explorer", NULL);
 	SendMessage(hTabs[6], WM_THEMECHANGED, 0, 0);
-	MakeEditDark(GetDlgItem(hTabs[6], IDC_TRACING));
+	MakeButtonDark(GetDlgItem(hTabs[6], IDC_TRACERESET));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGSYSINFO));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGERROR));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGAPI));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGAPIEXTENDED));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGSHADER));
+	MakeCheckboxDark(GetDlgItem(hTabs[6], IDC_LOGMOUSEHOOK));
 	_SetWindowTheme(hTabs[7], L"Explorer", NULL);
 	SendMessage(hTabs[7], WM_THEMECHANGED, 0, 0);
 	MakeGroupBoxDark(GetDlgItem(hTabs[7], IDC_GRPSELECT));
@@ -1680,14 +1686,14 @@ BOOL GetCheck(HWND hWnd, int DlgItem, BOOL *mask)
 	switch(check)
 	{
 	case BST_CHECKED:
-		*mask = TRUE;
+		if(mask) *mask = TRUE;
 		return TRUE;
 	case BST_UNCHECKED:
-		*mask = TRUE;
+		if(mask) *mask = TRUE;
 		return FALSE;
 	case BST_INDETERMINATE:
 	default:
-		*mask = FALSE;
+		if(mask) *mask = FALSE;
 		return FALSE;
 	}
 }
@@ -4861,9 +4867,47 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	return TRUE;
 }
 
+void SetTraceCheckboxes(HWND hWnd, DWORD level, DWORD mask, BOOL tristate)
+{
+	if (tristate && !mask)
+	{
+		SendDlgItemMessage(hWnd, IDC_LOGSYSINFO, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGERROR, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGAPI, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGAPIEXTENDED, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGSHADER, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGMOUSEHOOK, BM_SETSTYLE, BS_AUTO3STATE, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGSYSINFO, BM_SETCHECK, BST_INDETERMINATE, 0);
+		SendDlgItemMessage(hWnd, IDC_LOGERROR, BM_SETCHECK, BST_INDETERMINATE, 0);
+		SendDlgItemMessage(hWnd, IDC_LOGAPI, BM_SETCHECK, BST_INDETERMINATE, 0);
+		SendDlgItemMessage(hWnd, IDC_LOGAPIEXTENDED, BM_SETCHECK, BST_INDETERMINATE, 0);
+		SendDlgItemMessage(hWnd, IDC_LOGSHADER, BM_SETCHECK, BST_INDETERMINATE, 0);
+		SendDlgItemMessage(hWnd, IDC_LOGMOUSEHOOK, BM_SETCHECK, BST_INDETERMINATE, 0);
+		EnableWindow(GetDlgItem(hWnd, IDC_LOGAPIEXTENDED), FALSE);
+	}
+	else
+	{
+		SendDlgItemMessage(hWnd, IDC_LOGSYSINFO, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGERROR, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGAPI, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGAPIEXTENDED, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGSHADER, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SendDlgItemMessage(hWnd, IDC_LOGMOUSEHOOK, BM_SETSTYLE, BS_AUTOCHECKBOX, (LPARAM)TRUE);
+		SetCheck(hWnd, IDC_LOGSYSINFO, level & 1, mask, tristate);
+		SetCheck(hWnd, IDC_LOGERROR, level & 1 << 1, mask, tristate);
+		SetCheck(hWnd, IDC_LOGAPI, level & 1 << 2, mask, tristate);
+		SetCheck(hWnd, IDC_LOGAPIEXTENDED, level & 1 << 3, mask, tristate);
+		SetCheck(hWnd, IDC_LOGSHADER, level & 1 << 4, mask, tristate);
+		SetCheck(hWnd, IDC_LOGMOUSEHOOK, level & 1 << 16, mask, tristate);
+		if (level & 1 << 2) EnableWindow(GetDlgItem(hWnd, IDC_LOGAPIEXTENDED), TRUE);
+		else EnableWindow(GetDlgItem(hWnd, IDC_LOGAPIEXTENDED), FALSE);
+	}
+}
+
 LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	RECT r;
+	BOOL tristate;
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -4918,10 +4962,67 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
-		case IDC_TRACING:
-			cfg->DebugTraceLevel = GetCombo(hWnd, IDC_TRACING, &cfgmask->DebugTraceLevel);
+		case IDC_TRACERESET:
+			if (current_app)
+			{
+				cfgmask->DebugTraceLevel = 0;
+				tristate = TRUE;
+			}
+			else tristate = FALSE;
+			cfg->DebugTraceLevel = 0;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, tristate);
 			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 			*dirty = TRUE;
+			break;
+		case IDC_LOGSYSINFO:
+			if (GetCheck(hWnd, IDC_LOGSYSINFO, NULL)) cfg->DebugTraceLevel |= 1;
+			else cfg->DebugTraceLevel &= ~1;
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOGERROR:
+			if (GetCheck(hWnd, IDC_LOGERROR, NULL)) cfg->DebugTraceLevel |= 1 << 1;
+			else cfg->DebugTraceLevel &= ~(1 << 1);
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOGAPI:
+			if (GetCheck(hWnd, IDC_LOGAPI, NULL)) cfg->DebugTraceLevel |= 1 << 2;
+			else cfg->DebugTraceLevel &= ~(1 << 2);
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOGAPIEXTENDED:
+			if (GetCheck(hWnd, IDC_LOGAPIEXTENDED, NULL)) cfg->DebugTraceLevel |= 1 << 3;
+			else cfg->DebugTraceLevel &= ~(1 << 3);
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOGSHADER:
+			if (GetCheck(hWnd, IDC_LOGSHADER, NULL)) cfg->DebugTraceLevel |= 1 << 4;
+			else cfg->DebugTraceLevel &= ~(1 << 4);
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		case IDC_LOGMOUSEHOOK:
+			if (GetCheck(hWnd, IDC_LOGMOUSEHOOK, NULL)) cfg->DebugTraceLevel |= 1 << 16;
+			else cfg->DebugTraceLevel &= ~(1 << 16);
+			cfgmask->DebugTraceLevel = 1;
+			SetTraceCheckboxes(hWnd, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+			break;
+		default:
 			break;
 		}
 	default:
@@ -5066,8 +5167,6 @@ void RefreshControls(HWND hWnd)
 		EnableWindow(GetDlgItem(hTabs[3], IDC_COMREG), FALSE);
 		// Debug tab
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_ADDSTRING, 0, (LPARAM)strdefault);
-		// Tracing tab
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)strdefault);
 
 		// Update hacks tab if needed
 		if (tabopen == 5)
@@ -5148,9 +5247,6 @@ void RefreshControls(HWND hWnd)
 		// Debug tab
 		SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_DELETESTRING,
 			SendDlgItemMessage(hTabs[4], IDC_GLVERSION, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
-		// Tracing tab
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_DELETESTRING,
-			SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_FINDSTRING, -1, (LPARAM)strdefault), 0);
 
 		// Update hacks tab if needed
 		if (tabopen == 5)
@@ -5273,7 +5369,7 @@ void RefreshControls(HWND hWnd)
 	else UpdateHacksControl(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
 	RedrawWindow(GetDlgItem(hTabs[5], IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 	// Tracing tab
-	SetCombo(hTabs[6], IDC_TRACING, cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, tristate);
+	SetTraceCheckboxes(hTabs[6], cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, tristate);
 }
 
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -6093,19 +6189,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// Auto expand viewport hack value
 		SetRGBHex(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
 		// Tracing
-		_tcscpy(buffer, _T("Disabled"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("System information only"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Errors and system information"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Errors, system information, and basic API trace"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Errors, system information, and detailed API trace"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		_tcscpy(buffer, _T("Errors, system information, API trace, and dump shaders"));
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_ADDSTRING, 0, (LPARAM)buffer);
-		SendDlgItemMessage(hTabs[6], IDC_TRACING, CB_SETCURSEL, cfg->DebugTraceLevel, 0);
+		SetTraceCheckboxes(hTabs[6], cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, FALSE);
 #ifndef _M_X64
 		DestroyWindow(GetDlgItem(hTabs[6], IDC_TRACEX64NOTICE));
 #endif
