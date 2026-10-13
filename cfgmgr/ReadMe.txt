@@ -572,6 +572,18 @@ If DebugMaxGLVersionMajor is nonzero, sets the maximum OpenGL minor version
 that DXGL will use, unless the actual major version is less than
 DebugMaxGLVersionMajor.
 
+Member DebugDisableErrors
+INI Entry DebugDisableErrors
+INI Group debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugDisableErrors
+In OpenGL 4.6, create a context with errors disabled.
+
+Member DebugTraceLevel
+INI Entry DebugTraceLevel
+INI Group Debug
+REG_DWORD HKCU\DXGL\Profiles\<app>\DebugTraceLevel
+Bitmask for debug trace logs.  Refer to dxgl-example.ini for info
+
 Member HackCrop640480to640400
 INI Entry HackCrop640480to640400
 INI Group hacks

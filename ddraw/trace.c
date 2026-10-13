@@ -1080,7 +1080,7 @@ void trace_enter(const char *function, int level, int paramcount, ...)
 	DWORD byteswritten;
 	int i;
 	int argtype;
-	if ((level < 3) && !trace_depth) return;
+	if (!(level & DXGLTRACE_API) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1090,7 +1090,7 @@ void trace_enter(const char *function, int level, int paramcount, ...)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	if ((level >= 4) || (!trace_depth))
+	if ((level & DXGLTRACE_APIEXTENDED) || (!trace_depth))
 	{
 		va_start(args, paramcount);
 		for (i = 0; i < trace_depth; i++)
@@ -1113,7 +1113,7 @@ void trace_exit(const char *function, int level, int argtype, void *arg)
 {
 	DWORD byteswritten;
 	int i;
-	if ((level < 3) && !trace_depth) return;
+	if (!(level & DXGLTRACE_API) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1124,7 +1124,7 @@ void trace_exit(const char *function, int level, int argtype, void *arg)
 		return;
 	}
 	if(trace_depth) trace_depth--;
-	if ((level >= 4) || (!trace_depth))
+	if ((level & DXGLTRACE_APIEXTENDED) || (!trace_depth))
 	{
 		for (i = 0; i < trace_depth; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1144,7 +1144,7 @@ void trace_var(const char *function, int level, const char *var, int argtype, vo
 {
 	DWORD byteswritten;
 	int i;
-	if ((level < 3) && !trace_depth) return;
+	if (!(level & DXGLTRACE_API) && !trace_depth) return;
 	if (trace_fail) return;
 	if(!trace_ready) init_trace();
 	EnterCriticalSection(&trace_cs);
@@ -1154,7 +1154,7 @@ void trace_var(const char *function, int level, const char *var, int argtype, vo
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	if ((level >= 4) || (!trace_depth))
+	if ((level & DXGLTRACE_APIEXTENDED) || (!trace_depth))
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1181,7 +1181,7 @@ void trace_string(const char *str, int level)
 		LeaveCriticalSection(&trace_cs);
 		return;
 	}
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1360,7 +1360,7 @@ void trace_sysinfo(int level)
 		osver.szCSDVersion[i] = 0;
 	strcpy(osstring, "Windows version:  ");
 	print_winver(&osver, osstring, 1);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1373,7 +1373,7 @@ void trace_sysinfo(int level)
 	{
 		strcpy(osstring, "Detected as version:  ");
 		print_winver(&osver2, osstring, 1);
-		if (level >= 4)
+		if (level & DXGLTRACE_APIEXTENDED)
 		{
 			for (i = 0; i < trace_depth - 1; i++)
 				WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1391,13 +1391,13 @@ void trace_sysinfo(int level)
 		if(is64) strcpy(osstring,"64-bit Operating System\r\n");
 		else strcpy(osstring,"32-bit Operating System\r\n");
 	}
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
 	}
 	WriteFile(outfile,osstring,strlen(osstring),&byteswritten,NULL);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1406,7 +1406,7 @@ void trace_sysinfo(int level)
 	glstring = glGetString(GL_VENDOR);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1415,7 +1415,7 @@ void trace_sysinfo(int level)
 	glstring = glGetString(GL_RENDERER);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1424,7 +1424,7 @@ void trace_sysinfo(int level)
 	glstring = glGetString(GL_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
@@ -1433,7 +1433,7 @@ void trace_sysinfo(int level)
 	glstring = glGetString(GL_SHADING_LANGUAGE_VERSION);
 	if(glstring) WriteFile(outfile,glstring,strlen((const char*)glstring),&byteswritten,NULL);
 	WriteFile(outfile,"\r\n",2,&byteswritten,NULL);
-	if (level >= 4)
+	if (level & DXGLTRACE_APIEXTENDED)
 	{
 		for (i = 0; i < trace_depth - 1; i++)
 			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
