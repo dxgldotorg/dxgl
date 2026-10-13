@@ -1188,7 +1188,7 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 {
 	HWND_HOOK *wndhook;
 	LONG sizes[6];
-	POINT pt;
+	POINT ptin, ptout;
 
 	if (dxglcfg.DebugNoMouseHooks) {
 		return _SetCursorPos(x, y);
@@ -1198,8 +1198,10 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	if (!wndhook) {
 		return _SetCursorPos(x, y);
 	}
-
-
+	ptin.x = x;
+	ptin.y = y;
+	TranslateCursorPos(&ptin, &ptout, FALSE, TRUE, wndhook);
+	return _SetCursorPos(ptout.x, ptout.y);
 }
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
 {
