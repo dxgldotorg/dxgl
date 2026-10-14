@@ -1,5 +1,5 @@
 // DXGL
-// Copyright (C) 2013-2025 William Feely
+// Copyright (C) 2013-2026 William Feely
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -44,12 +44,20 @@ extern BOOL trace_end;
 #define TRACE_SHADER(str) if(dxglcfg.DebugTraceLevel & DXGLTRACE_SHADER) trace_string(str,dxglcfg.DebugTraceLevel)
 #define TRACE_STRING(str) if(dxglcfg.DebugTraceLevel & DXGLTRACE_SYSINFO) trace_string(str,dxglcfg.DebugTraceLevel)
 #define TRACE_SYSINFO() if(dxglcfg.DebugTraceLevel & DXGLTRACE_SYSINFO) trace_sysinfo(dxglcfg.DebugTraceLevel) // Must be in thread used by OpenGL.
+#define TRACE_GETCURSORPOS(pin,pout) if(dxglcfg.DebugTraceLevel & DXGLTRACE_MOUSEHOOK) trace_getcursorpos(pin,pout)
+#define TRACE_SETCURSORPOS(pin,pout) if(dxglcfg.DebugTraceLevel & DXGLTRACE_MOUSEHOOK) trace_setcursorpos(pin,pout)
+#define TRACE_GETCLIPCURSOR(rin,rout) if(dxglcfg.DebugTraceLevel & DXGLTRACE_MOUSEHOOK) trace_getclipcursor(rin,rout)
+#define TRACE_CLIPCURSOR(rin,rout) if(dxglcfg.DebugTraceLevel & DXGLTRACE_MOUSEHOOK) trace_clipcursor(rin,rout)
 void trace_enter(const char *function, int level, int paramcount, ...);
 void trace_exit(const char *function, int level, int argtype, void *arg);
 void *trace_ret(const char *function, int level, int argtype, void *arg);
 void trace_var(const char *function, int level, const char *var, int argtype, void *arg);
 void trace_string(const char *str, int level);
 void trace_sysinfo(int level);
+void trace_getcursorpos(POINT *pin, POINT *pout);
+void trace_setcursorpos(POINT *pin, POINT *pout);
+void trace_getclipcursor(RECT *rin, RECT *rout);
+void trace_clipcursor(RECT *rin, RECT *rout);
 #define TRACE_RET(type, argtype, arg) if(dxglcfg.DebugTraceLevel & DXGLTRACE_API) \
 return (type)trace_ret(__FUNCTION__,dxglcfg.DebugTraceLevel,argtype,(void*)arg); \
 else return arg;
