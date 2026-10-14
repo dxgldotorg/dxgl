@@ -1445,3 +1445,83 @@ void trace_sysinfo(int level)
 	sysinfo_dumped = TRUE;
 	LeaveCriticalSection(&trace_cs);
 }
+
+void trace_getcursorpos(POINT *pin, POINT *pout)
+{
+	DWORD byteswritten;
+	if (trace_fail) return;
+	if (!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	if (trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
+	WriteFile(outfile, "GetCursorPos (", 14, &byteswritten, NULL);
+	trace_decode_arg(25, pout);
+	WriteFile(outfile, ") <- (", 5, &byteswritten, NULL);
+	trace_decode_arg(25, pin);
+	WriteFile(outfile, ")\r\n", 3, &byteswritten, NULL);
+	LeaveCriticalSection(&trace_cs);
+}
+
+void trace_setcursorpos(POINT *pin, POINT *pout)
+{
+	DWORD byteswritten;
+	if (trace_fail) return;
+	if (!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	if (trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
+	WriteFile(outfile, "SetCursorPos (", 14, &byteswritten, NULL);
+	trace_decode_arg(25, pin);
+	WriteFile(outfile, ") -> (", 5, &byteswritten, NULL);
+	trace_decode_arg(25, pout);
+	WriteFile(outfile, ")\r\n", 3, &byteswritten, NULL);
+	LeaveCriticalSection(&trace_cs);
+}
+
+void trace_getclipcursor(RECT *rin, RECT *rout)
+{
+	DWORD byteswritten;
+	if (trace_fail) return;
+	if (!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	if (trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
+	WriteFile(outfile, "GetClipCursor(", 14, &byteswritten, NULL);
+	trace_decode_arg(26, rout);
+	WriteFile(outfile, ") <- (", 5, &byteswritten, NULL);
+	trace_decode_arg(26, rin);
+	WriteFile(outfile, ")\r\n", 3, &byteswritten, NULL);
+	LeaveCriticalSection(&trace_cs);
+}
+
+void trace_clipcursor(RECT *rin, RECT *rout)
+{
+	DWORD byteswritten;
+	if (trace_fail) return;
+	if (!trace_ready) init_trace();
+	EnterCriticalSection(&trace_cs);
+	if (trace_end)
+	{
+		end_trace();
+		LeaveCriticalSection(&trace_cs);
+		return;
+	}
+	WriteFile(outfile, "ClipCursor   (", 14, &byteswritten, NULL);
+	trace_decode_arg(26, rin);
+	WriteFile(outfile, ") -> (", 5, &byteswritten, NULL);
+	trace_decode_arg(26, rout);
+	WriteFile(outfile, ")\r\n", 3, &byteswritten, NULL);
+	LeaveCriticalSection(&trace_cs);
+}

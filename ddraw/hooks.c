@@ -1182,6 +1182,7 @@ BOOL WINAPI HookGetCursorPos(LPPOINT point)
 	error = _GetCursorPos(&pt);
 	if (!error) return(error);
 	TranslateCursorPos(&pt, point, TRUE, FALSE, wndhook);
+	TRACE_GETCURSORPOS(&pt, point);
 	return error;
 }
 
@@ -1202,6 +1203,7 @@ BOOL WINAPI HookSetCursorPos(int x, int y)
 	ptin.x = x;
 	ptin.y = y;
 	TranslateCursorPos(&ptin, &ptout, FALSE, TRUE, wndhook);
+	TRACE_SETCURSORPOS(&ptin, &ptout);
 	return _SetCursorPos(ptout.x, ptout.y);
 }
 HCURSOR WINAPI HookSetCursor(HCURSOR hCursor)
@@ -1241,6 +1243,7 @@ BOOL WINAPI HookClipCursor(const RECT *rect)
 
 	TranslateCursorPos((POINT*)&rect->left, (POINT*)&out.left, FALSE, TRUE, wndhook);
 	TranslateCursorPos((POINT*)&rect->right, (POINT*)&out.right, FALSE, TRUE, wndhook);
+	TRACE_CLIPCURSOR(rect, &out);
 	return _ClipCursor(&out);
 }
 
@@ -1263,6 +1266,7 @@ BOOL WINAPI HookGetClipCursor(LPRECT lpRect)
 	if (error) return error;
 	TranslateCursorPos((POINT*)&tmp.left, (POINT*)&out.left, TRUE, FALSE, wndhook);
 	TranslateCursorPos((POINT*)&tmp.right, (POINT*)&out.right, TRUE, FALSE, wndhook);
+	TRACE_GETCLIPCURSOR(&tmp, &out);
 	return error;
 
 }
