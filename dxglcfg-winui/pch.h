@@ -48,7 +48,7 @@
 #include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
 #include <Microsoft.UI.Xaml.Window.h>
 
-
-
+#include "../cfgmgr/LibSha256.h"
+#include "../cfgmgr/cfgmgr.h"
 
 #endif //_PCH_H
