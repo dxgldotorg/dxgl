@@ -4908,6 +4908,8 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 {
 	RECT r;
 	BOOL tristate;
+	LPNMCUSTOMDRAW customdraw;
+	TCHAR buttontext[256];
 	switch(Msg)
 	{
 	case WM_INITDIALOG:
@@ -4959,6 +4961,41 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			return (LPARAM)hbrDarkTabBackground;
 		}
 		else return FALSE;
+	case WM_NOTIFY:
+		if (!usedarkmode) return DefWindowProc(hWnd, Msg, wParam, lParam);
+		customdraw = (LPNMCUSTOMDRAW)lParam;
+		if (customdraw->hdr.code == NM_CUSTOMDRAW)
+		{
+			if ((customdraw->hdr.idFrom == IDC_LOGSYSINFO) || (customdraw->hdr.idFrom == IDC_LOGERROR) ||
+				(customdraw->hdr.idFrom == IDC_LOGAPI) || (customdraw->hdr.idFrom == IDC_LOGAPIEXTENDED) ||
+				(customdraw->hdr.idFrom == IDC_LOGSHADER) || (customdraw->hdr.idFrom == IDC_LOGMOUSEHOOK))
+			{
+				if(!IsWindowEnabled(GetDlgItem(hWnd,customdraw->hdr.idFrom)))
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				switch (customdraw->dwDrawStage)
+				{
+				case CDDS_PREERASE:
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
+					return TRUE;
+				case CDDS_PREPAINT:
+					if (_wine_get_version) return DefWindowProc(hWnd, Msg, wParam, lParam);
+					SetTextColor(customdraw->hdc, RGB(255, 255, 255));
+					SetBkMode(customdraw->hdc, TRANSPARENT);
+					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
+					r = customdraw->rc;
+					r.left += dpiscale(15);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
+					return TRUE;
+				default:
+					break;
+				}
+			}
+		}
+		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
