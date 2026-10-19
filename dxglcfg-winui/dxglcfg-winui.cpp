@@ -16,11 +16,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pch.h"
-#include "dxglcfg-winui.h"
 #include "resource.h"
 #include "../dxglcfg/resource.h"
 #include "util.h"
 #pragma comment(lib, "comctl32.lib")
+#include "MainWindow.xaml.h"
+#include "dxglcfg-winui.h"
+
+#include <WindowsAppSDK-VersionInfo.h>
 
 using namespace winrt;
 using namespace winrt::Microsoft::UI::Windowing;
@@ -99,104 +102,63 @@ LRESULT CALLBACK FixTopBorder(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
 	return DefSubclassProc(hwnd, msg, wParam, lParam);
 }
 
-class DXGLCFGApp : public ApplicationT<DXGLCFGApp, IXamlMetadataProvider>
+winrt::fire_and_forget DXGLCFGWindow_Create(winrt::dxglcfg_winui::implementation::MainWindow &window)
 {
-public:
-	winrt::Windows::Foundation::IAsyncAction OnLaunched(LaunchActivatedEventArgs const&)
+	HICON appicon;
+	HWND hwnd;
+	window.Title(dxglcfgname);
+	window.SystemBackdrop(Media::MicaBackdrop());
+	if (!hDxglcfg) hDxglcfg = GetModuleHandle(NULL);
+	try
 	{
-		HICON appicon;
-		HWND hwnd;
-		std::wstring xamlfile;
-		window = Window();
-		window.Title(dxglcfgname);
-		Resources().MergedDictionaries().Append(XamlControlsResources());
-		xamlfile = GetXAMLFromResource(IDR_DXGLCFG_WINUI_MAIN);
-		UIElement xamlRoot = Markup::XamlReader::Load(xamlfile).as<UIElement>();
-		xamlroot = xamlRoot.as<UIElement>();
-		auto maingrid = xamlRoot.as<Grid>();
-		window.Content(maingrid);
-		window.SystemBackdrop(Media::MicaBackdrop());
-
-		titlebar = maingrid.FindName(L"DXGLCFGTitlebar").try_as<TitleBar>();
-		titlebar.Title(dxglcfgname);
-		mainnav = maingrid.FindName(L"MainNav").try_as<NavigationView>();
-		if (!hDxglcfg) hDxglcfg = GetModuleHandle(NULL);
-		try
-		{
-			appicon = (HICON)LoadImage(hDxglcfg, MAKEINTRESOURCE(IDI_DXGL), IMAGE_ICON,
-				GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-			auto windowNative = window.as<IWindowNative>();
-			winrt::check_hresult(windowNative->get_WindowHandle(&hwnd));
-			SetWindowSubclass(hwnd, FixTopBorder, 1, 0);
-			IRandomAccessStream stream = co_await ReadIconAsync(appicon, GetDpiForWindow(hwnd));
-			auto bitmapsource = BitmapImage();
-			co_await bitmapsource.SetSourceAsync(stream);
-			ImageIconSource titlebaricon;
-			titlebaricon.ImageSource(bitmapsource);
-			titlebar.IconSource(titlebaricon);
-			DestroyIcon(appicon);
-		}
-		catch (hresult_error const& error) {}
-		titlebar.PaneToggleRequested({ this, &DXGLCFGApp::TitleBar_PaneToggleRequested });
-
-		switch (currcfg.DarkMode)
-		{
-		case 0:
-		default:
-			maingrid.RequestedTheme(ElementTheme::Default);
-			break;
-		case 1:
-			maingrid.RequestedTheme(ElementTheme::Dark);
-			break;
-		case 2:
-			maingrid.RequestedTheme(ElementTheme::Light);
-			break;
-		}
-		window.ExtendsContentIntoTitleBar(true);
-		window.SetTitleBar(titlebar);
-		window.AppWindow().TitleBar().PreferredHeightOption(TitleBarHeightOption::Tall);
-		window.Activate();
+		appicon = (HICON)LoadImage(hDxglcfg, MAKEINTRESOURCE(IDI_DXGL), IMAGE_ICON,
+			GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+		auto windowNative = window.try_as<IWindowNative>();
+		winrt::check_hresult(windowNative->get_WindowHandle(&hwnd));
+		SetWindowSubclass(hwnd, FixTopBorder, 1, 0);
+		IRandomAccessStream stream = co_await ReadIconAsync(appicon, GetDpiForWindow(hwnd));
+		auto bitmapsource = BitmapImage();
+		co_await bitmapsource.SetSourceAsync(stream);
+		ImageIconSource titlebaricon;
+		titlebaricon.ImageSource(bitmapsource);
+		window.DXGLCFGTitlebar().IconSource(titlebaricon);
+		DestroyIcon(appicon);
 	}
-	void TitleBar_PaneToggleRequested(TitleBar const &sender, winrt::Windows::Foundation::IInspectable const &args)
+	catch (hresult_error const& error) {}
+	switch (currcfg.DarkMode)
 	{
-		mainnav.IsPaneOpen(!mainnav.IsPaneOpen());
+	case 0:
+	default:
+		window.DXGLCFGMainGrid().RequestedTheme(ElementTheme::Default);
+		break;
+	case 1:
+		window.DXGLCFGMainGrid().RequestedTheme(ElementTheme::Dark);
+		break;
+	case 2:
+		window.DXGLCFGMainGrid().RequestedTheme(ElementTheme::Light);
+		break;
 	}
-
-	IXamlType GetXamlType(TypeName const& type)
-	{
-		return provider.GetXamlType(type);
-	}
-	IXamlType GetXamlType(hstring const& fullname)
-	{
-		return provider.GetXamlType(fullname);
-	}
-	com_array<XmlnsDefinition> GetXmlnsDefinitions()
-	{
-		return provider.GetXmlnsDefinitions();
-	}
-private:
-	Page displayPage{ nullptr };
-	Window window{ nullptr };
-	TitleBar titlebar{ nullptr };
-	NavigationView mainnav{ nullptr };
-	XamlControlsXamlMetaDataProvider provider;
-};
+	window.AppWindow().TitleBar().PreferredHeightOption(TitleBarHeightOption::Tall);
+	window.DXGLCFGTitlebar().Title(dxglcfgname);
+#ifdef _DEBUG
+	window.DXGLCFGTitlebar().Subtitle(L"Debug");
+#endif
+	window.Activate();
+}
 
 int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
 {
-	LPCTSTR wndclassname = _T("DXGL Config WinUI");
-	HWND hwnd;
-	WNDCLASS wndclass;
-	HINSTANCE hinstance = GetModuleHandle(NULL);
-	MSG msg;
+	int result;
 	GetCurrentConfig(&currcfg, FALSE);
 	PACKAGE_VERSION minver = { WINDOWSAPPSDK_RUNTIME_VERSION_UINT64 };
-	HRESULT error = MddBootstrapInitialize2(WINDOWSAPPSDK_RELEASE_MAJORMINOR, 
+	HRESULT error = MddBootstrapInitialize2(WINDOWSAPPSDK_RELEASE_MAJORMINOR,
 		WINDOWSAPPSDK_RELEASE_VERSION_TAG_W,
 		minver,	MddBootstrapInitializeOptions_None);
 	if (FAILED(error)) return 0;
-	winrt::init_apartment(winrt::apartment_type::single_threaded);
-	Application::Start([](auto&&) {make<DXGLCFGApp>(); });
+	/*winrt::init_apartment(winrt::apartment_type::single_threaded);
+	Application::Start([](auto&&) {make<DXGLCFGApp>(); });*/
+	result = wWinMain(0, 0, 0, 0);
 	MddBootstrapShutdown();
-	return 1;
+	if (result) return 0;
+	else return 1;
 }
