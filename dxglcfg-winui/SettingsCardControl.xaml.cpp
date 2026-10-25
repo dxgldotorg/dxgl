@@ -41,9 +41,11 @@ namespace winrt::dxglcfg_winui::implementation
     }
     DependencyProperty SettingsCardControl::HeaderProperty()
     {
-        return DependencyProperty::Register(L"Header", xaml_typename<hstring>(),
+        static DependencyProperty headerproperty =
+            DependencyProperty::Register(L"Header", xaml_typename<hstring>(),
             xaml_typename<dxglcfg_winui::SettingsCardControl>(),
             PropertyMetadata(box_value(L"")));
+        return headerproperty;
     }
 
     hstring SettingsCardControl::Description()
@@ -52,13 +54,15 @@ namespace winrt::dxglcfg_winui::implementation
     }
     void SettingsCardControl::Description(hstring const &value)
     {
-        SetValue(HeaderProperty(), box_value(value));
+        SetValue(DescriptionProperty(), box_value(value));
     }
     DependencyProperty SettingsCardControl::DescriptionProperty()
     {
-        return DependencyProperty::Register(L"Description", xaml_typename<hstring>(),
+        static DependencyProperty descriptionproperty =
+            DependencyProperty::Register(L"Description", xaml_typename<hstring>(),
             xaml_typename<dxglcfg_winui::SettingsCardControl>(),
             PropertyMetadata(box_value(L"")));
+        return descriptionproperty;
     }
 
     IconElement SettingsCardControl::HeaderIcon()
@@ -71,9 +75,11 @@ namespace winrt::dxglcfg_winui::implementation
     }
     DependencyProperty SettingsCardControl::HeaderIconProperty()
     {
-        return DependencyProperty::Register(L"HeaderIcon", xaml_typename<IconElement>(),
+        static DependencyProperty iconproperty =
+            DependencyProperty::Register(L"HeaderIcon", xaml_typename<IconElement>(),
             xaml_typename<dxglcfg_winui::SettingsCardControl>(),
             PropertyMetadata(nullptr));
+        return iconproperty;
     }
 
     IInspectable SettingsCardControl::HeaderContent()
@@ -86,8 +92,10 @@ namespace winrt::dxglcfg_winui::implementation
     }
     DependencyProperty SettingsCardControl::HeaderContentProperty()
     {
-        return DependencyProperty::Register(L"HeaderContent", xaml_typename<IInspectable>(),
+        static DependencyProperty contentproperty = 
+            DependencyProperty::Register(L"HeaderContent", xaml_typename<IInspectable>(),
             xaml_typename<dxglcfg_winui::SettingsCardControl>(),
             PropertyMetadata(nullptr));
+        return contentproperty;
     }
 }

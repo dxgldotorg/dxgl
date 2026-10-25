@@ -19,5 +19,4 @@
 #define IDC_STATIC (-1)
 #endif
 
-#define IDR_DXGLCFG_WINUI_DISPLAYPAGE               4010
 #define IDR_DXGLCFG_WINUI_SETTINGSCARDCONTROL       4100

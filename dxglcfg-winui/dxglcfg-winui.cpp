@@ -143,6 +143,8 @@ winrt::fire_and_forget DXGLCFGWindow_Create(winrt::dxglcfg_winui::implementation
 #ifdef _DEBUG
 	window.DXGLCFGTitlebar().Subtitle(L"Debug");
 #endif
+	window.MainNav().SelectedItem(window.MainNav().MenuItems().GetAt(0));
+
 	window.Activate();
 }
 

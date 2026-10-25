@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
     DXGL
-    Copyright (C) 2026 William Fely
+    Copyright (C) 2026 William Feely
     
     This library is free software; you can redistribute it an/or
     modify it under the terms of the GNU Lesser General Pulic
@@ -72,7 +72,8 @@
             IsPaneToggleButtonVisible="False"
             IsSettingsVisible="false"
             IsTabStop="false"
-            OpenPaneLength="170">
+            OpenPaneLength="170"
+            SelectionChanged="MainNav_SelectionChanged">
             <Frame x:Name="RootFrame" />
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Name="TabDisplay" Content="Display">

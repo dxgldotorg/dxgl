@@ -18,6 +18,7 @@
 namespace dxglcfg_winui
 {
     [default_interface]
+    [contentproperty("HeaderContent")]
     runtimeclass SettingsCardControl : Microsoft.UI.Xaml.Controls.UserControl
     {
         SettingsCardControl();

@@ -21,10 +21,14 @@
 #include "MainWindow.g.cpp"
 #endif
 
+#include <winrt/Windows.UI.Xaml.Interop.h>
+
 #include "dxglcfg-winui.h"
+#include "DisplayPage.xaml.h"
 
 using namespace winrt;
 using namespace Microsoft::UI::Xaml;
+using namespace Microsoft::UI::Xaml::Controls;
 
 namespace winrt::dxglcfg_winui::implementation
 {
@@ -37,4 +41,18 @@ namespace winrt::dxglcfg_winui::implementation
     {
         this->MainNav().IsPaneOpen(!this->MainNav().IsPaneOpen());
     }
+    void MainWindow::MainNav_SelectionChanged(NavigationView const &sender, NavigationViewSelectionChangedEventArgs const& args)
+    {
+        auto selecteditem = args.SelectedItemContainer();
+        hstring name = selecteditem.Name();
+        if (name == L"TabDisplay")
+        {
+            RootFrame().Navigate(xaml_typename<dxglcfg_winui::DisplayPage>());
+        }
+        else
+        {
+            RootFrame().Content(nullptr);
+        }
+    }
 }
+

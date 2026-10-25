@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <!--
     DXGL
-    Copyright (C) 2026 William Fely
+    Copyright (C) 2026 William Feely
     
     This library is free software; you can redistribute it an/or
     modify it under the terms of the GNU Lesser General Pulic
@@ -29,7 +29,7 @@
 
     <Border
         Padding="16,12"
-        Background="{ThemeResource LayerOnAcrylicSecondaryBrush}"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="1"
         CornerRadius="{ThemeResource ControlCornerRadius}">
@@ -45,7 +45,10 @@
                 Orientation="Horizontal"
                 Spacing="16">
                 <ContentControl VerticalAlignment="Center" Content="{x:Bind HeaderIcon, Mode=OneWay}" />
-                <StackPanel VerticalAlignment="Center">
+                <StackPanel
+                    VerticalAlignment="Center"
+                    Orientation="Vertical"
+                    Spacing="2">
                     <TextBlock
                         Style="{ThemeResource BodyStrongTextBlockStyle}"
                         Text="{x:Bind Header, Mode=OneWay}"

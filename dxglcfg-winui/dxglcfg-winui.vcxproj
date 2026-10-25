@@ -52,7 +52,7 @@
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0</WindowsTargetPlatformVersion>
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
-    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <CppWinRTProjectLanguage>C++/WinRT</CppWinRTProjectLanguage>
     <XamlLanguage>CppWinRT</XamlLanguage>
@@ -63,6 +63,7 @@
     <EnableMsixTooling>false</EnableMsixTooling>
     <AppxPackage>false</AppxPackage>
     <ProjectPriFileName>dxglcfg.pri</ProjectPriFileName>
+    <CppWinRTOptimized>true</CppWinRTOptimized>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -129,6 +130,10 @@
     <ClInclude Include="App.xaml.h">
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="DisplayPage.xaml.h">
+      <DependentUpon>DisplayPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="dxglcfg-winui.h" />
     <ClInclude Include="MainWindow.xaml.h">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -139,17 +144,28 @@
       <DependentUpon>SettingsCardControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="SettingsExpanderControl.xaml.h">
+      <DependentUpon>SettingsExpanderControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
-    <Page Include="dxglcfg-displaypage.xaml" />
+    <Page Include="DisplayPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml" />
     <Page Include="SettingsCardControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SettingsExpanderControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DisplayPage.xaml.cpp">
+      <DependentUpon>DisplayPage.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dxglcfg-winui.cpp" />
     <ClCompile Include="pch.cpp">
@@ -166,15 +182,26 @@
       <DependentUpon>SettingsCardControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="SettingsExpanderControl.xaml.cpp">
+      <DependentUpon>SettingsExpanderControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="DisplayPage.idl">
+      <DependentUpon>DisplayPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="MainWindow.idl">
       <SubType>Code</SubType>
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Midl>
     <Midl Include="SettingsCardControl.idl">
       <DependentUpon>SettingsCardControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsExpanderControl.idl">
+      <DependentUpon>SettingsExpanderControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

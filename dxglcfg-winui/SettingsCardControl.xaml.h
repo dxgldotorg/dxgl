@@ -40,7 +40,6 @@ namespace winrt::dxglcfg_winui::implementation
         winrt::Windows::Foundation::IInspectable HeaderContent();
         void HeaderContent(winrt::Windows::Foundation::IInspectable const &value);
         static Microsoft::UI::Xaml::DependencyProperty HeaderContentProperty();
-
     };
 }
 

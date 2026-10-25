@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    DXGL
+    Copyright (C) 2026 William Feely
+    
+    This library is free software; you can redistribute it an/or
+    modify it under the terms of the GNU Lesser General Pulic
+    License as published by the Free Software Foundation; eiher
+    version 2.1 of the License, or (at your option) any later verson.
+    
+    This library is distributed in the hope that it will be useul,
+    but WITHOUT ANY WARRANTY; without even the implied warrant of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See theGNU
+    Lesser General Public License for more detals.
+    
+    You should have received a copy of the GNU Lesser General Pulic
+    License along with this library; if not, write to the Free Softare
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+
+<UserControl
+    x:Class="dxglcfg_winui.SettingsExpanderControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:dxglcfg_winui"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border
+        Padding="16,12"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="{ThemeResource ControlCornerRadius}">
+        <Grid ColumnSpacing="16" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="16">
+                <ContentControl VerticalAlignment="Center" Content="{x:Bind HeaderIcon, Mode=OneWay}" />
+                <StackPanel
+                    VerticalAlignment="Center"
+                    Orientation="Vertical"
+                    Spacing="2">
+                    <TextBlock
+                        Style="{ThemeResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind Header, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Text="{x:Bind Description, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </StackPanel>
+            <ContentControl
+                Grid.Row="0"
+                Grid.Column="2"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Content="{x:Bind HeaderContent, Mode=OneWay}" />
+            <Grid
+                x:Name="SliderContainer"
+                Grid.Row="1"
+                Grid.Column="0"
+                Grid.ColumnSpan="3"
+                Margin="16,0,16,2"
+                Visibility="Collapsed">
+                <!--<FlipView
+                    x:Name="InternalPanelSlider"
+                    Height="150"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsTabStop="False"
+                    ItemsSource="{x:Bind Panels, Mode=OneWay}"
+                    SelectedIndex="{x:Bind PanelIndex, Mode=TwoWay}">
+                    <FlipView.Template>
+                        <ControlTemplate TargetType="FlipView">
+                            <ItemsPresenter />
+                        </ControlTemplate>
+                    </FlipView.Template>
+                </FlipView>-->
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

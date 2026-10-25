@@ -26,6 +26,8 @@ namespace winrt::dxglcfg_winui::implementation
         MainWindow();
         void DXGLCFG_PaneToggleRequested(winrt::Windows::Foundation::IInspectable const &sender,
             winrt::Windows::Foundation::IInspectable const &e);
+        void MainNav_SelectionChanged(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& sender,
+            winrt::Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& args);
     };
 }
 
