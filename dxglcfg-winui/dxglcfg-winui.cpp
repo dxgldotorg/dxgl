@@ -148,7 +148,7 @@ winrt::fire_and_forget DXGLCFGWindow_Create(winrt::dxglcfg_winui::implementation
 	window.Activate();
 }
 
-int WINAPI RunDXGLConfigWinUI(void *rundxgltest)
+int WINAPI RunDXGLConfigWinUI(void *rundxgltest, unsigned int tab, DWORD app)
 {
 	int result;
 	GetCurrentConfig(&currcfg, FALSE);

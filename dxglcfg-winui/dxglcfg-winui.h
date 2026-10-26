@@ -20,6 +20,6 @@
 #define _DXGLCFG_WINUI_H
 
 winrt::fire_and_forget DXGLCFGWindow_Create(winrt::dxglcfg_winui::implementation::MainWindow &window);
-int WINAPI RunDXGLConfigWinUI(void *rundxgltest);
+int WINAPI RunDXGLConfigWinUI(void *rundxgltest, unsigned int tab, DWORD app);
 
 #endif //_DXGLCFG_WINUI_H

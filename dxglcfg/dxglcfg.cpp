@@ -7063,7 +7063,7 @@ typedef struct tagINITCOMMONCONTROLSEX {
 // Attempt to start DXGL Config WinUI version
 int StartDXGLCFGWinUI()
 {
-	int(WINAPI * _RunDXGLConfigWinUI)(void *rundxgltest) = NULL;
+	int(WINAPI * _RunDXGLConfigWinUI)(void *rundxgltest, unsigned int tab, DWORD app) = NULL;
 	HMODULE hDxglcfg_winui = NULL;
 	int error;
 	if ((osver.dwMajorVersion < 10) || (osver.dwBuildNumber < 17763)) return 0; // Bail out if not running Windows 10 1809+
@@ -7071,8 +7071,8 @@ int StartDXGLCFGWinUI()
 	hDxglcfg_winui = LoadLibrary(_T("dxglcfg-winui.dll"));
 	if (hDxglcfg_winui)
 	{
-		_RunDXGLConfigWinUI = (int(WINAPI*)(void*))GetProcAddress(hDxglcfg_winui, "RunDXGLConfigWinUI");
-		if (_RunDXGLConfigWinUI) error = _RunDXGLConfigWinUI(RunDXGLTest);
+		_RunDXGLConfigWinUI = (int(WINAPI*)(void*, unsigned int, DWORD))GetProcAddress(hDxglcfg_winui, "RunDXGLConfigWinUI");
+		if (_RunDXGLConfigWinUI) error = _RunDXGLConfigWinUI(RunDXGLTest, tabopen, startup_app);
 		FreeLibrary(hDxglcfg_winui);
 		return error;
 	}
