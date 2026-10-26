@@ -72,6 +72,7 @@ DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 DXGLCFG currcfg;
 DWORD lastdark;
+DWORD lastdpi;
 BOOL *dirty;
 static HINSTANCE hinstance;
 BOOL msaa_available = FALSE;
@@ -907,10 +908,11 @@ app_setting *apps = NULL;
 int appcount;
 int maxapps;
 DWORD current_app;
+DWORD startup_app;
 BOOL tristate;
 TCHAR strdefault[] = _T("(global default)");
 TCHAR strdefaultshort[] = _T("(default)");
-static int tabopen;
+static unsigned int tabopen;
 BOOL modelistdirty = FALSE;
 
 static const TCHAR *colormodes[32] = {
@@ -5630,17 +5632,18 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[8] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
 		createdialoglock = FALSE;
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
-		SetWindowPos(hTabs[0], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
-		ShowWindow(hTabs[1], SW_HIDE);
-		ShowWindow(hTabs[2], SW_HIDE);
-		ShowWindow(hTabs[3], SW_HIDE);
-		ShowWindow(hTabs[4], SW_HIDE);
-		ShowWindow(hTabs[5], SW_HIDE);
-		ShowWindow(hTabs[6], SW_HIDE);
-		ShowWindow(hTabs[7], SW_HIDE);
-		ShowWindow(hTabs[8], SW_HIDE);
-		tabopen = 0;
-
+		if (tabopen > 8) tabopen = 0;
+		SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+		if (tabopen != 0) ShowWindow(hTabs[0], SW_HIDE);
+		if (tabopen != 1) ShowWindow(hTabs[1], SW_HIDE);
+		if (tabopen != 2) ShowWindow(hTabs[2], SW_HIDE);
+		if (tabopen != 3) ShowWindow(hTabs[3], SW_HIDE);
+		if (tabopen != 4) ShowWindow(hTabs[4], SW_HIDE);
+		if (tabopen != 5) ShowWindow(hTabs[5], SW_HIDE);
+		if (tabopen != 6) ShowWindow(hTabs[6], SW_HIDE);
+		if (tabopen != 7) ShowWindow(hTabs[7], SW_HIDE);
+		if (tabopen != 8) ShowWindow(hTabs[8], SW_HIDE);
+		SendDlgItemMessage(hWnd, IDC_TABS, TCM_SETCURSEL, tabopen, 0);
 		// Remove unimplemented controls
 		DestroyWindow(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLDLABEL));
 		DestroyWindow(GetDlgItem(hTabs[1], IDC_BLTTHRESHOLD));
@@ -6233,7 +6236,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		// About text
 		_tcscpy(abouttext, _T("DXGL\r\nVersion "));
 		_tcscat(abouttext, _T(DXGLVERSTRING));
-		_tcscat(abouttext, _T("\r\nCopyright ©2011-"));
+		_tcscat(abouttext, _T("\r\nCopyright  2011-"));
 		_tcscat(abouttext, _T(COPYYEARSTRING));
 		_tcscat(abouttext, _T(" William Feely\r\n\r\n\
 This library is free software; you can redistribute it and/or\r\n\
@@ -6396,7 +6399,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			SendDlgItemMessage(hWnd,IDC_APPS,CB_ADDSTRING,0,(LPARAM)apps[i].name);
 		}
 		current_app = 0;
-		SendDlgItemMessage(hWnd,IDC_APPS,CB_SETCURSEL,0,0);
+		if (startup_app > appcount) startup_app = 0;
+		SendDlgItemMessage(hWnd,IDC_APPS,CB_SETCURSEL,startup_app,0);
+		cursel = MAKEWPARAM(IDC_APPS, CBN_SELCHANGE);
+		SendMessage(hWnd, WM_COMMAND, cursel, (LPARAM)GetDlgItem(hWnd, IDC_APPS));
 		GetWindowRect(GetDlgItem(hWnd, IDC_APPS), &r);
 		SetWindowPos(GetDlgItem(hWnd, IDC_APPS), HWND_TOP, r.left, r.top, r.right - r.left,
 			(r.bottom - r.top) + (16 * (GetSystemMetrics(SM_CYSMICON) + 1)+(2*GetSystemMetrics(SM_CYBORDER))),
@@ -6424,6 +6430,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		SetForegroundWindow(hWnd);*/
 		GetCurrentConfig(&currcfg, FALSE);
 		lastdark = currcfg.DarkMode;
+		lastdpi = currcfg.DPIScale;
 		EnableDarkModeForMainDialog(hWnd);
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
@@ -6609,6 +6616,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			SaveChanges(hWnd);
 			if(modelistdirty) ResetModeList(hTabs[7]);
 			GetCurrentConfig(&currcfg, FALSE);
+			if (currcfg.DPIScale != lastdpi)
+			{
+				EndDialog(hWnd, IDRETRY);
+				return TRUE;
+			}
 			if (currcfg.DarkMode != lastdark)
 			{
 				lastdark = currcfg.DarkMode;
@@ -7071,7 +7083,80 @@ int StartDXGLCFGWinUI()
 	}
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    lpCmdLine, int nCmdShow)
+void RestartDXGLCfg()
+{
+	TCHAR path[MAX_PATH];
+	TCHAR params[MAX_PATH+64];
+	TCHAR number[12];
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	GetModuleFileName(NULL, path, MAX_PATH);
+	_tcscpy(params, _T("\""));
+	_tcscat(params, path);
+	_tcscat(params, _T("\" "));
+	_tcscat(params, _T("tab "));
+	_itot(tabopen, number, 10);
+	_tcscat(params, number);
+	_tcscat(params, _T(" app "));
+	_itot(current_app, number, 10);
+	_tcscat(params, number);
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+	si.cb = sizeof(STARTUPINFO);
+	GetStartupInfo(&si);
+	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	CreateProcess(NULL, params, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+}
+
+void LoadParams(LPTSTR cmdline)
+{
+	TCHAR *cmdptr;
+	TCHAR *cmdptr2;
+	TCHAR number[16];
+	int i;
+	size_t length;
+	tabopen = 0;
+	startup_app = 0;
+	cmdptr = cmdline;
+	while (*cmdptr != 0)
+	{
+		if (!_tcsnicmp(cmdptr, _T("tab "), 4))
+		{
+			cmdptr += 4;
+			cmdptr2 = cmdptr;
+			length = _tcslen(cmdptr);
+			if (length >= 16) length = 15;
+			for (i = 0; i < length; i++)
+			{
+				if ((*cmdptr2 == _T(' ')) || (*cmdptr2 == 0)) break;
+				cmdptr2++;
+			}
+			_tcsncpy(number, cmdptr, i);
+			number[i] = 0;
+			cmdptr = cmdptr2;
+			tabopen = _ttoi(number);
+			if (tabopen > 8) tabopen = 0;
+		}
+		if (!_tcsnicmp(cmdptr, _T("app "), 4))
+		{
+			cmdptr += 4;
+			cmdptr2 = cmdptr;
+			length = _tcslen(cmdptr);
+			if (length >= 16) length = 15;
+			for (i = 0; i < length; i++)
+			{
+				if ((*cmdptr2 == _T(' ')) || (*cmdptr2 == 0)) break;
+				cmdptr2++;
+			}
+			_tcsncpy(number, cmdptr, i);
+			number[i] = 0;
+			cmdptr = cmdptr2;
+			startup_app = _ttoi(number);
+		}
+		cmdptr++;
+	}
+}
+
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
 	INITCOMMONCONTROLSEX icc;
 	HMODULE comctl32 = NULL;
@@ -7081,6 +7166,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 	HWND hWnd;
 	DXGLCFG tmpcfg;
 	int i;
+	INT_PTR result;
+	TCHAR *cmdline;
+	TCHAR *params;
 	ntdll = LoadLibrary(_T("ntdll.dll"));
 	if (ntdll) _wine_get_version = (char*(__cdecl*)())GetProcAddress(ntdll, "wine_get_version");
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -7157,7 +7245,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 		if (hWnd) SetForegroundWindow(hWnd);
 		return 0;
 	}
-	if(!StartDXGLCFGWinUI()) DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
+	LoadParams(lpCmdLine);
+	result = StartDXGLCFGWinUI();
+	if(!result) result = DialogBox(hInstance,MAKEINTRESOURCE(IDD_DXGLCFG),0,(DLGPROC)DXGLCfgCallback);
 	if (hMutex) ReleaseMutex(hMutex);
 	if (hMutex) CloseHandle(hMutex);
 	if (apps)
@@ -7174,5 +7264,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR    l
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
 #endif
+	if (result == 4) RestartDXGLCfg();
 	return 0;
 }
