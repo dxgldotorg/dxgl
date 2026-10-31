@@ -2557,6 +2557,9 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					r = customdraw->rc;
 					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:
@@ -3300,6 +3303,9 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					r = customdraw->rc;
 					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:
@@ -3479,6 +3485,9 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 					r = customdraw->rc;
 					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:
@@ -4411,6 +4420,9 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 					r1 = customdraw->rc;
 					r1.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r1, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r1);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:
@@ -4981,6 +4993,9 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					r = customdraw->rc;
 					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:

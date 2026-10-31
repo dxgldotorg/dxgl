@@ -616,6 +616,9 @@ Do you want to apply them before running this test?"),
 					r = customdraw->rc;
 					r.left += dpiscale(15);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
+					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
+						DrawFocusRect(customdraw->hdc, &r);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_SKIPDEFAULT);
 					return TRUE;
 				default:
