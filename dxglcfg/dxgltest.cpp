@@ -43,6 +43,8 @@ extern BOOL usedarkmode;
 extern UINT windowdpi;
 static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
 extern DXGLCFG currcfg;
+extern DWORD lastdark;
+extern DWORD lastdpi;
 
 #ifndef WM_DPICHANGED_AFTERPARENT
 #define WM_DPICHANGED_AFTERPARENT 0x02E3

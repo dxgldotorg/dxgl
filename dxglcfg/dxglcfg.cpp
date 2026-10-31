@@ -405,20 +405,11 @@ void MakeCheckboxDark(HWND hWnd)
 		}
 		else _SetWindowTheme(hWnd, L" ", NULL);
 		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
-		/*style = GetWindowLongPtr(hWnd, GWL_STYLE);
-		style |= BS_OWNERDRAW;
-		SetWindowLongPtr(hWnd, GWL_STYLE, style);
-		SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);*/
 }
 	else
 	{
 		_SetWindowTheme(hWnd, L" ", NULL);
 		SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
-		/*style = GetWindowLongPtr(hWnd, GWL_STYLE);
-		style &= ~BS_OWNERDRAW;
-		style |= BS_AUTOCHECKBOX;
-		SetWindowLongPtr(hWnd, GWL_STYLE, style);
-		SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);*/
 	}
 }
 
@@ -2458,7 +2449,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 		if (uxtheme) hThemeDisplay = _OpenThemeData(hWnd, L"Button");
 		else hThemeDisplay = NULL;
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
-		return TRUE;
+		return FALSE;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
 		else return FALSE;
@@ -2962,7 +2953,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 	default:
 		return FALSE;
 	}
-	return TRUE;
+	return FALSE;
 }
 
 LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -2980,7 +2971,7 @@ LRESULT CALLBACK EffectsTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -3176,7 +3167,7 @@ LRESULT CALLBACK Tab3DCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -3421,7 +3412,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -3822,7 +3813,7 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYMENUCHECK, windowdpi));
 			SendDlgItemMessage(hWnd, IDC_DEBUGLIST, WM_VSCROLL, SB_ENDSCROLL, 0);
 		}
@@ -4553,7 +4544,7 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 			dlgfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
 			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
 			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
@@ -4921,7 +4912,7 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			r.right = 340;
 			r.bottom = 169;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE);
+			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -5618,19 +5609,20 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_INSERTITEM, 8, (LPARAM)&tab);
 		hTab = GetDlgItem(hWnd, IDC_TABS);
 		createdialoglock = TRUE;
-		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hTab, (DLGPROC)DisplayTabCallback);
-		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hTab, (DLGPROC)EffectsTabCallback);
-		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hTab, (DLGPROC)Tab3DCallback);
-		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hTab, (DLGPROC)AdvancedTabCallback);
-		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hTab, (DLGPROC)DebugTabCallback);
-		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hTab, (DLGPROC)HacksTabCallback);
-		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TRACING), hTab, (DLGPROC)TracingTabCallback);
-		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hTab, (DLGPROC)TestTabCallback);
-		hTabs[8] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hTab, (DLGPROC)AboutTabCallback);
+		hTabs[0] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DISPLAY), hWnd, (DLGPROC)DisplayTabCallback);
+		hTabs[1] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_EFFECTS), hWnd, (DLGPROC)EffectsTabCallback);
+		hTabs[2] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_3DGRAPHICS), hWnd, (DLGPROC)Tab3DCallback);
+		hTabs[3] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ADVANCED), hWnd, (DLGPROC)AdvancedTabCallback);
+		hTabs[4] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DEBUG), hWnd, (DLGPROC)DebugTabCallback);
+		hTabs[5] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_HACKS), hWnd, (DLGPROC)HacksTabCallback);
+		hTabs[6] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TRACING), hWnd, (DLGPROC)TracingTabCallback);
+		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hWnd, (DLGPROC)TestTabCallback);
+		hTabs[8] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hWnd, (DLGPROC)AboutTabCallback);
 		createdialoglock = FALSE;
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
+		MapWindowPoints(GetDlgItem(hWnd, IDC_TABS), hWnd, (LPPOINT)&r, 2);
 		if (tabopen > 8) tabopen = 0;
-		SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+		SetWindowPos(hTabs[tabopen], GetDlgItem(hWnd, IDC_TABS), r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 		if (tabopen != 0) ShowWindow(hTabs[0], SW_HIDE);
 		if (tabopen != 1) ShowWindow(hTabs[1], SW_HIDE);
 		if (tabopen != 2) ShowWindow(hTabs[2], SW_HIDE);
@@ -6493,7 +6485,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, -1, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
 			SendDlgItemMessage(hWnd, IDC_APPS, CB_SETITEMHEIGHT, 0, _GetSystemMetricsForDpi(SM_CYSMICON, windowdpi));
 			SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
-			SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+			MapWindowPoints(GetDlgItem(hWnd, IDC_TABS), hWnd, (LPPOINT)&r, 2);
+			SetWindowPos(hTabs[tabopen], GetDlgItem(hWnd, IDC_TABS),
+				r.left, r.bottom + 3, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 			return TRUE;
 		}
 		break;
@@ -6529,7 +6523,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				ShowWindow(hTabs[tabopen], SW_HIDE);
 				tabopen = newtab;
 				SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
-				SetWindowPos(hTabs[tabopen], NULL, r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+				MapWindowPoints(GetDlgItem(hWnd, IDC_TABS), hWnd, (LPPOINT)&r, 2);
+				SetWindowPos(hTabs[tabopen], GetDlgItem(hWnd, IDC_TABS),
+					r.left, r.bottom + 3, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 			}
 		}
 		break;
@@ -7064,6 +7060,7 @@ void RestartDXGLCfg()
 	TCHAR number[12];
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
+	BOOL result;
 	GetModuleFileName(NULL, path, MAX_PATH);
 	_tcscpy(params, _T("\""));
 	_tcscat(params, path);
@@ -7078,7 +7075,12 @@ void RestartDXGLCfg()
 	si.cb = sizeof(STARTUPINFO);
 	GetStartupInfo(&si);
 	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-	CreateProcess(NULL, params, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+	result = CreateProcess(NULL, params, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+	if (result)
+	{
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
 }
 
 void LoadParams(LPTSTR cmdline)
