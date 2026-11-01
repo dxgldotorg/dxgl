@@ -1320,6 +1320,16 @@ void SaveChanges(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd,IDC_APPLY),FALSE);
 }
 
+void DisableApplyButton(HWND hWnd)
+{
+	int i;
+	for (i = 0; i < appcount; i++)
+	{
+		apps[i].dirty = FALSE;
+	}
+	EnableWindow(GetDlgItem(hWnd,IDC_APPLY),FALSE);
+}
+
 void FloatToAspect(float f, LPTSTR aspect)
 {
 	float integer;
@@ -5646,6 +5656,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		hTabs[7] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_TESTGFX), hWnd, (DLGPROC)TestTabCallback);
 		hTabs[8] = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_ABOUT), hWnd, (DLGPROC)AboutTabCallback);
 		createdialoglock = FALSE;
+		DisableApplyButton(hWnd);
 		SendDlgItemMessage(hWnd, IDC_TABS, TCM_GETITEMRECT, 0, (LPARAM)&r);
 		MapWindowPoints(GetDlgItem(hWnd, IDC_TABS), hWnd, (LPPOINT)&r, 2);
 		if (tabopen > 8) tabopen = 0;
