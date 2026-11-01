@@ -260,10 +260,10 @@ FONT 8, "Ms Shell Dlg"
     //COMBOBOX        IDC_TRACING, 7, 17, 200, 63, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP
     CONTROL         "", IDC_STATIC, WC_STATIC, SS_ETCHEDHORZ, 7, 27, 328, 1
     PUSHBUTTON      "Reset", IDC_TRACERESET, 300, 8, 36, 12, WS_TABSTOP
-    LTEXT           "Enabling tracing will save a file named dxgl.log in the application folder.\r\nPress Ctrl+Break to stop tracing at any time when the application is running.", IDC_STATIC, 7, 7, 290, 17, SS_LEFT
-    LTEXT           "Tracing is not currently supported on x64 systems, and may result in unexpected behavior.", IDC_TRACEX64NOTICE, 7, 146, 290, 9, SS_LEFT
-    LTEXT           "Certain tracing options may severely affect performance.  Please only enable for testing.", IDC_STATIC, 7, 157, 290, 9, SS_LEFT
-    LTEXT           "Standard logging options", IDC_STATIC, 7, 32, 100, 9, SS_LEFT | WS_TABSTOP
+    LTEXT           "Enabling tracing will save a file named dxgl.log in the application folder.\r\nPress Ctrl+Break to stop tracing at any time when the application is running.", IDC_STATIC, 7, 7, 290, 17
+    LTEXT           "Tracing is not currently supported on x64 systems, and may result in unexpected behavior.", IDC_TRACEX64NOTICE, 7, 146, 290, 9
+    LTEXT           "Certain tracing options may severely affect performance.  Please only enable for testing.", IDC_STATIC, 7, 157, 290, 9
+    LTEXT           "Standard logging options", IDC_STATIC, 7, 32, 100, 9, SS_LEFT
     AUTOCHECKBOX    "Log system information", IDC_LOGSYSINFO, 7, 43, 86, 8, WS_TABSTOP
     AUTOCHECKBOX    "Log errors", IDC_LOGERROR, 7, 54, 48, 8, WS_TABSTOP
     AUTOCHECKBOX    "Log API calls", IDC_LOGAPI, 7, 65, 54, 8, WS_TABSTOP
@@ -345,14 +345,14 @@ STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VIS
 CAPTION "Save .ini File"
 FONT 8, "Ms Shell Dlg"
 {
+	GROUPBOX        ".ini file options", IDC_GRPINIOPTIONS, 5, 5, 172, 69, 0, WS_EX_LEFT
 	AUTOCHECKBOX    "Don't write application profile to registry", IDC_NOWRITEREGISTRY, 11, 16, 138, 8, 0, WS_EX_LEFT
 	AUTOCHECKBOX    "Override global registry settings", IDC_OVERRIDEREGISTRY, 11, 26, 113, 8, 0, WS_EX_LEFT
 	AUTOCHECKBOX    "Prevent DXGL Config from overwriting ddraw.dll", IDC_NOOVERWRITE, 11, 36, 165, 8, 0, WS_EX_LEFT
-	GROUPBOX        ".ini file options", IDC_GRPINIOPTIONS, 5, 5, 172, 69, 0, WS_EX_LEFT
 	AUTOCHECKBOX    "Save SHA-256 signature of existing ddraw.dll", IDC_SAVESHA256, 11, 46, 157, 8, 0, WS_EX_LEFT
 	AUTOCHECKBOX    "Prevent DXGL Config from deleting ddraw.dll", IDC_NOUNINSTALL, 11, 56, 156, 8, 0, WS_EX_LEFT
-	PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
 	DEFPUSHBUTTON   "&Save", IDOK, 76, 76, 50, 14, 0, WS_EX_LEFT
+	PUSHBUTTON      "Cancel", IDCANCEL, 131, 76, 50, 14, 0, WS_EX_LEFT
 }
 
 
