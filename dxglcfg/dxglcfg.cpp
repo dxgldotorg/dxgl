@@ -4314,7 +4314,12 @@ LRESULT CALLBACK TabControlCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 			tabitem.cchTextMax = 256;
 			TabCtrl_GetItem(hWnd, activetab, &tabitem);
 			SetBkColor(hdc, darktabbackground);
-			TextOut(hdc, r.left + dpiscale(6), r.top + dpiscale(3), tabtext, _tcslen(tabtext));
+			r.left += dpiscale(6);
+			r.top += dpiscale(3);
+			DrawText(hdc, tabtext, _tcslen(tabtext), &r, DT_LEFT | DT_SINGLELINE);
+			TabCtrl_GetItemRect(hWnd, activetab, &r);
+			if ((hWnd == GetFocus()) && !(SendMessage(hWnd, WM_QUERYUISTATE, 0, 0) & UISF_HIDEFOCUS))
+				DrawFocusRect(hdc, &r);
 			SelectObject(hdc, oldfont);
 			EndPaint(hWnd, &ps);
 			return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
