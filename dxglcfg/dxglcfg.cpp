@@ -587,11 +587,11 @@ void EnableDarkModeForMainDialog(HWND hDialog)
 	MakeEditDark(GetDlgItem(hTabs[4], IDC_GLVERSION));
 	_SetWindowTheme(hTabs[5], L"Explorer", NULL);
 	SendMessage(hTabs[5], WM_THEMECHANGED, 0, 0);
-	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSDROPDOWN));
-	MakeEditDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSEDIT));
+	MakeEditDark(GetDlgItem(hTabs[5], IDC_HACKSDROPDOWN));
+	MakeEditDark(GetDlgItem(hTabs[5], IDC_HACKSEDIT));
 	MakeEditDark(GetDlgItem(hTabs[5], IDC_HACKSLIST));
-	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNRESET));
-	MakeButtonDark(GetDlgItem(GetDlgItem(hTabs[5], IDC_HACKSLIST), IDC_HACKSBTNEDIT));
+	MakeButtonDark(GetDlgItem(hTabs[5], IDC_HACKSBTNRESET));
+	MakeButtonDark(GetDlgItem(hTabs[5], IDC_HACKSBTNEDIT));
 	_SetWindowTheme(hTabs[6], L"Explorer", NULL);
 	SendMessage(hTabs[6], WM_THEMECHANGED, 0, 0);
 	MakeButtonDark(GetDlgItem(hTabs[6], IDC_TRACERESET));
@@ -4139,26 +4139,48 @@ void DrawHacksItemText(HDC hdc, RECT *r, int item)
 LRESULT CALLBACK HacksListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	WNDPROC oldproc;
+	POINT p;
+	RECT r;
 	oldproc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-	switch (Msg)
+	if (Msg == WM_NCHITTEST)
 	{
-	case WM_COMMAND:
-		SendMessage(GetParent(hWnd), Msg, wParam, lParam);
-		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
-		break;
-	case WM_CTLCOLOREDIT:
-	case WM_CTLCOLORLISTBOX:
-		if (usedarkmode)
+		p.x = GET_X_LPARAM(lParam);
+		p.y = GET_Y_LPARAM(lParam);
+		ScreenToClient(hWnd, &p);
+		switch (hackstabitem)
 		{
-			SetBkColor((HDC)wParam, darktabbackground);
-			SetTextColor((HDC)wParam, darkmodetext);
-			return (LPARAM)hbrDarkTabBackground;
+		case 0:
+		case 1:
+		case 2:
+		case 4:
+		case 5:
+		case 7:
+			GetWindowRect(GetDlgItem(hTabs[5], IDC_HACKSDROPDOWN), &r);
+			MapWindowPoints(HWND_DESKTOP, hWnd, (LPPOINT)&r, 2);
+			if (PtInRect(&r, p)) return HTTRANSPARENT;
+			break;
+		case 3:
+		case 6:
+			GetWindowRect(GetDlgItem(hTabs[5], IDC_HACKSEDIT), &r);
+			MapWindowPoints(HWND_DESKTOP, hWnd, (LPPOINT)&r, 2);
+			if (PtInRect(&r, p)) return HTTRANSPARENT;
+			break;
+		case 8:
+			GetWindowRect(GetDlgItem(hTabs[5], IDC_HACKSBTNEDIT), &r);
+			MapWindowPoints(HWND_DESKTOP, hWnd, (LPPOINT)&r, 2);
+			if (PtInRect(&r, p)) return HTTRANSPARENT;
+			if (tristate)
+			{
+				GetWindowRect(GetDlgItem(hTabs[5], IDC_HACKSBTNRESET), &r);
+				MapWindowPoints(HWND_DESKTOP, hWnd, (LPPOINT)&r, 2);
+				if (PtInRect(&r, p)) return HTTRANSPARENT;
+			}
+		default:
+			return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 		}
-		else return FALSE;
-	default:
 		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
-		break;
 	}
+	else return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
 }
 
 int hottab = -1;
@@ -4556,14 +4578,10 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
-		SetParent(GetDlgItem(hWnd,IDC_HACKSDROPDOWN), GetDlgItem(hWnd,IDC_HACKSLIST));
-		SetParent(GetDlgItem(hWnd, IDC_HACKSEDIT), GetDlgItem(hWnd, IDC_HACKSLIST));
-		SetParent(GetDlgItem(hWnd, IDC_HACKSBTNRESET), GetDlgItem(hWnd, IDC_HACKSLIST));
-		SetParent(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), GetDlgItem(hWnd, IDC_HACKSLIST));
-		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
-		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
-		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
-		ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_HACKSEDIT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNRESET), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), SW_HIDE);
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_USERDATA,
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_HACKSLIST), GWLP_WNDPROC, (LONG_PTR)HacksListCallback);
@@ -4577,31 +4595,30 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			MapDialogRect(hWnd, &r);
 			SetWindowPos(hWnd, NULL, 0, 0, r.right, r.bottom, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 			dlgfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
-			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
-			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
-			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET, WM_SETFONT, (WPARAM)dlgfont, TRUE);
-			SendDlgItemMessage(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(hWnd, IDC_HACKSDROPDOWN, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(hWnd, IDC_HACKSEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(hWnd, IDC_HACKSBTNRESET, WM_SETFONT, (WPARAM)dlgfont, TRUE);
+			SendDlgItemMessage(hWnd, IDC_HACKSBTNEDIT, WM_SETFONT, (WPARAM)dlgfont, TRUE);
 			r.left = 186; r.top = 17; r.right = 146; r.bottom = 80;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), NULL,
-				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			SetWindowPos(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOZORDER);
 			r.left = 186; r.top = 32; r.right = 146; r.bottom = 14;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), NULL,
-				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+			SetWindowPos(GetDlgItem(hWnd, IDC_HACKSEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOZORDER);
 			r.left = 258; r.top = 54; r.right = 36; r.bottom = 12;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), NULL,
-				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			SetWindowPos(GetDlgItem(hWnd, IDC_HACKSBTNRESET), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOZORDER);
 			r.left = 294; r.top = 54; r.right = 36; r.bottom = 12;
 			MapDialogRect(hWnd, &r);
-			SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), NULL,
-				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+			SetWindowPos(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), NULL,
+				r.left, r.top, r.right, r.bottom, SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOZORDER);
 			for (x = 0; x <= 8; x++)
 			{
-				if (x == 3)
-					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
-				else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+				if (x == 3)	GetWindowRect(GetDlgItem(hWnd, IDC_HACKSEDIT), &r);
+				else GetWindowRect(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), &r);
 				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_SETITEMHEIGHT, x, r.bottom - r.top);
 			}
 		}
@@ -4647,8 +4664,8 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		{
 		case IDC_HACKSLIST:
 			if(((LPMEASUREITEMSTRUCT)lParam)->itemID == 3)
-				GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
-			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+				GetWindowRect(GetDlgItem(hWnd, IDC_HACKSEDIT), &r);
+			else GetWindowRect(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), &r);
 			((LPMEASUREITEMSTRUCT)lParam)->itemHeight = r.bottom - r.top;
 			((LPMEASUREITEMSTRUCT)lParam)->itemWidth = r.right - r.left;
 			break;
@@ -4667,14 +4684,14 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				{
 					if (!EditInterlock)
 					{
-						cfg->HackAutoExpandViewportValue = GetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, &cfgmask->HackAutoExpandViewportValue);
+						cfg->HackAutoExpandViewportValue = GetRGBHex(hWnd, IDC_HACKSEDIT, &cfgmask->HackAutoExpandViewportValue);
 						EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 						*dirty = TRUE;
 					}
 				}
 				if (HIWORD(wParam) == EN_KILLFOCUS)
 				{
-					SetRGBHex(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
+					SetRGBHex(hWnd, IDC_HACKSEDIT, cfg->HackAutoExpandViewportValue, cfgmask->HackAutoExpandViewportValue);
 				}
 				break;
 			case 6:
@@ -4682,14 +4699,14 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				{
 					if (!EditInterlock)
 					{
-						cfg->HackPaletteDelay = GetInteger(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, (int*)&cfgmask->HackPaletteDelay, 20, TRUE);
+						cfg->HackPaletteDelay = GetInteger(hWnd, IDC_HACKSEDIT, (int*)&cfgmask->HackPaletteDelay, 20, TRUE);
 						EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 						*dirty = TRUE;
 					}
 				}
 				if (HIWORD(wParam) == EN_KILLFOCUS)
 				{
-					SetInteger(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay);
+					SetInteger(hWnd, IDC_HACKSEDIT, cfg->HackPaletteDelay, cfgmask->HackPaletteDelay);
 				}
 				break;
 			}
@@ -4698,38 +4715,38 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			switch (hackstabitem)
 			{
 			case 0:
-				cfg->HackCrop640480to640400 = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackCrop640480to640400 = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					(DWORD*)&cfgmask->HackCrop640480to640400);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				break;
 			case 1:
-				cfg->HackAutoExpandViewport = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackAutoExpandViewport = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					&cfgmask->HackAutoExpandViewport);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				break;
 			case 2:
-				cfg->HackAutoExpandViewportCompare = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackAutoExpandViewportCompare = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					&cfgmask->HackAutoExpandViewportCompare);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				break;
 			case 4:
-				cfg->HackNoTVRefresh = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackNoTVRefresh = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					(DWORD*)&cfgmask->HackNoTVRefresh);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				modelistdirty = TRUE;
 				break;
 			case 5:
-				cfg->HackSetCursor = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackSetCursor = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					(DWORD*)&cfgmask->HackSetCursor);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
 				break;
 			case 7:
-				cfg->HackPaletteVsync = GetCombo(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN,
+				cfg->HackPaletteVsync = GetCombo(hWnd, IDC_HACKSDROPDOWN,
 					(DWORD*)&cfgmask->HackPaletteVsync);
 				EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
 				*dirty = TRUE;
@@ -4768,46 +4785,47 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			{
 				hackstabitem = (DWORD)SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETCURSEL, 0, 0);
 				SendDlgItemMessage(hWnd, IDC_HACKSLIST, LB_GETITEMRECT, hackstabitem, (LPARAM)&r2);
+				MapWindowPoints(GetDlgItem(hWnd, IDC_HACKSLIST), hWnd, (LPPOINT)&r2, 2);
 				if ((hackstabitem == 3) || (hackstabitem == 6))
 				{
-					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
+					GetWindowRect(GetDlgItem(hWnd, IDC_HACKSEDIT), &r);
 					x = r.right - r.left;
 					r2.left = r2.right - x;
-					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT),
-						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
-					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT, hackstabitem);
+					SetWindowPos(GetDlgItem(hWnd, IDC_HACKSEDIT),
+						0, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW | SWP_NOZORDER);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), SW_HIDE);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNRESET), SW_HIDE);
+					UpdateHacksControl(hWnd, IDC_HACKSEDIT, hackstabitem);
 				}
 				else if (hackstabitem == 8)
 				{
-					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), &r);
-					x = r.right - r.left;
-					r2.left = r2.right - x;
-					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT),
-						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
-					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), &r);
+					GetWindowRect(GetDlgItem(hWnd, IDC_HACKSBTNRESET), &r);
 					x = r.right - r.left;
 					r2.left = r2.right - (x*2);
-					if(tristate) SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
-						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
-					else SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
-						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_HIDEWINDOW);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), SW_HIDE);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
+					if(tristate) SetWindowPos(GetDlgItem(hWnd, IDC_HACKSBTNRESET),
+						0, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW | SWP_NOZORDER);
+					else SetWindowPos(GetDlgItem(hWnd, IDC_HACKSBTNRESET),
+						0, r2.left, r2.top, x, r2.bottom - r2.top, SWP_HIDEWINDOW | SWP_NOZORDER);
+					GetWindowRect(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), &r);
+					x = r.right - r.left;
+					r2.left = r2.right - x;
+					SetWindowPos(GetDlgItem(hWnd, IDC_HACKSBTNEDIT),
+						0, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW | SWP_NOZORDER);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), SW_HIDE);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSEDIT), SW_HIDE);
 				}
 				else
 				{
-					GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+					GetWindowRect(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), &r);
 					x = r.right - r.left;
 					r2.left = r2.right - x;
-					SetWindowPos(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN),
-						HWND_TOP, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), SW_HIDE);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT), SW_HIDE);
-					ShowWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET), SW_HIDE);
-					UpdateHacksControl(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN, hackstabitem);
+					SetWindowPos(GetDlgItem(hWnd, IDC_HACKSDROPDOWN),
+						0, r2.left, r2.top, x, r2.bottom - r2.top, SWP_SHOWWINDOW | SWP_NOZORDER);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNEDIT), SW_HIDE);
+					ShowWindow(GetDlgItem(hWnd, IDC_HACKSBTNRESET), SW_HIDE);
+					UpdateHacksControl(hWnd, IDC_HACKSDROPDOWN, hackstabitem);
 				}
 				RedrawWindow(GetDlgItem(hWnd, IDC_HACKSLIST), NULL, NULL, RDW_INVALIDATE);
 			}
@@ -4861,20 +4879,41 @@ LRESULT CALLBACK HacksTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 			drawitem->rcItem.left -= 1;
 			if ((hackstabitem == 3) || (hackstabitem == 6))
-				GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSEDIT), &r);
-			else GetWindowRect(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSDROPDOWN), &r);
+				GetWindowRect(GetDlgItem(hWnd, IDC_HACKSEDIT), &r);
+			else GetWindowRect(GetDlgItem(hWnd, IDC_HACKSDROPDOWN), &r);
 			memcpy(&r2, &drawitem->rcItem, sizeof(RECT));
 			r2.left = r2.right - (r.right - r.left) + 4;
 			DrawHacksItemText(drawitem->hDC, &r2, drawitem->itemID);
 			if (drawitem->itemState & ODS_FOCUS) DrawFocusRect(drawitem->hDC, &drawitem->rcItem);
 			SetTextColor(drawitem->hDC, OldTextColor);
 			SetBkColor(drawitem->hDC, OldBackColor);
-			if (hackstabitem == 8 && !_wine_get_version)
+			if (!_wine_get_version)
 			{
-				RedrawWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNEDIT),
-					NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
-				if(tristate) RedrawWindow(GetDlgItem(GetDlgItem(hWnd, IDC_HACKSLIST), IDC_HACKSBTNRESET),
-					NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+				switch (hackstabitem)
+				{
+				case 0:
+				case 1:
+				case 2:
+				case 4:
+				case 5:
+				case 7:
+					RedrawWindow(GetDlgItem(hWnd, IDC_HACKSDROPDOWN),
+						NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+					break;
+				case 3:
+				case 6:
+					RedrawWindow(GetDlgItem(hWnd, IDC_HACKSEDIT),
+						NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+					break;
+				case 8:
+					RedrawWindow(GetDlgItem(hWnd, IDC_HACKSBTNEDIT),
+						NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+					if (tristate) RedrawWindow(GetDlgItem(hWnd, IDC_HACKSBTNRESET),
+						NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+					break;
+				default:
+					break;
+				}
 			}
 			DefWindowProc(hWnd, Msg, wParam, lParam);
 			break;
