@@ -4378,19 +4378,23 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				GetWindowRect(GetDlgItem(hWnd, i), &r1);
 				ScreenToClient(hWnd, (LPPOINT)&r1.left);
 				r1.top -= checkspacing;
-				SetWindowPos(GetDlgItem(hWnd, i), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+				SetWindowPos(GetDlgItem(hWnd, i), 0, r1.left, r1.top, 0, 0,
+					SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE);
 			}
 			GetWindowRect(GetDlgItem(hWnd, IDOK), &r1);
 			ScreenToClient(hWnd, (LPPOINT)&r1.left);
 			r1.top -= checkspacing;
-			SetWindowPos(GetDlgItem(hWnd, IDOK), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+			SetWindowPos(GetDlgItem(hWnd, IDOK), 0, r1.left, r1.top, 0, 0,
+				SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE);
 			GetWindowRect(GetDlgItem(hWnd, IDCANCEL), &r1);
 			ScreenToClient(hWnd, (LPPOINT)&r1.left);
 			r1.top -= checkspacing;
-			SetWindowPos(GetDlgItem(hWnd, IDCANCEL), HWND_TOP, r1.left, r1.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+			SetWindowPos(GetDlgItem(hWnd, IDCANCEL), 0, r1.left, r1.top, 0, 0,
+				SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE);
 			GetWindowRect(hWnd, &r1);
 			r1.bottom -= checkspacing;
-			SetWindowPos(hWnd, HWND_TOP, r1.left, r1.top, r1.right-r1.left, r1.bottom-r1.top, SWP_SHOWWINDOW);
+			SetWindowPos(hWnd, 0, r1.left, r1.top, r1.right - r1.left, r1.bottom - r1.top,
+				SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, lParam);
 			coremask = *(ULONGLONG*)lParam;
 			if (!coremask) coremask = (ULONGLONG)0xFFFFFFFFFFFFFFFFi64;
