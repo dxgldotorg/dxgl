@@ -3764,6 +3764,51 @@ void WriteDebugItem(int item, BOOL value, BOOL mask)
 		break;
 	}
 }
+LRESULT CALLBACK DebugListCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	WNDPROC oldproc;
+	BOOL debugvalue, debugmask;
+	DWORD item;
+	oldproc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	if (Msg == WM_KEYDOWN)
+	{
+		if (wParam == VK_SPACE)
+		{
+			item = (DWORD)SendMessage(hWnd, LB_GETCURSEL, 0, 0);
+			ReadDebugItem(item, &debugvalue, &debugmask);
+			if (tristate)
+			{
+				if (debugvalue && debugmask)
+				{
+					debugvalue = FALSE;
+					debugmask = FALSE;
+				}
+				else if (!debugmask)
+				{
+					debugvalue = FALSE;
+					debugmask = TRUE;
+				}
+				else
+				{
+					debugvalue = TRUE;
+					debugmask = TRUE;
+				}
+			}
+			else
+			{
+				if (debugvalue)
+					debugvalue = FALSE;
+				else debugvalue = TRUE;
+			}
+			WriteDebugItem(item, debugvalue, debugmask);
+			RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
+			EnableWindow(GetDlgItem(hDialog, IDC_APPLY), TRUE);
+			*dirty = TRUE;
+		}
+		return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+	}
+	else return CallWindowProc(oldproc, hWnd, Msg, wParam, lParam);
+}
 
 LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -3777,6 +3822,9 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 		if (_EnableThemeDialogTexture) _EnableThemeDialogTexture(hWnd, ETDT_ENABLETAB);
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_DEBUGLIST), GWLP_USERDATA,
+			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_DEBUGLIST), GWLP_WNDPROC));
+		SetWindowLongPtr(GetDlgItem(hWnd, IDC_DEBUGLIST), GWLP_WNDPROC, (LONG_PTR)DebugListCallback);
 		return TRUE;
 	case WM_CTLCOLORDLG:
 		if (usedarkmode && hbrDarkTabBackground) return (LRESULT)hbrDarkTabBackground;
@@ -3843,6 +3891,9 @@ LRESULT CALLBACK DebugTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 		case IDC_DEBUGLIST:
 			if ((HIWORD(wParam) == LBN_SELCHANGE) || (HIWORD(wParam) == LBN_DBLCLK))
 			{
+				if((GetAsyncKeyState(VK_UP) & 0x8000) || (GetAsyncKeyState(VK_DOWN) & 0x8000) || 
+					(GetAsyncKeyState(VK_PRIOR) & 0x8000) || (GetAsyncKeyState(VK_NEXT) & 0x8000) || 
+					(GetAsyncKeyState(VK_HOME) & 0x8000) || (GetAsyncKeyState(VK_END) & 0x8000)) break;
 				item = (DWORD)SendDlgItemMessage(hWnd, IDC_DEBUGLIST, LB_GETCURSEL, 0, 0);
 				ReadDebugItem(item, &debugvalue, &debugmask);
 				if (tristate)
