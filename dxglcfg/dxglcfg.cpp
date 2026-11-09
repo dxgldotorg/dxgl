@@ -21,6 +21,8 @@
 #if _MSC_VER >= 1400
 #define _CRTDBG_MAP_ALLOC
 #endif
+#define CINTERFACE
+#define COBJMACROS
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
@@ -131,6 +133,123 @@ static const TCHAR clsid_ddraw7[] = _T("Software\\Classes\\CLSID\\{3C305196-50DB
 static const TCHAR clsid_ddrawclipper[] = _T("Software\\Classes\\CLSID\\{593817A0-7DB3-11CF-A2DE-00AA00B93356}");
 static const TCHAR inprocserver32[] = _T("\\InprocServer32");
 static const TCHAR threadingmodel[] = _T("ThreadingModel");
+
+static void AddFile(LPTSTR filename, HWND hWnd);
+static UINT DropFilePathLength;
+static LPTSTR DropFilePath = NULL;
+
+IDropTarget DXGLCfgDropTarget;
+IDropTargetVtbl DXGLCfgDropTargetVtbl;
+
+ULONG DXGLCfgDropTargetRefCount = 0;
+UINT dragcount;
+
+ULONG WINAPI DXGLCfgDropTarget_AddRef(IDropTarget *This)
+{
+	return InterlockedIncrement(&DXGLCfgDropTargetRefCount);
+}
+ULONG WINAPI DXGLCfgDropTarget_Release(IDropTarget *This)
+{
+	return InterlockedDecrement(&DXGLCfgDropTargetRefCount);
+}
+HRESULT WINAPI DXGLCfgDropTarget_QueryInterface(IDropTarget *This, REFIID iid, void **ppvObject)
+{
+	if (!This) return E_POINTER;
+	if (&iid) return E_INVALIDARG;
+	if ((iid == IID_IUnknown) || (iid == IID_IDropTarget))
+	{
+		DXGLCfgDropTarget_AddRef(This);
+		*ppvObject = This;
+		return S_OK;
+	}
+	else return E_NOINTERFACE;
+}
+void DXGLCfgDropTarget_CheckDrag(IDataObject *pDataObject)
+{
+	FORMATETC format;
+	HDROP hDrop;
+	STGMEDIUM medium;
+	format.cfFormat = CF_HDROP;
+	format.ptd = NULL;
+	format.dwAspect = DVASPECT_CONTENT;
+	format.lindex = -1;
+	format.tymed = TYMED_HGLOBAL;
+	if (SUCCEEDED(IDataObject_GetData(pDataObject, &format, &medium)))
+	{
+		hDrop = (HDROP)GlobalLock(medium.hGlobal);
+		if (hDrop)
+		{
+			dragcount = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+			GlobalUnlock(medium.hGlobal);
+		}
+	}
+}
+HRESULT WINAPI DXGLCfgDropTarget_DragEnter(IDropTarget *This, IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+{
+	DXGLCfgDropTarget_CheckDrag(pDataObject);
+	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
+	else *pdwEffect = DROPEFFECT_NONE;
+	return S_OK;
+}
+HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+{
+	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
+	else *pdwEffect = DROPEFFECT_NONE;
+	return S_OK;
+}
+HRESULT WINAPI DXGLCfgDropTarget_DragLeave(IDropTarget *This)
+{
+	dragcount = 0;
+	return S_OK;
+}
+
+HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+{
+	FORMATETC format;
+	HDROP hDrop;
+	STGMEDIUM medium;
+	UINT pathlength;
+	TCHAR *path = NULL;
+	if (!DropFilePath)
+	{
+		DropFilePath = (LPTSTR)malloc(MAX_PATH*sizeof(TCHAR));
+		DropFilePathLength = MAX_PATH;
+		if (!DropFilePath) return E_OUTOFMEMORY;
+	}
+	format.cfFormat = CF_HDROP;
+	format.ptd = NULL;
+	format.dwAspect = DVASPECT_CONTENT;
+	format.lindex = -1;
+	format.tymed = TYMED_HGLOBAL;
+	if (SUCCEEDED(IDataObject_GetData(pDataObject, &format, &medium)))
+	{
+		hDrop = (HDROP)GlobalLock(medium.hGlobal);
+		if (hDrop)
+		{
+			pathlength = DragQueryFile(hDrop, 0, NULL, 0);
+			if ((pathlength + 1) > DropFilePathLength)
+			{
+				path = (LPTSTR)realloc(DropFilePath, (pathlength + 1) * sizeof(TCHAR));
+				if (!path)
+				{
+					GlobalUnlock(hDrop);
+					return E_OUTOFMEMORY;
+				}
+				DropFilePath = path;
+				DropFilePathLength = pathlength + 1;
+			}
+			if (pathlength > 0)
+			{
+				DragQueryFile(hDrop, 0, DropFilePath, pathlength + 1);
+				SetActiveWindow(hDialog);
+				PostMessage(hDialog, WM_APP + 1, 0, 0);
+				*pdwEffect = DROPEFFECT_COPY;
+			}
+			GlobalUnlock(hDrop);
+		}
+	}
+	return S_OK;
+}
 
 // COM levels:
 // 0:  Not registered
@@ -975,8 +1094,10 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 	LPCTSTR errmsg;
 	DWORD fileptr;
 	DWORD bytesread;
-	BYTE header[16];
+	BYTE header[24];
 	BYTE *headerptr;
+	BYTE *optionalheader;
+	WORD optionalheadersize;
 	#ifdef _M_X64
 	const WORD machine = 0x8664;
 	#else
@@ -1029,7 +1150,7 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
 			return exitcode;
 		}
-		if (!ReadFile(exefile,header,16,&bytesread,NULL))
+		if (!ReadFile(exefile,header,24,&bytesread,NULL))
 		{
 			exitcode = GetLastError();
 			CloseHandle(exefile);
@@ -1061,6 +1182,60 @@ DWORD AddApp(LPCTSTR path, BOOL copyfile, BOOL admin, BOOL force, HWND hwnd)
 			#endif
 			return ERROR_INVALID_PARAMETER;
 		}
+		headerptr = header + 22;
+		if ((*(WORD*)headerptr & IMAGE_FILE_SYSTEM) || (*(WORD*)headerptr & IMAGE_FILE_DLL) ||
+			!(*(WORD*)headerptr & IMAGE_FILE_EXECUTABLE_IMAGE))
+		{
+			MessageBox(hwnd, _T("Incorrect program type detected.  Please only select program files."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			return ERROR_INVALID_PARAMETER;
+		}
+		headerptr = header + 20;
+		optionalheadersize = *(WORD*)headerptr;
+		if (!optionalheadersize)
+		{
+			MessageBox(hwnd, _T("File is not a valid executable.  No COFF optional header found."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			return ERROR_INVALID_PARAMETER;
+		}
+		optionalheader = (BYTE*)malloc(optionalheadersize);
+		if (!optionalheader) return ERROR_OUTOFMEMORY;
+		if (SetFilePointer(exefile, fileptr + 24, NULL, FILE_BEGIN) != fileptr + 24)
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		if (!ReadFile(exefile, optionalheader, optionalheadersize, &bytesread, NULL))
+		{
+			exitcode = GetLastError();
+			CloseHandle(exefile);
+			_tcscpy(command, _T("Read error:\r\n"));
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, exitcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				command + _tcslen(command), MAX_PATH, NULL);
+			MessageBox(hwnd, command, _T("Error"), MB_OK | MB_ICONSTOP);
+			return exitcode;
+		}
+		if ((*(WORD*)optionalheader != 0x10b) && (*(WORD*)optionalheader != 0x20b))
+		{
+			MessageBox(hwnd, _T("Only PE32 or PE32+ executables are supported."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			return ERROR_INVALID_PARAMETER;
+		}
+		headerptr = optionalheader + 68;
+		if((*(WORD*)headerptr != IMAGE_SUBSYSTEM_WINDOWS_GUI) && (*(WORD*)headerptr != IMAGE_SUBSYSTEM_WINDOWS_CUI))
+		{
+			MessageBox(hwnd, _T("Program is not a valid Win32 executable."),
+				_T("Invalid EXE"), MB_OK | MB_ICONSTOP);
+			return ERROR_INVALID_PARAMETER;
+		}
+		free(optionalheader);
 		CloseHandle(exefile);
 	}
 	if (copyfile)
@@ -5526,6 +5701,137 @@ void RefreshControls(HWND hWnd)
 	SetTraceCheckboxes(hTabs[6], cfg->DebugTraceLevel, cfgmask->DebugTraceLevel, tristate);
 }
 
+static void AddFile(LPTSTR filename, HWND hWnd)
+{
+	LPTSTR regbuffer;
+	DWORD regbuffersize;
+	DWORD err;
+	LONG error;
+	DWORD buffersize;
+	HKEY hKey;
+	LPTSTR path = NULL;
+	SHFILEINFO fileinfo;
+	DWORD verinfosize;
+	BOOL hasname;
+	LPTSTR outbuffer;
+	UINT outlen;
+	void *verinfo;
+	TCHAR verpath[64];
+	WORD translation[2];
+	if (CheckProfileExists(filename))
+	{
+		MessageBox(hWnd, _T("A profile already exists for this program."),
+			_T("Profile already exists"), MB_OK | MB_ICONWARNING);
+		return;
+	}
+	err = AddApp(filename, TRUE, FALSE, FALSE, hWnd);
+	if (!err)
+	{
+		LPTSTR newkey = MakeNewConfig(filename);
+		LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 24) * sizeof(TCHAR));
+		_tcscpy(newkey2, profilespath2);
+		_tcscat(newkey2, newkey);
+		appcount++;
+		if (appcount > maxapps)
+		{
+			maxapps += 128;
+			apps = (app_setting *)realloc(apps, maxapps * sizeof(app_setting));
+		}
+		RegOpenKeyEx(HKEY_CURRENT_USER, newkey2, 0, KEY_READ, &hKey);
+		RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, NULL, &buffersize);
+		regbuffer = (LPTSTR)malloc(buffersize);
+		regbuffer[0] = 0;
+		error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
+		apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+		_tcscpy(apps[appcount - 1].regkey, newkey);
+		GetConfig(&apps[appcount - 1].cfg, &apps[appcount - 1].mask, newkey);
+		apps[appcount - 1].dirty = FALSE;
+		free(newkey2);
+		if ((regbuffer[0] == 0) || error != ERROR_SUCCESS)
+		{
+			// Default icon
+			apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+			apps[appcount - 1].icon_shared = TRUE;
+			apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+			_tcscpy(apps[appcount - 1].name, newkey);
+			return;
+		}
+		if (_tcsrchr(newkey, _T('-'))) *(_tcsrchr(newkey, _T('-'))) = 0;
+		path = (LPTSTR)malloc(((_tcslen(regbuffer) + _tcslen(newkey) + 2)) * sizeof(TCHAR));
+		_tcscpy(path, regbuffer);
+		_tcscpy(apps[appcount - 1].path, path);
+		_tcscat(path, _T("\\"));
+		_tcscat(path, newkey);
+		if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
+		{
+			// Default icon
+			apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
+			apps[appcount - 1].icon_shared = TRUE;
+			apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+			_tcscpy(apps[appcount - 1].name, newkey);
+			return;
+		}
+		else
+		{
+			// Get exe attributes
+			error = (LONG)SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
+			apps[appcount - 1].icon = fileinfo.hIcon;
+			apps[appcount - 1].icon_shared = FALSE;
+			verinfosize = GetFileVersionInfoSize(path, NULL);
+			verinfo = malloc(verinfosize);
+			hasname = FALSE;
+			if (GetFileVersionInfo(path, 0, verinfosize, verinfo))
+			{
+				if (VerQueryValue(verinfo, _T("\\VarFileInfo\\Translation"), (LPVOID*)&outbuffer, &outlen))
+				{
+					memcpy(translation, outbuffer, 4);
+					_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\FileDescription"), translation[0], translation[1]);
+					if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
+					{
+						hasname = TRUE;
+						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
+						_tcscpy(apps[appcount - 1].name, outbuffer);
+					}
+					else
+					{
+						_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\ProductName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+						if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
+						{
+							hasname = TRUE;
+							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
+							_tcscpy(apps[appcount - 1].name, outbuffer);
+						}
+						else
+						{
+							_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\InternalName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
+							if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
+							{
+								hasname = TRUE;
+								apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
+								_tcscpy(apps[appcount - 1].name, outbuffer);
+							}
+						}
+					}
+				}
+			}
+			if (!hasname)
+			{
+				apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
+				_tcscpy(apps[appcount - 1].name, newkey);
+			}
+			free(verinfo);
+			free(path);
+		}
+		SendDlgItemMessage(hWnd, IDC_APPS, CB_SETCURSEL,
+			SendDlgItemMessage(hWnd, IDC_APPS, CB_ADDSTRING, 0, (LPARAM)apps[appcount - 1].name), 0);
+		SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
+		RegCloseKey(hKey);
+		free(regbuffer);
+	}
+}
+
+static 	TCHAR abouttext[1024];
+
 LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	PIXELFORMATDESCRIPTOR pfd =
@@ -5588,10 +5894,8 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	LPTSTR regkey;
 	BOOL failed;
 	LPTSTR installpath;
-	DWORD err;
 	RECT r, r2;
 	NMHDR *nm;
-	TCHAR abouttext[1024];
 	int newtab;
 	DWORD dpisupport;
 	TCITEM tab;
@@ -6553,7 +6857,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
 		GetWindowRect(hWnd, &dlgrect);
+		DXGLCfgDropTarget.lpVtbl = &DXGLCfgDropTargetVtbl;
+		DXGLCfgDropTarget.lpVtbl->QueryInterface = DXGLCfgDropTarget_QueryInterface;
+		DXGLCfgDropTarget.lpVtbl->AddRef = DXGLCfgDropTarget_AddRef;
+		DXGLCfgDropTarget.lpVtbl->Release = DXGLCfgDropTarget_Release;
+		DXGLCfgDropTarget.lpVtbl->DragEnter = DXGLCfgDropTarget_DragEnter;
+		DXGLCfgDropTarget.lpVtbl->DragOver = DXGLCfgDropTarget_DragOver;
+		DXGLCfgDropTarget.lpVtbl->DragLeave = DXGLCfgDropTarget_DragLeave;
+		DXGLCfgDropTarget.lpVtbl->Drop = DXGLCfgDropTarget_Drop;
+		RegisterDragDrop(hWnd, &DXGLCfgDropTarget);
 		return TRUE;
+	case WM_DESTROY:
+		RevokeDragDrop(hWnd);
+		if (DropFilePath) free(DropFilePath);
 	case WM_SETTINGCHANGE:
 		if (lParam)
 		{
@@ -6772,119 +7088,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			filename.lpstrInitialDir = _T("%ProgramFiles%");
 			filename.lpstrTitle = _T("Select program");
 			filename.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
-			if (GetOpenFileName(&filename))
-			{
-				if (CheckProfileExists(filename.lpstrFile))
-				{
-					MessageBox(hWnd, _T("A profile already exists for this program."),
-						_T("Profile already exists"), MB_OK | MB_ICONWARNING);
-					break;
-				}
-				err = AddApp(filename.lpstrFile, TRUE, FALSE, FALSE, hWnd);
-				if (!err)
-				{
-					LPTSTR newkey = MakeNewConfig(filename.lpstrFile);
-					LPTSTR newkey2 = (LPTSTR)malloc((_tcslen(newkey) + 24) * sizeof(TCHAR));
-					_tcscpy(newkey2, profilespath2);
-					_tcscat(newkey2, newkey);
-					appcount++;
-					if (appcount > maxapps)
-					{
-						maxapps += 128;
-						apps = (app_setting *)realloc(apps, maxapps * sizeof(app_setting));
-					}
-					RegOpenKeyEx(HKEY_CURRENT_USER, newkey2, 0, KEY_READ, &hKey);
-					RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, NULL, &buffersize);
-					regbuffer = (LPTSTR)malloc(buffersize);
-					regbuffer[0] = 0;
-					error = RegQueryValueEx(hKey, _T("InstallPath"), NULL, NULL, (LPBYTE)regbuffer, &buffersize);
-					apps[appcount - 1].regkey = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
-					_tcscpy(apps[appcount - 1].regkey, newkey);
-					GetConfig(&apps[appcount - 1].cfg, &apps[appcount - 1].mask, newkey);
-					apps[appcount - 1].dirty = FALSE;
-					free(newkey2);
-					if ((regbuffer[0] == 0) || error != ERROR_SUCCESS)
-					{
-						// Default icon
-						apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
-						apps[appcount - 1].icon_shared = TRUE;
-						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
-						_tcscpy(apps[appcount - 1].name, newkey);
-						break;
-					}
-					if (_tcsrchr(newkey, _T('-'))) *(_tcsrchr(newkey, _T('-'))) = 0;
-					path = (LPTSTR)malloc(((_tcslen(regbuffer) + _tcslen(newkey) + 2)) * sizeof(TCHAR));
-					_tcscpy(path, regbuffer);
-					_tcscpy(apps[appcount - 1].path, path);
-					_tcscat(path, _T("\\"));
-					_tcscat(path, newkey);
-					if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
-					{
-						// Default icon
-						apps[appcount - 1].icon = LoadIcon(NULL, IDI_APPLICATION);
-						apps[appcount - 1].icon_shared = TRUE;
-						apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
-						_tcscpy(apps[appcount - 1].name, newkey);
-						break;
-					}
-					else
-					{
-						// Get exe attributes
-						error = (LONG)SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
-						apps[appcount - 1].icon = fileinfo.hIcon;
-						apps[appcount - 1].icon_shared = FALSE;
-						verinfosize = GetFileVersionInfoSize(path, NULL);
-						verinfo = malloc(verinfosize);
-						hasname = FALSE;
-						if (GetFileVersionInfo(path, 0, verinfosize, verinfo))
-						{
-							if (VerQueryValue(verinfo, _T("\\VarFileInfo\\Translation"), (LPVOID*)&outbuffer, &outlen))
-							{
-								memcpy(translation, outbuffer, 4);
-								_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\FileDescription"), translation[0], translation[1]);
-								if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
-								{
-									hasname = TRUE;
-									apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
-									_tcscpy(apps[appcount - 1].name, outbuffer);
-								}
-								else
-								{
-									_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\ProductName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
-									if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
-									{
-										hasname = TRUE;
-										apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
-										_tcscpy(apps[appcount - 1].name, outbuffer);
-									}
-									else
-									{
-										_sntprintf(verpath, 64, _T("\\StringFileInfo\\%04x%04x\\InternalName"), ((WORD*)outbuffer)[0], ((WORD*)outbuffer)[1]);
-										if (VerQueryValue(verinfo, verpath, (LPVOID*)&outbuffer, &outlen))
-										{
-											hasname = TRUE;
-											apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(outbuffer) + 1) * sizeof(TCHAR));
-											_tcscpy(apps[appcount - 1].name, outbuffer);
-										}
-									}
-								}
-							}
-						}
-						if (!hasname)
-						{
-							apps[appcount - 1].name = (LPTSTR)malloc((_tcslen(newkey) + 1) * sizeof(TCHAR));
-							_tcscpy(apps[appcount - 1].name, newkey);
-						}
-						free(verinfo);
-						free(path);
-					}
-					SendDlgItemMessage(hWnd, IDC_APPS, CB_SETCURSEL,
-						SendDlgItemMessage(hWnd, IDC_APPS, CB_ADDSTRING, 0, (LPARAM)apps[appcount - 1].name), 0);
-					SendMessage(hWnd, WM_COMMAND, IDC_APPS + 0x10000, 0);
-					RegCloseKey(hKey);
-					free(regbuffer);
-				}
-			}
+			if (GetOpenFileName(&filename)) AddFile(filename.lpstrFile, hWnd);
 			break;
 		case IDC_REMOVE:
 			if(MessageBox(hWnd,_T("Do you want to delete the selected application profile and remove DXGL from its installation folder(s)?"),
@@ -6934,6 +7138,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			RefreshControls(hWnd);
 			break;
 		}
+		break;
+	case WM_APP + 1:
+		AddFile(DropFilePath, hWnd);
 		break;
 	}
 	return FALSE;
@@ -7294,8 +7501,16 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	DXGLCFG tmpcfg;
 	int i;
 	INT_PTR result;
+	DWORD ret;
 	TCHAR *cmdline;
 	TCHAR *params;
+	HRESULT error;
+	error = OleInitialize(NULL);
+	if (FAILED(error))
+	{
+		MessageBox(NULL, _T("OleInitialize failed.  Your operating system installation may be broken."), _T("Fatal error"), MB_OK | MB_ICONHAND);
+		return error;
+	}
 	ntdll = LoadLibrary(_T("ntdll.dll"));
 	if (ntdll) _wine_get_version = (char*(__cdecl*)())GetProcAddress(ntdll, "wine_get_version");
 	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -7317,34 +7532,42 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 			gradientavailable = false;
 		}
 	}
-	CoInitialize(NULL);
 	if (!_tcsnicmp(lpCmdLine, _T("upgrade"), 7))
 	{
 		UpgradeDXGL();
+		OleUninitialize();
 		return 0;
 	}
 	if (!_tcsnicmp(lpCmdLine, _T("uninstall"), 9))
 	{
 		UninstallDXGL(lpCmdLine[10]);
+		OleUninitialize();
 		return 0;
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("install "),8))
 	{
-		return AddApp(lpCmdLine+8,TRUE,TRUE,FALSE,NULL);
+		ret = AddApp(lpCmdLine+8,TRUE,TRUE,FALSE,NULL);
+		OleUninitialize();
+		return ret;
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("forceinstall "),13))
 	{
-		return AddApp(lpCmdLine+8,TRUE,TRUE,TRUE,NULL);
+		ret = AddApp(lpCmdLine+8,TRUE,TRUE,TRUE,NULL);
+		OleUninitialize();
+		return ret;
 	}
 	if(!_tcsnicmp(lpCmdLine,_T("remove "),7))
 	{
-		return DelApp(lpCmdLine+7,TRUE,NULL);
+		ret =  DelApp(lpCmdLine+7,TRUE,NULL);
+		OleUninitialize();
+		return ret;
 	}
 	if (!_tcsnicmp(lpCmdLine, _T("profile_install"), 15))
 	{
 		UpgradeDXGLTestToDXGLCfg();
 		LPDIRECTDRAW lpdd;
 		GetCurrentConfig(&tmpcfg, FALSE);
+		OleUninitialize();
 		return 0;
 	}
 	icc.dwSize = sizeof(icc);
@@ -7370,6 +7593,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		hWnd = FindWindow(NULL, dxglcfgname);
 		// Focus DXGL Config window
 		if (hWnd) SetForegroundWindow(hWnd);
+		OleUninitialize();
 		return 0;
 	}
 	LoadParams(lpCmdLine);
@@ -7392,5 +7616,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	_CrtDumpMemoryLeaks();
 #endif
 	if (result == 4) RestartDXGLCfg();
+	OleUninitialize();
 	return 0;
 }
