@@ -49,7 +49,7 @@ SetCompressor /SOLID lzma
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-!if ${COMPILER} == "VC2026_7"
+!if ${COMPILER} == "VC2026_12"
 !ifdef _DEBUG
 !define PLUGINDIR "Debug VS2026"
 !ifdef _CPU_X64
@@ -217,12 +217,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2026_7"
+!else if ${COMPILER} == "VC2026_12"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.51.36247/vc_redist.x64.exe
-!define runtime_name "Visual C++ 2026.7 x64"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.52.37029/vc_redist.x64.exe
+!define runtime_name "Visual C++ 2026.12 x64"
 !define runtime_filename "vc_redist.x64.exe"
-!define runtime_sha512 "C42C82CFD5EAA2165B600F6109CB14FF4308CDF4CFF656A1375B4A933F1630BFE54C99C4D0FB9ED3BEA4DC4E4FDAA3DB8E7C58356CCA07C2954F4C297757D62D"
+!define runtime_sha512 "E38E75CCD3C4C38713AFB452FA70F56A78006CDAC14C9404836FA43FB02E5CEC8B0FE20F7F492C20C5A7F4BF7CC6007C69A711D11E9869DA41763B8E224FA399"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -271,12 +271,12 @@ Page Custom PortableModeEnter PortableModeLeave
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define PRODUCT_SUFFIX "-msvc12"
-!else if ${COMPILER} == "VC2026_7"
+!else if ${COMPILER} == "VC2026_12"
 !define download_runtime 1
-!define runtime_url http://dxgl.org/download/runtimes/vc14.51.36247/vc_redist.x86.exe
-!define runtime_name "Visual C++ 2026.7 x86"
+!define runtime_url http://dxgl.org/download/runtimes/vc14.52.37029/vc_redist.x86.exe
+!define runtime_name "Visual C++ 2026.12 x86"
 !define runtime_filename "vc_redist.x86.exe"
-!define runtime_sha512 "DF8E1806E5FB27522E9F985A21EE79C1853BBDAF8A9F3F586E6033EF67F864C578C0673B6EEFB86E915E16004A42D262D504D000910D9CFC403F5A7F78FCB575"
+!define runtime_sha512 "8D354FFC3CEABC217F99D3ACBC702F2DF78F439CE1AFB9EAC298F3332FC8A13FBC75DC76AFEDB5B013B48E5D887C4E060E2C790558EBB1D3D9BF7D0A38D142A4"
 !define runtime_regkey SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum
 !define runtime_regvalue Install
 !define runtime_regvalue2 Version
@@ -421,7 +421,7 @@ Section "Set Wine DLL Overrides" SEC_WINEDLLOVERRIDE
 SectionEnd
 
 Section /o "Debug symbols" SEC_DEBUGSYMBOLS
-  !if ${COMPILER} == "VC2026_7"
+  !if ${COMPILER} == "VC2026_12"
   File "..\${SRCDIR}\cfgmgr.pdb"
   !endif
   File "..\${SRCDIR}\ddraw.pdb"
@@ -510,7 +510,7 @@ Function .onInit
 	Quit
   ${EndIf}
   !endif
-  !if ${COMPILER} == "VC2026_7"
+  !if ${COMPILER} == "VC2026_12"
   dxgl-nsis::CheckSSE2 $0
   Pop $0
   ${If} $0 == "0"
@@ -572,7 +572,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  !if ${COMPILER} == "VC2026_7"
+  !if ${COMPILER} == "VC2026_12"
   StrCmp $0 1 skipvcredist1
   goto vcinstall
   skipvcredist1:
@@ -585,7 +585,7 @@ Function .onInit
   !ifdef _CPU_X64
   SetRegView 32
   !endif
-  ${VersionCompare} "$0" "14.51.36247" $1
+  ${VersionCompare} "$0" "14.52.37029" $1
   ${If} $1 == 0
     goto skipvcredist
   ${EndIf}
@@ -705,7 +705,7 @@ Section Uninstall
 SectionEnd
 
 !if ${SIGNTOOL} == 1
-!if ${COMPILER} == "VC2026_7"
+!if ${COMPILER} == "VC2026_12"
 !finalize 'signtool sign /tr http://timestamp.sectigo.com /td sha384 /fd sha384 /as %1'
 !endif
 !endif
