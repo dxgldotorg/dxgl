@@ -2036,18 +2036,7 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 			dwmapi = NULL;
 		}
 	}
-	uxtheme = LoadLibrary(_T("uxtheme.dll"));
-	if (uxtheme)
-	{
-		_SetPreferredAppMode = (int(WINAPI*)(int))GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
-		_FlushMenuThemes = (void(WINAPI*)())GetProcAddress(uxtheme, MAKEINTRESOURCEA(136));
-		if (!(_SetPreferredAppMode && _FlushMenuThemes))
-		{
-			FreeLibrary(uxtheme);
-			uxtheme = NULL;
-		}
-	}
-	if(!hNtdll) hNtdll = GetModuleHandle(_T("ntdll.dll"));
+	if (!hNtdll) hNtdll = GetModuleHandle(_T("ntdll.dll"));
 	if (hNtdll && !_RtlGetVersion) _RtlGetVersion = (long(NTAPI*)(LPOSVERSIONINFOEXW))GetProcAddress(hNtdll, "RtlGetVersion");
 	if (_RtlGetVersion)
 	{
@@ -2055,6 +2044,20 @@ HRESULT WINAPI glDirectDraw7_Initialize(glDirectDraw7 *This, GUID FAR *lpGUID)
 		_RtlGetVersion((LPOSVERSIONINFOEXW)&osver);
 	}
 	else ZeroMemory(&osver, sizeof(OSVERSIONINFOW));
+	if (osver.dwBuildNumber >= 17763)
+	{
+		uxtheme = LoadLibrary(_T("uxtheme.dll"));
+		if (uxtheme)
+		{
+			_SetPreferredAppMode = (int(WINAPI*)(int))GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
+			_FlushMenuThemes = (void(WINAPI*)())GetProcAddress(uxtheme, MAKEINTRESOURCEA(136));
+			if (!(_SetPreferredAppMode && _FlushMenuThemes))
+			{
+				FreeLibrary(uxtheme);
+				uxtheme = NULL;
+			}
+		}
+	}
 	This->initialized = true;
 	TRACE_EXIT(23,DD_OK);
 	return DD_OK;
