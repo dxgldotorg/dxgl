@@ -70,6 +70,10 @@
 #define WM_DPICHANGED_AFTERPARENT 0x02E3
 #endif
 
+#ifndef WM_COPYGLOBALDATA
+#define WM_COPYGLOBALDATA 0x0049
+#endif
+
 DXGLCFG *cfg;
 DXGLCFG *cfgmask;
 DXGLCFG currcfg;
@@ -135,14 +139,23 @@ static const TCHAR inprocserver32[] = _T("\\InprocServer32");
 static const TCHAR threadingmodel[] = _T("ThreadingModel");
 
 static void AddFile(LPTSTR filename, HWND hWnd);
-static UINT DropFilePathLength;
+static UINT DropFilePathLength = 0;
 static LPTSTR DropFilePath = NULL;
 
 IDropTarget DXGLCfgDropTarget;
 IDropTargetVtbl DXGLCfgDropTargetVtbl;
 
-ULONG DXGLCfgDropTargetRefCount = 0;
-UINT dragcount;
+#ifndef MSGFLT_ADD
+#define MSGFLT_ADD 1
+#endif
+
+BOOL(WINAPI *_ChangeWindowMessageFilter)(UINT message, DWORD dwFlag) = NULL;
+BOOL(WINAPI *_ChangeWindowMessageFilterEx)(HWND hwnd, UINT message, DWORD action, void *pChangeFilterStruct) = NULL;
+
+static volatile LONG DXGLCfgDropTargetRefCount = 0;
+static UINT dragcount;
+
+static DWORD elevation = 0;
 
 ULONG WINAPI DXGLCfgDropTarget_AddRef(IDropTarget *This)
 {
@@ -5886,7 +5899,6 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	void *verinfo;
 	COLORREF OldTextColor,OldBackColor;
 	HANDLE token = NULL;
-	DWORD elevation;
 	HWND hGLWnd;
 	OPENFILENAME filename;
 	TCHAR selectedfile[MAX_PATH + 1];
@@ -5904,6 +5916,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	HWND hTempWnd;
 	SYSTEM_INFO sysinfo;
 	MINMAXINFO *minmax;
+	HDROP hDrop;
 	//DWORD threadid;
 	switch (Msg)
 	{
@@ -6857,18 +6870,49 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			(LONG_PTR)GetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC));
 		SetWindowLongPtr(GetDlgItem(hWnd, IDC_TABS), GWLP_WNDPROC, (LONG_PTR)TabControlCallback);
 		GetWindowRect(hWnd, &dlgrect);
-		DXGLCfgDropTarget.lpVtbl = &DXGLCfgDropTargetVtbl;
-		DXGLCfgDropTarget.lpVtbl->QueryInterface = DXGLCfgDropTarget_QueryInterface;
-		DXGLCfgDropTarget.lpVtbl->AddRef = DXGLCfgDropTarget_AddRef;
-		DXGLCfgDropTarget.lpVtbl->Release = DXGLCfgDropTarget_Release;
-		DXGLCfgDropTarget.lpVtbl->DragEnter = DXGLCfgDropTarget_DragEnter;
-		DXGLCfgDropTarget.lpVtbl->DragOver = DXGLCfgDropTarget_DragOver;
-		DXGLCfgDropTarget.lpVtbl->DragLeave = DXGLCfgDropTarget_DragLeave;
-		DXGLCfgDropTarget.lpVtbl->Drop = DXGLCfgDropTarget_Drop;
-		RegisterDragDrop(hWnd, &DXGLCfgDropTarget);
+		if (elevation)
+		{
+			if (!hUser32) hUser32 = GetModuleHandle(_T("User32.dll"));
+			if (hUser32)
+			{
+				_ChangeWindowMessageFilterEx =
+					(BOOL(WINAPI*)(HWND, UINT, DWORD, void*))GetProcAddress(hUser32, "ChangeWindowMessageFilterEx");
+				if (_ChangeWindowMessageFilterEx)
+				{
+					_ChangeWindowMessageFilterEx(hWnd, WM_DROPFILES, 1, NULL);
+					_ChangeWindowMessageFilterEx(hWnd, WM_COPYDATA, 1, NULL);
+					_ChangeWindowMessageFilterEx(hWnd, WM_COPYGLOBALDATA, 1, NULL);
+				}
+				else
+				{
+					_ChangeWindowMessageFilter =
+						(BOOL(WINAPI*)(UINT, DWORD))GetProcAddress(hUser32, "ChangeWindowMessageFilter");
+					if (_ChangeWindowMessageFilter)
+					{
+						_ChangeWindowMessageFilter(WM_DROPFILES, MSGFLT_ADD);
+						_ChangeWindowMessageFilter(WM_COPYDATA, MSGFLT_ADD);
+						_ChangeWindowMessageFilter(WM_COPYGLOBALDATA, MSGFLT_ADD);
+					}
+				}
+			}
+			DragAcceptFiles(hWnd, TRUE);
+		}
+		else
+		{
+			DXGLCfgDropTarget.lpVtbl = &DXGLCfgDropTargetVtbl;
+			DXGLCfgDropTarget.lpVtbl->QueryInterface = DXGLCfgDropTarget_QueryInterface;
+			DXGLCfgDropTarget.lpVtbl->AddRef = DXGLCfgDropTarget_AddRef;
+			DXGLCfgDropTarget.lpVtbl->Release = DXGLCfgDropTarget_Release;
+			DXGLCfgDropTarget.lpVtbl->DragEnter = DXGLCfgDropTarget_DragEnter;
+			DXGLCfgDropTarget.lpVtbl->DragOver = DXGLCfgDropTarget_DragOver;
+			DXGLCfgDropTarget.lpVtbl->DragLeave = DXGLCfgDropTarget_DragLeave;
+			DXGLCfgDropTarget.lpVtbl->Drop = DXGLCfgDropTarget_Drop;
+			RegisterDragDrop(hWnd, &DXGLCfgDropTarget);
+		}
 		return TRUE;
 	case WM_DESTROY:
-		RevokeDragDrop(hWnd);
+		if (!elevation) RevokeDragDrop(hWnd);
+		else DragAcceptFiles(hWnd, FALSE);
 		if (DropFilePath) free(DropFilePath);
 	case WM_SETTINGCHANGE:
 		if (lParam)
@@ -7139,8 +7183,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			break;
 		}
 		break;
+		case WM_DROPFILES:
+			hDrop = (HDROP)wParam;
+			if (DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0) != 1)
+			{
+				SetActiveWindow(hDialog);
+				PostMessage(hWnd, WM_APP + 2, 0, 0);
+			}
+			else
+			{
+				if (!DropFilePath)
+				{
+					DropFilePath = (LPTSTR)malloc(MAX_PATH * sizeof(TCHAR));
+					DropFilePathLength = MAX_PATH;
+					if (!DropFilePath)
+					{
+						SetActiveWindow(hDialog);
+						PostMessage(hWnd, WM_APP + 3, 0, 0);
+						break;
+					};
+				}
+				buffersize = DragQueryFile(hDrop, 0, NULL, 0);
+				if ((buffersize + 1) > DropFilePathLength)
+				{
+					path = (LPTSTR)realloc(DropFilePath, (buffersize + 1) * sizeof(TCHAR));
+					if (!path)
+					{
+						SetActiveWindow(hDialog);
+						PostMessage(hWnd, WM_APP + 3, 0, 0);
+						break;
+					}
+					DropFilePath = path;
+					DropFilePathLength = buffersize + 1;
+				}
+				if (buffersize > 0)
+				{
+					DragQueryFile(hDrop, 0, DropFilePath, buffersize + 1);
+					SetActiveWindow(hDialog);
+					PostMessage(hDialog, WM_APP + 1, 0, 0);
+				}
+			}
+			break;
 	case WM_APP + 1:
 		AddFile(DropFilePath, hWnd);
+		break;
+	case WM_APP + 2:
+		MessageBox(hWnd, _T("Please drop only one file at a time."), _T("DXGL Config"), MB_OK | MB_ICONEXCLAMATION);
+		break;
+	case WM_APP + 3:
+		MessageBox(hWnd, _T("Error with drag and drop.  You may be out of memory or an internal error occurred."), _T("DXGL Config"), MB_OK | MB_ICONEXCLAMATION);
 		break;
 	}
 	return FALSE;
