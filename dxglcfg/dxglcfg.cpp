@@ -36,6 +36,7 @@
 #include <math.h>
 #include <io.h>
 #include <Uxtheme.h>
+#include <ShlObj.h>
 #include "include/vsstyle.h"
 #include "resource.h"
 #include "../cfgmgr/LibSha256.h"
@@ -141,9 +142,13 @@ static const TCHAR threadingmodel[] = _T("ThreadingModel");
 static void AddFile(LPTSTR filename, HWND hWnd);
 static UINT DropFilePathLength = 0;
 static LPTSTR DropFilePath = NULL;
+static FORMATETC formatdescription;
+
 
 IDropTarget DXGLCfgDropTarget;
 IDropTargetVtbl DXGLCfgDropTargetVtbl;
+IDropTargetHelper *DXGLCfgDropTargetHelper = NULL;
+IDataObject *DXGLCfgDropTargetDataObject = NULL;
 
 #ifndef MSGFLT_ADD
 #define MSGFLT_ADD 1
@@ -163,7 +168,16 @@ ULONG WINAPI DXGLCfgDropTarget_AddRef(IDropTarget *This)
 }
 ULONG WINAPI DXGLCfgDropTarget_Release(IDropTarget *This)
 {
-	return InterlockedDecrement(&DXGLCfgDropTargetRefCount);
+	LONG ret = InterlockedDecrement(&DXGLCfgDropTargetRefCount);
+	if (ret == 0)
+	{
+		if (DXGLCfgDropTargetHelper)
+		{
+			DXGLCfgDropTargetHelper->lpVtbl->Release(DXGLCfgDropTargetHelper);
+			DXGLCfgDropTargetHelper = NULL;
+		}
+	}
+	return ret;
 }
 HRESULT WINAPI DXGLCfgDropTarget_QueryInterface(IDropTarget *This, REFIID iid, void **ppvObject)
 {
@@ -175,7 +189,7 @@ HRESULT WINAPI DXGLCfgDropTarget_QueryInterface(IDropTarget *This, REFIID iid, v
 		*ppvObject = This;
 		return S_OK;
 	}
-	else return E_NOINTERFACE;
+	else return E_NOINTERFACE; 
 }
 void DXGLCfgDropTarget_CheckDrag(IDataObject *pDataObject)
 {
@@ -199,20 +213,75 @@ void DXGLCfgDropTarget_CheckDrag(IDataObject *pDataObject)
 }
 HRESULT WINAPI DXGLCfgDropTarget_DragEnter(IDropTarget *This, IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	POINT p;
 	DXGLCfgDropTarget_CheckDrag(pDataObject);
 	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
 	else *pdwEffect = DROPEFFECT_NONE;
+	if (DXGLCfgDropTargetHelper)
+	{
+		p.x = pt.x;
+		p.y = pt.y;
+		DXGLCfgDropTargetHelper->lpVtbl->DragEnter(DXGLCfgDropTargetHelper, hDialog, pDataObject, &p, *pdwEffect);
+		DXGLCfgDropTargetDataObject = pDataObject;
+	}
 	return S_OK;
 }
+#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < 0x06000000)
+typedef struct
+{
+	DWORD type;
+	WCHAR szMessage[MAX_PATH];
+	WCHAR szInsert[MAX_PATH];
+} DROPDESCRIPTION;
+#define DROPIMAGE_COPY 1
+#define CFSTR_DROPDESCRIPTION _T("DropDescription")
+#endif
 HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	POINT p;
+	DROPDESCRIPTION dd;
+	DROPDESCRIPTION *pdd;
+	HGLOBAL hGlobal;
+	STGMEDIUM medium;
 	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
 	else *pdwEffect = DROPEFFECT_NONE;
+	if (DXGLCfgDropTargetHelper)
+	{
+		ZeroMemory(&dd, sizeof(DROPDESCRIPTION));
+		dd.type = DROPIMAGE_COPY;
+		wcscpy(dd.szMessage, L"Add profile");
+		wcscpy(dd.szInsert, L"");
+		hGlobal = GlobalAlloc(GHND, sizeof(DROPDESCRIPTION));
+		if (hGlobal)
+		{
+			pdd = (DROPDESCRIPTION*)GlobalLock(hGlobal);
+			if (pdd)
+			{
+				memcpy(pdd, &dd, sizeof(DROPDESCRIPTION));
+				GlobalUnlock(hGlobal);
+				ZeroMemory(&medium, sizeof(STGMEDIUM));
+				medium.tymed = TYMED_HGLOBAL;
+				medium.hGlobal = hGlobal;
+				if (SUCCEEDED(DXGLCfgDropTargetDataObject->lpVtbl->SetData(DXGLCfgDropTargetDataObject, &formatdescription, &medium, TRUE)))
+				{
+				}
+				else GlobalFree(hGlobal);
+			}
+		}
+		p.x = pt.x;
+		p.y = pt.y;
+		DXGLCfgDropTargetHelper->lpVtbl->DragOver(DXGLCfgDropTargetHelper, &p, *pdwEffect);
+	}
 	return S_OK;
 }
 HRESULT WINAPI DXGLCfgDropTarget_DragLeave(IDropTarget *This)
 {
 	dragcount = 0;
+	if (DXGLCfgDropTargetHelper)
+	{
+		DXGLCfgDropTargetHelper->lpVtbl->DragLeave(DXGLCfgDropTargetHelper);
+		DXGLCfgDropTargetDataObject = NULL;
+	}
 	return S_OK;
 }
 
@@ -223,6 +292,7 @@ HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObjec
 	STGMEDIUM medium;
 	UINT pathlength;
 	TCHAR *path = NULL;
+	POINT p;
 	if (!DropFilePath)
 	{
 		DropFilePath = (LPTSTR)malloc(MAX_PATH*sizeof(TCHAR));
@@ -260,6 +330,12 @@ HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObjec
 			}
 			GlobalUnlock(hDrop);
 		}
+	}
+	if (DXGLCfgDropTargetHelper)
+	{
+		p.x = pt.x;
+		p.y = pt.y;
+		DXGLCfgDropTargetHelper->lpVtbl->Drop(DXGLCfgDropTargetHelper, pDataObject, &p, *pdwEffect);
 	}
 	return S_OK;
 }
@@ -6899,6 +6975,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		}
 		else
 		{
+			CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
+				IID_IDropTargetHelper, (void**)&DXGLCfgDropTargetHelper);
+			if (DXGLCfgDropTargetHelper)
+			{
+				formatdescription.cfFormat = RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
+				formatdescription.ptd = NULL;
+				formatdescription.dwAspect = DVASPECT_CONTENT;
+				formatdescription.lindex = -1;
+				formatdescription.tymed = TYMED_HGLOBAL;
+			}
 			DXGLCfgDropTarget.lpVtbl = &DXGLCfgDropTargetVtbl;
 			DXGLCfgDropTarget.lpVtbl->QueryInterface = DXGLCfgDropTarget_QueryInterface;
 			DXGLCfgDropTarget.lpVtbl->AddRef = DXGLCfgDropTarget_AddRef;
