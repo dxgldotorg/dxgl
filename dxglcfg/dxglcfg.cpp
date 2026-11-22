@@ -2816,7 +2816,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -2826,7 +2826,7 @@ LRESULT CALLBACK DisplayTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -3562,7 +3562,7 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -3572,7 +3572,7 @@ LRESULT CALLBACK SaveINICallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -3744,7 +3744,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -3754,7 +3754,7 @@ LRESULT CALLBACK AdvancedTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -4761,7 +4761,7 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 				{
 				case CDDS_PREERASE:
 					r1 = customdraw->rc;
-					r1.left += dpiscale(15);
+					r1.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r1, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -4771,7 +4771,7 @@ LRESULT CALLBACK AffinityDlgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r1 = customdraw->rc;
-					r1.left += dpiscale(15);
+					r1.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r1, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -5351,7 +5351,7 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -5361,7 +5361,7 @@ LRESULT CALLBACK TracingTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM l
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))

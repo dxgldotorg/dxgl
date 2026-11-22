@@ -3507,7 +3507,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -3517,7 +3517,7 @@ INT_PTR CALLBACK TexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -4114,7 +4114,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -4124,7 +4124,7 @@ INT_PTR CALLBACK VertexShader7Proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
@@ -4770,7 +4770,7 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkBackground);
 					SetWindowLongPtr(hwnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -4780,7 +4780,7 @@ INT_PTR CALLBACK WindowStyleProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lPar
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
