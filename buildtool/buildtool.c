@@ -75,6 +75,9 @@ int GetGitVersion(char *path, DXGLVER *version)
 #else
 	is64 = IsWOW64();
 #endif
+	strcpy(version->branch, "N/A");
+	strcpy(version->revision, "N/A");
+	strcpy(version->verstring, "Non-Git");
 	strncpy(pathbase, path, FILENAME_MAX);
 	strncpy(pathin, path, FILENAME_MAX);
 	pathin[FILENAME_MAX] = 0;
