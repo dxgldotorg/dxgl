@@ -1072,7 +1072,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				apps[appcount - 1].icon_shared = TRUE;
 				apps[appcount - 1].name = (TCHAR*)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
 				_tcscpy(apps[appcount - 1].name, subkey);
-				break;
+				continue;
 			}
 			path = (LPTSTR)malloc(((_tcslen(regbuffer) + _tcslen(subkey) + 2)) * sizeof(TCHAR));
 			_tcscpy(path, regbuffer);
@@ -1091,7 +1091,7 @@ LRESULT CALLBACK DXGLCfgCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 				apps[appcount - 1].icon_shared = TRUE;
 				apps[appcount - 1].name = (TCHAR*)malloc((_tcslen(subkey) + 1) * sizeof(TCHAR));
 				_tcscpy(apps[appcount - 1].name, subkey);
-				break;
+				continue;
 			}
 			// Get exe attributes
 			error = SHGetFileInfo(path, 0, &fileinfo, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ADDOVERLAYS);
