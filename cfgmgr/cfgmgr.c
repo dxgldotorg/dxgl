@@ -513,7 +513,7 @@ DWORD ReadDWORDWithObsolete(HKEY hKey, DWORD original, DWORD *mask, LPCTSTR valu
 	}
 }
 
-ULONGLONG ReadQWORD(HKEY hKey, DWORD original, ULONGLONG *mask, LPCTSTR value)
+ULONGLONG ReadQWORD(HKEY hKey, ULONGLONG original, ULONGLONG *mask, LPCTSTR value)
 {
 	ULONGLONG ullOut = 0i64;
 	DWORD sizeout = 8;
