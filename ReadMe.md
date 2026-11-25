@@ -1,5 +1,5 @@
 <!--Please enable Word Wrap in Notepad to view this document.-->
-# DXGL 0.5.28
+# DXGL 0.5.29
 https://dxgl.org
 
 ## Introduction

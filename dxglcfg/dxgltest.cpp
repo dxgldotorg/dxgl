@@ -45,6 +45,10 @@ static inline int dpiscale(int coord) { return (coord * windowdpi) / 96; }
 extern DXGLCFG currcfg;
 extern DWORD lastdark;
 extern DWORD lastdpi;
+extern int comlevel;
+int GetCOMLevel();
+int SetCOMLevel(int level);
+void EnableDarkModeForMainDialog(HWND hDialog);
 
 #ifndef WM_DPICHANGED_AFTERPARENT
 #define WM_DPICHANGED_AFTERPARENT 0x02E3
@@ -487,10 +491,26 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			{
 				if (IsWindowEnabled(GetDlgItem(hDialog, IDC_APPLY)))
 				{
-					if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n\
-Do you want to apply them before running this test?"),
-_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
-SaveChanges(hDialog);
+					if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n"
+						"Do you want to apply them before running this test?"),
+						_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+						{
+							SaveChanges(hDialog);
+							GetCurrentConfig(&currcfg, FALSE);
+							if (currcfg.DPIScale != lastdpi)
+							{
+								MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n"
+									"Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
+								EndDialog(hDialog, IDRETRY);
+								return TRUE;
+							}
+							if (currcfg.DarkMode != lastdark)
+							{
+								lastdark = currcfg.DarkMode;
+								EnableDarkModeForMainDialog(hDialog);
+							}
+							if (comlevel != GetCOMLevel()) SetCOMLevel(comlevel);
+					}
 					if (modelistdirty) ResetModeList(hWnd);
 				}
 				if (SendDlgItemMessage(hWnd, IDC_RESIZABLE, BM_GETCHECK, 0, 0)) resizable = true;
@@ -560,10 +580,26 @@ SaveChanges(hDialog);
 		case IDC_TEST:
 			if (IsWindowEnabled(GetDlgItem(hDialog, IDC_APPLY)))
 			{
-				if(MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n\
-Do you want to apply them before running this test?"),
-					_T("Notice"), MB_YESNO| MB_ICONQUESTION) == IDYES)
+				if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n"
+					"Do you want to apply them before running this test?"),
+					_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+				{
 					SaveChanges(hDialog);
+					GetCurrentConfig(&currcfg, FALSE);
+					if (currcfg.DPIScale != lastdpi)
+					{
+						MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n"
+							"Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
+						EndDialog(hDialog, IDRETRY);
+						return TRUE;
+					}
+					if (currcfg.DarkMode != lastdark)
+					{
+						lastdark = currcfg.DarkMode;
+						EnableDarkModeForMainDialog(hDialog);
+					}
+					if (comlevel != GetCOMLevel()) SetCOMLevel(comlevel);
+				}
 			}
 			if(SendDlgItemMessage(hWnd,IDC_RESIZABLE,BM_GETCHECK,0,0)) resizable = true;
 			else resizable = false;
@@ -604,7 +640,7 @@ Do you want to apply them before running this test?"),
 				{
 				case CDDS_PREERASE:
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					FillRect(customdraw->hdc, &r, hbrDarkTabBackground);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, CDRF_NOTIFYPOSTERASE);
 					return TRUE;
@@ -614,7 +650,7 @@ Do you want to apply them before running this test?"),
 					SetBkMode(customdraw->hdc, TRANSPARENT);
 					GetWindowText(customdraw->hdr.hwndFrom, buttontext, 256);
 					r = customdraw->rc;
-					r.left += dpiscale(15);
+					r.left += dpiscale(16);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 					DrawText(customdraw->hdc, buttontext, -1, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT);
 					if ((customdraw->uItemState & CDIS_FOCUS) && (customdraw->uItemState & CDIS_SHOWKEYBOARDCUES))
