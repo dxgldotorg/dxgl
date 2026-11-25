@@ -128,7 +128,7 @@ HWND hTabs[9];
 UINT(WINAPI *_GetDpiForWindow)(HWND hwnd) = NULL;
 RECT dlgrect;
 
-static int comlevel;
+int comlevel;
 
 static const TCHAR clsid_ddraw[] = _T("Software\\Classes\\CLSID\\{D7B70EE0-4340-11CF-B063-0020AFC2CD35}");
 static const TCHAR clsid_ddraw7[] = _T("Software\\Classes\\CLSID\\{3C305196-50DB-11D3-9CFE-00C04FD930C5}");
