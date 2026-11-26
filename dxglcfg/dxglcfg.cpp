@@ -21,8 +21,6 @@
 #if _MSC_VER >= 1400
 #define _CRTDBG_MAP_ALLOC
 #endif
-#define CINTERFACE
-#define COBJMACROS
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
@@ -141,12 +139,6 @@ static UINT DropFilePathLength = 0;
 static LPTSTR DropFilePath = NULL;
 static FORMATETC formatdescription;
 
-
-IDropTarget DXGLCfgDropTarget;
-IDropTargetVtbl DXGLCfgDropTargetVtbl;
-IDropTargetHelper *DXGLCfgDropTargetHelper = NULL;
-IDataObject *DXGLCfgDropTargetDataObject = NULL;
-
 #ifndef MSGFLT_ADD
 #define MSGFLT_ADD 1
 #endif
@@ -154,75 +146,29 @@ IDataObject *DXGLCfgDropTargetDataObject = NULL;
 BOOL(WINAPI *_ChangeWindowMessageFilter)(UINT message, DWORD dwFlag) = NULL;
 BOOL(WINAPI *_ChangeWindowMessageFilterEx)(HWND hwnd, UINT message, DWORD action, void *pChangeFilterStruct) = NULL;
 
-static volatile LONG DXGLCfgDropTargetRefCount = 0;
-static UINT dragcount;
+IDropTarget *DropTarget = NULL;
+
+class DXGLCfgDropTarget : public IDropTarget {
+private:
+	LONG refcount;
+	HWND hwnd;
+	UINT dragcount;
+	IDropTargetHelper *DropTargetHelper;
+	IDataObject *DropTargetDataObject;
+	void CheckDrag(IDataObject *pDataObject);
+public:
+	DXGLCfgDropTarget(HWND hWnd);
+	STDMETHODIMP QueryInterface(REFIID iid, void **ppvObject);
+	STDMETHODIMP_(ULONG) AddRef();
+	STDMETHODIMP_(ULONG) Release();
+	STDMETHODIMP DragEnter(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+	STDMETHODIMP DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+	STDMETHODIMP DragLeave();
+	STDMETHODIMP Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+};
 
 static DWORD elevation = 0;
 
-ULONG WINAPI DXGLCfgDropTarget_AddRef(IDropTarget *This)
-{
-	return InterlockedIncrement(&DXGLCfgDropTargetRefCount);
-}
-ULONG WINAPI DXGLCfgDropTarget_Release(IDropTarget *This)
-{
-	LONG ret = InterlockedDecrement(&DXGLCfgDropTargetRefCount);
-	if (ret == 0)
-	{
-		if (DXGLCfgDropTargetHelper)
-		{
-			DXGLCfgDropTargetHelper->lpVtbl->Release(DXGLCfgDropTargetHelper);
-			DXGLCfgDropTargetHelper = NULL;
-		}
-	}
-	return ret;
-}
-HRESULT WINAPI DXGLCfgDropTarget_QueryInterface(IDropTarget *This, REFIID iid, void **ppvObject)
-{
-	if (!This) return E_POINTER;
-	if (&iid) return E_INVALIDARG;
-	if ((iid == IID_IUnknown) || (iid == IID_IDropTarget))
-	{
-		DXGLCfgDropTarget_AddRef(This);
-		*ppvObject = This;
-		return S_OK;
-	}
-	else return E_NOINTERFACE; 
-}
-void DXGLCfgDropTarget_CheckDrag(IDataObject *pDataObject)
-{
-	FORMATETC format;
-	HDROP hDrop;
-	STGMEDIUM medium;
-	format.cfFormat = CF_HDROP;
-	format.ptd = NULL;
-	format.dwAspect = DVASPECT_CONTENT;
-	format.lindex = -1;
-	format.tymed = TYMED_HGLOBAL;
-	if (SUCCEEDED(IDataObject_GetData(pDataObject, &format, &medium)))
-	{
-		hDrop = (HDROP)GlobalLock(medium.hGlobal);
-		if (hDrop)
-		{
-			dragcount = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
-			GlobalUnlock(medium.hGlobal);
-		}
-	}
-}
-HRESULT WINAPI DXGLCfgDropTarget_DragEnter(IDropTarget *This, IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
-{
-	POINT p;
-	DXGLCfgDropTarget_CheckDrag(pDataObject);
-	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
-	else *pdwEffect = DROPEFFECT_NONE;
-	if (DXGLCfgDropTargetHelper)
-	{
-		p.x = pt.x;
-		p.y = pt.y;
-		DXGLCfgDropTargetHelper->lpVtbl->DragEnter(DXGLCfgDropTargetHelper, hDialog, pDataObject, &p, *pdwEffect);
-		DXGLCfgDropTargetDataObject = pDataObject;
-	}
-	return S_OK;
-}
 #if !defined(NTDDI_VERSION) || (NTDDI_VERSION < 0x06000000)
 typedef struct
 {
@@ -233,7 +179,91 @@ typedef struct
 #define DROPIMAGE_COPY 1
 #define CFSTR_DROPDESCRIPTION _T("DropDescription")
 #endif
-HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+
+DXGLCfgDropTarget::DXGLCfgDropTarget(HWND hWnd)
+{
+	refcount = 1;
+	hwnd = hWnd;
+	dragcount = 0;
+	DropTargetHelper = NULL;
+	DropTargetDataObject = NULL;
+	CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
+		IID_IDropTargetHelper, (void**)&DropTargetHelper);
+	if (DropTargetHelper)
+	{
+		formatdescription.cfFormat = RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
+		formatdescription.ptd = NULL;
+		formatdescription.dwAspect = DVASPECT_CONTENT;
+		formatdescription.lindex = -1;
+		formatdescription.tymed = TYMED_HGLOBAL;
+	}
+}
+
+STDMETHODIMP_(ULONG) DXGLCfgDropTarget::AddRef()
+{
+	return InterlockedIncrement(&refcount);
+}
+STDMETHODIMP_(ULONG) DXGLCfgDropTarget::Release()
+{
+	LONG ret = InterlockedDecrement(&refcount);
+	if (ret == 0)
+	{
+		if (DropTargetHelper)
+		{
+			DropTargetHelper->Release();
+			DropTargetHelper = NULL;
+		}
+	}
+	return ret;
+}
+STDMETHODIMP DXGLCfgDropTarget::QueryInterface(REFIID iid, void **ppvObject)
+{
+	if (!this) return E_POINTER;
+	if (&iid) return E_INVALIDARG;
+	if ((iid == IID_IUnknown) || (iid == IID_IDropTarget))
+	{
+		this->AddRef();
+		*ppvObject = this;
+		return S_OK;
+	}
+	else return E_NOINTERFACE; 
+}
+void DXGLCfgDropTarget::CheckDrag(IDataObject *pDataObject)
+{
+	FORMATETC format;
+	HDROP hDrop;
+	STGMEDIUM medium;
+	format.cfFormat = CF_HDROP;
+	format.ptd = NULL;
+	format.dwAspect = DVASPECT_CONTENT;
+	format.lindex = -1;
+	format.tymed = TYMED_HGLOBAL;
+	if (SUCCEEDED(pDataObject->GetData(&format, &medium)))
+	{
+		hDrop = (HDROP)GlobalLock(medium.hGlobal);
+		if (hDrop)
+		{
+			dragcount = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+			GlobalUnlock(medium.hGlobal);
+		}
+	}
+}
+HRESULT WINAPI DXGLCfgDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+{
+	POINT p;
+	this->CheckDrag(pDataObject);
+	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
+	else *pdwEffect = DROPEFFECT_NONE;
+	if (DropTargetHelper)
+	{
+		p.x = pt.x;
+		p.y = pt.y;
+		DropTargetHelper->DragEnter(hDialog, pDataObject, &p, *pdwEffect);
+		DropTargetDataObject = pDataObject;
+	}
+	return S_OK;
+}
+HRESULT WINAPI DXGLCfgDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	POINT p;
 	DROPDESCRIPTION dd;
@@ -242,7 +272,7 @@ HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, 
 	STGMEDIUM medium;
 	if (dragcount == 1) *pdwEffect &= DROPEFFECT_COPY;
 	else *pdwEffect = DROPEFFECT_NONE;
-	if (DXGLCfgDropTargetHelper)
+	if (DropTargetHelper)
 	{
 		ZeroMemory(&dd, sizeof(DROPDESCRIPTION));
 		dd.type = DROPIMAGE_COPY;
@@ -259,7 +289,7 @@ HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, 
 				ZeroMemory(&medium, sizeof(STGMEDIUM));
 				medium.tymed = TYMED_HGLOBAL;
 				medium.hGlobal = hGlobal;
-				if (SUCCEEDED(DXGLCfgDropTargetDataObject->lpVtbl->SetData(DXGLCfgDropTargetDataObject, &formatdescription, &medium, TRUE)))
+				if (SUCCEEDED(DropTargetDataObject->SetData(&formatdescription, &medium, TRUE)))
 				{
 				}
 				else GlobalFree(hGlobal);
@@ -267,22 +297,22 @@ HRESULT WINAPI DXGLCfgDropTarget_DragOver(IDropTarget *This, DWORD grfKeyState, 
 		}
 		p.x = pt.x;
 		p.y = pt.y;
-		DXGLCfgDropTargetHelper->lpVtbl->DragOver(DXGLCfgDropTargetHelper, &p, *pdwEffect);
+		DropTargetHelper->DragOver(&p, *pdwEffect);
 	}
 	return S_OK;
 }
-HRESULT WINAPI DXGLCfgDropTarget_DragLeave(IDropTarget *This)
+HRESULT WINAPI DXGLCfgDropTarget::DragLeave()
 {
 	dragcount = 0;
-	if (DXGLCfgDropTargetHelper)
+	if (DropTargetHelper)
 	{
-		DXGLCfgDropTargetHelper->lpVtbl->DragLeave(DXGLCfgDropTargetHelper);
-		DXGLCfgDropTargetDataObject = NULL;
+		DropTargetHelper->DragLeave();
+		DropTargetDataObject = NULL;
 	}
 	return S_OK;
 }
 
-HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+HRESULT WINAPI DXGLCfgDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	FORMATETC format;
 	HDROP hDrop;
@@ -301,7 +331,7 @@ HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObjec
 	format.dwAspect = DVASPECT_CONTENT;
 	format.lindex = -1;
 	format.tymed = TYMED_HGLOBAL;
-	if (SUCCEEDED(IDataObject_GetData(pDataObject, &format, &medium)))
+	if (SUCCEEDED(pDataObject->GetData(&format, &medium)))
 	{
 		hDrop = (HDROP)GlobalLock(medium.hGlobal);
 		if (hDrop)
@@ -321,6 +351,7 @@ HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObjec
 			if (pathlength > 0)
 			{
 				DragQueryFile(hDrop, 0, DropFilePath, pathlength + 1);
+				SetForegroundWindow(hDialog);
 				SetActiveWindow(hDialog);
 				PostMessage(hDialog, WM_APP + 1, 0, 0);
 				*pdwEffect = DROPEFFECT_COPY;
@@ -328,11 +359,11 @@ HRESULT WINAPI DXGLCfgDropTarget_Drop(IDropTarget *This, IDataObject *pDataObjec
 			GlobalUnlock(hDrop);
 		}
 	}
-	if (DXGLCfgDropTargetHelper)
+	if (DropTargetHelper)
 	{
 		p.x = pt.x;
 		p.y = pt.y;
-		DXGLCfgDropTargetHelper->lpVtbl->Drop(DXGLCfgDropTargetHelper, pDataObject, &p, *pdwEffect);
+		DropTargetHelper->Drop(pDataObject, &p, *pdwEffect);
 	}
 	return S_OK;
 }
@@ -6972,25 +7003,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 		}
 		else
 		{
-			CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
-				IID_IDropTargetHelper, (void**)&DXGLCfgDropTargetHelper);
-			if (DXGLCfgDropTargetHelper)
-			{
-				formatdescription.cfFormat = RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
-				formatdescription.ptd = NULL;
-				formatdescription.dwAspect = DVASPECT_CONTENT;
-				formatdescription.lindex = -1;
-				formatdescription.tymed = TYMED_HGLOBAL;
-			}
-			DXGLCfgDropTarget.lpVtbl = &DXGLCfgDropTargetVtbl;
-			DXGLCfgDropTarget.lpVtbl->QueryInterface = DXGLCfgDropTarget_QueryInterface;
-			DXGLCfgDropTarget.lpVtbl->AddRef = DXGLCfgDropTarget_AddRef;
-			DXGLCfgDropTarget.lpVtbl->Release = DXGLCfgDropTarget_Release;
-			DXGLCfgDropTarget.lpVtbl->DragEnter = DXGLCfgDropTarget_DragEnter;
-			DXGLCfgDropTarget.lpVtbl->DragOver = DXGLCfgDropTarget_DragOver;
-			DXGLCfgDropTarget.lpVtbl->DragLeave = DXGLCfgDropTarget_DragLeave;
-			DXGLCfgDropTarget.lpVtbl->Drop = DXGLCfgDropTarget_Drop;
-			RegisterDragDrop(hWnd, &DXGLCfgDropTarget);
+			DropTarget = new DXGLCfgDropTarget(hWnd);
+			RegisterDragDrop(hWnd, DropTarget);
 		}
 		return TRUE;
 	case WM_DESTROY:
@@ -7270,6 +7284,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 			hDrop = (HDROP)wParam;
 			if (DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0) != 1)
 			{
+				SetForegroundWindow(hDialog);
 				SetActiveWindow(hDialog);
 				PostMessage(hWnd, WM_APP + 2, 0, 0);
 			}
@@ -7281,6 +7296,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					DropFilePathLength = MAX_PATH;
 					if (!DropFilePath)
 					{
+						SetForegroundWindow(hDialog);
 						SetActiveWindow(hDialog);
 						PostMessage(hWnd, WM_APP + 3, 0, 0);
 						break;
@@ -7292,6 +7308,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 					path = (LPTSTR)realloc(DropFilePath, (buffersize + 1) * sizeof(TCHAR));
 					if (!path)
 					{
+						SetForegroundWindow(hDialog);
 						SetActiveWindow(hDialog);
 						PostMessage(hWnd, WM_APP + 3, 0, 0);
 						break;
@@ -7302,6 +7319,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA")
 				if (buffersize > 0)
 				{
 					DragQueryFile(hDrop, 0, DropFilePath, buffersize + 1);
+					SetForegroundWindow(hDialog);
 					SetActiveWindow(hDialog);
 					PostMessage(hDialog, WM_APP + 1, 0, 0);
 				}
