@@ -268,7 +268,8 @@ FONT 8, "Ms Shell Dlg"
     AUTOCHECKBOX    "Log errors", IDC_LOGERROR, 7, 54, 48, 8, WS_TABSTOP
     AUTOCHECKBOX    "Log API calls", IDC_LOGAPI, 7, 65, 54, 8, WS_TABSTOP
     AUTOCHECKBOX    "Log detailed API calls", IDC_LOGAPIEXTENDED, 7, 76, 86, 8, WS_TABSTOP
-    AUTOCHECKBOX    "Log compiled shaders", IDC_LOGSHADER, 7, 87, 86, 8, WS_TABSTOP
+    AUTOCHECKBOX    "Log API call results", IDC_LOGAPIRESULT, 7, 87, 76, 8, WS_TABSTOP
+    AUTOCHECKBOX    "Log compiled shaders", IDC_LOGSHADER, 7, 98, 86, 8, WS_TABSTOP
     LTEXT           "Expert logging options", IDC_STATIC, 114, 32, 100, 9, SS_LEFT
     AUTOCHECKBOX    "Log mouse API hooks", IDC_LOGMOUSEHOOK, 114, 43, 82, 8, WS_TABSTOP
 }

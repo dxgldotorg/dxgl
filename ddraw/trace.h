@@ -28,6 +28,7 @@ extern "C" {
 #define DXGLTRACE_API         4
 #define DXGLTRACE_APIEXTENDED 8
 #define DXGLTRACE_SHADER      16
+#define DXGLTRACE_APIRESULT   32
 
 #define DXGLTRACE_MOUSEHOOK   65536
 
