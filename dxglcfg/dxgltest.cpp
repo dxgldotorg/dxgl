@@ -491,16 +491,16 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			{
 				if (IsWindowEnabled(GetDlgItem(hDialog, IDC_APPLY)))
 				{
-					if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n"
-						"Do you want to apply them before running this test?"),
+					if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n\
+Do you want to apply them before running this test?"),
 						_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 						{
 							SaveChanges(hDialog);
 							GetCurrentConfig(&currcfg, FALSE);
 							if (currcfg.DPIScale != lastdpi)
 							{
-								MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n"
-									"Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
+								MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n\
+Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
 								EndDialog(hDialog, IDRETRY);
 								return TRUE;
 							}
@@ -580,16 +580,16 @@ INT_PTR CALLBACK TestTabCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 		case IDC_TEST:
 			if (IsWindowEnabled(GetDlgItem(hDialog, IDC_APPLY)))
 			{
-				if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n"
-					"Do you want to apply them before running this test?"),
+				if (MessageBox(hDialog, _T("You have unsaved changes to your configuration.\r\n\
+Do you want to apply them before running this test?"),
 					_T("Notice"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 				{
 					SaveChanges(hDialog);
 					GetCurrentConfig(&currcfg, FALSE);
 					if (currcfg.DPIScale != lastdpi)
 					{
-						MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n"
-							"Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
+						MessageBox(hDialog, _T("DXGL Config needs to restart to apply changes.\r\n\
+Please start the test again after DXGL Config restarts."), _T("Notice"), MB_OK | MB_ICONINFORMATION);
 						EndDialog(hDialog, IDRETRY);
 						return TRUE;
 					}
