@@ -1124,14 +1124,17 @@ void trace_exit(const char *function, int level, int argtype, void *arg)
 		return;
 	}
 	if(trace_depth) trace_depth--;
-	if ((level & DXGLTRACE_APIEXTENDED) || (!trace_depth))
+	if (level & DXGLTRACE_APIRESULT)
 	{
-		for (i = 0; i < trace_depth; i++)
-			WriteFile(outfile, "    ", 4, &byteswritten, NULL);
-		WriteFile(outfile, function, strlen(function), &byteswritten, NULL);
-		WriteFile(outfile, " returned ", 10, &byteswritten, NULL);
-		trace_decode_arg(argtype, arg);
-		WriteFile(outfile, "\r\n", 2, &byteswritten, NULL);
+		if ((level & DXGLTRACE_APIEXTENDED) || (!trace_depth))
+		{
+			for (i = 0; i < trace_depth; i++)
+				WriteFile(outfile, "    ", 4, &byteswritten, NULL);
+			WriteFile(outfile, function, strlen(function), &byteswritten, NULL);
+			WriteFile(outfile, " returned ", 10, &byteswritten, NULL);
+			trace_decode_arg(argtype, arg);
+			WriteFile(outfile, "\r\n", 2, &byteswritten, NULL);
+		}
 	}
 	LeaveCriticalSection(&trace_cs);
 }
