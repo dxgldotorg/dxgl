@@ -377,7 +377,8 @@
 #define IDC_LOGERROR                            3411
 #define IDC_LOGAPI                              3412
 #define IDC_LOGAPIEXTENDED                      3413
-#define IDC_LOGSHADER                           3414
+#define IDC_LOGAPIRESULT                        3414
+#define IDC_LOGSHADER                           3415
 #define IDC_LOGMOUSEHOOK                        3420
 
 // Controls - Affinity dialog
