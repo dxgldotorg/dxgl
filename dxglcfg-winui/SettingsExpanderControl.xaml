@@ -78,20 +78,10 @@
                 Grid.ColumnSpan="3"
                 Margin="16,0,16,2"
                 Visibility="Collapsed">
-                <!--<FlipView
-                    x:Name="InternalPanelSlider"
-                    Height="150"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    IsTabStop="False"
-                    ItemsSource="{x:Bind Panels, Mode=OneWay}"
-                    SelectedIndex="{x:Bind PanelIndex, Mode=TwoWay}">
-                    <FlipView.Template>
-                        <ControlTemplate TargetType="FlipView">
-                            <ItemsPresenter />
-                        </ControlTemplate>
-                    </FlipView.Template>
-                </FlipView>-->
+                <ContentControl
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center" 
+                    Content="{x:Bind ExpandableContent, Mode=OneWay}" />
             </Grid>
         </Grid>
     </Border>

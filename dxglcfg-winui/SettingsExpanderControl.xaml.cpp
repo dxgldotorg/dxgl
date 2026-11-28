@@ -102,37 +102,48 @@ namespace winrt::dxglcfg_winui::implementation
         return contentproperty;
     }
 
-    /*int32_t SettingsExpanderControl::PanelIndex()
+    IInspectable SettingsExpanderControl::ExpandableContent()
     {
-        return unbox_value<int32_t>(GetValue(PanelIndexProperty()));
+        return unbox_value<IInspectable>(GetValue(ExpandableContentProperty()));
     }
-    void SettingsExpanderControl::PanelIndex(int32_t value)
+    void SettingsExpanderControl::ExpandableContent(IInspectable const &value)
     {
-        SetValue(PanelIndexProperty(), box_value(value));
+        SetValue(ExpandableContentProperty(), box_value(value));
+    }
+    DependencyProperty SettingsExpanderControl::ExpandableContentProperty()
+    {
+        static DependencyProperty expandablecontentproperty =
+            DependencyProperty::Register(L"ExpandableContent", xaml_typename<IInspectable>(),
+                xaml_typename<dxglcfg_winui::SettingsExpanderControl>(),
+                PropertyMetadata(nullptr));
+        return expandablecontentproperty;
     }
 
-    void SettingsExpanderControl::OnPanelIndexChanged(DependencyObject const &d, DependencyPropertyChangedEventArgs const &e)
+    bool SettingsExpanderControl::IsExpanded()
     {
-        auto expander = d.as<dxglcfg_winui::implementation::SettingsExpanderControl>();
-        int32_t index = unbox_value<int32_t>(e.NewValue());
-        auto slidercontainer = expander->FindName(L"SliderContainer").as<Grid>();
-        auto internalslider = expander->FindName(L"InternalPanelSlider").as<FlipView>();
-        if (slidercontainer && internalslider)
+        return unbox_value<bool>(GetValue(IsExpandedProperty()));
+    }
+    void SettingsExpanderControl::IsExpanded(bool value)
+    {
+        SetValue(IsExpandedProperty(), box_value<bool>(value));
+    }
+    DependencyProperty SettingsExpanderControl::IsExpandedProperty()
+    {
+        static DependencyProperty isexpandedproperty =
+            DependencyProperty::Register(L"IsExpanded", xaml_typename<bool>(),
+                xaml_typename<dxglcfg_winui::SettingsExpanderControl>(),
+                PropertyMetadata(box_value(false), PropertyChangedCallback(&OnIsExpandedChanged)));
+        return isexpandedproperty;
+    }
+    void SettingsExpanderControl::OnIsExpandedChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
+    {
+        auto control = d.as<dxglcfg_winui::SettingsExpanderControl>();
+        auto expander = winrt::get_self<SettingsExpanderControl>(control);
+        bool isExpanded = unbox_value<bool>(e.NewValue());
+        auto sliderContainer = expander->FindName(L"Sliderontainer").as<Grid>();
+        if (sliderContainer)
         {
-            internalslider.SelectedIndex(0);
+            sliderContainer.Visibility(isExpanded ? Visibility::Visible : Visibility::Collapsed);
         }
     }
-    DependencyProperty SettingsExpanderControl::PanelIndexProperty()
-    {
-        static DependencyProperty panelindexproperty =
-            DependencyProperty::Register(L"PanelIndex", xaml_typename<int32_t>(),
-                xaml_typename<dxglcfg_winui::SettingsExpanderControl>(),
-                PropertyMetadata(box_value(0), PropertyChangedCallback(&OnPanelIndexChanged)));
-        return panelindexproperty;
-    }
-
-    DependencyObjectCollection SettingsExpanderControl::Panels()
-    {
-        return paneldata;
-    }*/
 }

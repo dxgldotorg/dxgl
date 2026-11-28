@@ -44,17 +44,15 @@
             VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Auto">
             <Border>
-                <StackPanel Spacing="4">
+                <StackPanel Spacing="4" Margin="0,0,0,36">
                     <StackPanel.ChildrenTransitions>
                         <RepositionThemeTransition />
                     </StackPanel.ChildrenTransitions>
                     <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Basic settings" />
-                    <local:SettingsExpanderControl
-                        Description="Chooses how to handle video mode changes"
-                        Header="Video mode">
-                        <!--PanelIndex="{x:Bind dxglcfg_scaler.SelectedIndex, Mode=OneWay}">-->
+                    <local:SettingsExpanderControl Description="Chooses how to handle video mode changes" Header="Video mode">
+                        <!--  PanelIndex="{x:Bind dxglcfg_scaler.SelectedIndex, Mode=OneWay}">  -->
                         <local:SettingsExpanderControl.HeaderContent>
-                            <ComboBox Name="dxglcfg_scaler">
+                            <ComboBox Name="dxglcfg_scaler" Width="220">
                                 <ComboBoxItem Content="Change desktop resolution" Tag="x:{Int32 0}" />
                                 <ComboBoxItem Content="Stretch to screen" Tag="x:{Int32 1}" />
                                 <ComboBoxItem Content="Aspect corrected stretch" Tag="x:{Int32 2}" />
@@ -68,18 +66,9 @@
                                 <ComboBoxItem Content="Custom size, centered" Tag="x:{Int32 10}" />
                             </ComboBox>
                         </local:SettingsExpanderControl.HeaderContent>
-                        <!--<local:SettingsExpanderControl.Panels>
-                            <Grid
-                                Padding="12"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                CornerRadius="4">
-                                <ComboBox Header="Test" SelectedIndex="0">
-                                    <ComboBoxItem>item 1</ComboBoxItem>
-                                    <ComboBoxItem>item 2</ComboBoxItem>
-                                    <ComboBoxItem>item 3</ComboBoxItem>
-                                </ComboBox>
-                            </Grid>
-                        </local:SettingsExpanderControl.Panels>-->
+                        <local:SettingsExpanderControl.ExpandableContent>
+                            <!--  FIXME:  Add fixed scaling and custom resolution  -->
+                        </local:SettingsExpanderControl.ExpandableContent>
                     </local:SettingsExpanderControl>
                     <local:SettingsCardControl Description="Add support for various color depths.  8, 16, and 32 are recommended." Header="Add color depths">
                         <StackPanel Orientation="Vertical">
@@ -96,10 +85,117 @@
                         </StackPanel>
                     </local:SettingsCardControl>
                     <local:SettingsCardControl Description="Select the filter to use for scaling the output" Header="Scaling method">
-                        <ComboBox Name="dxglcfg_scalingfilter">
+                        <ComboBox Name="dxglcfg_scalingfilter" Width="100">
                             <ComboBoxItem Content="Nearest" Tag="x:Int32 0" />
                             <ComboBoxItem Content="Bilinear" Tag="x:Int32 1" />
                         </ComboBox>
+                    </local:SettingsCardControl>
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Display mode settings" />
+                    <local:SettingsCardControl Description="Add additional display modes if supported by the current scaling mode.&#x0a;Common low resolutions and Common SVGA resolutions are recommended." Header="Additional display modes">
+                        <DropDownButton
+                            Name="dxglcfg_AddModes"
+                            Width="220"
+                            HorizontalContentAlignment="Left">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="Bottom">
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_1" Text="Common low resolutions" IsChecked="True"/>
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_128" Text="Common SVGA resolutions" IsChecked="True"/>
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_2" Text="Uncommon low resolutions" />
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_4" Text="Uncommon SD resolutions" />
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_8" Text="High Definition resolutions" />
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_16" Text="Ultra-HD resolutions" />
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_32" Text="Ultra-HD above 4k" />
+                                    <ToggleMenuFlyoutItem Name="dxglcfg_AddModes_64" Text="Very uncommon resolutions" />
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Override the aspect ratio of the display." Header="Screen aspect ratio">
+                        <ComboBox Name="dxglcfg_aspect" Width="100" IsEditable="True">
+                            <ComboBoxItem Content="Default" />
+                            <ComboBoxItem Content="4:3" />
+                            <ComboBoxItem Content="16:10" />
+                            <ComboBoxItem Content="16:9" />
+                            <ComboBoxItem Content="5:4" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Determines how video modes are sorteed." Header="Sort video modes">
+                        <ComboBox Name="dxglcfg_SortModes" Width="200">
+                            <ComboBoxItem Content="Use system order" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Group by color depth" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Group by resolution" Tag="x:{Int32 2}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Override vertical sync mode" Header="Vertical sync">
+                        <ComboBox Name="dxglcfg_vsync" Width="200">
+                            <ComboBoxItem Content="Application default" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Disabled" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Enabled every flip or primary Blt" Tag="x:{Int32 2}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Change the color depth in Windows (requires compatibility option)." Header="Change display color depth">
+                        <CheckBox Name="dxglcfg_colormode" Content="Enabled" />
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Use as single buffered pixel format in OpenGL.  Disables vertical sync." Header="Single buffered display">
+                        <CheckBox Name="dxglcfg_SingleBufferDevice" Content="Enabled" />
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Use SetDisplayConfig API to change display modes." Header="Use SetDisplayConfig API">
+                        <CheckBox Name="dxglcfg_UseSetDisplayConfig" Content="Enabled" />
+                    </local:SettingsCardControl>
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Window management settings" />
+                    <local:SettingsCardControl Description="Sets the mode to be used when creating a window for fullscreen mode." Header="Fullscreen window mode">
+                        <ComboBox Name="dxglcfg_fullmode" Width="250">
+                            <ComboBoxItem Content="Exclusive fullscreen" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Non-exclusive fullscreen" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Non-resizable window" Tag="x:{Int32 2}" />
+                            <ComboBoxItem Content="Resizable window" Tag="x:{Int32 3}" />
+                            <ComboBoxItem Content="Borderless window" Tag="x:{Int32 4}" />
+                            <ComboBoxItem Content="Borderless window (scaled)" Tag="x:{Int32 5}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Overrides the scaling of windowed mode DirectDraw applications." Header="Windowed mode scaling">
+                        <ComboBox Name="dxglcfg_WindowScale" Width="100" IsEditable="True">
+                            <ComboBoxItem Content="1x" />
+                            <ComboBoxItem Content="2x" />
+                            <ComboBoxItem Content="3x" />
+                            <ComboBoxItem Content="4x" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Sets the Windows DPI scaling mode to improve compatibility." Header="DPI scaling mode">
+                        <ComboBox Name="dxglcfg_DPIScale" Width="200">
+                            <ComboBoxItem Content="Disabled" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Per-monitor" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Windows AppCompat" Tag="x:{Int32 2}" />
+                            <ComboBoxItem Content="System" Tag="x:{Int32 3}" />
+                            <ComboBoxItem Content="Per-monitor V2" Tag="x:{Int32 4}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Applies dark mode UI tweaks to titlebars and context menus.&#x0a;Can also be used to set dark mode preference in DXGL Config" Header="Dark mode support">
+                        <ComboBox Name="dxglcfg_DarkMode" Width="200">
+                            <ComboBoxItem Content="System default" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Prefer dark mode" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Prefer light mode" Tag="x:{Int32 2}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Overrides window corners in Windows 11." Header="Window corner style">
+                        <ComboBox Name="dxglcfg_WindowCorner">
+                            <ComboBoxItem Content="System default" Tag="x:{Int32 0}" />
+                            <ComboBoxItem Content="Square corners" Tag="x:{Int32 1}" />
+                            <ComboBoxItem Content="Rounded corners" Tag="x:{Int32 2}" />
+                            <ComboBoxItem Content="Small rounded corners" Tag="x:{Int32 3}" />
+                        </ComboBox>
+                    </local:SettingsCardControl>
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="FIXME:  Move to Settings Expander Control for Video mode." />
+                    <local:SettingsCardControl Description="Select the fixed scaling amount." Header="Fixed scaling">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="X" />
+                            <TextBox Name="dxglcfg_DisplayMultiplierX" />
+                            <TextBlock Text="Y" />
+                            <TextBox Name="dxglcfg_DisplayMultiplierY" />
+                        </StackPanel>
+                    </local:SettingsCardControl>
+                    <local:SettingsCardControl Description="Select the custom display resolution" Header="Custom resolution">
+                        <ComboBox Name="dxglcfg_CustomResolution" Width="200" IsEditable="True" />
                     </local:SettingsCardControl>
                 </StackPanel>
             </Border>

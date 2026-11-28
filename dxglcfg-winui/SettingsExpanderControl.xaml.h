@@ -41,15 +41,15 @@ namespace winrt::dxglcfg_winui::implementation
         void HeaderContent(winrt::Windows::Foundation::IInspectable const &value);
         static Microsoft::UI::Xaml::DependencyProperty HeaderContentProperty();
 
-        //static void OnPanelIndexChanged(DependencyObject const &d, winrt::Microsoft::UI::Xaml::DependencyPropertyChangedEventArgs const &e);
-        //int32_t PanelIndex();
-        //void PanelIndex(int32_t value);
-        //static Microsoft::UI::Xaml::DependencyProperty PanelIndexProperty();
+        winrt::Windows::Foundation::IInspectable ExpandableContent();
+        void ExpandableContent(winrt::Windows::Foundation::IInspectable const &value);
+        static Microsoft::UI::Xaml::DependencyProperty ExpandableContentProperty();
 
-        //winrt::Microsoft::UI::Xaml::DependencyObjectCollection Panels();
-
-    private:
-        //winrt::Microsoft::UI::Xaml::DependencyObjectCollection paneldata;
+        bool IsExpanded();
+        void IsExpanded(bool value);
+        static Microsoft::UI::Xaml::DependencyProperty IsExpandedProperty();
+        static void OnIsExpandedChanged(Microsoft::UI::Xaml::DependencyObject const& d,
+            Microsoft::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
 
     };
 }

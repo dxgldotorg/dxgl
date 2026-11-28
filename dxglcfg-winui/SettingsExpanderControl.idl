@@ -27,14 +27,14 @@ namespace dxglcfg_winui
         String Description;
         Microsoft.UI.Xaml.Controls.IconElement HeaderIcon;
         IInspectable HeaderContent;
-        //Int32 PanelIndex;
-
-        //Microsoft.UI.Xaml.DependencyObjectCollection Panels{ get; };
+        IInspectable ExpandableContent;
+        Boolean IsExpanded;
 
         static Microsoft.UI.Xaml.DependencyProperty HeaderProperty{ get; };
         static Microsoft.UI.Xaml.DependencyProperty DescriptionProperty{ get; };
         static Microsoft.UI.Xaml.DependencyProperty HeaderIconProperty{ get; };
         static Microsoft.UI.Xaml.DependencyProperty HeaderContentProperty{ get; };
-        //static Microsoft.UI.Xaml.DependencyProperty PanelIndexProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty ExpandableContentProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty IsExpandedProperty{ get; };
     }
 }
